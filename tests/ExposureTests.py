@@ -5,7 +5,7 @@ import sys
 import unittest
 from flask import json
 import shutil
-
+import tarfile
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
@@ -34,7 +34,7 @@ class Test_ExposureTests(unittest.TestCase):
 
     def setUp(self):
         app.DO_GZIP_RESPONSE = False
-        exposure_data_directory = os.path.join(TEST_DIRECTORY, 'data')
+        exposure_data_directory = os.path.join(TEST_DIRECTORY, 'exposure_data')
         app.EXPOSURE_DATA_DIRECTORY = exposure_data_directory
         app.APP.config['TESTING'] = True
         self.app = app.APP.test_client()
@@ -62,6 +62,12 @@ class Test_ExposureTests(unittest.TestCase):
         exposures = json.loads(response.data.decode('utf-8'))['exposures']
         assert len(exposures) == 1
         assert sum(1 for exposure in exposures if exposure['location'] == 'test1') == 1
+
+    def test_get_exposure_by_location_2(self):
+        self.clean_directories()
+        self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test1.tar'))
+        response = self.app.get("/exposure/test2")
+        assert response._status_code == 404
 
     def test_post_exposure_1(self):
         self.clean_directories()
@@ -124,6 +130,34 @@ class Test_ExposureTests(unittest.TestCase):
         assert response._status_code == 200
         response = self.app.get("/exposure/" + location)
         assert response._status_code == 404
+
+    def test_check_exposure_1(self):
+        self.clean_directories()
+        os.chdir(TEST_DATA_DIRECTORY)
+        filepath = 'items.bin'
+        self.touch(filepath)        
+        filepath = 'coverages.bin'
+        self.touch(filepath)        
+        filepath = 'summaryxref.bin'
+        self.touch(filepath)        
+        filepath = 'fm_programme.bin'
+        self.touch(filepath)        
+        filepath = 'fm_policytc.bin'
+        self.touch(filepath)        
+        filepath = 'fm_profile.bin'
+        self.touch(filepath)        
+        filepath = 'fm_summaryxref.bin'
+        self.touch(filepath)        
+        tarpath = 'exposure.tar'
+        tar = tarfile.open(tarpath, 'w')
+        for name in [
+            'items.bin', 'coverages.bin', 'summaryxref.bin',
+            'fm_programme.bin', 'fm_policytc.bin', 'fm_profile.bin', 'fm_summaryxref.bin']:
+            tar.add(name)
+        tar.close() 
+        os.chdir(TEST_DIRECTORY)
+        assert(app.validate_exposure_tar(
+            os.path.join(TEST_DATA_DIRECTORY, tarpath)))
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,8 +5,9 @@ Oasis API application endpoints.
 import os
 import uuid
 import inspect
-import traceback
+import tarfile
 import time
+import traceback
 from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
 
@@ -92,7 +93,7 @@ def post_exposure():
 
         file = request.files['file']
         filename = str(uuid.uuid4())
-        filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename)
+        filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename) + DATA_FILE_SUFFIX
         file.save(filepath)
 
         # If zipped, extract the tar file
@@ -118,8 +119,8 @@ def post_exposure():
 
     return response
 
-@APP.route('/exposure', defaults={'location': None}, methods=["get"])
-@APP.route('/exposure/<location>', methods=["get"])
+@APP.route('/exposure', defaults={'location': None}, methods=["delete"])
+@APP.route('/exposure/<location>', methods=["delete"])
 def delete_exposure(location):
     try:
         if location == None:
@@ -172,3 +173,15 @@ def get_results():
 @APP.route('/results', methods="delete")
 def delete_results():
     return True
+
+def validate_exposure_tar(filepath):
+    tar = tarfile.open(filepath)
+    members = tar.getmembers()
+    return (len(members) == 7) and \
+        (sum(1 for member in members if member.name == 'items.bin') == 1) and \
+        (sum(1 for member in members if member.name == 'coverages.bin') == 1) and \
+        (sum(1 for member in members if member.name == 'summaryxref.bin') == 1) and \
+        (sum(1 for member in members if member.name == 'fm_programme.bin') == 1) and \
+        (sum(1 for member in members if member.name == 'fm_policytc.bin') == 1) and \
+        (sum(1 for member in members if member.name == 'fm_profile.bin') == 1) and \
+        (sum(1 for member in members if member.name == 'fm_summaryxref.bin') == 1)
