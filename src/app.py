@@ -10,6 +10,7 @@ import time
 import traceback
 from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
+from flask_swagger import swagger
 
 APP = Flask(__name__)
 
@@ -28,10 +29,30 @@ HTTP_RESPONSE_OK = 200
 HTTP_RESPONSE_INTERNAL_ERROR = 400
 HTTP_RESPONSE_RESOURCE_NOT_FOUND = 404
 
-@APP.route('/exposure', defaults={'location': None}, methods=["get"])
-@APP.route('/exposure/<location>', methods=["get"])
-def get_exposure(location):
-    
+@APP.route('/exposure_summary', defaults={'location': None}, methods=["get"])
+@APP.route('/exposure_summary/<location>', methods=["GET"])
+def get_exposure_summary(location):
+    """
+    Get exposure summary
+    ---
+    description: Returns a summary of a exposure resource and contents. If location parameter is not supplied returns a summary of all exposures.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: A list of exposure summaries.
+            type: array
+            items:
+                $ref: '#/definitions/exposure_summary'
+        '404':
+            description: Resource not found
+    parameters:
+    - name: location
+      in: path
+      description: The location of the exposure resource to summarise.
+      required: false
+      type: str
+    """
     try:
         exposures = list()
         if location == None:
@@ -78,8 +99,49 @@ def get_exposure(location):
 
     return response
 
-@APP.route('/exposure', methods=["post"])
+@APP.route('/exposure/<location>', methods=["GET"])
+def get_exposure(location):
+    """
+    Get an exposure resource
+    ---
+    description: Returns an exposure resource. If location parameter is not supplied returns a summary of all exposures.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: A compressed tar file containing the Oasis exposure files.
+            type: file
+        '404':
+            description: Resource not found
+    parameters:
+    - name: location
+      in: path
+      description: The location of the exposure resource.
+      required: true
+      type: str
+    """
+    return True
+
+@APP.route('/exposure', methods=["POST"])
 def post_exposure():
+    """
+    Upload an exposure resource
+    ---
+    description: Uploads an exposure resourceby posting an exposure tar file. The tar file can be compressed or uncompressed.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: The exposure summary of the created resource.
+        schema:
+          type: '#/definitions/expposure_summary'
+    responses:
+        '200':
+            description: The exposure summary of the uploaded exposure resource.
+            type: file 
+        '404':
+            description: Resource not found
+    """
     try:
         content_type = ''
         if 'Content-Type' in request.headers:
@@ -119,9 +181,27 @@ def post_exposure():
 
     return response
 
-@APP.route('/exposure', defaults={'location': None}, methods=["delete"])
-@APP.route('/exposure/<location>', methods=["delete"])
+#@APP.route('/exposure', defaults={'location': None}, methods=["delete"])
+@APP.route('/exposure/<location>', methods=["DELETE"])
 def delete_exposure(location):
+    """
+    Delete an exposure resource
+    ---
+    description: Deletes an exposure resource. If no location is given all exposure resources will be deleted.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: OK
+        '404':
+            description: Resource not found
+    parameters:
+    - name: location
+      in: path
+      description: location of exposure resource to delete.
+      required: true
+      type: str
+    """
     try:
         if location == None:
             
@@ -154,25 +234,133 @@ def delete_exposure(location):
 
     return response
 
-@APP.route('/analysis', methods="post")
+@APP.route('/analysis', methods=["POST"])
 def post_analysis():
+    """
+    Start an analysis
+    ---
+    description: Starts an analysis by creating an analysis queue resource.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: The analysis_queue resource for the new analysis.
+        schema:
+          type: '#/definitions/analysis_queue'
+    parameters:
+    - name: file
+      in: body
+      description: The analysis settings 
+      required: true
+      type: file
+    """
+    #TODO
     return True
     
-@APP.route('/analysis_queue', methods="get")
-def get_analysis_queue():
+#@APP.route('/analysis_queue', methods="get")
+@APP.route('/analysis_queue/{location}', methods=["GET"])
+def get_analysis_queue(location):
+    """
+    Get an analysis queue resource
+    ---
+    description: Gets an analysis queue resource. If no location is given all exposure queue resources are returned. 
+    Returns: a list of exposure queue resources.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: A list of analysis queue resources.
+        schema:
+            type: array
+            items:
+                $ref: '#/definitions/analysis_queue'
+        '404':
+            description: Resource not found
+    parameters:
+    - name: location
+      in: path
+      description: The location of the results resource to download.
+      required: true
+      type: str
+    """
+    # TODO
     return True
 
-@APP.route('/analysis_queue', methods="delete")
+@APP.route('/analysis_queue', methods=["DELETE"])
 def delete_analysis_queue():
+    """
+    Delete an analysis queue resource
+    ---
+    description: Deletes an analysis queue resource. If no location is given all analysis queue resources will be deleted.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: OK
+        '404':
+            description: Resource not found
+    parameters:
+    - name: location
+      in: path
+      description: The location of the analysis queue resource to delete.
+      required: true
+      type: str
+    """
+    #TODO
     return True
 
-@APP.route('/results', methods="get")
-def get_results():
+@APP.route('/results/{location}', methods=["GET"])
+def get_results(location):
+    """
+    Get a results resource
+    ---
+    description: Gets a results resource, returning a compressed results tar file.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: A list of exposure summaries.
+            type: file
+        '404':
+            description: Resource not found
+    parameters:
+    - name: location
+      in: path
+      description: The location of the results resource to download.
+      required: true
+      type: str
+    """
     return True
 
-@APP.route('/results', methods="delete")
-def delete_results():
+#@APP.route('/results', methods="delete")
+@APP.route('/results/{location}', methods=["DELETE"])
+def delete_results(location):
+    """
+    Delete a results resource
+    ---
+    description: Deletes a results resource. If no location is given all results resources will be deleted.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: OK
+        '404':
+            description: Resource not found
+    parameters:
+    - name: location
+      in: path
+      description: The location of the results resource to delete.
+      required: true
+      type: str
+    """
     return True
+
+@APP.route("/spec")
+def spec():
+    swag = swagger(APP)
+    swag['info']['version'] = "0.1"
+    swag['info']['title'] = "Oasis API"
+    return jsonify(swag)
 
 def validate_exposure_tar(filepath):
     tar = tarfile.open(filepath)
