@@ -35,7 +35,7 @@ def get_exposure_summary(location):
     """
     Get exposure summary
     ---
-    description: Returns a summary of a exposure resource and contents. If location parameter is not supplied returns a summary of all exposures.
+    description: Gets a summary of a exposure resources and their contents. If location parameter is not supplied returns a summary of all exposures.
     produces:
     - application/json
     responses:
@@ -181,7 +181,7 @@ def post_exposure():
 
     return response
 
-#@APP.route('/exposure', defaults={'location': None}, methods=["delete"])
+@APP.route('/exposure', defaults={'location': None}, methods=["delete"])
 @APP.route('/exposure/<location>', methods=["DELETE"])
 def delete_exposure(location):
     """
@@ -264,7 +264,6 @@ def get_analysis_queue(location):
     Get an analysis queue resource
     ---
     description: Gets an analysis queue resource. If no location is given all exposure queue resources are returned. 
-    Returns: a list of exposure queue resources.
     produces:
     - application/json
     responses:
