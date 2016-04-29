@@ -1,0 +1,274 @@
+{
+  "definitions": {}, 
+  "info": {
+    "title": "Oasis API", 
+    "version": "0.1"
+  }, 
+  "paths": {
+    "/analysis": {
+      "post": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The analysis settings", 
+            "in": "body", 
+            "name": "file", 
+            "required": true, 
+            "type": "file"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "The analysis_queue resource for the new analysis."
+          }, 
+          "schema": {
+            "type": "#/definitions/analysis_queue"
+          }
+        }, 
+        "summary": "Start an analysis"
+      }
+    }, 
+    "/analysis_queue": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the analysis queue resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "str"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete an analysis queue resource"
+      }
+    }, 
+    "/analysis_queue/{location}": {
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the results resource to download.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "str"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A list of analysis queue resources."
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }, 
+          "schema": {
+            "items": {
+              "$ref": "#/definitions/analysis_queue"
+            }, 
+            "type": "array"
+          }
+        }, 
+        "summary": "Get an analysis queue resource"
+      }
+    }, 
+    "/exposure": {
+      "post": {
+        "description": "", 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "The exposure summary of the uploaded exposure resource.", 
+            "type": "file"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Upload an exposure resource"
+      }
+    }, 
+    "/exposure/{location}": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "location of exposure resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "str"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete an exposure resource"
+      }, 
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the exposure resource.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "str"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A compressed tar file containing the Oasis exposure files.", 
+            "type": "file"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Get an exposure resource"
+      }
+    }, 
+    "/exposure_summary": {
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the exposure resource to summarise.", 
+            "in": "path", 
+            "name": "location", 
+            "required": false, 
+            "type": "str"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A list of exposure summaries.", 
+            "items": {
+              "$ref": "#/definitions/exposure_summary"
+            }, 
+            "type": "array"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Get exposure summary"
+      }
+    }, 
+    "/exposure_summary/{location}": {
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the exposure resource to summarise.", 
+            "in": "path", 
+            "name": "location", 
+            "required": false, 
+            "type": "str"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A list of exposure summaries.", 
+            "items": {
+              "$ref": "#/definitions/exposure_summary"
+            }, 
+            "type": "array"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Get exposure summary"
+      }
+    }, 
+    "/results/{location}": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the results resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "str"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete a results resource"
+      }, 
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the results resource to download.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "str"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A list of exposure summaries.", 
+            "type": "file"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Get a results resource"
+      }
+    }
+  }, 
+  "swagger": "2.0"
+}
