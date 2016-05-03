@@ -6,6 +6,7 @@ import unittest
 from flask import json
 import shutil
 import tarfile
+import time
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
@@ -45,7 +46,7 @@ class Test_ExposureTests(unittest.TestCase):
         self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test2.tar'))
         self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test3.tar'))
         self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test4.tar'))
-        response = self.app.get("/exposure")
+        response = self.app.get("/exposure_summary")
         assert response._status_code == 200
         exposures = json.loads(response.data.decode('utf-8'))['exposures']
         assert len(exposures) == 4
@@ -57,7 +58,7 @@ class Test_ExposureTests(unittest.TestCase):
     def test_get_exposure_by_location_1(self):
         self.clean_directories()
         self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test1.tar'))
-        response = self.app.get("/exposure/test1")
+        response = self.app.get("/exposure_summary/test1")
         assert response._status_code == 200
         exposures = json.loads(response.data.decode('utf-8'))['exposures']
         assert len(exposures) == 1
@@ -66,7 +67,7 @@ class Test_ExposureTests(unittest.TestCase):
     def test_get_exposure_by_location_2(self):
         self.clean_directories()
         self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test1.tar'))
-        response = self.app.get("/exposure/test2")
+        response = self.app.get("/exposure_summary/test2")
         assert response._status_code == 404
 
     def test_post_exposure_1(self):
@@ -106,6 +107,7 @@ class Test_ExposureTests(unittest.TestCase):
         assert not os.path.exists(filepath1)
         assert os.path.exists(filepath2)
 
+from TaskStatus import TASK_STATES
     def test_exposure_roundtrip_1(self):
         self.clean_directories()
         filepath = os.path.join(TEST_DIRECTORY, 'post1.tar')
@@ -121,14 +123,14 @@ class Test_ExposureTests(unittest.TestCase):
         exposures = json.loads(response.data.decode('utf-8'))['exposures']
         assert len(exposures) == 1
         location = exposures[0]['location']
-        response = self.app.get("/exposure/" + location)
+        response = self.app.get("/exposure_summary/" + location)
         assert response._status_code == 200
         exposures = json.loads(response.data.decode('utf-8'))['exposures']
         assert len(exposures) == 1
         assert sum(1 for exposure in exposures if exposure['location'] == location) == 1
         response = self.app.delete("/exposure/" + location)
         assert response._status_code == 200
-        response = self.app.get("/exposure/" + location)
+        response = self.app.get("/exposure_summary/" + location)
         assert response._status_code == 404
 
     def test_check_exposure_1(self):
