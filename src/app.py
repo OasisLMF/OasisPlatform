@@ -11,6 +11,7 @@ import traceback
 from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
+from celery import Celery
 
 APP = Flask(__name__)
 
@@ -29,7 +30,10 @@ HTTP_RESPONSE_OK = 200
 HTTP_RESPONSE_INTERNAL_ERROR = 400
 HTTP_RESPONSE_RESOURCE_NOT_FOUND = 404
 
-@APP.route('/exposure_summary', defaults={'location': None}, methods=["get"])
+CELERY = Celery()
+CELERY.config_from_object('CeleryConfig')
+
+@APP.route('/exposure_summary', defaults={'location': None}, methods=["GET"])
 @APP.route('/exposure_summary/<location>', methods=["GET"])
 def get_exposure_summary(location):
     """
@@ -181,7 +185,7 @@ def post_exposure():
 
     return response
 
-@APP.route('/exposure', defaults={'location': None}, methods=["delete"])
+@APP.route('/exposure', defaults={'location': None}, methods=["DELETE"])
 @APP.route('/exposure/<location>', methods=["DELETE"])
 def delete_exposure(location):
     """
@@ -254,11 +258,11 @@ def post_analysis():
       required: true
       type: file
     """
-    #TODO
-    return True
+    result = CELERY.send_task("tasks.start_analysis", ["ANALYSIS_SETTINGS_JSON"])
+    task_id = result.task_id
+    return jsonify({'location': task_id})
     
-#@APP.route('/analysis_queue', methods="get")
-@APP.route('/analysis_queue/{location}', methods=["GET"])
+@APP.route('/analysis_queue/<location>', methods=["GET"])
 def get_analysis_queue(location):
     """
     Get an analysis queue resource
@@ -282,8 +286,10 @@ def get_analysis_queue(location):
       required: true
       type: str
     """
-    # TODO
-    return True
+
+    result = CELERY.AsyncResult(location)
+    status = result.status
+    return jsonify({'status': status})
 
 @APP.route('/analysis_queue', methods=["DELETE"])
 def delete_analysis_queue():
@@ -308,7 +314,7 @@ def delete_analysis_queue():
     #TODO
     return True
 
-@APP.route('/results/{location}', methods=["GET"])
+@APP.route('/results/<location>', methods=["GET"])
 def get_results(location):
     """
     Get a results resource
@@ -331,8 +337,8 @@ def get_results(location):
     """
     return True
 
-#@APP.route('/results', methods="delete")
-@APP.route('/results/{location}', methods=["DELETE"])
+@APP.route('/results', methods="delete")
+@APP.route('/results/<location>', methods=["DELETE"])
 def delete_results(location):
     """
     Delete a results resource
@@ -360,6 +366,17 @@ def spec():
     swag['info']['version'] = "0.1"
     swag['info']['title'] = "Oasis API"
     return jsonify(swag)
+
+@APP.route('/healthcheck', methods=['GET'])
+def get_healthcheck():
+    '''
+    Basic healthcheck response.
+    '''
+
+    # TODO: check job management connections
+
+    logging.info("get_healthcheck")
+    return "OK"
 
 def validate_exposure_tar(filepath):
     tar = tarfile.open(filepath)
