@@ -107,7 +107,6 @@ class Test_ExposureTests(unittest.TestCase):
         assert not os.path.exists(filepath1)
         assert os.path.exists(filepath2)
 
-from TaskStatus import TASK_STATES
     def test_exposure_roundtrip_1(self):
         self.clean_directories()
         filepath = os.path.join(TEST_DIRECTORY, 'post1.tar')

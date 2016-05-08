@@ -12,6 +12,7 @@ from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from celery import Celery
+from collections import namedtuple
 
 APP = Flask(__name__)
 
@@ -32,6 +33,36 @@ HTTP_RESPONSE_RESOURCE_NOT_FOUND = 404
 
 CELERY = Celery()
 CELERY.config_from_object('CeleryConfig')
+
+"""
+Exposure summary
+---
+  ExposureSummary:
+    type: object
+    properties:
+      location:
+        type: string
+        description: The location of the exposure data.
+      size:
+        type: int
+        description: The size of the uncompressed exposure data in bytes.
+      created_date:
+        type: date
+        description: The date when the exposure data was uploaded.
+"""
+class ExposureSummary(object):
+
+   def __init__(self):
+       self.location = ""
+       self.size = 0
+       self.created_date = ""
+
+   def __init__(self, location, size, created_date):
+       self.location = location
+       self.size = size
+       self.created_date = created_date
+
+
 
 @APP.route('/exposure_summary', defaults={'location': None}, methods=["GET"])
 @APP.route('/exposure_summary/<location>', methods=["GET"])
@@ -58,8 +89,8 @@ def get_exposure_summary(location):
       type: str
     """
     try:
-        exposures = list()
         if location == None:
+            exposure_summaries = list()
             for filename in os.listdir(EXPOSURE_DATA_DIRECTORY):
                 
                 filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename)
@@ -71,14 +102,12 @@ def get_exposure_summary(location):
 
                 size_in_bytes = os.path.getsize(filepath)
                 created_date = time.ctime(os.path.getctime(filepath))
-                exposures.append(
-                    {
-                        "location": str.replace(filename, DATA_FILE_SUFFIX, ''),
-                        "size": size_in_bytes,
-                        "created_date": created_date
-                    })
-        
-            response = jsonify({"exposures": exposures})
+                exposure_summaries.append(
+                    ExposureSummary(
+                        location = str.replace(filename, DATA_FILE_SUFFIX, ''),
+                        size = size_in_bytes,
+                        created_date = created_date))
+            response = jsonify({"exposures": [exposure_summary.__dict__ for exposure_summary in exposure_summaries]})
         else:
             filename = str(location) + DATA_FILE_SUFFIX;
             filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename)
@@ -88,14 +117,11 @@ def get_exposure_summary(location):
             else:
                 size_in_bytes = os.path.getsize(filepath)
                 created_date = time.ctime(os.path.getctime(filepath))
-                exposures.append(
-                    {
-                        "location": str.replace(filename, DATA_FILE_SUFFIX, ''),
-                        "size": size_in_bytes,
-                        "created_date": created_date
-                    })
-                response = jsonify({"exposures": exposures})
-
+                exposure_summary = ExposureSummary(
+                        location = str.replace(filename, DATA_FILE_SUFFIX, ''),
+                        size = size_in_bytes,
+                        created_date = created_date)
+                response = jsonify({"exposures": [exposure_summary.__dict__]})
     except:
         print "Error in post_lookup"
         print traceback.format_exc()
