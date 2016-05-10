@@ -2,7 +2,7 @@
 import sys
 import logging
 logging.basicConfig(stream=sys.stderr)
-sys.path.insert(0,"/var/www/oasisapi/")
+sys.path.insert(0,"/var/www/oasisapi/src/")
 
 from app import APP as application
 application.secret_key = 'Add your secret key'

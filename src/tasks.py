@@ -2,6 +2,7 @@ from celery.task import task
 import time
 from ConfigParser import ConfigParser
 import os
+import sys
 import inspect
 import logging
 
@@ -19,17 +20,25 @@ if not isinstance(NUMERIC_LOG_LEVEL, int):
 
 logging.basicConfig(
     filename=LOG_FILENAME,
-    level=NUMERIC_LOG_LEVEL,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+p = '/var/www/calcBE'
+if not p in sys.path:
+    sys.path.append(p)
+from calcBEServer import calcBEServerClass
+x = calcBEServerClass()
 
 @task(bind=True)
 def start_analysis(self, analysis_profile):
     '''
     Mock task for starting an analysis.
     '''
-
+    sys.stderr.write('in start_analysis()\n')
     self.update_state(state='STARTED')
-    print analysis_profile
-    time.sleep(30)
+    sys.stderr.write('analysis_profile = {}\n'.format( analysis_profile))
 
-    return "Done"
+    ret = x.setupCalcProcesses(None, analysis_profile)
+    sys.stderr.write('ret = {}\n'.format(ret))
+ 
+    return ret

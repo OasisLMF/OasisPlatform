@@ -3,16 +3,17 @@ Oasis API application endpoints.
 """
 
 import os
+import sys
 import uuid
 import inspect
 import tarfile
 import time
 import traceback
+import logging
 from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from celery import Celery
-from collections import namedtuple
 
 APP = Flask(__name__)
 
@@ -24,6 +25,15 @@ CONFIG_PARSER.read(INI_PATH)
 EXPOSURE_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'EXPOSURE_DATA_DIRECTORY')
 RESULTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'RESULTS_DATA_DIRECTORY')
 
+LOG_FILENAME = CONFIG_PARSER.get('Default', 'LOG_FILENAME')+'_app'
+LOG_LEVEL = CONFIG_PARSER.get('Default', 'LOG_LEVEL')
+NUMERIC_LOG_LEVEL = getattr(logging, LOG_LEVEL.upper(), None)
+
+logging.basicConfig(
+    filename='appLogger.log', # LOG_FILENAME,
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 DATA_FILE_SUFFIX = '.tar'
 GZIP_FILE_SUFFIX = '.gz'
 
@@ -34,81 +44,33 @@ HTTP_RESPONSE_RESOURCE_NOT_FOUND = 404
 CELERY = Celery()
 CELERY.config_from_object('CeleryConfig')
 
-class ExposureSummary(object):
-   def __init__(self):
-       self.location = ""
-       self.size = 0
-       self.created_date = ""
-   def __init__(self, location, size, created_date):
-       self.location = location
-       self.size = size
-       self.created_date = created_date
-
-class ResultsSummary(object):
-   def __init__(self):
-       self.location = ""
-       self.size = 0
-       self.created_date = ""
-   def __init__(self, location, size, created_date):
-       self.location = location
-       self.size = size
-       self.created_date = created_date
-
-class AnalysisStatus(object):
-   def __init__(self):
-       self.id = -1
-       self.status = ""
-       self.message = ""
-       selef.results_summary = None
-
-   def __init__(self, id, status, message, results_summary):
-       self.id = id
-       self.status = status
-       self.message = message
-       selef.results_summary = results_summary
-
 @APP.route('/exposure_summary', defaults={'location': None}, methods=["GET"])
 @APP.route('/exposure_summary/<location>', methods=["GET"])
 def get_exposure_summary(location):
     """
     Get exposure summary
     ---
-    definitions:
-    - schema:
-        id: ExposureSummary
-        properties:
-            location:
-                type: string
-                description: The location of the exposure data.
-            size:
-                type: integer
-                description: The size of the uncompressed exposure data in bytes.
-            created_date:
-                type: string
-                format: dateTime
-                description: The date when the exposure data was uploaded.
     description: Gets a summary of a exposure resources and their contents. If location parameter is not supplied returns a summary of all exposures.
     produces:
     - application/json
     responses:
-        200:
+        '200':
             description: A list of exposure summaries.
-            schema:
-                type: array
-                items:
-                    $ref: "#/definitions/ExposureSummary"
-        404:
+            type: array
+            items:
+                $ref: '#/definitions/exposure_summary'
+        '404':
             description: Resource not found
     parameters:
     - name: location
       in: path
       description: The location of the exposure resource to summarise.
-      required: true
-      type: string
+      required: false
+      type: str
     """
     try:
+        exposures = list()
         if location == None:
-            exposure_summaries = list()
             for filename in os.listdir(EXPOSURE_DATA_DIRECTORY):
                 
                 filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename)
@@ -120,12 +82,14 @@ def get_exposure_summary(location):
 
                 size_in_bytes = os.path.getsize(filepath)
                 created_date = time.ctime(os.path.getctime(filepath))
-                exposure_summaries.append(
-                    ExposureSummary(
-                        location = str.replace(filename, DATA_FILE_SUFFIX, ''),
-                        size = size_in_bytes,
-                        created_date = created_date))
-            response = jsonify({"exposures": [exposure_summary.__dict__ for exposure_summary in exposure_summaries]})
+                exposures.append(
+                    {
+                        "location": str.replace(filename, DATA_FILE_SUFFIX, ''),
+                        "size": size_in_bytes,
+                        "created_date": created_date
+                    })
+        
+            response = jsonify({"exposures": exposures})
         else:
             filename = str(location) + DATA_FILE_SUFFIX;
             filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename)
@@ -135,11 +99,14 @@ def get_exposure_summary(location):
             else:
                 size_in_bytes = os.path.getsize(filepath)
                 created_date = time.ctime(os.path.getctime(filepath))
-                exposure_summary = ExposureSummary(
-                        location = str.replace(filename, DATA_FILE_SUFFIX, ''),
-                        size = size_in_bytes,
-                        created_date = created_date)
-                response = jsonify({"exposures": [exposure_summary.__dict__]})
+                exposures.append(
+                    {
+                        "location": str.replace(filename, DATA_FILE_SUFFIX, ''),
+                        "size": size_in_bytes,
+                        "created_date": created_date
+                    })
+                response = jsonify({"exposures": exposures})
+
     except:
         print "Error in post_lookup"
         print traceback.format_exc()
@@ -152,20 +119,21 @@ def get_exposure(location):
     """
     Get an exposure resource
     ---
-    description: Returns an exposure resource. If no location parameter is supplied returns a summary of all exposures.
+    description: Returns an exposure resource. If location parameter is not supplied returns a summary of all exposures.
     produces:
     - application/json
     responses:
-        200:
+        '200':
             description: A compressed tar file containing the Oasis exposure files.
-        404:
+            type: file
+        '404':
             description: Resource not found
     parameters:
     - name: location
       in: path
       description: The location of the exposure resource.
       required: true
-      type: string
+      type: str
     """
     return True
 
@@ -174,14 +142,20 @@ def post_exposure():
     """
     Upload an exposure resource
     ---
-    description: Uploads an exposure resource by posting an exposure tar file. The tar file can be compressed or uncompressed.
+    description: Uploads an exposure resourceby posting an exposure tar file. The tar file can be compressed or uncompressed.
     produces:
     - application/json
     responses:
-        200:
-            description: The exposure summary of the created exposure resource.
-            schema:
-                $ref: '#/definitions/ExposureSummary'
+        '200':
+            description: The exposure summary of the created resource.
+        schema:
+          type: '#/definitions/expposure_summary'
+    responses:
+        '200':
+            description: The exposure summary of the uploaded exposure resource.
+            type: file 
+        '404':
+            description: Resource not found
     """
     try:
         content_type = ''
@@ -232,16 +206,16 @@ def delete_exposure(location):
     produces:
     - application/json
     responses:
-        200:
+        '200':
             description: OK
-        404:
+        '404':
             description: Resource not found
     parameters:
     - name: location
       in: path
       description: location of exposure resource to delete.
       required: true
-      type: string
+      type: str
     """
     try:
         if location == None:
@@ -284,87 +258,70 @@ def post_analysis():
     produces:
     - application/json
     responses:
-        200:  
+        '200':
             description: The analysis_queue resource for the new analysis.
-            schema:
-                $ref: '#/definitions/AnalysisQueue'
-    produces:
-    - application/json
+        schema:
+          type: '#/definitions/analysis_queue'
     parameters:
-    - name: analysis_settings
-      in: formData
+    - name: file
+      in: body
       description: The analysis settings 
       required: true
       type: file
     """
     result = CELERY.send_task("tasks.start_analysis", ["ANALYSIS_SETTINGS_JSON"])
     task_id = result.task_id
+    sys.stderr.write('/analysis: result = {}i\n'.format(result))
     return jsonify({'location': task_id})
     
-@APP.route('/analysis_status/<location>', methods=["GET"])
-def get_analysis_status(location):
+@APP.route('/analysis_queue/<location>', methods=["GET"])
+def get_analysis_queue(location):
     """
-    Get an analysis status resource
+    Get an analysis queue resource
     ---
-    definitions:
-    - schema:
-        id: AnalysisStatus
-        properties:
-            id:
-                type: string
-                description: The analysis ID.
-            status:
-                type: string
-                description: The analysis status.
-            message:
-                type: string
-                description: The analysis status message.
-            results_summary_location:
-                type: string
-                description: The location of the analysis results.
-    description: Gets an analysis status resource. If no location is given all exposure status resources are returned. 
+    description: Gets an analysis queue resource. If no location is given all exposure queue resources are returned. 
     produces:
     - application/json
     responses:
-        200:
-            description: A list of analysis status resources.
-            schema:
-                type: array
-                items:
-                    $ref: '#/definitions/Analysisstatus'
-        404:
-            description: Resource not found.
-    parameters:
-    -   name: location
-        in: path
-        description: The location of the results resource to download.
-        required: true
-        type: string
-    """
-    result = CELERY.AsyncResult(location)
-    status = result.status
-    return jsonify({'status': status})
-
-@APP.route('/analysis_status', methods=["DELETE"])
-@APP.route('/analysis_status/<location>', methods=["DELETE"])
-def delete_analysis_status(location):
-    """
-    Delete an analysis status resource
-    ---
-    description: Deletes an analysis status resource. If no location is given all analysis status resources will be deleted.
-    produces:
-    - application/json
-    responses:
-        200:
-            description: OK
-        404:
+        '200':
+            description: A list of analysis queue resources.
+        schema:
+            type: array
+            items:
+                $ref: '#/definitions/analysis_queue'
+        '404':
             description: Resource not found
     parameters:
     - name: location
       in: path
-      description: The location of the analysis status resource to delete.
+      description: The location of the results resource to download.
       required: true
-      type: string
+      type: str
+    """
+
+    result = CELERY.AsyncResult(location)
+    status = result.status
+    return jsonify({'status': status})
+
+@APP.route('/analysis_queue', methods=["DELETE"])
+def delete_analysis_queue():
+    """
+    Delete an analysis queue resource
+    ---
+    description: Deletes an analysis queue resource. If no location is given all analysis queue resources will be deleted.
+    produces:
+    - application/json
+    responses:
+        '200':
+            description: OK
+        '404':
+            description: Resource not found
+    parameters:
+    - name: location
+      in: path
+      description: The location of the analysis queue resource to delete.
+      required: true
+      type: str
     """
     #TODO
     return True
@@ -378,20 +335,21 @@ def get_results(location):
     produces:
     - application/json
     responses:
-        200:
-            description: A compressed tar of the results generated by an analysis.
-        404:
-            description: Resource not found.
+        '200':
+            description: A list of exposure summaries.
+            type: file
+        '404':
+            description: Resource not found
     parameters:
-    -   name: location
-        in: path
-        description: The location of the results resource to download.
-        required: true
-        type: string
+    - name: location
+      in: path
+      description: The location of the results resource to download.
+      required: true
+      type: str
     """
     return True
 
-@APP.route('/results', methods=["DELETE"])
+@APP.route('/results', methods="delete")
 @APP.route('/results/<location>', methods=["DELETE"])
 def delete_results(location):
     """
@@ -401,16 +359,16 @@ def delete_results(location):
     produces:
     - application/json
     responses:
-        200:
+        '200':
             description: OK
-        404:
+        '404':
             description: Resource not found
     parameters:
     - name: location
       in: path
       description: The location of the results resource to delete.
       required: true
-      type: string
+      type: str
     """
     return True
 
@@ -429,7 +387,6 @@ def get_healthcheck():
 
     # TODO: check job management connections
 
-    logging.info("get_healthcheck")
     return "OK"
 
 def validate_exposure_tar(filepath):
