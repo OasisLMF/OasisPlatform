@@ -1,17 +1,16 @@
-#
-# Celery Dockerfile
-#
-# https://github.com/dockerfile/celery
-#
-
-# Pull base image.
-# FROM dockerfile/python
 FROM python:2.7
-RUN pip install celery
-RUN pip install ConfigParser
+RUN pip install \
+    celery \
+    ConfigParser
 
-# Define working directory.
-#WORKDIR /home
+RUN useradd -ms /bin/bash worker
+USER worker
+WORKDIR /home/worker
 
-# Define default command.
-CMD ["bash"]
+COPY ./CeleryConfig.py  ./
+COPY ./Tasks.ini  ./
+COPY ./tasks.py  ./
+COPY ./TaskStatus.py  ./
+COPY ./startup.sh  ./
+
+ENTRYPOINT ./startup.sh;bash
