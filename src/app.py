@@ -34,35 +34,38 @@ HTTP_RESPONSE_RESOURCE_NOT_FOUND = 404
 CELERY = Celery()
 CELERY.config_from_object('CeleryConfig')
 
-"""
-Exposure summary
----
-  ExposureSummary:
-    type: object
-    properties:
-      location:
-        type: string
-        description: The location of the exposure data.
-      size:
-        type: int
-        description: The size of the uncompressed exposure data in bytes.
-      created_date:
-        type: date
-        description: The date when the exposure data was uploaded.
-"""
 class ExposureSummary(object):
-
    def __init__(self):
        self.location = ""
        self.size = 0
        self.created_date = ""
-
    def __init__(self, location, size, created_date):
        self.location = location
        self.size = size
        self.created_date = created_date
 
+class ResultsSummary(object):
+   def __init__(self):
+       self.location = ""
+       self.size = 0
+       self.created_date = ""
+   def __init__(self, location, size, created_date):
+       self.location = location
+       self.size = size
+       self.created_date = created_date
 
+class AnalysisStatus(object):
+   def __init__(self):
+       self.id = -1
+       self.status = ""
+       self.message = ""
+       selef.results_summary = None
+
+   def __init__(self, id, status, message, results_summary):
+       self.id = id
+       self.status = status
+       self.message = message
+       selef.results_summary = results_summary
 
 @APP.route('/exposure_summary', defaults={'location': None}, methods=["GET"])
 @APP.route('/exposure_summary/<location>', methods=["GET"])
@@ -70,23 +73,38 @@ def get_exposure_summary(location):
     """
     Get exposure summary
     ---
+    definitions:
+    - schema:
+        id: ExposureSummary
+        properties:
+            location:
+                type: string
+                description: The location of the exposure data.
+            size:
+                type: integer
+                description: The size of the uncompressed exposure data in bytes.
+            created_date:
+                type: string
+                format: dateTime
+                description: The date when the exposure data was uploaded.
     description: Gets a summary of a exposure resources and their contents. If location parameter is not supplied returns a summary of all exposures.
     produces:
     - application/json
     responses:
-        '200':
+        200:
             description: A list of exposure summaries.
-            type: array
-            items:
-                $ref: '#/definitions/exposure_summary'
-        '404':
+            schema:
+                type: array
+                items:
+                    $ref: "#/definitions/ExposureSummary"
+        404:
             description: Resource not found
     parameters:
     - name: location
       in: path
       description: The location of the exposure resource to summarise.
-      required: false
-      type: str
+      required: true
+      type: string
     """
     try:
         if location == None:
@@ -134,21 +152,20 @@ def get_exposure(location):
     """
     Get an exposure resource
     ---
-    description: Returns an exposure resource. If location parameter is not supplied returns a summary of all exposures.
+    description: Returns an exposure resource. If no location parameter is supplied returns a summary of all exposures.
     produces:
     - application/json
     responses:
-        '200':
+        200:
             description: A compressed tar file containing the Oasis exposure files.
-            type: file
-        '404':
+        404:
             description: Resource not found
     parameters:
     - name: location
       in: path
       description: The location of the exposure resource.
       required: true
-      type: str
+      type: string
     """
     return True
 
@@ -157,20 +174,14 @@ def post_exposure():
     """
     Upload an exposure resource
     ---
-    description: Uploads an exposure resourceby posting an exposure tar file. The tar file can be compressed or uncompressed.
+    description: Uploads an exposure resource by posting an exposure tar file. The tar file can be compressed or uncompressed.
     produces:
     - application/json
     responses:
-        '200':
-            description: The exposure summary of the created resource.
-        schema:
-          type: '#/definitions/expposure_summary'
-    responses:
-        '200':
-            description: The exposure summary of the uploaded exposure resource.
-            type: file 
-        '404':
-            description: Resource not found
+        200:
+            description: The exposure summary of the created exposure resource.
+            schema:
+                $ref: '#/definitions/ExposureSummary'
     """
     try:
         content_type = ''
@@ -221,16 +232,16 @@ def delete_exposure(location):
     produces:
     - application/json
     responses:
-        '200':
+        200:
             description: OK
-        '404':
+        404:
             description: Resource not found
     parameters:
     - name: location
       in: path
       description: location of exposure resource to delete.
       required: true
-      type: str
+      type: string
     """
     try:
         if location == None:
@@ -273,13 +284,15 @@ def post_analysis():
     produces:
     - application/json
     responses:
-        '200':
+        200:  
             description: The analysis_queue resource for the new analysis.
-        schema:
-          type: '#/definitions/analysis_queue'
+            schema:
+                $ref: '#/definitions/AnalysisQueue'
+    produces:
+    - application/json
     parameters:
-    - name: file
-      in: body
+    - name: analysis_settings
+      in: formData
       description: The analysis settings 
       required: true
       type: file
@@ -288,54 +301,70 @@ def post_analysis():
     task_id = result.task_id
     return jsonify({'location': task_id})
     
-@APP.route('/analysis_queue/<location>', methods=["GET"])
-def get_analysis_queue(location):
+@APP.route('/analysis_status/<location>', methods=["GET"])
+def get_analysis_status(location):
     """
-    Get an analysis queue resource
+    Get an analysis status resource
     ---
-    description: Gets an analysis queue resource. If no location is given all exposure queue resources are returned. 
+    definitions:
+    - schema:
+        id: AnalysisStatus
+        properties:
+            id:
+                type: string
+                description: The analysis ID.
+            status:
+                type: string
+                description: The analysis status.
+            message:
+                type: string
+                description: The analysis status message.
+            results_summary_location:
+                type: string
+                description: The location of the analysis results.
+    description: Gets an analysis status resource. If no location is given all exposure status resources are returned. 
     produces:
     - application/json
     responses:
-        '200':
-            description: A list of analysis queue resources.
-        schema:
-            type: array
-            items:
-                $ref: '#/definitions/analysis_queue'
-        '404':
-            description: Resource not found
+        200:
+            description: A list of analysis status resources.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Analysisstatus'
+        404:
+            description: Resource not found.
     parameters:
-    - name: location
-      in: path
-      description: The location of the results resource to download.
-      required: true
-      type: str
+    -   name: location
+        in: path
+        description: The location of the results resource to download.
+        required: true
+        type: string
     """
-
     result = CELERY.AsyncResult(location)
     status = result.status
     return jsonify({'status': status})
 
-@APP.route('/analysis_queue', methods=["DELETE"])
-def delete_analysis_queue():
+@APP.route('/analysis_status', methods=["DELETE"])
+@APP.route('/analysis_status/<location>', methods=["DELETE"])
+def delete_analysis_status(location):
     """
-    Delete an analysis queue resource
+    Delete an analysis status resource
     ---
-    description: Deletes an analysis queue resource. If no location is given all analysis queue resources will be deleted.
+    description: Deletes an analysis status resource. If no location is given all analysis status resources will be deleted.
     produces:
     - application/json
     responses:
-        '200':
+        200:
             description: OK
-        '404':
+        404:
             description: Resource not found
     parameters:
     - name: location
       in: path
-      description: The location of the analysis queue resource to delete.
+      description: The location of the analysis status resource to delete.
       required: true
-      type: str
+      type: string
     """
     #TODO
     return True
@@ -349,21 +378,20 @@ def get_results(location):
     produces:
     - application/json
     responses:
-        '200':
-            description: A list of exposure summaries.
-            type: file
-        '404':
-            description: Resource not found
+        200:
+            description: A compressed tar of the results generated by an analysis.
+        404:
+            description: Resource not found.
     parameters:
-    - name: location
-      in: path
-      description: The location of the results resource to download.
-      required: true
-      type: str
+    -   name: location
+        in: path
+        description: The location of the results resource to download.
+        required: true
+        type: string
     """
     return True
 
-@APP.route('/results', methods="delete")
+@APP.route('/results', methods=["DELETE"])
 @APP.route('/results/<location>', methods=["DELETE"])
 def delete_results(location):
     """
@@ -373,16 +401,16 @@ def delete_results(location):
     produces:
     - application/json
     responses:
-        '200':
+        200:
             description: OK
-        '404':
+        404:
             description: Resource not found
     parameters:
     - name: location
       in: path
       description: The location of the results resource to delete.
       required: true
-      type: str
+      type: string
     """
     return True
 
