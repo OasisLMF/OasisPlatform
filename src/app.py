@@ -12,7 +12,8 @@ from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from celery import Celery
-from collections import namedtuple
+from resource_classes import AnalysisStatus, ExposureSummary, ResultsSummary
+from oasis_log import oasis_log
 
 APP = Flask(__name__)
 
@@ -34,41 +35,9 @@ HTTP_RESPONSE_RESOURCE_NOT_FOUND = 404
 CELERY = Celery()
 CELERY.config_from_object('CeleryConfig')
 
-class ExposureSummary(object):
-   def __init__(self):
-       self.location = ""
-       self.size = 0
-       self.created_date = ""
-   def __init__(self, location, size, created_date):
-       self.location = location
-       self.size = size
-       self.created_date = created_date
-
-class ResultsSummary(object):
-   def __init__(self):
-       self.location = ""
-       self.size = 0
-       self.created_date = ""
-   def __init__(self, location, size, created_date):
-       self.location = location
-       self.size = size
-       self.created_date = created_date
-
-class AnalysisStatus(object):
-   def __init__(self):
-       self.id = -1
-       self.status = ""
-       self.message = ""
-       selef.results_summary = None
-
-   def __init__(self, id, status, message, results_summary):
-       self.id = id
-       self.status = status
-       self.message = message
-       selef.results_summary = results_summary
-
 @APP.route('/exposure_summary', defaults={'location': None}, methods=["GET"])
 @APP.route('/exposure_summary/<location>', methods=["GET"])
+@oasis_log
 def get_exposure_summary(location):
     """
     Get exposure summary
@@ -107,10 +76,10 @@ def get_exposure_summary(location):
       type: string
     """
     try:
-        if location == None:
+        if location is None:
             exposure_summaries = list()
             for filename in os.listdir(EXPOSURE_DATA_DIRECTORY):
-                
+
                 filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename)
                 
                 if not filepath.endswith(DATA_FILE_SUFFIX):
@@ -122,12 +91,13 @@ def get_exposure_summary(location):
                 created_date = time.ctime(os.path.getctime(filepath))
                 exposure_summaries.append(
                     ExposureSummary(
-                        location = str.replace(filename, DATA_FILE_SUFFIX, ''),
-                        size = size_in_bytes,
-                        created_date = created_date))
-            response = jsonify({"exposures": [exposure_summary.__dict__ for exposure_summary in exposure_summaries]})
+                        location=str.replace(filename, DATA_FILE_SUFFIX, ''),
+                        size=size_in_bytes,
+                        created_date=created_date))
+            response = jsonify(
+                {"exposures": [exposure_summary.__dict__ for exposure_summary in exposure_summaries]})
         else:
-            filename = str(location) + DATA_FILE_SUFFIX;
+            filename = str(location) + DATA_FILE_SUFFIX
             filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename)
 
             if not os.path.exists(filepath):
@@ -136,9 +106,9 @@ def get_exposure_summary(location):
                 size_in_bytes = os.path.getsize(filepath)
                 created_date = time.ctime(os.path.getctime(filepath))
                 exposure_summary = ExposureSummary(
-                        location = str.replace(filename, DATA_FILE_SUFFIX, ''),
-                        size = size_in_bytes,
-                        created_date = created_date)
+                    location=str.replace(filename, DATA_FILE_SUFFIX, ''),
+                    size=size_in_bytes,
+                    created_date=created_date)
                 response = jsonify({"exposures": [exposure_summary.__dict__]})
     except:
         print "Error in post_lookup"
@@ -148,11 +118,13 @@ def get_exposure_summary(location):
     return response
 
 @APP.route('/exposure/<location>', methods=["GET"])
+@oasis_log
 def get_exposure(location):
     """
     Get an exposure resource
     ---
-    description: Returns an exposure resource. If no location parameter is supplied returns a summary of all exposures.
+    description: Returns an exposure resource. If no location parameter is supplied 
+       returns a summary of all exposures.
     produces:
     - application/json
     responses:
@@ -170,6 +142,7 @@ def get_exposure(location):
     return True
 
 @APP.route('/exposure', methods=["POST"])
+@oasis_log
 def post_exposure():
     """
     Upload an exposure resource
@@ -224,6 +197,7 @@ def post_exposure():
 
 @APP.route('/exposure', defaults={'location': None}, methods=["DELETE"])
 @APP.route('/exposure/<location>', methods=["DELETE"])
+@oasis_log
 def delete_exposure(location):
     """
     Delete an exposure resource
@@ -244,12 +218,12 @@ def delete_exposure(location):
       type: string
     """
     try:
-        if location == None:
-            
+        if location is None:
+
             for filename in os.listdir(EXPOSURE_DATA_DIRECTORY):
                 
                 filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename)
-                
+    
                 if not filepath.endswith(DATA_FILE_SUFFIX):
                     continue
                 if not os.path.isfile(filepath):
@@ -276,6 +250,7 @@ def delete_exposure(location):
     return response
 
 @APP.route('/analysis', methods=["POST"])
+@oasis_log
 def post_analysis():
     """
     Start an analysis
@@ -302,6 +277,7 @@ def post_analysis():
     return jsonify({'location': task_id})
     
 @APP.route('/analysis_status/<location>', methods=["GET"])
+@oasis_log
 def get_analysis_status(location):
     """
     Get an analysis status resource
@@ -347,6 +323,7 @@ def get_analysis_status(location):
 
 @APP.route('/analysis_status', methods=["DELETE"])
 @APP.route('/analysis_status/<location>', methods=["DELETE"])
+@oasis_log
 def delete_analysis_status(location):
     """
     Delete an analysis status resource
@@ -370,6 +347,7 @@ def delete_analysis_status(location):
     return True
 
 @APP.route('/results/<location>', methods=["GET"])
+@oasis_log
 def get_results(location):
     """
     Get a results resource
@@ -393,6 +371,7 @@ def get_results(location):
 
 @APP.route('/results', methods=["DELETE"])
 @APP.route('/results/<location>', methods=["DELETE"])
+@oasis_log
 def delete_results(location):
     """
     Delete a results resource
@@ -415,6 +394,7 @@ def delete_results(location):
     return True
 
 @APP.route("/spec")
+@oasis_log
 def spec():
     swag = swagger(APP)
     swag['info']['version'] = "0.1"
@@ -422,6 +402,7 @@ def spec():
     return jsonify(swag)
 
 @APP.route('/healthcheck', methods=['GET'])
+@oasis_log
 def get_healthcheck():
     '''
     Basic healthcheck response.
