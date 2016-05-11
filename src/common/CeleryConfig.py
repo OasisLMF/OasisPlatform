@@ -1,0 +1,6 @@
+CELERY_IMPORTS = ('tasks')
+CELERY_IGNORE_RESULT = False
+BROKER_URL = "192.168.99.100" #IP address of the server running RabbitMQ and Celery
+CELERY_IMPORTS=("tasks",)
+CELERY_RESULT_BACKEND = "amqp"
+CELERY_AMQP_TASK_RESULT_EXPIRES = 1000 
