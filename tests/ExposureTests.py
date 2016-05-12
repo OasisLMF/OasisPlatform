@@ -13,7 +13,8 @@ TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
 LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
 sys.path.append(LIB_PATH)
 
-import app
+from server import app
+from common import data
 
 class Test_ExposureTests(unittest.TestCase):
     ''' 
@@ -136,26 +137,26 @@ class Test_ExposureTests(unittest.TestCase):
         self.clean_directories()
         os.chdir(TEST_DATA_DIRECTORY)
         filepath = 'items.bin'
-        self.touch(filepath)        
+        self.touch(filepath)
         filepath = 'coverages.bin'
-        self.touch(filepath)        
+        self.touch(filepath)
         filepath = 'summaryxref.bin'
-        self.touch(filepath)        
+        self.touch(filepath)
         filepath = 'fm_programme.bin'
-        self.touch(filepath)        
+        self.touch(filepath)
         filepath = 'fm_policytc.bin'
-        self.touch(filepath)        
+        self.touch(filepath)
         filepath = 'fm_profile.bin'
-        self.touch(filepath)        
+        self.touch(filepath)
         filepath = 'fm_summaryxref.bin'
-        self.touch(filepath)        
+        self.touch(filepath)
         tarpath = 'exposure.tar'
         tar = tarfile.open(tarpath, 'w')
         for name in [
             'items.bin', 'coverages.bin', 'summaryxref.bin',
             'fm_programme.bin', 'fm_policytc.bin', 'fm_profile.bin', 'fm_summaryxref.bin']:
             tar.add(name)
-        tar.close() 
+        tar.close()
         os.chdir(TEST_DIRECTORY)
         assert(app.validate_exposure_tar(
             os.path.join(TEST_DATA_DIRECTORY, tarpath)))
