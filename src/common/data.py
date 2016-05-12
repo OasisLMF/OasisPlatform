@@ -8,7 +8,7 @@ class ExposureSummary(object):
        self.size = size
        self.created_date = created_date
 
-class ResultsSummary(object):
+class OutputsSummary(object):
    def __init__(self):
        self.location = ""
        self.size = 0
@@ -23,10 +23,10 @@ class AnalysisStatus(object):
        self.id = -1
        self.status = ""
        self.message = ""
-       selef.results_summary = None
+       selef.outputs_summary = None
 
-   def __init__(self, id, status, message, results_summary):
+   def __init__(self, id, status, message, outputs_summary):
        self.id = id
        self.status = status
        self.message = message
-       selef.results_summary = results_summary
+       selef.outputs_summary = outputs_summary
