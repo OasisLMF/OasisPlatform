@@ -1,4 +1,4 @@
-from celery.task import task
+from celery import task
 import time
 from ConfigParser import ConfigParser
 import os
@@ -19,7 +19,7 @@ if not isinstance(NUMERIC_LOG_LEVEL, int):
     raise ValueError('Invalid log level: %s' % LOG_LEVEL)
 
 logging.basicConfig(
-    filename=LOG_FILENAME,
+    filename="tasks.log", # LOG_FILENAME,
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -36,9 +36,15 @@ def start_analysis(self, analysis_profile):
     '''
     sys.stderr.write('in start_analysis()\n')
     self.update_state(state='STARTED')
-    sys.stderr.write('analysis_profile = {}\n'.format( analysis_profile))
+    with open('tasks.log','w') as l:
+
+
+        l.write('analysis_profile = {} size = {} type = {}\n'.format( analysis_profile, len(analysis_profile), type(analysis_profile)))
+    sys.stderr.write('analysis_profile = {} size = {} type = {}\n'.format( analysis_profile, len(analysis_profile), type(analysis_profile)))
 
     ret = x.setupCalcProcesses(None, analysis_profile)
+    with open('tasks.log','a') as l:
+        l.write('result = {}\n'.format(ret))
     sys.stderr.write('ret = {}\n'.format(ret))
  
     return ret

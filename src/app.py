@@ -14,6 +14,7 @@ from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from celery import Celery
+# from tasks import  start_analysis
 
 APP = Flask(__name__)
 
@@ -269,10 +270,17 @@ def post_analysis():
       required: true
       type: file
     """
-    result = CELERY.send_task("tasks.start_analysis", ["ANALYSIS_SETTINGS_JSON"])
+    try:
+        f = request.form.getlist('ANALYSIS_SETTINGS_JSON')
+    except Exception as e:
+        sys.stderr.write('exception = {}'.format(e))
+        return jsonify({'success':False , 'detail':e})
+
+    result = CELERY.send_task("tasks.start_analysis", f) 
     task_id = result.task_id
-    sys.stderr.write('/analysis: result = {}i\n'.format(result))
-    return jsonify({'location': task_id})
+    [x] = f
+    sys.stderr.write('/analysis: result = {} f = {} len={} type={} typeOfElement={}\n'.format(result, f, len(f), type(f), type(x)))
+    return jsonify({'success':True , 'location': task_id})
     
 @APP.route('/analysis_queue/<location>', methods=["GET"])
 def get_analysis_queue(location):
