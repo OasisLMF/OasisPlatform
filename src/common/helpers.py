@@ -1,6 +1,12 @@
 import time
 from functools import wraps
 
+# Celery task status
+TASK_STATUS_PENDING = "PENDING"
+TASK_STATUS_RUNNING = "RUNNING"
+TASK_STATUS_SUCCESS = "SUCCESS"
+TASK_STATUS_FAILURE = "FAILURE"
+
 def oasis_log(func):
     
     '''

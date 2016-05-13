@@ -5,6 +5,7 @@ Oasis API application endpoints.
 import os
 import uuid
 import inspect
+import logging
 import tarfile
 import time
 import traceback
@@ -199,6 +200,7 @@ def post_exposure():
 @APP.route('/exposure', defaults={'location': None}, methods=["DELETE"])
 @APP.route('/exposure/<location>', methods=["DELETE"])
 @helpers.oasis_log
+
 def delete_exposure(location):
     """
     Delete an exposure resource
