@@ -1,16 +1,17 @@
 FROM python:2.7
 
-COPY ./requirements.txt ./
+COPY ./example_worker/requirements.txt ./
 RUN pip install -r requirements.txt
 
-RUN useradd -ms /bin/bash worker
-USER worker
-WORKDIR /home/worker
+RUN useradd -ms /bin/bash example_worker
+USER example_worker
+WORKDIR /home/example_worker
 
-COPY ./CeleryConfig.py  ./
-COPY ./Tasks.ini  ./
-COPY ./tasks.py  ./
-COPY ./TaskStatus.py  ./
-COPY ./startup.sh  ./
+COPY ./common/CeleryConfig.py  ./
+COPY ./common/helpers.py  ./
+
+COPY ./example_worker/Tasks.ini  ./
+COPY ./example_worker/tasks.py  ./
+COPY ./example_worker/startup.sh  ./
 
 ENTRYPOINT ./startup.sh;bash

@@ -13,7 +13,7 @@ from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from celery import Celery
-from common.data import *
+from common import data
 from common import helpers
 
 APP = Flask(__name__)
@@ -34,7 +34,7 @@ HTTP_RESPONSE_INTERNAL_ERROR = 400
 HTTP_RESPONSE_RESOURCE_NOT_FOUND = 404
 
 CELERY = Celery()
-CELERY.config_from_object('CeleryConfig')
+CELERY.config_from_object('common.CeleryConfig')
 
 @APP.route('/exposure_summary', defaults={'location': None}, methods=["GET"])
 @APP.route('/exposure_summary/<location>', methods=["GET"])

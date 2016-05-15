@@ -2,5 +2,5 @@
 
 # Start worker on init
 celery worker --detach --config=CeleryConfig -l DEBUG \
-    --pidfile="/home/worker/%n.pid" \
-    --logfile="/home/worker/%n.log"
+    --pidfile="/home/example_worker/%n.pid" \
+    --logfile="/home/example_worker/%n.log"

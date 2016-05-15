@@ -4,6 +4,8 @@ from ConfigParser import ConfigParser
 import os
 import inspect
 import logging
+#import multiprocessing
+import billiard as multiprocessing
 
 CONFIG_PARSER = ConfigParser()
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -22,14 +24,21 @@ logging.basicConfig(
     level=NUMERIC_LOG_LEVEL,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+def wait():
+    time.sleep(30)
+    return
+
 @task(bind=True)
 def start_analysis(self, analysis_profile):
     '''
     Mock task for starting an analysis.
     '''
-
     self.update_state(state='STARTED')
     print analysis_profile
+    p = multiprocessing.Process(target=wait)
+    p.start()
+    p.join()    
+
     time.sleep(30)
 
     return "Done"
