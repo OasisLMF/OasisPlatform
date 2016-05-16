@@ -1,5 +1,43 @@
 {
-  "definitions": {}, 
+  "definitions": {
+    "AnalysisStatus": {
+      "properties": {
+        "id": {
+          "description": "The analysis ID.", 
+          "type": "string"
+        }, 
+        "message": {
+          "description": "The analysis status message.", 
+          "type": "string"
+        }, 
+        "outputs_summary_location": {
+          "description": "The location of the analysis outputs.", 
+          "type": "string"
+        }, 
+        "status": {
+          "description": "The analysis status.", 
+          "type": "string"
+        }
+      }
+    }, 
+    "ExposureSummary": {
+      "properties": {
+        "created_date": {
+          "description": "The date when the exposure data was uploaded.", 
+          "format": "dateTime", 
+          "type": "string"
+        }, 
+        "location": {
+          "description": "The location of the exposure data.", 
+          "type": "string"
+        }, 
+        "size": {
+          "description": "The size of the uncompressed exposure data in bytes.", 
+          "type": "integer"
+        }
+      }
+    }
+  }, 
   "info": {
     "title": "Oasis API", 
     "version": "0.1"
@@ -11,8 +49,8 @@
         "parameters": [
           {
             "description": "The analysis settings", 
-            "in": "body", 
-            "name": "file", 
+            "in": "formData", 
+            "name": "analysis_settings", 
             "required": true, 
             "type": "file"
           }
@@ -22,25 +60,25 @@
         ], 
         "responses": {
           "200": {
-            "description": "The analysis_queue resource for the new analysis."
-          }, 
-          "schema": {
-            "type": "#/definitions/analysis_queue"
+            "description": "The analysis_queue resource for the new analysis.", 
+            "schema": {
+              "$ref": "#/definitions/AnalysisQueue"
+            }
           }
         }, 
         "summary": "Start an analysis"
       }
     }, 
-    "/analysis_queue": {
+    "/analysis_status": {
       "delete": {
         "description": "", 
         "parameters": [
           {
-            "description": "The location of the analysis queue resource to delete.", 
+            "description": "The location of the analysis status resource to delete.", 
             "in": "path", 
             "name": "location", 
             "required": true, 
-            "type": "str"
+            "type": "string"
           }
         ], 
         "produces": [
@@ -54,19 +92,19 @@
             "description": "Resource not found"
           }
         }, 
-        "summary": "Delete an analysis queue resource"
+        "summary": "Delete an analysis status resource"
       }
     }, 
-    "/analysis_queue/{location}": {
-      "get": {
+    "/analysis_status/{location}": {
+      "delete": {
         "description": "", 
         "parameters": [
           {
-            "description": "The location of the results resource to download.", 
+            "description": "The location of the analysis status resource to delete.", 
             "in": "path", 
             "name": "location", 
             "required": true, 
-            "type": "str"
+            "type": "string"
           }
         ], 
         "produces": [
@@ -74,22 +112,70 @@
         ], 
         "responses": {
           "200": {
-            "description": "A list of analysis queue resources."
+            "description": "OK"
           }, 
           "404": {
             "description": "Resource not found"
-          }, 
-          "schema": {
-            "items": {
-              "$ref": "#/definitions/analysis_queue"
-            }, 
-            "type": "array"
           }
         }, 
-        "summary": "Get an analysis queue resource"
+        "summary": "Delete an analysis status resource"
+      }, 
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the outputs resource to download.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A list of analysis status resources.", 
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Analysisstatus"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "404": {
+            "description": "Resource not found."
+          }
+        }, 
+        "summary": "Get an analysis status resource"
       }
     }, 
     "/exposure": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "location of exposure resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete an exposure resource"
+      }, 
       "post": {
         "description": "", 
         "produces": [
@@ -97,11 +183,10 @@
         ], 
         "responses": {
           "200": {
-            "description": "The exposure summary of the uploaded exposure resource.", 
-            "type": "file"
-          }, 
-          "404": {
-            "description": "Resource not found"
+            "description": "The exposure summary of the created exposure resource.", 
+            "schema": {
+              "$ref": "#/definitions/ExposureSummary"
+            }
           }
         }, 
         "summary": "Upload an exposure resource"
@@ -116,7 +201,7 @@
             "in": "path", 
             "name": "location", 
             "required": true, 
-            "type": "str"
+            "type": "string"
           }
         ], 
         "produces": [
@@ -140,7 +225,7 @@
             "in": "path", 
             "name": "location", 
             "required": true, 
-            "type": "str"
+            "type": "string"
           }
         ], 
         "produces": [
@@ -148,8 +233,7 @@
         ], 
         "responses": {
           "200": {
-            "description": "A compressed tar file containing the Oasis exposure files.", 
-            "type": "file"
+            "description": "A compressed tar file containing the Oasis exposure files."
           }, 
           "404": {
             "description": "Resource not found"
@@ -166,8 +250,8 @@
             "description": "The location of the exposure resource to summarise.", 
             "in": "path", 
             "name": "location", 
-            "required": false, 
-            "type": "str"
+            "required": true, 
+            "type": "string"
           }
         ], 
         "produces": [
@@ -176,10 +260,12 @@
         "responses": {
           "200": {
             "description": "A list of exposure summaries.", 
-            "items": {
-              "$ref": "#/definitions/exposure_summary"
-            }, 
-            "type": "array"
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/ExposureSummary"
+              }, 
+              "type": "array"
+            }
           }, 
           "404": {
             "description": "Resource not found"
@@ -196,8 +282,8 @@
             "description": "The location of the exposure resource to summarise.", 
             "in": "path", 
             "name": "location", 
-            "required": false, 
-            "type": "str"
+            "required": true, 
+            "type": "string"
           }
         ], 
         "produces": [
@@ -206,10 +292,12 @@
         "responses": {
           "200": {
             "description": "A list of exposure summaries.", 
-            "items": {
-              "$ref": "#/definitions/exposure_summary"
-            }, 
-            "type": "array"
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/ExposureSummary"
+              }, 
+              "type": "array"
+            }
           }, 
           "404": {
             "description": "Resource not found"
@@ -218,16 +306,16 @@
         "summary": "Get exposure summary"
       }
     }, 
-    "/results/{location}": {
+    "/outputs": {
       "delete": {
         "description": "", 
         "parameters": [
           {
-            "description": "The location of the results resource to delete.", 
+            "description": "The location of the outputs resource to delete.", 
             "in": "path", 
             "name": "location", 
             "required": true, 
-            "type": "str"
+            "type": "string"
           }
         ], 
         "produces": [
@@ -241,17 +329,19 @@
             "description": "Resource not found"
           }
         }, 
-        "summary": "Delete a results resource"
-      }, 
-      "get": {
+        "summary": "Delete a outputs resource"
+      }
+    }, 
+    "/outputs/{location}": {
+      "delete": {
         "description": "", 
         "parameters": [
           {
-            "description": "The location of the results resource to download.", 
+            "description": "The location of the outputs resource to delete.", 
             "in": "path", 
             "name": "location", 
             "required": true, 
-            "type": "str"
+            "type": "string"
           }
         ], 
         "produces": [
@@ -259,14 +349,37 @@
         ], 
         "responses": {
           "200": {
-            "description": "A list of exposure summaries.", 
-            "type": "file"
+            "description": "OK"
           }, 
           "404": {
             "description": "Resource not found"
           }
         }, 
-        "summary": "Get a results resource"
+        "summary": "Delete a outputs resource"
+      }, 
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the outputs resource to download.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A compressed tar of the outputs generated by an analysis."
+          }, 
+          "404": {
+            "description": "Resource not found."
+          }
+        }, 
+        "summary": "Get a outputs resource"
       }
     }
   }, 
