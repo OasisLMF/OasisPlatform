@@ -258,14 +258,14 @@ def post_analysis():
     """
     Start an analysis
     ---
-    description: Starts an analysis by creating an analysis queue resource.
+    description: Starts an analysis by creating an analysis status resource.
     produces:
     - application/json
     responses:
         200:  
-            description: The analysis_queue resource for the new analysis.
+            description: The analysis status resource for the new analysis.
             schema:
-                $ref: '#/definitions/AnalysisQueue'
+                $ref: '#/definitions/AnalysisStatus'
     produces:
     - application/json
     parameters:
@@ -310,7 +310,7 @@ def get_analysis_status(location):
             schema:
                 type: array
                 items:
-                    $ref: '#/definitions/Analysisstatus'
+                    $ref: '#/definitions/AnalysisStatus'
         404:
             description: Resource not found.
     parameters:
