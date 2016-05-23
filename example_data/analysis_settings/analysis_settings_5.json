@@ -1,0 +1,55 @@
+{
+    "analysis_settings": {
+        "prog_id": 1,
+        "module_supplier_id": "[MODEL_SUPPLIER]",
+        "model_version_id": "[MODEL_VERSION]",
+        "number_of_samples": 100,
+        "gul_threshold": 100,
+        "model_settings": {
+            "use_random_number_file": true,
+            "event_occurrence_file_id": 1
+        },        
+        "gul_output": true,
+        "il_output": true,
+        "gul_summaries": [
+            // Program
+            {
+                "id": 0,
+                "eltcalc": true,
+                "leccalc": {
+                    "full_uncertainty_aep": true,
+                    "full_uncertainty_oep": true
+                }
+            },
+            // By state
+            {
+                "id": 1,
+                "eltcalc": true,
+                "leccalc": {
+                    "full_uncertainty_aep": true,
+                    "full_uncertainty_oep": true
+                }
+            }
+        ],
+        "il_summaries": [
+            // Program
+            {
+                "id": 0,
+                "eltcalc": true,
+                "leccalc": {
+                    "full_uncertainty_aep": true,
+                    "full_uncertainty_oep": true
+                }
+            },
+            // By state
+            {
+                "id": 1,
+                "eltcalc": true,
+                "leccalc": {
+                    "full_uncertainty_aep": true,
+                    "full_uncertainty_oep": true
+                }
+            }
+        ]
+    }
+}
