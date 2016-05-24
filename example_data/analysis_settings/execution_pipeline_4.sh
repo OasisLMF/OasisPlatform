@@ -84,7 +84,6 @@ leccalc -F -p 3 -P 1000000 -k ./work/3/il_aep/1 < ./work/3/il_summary1_output2 &
 leccalc -F -p 4 -P 1000000 -k ./work/4/il_aep/1 < ./work/4/il_summary1_output2 &
 leccalc -F -p 5 -P 1000000 -k ./work/5/il_aep/1 < ./work/5/il_summary1_output2 &
 
-
 leccalc -f -p 1 -P 1000000 -k ./work/1/gul_oep/1 < ./work/1/gul_summary1_output3 &
 leccalc -f -p 2 -P 1000000 -k ./work/2/gul_oep/1 < ./work/2/gul_summary1_output3 &
 leccalc -f -p 3 -P 1000000 -k ./work/3/gul_oep/1 < ./work/3/gul_summary1_output3 &
@@ -95,7 +94,6 @@ leccalc -f -p 2 -P 1000000 -k ./work/2/il_oep/1 < ./work/2/il_summary1_output3 &
 leccalc -f -p 3 -P 1000000 -k ./work/3/il_oep/1 < ./work/3/il_summary1_output3 &
 leccalc -f -p 4 -P 1000000 -k ./work/4/il_oep/1 < ./work/4/il_summary1_output3 &
 leccalc -f -p 5 -P 1000000 -k ./work/5/il_oep/1 < ./work/5/il_summary1_output3 &
-
 
 tee < ./work/1/gul_summary1 ./work/1/gul_summary1_output1 ./work/1/gul_summary1_output2 ./work/1/gul_summary1_output3 > /dev/null &
 tee < ./work/2/gul_summary1 ./work/2/gul_summary1_output1 ./work/2/gul_summary1_output2 ./work/1/gul_summary1_output3 > /dev/null &
@@ -108,24 +106,22 @@ tee < ./work/3/il_summary1 ./work/3/il_summary1_output1 ./work/3/il_summary1_out
 tee < ./work/4/il_summary1 ./work/4/il_summary1_output1 ./work/4/il_summary1_output2 ./work/1/il_summary1_output3 > /dev/null &
 tee < ./work/5/il_summary1 ./work/5/il_summary1_output1 ./work/5/il_summary1_output2 ./work/1/il_summary1_output3 > /dev/null &
 
-
 summarycalc -g -1 ./work/1/gul_summary1 < ./work/1/gul &
 summarycalc -g -1 ./work/2/gul_summary1 < ./work/2/gul &
 summarycalc -g -1 ./work/3/gul_summary1 < ./work/3/gul &
 summarycalc -g -1 ./work/4/gul_summary1 < ./work/4/gul &
 summarycalc -g -1 ./work/5/gul_summary1 < ./work/5/gul &
-summarycalc -g -1 ./work/1/il_summary1 < ./work/1/il &
-summarycalc -g -1 ./work/2/il_summary1 < ./work/2/il &
-summarycalc -g -1 ./work/3/il_summary1 < ./work/3/il &
-summarycalc -g -1 ./work/4/il_summary1 < ./work/4/il &
-summarycalc -g -1 ./work/5/il_summary1 < ./work/5/il &
+summarycalc -f -1 ./work/1/il_summary1 < ./work/1/il &
+summarycalc -f -1 ./work/2/il_summary1 < ./work/2/il &
+summarycalc -f -1 ./work/3/il_summary1 < ./work/3/il &
+summarycalc -f -1 ./work/4/il_summary1 < ./work/4/il &
+summarycalc -f -1 ./work/5/il_summary1 < ./work/5/il &
 
-
-eve 1 5 | getmodel | gulcalc -S100 -R1000000 -c ./work/1/gul | fmcalc -S100 -R1000000 -c ./work/1/il
-eve 2 5 | getmodel | gulcalc -S100 -R1000000 -c ./work/2/gul | fmcalc -S100 -R1000000 -c ./work/2/il
-eve 3 5 | getmodel | gulcalc -S100 -R1000000 -c ./work/3/gul | fmcalc -S100 -R1000000 -c ./work/3/il
-eve 4 5 | getmodel | gulcalc -S100 -R1000000 -c ./work/4/gul | fmcalc -S100 -R1000000 -c ./work/4/il
-eve 5 5 | getmodel | gulcalc -S100 -R1000000 -c ./work/5/gul | fmcalc -S100 -R1000000 -c ./work/5/il
+eve 1 5 | getmodel | gulcalc -S100 -R1000000 | tee ./work/1/gul | fmcalc -S100 -R1000000 -c | ./work/1/il
+eve 2 5 | getmodel | gulcalc -S100 -R1000000 | tee ./work/2/gul | fmcalc -S100 -R1000000 -c | ./work/2/il
+eve 3 5 | getmodel | gulcalc -S100 -R1000000 | tee ./work/3/gul | fmcalc -S100 -R1000000 -c | ./work/3/il
+eve 4 5 | getmodel | gulcalc -S100 -R1000000 | tee ./work/4/gul | fmcalc -S100 -R1000000 -c | ./work/4/il
+eve 5 5 | getmodel | gulcalc -S100 -R1000000 | tee ./work/5/gul | fmcalc -S100 -R1000000 -c | ./work/5/il
 
 cat ./work/1/gul_1_elt.csv ./work/2/gul_1_elt.csv ./work/3/gul_1_elt.csv ./work/4/gul_1_elt.csv ./work/5/gul_1_elt.csv > ./outputs/gul_1_elt.csv
 cat ./work/1/il_1_elt.csv ./work/2/il_1_elt.csv ./work/3/il_1_elt.csv ./work/4/il_1_elt.csv ./work/5/il_1_elt.csv > ./outputs/il_1_elt.csv

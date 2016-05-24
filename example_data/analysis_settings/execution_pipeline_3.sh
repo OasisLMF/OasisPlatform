@@ -56,17 +56,17 @@ tee < ./work/3/il_summary1 ./work/3/il_summary1_output1 ./work/3/il_summary1_out
 tee < ./work/4/il_summary1 ./work/4/il_summary1_output1 ./work/4/il_summary1_output2 ./work/1/il_summary1_output3 > /dev/null &
 tee < ./work/5/il_summary1 ./work/5/il_summary1_output1 ./work/5/il_summary1_output2 ./work/1/il_summary1_output3 > /dev/null &
 
-summarycalc -g -1 ./work/1/il_summary1 < ./work/1/il &
-summarycalc -g -1 ./work/2/il_summary1 < ./work/2/il &
-summarycalc -g -1 ./work/3/il_summary1 < ./work/3/il &
-summarycalc -g -1 ./work/4/il_summary1 < ./work/4/il &
-summarycalc -g -1 ./work/5/il_summary1 < ./work/5/il &
+summarycalc -f -1 ./work/1/il_summary1 < ./work/1/il &
+summarycalc -f -1 ./work/2/il_summary1 < ./work/2/il &
+summarycalc -f -1 ./work/3/il_summary1 < ./work/3/il &
+summarycalc -f -1 ./work/4/il_summary1 < ./work/4/il &
+summarycalc -f -1 ./work/5/il_summary1 < ./work/5/il &
 
-eve 1 5 | getmodel | fmcalc -S100 -R1000000 -c ./work/1/il 
-eve 2 5 | getmodel | fmcalc -S100 -R1000000 -c ./work/2/il
-eve 3 5 | getmodel | fmcalc -S100 -R1000000 -c ./work/3/il
-eve 4 5 | getmodel | fmcalc -S100 -R1000000 -c ./work/4/il
-eve 5 5 | getmodel | fmcalc -S100 -R1000000 -c ./work/5/il
+eve 1 5 | getmodel | fmcalc -S100 -R1000000 | ./work/1/il 
+eve 2 5 | getmodel | fmcalc -S100 -R1000000 | ./work/2/il
+eve 3 5 | getmodel | fmcalc -S100 -R1000000 | ./work/3/il
+eve 4 5 | getmodel | fmcalc -S100 -R1000000 | ./work/4/il
+eve 5 5 | getmodel | fmcalc -S100 -R1000000 | ./work/5/il
 
 cat ./work/1/il_1_elt.csv ./work/2/il_1_elt.csv ./work/3/il_1_elt.csv ./work/4/il_1_elt.csv ./work/5/il_1_elt.csv > ./outputs/il_1_elt.csv
 lecsummary –A -k ./work/1/il_aep/1 > ./output/il_1_AEP.csv
