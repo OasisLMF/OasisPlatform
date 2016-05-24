@@ -9,11 +9,15 @@
             "use_random_number_file": true,
             "event_occurrence_file_id": 1
         },
-        "il_output": true,
-        "il_summaries": [
+        "gul_output": true,
+        "gul_summaries": [
             {
                 "id": 0,
-                "aalcalc": true
+                "eltcalc": true,
+                "leccalc": {
+                    "full_uncertainty_aep": true,
+                    "full_uncertainty_oep": true
+                }
             }
         ]
     }
