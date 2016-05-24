@@ -9,7 +9,7 @@
             "use_random_number_file": true,
             "event_occurrence_file_id": 1
         },        
-        "gul_output": true,
+        "gul_output": false,
         "il_output": true,
         "il_summaries": [
             // Program
