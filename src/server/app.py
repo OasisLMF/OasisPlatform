@@ -25,9 +25,11 @@ CONFIG_PARSER.read(INI_PATH)
 
 EXPOSURE_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'EXPOSURE_DATA_DIRECTORY')
 RESULTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'RESULTS_DATA_DIRECTORY')
+UPLOAD_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'UPLOAD_DIRECTORY')
 
 DATA_FILE_SUFFIX = '.tar'
 GZIP_FILE_SUFFIX = '.gz'
+ALLOWED_EXTENSIONS = set(['tar','gz','tar.gz','bz2','tar.bz2'])
 
 HTTP_RESPONSE_OK = 200
 HTTP_RESPONSE_INTERNAL_ERROR = 400
@@ -143,7 +145,11 @@ def get_exposure(location):
     """
     return True
 
-@APP.route('/exposure', methods=["POST"])
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@APP.route('/exposure', methods=["POST","GET"])
 @helpers.oasis_log
 def post_exposure():
     """
@@ -159,36 +165,68 @@ def post_exposure():
                 $ref: '#/definitions/ExposureSummary'
     """
     try:
-        content_type = ''
-        if 'Content-Type' in request.headers:
-            content_type = request.headers['Content-Type']
+        if request.method == 'GET':
+            return '''<!doctype html><head><title>Upload new File</title>
+            </head>
+            <h1>Upload new File</h1>
+            <form action="" method=post enctype=multipart/form-data>
+            <p><input type=file name=file>
+            <input type=submit value=Upload></form>'''
 
-        is_gzipped = False
+        upfile = request.files['file']
+        if upfile and allowed_file(upfile.filename):
+            #Validate tar file.
+            #if validate_exposure_tar(file.name):
+            #Since file is allowed then must have gzip extension.         
+            filename = str(uuid.uuid4())
+            filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename) + DATA_FILE_SUFFIX
+            upfile.save(filepath)
+            #Validate the exposure tar file contents.
+            if validate_exposure_tar(filepath):
+                #Un tar the file.
+                tar = tarfile.open(filepath)
+                #tarnamelist = tar.getnames()
+                #for name in tarnamelist:
+                #    pass
+                    #Generate a list of all the files to use chmod and dos2linux cmd on
+                    #os.chmod( file_path , 0777)
+                    #dos2unixcmd = 'dos2unix -q ' + file_path
+                    #try:
+                    #    os.system(dos2unixcmd)
+                    #except Exception as e:
+                    #    msg = 'Error uploading {0} on dos2unix command : {1}'.format(file_path, e)                              
+                
+                #ToDo replace extractAll with safe_extract method.
+                if not os.path.exists(UPLOAD_DATA_DIRECTORY):
+                    os.makedirs(UPLOAD_DATA_DIRECTORY)
+                dirname = UPLOAD_DATA_DIRECTORY + "/" + filename
+                os.mkdir(dirname)      
+                tar.extractall(dirname)
+                tar.close()
 
-        if 'Content-Encoding' in request.headers:
-            content_encoding = request.headers['Content-Encoding']
-            is_gzipped = (content_encoding == 'gzip')
+                # Check the content, and if invalid delete
 
-        file = request.files['file']
-        filename = str(uuid.uuid4())
-        filepath = os.path.join(EXPOSURE_DATA_DIRECTORY, filename) + DATA_FILE_SUFFIX
-        file.save(filepath)
+                size_in_bytes = os.path.getsize(filepath)
+                created_date = time.ctime(os.path.getctime(filepath))
 
-        # If zipped, extract the tar file
-        #if is_gzipped:
+                exposure = {
+                    "location": dirname,
+                    "size": size_in_bytes,
+                    "created_date": created_date
+                }  
 
-        # Check the content, and if invalid delete
-
-        size_in_bytes = os.path.getsize(filepath)
-        created_date = time.ctime(os.path.getctime(filepath))
-
-        exposure = {
-            "location": filename,
-            "size": size_in_bytes,
-            "created_date": created_date
-        }  
-
-        response = jsonify({'exposures': [exposure]})
+                response = jsonify({'exposures': [exposure]})
+           
+            else:
+                #File uploaded not a valid exposure tar.
+                #Should log this in case user queries support about errors.
+                print("Invalid exposure tar file uploaded see function validate_exposure_tar for format")
+                #Remove invalid tar file.
+                os.remove(filepath)
+                response = Response(status=HTTP_RESPONSE_INTERNAL_ERROR)                  
+        else:
+            #Not a gzip tar file extension, return error.
+            response = Response(status=HTTP_RESPONSE_INTERNAL_ERROR)    
 
     except:
         print "Error in post_lookup"
@@ -419,11 +457,13 @@ def get_healthcheck():
 def validate_exposure_tar(filepath):
     tar = tarfile.open(filepath)
     members = tar.getmembers()
-    return (len(members) == 7) and \
-        (sum(1 for member in members if member.name == 'items.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'coverages.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'summaryxref.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'fm_programme.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'fm_policytc.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'fm_profile.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'fm_summaryxref.bin') == 1)
+    return (len(members) == 9) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'events.bin') == 1) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'fm_xref.bin') == 1) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'items.bin') == 1) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'coverages.bin') == 1) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'fmsummaryxref.bin') == 1) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'fm_programme.bin') == 1) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'fm_policytc.bin') == 1) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'fm_profile.bin') == 1) and \
+        (sum(1 for member in members if os.path.basename(member.name) == 'gulsummaryxref.bin') == 1)
