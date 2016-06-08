@@ -8,7 +8,7 @@
       "exposure_location":"L:",
       "model_settings":{
          "use_random_number_file":true,
-         "event_occurrence_file_id": 1
+         "event_occurrence_file_id": 1,
          "demand_surge":true,
          "leakage_factor":0.5,
          "peril_wind":true,
