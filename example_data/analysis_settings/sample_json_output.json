@@ -1,47 +1,47 @@
 {
    "analysis_settings":{
-      "prog_id":"1",
+      "prog_id":1,
       "module_supplier_id":"ARA",
-      "model_version_id":"1",
-      "number_of_samples":"10",
-      "gul_threshold":"0",
+      "model_version_id":1,
+      "number_of_samples":10,
+      "gul_threshold":0,
       "exposure_location":"L:",
       "model_settings":{
          "use_random_number_file":true,
          "event_occurrence_file_id": 1
-         "demand_surge":"true",
-         "leakage_factor":"0.5",
-         "peril_wind":"true",
-         "peril_surge":"false"
+         "demand_surge":true,
+         "leakage_factor":0.5,
+         "peril_wind":true,
+         "peril_surge":false
       },
-      "gul_output":"true",
+      "gul_output":true,
       "gul_summaries":[
          {
-            "id": "1",
-            "summarycalc": "true",
+            "id": 1,
+            "summarycalc": true,
             "leccalc": {
-               "leccalc_sample_mean_oep": "true"
+               "leccalc_sample_mean_oep": true
             }
          },
          {
-            "id":"2",
+            "id":2,
             "leccalc":{
-               "leccalc_sample_mean_oep":"true"
+               "leccalc_sample_mean_oep":true
             }
          }
       ],
-      "il_output": "true",
+      "il_output": true,
       "il_summaries":[
          {
-            "id": "1",
+            "id": 1,
             "leccalc": {
-               "leccalc_sample_mean_oep": "true"
+               "leccalc_sample_mean_oep": true
             }
          },
          {
-            "id":"2",
+            "id":2,
             "leccalc":{
-               "leccalc_sample_mean_oep":"true"
+               "leccalc_sample_mean_oep":true
             }
          }
       ]
