@@ -12,7 +12,8 @@
          "demand_surge":true,
          "leakage_factor":0.5,
          "peril_wind":true,
-         "peril_surge":false
+         "peril_surge":false,
+         "session_id":1234
       },
       "gul_output":true,
       "gul_summaries":[
