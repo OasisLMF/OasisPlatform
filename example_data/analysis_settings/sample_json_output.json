@@ -12,27 +12,35 @@
          "leakage_factor":"0.5",
          "peril_wind":"true",
          "peril_surge":"false"
-      }      "gul_output":"true",
+      },
+      "gul_output":"true",
       "gul_summaries":[
          {
-            "id":"1",
-            "summarycalc":"true",
-            "leccalc":{
-               "leccalc_sample_mean_oep":"true"
-            }            "id":"2",
+            "id": "1",
+            "summarycalc": "true",
+            "leccalc": {
+               "leccalc_sample_mean_oep": "true"
+            }
+         },
+         {
+            "id":"2",
             "leccalc":{
                "leccalc_sample_mean_oep":"true"
             }
-         }         "il_output":"true",
-         "il_summaries":[
-            {
-               "id":"1",
-               "leccalc":{
-                  "leccalc_sample_mean_oep":"true"
-               }               "id":"2",
-               "leccalc":{
-                  "leccalc_sample_mean_oep":"true"
-               }
+         }
+      ],
+      "il_output": "true",
+      "il_summaries":[
+         {
+            "id": "1",
+            "leccalc": {
+               "leccalc_sample_mean_oep": "true"
+            }
+         },
+         {
+            "id":"2",
+            "leccalc":{
+               "leccalc_sample_mean_oep":"true"
             }
          }
       ]
