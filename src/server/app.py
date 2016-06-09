@@ -386,7 +386,7 @@ def get_analysis_status(location):
         APP.logger.debug("Response: {}".format(response.data))
     except:
         APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
+        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
     return response
 
 @APP.route('/analysis_status', methods=["DELETE"])
