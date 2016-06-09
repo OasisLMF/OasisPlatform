@@ -1,0 +1,23 @@
+FROM python:2.7
+
+COPY ./src/client/requirements.txt ./
+RUN pip install -r requirements.txt
+
+RUN useradd -ms /bin/bash oasis
+USER oasis
+WORKDIR /home/oasis
+
+RUN mkdir inputs
+RUN mkdir outputs
+RUN mkdir analysis_settings
+RUN mkdir common
+RUN mkdir client 
+
+COPY ./example_data/inputs/nationwide/csv ./inputs
+COPY ./example_data/analysis_settings/analysis_settings* ./analysis_settings/
+COPY ./src/common ./common/
+COPY ./src/client ./client/
+COPY ./tests/ApiTester.py ./
+COPY ./utils/wait-for-it.sh /tmp/
+
+ENTRYPOINT /tmp/wait-for-it.sh server:80/healthcheck;bash
