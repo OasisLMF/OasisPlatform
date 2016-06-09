@@ -23,9 +23,9 @@ class AnalysisStatus(object):
        self.id = -1
        self.status = ""
        self.message = ""
-       selef.outputs_summary = None
-   def __init__(self, id, status, message, outputs_summary):
+       self.outputs_location = ""
+   def __init__(self, id, status, message, outputs_location):
        self.id = id
        self.status = status
        self.message = message
-       selef.outputs_summary = outputs_summary
+       self.outputs_location = outputs_location
