@@ -17,4 +17,4 @@ COPY ./src/example_worker/tasks.py  ./
 COPY ./src/example_worker/startup.sh  ./
 COPY ./utils/wait-for-it.sh /tmp/
 
-ENTRYPOINT /tmp/wait-for-it.sh rabbit:5672; /tmp/wait-for-it.sh mysql:3306;./startup.sh
+ENTRYPOINT /tmp/wait-for-it.sh rabbit:5672; /tmp/wait-for-it.sh mysql:3306;./startup.sh; tail -f /dev/null

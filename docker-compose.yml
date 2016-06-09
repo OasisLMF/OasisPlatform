@@ -1,9 +1,5 @@
 version: '2'
 services:
-#  client:
-#   image: my_client
-#   links:
-#     - server:server
   server:
    image: my_server
    ports:
@@ -12,7 +8,7 @@ services:
      - mysql:mysql
      - rabbit:rabbit
    volumes:
-#    - ./logs/worker:/var/log/oasis
+     - ./log:/var/log/oasis
      - ./upload:/var/www/oasis/upload
      - ./download:/var/www/oasis/download
   worker_1:
@@ -21,7 +17,7 @@ services:
      - mysql:mysql
      - rabbit:myrabbit
     volumes:
-#      - ./logs/worker:/var/log/oasis
+     - ./log:/var/log/oasis
      - ./upload:/var/www/oasis/upload
      - ./download:/var/www/oasis/download
   mysql:
