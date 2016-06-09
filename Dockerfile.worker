@@ -1,0 +1,20 @@
+FROM python:2.7
+
+COPY ./src/example_worker/requirements.txt ./
+RUN pip install -r requirements.txt
+
+RUN mkdir /var/log/oasis
+
+RUN useradd -ms /bin/bash example_worker
+RUN chown example_worker /var/log/oasis
+
+USER example_worker
+WORKDIR /home/example_worker
+
+COPY ./src/common ./common/
+COPY ./src/example_worker/Tasks.ini  ./
+COPY ./src/example_worker/tasks.py  ./
+COPY ./src/example_worker/startup.sh  ./
+COPY ./utils/wait-for-it.sh /tmp/
+
+ENTRYPOINT /tmp/wait-for-it.sh rabbit:5672; /tmp/wait-for-it.sh mysql:3306;./startup.sh
