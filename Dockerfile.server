@@ -23,14 +23,14 @@ COPY ./src/server_config/oasis.wsgi /var/www/oasis/oasis.wsgi
 COPY ./src/server /var/www/oasis/server/
 
 COPY ./src/common /var/www/oasis/common/
-COPY ./src/server/requirements.txt /tmp/
-COPY ./src/server/startup.sh /tmp/
-COPY ./utils/wait-for-it.sh /tmp/
+COPY ./src/server/requirements.txt ./
+COPY ./src/server/startup.sh ./
+COPY ./utils/wait-for-it.sh ./
 
-RUN pip install -r /tmp/requirements.txt
+RUN pip install -r ./requirements.txt
 
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 EXPOSE 80
 
-ENTRYPOINT /tmp/wait-for-it.sh rabbit:5672; /tmp/startup.sh; tail -f /dev/null 
+ENTRYPOINT ./wait-for-it.sh rabbit:5672; ./startup.sh; tail -f /dev/null
