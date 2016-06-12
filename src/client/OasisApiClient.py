@@ -30,7 +30,14 @@ class OasisApiClient(object):
 
     TAR_FILE = "inputs.tar.gz"
 
-    def __init__(self, oasis_api_url, logger):    
+    def __init__(self, oasis_api_url, logger):  
+        '''
+        Construct the client.
+        Args:
+            oasis_api_url: the URL for the API.
+            logger: the logger.
+        '''
+          
         self._oasis_api_url = oasis_api_url
         self._logger = logger
         # Check that the conversion tools are available
@@ -38,7 +45,13 @@ class OasisApiClient(object):
             if shutilwhich.which(tool) == "":
                 error_message ="Failed to find conversion tool: {}".format(tool) 
                 self._logger.error(error_message)
-                raise Exception(error_message)    
+                raise Exception(error_message)
+        # Check the API
+        request_url = "/healthcheck"
+        response = requests.get(self._oasis_api_url + request_url)
+        if response.status_code != 200:
+            self._logger.error("GET {} failed: {}".format(request_url, str(response.status_code)))
+            raise Exception("API healthcheck failed.")
 
     def upload_inputs_from_directory(self, directory, do_validation=False):
         '''
@@ -71,7 +84,7 @@ class OasisApiClient(object):
             headers={'Content-Type': inputs_multipart_data.content_type})
         if response.status_code != 200:
             self._logger.error("POST {} failed: {}".format(request_url, str(response.status_code)))
-            throw Exception("Failed to save exposure.")
+            raise Exception("Failed to save exposure.")
         exposure_location = response.json()['exposures'][0]['location'] 
         self._logger.debug("Uploaded exposure. Location: " + exposure_location)
 
@@ -115,6 +128,9 @@ class OasisApiClient(object):
         while True:
             self._logger.debug("Polling analysis status for: {}".format(analysis_status_location))
             response = requests.get(self._oasis_api_url + request_url + analysis_status_location)
+            if response.status_code != 200:
+                raise Exception("GET analysis status failed: {}".format(response.status_code))
+
             self._logger.debug("Response: {}".format(response.json()))
             status = response.json()['status']
             message = response.json()['message']
