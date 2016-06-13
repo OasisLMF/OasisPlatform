@@ -13,8 +13,6 @@ WORKDIR /home/example_worker
 
 COPY ./src/example_worker/startup.sh  ./
 COPY ./utils/wait-for-it.sh ./
-RUN chmod +x startup.sh
-RUN chmod +x wait-for-it.sh
 
 COPY ./src/common ./common/
 COPY ./src/example_worker/Tasks.ini  ./
