@@ -172,6 +172,50 @@ class OasisApiClient(object):
         end = time.time()
         self._logger.debug("COMPLETED: OasisApiClient.run_analysis in {}s".format(round(end - start,2)))
 
+    def download_exposure(exposure_location, localfile):
+        '''
+        Download exposure data to a specified local file.
+        '''
+        print "Downloading exposure. Location:{}".format(exposure_location)
+        response = requests.get(
+            self._oasis_api_url + "/exposure/" + exposure_location, 
+            stream=True)
+        if response.status_code != 200:
+            exception_message = "GET /exposure failed: {}".format(str(response.status_code)) 
+            self._logger.error(exception_message)
+            raise Exception(exception_message)
+  
+        with open(localfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+                    os.fsync()       
+
+        print "Downloaded exposure"
+
+    def download_outputs(outputs_location, localfile):
+        '''
+        Download outputs data to a specified local file.
+        '''
+        print "Downloading outputs. Location:{}".format(outputs_location)
+        response = requests.get(
+            self._oasis_api_url + "/outputs/" + outputs_location, 
+            stream=True)
+        if response.status_code != 200:
+            exception_message = "GET /outputs failed: {}".format(str(response.status_code)) 
+            self._logger.error(exception_message)
+            raise Exception(exception_message)
+  
+        with open(localfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+                    os.fsync()       
+
+        print "Downloaded outputs"
+
     def _check_inputs_directory(self, directory_to_check):
         ''' Check the directory state.'''
         file_path = os.path.join(directory_to_check, self.TAR_FILE)
