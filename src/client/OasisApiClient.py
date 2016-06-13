@@ -23,7 +23,7 @@ class OasisApiClient(object):
     CONVERSION_TOOLS = {
             "items" : "itemtobin", 
             "coverages": "coveragetobin",  
-            'summaryxref': 'summaryxreftobin',
+            'summaryxref': 'fmsummaryxreftobin',
             'fm_programme': 'fmprogrammetobin', 
             'fm_policytc': 'fmpolicytctobin',  
             'fm_profile': 'fmprofiletobin'} 
@@ -150,6 +150,9 @@ class OasisApiClient(object):
         if response.status_code != 200:
             self._logger.error("GET /outputs failed: {}".format(str(response.status_code)))
             raise Exception("Failed to download outputs")
+        outputs_file = os.path.join(outputs_directory, outputs_location + ".tar.gz")
+        with open(outputs_file, "wb") as outfile:
+            outfile.write(response.data) 
         self._logger.debug("Downloaded outputs")
 
         self._logger.debug("Deleting exposure")

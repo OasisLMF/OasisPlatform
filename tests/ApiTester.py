@@ -18,7 +18,7 @@ from client import OasisApiClient
 
 parser = argparse.ArgumentParser(description='Test the Oasis API client.')
 parser.add_argument(
-    '--url', metavar='N', type=str, default='http://localhost', required=True,
+    '--url', metavar='N', type=str, default='http://localhost', required=False,
     help='The base URL for the API.')
 parser.add_argument(
     '--num_analyses', metavar='N', type=int, default='1', required=False,
