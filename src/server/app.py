@@ -93,18 +93,15 @@ def get_exposure_summary(location):
         if location is None:
             exposure_summaries = list()
             for filename in os.listdir(INPUTS_DATA_DIRECTORY):
-
                 filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
-                
                 if not filepath.endswith(TAR_FILE_SUFFIX):
                     continue
                 if not os.path.isfile(filepath):
                     continue
-
                 size_in_bytes = os.path.getsize(filepath)
                 created_date = time.ctime(os.path.getctime(filepath))
                 exposure_summaries.append(
-                    ExposureSummary(
+                    data.ExposureSummary(
                         location=str.replace(filename, TAR_FILE_SUFFIX, ''),
                         size=size_in_bytes,
                         created_date=created_date))
@@ -113,14 +110,12 @@ def get_exposure_summary(location):
         else:
             filename = str(location) + TAR_FILE_SUFFIX
             filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
-
             if not os.path.exists(filepath):
                 response = Response(status=helpers.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
             else:
                 size_in_bytes = os.path.getsize(filepath)
                 created_date = time.ctime(os.path.getctime(filepath))
-                
-                exposure_summary = ExposureSummary(
+                exposure_summary = data.ExposureSummary(
                     location=str.replace(filename, TAR_FILE_SUFFIX, ''),
                     size=size_in_bytes,
                     created_date=created_date)
@@ -128,7 +123,7 @@ def get_exposure_summary(location):
                 APP.logger.debug("Exposures: " + response.data)
     except:
         APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
+        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
     return response
 
@@ -138,8 +133,7 @@ def get_exposure(location):
     """
     Get an exposure resource
     ---
-    description: Returns an exposure resource. If no location parameter is supplied 
-       returns a summary of all exposures.
+    description: Returns an exposure resource.
     produces:
     - application/json
     responses:
@@ -154,9 +148,19 @@ def get_exposure(location):
       required: true
       type: string
     """
-    # TODO
     try:
-        True
+        APP.logger.debug("Location: {}".format(location))
+        if location is None:
+                response = Response(status=helpers.HTTP_RESPONSE_BAD_REQUEST)
+        else:
+            filename = str(location) + TAR_FILE_SUFFIX
+            filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
+            if not os.path.exists(filepath):
+                response = Response(
+                    status=helpers.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+            else:
+                response = send_from_directory(
+                    INPUTS_DATA_DIRECTORY, location + TAR_FILE_SUFFIX)
     except:
         APP.log_exception(traceback.format_exc())
         response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
@@ -169,7 +173,8 @@ def post_exposure():
     """
     Upload an exposure resource
     ---
-    description: Uploads an exposure resource by posting an exposure tar file. The tar file can be compressed or uncompressed.
+    description: Uploads an exposure resource by posting an exposure tar file. 
+                 The tar file can be compressed or uncompressed.
     produces:
     - application/json
     responses:
@@ -264,7 +269,7 @@ def delete_exposure(location):
                 response = Response(status=helpers.HTTP_RESPONSE_OK)
     except:
         APP.log_exception(traceback.format_exc())
-        response = Response(status_code.HTTP_RESPONSE_INTERNAL_ERROR) 
+        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR) 
 
     return response
 
@@ -294,7 +299,7 @@ def post_analysis():
     try:
         analysis_settings = request.json
         if not validate_analysis_settings(analysis_settings):
-            response = Response(status_code = HTTP_RESPONSE_BAD_REQUEST)
+            response = Response(status_code = helpers.HTTP_RESPONSE_BAD_REQUEST)
         else:
             result = CELERY.send_task("tasks.start_analysis", [analysis_settings])
             task_id = result.task_id
