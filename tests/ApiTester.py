@@ -39,6 +39,9 @@ shutil.copytree(
     os.path.join(inputs_data_directory, "csv"),
     upload_directory)
 
+if not os.path.exists("outputs"):
+    os.makedirs("outputs")
+
 num_failed = 0
 num_completed = 0
 
