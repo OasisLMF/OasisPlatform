@@ -27,6 +27,9 @@ COPY ./src/server/requirements.txt ./
 COPY ./src/server/startup.sh ./
 COPY ./utils/wait-for-it.sh ./
 
+RUN chmod a+x startup.sh
+RUN chmod a+x wait-for-it.sh
+
 RUN pip install -r ./requirements.txt
 
 RUN a2dissite 000-default
