@@ -3,6 +3,11 @@ FROM python:2.7
 COPY ./src/example_worker/requirements.txt ./
 RUN pip install -r requirements.txt
 
+COPY ./src/example_worker/startup.sh  /usr/local/bin
+COPY ./utils/wait-for-it.sh /usr/local/bin
+RUN chmod +x /usr/local/bin/startup.sh
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
 RUN mkdir /var/log/oasis
 
 RUN useradd -ms /bin/bash example_worker
@@ -14,10 +19,5 @@ WORKDIR /home/example_worker
 COPY ./src/common ./common/
 COPY ./src/example_worker/Tasks.ini  ./
 COPY ./src/example_worker/tasks.py  ./
-COPY ./src/example_worker/startup.sh  ./
-COPY ./utils/wait-for-it.sh ./
 
-RUN chmod a+x startup.sh
-RUN chmod a+x wait-for-it.sh
-
-ENTRYPOINT ./wait-for-it.sh rabbit:5672; ./wait-for-it.sh mysql:3306;./startup.sh; tail -f /dev/null
+ENTRYPOINT wait-for-it.sh rabbit:5672; wait-for-it.sh mysql:3306; startup.sh; tail -f /dev/null
