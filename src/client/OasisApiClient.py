@@ -146,13 +146,8 @@ class OasisApiClient(object):
         self._logger.debug("Analysis completed")
 
         self._logger.debug("Downloading outputs")
-        response = requests.get(self._oasis_api_url + "/outputs/" + outputs_location)
-        if response.status_code != 200:
-            self._logger.error("GET /outputs failed: {}".format(str(response.status_code)))
-            raise Exception("Failed to download outputs")
         outputs_file = os.path.join(outputs_directory, outputs_location + ".tar.gz")
-        with open(outputs_file, "wb") as outfile:
-            outfile.write(response.content) 
+	self.download_outputs(outputs_location, outputs_file)
         self._logger.debug("Downloaded outputs")
 
         self._logger.debug("Deleting exposure")
@@ -172,7 +167,7 @@ class OasisApiClient(object):
         end = time.time()
         self._logger.debug("COMPLETED: OasisApiClient.run_analysis in {}s".format(round(end - start,2)))
 
-    def download_exposure(exposure_location, localfile):
+    def download_exposure(self, exposure_location, localfile):
         '''
         Download exposure data to a specified local file.
         '''
@@ -186,15 +181,13 @@ class OasisApiClient(object):
             raise Exception(exception_message)
   
         with open(localfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in response.iter_content(chunk_size=1024): 
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
-                    f.flush()
-                    os.fsync()       
 
         print "Downloaded exposure"
 
-    def download_outputs(outputs_location, localfile):
+    def download_outputs(self, outputs_location, localfile):
         '''
         Download outputs data to a specified local file.
         '''
@@ -208,11 +201,9 @@ class OasisApiClient(object):
             raise Exception(exception_message)
   
         with open(localfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
+            for chunk in response.iter_content(chunk_size=1024): 
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
-                    f.flush()
-                    os.fsync()       
 
         print "Downloaded outputs"
 
