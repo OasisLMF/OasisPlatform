@@ -152,7 +152,7 @@ class OasisApiClient(object):
             raise Exception("Failed to download outputs")
         outputs_file = os.path.join(outputs_directory, outputs_location + ".tar.gz")
         with open(outputs_file, "wb") as outfile:
-            outfile.write(response.data) 
+            outfile.write(response.content) 
         self._logger.debug("Downloaded outputs")
 
         self._logger.debug("Deleting exposure")
