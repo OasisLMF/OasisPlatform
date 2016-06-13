@@ -36,4 +36,4 @@ RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 EXPOSE 80
 
-ENTRYPOINT ./wait-for-it.sh rabbit:5672; ./startup.sh; tail -f /dev/null
+ENTRYPOINT wait-for-it.sh rabbit:5672; startup.sh; tail -f /dev/null
