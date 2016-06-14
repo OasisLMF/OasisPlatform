@@ -1,0 +1,5 @@
+prog_id,1,int
+module_supplier_id,ARA,str
+model_version_id,1,int
+number_of_samples,10,int
+gul_threshold,0,float
