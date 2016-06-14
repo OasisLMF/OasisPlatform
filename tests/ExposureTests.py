@@ -3,10 +3,12 @@ import os
 import inspect
 import sys
 import unittest
-from flask import json
 import shutil
 import tarfile
 import time
+
+from flask import json
+from random import randint
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
@@ -25,10 +27,16 @@ class Test_ExposureTests(unittest.TestCase):
         with open(path, 'a'):
             os.utime(path, None)
 
+    def create_file(self, path, size_in_bytes):
+        with open(path, "wb") as outfile:
+            # Write 1 MB of random data
+            for x in xrange(size_in_bytes):
+                outfile.write(chr(randint(0,255)))
+
     def clean_directories(self):
-        if os.path.exists(app.EXPOSURE_DATA_DIRECTORY):
-            shutil.rmtree(app.EXPOSURE_DATA_DIRECTORY)
-        os.makedirs(app.EXPOSURE_DATA_DIRECTORY)
+        if os.path.exists(app.INPUTS_DATA_DIRECTORY):
+            shutil.rmtree(app.INPUTS_DATA_DIRECTORY)
+        os.makedirs(app.INPUTS_DATA_DIRECTORY)
         
         if os.path.exists(TEST_DATA_DIRECTORY):
             shutil.rmtree(TEST_DATA_DIRECTORY)
@@ -36,17 +44,17 @@ class Test_ExposureTests(unittest.TestCase):
 
     def setUp(self):
         app.DO_GZIP_RESPONSE = False
-        exposure_data_directory = os.path.join(TEST_DIRECTORY, 'exposure_data')
-        app.EXPOSURE_DATA_DIRECTORY = exposure_data_directory
+        INPUTS_DATA_DIRECTORY = os.path.join(TEST_DIRECTORY, 'exposure_data')
+        app.INPUTS_DATA_DIRECTORY = INPUTS_DATA_DIRECTORY
         app.APP.config['TESTING'] = True
         self.app = app.APP.test_client()
 
-    def test_get_exposure_1(self):
+    def test_get_exposure_summary_1(self):
         self.clean_directories()
-        self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test1.tar'))
-        self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test2.tar'))
-        self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test3.tar'))
-        self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test4.tar'))
+        self.create_file(os.path.join(app.INPUTS_DATA_DIRECTORY, 'test1.tar'), 100)
+        self.create_file(os.path.join(app.INPUTS_DATA_DIRECTORY, 'test2.tar'), 200)
+        self.create_file(os.path.join(app.INPUTS_DATA_DIRECTORY, 'test3.tar'), 300)
+        self.create_file(os.path.join(app.INPUTS_DATA_DIRECTORY, 'test4.tar'), 400)
         response = self.app.get("/exposure_summary")
         assert response._status_code == 200
         exposures = json.loads(response.data.decode('utf-8'))['exposures']
@@ -55,20 +63,44 @@ class Test_ExposureTests(unittest.TestCase):
         assert sum(1 for exposure in exposures if exposure['location'] == 'test2') == 1
         assert sum(1 for exposure in exposures if exposure['location'] == 'test3') == 1
         assert sum(1 for exposure in exposures if exposure['location'] == 'test4') == 1
+        assert sum(1 for exposure in exposures if exposure['size'] == 100) == 1
+        assert sum(1 for exposure in exposures if exposure['size'] == 200) == 1
+        assert sum(1 for exposure in exposures if exposure['size'] == 300) == 1
+        assert sum(1 for exposure in exposures if exposure['size'] == 400) == 1
 
-    def test_get_exposure_by_location_1(self):
+    def test_get_exposure_summary_by_location_1(self):
         self.clean_directories()
-        self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test1.tar'))
+        self.create_file(os.path.join(app.INPUTS_DATA_DIRECTORY, 'test1.tar'), 100)
         response = self.app.get("/exposure_summary/test1")
         assert response._status_code == 200
         exposures = json.loads(response.data.decode('utf-8'))['exposures']
         assert len(exposures) == 1
         assert sum(1 for exposure in exposures if exposure['location'] == 'test1') == 1
+        assert sum(1 for exposure in exposures if exposure['size'] == 100) == 1
+
+    def test_get_exposure_by_location_1(self):
+        self.clean_directories()
+        self.create_file(os.path.join(app.INPUTS_DATA_DIRECTORY, 'test1.tar'), 100)
+        response = self.app.get("/exposure/test1")
+        
+        assert response._status_code == 200
+  
+        exposure_file =  "temp_exposure_data" 
+        with open(exposure_file, "wb") as outfile:
+            outfile.write(response.data) 
+        assert(os.path.exists(exposure_file))
+        assert(os.path.getsize(exposure_file) == 100)
+
+    def test_get_exposure_summary_by_location_2(self):
+        self.clean_directories()
+        self.touch(os.path.join(app.INPUTS_DATA_DIRECTORY, 'test1.tar'))
+        response = self.app.get("/exposure_summary/test2")
+        assert response._status_code == 404
 
     def test_get_exposure_by_location_2(self):
         self.clean_directories()
-        self.touch(os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test1.tar'))
-        response = self.app.get("/exposure_summary/test2")
+        self.touch(os.path.join(app.INPUTS_DATA_DIRECTORY, 'test1.tar'))
+        response = self.app.get("/exposure/test2")
         assert response._status_code == 404
 
     def test_post_exposure_1(self):
@@ -88,8 +120,8 @@ class Test_ExposureTests(unittest.TestCase):
 
     def test_delete_exposure_1(self):
         self.clean_directories()
-        filepath1 = os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test1.tar')
-        filepath2 = os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test2.tar')
+        filepath1 = os.path.join(app.INPUTS_DATA_DIRECTORY, 'test1.tar')
+        filepath2 = os.path.join(app.INPUTS_DATA_DIRECTORY, 'test2.tar')
         self.touch(filepath1)
         self.touch(filepath2)
         response = self.app.delete("/exposure")
@@ -99,8 +131,8 @@ class Test_ExposureTests(unittest.TestCase):
 
     def test_delete_exposure_by_location_1(self):
         self.clean_directories()
-        filepath1 = os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test1.tar')
-        filepath2 = os.path.join(app.EXPOSURE_DATA_DIRECTORY, 'test2.tar')
+        filepath1 = os.path.join(app.INPUTS_DATA_DIRECTORY, 'test1.tar')
+        filepath2 = os.path.join(app.INPUTS_DATA_DIRECTORY, 'test2.tar')
         self.touch(filepath1)
         self.touch(filepath2)
         response = self.app.delete("/exposure/test1")
