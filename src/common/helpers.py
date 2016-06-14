@@ -1,3 +1,4 @@
+import inspect
 import time
 import uuid
 from functools import wraps
@@ -25,13 +26,16 @@ def oasis_log(logger):
         @wraps(func)
         def wrapper(*args, **kwargs):
             func_name = func.__name__
-            logger.debug("STARTED: {}".format(func.__name__))
+            logger.info("STARTED: {}".format(func.__name__))
+            args, _, _, values = inspect.getargvalues(inspect.currentframe())
+            for i in args:
+                logger.info("{}={}").format(i, values[i])
             start = time.time()
                 
             result = func(*args, **kwargs)
                 
             end = time.time()
-            logger.debug("COMPLETED: {} in {}s".format(func_name, round(end - start,2)))
+            logger.info("COMPLETED: {} in {}s".format(func_name, round(end - start,2)))
             return result
         return wrapper
     return actual_oasis_log
