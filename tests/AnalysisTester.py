@@ -5,23 +5,24 @@ import sys
 import unittest
 from flask import json
 import shutil
+import requests
 
 import tarfile
 import time
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
-sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
+#sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
 
-from server import app
+#from server import app
 from common import helpers
 
-app.DO_GZIP_RESPONSE = False
-sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
-exposure_data_directory = os.path.join(TEST_DIRECTORY, 'exposure_data')
-app.EXPOSURE_DATA_DIRECTORY = exposure_data_directory
-app.APP.config['TESTING'] = True
-app = app.APP.test_client()
+#app.DO_GZIP_RESPONSE = False
+#sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
+#INPUTS_DATA_DIRECTORY = os.path.join(TEST_DIRECTORY, 'exposure_data')
+#app.INPUTS_DATA_DIRECTORY = INPUTS_DATA_DIRECTORY
+#app.APP.config['TESTING'] = True
+#app = app.APP.test_client()
 
 response = app.post("/analysis")
 data = response.data
