@@ -9,6 +9,10 @@ from common import helpers
 from common import data
 from random import randint
 from numpy import random
+'''
+Mock task that creates a random results file of a specified size,
+and fails with a specified probability.
+'''
 
 CONFIG_PARSER = ConfigParser()
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
