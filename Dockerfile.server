@@ -14,10 +14,6 @@ RUN mkdir /var/www/oasis/upload
 RUN mkdir /var/www/oasis/download
 RUN mkdir /var/log/oasis
 
-RUN chown www-data /var/www/oasis/upload
-RUN chown www-data /var/www/oasis/download
-RUN chown www-data /var/log/oasis
-
 COPY ./src/server_config/oasis.conf /etc/apache2/sites-available/oasis.conf
 COPY ./src/server_config/oasis.wsgi /var/www/oasis/oasis.wsgi
 COPY ./src/server /var/www/oasis/server/
