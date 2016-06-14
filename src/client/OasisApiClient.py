@@ -1,3 +1,6 @@
+import csv
+import inspect
+import jsonpickle
 import os
 import subprocess
 import traceback
@@ -16,7 +19,7 @@ class OasisApiClient(object):
     Client for Oasis API
     '''
 
-    FILES = {
+    INPUTS_FILES = {
             "items", "coverages",  'summaryxref',
             'fm_programme', 'fm_policytc',  'fm_profile'} 
 
@@ -29,6 +32,14 @@ class OasisApiClient(object):
             'fm_profile': 'fmprofiletobin'} 
 
     TAR_FILE = "inputs.tar.gz"
+
+    # Analysis settings files
+    GENERAL_SETTINGS_FILE = "general_settings.csv"
+    MODEL_SETTINGS_FILE = "model_settings.csv"
+    GUL_SUMMARIES_FILE = "gul_summaries.csv"
+    IL_SUMMARIES_FILE = "il_summaries.csv"
+
+    DOWNLOAD_CHUCK_SIZE_IN_BYTES = 1024
 
     def __init__(self, oasis_api_url, logger):  
         '''
@@ -62,10 +73,16 @@ class OasisApiClient(object):
         Returns:
             The location of the uploaded inputs.
         '''
-
-        self._logger.debug("STARTED: OasisApiClient.upload_inputs_from_directory")
+        frame = inspect.currentframe()
+        func_name = inspect.getframeinfo(frame)[2]
+        self._logger.info("STARTED: {}".format(func_name))
+        args, _, _, values = inspect.getargvalues(frame)
+        for i in args:
+            if i == 'self': continue
+            self._logger.info("{}={}".format(i, values[i]))
         start = time.time()
-                
+         
+                  
         self._check_inputs_directory(directory)
         if do_validation:
             self._validate_inputs(directory)
@@ -91,13 +108,14 @@ class OasisApiClient(object):
         # Tidy up
         self._clean_directory(directory)
 
+
         end = time.time()
-        self._logger.debug("COMPLETED: OasisApiClient.upload_inputs_from_directory in {}s".format(round(end - start,2)))
+        self._logger.info("COMPLETED: {} in {}s".format(func_name, round(end - start,2)))
 
         # Return the location of the uploaded inputs
         return exposure_location
 
-    def run_analysis(self, analysis_settings_json, inputs_location, outputs_directory, do_clean=False):
+    def run_analysis(self, analysis_settings_directory, inputs_location, outputs_directory, do_clean=False):
         '''
         Run an analysis.
         Args:
@@ -108,9 +126,17 @@ class OasisApiClient(object):
         Returns:
             The location of the uploaded inputs.
         '''
-        
-        self._logger.debug("STARTED: OasisApiClient.run_analysis")
+        frame = inspect.currentframe()
+        func_name = inspect.getframeinfo(frame)[2]
+        self._logger.info("STARTED: {}".format(func_name))
+        args, _, _, values = inspect.getargvalues(frame)
+        for i in args:
+            if i == 'self': continue
+            self._logger.info("{}={}".format(i, values[i]))
+
         start = time.time()
+
+        analysis_settings_json = self.create_analysis_settings_json(analysis_settings_directory)
 
         request_url ="/analysis" 
         response = requests.post(
@@ -121,7 +147,7 @@ class OasisApiClient(object):
             raise Exception("Failed to start analysis")          
         analysis_status_location =  response.json()['location']
         status = helpers.TASK_STATUS_PENDING
-        print "Analysis started"
+        self._logger.info("Analysis started")
         analysis_poll_interval_in_seconds = 5
         request_url ="/analysis_status/"
         
@@ -144,15 +170,11 @@ class OasisApiClient(object):
             time.sleep(analysis_poll_interval_in_seconds)
         outputs_location = response.json()['outputs_location']
         self._logger.debug("Analysis completed")
+        func_name= func_name
 
         self._logger.debug("Downloading outputs")
-        response = requests.get(self._oasis_api_url + "/outputs/" + outputs_location)
-        if response.status_code != 200:
-            self._logger.error("GET /outputs failed: {}".format(str(response.status_code)))
-            raise Exception("Failed to download outputs")
         outputs_file = os.path.join(outputs_directory, outputs_location + ".tar.gz")
-        with open(outputs_file, "wb") as outfile:
-            outfile.write(response.content) 
+        self.download_outputs(outputs_location, outputs_file)
         self._logger.debug("Downloaded outputs")
 
         self._logger.debug("Deleting exposure")
@@ -162,21 +184,32 @@ class OasisApiClient(object):
             self._logger.warn("DELETE /exposure failed: {}".format(str(response.status_code)))
         self._logger.debug("Deleted exposure")
 
-        print "Deleting outputs"
+        self._logger.info("Deleting outputs")
         response = requests.delete(self._oasis_api_url + "/outputs/" + outputs_location)
         if response.status_code != 200:
             # Do not fail if tidy up fails
             self._logger.warn("DELETE /outputs failed: {}".format(str(response.status_code)))
-        print "Deleted outputs"
+        self._logger.info("Deleted outputs")
 
         end = time.time()
         self._logger.debug("COMPLETED: OasisApiClient.run_analysis in {}s".format(round(end - start,2)))
 
-    def download_exposure(exposure_location, localfile):
+    def download_exposure(self,exposure_location, localfile):
         '''
         Download exposure data to a specified local file.
+        Args:
+            exposure_location (string): The location of the exposure resource.
+            localfile (string): The localfile to download to.
         '''
-        print "Downloading exposure. Location:{}".format(exposure_location)
+        frame = inspect.currentframe()
+        func_name = inspect.getframeinfo(frame)[2]
+        self._logger.info("STARTED: {}".format(func_name))
+        args, _, _, values = inspect.getargvalues(frame)
+        for i in args:
+            if i == 'self': continue
+            self._logger.info("{}={}".format(i, values[i]))
+        start = time.time()
+
         response = requests.get(
             self._oasis_api_url + "/exposure/" + exposure_location, 
             stream=True)
@@ -186,19 +219,34 @@ class OasisApiClient(object):
             raise Exception(exception_message)
   
         with open(localfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
-                if chunk: # filter out keep-alive new chunks
+            for chunk in response.iter_content(chunk_size=self.DOWNLOAD_CHUCK_SIZE_IN_BYTES): 
+                if chunk:
                     f.write(chunk)
-                    f.flush()
-                    os.fsync()       
 
-        print "Downloaded exposure"
+        end = time.time()
+        self._logger.info("COMPLETED: {} in {}s".format(func_name, round(end - start,2)))
 
-    def download_outputs(outputs_location, localfile):
+    def download_outputs(self, outputs_location, localfile):
         '''
         Download outputs data to a specified local file.
+        Args:
+            outputs_location (string): The location of the outputs resource.
+            localfile (string): The localfile to download to.
         '''
-        print "Downloading outputs. Location:{}".format(outputs_location)
+        frame = inspect.currentframe()
+        func_name = inspect.getframeinfo(frame)[2]
+        self._logger.info("STARTED: {}".format(func_name))
+        args, _, _, values = inspect.getargvalues(frame)
+        for i in args:
+            if i == 'self': continue
+            self._logger.info("{}={}".format(i, values[i]))
+        start = time.time()
+
+        if os.path.exists(localfile):
+            error_message = 'Local file alreday exists: {}'.format(localfile)
+            _logger.error(error_message)
+            raise Exception(error_message)
+
         response = requests.get(
             self._oasis_api_url + "/outputs/" + outputs_location, 
             stream=True)
@@ -208,20 +256,80 @@ class OasisApiClient(object):
             raise Exception(exception_message)
   
         with open(localfile, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024): 
-                if chunk: # filter out keep-alive new chunks
+            for chunk in response.iter_content(chunk_size=self.DOWNLOAD_CHUCK_SIZE_IN_BYTES): 
+                if chunk:
                     f.write(chunk)
-                    f.flush()
-                    os.fsync()       
 
-        print "Downloaded outputs"
+        end = time.time()
+        self._logger.info("COMPLETED: {} in {}s".format(func_name, round(end - start,2)))
+
+    def create_analysis_settings_json(self, directory):
+        '''
+        Generate an analysis settings JSON from a set of
+        CSV files in a specified directory.
+        Args:
+            directory (string): the directory containing the CSV files.
+        Returns:
+            The analysis settings JSON.
+        '''
+        frame = inspect.currentframe()
+        func_name = inspect.getframeinfo(frame)[2]
+        self._logger.info("STARTED: {}".format(func_name))
+        args, _, _, values = inspect.getargvalues(frame)
+        for i in args:
+            if i == 'self': continue
+            self._logger.info("{}={}".format(i, values[i]))
+        start = time.time()
+
+        if not os.path.exists(directory):
+            error_message = "Directory does not exist: {}".format(directory)
+            self._logger.error(error_message) 
+            raise Exception(error_message)
+
+        general_settings_file = os.path.join(directory, self.GENERAL_SETTINGS_FILE)
+        model_settings_file = os.path.join(directory, self.MODEL_SETTINGS_FILE)
+        gul_summaries_file = os.path.join(directory, self.GUL_SUMMARIES_FILE)
+        il_summaries_file = os.path.join(directory, self.IL_SUMMARIES_FILE)
+       
+        for file in [general_settings_file, model_settings_file, gul_summaries_file, il_summaries_file]:
+            if not os.path.exists(directory):
+                error_message = "File does not exist: {}".format(directory)
+                self._logger.error(error_message) 
+                raise Exception(error_message)
+
+        general_settings = dict()
+        with open(general_settings_file, 'rb') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                general_settings[row[0]] = eval("{}('{}')".format(row[2], row[1]))
+
+        model_settings = dict()
+        with open(model_settings_file, 'rb') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                model_settings[row[0]] = eval("{}('{}')".format(row[2], row[1]))
+
+        gul_summaries = self._get_summaries(gul_summaries_file)
+        il_summaries = self._get_summaries(il_summaries_file)
+
+        analysis_settings = general_settings
+        analysis_settings['model_settings'] = model_settings
+        analysis_settings['gul_summaries'] = gul_summaries
+        analysis_settings['il_summaries'] = il_summaries
+        json = jsonpickle.encode(analysis_settings)
+        self._logger.info("Analysis settings json: {}".format(json))
+
+        end = time.time()
+        self._logger.info("COMPLETED: {} in {}s".format(func_name, round(end - start,2)))
+
+        return json
 
     def _check_inputs_directory(self, directory_to_check):
         ''' Check the directory state.'''
         file_path = os.path.join(directory_to_check, self.TAR_FILE)
         if os.path.exists(file_path):
             raise Exception("Inputs tar file already exists: {}".format(file_path))
-        for file in self.FILES:
+        for file in self.INPUTS_FILES:
             file_path = os.path.join(directory_to_check, file + ".csv")
             if not os.path.exists(file_path):
                 raise Exception("Failed to find {}".format(file_path))
@@ -236,7 +344,7 @@ class OasisApiClient(object):
 
     def _create_binary_files(self, directory):
         ''' Create the binary files.'''
-        for file in self.FILES:
+        for file in self.INPUTS_FILES:
             conversion_tool = self.CONVERSION_TOOLS[file]
             input_file_path = os.path.join(directory, file + ".csv")
             output_file_path = os.path.join(directory, file + ".bin")
@@ -254,7 +362,7 @@ class OasisApiClient(object):
         original_cwd = os.getcwd()
         os.chdir(directory)
         with tarfile.open(self.TAR_FILE, "w:gz") as tar:
-            for file in self.FILES:
+            for file in self.INPUTS_FILES:
                 bin_file = file + ".bin"
                 tar.add(bin_file)
         os.chdir(original_cwd)
@@ -264,7 +372,28 @@ class OasisApiClient(object):
         file_path = os.path.join(directory_to_check, self.TAR_FILE)
         if os.path.exists(file_path):
             os.remove(file_path)
-        for file in self.FILES:
+        for file in self.INPUTS_FILES:
             file_path = os.path.join(directory_to_check, file + ".bin")
             if os.path.exists(file_path):
                 os.remove(file_path)
+
+    def _get_summaries(self, summary_file):
+        ''' Get a list representation of a summary file. '''
+        summaries_dict = dict()
+        with open(summary_file, 'rb') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                id = int(row[0]) 
+                if not summaries_dict.has_key(id):
+                    summaries_dict[id] = dict()
+                    summaries_dict[id]['leccalc'] = dict()
+                if row[1].startswith('leccalc'):
+                    summaries_dict[id]['leccalc'][row[1]] = bool(row[2]) 
+                else:
+                    summaries_dict[id][row[1]] = bool(row[2])
+        summaries = list()
+        for id in summaries_dict.keys():
+            summaries_dict[id]['id'] = id
+            summaries.append(summaries_dict[id])
+
+        return summaries
