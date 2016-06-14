@@ -33,6 +33,10 @@ num_analyses = args.num_analyses
 sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
 inputs_data_directory = os.path.join(TEST_DIRECTORY, '..', 'example_data', 'inputs', 'nationwide')
 
+outputs_data_directory = os.path.join(TEST_DIRECTORY, 'outputs')
+if not os.path.exists(outputs_data_directory):
+    os.makedirs(outputs_data_directory)
+
 analysis_settings_data_directory = os.path.join(TEST_DIRECTORY, '..', 'example_data', 'analysis_settings_csv')
 upload_directory = os.path.join("upload", str(uuid.uuid1()))
 
@@ -51,7 +55,7 @@ for analysis_id in range(num_analyses):
         inputs_location = client.upload_inputs_from_directory(upload_directory, do_validation=False)
         analysis_settings_json = "Test"
         #client.run_analysis(analysis_settings_json, inputs_location, "outputs", do_clean=False)
-        client.run_analysis(analysis_settings_data_directory, "inputs", "outputs", do_clean=False)
+        client.run_analysis(analysis_settings_data_directory, inputs_data_directory, outputs_data_directory, do_clean=False)
         num_completed = num_completed + 1
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
