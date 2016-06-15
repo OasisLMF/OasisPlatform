@@ -16,7 +16,14 @@ HTTP_RESPONSE_RESOURCE_NOT_FOUND = 404
 HTTP_RESPONSE_INTERNAL_SERVER_ERROR = 500
 
 def generate_unique_filename():
+    ''' Generate a random filename'''
     return str(uuid.uuid4())
+
+def escape_string_for_json(str):
+    ''' Escape a string for inclusion in JSON document'''
+    str = str.replace("'", "\'")
+    str = str.replace('"', '\"')
+    return str
 
 def oasis_log(logger):
     def actual_oasis_log(func):
@@ -29,6 +36,7 @@ def oasis_log(logger):
             logger.info("STARTED: {}".format(func.__name__))
             args, _, _, values = inspect.getargvalues(inspect.currentframe())
             for i in args:
+                if i == "self": continue
                 logger.info("{}={}").format(i, values[i])
             start = time.time()
                 

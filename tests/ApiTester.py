@@ -58,26 +58,7 @@ for analysis_id in range(num_analyses):
         client.run_analysis(analysis_settings_data_directory, inputs_data_directory, outputs_data_directory, do_clean=False)
         num_completed = num_completed + 1
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        print "*** print_tb:"
-        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-        print "*** print_exception:"
-        traceback.print_exception(exc_type, exc_value, exc_traceback,
-            limit=2, file=sys.stdout)
-        print "*** print_exc:"
-        traceback.print_exc()
-        print "*** format_exc, first and last line:"
-        formatted_lines = traceback.format_exc().splitlines()
-        print formatted_lines[0]
-        print formatted_lines[-1]
-        print "*** format_exception:"
-        print repr(traceback.format_exception(exc_type, exc_value,
-                                          exc_traceback))
-        print "*** extract_tb:"
-        print repr(traceback.extract_tb(exc_traceback))
-        print "*** format_tb:"
-        print repr(traceback.format_tb(exc_traceback))
-        print "*** tb_lineno:", exc_traceback.tb_lineno
+        logger.exception("API test failed")
         num_failed = num_failed + 1
 
 print "Done. Num completed={}; Num failed={}".format(num_completed, num_failed)

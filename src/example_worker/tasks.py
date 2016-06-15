@@ -15,6 +15,7 @@ and fails with a specified probability.
 '''
 
 CONFIG_PARSER = ConfigParser()
+    
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 INI_PATH = os.path.abspath(os.path.join(CURRENT_DIRECTORY, 'Tasks.ini'))
 CONFIG_PARSER.read(INI_PATH)
@@ -32,30 +33,45 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 @task(bind=True)
-def start_analysis(self, analysis_profile, ):
+def start_analysis(self, analysis_profile):
     '''
     Mock task for starting an analysis.
+    Args:
+        analysis_profile_json (string): The analysis settings.
+    Returns:
+        (string) The location of the outputs.  
     '''
-    logging.info("Starting task")
-    self.update_state(state='STARTED')
-    print analysis_profile
+    frame = inspect.currentframe()
+    func_name = inspect.getframeinfo(frame)[2]
+    logging.info("STARTED: {}".format(func_name))
+    args, _, _, values = inspect.getargvalues(frame)
+    for i in args:
+        if i == 'self': continue
+        logging.info("{}={}".format(i, values[i]))
+    start = time.time()
 
-    failure_rate = 0.1
-    if random.uniform() < failure_rate:
-        logging.exception("Random failure")
-        raise Exception("Analysis failed")
+    try:
 
-    sleep_time=2
-    time.sleep(sleep_time)
+        failure_rate = 0.0
+        if random.uniform() < failure_rate:
+            logging.exception("Random failure")
+            raise Exception("Analysis failed")
 
-    # Mock results
-    output_file = helpers.generate_unique_filename()
-    filepath = os.path.join("/var/www/oasis/download", output_file + ".tar") 
-    with open(filepath, "wb") as outfile:
-        # Write 1 MB of random data
-        for x in xrange(1024 * 1024):
-            outfile.write(chr(randint(0,255)))
+        sleep_time=2
+        time.sleep(sleep_time)
 
-    logging.info("Done")
+        # Mock results
+        output_file = helpers.generate_unique_filename()
+        filepath = os.path.join("/var/www/oasis/download", output_file + ".tar") 
+        with open(filepath, "wb") as outfile:
+            # Write 1 MB of random data
+            for x in xrange(1024 * 1024):
+                outfile.write(chr(randint(0,255)))
+    except Exception as e:
+        logging.exception("Calc BE task failed.")
+        raise e
+
+    end = time.time()
+    logging.info("COMPLETED: {} in {}s".format(func_name, round(end - start,2)))
 
     return output_file

@@ -378,7 +378,7 @@ def get_analysis_status(location):
             analysis_status = data.AnalysisStatus(
                 id = -1,
                 status = result.state,
-                message=result.result,             
+                message=helpers.escape_string_for_json(repr(result.result)),             
                 outputs_location=None)
         else: 
             analysis_status = data.AnalysisStatus(
