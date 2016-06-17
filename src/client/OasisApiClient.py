@@ -19,17 +19,28 @@ class OasisApiClient(object):
     Client for Oasis API
     '''
 
+
     INPUTS_FILES = {
-            "items", "coverages",  'summaryxref',
-            'fm_programme', 'fm_policytc',  'fm_profile'} 
+            'coverages', 
+            'events', 
+            'fm_policytc',  
+            'fm_profile', 
+            'fm_programme', 
+            'fm_xref', 
+            'fmsummaryxref', 
+            'gulsummaryxref', 
+            'items'} 
 
     CONVERSION_TOOLS = {
-            "items" : "itemtobin", 
-            "coverages": "coveragetobin",  
-            'summaryxref': 'fmsummaryxreftobin',
-            'fm_programme': 'fmprogrammetobin', 
-            'fm_policytc': 'fmpolicytctobin',  
-            'fm_profile': 'fmprofiletobin'} 
+            'coverages' : 'coveragetobin',
+            'events' : 'evetobin',
+            'fm_policytc' : 'fmpolicytctobin',  
+            'fm_profile' : 'fmprofiletobin', 
+            'fm_programme' : 'fmprogrammetobin', 
+            'fm_xref' : 'fmxreftobin', 
+            'fmsummaryxref' : 'fmsummaryxreftobin', 
+            'gulsummaryxref' : 'gulsummaryxreftobin',
+            'items' : "itemtobin"} 
 
     TAR_FILE = "inputs.tar.gz"
 
@@ -115,7 +126,7 @@ class OasisApiClient(object):
         # Return the location of the uploaded inputs
         return exposure_location
 
-    def run_analysis(self, analysis_settings_directory, inputs_location, outputs_directory, do_clean=False):
+    def run_analysis(self, analysis_settings_json, input_location, outputs_directory, do_clean=False):
         '''
         Run an analysis.
         Args:
@@ -136,11 +147,9 @@ class OasisApiClient(object):
 
         start = time.time()
 
-        analysis_settings_json = self.create_analysis_settings_json(analysis_settings_directory)
-
-        request_url ="/analysis" 
+        request_url ="/analysis/"  + input_location 
         response = requests.post(
-            self._oasis_api_url + request_url, #+ inputs_location,
+            self._oasis_api_url + request_url,
             json = analysis_settings_json)
         if response.status_code != 200:
             self._logger.error("POST {} failed: {}".format(request_url, str(response.status_code)))
@@ -166,7 +175,7 @@ class OasisApiClient(object):
             if status == helpers.TASK_STATUS_FAILURE:
                 error_message = "Analysis failed: {}".format(message)
                 self._logger.error(error_message)
-                raise Excepion(error_message)
+                raise Exception(error_message)
             time.sleep(analysis_poll_interval_in_seconds)
         outputs_location = response.json()['outputs_location']
         self._logger.debug("Analysis completed")
@@ -178,7 +187,7 @@ class OasisApiClient(object):
         self._logger.debug("Downloaded outputs")
 
         self._logger.debug("Deleting exposure")
-        response = requests.delete(self._oasis_api_url + "/exposure/" + inputs_location)
+        response = requests.delete(self._oasis_api_url + "/exposure/" + input_location)
         if response.status_code != 200:
             # Do not fail if tidy up fails
             self._logger.warn("DELETE /exposure failed: {}".format(str(response.status_code)))
