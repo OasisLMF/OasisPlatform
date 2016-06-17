@@ -8,18 +8,19 @@ services:
      - mysql:mysql
      - rabbit:rabbit
    volumes:
-     - ./log:/var/log/oasis:rw
+#     - ./log:/var/log/oasis:rw
      - ./upload:/var/www/oasis/upload:rw
      - ./download:/var/www/oasis/download:rw
-  worker_1:
+  worker:
     image: my_worker
     links:
      - mysql:mysql
      - rabbit:myrabbit
     volumes:
-     - ./log:/var/log/oasis:rw
-     - ./upload:/var/www/oasis/upload:rw
-     - ./download:/var/www/oasis/download:rw
+#     - ./log:/var/log/oasis:rw
+     - ./upload:/var/oasis/upload:rw
+     - ./download:/var/oasis/download:rw
+     - ./data/static:/var/oasis/model_data/OasisIM/1:rw
   mysql:
     image: mysql
     environment:
