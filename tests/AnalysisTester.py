@@ -12,7 +12,7 @@ import time
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
-#sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
+sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
 
 #from server import app
 from common import helpers
