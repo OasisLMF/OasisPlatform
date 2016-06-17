@@ -1,4 +1,4 @@
-CELERY_IMPORTS = ('tasks')
+#CELERY_IMPORTS = ('tasks')
 CELERY_IGNORE_RESULT = False
 BROKER_URL = "rabbit" #IP address of the server running RabbitMQ and Celery
 CELERY_RESULT_BACKEND = 'db+mysql://celery:password@mysql/celery'
