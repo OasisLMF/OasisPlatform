@@ -273,9 +273,9 @@ def delete_exposure(location):
 
     return response
 
-@APP.route('/analysis', methods=["POST"])
+@APP.route('/analysis/<input_location>', methods=["POST"])
 @helpers.oasis_log(APP.logger)
-def post_analysis():
+def post_analysis(input_location):
     """
     Start an analysis
     ---
@@ -290,6 +290,11 @@ def post_analysis():
     produces:
     - application/json
     parameters:
+    -   name: input_location
+        in: path
+        description: The location of the input resource to analyse.
+        required: true
+        type: string
     - name: analysis_settings
       in: formData
       description: The analysis settings 
@@ -301,7 +306,7 @@ def post_analysis():
         if not validate_analysis_settings(analysis_settings):
             response = Response(status_code = helpers.HTTP_RESPONSE_BAD_REQUEST)
         else:
-            result = CELERY.send_task("tasks.start_analysis", [analysis_settings])
+            result = CELERY.send_task("run_analysis", (input_location, [analysis_settings]))
             task_id = result.task_id
             response = jsonify({'location': task_id})
     except:
