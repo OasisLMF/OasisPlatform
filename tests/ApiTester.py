@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import inspect
 import sys
@@ -31,31 +32,34 @@ base_url = args.url
 num_analyses = args.num_analyses
 
 sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
-inputs_data_directory = os.path.join(TEST_DIRECTORY, '..', 'example_data', 'inputs', 'nationwide')
+#input_data_directory = os.path.join(TEST_DIRECTORY, '..', 'example_data', 'inputs', 'nationwide')
+input_data_directory = TEST_DATA_DIRECTORY
 
-outputs_data_directory = os.path.join(TEST_DIRECTORY, 'outputs')
-if not os.path.exists(outputs_data_directory):
-    os.makedirs(outputs_data_directory)
+output_data_directory = os.path.join(TEST_DIRECTORY, 'outputs')
+if not os.path.exists(output_data_directory):
+    os.makedirs(output_data_directory)
 
 analysis_settings_data_directory = os.path.join(TEST_DIRECTORY, '..', 'example_data', 'analysis_settings_csv')
 upload_directory = os.path.join("upload", str(uuid.uuid1()))
 
 shutil.copytree(
-    os.path.join(inputs_data_directory, "csv"),
+    os.path.join(input_data_directory, "input", "csv"),
     upload_directory)
 
 num_failed = 0
 num_completed = 0
 
+logger = logging.Logger("Test", logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+
 for analysis_id in range(num_analyses):
     try:
-        logger = logging.Logger("Test", logging.DEBUG)
-        logger.addHandler(logging.StreamHandler(sys.stdout))
         client = OasisApiClient.OasisApiClient(base_url, logger)
-        inputs_location = client.upload_inputs_from_directory(upload_directory, do_validation=False)
-        analysis_settings_json = "Test"
-        #client.run_analysis(analysis_settings_json, inputs_location, "outputs", do_clean=False)
-        client.run_analysis(analysis_settings_data_directory, inputs_data_directory, outputs_data_directory, do_clean=False)
+        input_location = client.upload_inputs_from_directory(upload_directory, do_validation=False)
+        with open(os.path.join(TEST_DATA_DIRECTORY, "analysis_settings.json")) as json_file:
+            analysis_settings_json = json.load(json_file)
+
+        client.run_analysis(analysis_settings_json, input_location, output_data_directory, do_clean=False)
         num_completed = num_completed + 1
     except Exception as e:
         logger.exception("API test failed")
