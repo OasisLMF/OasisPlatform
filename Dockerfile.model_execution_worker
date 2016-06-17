@@ -1,0 +1,24 @@
+FROM xtools
+
+RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev
+
+COPY ./src/model_execution_worker/requirements.txt ./
+RUN pip install -r requirements.txt
+
+RUN mkdir /var/log/oasis
+RUN mkdir /var/oasis/working
+
+RUN useradd -ms /bin/bash worker
+RUN chown worker /var/log/oasis
+RUN chown worker /var/oasis/working
+
+USER worker
+WORKDIR /home/worker
+
+COPY ./src/model_execution_worker/startup.sh  ./
+COPY ./utils/wait-for-it.sh ./
+
+COPY ./src/common ./common/
+COPY ./src/model_execution_worker/  ./model_execution_worker/
+
+ENTRYPOINT ./wait-for-it.sh rabbit:5672; ./wait-for-it.sh mysql:3306; ./startup.sh; tail -f /dev/null
