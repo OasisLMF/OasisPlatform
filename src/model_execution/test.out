@@ -1,7 +1,0 @@
-#!/bin/sh
-tee < working/il1summary1  > working/il1summary1eltcalc
-eltcalc < working/il1summary1eltcalc > output/il_1_eltcalc_1.csv
-summarycalc -f  -1 working/il1summary1 < working/il1
-tee < working/getmodeltotee1 > working/getmodeltoil1
-gulcalc -S100  -L100 -r -i - < working/getmodeltoil1 | fmcalc > working/il1
-eve 1 1 | getmodel -i 121 -d 102 > working/getmodeltotee1
