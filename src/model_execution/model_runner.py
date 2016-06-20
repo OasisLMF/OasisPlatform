@@ -1,74 +1,24 @@
-#! /usr/bin/python
-
 import os
-import sys
 import inspect
-import json
-import shutil
-import tempfile
 import time
 import logging
 import stat
 import subprocess
-from billiard import Process, Queue, cpu_count
-
-sys.path.append(os.path.join(os.getcwd(), '..'))
-from common import helpers
-#from model_execution_worker.calcBEconfig import numberOfSubChunks
-#from model_execution_worker.calcBEconfig import useCelery
-#from model_execution_worker.calcBEconfig import calcBERootDir
-
-calcBERootDir = "/var/www/calcBE"
-useCelery = True
-numberOfSubChunks = cpu_count() * 1 #numberOfCohorts
-
 '''
 TODO: Module description
 '''
 
-# import argparse
-
-# parser = argparse.ArgumentParser(description='Run a model using ktools.')
-
-# parser.add_argument('-a', '--analysis_settings_json', type=str, required=True,
-#                     help="The analysis settings JSON file.")
-# parser.add_argument('-w', '--working_directory', type=str, default=os.getcwd(),
-#                     help="The analysis working directory.")
-# parser.add_argument('-p', '--number_of_processes', type=int, default=-1,
-#                     help="The number of processes to use. " +
-#                     "Defaults to the number of available cores.")
-# parser.add_argument('-o', '--output_file', type=str, default='',
-#                     help="The output file for the generated command.")
-# parser.add_argument('-v', '--verbose', action='store_true',
-#                     help='Verbose logging.')
-
-# args = parser.parse_args()
-
-# analysis_settings_json = args.analysis_settings_json
-# working_directory = args.working_directory
-# number_of_processes = args.number_of_processes
-# command_output_file = args.output_file
-# do_verbose = args.verbose
-
-# do_command_output = not command_output_file == ''
 
 def log_command(command):
-     ''' Log a command '''
-     pass
+    ''' Log a command '''
+    pass
 
-# if do_verbose:
-#     log_level = logging.DEBUG
-#     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-# else:
-#     log_level = logging.INFO
-#     log_format = ' %(message)s'
-
-# logging.basicConfig(stream=sys.stdout, level=log_level, format=log_format)
 
 class PerspOpts:
     GUL = 1
     FM = 2
     GULFM = 3
+
 
 class AnalysisOpts:
     ELT = 1
@@ -80,19 +30,24 @@ class AnalysisOpts:
     PLT = 7
     ELH = 8
 
+
 max_analysis_opt = AnalysisOpts.ELH
+
 
 class resultsOpts:
     EBE = 1
     AGGREGATE = 2
     MAXIMUM = 3
 
+
 max_result_opt = resultsOpts.MAXIMUM
+
 
 # ("summarycalc", []), <- RK special case deal with in code
 resultsLoc = 0
 analysisLoc = 1
 summaryLoc = 2
+
 
 # definitions for output types and results types for each
 LEC_RESULT_TYPES = [
@@ -107,6 +62,7 @@ LEC_RESULT_TYPES = [
     "sample_mean_oep"
     ]
 
+
 ANALYSIS_TYPES = [
     ("summarycalc", []),
     ("eltcalc", []),
@@ -115,6 +71,7 @@ ANALYSIS_TYPES = [
     ("pltcalc", [])
     ]
 
+
 def open_process(s, dir):
     ''' Wrap subprocess.Open. Returns the Popen object. '''
     p = subprocess.Popen(s, shell=True, cwd=dir)
@@ -122,9 +79,11 @@ def open_process(s, dir):
     logging.debug('{} - process number={}'.format(s, p.pid))
     return p
 
+
 def assert_is_pipe(p):
     ''' Check whether pipes used have been created'''
     assert stat.S_ISFIFO(os.stat(p).st_mode)
+
 
 def waitForSubprocesses(procs):
     ''' Wait for a set of subprocesses. '''
@@ -132,7 +91,7 @@ def waitForSubprocesses(procs):
     logging.info('Waiting for {} processes.'.format(len(procs)))
 
     for p in procs:
-        if p.poll() == None:
+        if p.poll() is None:
             status = 'Running'
         else:
             'Exited with status {}'.format(p.poll())
@@ -151,14 +110,15 @@ def waitForSubprocesses(procs):
                 '{} process #{} ended\n'.format(command, p.pid))
         else:
             raise Exception(
-                '{} process #{} returned error return code {}'
-                .format(command, p.pid, return_code))
+                '{} process #{} returned error return code {}'.format(
+                    command, p.pid, return_code))
 
     logging.info('Done waiting for processes.')
 
-def outputString( \
-    dir, pipe_prefix, summary, output_command, input_pipe, \
-    p, rs=[], proc_number=None):
+
+def outputString(
+        dir, pipe_prefix, summary, output_command, input_pipe,
+        p, rs=[], proc_number=None):
     '''
     TODO
     Creates the output command string for running ktools.
@@ -167,7 +127,8 @@ def outputString( \
     dir (string):
     pipe_prefix (string):   gul or fm
     summary (string):      summary id for input summary (0-9)
-    outputcmd (string):    executable to use (leccalc, etc)
+    output_command (string):    executable to use (leccalc, etc)
+    input_pipe:
     p:            number of periods for -P parameter in executables
     rs (string) (optional): results parameter - relevant for leccalc only.
     procNumber (string) (optional):
@@ -229,6 +190,7 @@ def outputString( \
 
     return str
 
+
 def run_analysis(analysis_settings, number_of_processes):
     '''
     Worker function for supplier OasisIM. It orchestrates data
@@ -243,7 +205,8 @@ def run_analysis(analysis_settings, number_of_processes):
     logging.info("STARTED: {}".format(func_name))
     args, _, _, values = inspect.getargvalues(frame)
     for i in args:
-        if i == 'self': continue
+        if i == 'self':
+            continue
         logging.debug("{}={}".format(i, values[i]))
     start = time.time()
 
@@ -274,14 +237,14 @@ def run_analysis(analysis_settings, number_of_processes):
             pipe = '{}/il{}'.format(working_directory, p)
             os.mkfifo(pipe)
 
-        for pipe_prefix, key in \
-            [("gul", "gul_summaries"), ("il", "il_summaries")]:
+        for pipe_prefix, key in [
+                ("gul", "gul_summaries"),
+                ("il", "il_summaries")
+                ]:
 
             if key in analysis_settings:
                 for s in analysis_settings[key]:
-                    summaryLevelPipe = \
-                        '{}/{}{}summary{}' \
-                        .format(working_directory, pipe_prefix, p, s["id"])
+                    summaryLevelPipe = '{}/{}{}summary{}'.format(working_directory, pipe_prefix, p, s["id"])
                     os.mkfifo(summaryLevelPipe)
 
                     summaryPipes = []
@@ -295,7 +258,7 @@ def run_analysis(analysis_settings, number_of_processes):
                                     summaryPipes += ['{}/{}{}summary{}{}'.format(working_directory, pipe_prefix, p, s["id"], a)]
                                     logging.debug('new pipe: {}\n'.format(summaryPipes[-1]))
                                     os.mkfifo(summaryPipes[-1])
-                                    output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], number_of_periods, proc_number=p)]    
+                                    output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], number_of_periods, proc_number=p)]
                                 elif isinstance(s[a], dict):
                                     if a == "leccalc":
                                         requiredRs = []
@@ -316,25 +279,25 @@ def run_analysis(analysis_settings, number_of_processes):
                                             summaryPipes += [myFile]
                                         if p == number_of_processes:   # because leccalc integrates input for all processors
                                             logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, number_of_periods, myDirShort, requiredRs)))
-                                            outputCmds += [outputString(output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), number_of_periods, requiredRs)]
+                                            output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), number_of_periods, requiredRs)]
                                     else:
-                                        #! TODO what is this? Should it be an error?
+                                        # TODO what is this? Should it be an error?
                                         logging.info('Unexpectedly found analysis {} with results dict {}\n'.format(a, rs))
                     if len(summaryPipes) > 0:
                         assert_is_pipe(summaryLevelPipe)
                         tee_commands += ["tee < {} ".format(summaryLevelPipe)]
                         for sp in summaryPipes[:-1]:
-                            if not ".bin" in sp:
+                            if ".bin" not in sp:
                                 assert_is_pipe(sp)
                             tee_commands[-1] += "{} ".format(sp)
-                        if not ".bin" in summaryPipes[-1]:
+                        if ".bin" not in summaryPipes[-1]:
                             assert_is_pipe(summaryPipes[-1])
                         tee_commands[-1] += " > {}".format(summaryPipes[-1])
 
         # now run them in reverse order from consumers to producers
         for cmds in [tee_commands, output_commands]:
             for s in cmds:
-                if not 'leccalc' in s:
+                if 'leccalc' not in s:
                     procs += [open_process(s, model_root)]
 
         for summaryFlag, pipe_prefix in [("-g", "gul"), ("-f", "il")]:
@@ -414,51 +377,3 @@ def run_analysis(analysis_settings, number_of_processes):
     end = time.time()
     logging.info("COMPLETED: {} in {}s".format(
         func_name, round(end - start, 2)))
-
-
-# original_directory = os.getcwd()
-
-# try: 
-#     # Set the number of processes
-#     if number_of_processes == -1:
-#         number_of_processes = cpu_count()
-
-#     if not os.path.exists(analysis_settings_json):
-#         raise Exception(
-#             'Analysis settings file does not exist:{}'
-#             .format(analysis_settings_json))
-
-#     if not os.path.exists(working_directory):
-#         raise Exception(
-#             'Working directory does not exist:{}'
-#             .format(working_directory))
-
-#     if command_output_file:
-#         fully_qualified_command_output_file = os.path.abspath(command_output_file)
-#         with open(fully_qualified_command_output_file, "w") as file:
-#             file.writelines("#!/bin/sh" + os.linesep)
-#         def log_command(command):
-#             with open(fully_qualified_command_output_file, "a") as file:
-#                 file.writelines(command + os.linesep)
-
-#     os.chdir(working_directory)
-
-#     if os.path.exists("working"):
-#         shutil.rmtree('working')
-#     os.mkdir("working")
-
-#     try:
-#         # Parse the analysis settings file
-#         with open(analysis_settings_json) as file:
-#             analysis_settings = json.load(file)['analysis_settings']
-#     except:
-#         raise Exception(
-#             "Failed to parse analysis settings file: {}"
-#             .format(analysis_settings_json))
-
-#     run_analysis(analysis_settings, number_of_processes)
-
-# except Exception as e:
-#     logging.exception("Model execution task failed.")
-#     os.chdir(original_directory)
-#     exit
