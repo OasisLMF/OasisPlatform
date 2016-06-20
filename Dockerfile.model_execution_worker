@@ -20,5 +20,6 @@ COPY ./utils/wait-for-it.sh ./
 
 COPY ./src/common ./common/
 COPY ./src/model_execution_worker/  ./model_execution_worker/
+COPY ./src/model_execution/  ./model_execution/
 
 ENTRYPOINT ./wait-for-it.sh rabbit:5672; ./wait-for-it.sh mysql:3306; ./startup.sh; tail -f /dev/null
