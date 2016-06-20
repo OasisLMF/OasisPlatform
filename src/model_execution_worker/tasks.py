@@ -5,13 +5,13 @@ import os
 import shutil
 import tarfile
 import time
+import sys
 
 import billiard as multiprocessing
 from celery import Celery
 from celery.task import task
 from common import data, helpers
 from ConfigParser import ConfigParser
-from model_execution_worker import calcBEutils
 
 '''
 Celery task wrapper for Oasis ktools calculation. 
@@ -19,6 +19,7 @@ Celery task wrapper for Oasis ktools calculation.
 
 CONFIG_PARSER = ConfigParser()
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
 INI_PATH = os.path.abspath(os.path.join(CURRENT_DIRECTORY, 'Tasks.ini'))
 CONFIG_PARSER.read(INI_PATH)
 
@@ -134,12 +135,12 @@ def start_analysis(analysis_settings, input_location):
     #os.symlink(model_data_path, os.path.join(working_directory, "static")) 
     shutil.copytree(model_data_path, os.path.join(working_directory, "static")) 
 
-    loadModule =  __import__("{}.{}".format(module_supplier_id, "supplierWSs"), globals(), locals(), ['calc' ], -1 )
+    model_runner_module =  __import__("{}.{}".format(module_supplier_id, "supplier_model_runner"), globals(), locals(), ['run' ], -1 )
 
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
 
-    loadModule.calc(analysis_settings['analysis_settings'])
+    model_runner_module.run(analysis_settings['analysis_settings'])
 
     output_location = helpers.generate_unique_filename()
     output_filepath = os.path.join(
