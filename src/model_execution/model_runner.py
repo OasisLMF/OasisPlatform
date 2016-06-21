@@ -8,12 +8,6 @@ import subprocess
 TODO: Module description
 '''
 
-
-def log_command(command):
-    ''' Log a command '''
-    pass
-
-
 class PerspOpts:
     GUL = 1
     FM = 2
@@ -72,10 +66,11 @@ ANALYSIS_TYPES = [
     ]
 
 
-def open_process(s, dir):
+def open_process(s, dir, log_command):
     ''' Wrap subprocess.Open. Returns the Popen object. '''
     p = subprocess.Popen(s, shell=True, cwd=dir)
-    log_command(s)
+    if log_command:
+        log_command(s)
     logging.debug('{} - process number={}'.format(s, p.pid))
     return p
 
@@ -83,7 +78,7 @@ def open_process(s, dir):
 def assert_is_pipe(p):
     ''' Check whether pipes used have been created'''
     assert stat.S_ISFIFO(os.stat(p).st_mode)
-
+78
 
 def waitForSubprocesses(procs):
     ''' Wait for a set of subprocesses. '''
@@ -191,7 +186,7 @@ def outputString(
     return str
 
 
-def run_analysis(analysis_settings, number_of_processes):
+def run_analysis(analysis_settings, number_of_processes, log_command=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
@@ -200,6 +195,7 @@ def run_analysis(analysis_settings, number_of_processes):
         analysis_settings (string): the analysis settings.
         number_of_processes: the number of processes to spawn.
     '''
+    
     frame = inspect.currentframe()
     func_name = inspect.getframeinfo(frame)[2]
     logging.info("STARTED: {}".format(func_name))
@@ -298,7 +294,7 @@ def run_analysis(analysis_settings, number_of_processes):
         for cmds in [tee_commands, output_commands]:
             for s in cmds:
                 if 'leccalc' not in s:
-                    procs += [open_process(s, model_root)]
+                    procs += [open_process(s, model_root, log_command)]
 
         for summaryFlag, pipe_prefix in [("-g", "gul"), ("-f", "il")]:
             myKey = pipe_prefix+'_summaries'
@@ -312,7 +308,7 @@ def run_analysis(analysis_settings, number_of_processes):
                 myPipe = "{}/{}{}".format(working_directory, pipe_prefix, p)
                 assert_is_pipe(myPipe)
                 s = "summarycalc {} {} < {}".format(summaryFlag, summaryString, myPipe)
-                procs += [open_process(s, model_root)]
+                procs += [open_process(s, model_root, log_command)]
 
         gulFlags = "-S{} ".format(analysis_settings['number_of_samples'])
         if 'gul_threshold' in analysis_settings:
@@ -350,17 +346,17 @@ def run_analysis(analysis_settings, number_of_processes):
             getModelTee += " {} > {}".format(getModelTeePipes[0], getModelTeePipes[1])
         elif len(getModelTeePipes) == 1:
             getModelTee += " > {}".format(getModelTeePipes[0])
-        procs += [open_process(getModelTee, model_root)]
+        procs += [open_process(getModelTee, model_root, log_command)]
 
         for s in gulIlCmds:
-            procs += [open_process(s, model_root)]
+            procs += [open_process(s, model_root, log_command)]
 
         assert_is_pipe('{}/getmodeltotee{}'.format(working_directory, p))
         s = 'eve {} {} | getmodel -i {} -d {} > {}/getmodeltotee{}'.format(
             p, number_of_processes,
             number_of_intensity_bins, number_of_damage_bins,
             working_directory, p)
-        procs += [open_process(s, model_root)]
+        procs += [open_process(s, model_root, log_command)]
 
     waitForSubprocesses(procs)
 
@@ -370,7 +366,7 @@ def run_analysis(analysis_settings, number_of_processes):
     for s in output_commands:
         if 'leccalc' in s:
             logging.info("{}".format(s))
-            procs += [open_process(s, model_root)]
+            procs += [open_process(s, model_root, log_command)]
 
     waitForSubprocesses(procs)
 
