@@ -2,34 +2,35 @@
 
 import os
 import sys
-import inspect
 import json
 import shutil
-import tempfile
-import time
 import logging
-import stat
-import subprocess
-from billiard import Process, Queue, cpu_count
+from multiprocessing import cpu_count
 from ..model_execution import model_runner
-
-sys.path.append(os.path.join(os.getcwd(), '..'))
-from common import helpers
 
 import argparse
 
 parser = argparse.ArgumentParser(description='Run a model using ktools.')
 
-parser.add_argument('-a', '--analysis_settings_json', type=str, required=True,
+parser.add_argument('-a', '--analysis_settings_json',
+                    type=str,
+                    required=True,
                     help="The analysis settings JSON file.")
-parser.add_argument('-d', '--analysis_root_directory', type=str, default=os.getcwd(),
+parser.add_argument('-d', '--analysis_root_directory',
+                    type=str,
+                    default=os.getcwd(),
                     help="The analysis root directory.")
-parser.add_argument('-p', '--number_of_processes', type=int, default=-1,
+parser.add_argument('-p', '--number_of_processes',
+                    type=int,
+                    default=-1,
                     help="The number of processes to use. " +
                     "Defaults to the number of available cores.")
-parser.add_argument('-c', '--command_debug_file', type=str, default='',
+parser.add_argument('-c', '--command_debug_file',
+                    type=str,
+                    default='',
                     help="Debug file for the generated commands.")
-parser.add_argument('-v', '--verbose', action='store_true',
+parser.add_argument('-v', '--verbose',
+                    action='store_true',
                     help='Verbose logging.')
 
 args = parser.parse_args()
@@ -42,9 +43,11 @@ do_verbose = args.verbose
 
 do_command_output = not command_debug_file == ''
 
+
 def log_command(command):
-     ''' Log a command '''
-     pass
+    ''' Log a command '''
+    pass
+
 
 if do_verbose:
     log_level = logging.DEBUG
@@ -57,7 +60,7 @@ logging.basicConfig(stream=sys.stdout, level=log_level, format=log_format)
 
 original_directory = os.getcwd()
 
-try: 
+try:
     # Set the number of processes
     if number_of_processes == -1:
         number_of_processes = cpu_count()
@@ -73,9 +76,11 @@ try:
             .format(analysis_rot_directory))
 
     if command_debug_file:
-        fully_qualified_command_debug_file = os.path.abspath(command_debug_file)
+        fully_qualified_command_debug_file = \
+            os.path.abspath(command_debug_file)
         with open(fully_qualified_command_debug_file, "w") as file:
             file.writelines("#!/bin/sh" + os.linesep)
+
         def log_command(command):
             with open(fully_qualified_command_debug_file, "a") as file:
                 file.writelines(command + os.linesep)
