@@ -6,7 +6,9 @@ import json
 import shutil
 import logging
 from multiprocessing import cpu_count
-from ..model_execution import model_runner
+
+sys.path.append(os.path.join(os.getcwd(), "..", "src"))
+from model_execution import model_runner
 
 import argparse
 
@@ -85,22 +87,18 @@ try:
             with open(fully_qualified_command_debug_file, "a") as file:
                 file.writelines(command + os.linesep)
 
-    os.chdir(analysis_rot_directory)
 
+    # Parse the analysis settings file
+    with open(analysis_settings_json) as file:
+        json = json.load(file)
+        analysis_settings = json['analysis_settings']
+
+    os.chdir(analysis_rot_directory)
     if os.path.exists("working"):
         shutil.rmtree('working')
     os.mkdir("working")
-
-    try:
-        # Parse the analysis settings file
-        with open(analysis_settings_json) as file:
-            analysis_settings = json.load(file)['analysis_settings']
-    except:
-        raise Exception(
-            "Failed to parse analysis settings file: {}"
-            .format(analysis_settings_json))
-
-    model_runner.run_analysis(analysis_settings, number_of_processes)
+    
+    model_runner.run_analysis(analysis_settings, number_of_processes, log_command)
 
 except Exception as e:
     logging.exception("Model execution task failed.")
