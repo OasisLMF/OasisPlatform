@@ -85,20 +85,21 @@ def waitForSubprocesses(procs):
 
     logging.info('Waiting for {} processes.'.format(len(procs)))
 
+
     for p in procs:
         if p.poll() is None:
             status = 'Running'
         else:
-            'Exited with status {}'.format(p.poll())
+            status = 'Exited with status {}'.format(p.poll())
         logging.debug('Process # {}: {}'.format(p.pid, status))
 
     for p in procs:
-        #command = "{}".format(p.pid)
-        #try:
-        with open('/proc/{}/cmdline'.format(p.pid), 'r') as cmdF:
-            command = cmdF.read()
-        #except:
-        #    pass
+        command = "{}".format(p.pid)
+        try:
+            with open('/proc/{}/cmdline'.format(p.pid), 'r') as cmdF:
+                command = cmdF.read()
+        except:
+            pass
         return_code = p.wait()
         if return_code == 0:
             logging.debug(
@@ -113,7 +114,7 @@ def waitForSubprocesses(procs):
 
 def outputString(
         dir, pipe_prefix, summary, output_command, input_pipe,
-        p, rs=[], proc_number=None):
+        rs=[], proc_number=None):
     '''
     TODO
     Creates the output command string for running ktools.
@@ -124,7 +125,6 @@ def outputString(
     summary (string):      summary id for input summary (0-9)
     output_command (string):    executable to use (leccalc, etc)
     input_pipe:
-    p:            number of periods for -P parameter in executables
     rs (string) (optional): results parameter - relevant for leccalc only.
     procNumber (string) (optional):
     returns:
@@ -149,7 +149,7 @@ def outputString(
     if output_command == "eltcalc":
         str = 'eltcalc < {} > {}'.format(input_pipe, output_filename)
     elif output_command == "leccalc":
-        str = 'leccalc -P{} -K{} '.format(p, input_pipe)
+        str = 'leccalc -K{} '.format(input_pipe)
         for r in rs:
             if output_command == "leccalc":
                 if r not in LEC_RESULT_TYPES:
@@ -177,9 +177,9 @@ def outputString(
             elif r == "return_period_file":
                 str += '-r '
     elif output_command == "aalcalc":
-        str = 'aalcalc -P{} < {} > {}'.format(p, input_pipe, output_filename)
+        str = 'aalcalc < {} > {}'.format(input_pipe, output_filename)
     elif output_command == "pltcalc":
-        str = 'pltcalc -P{} < {} > {}'.format(p, input_pipe, output_filename)
+        str = 'pltcalc < {} > {}'.format(input_pipe, output_filename)
     elif output_command == "summarycalc":
         str = '{} < {}'.format(output_filename, input_pipe)
 
@@ -219,12 +219,6 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
         tee_commands = []
         output_commands = []
 
-        #! TODO Deprecated
-        number_of_periods = 1000
-        #! Can these be inferred from the data?
-        number_of_intensity_bins = 121
-        number_of_damage_bins = 102
-
         if 'gul_summaries' in analysis_settings:
             pipe = '{}/gul{}'.format(working_directory, p)
             os.mkfifo(pipe)
@@ -254,7 +248,7 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
                                     summaryPipes += ['{}/{}{}summary{}{}'.format(working_directory, pipe_prefix, p, s["id"], a)]
                                     logging.debug('new pipe: {}\n'.format(summaryPipes[-1]))
                                     os.mkfifo(summaryPipes[-1])
-                                    output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], number_of_periods, proc_number=p)]
+                                    output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], proc_number=p)]
                                 elif isinstance(s[a], dict):
                                     if a == "leccalc":
                                         requiredRs = []
@@ -274,8 +268,8 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
                                         if myFile not in summaryPipes:
                                             summaryPipes += [myFile]
                                         if p == number_of_processes:   # because leccalc integrates input for all processors
-                                            logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, number_of_periods, myDirShort, requiredRs)))
-                                            output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), number_of_periods, requiredRs)]
+                                            logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, myDirShort, requiredRs)))
+                                            output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), requiredRs)]
                                     else:
                                         # TODO what is this? Should it be an error?
                                         logging.info('Unexpectedly found analysis {} with results dict {}\n'.format(a, rs))
@@ -352,9 +346,8 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
             procs += [open_process(s, model_root, log_command)]
 
         assert_is_pipe('{}/getmodeltotee{}'.format(working_directory, p))
-        s = 'eve {} {} | getmodel -i {} -d {} > {}/getmodeltotee{}'.format(
+        s = 'eve {} {} | getmodel > {}/getmodeltotee{}'.format(
             p, number_of_processes,
-            number_of_intensity_bins, number_of_damage_bins,
             working_directory, p)
         procs += [open_process(s, model_root, log_command)]
 
