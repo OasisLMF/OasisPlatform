@@ -1,5 +1,5 @@
-OUTPUT_ID,SUMMARY_ID,SUMMARYSET_ID
-1,1,1
-2,2,1
-1,1,2
-2,1,2
+"output_id", "summary_id", "summaryset_id"
+1, 1, 1
+2, 2, 1
+1, 1, 2
+2, 1, 2
