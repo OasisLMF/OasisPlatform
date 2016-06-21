@@ -3,11 +3,14 @@
 import os
 import sys
 import json
+import inspect
 import shutil
 import logging
 from multiprocessing import cpu_count
 
-sys.path.append(os.path.join(os.getcwd(), "..", "src"))
+CURRENT_DIRECTORY = \
+    os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
 from model_execution import model_runner
 
 import argparse
