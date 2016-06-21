@@ -1,5 +1,6 @@
 import inspect
 import logging
+import json
 import os
 import shutil
 import tarfile
@@ -154,6 +155,10 @@ def start_analysis(analysis_settings, input_location):
 
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
+
+    # Persist the analysis_settings 
+    with open("analysis_settings.json", "w") as json_file:
+        json.dump(analysis_settings, json_file)
 
     model_runner_module.run(analysis_settings['analysis_settings'])
 
