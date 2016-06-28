@@ -23,7 +23,7 @@ For Flower, the celery management application, browse to http://locathost:5555
 
 Note that ktools must be installed and the ktools docker image available. To create the ktools docker image, run the following command in the ktools base directory:
 ~~~
-  sudo git build -t ktools -f Dockerfile.ktools .
+  sudo docker build -t ktools -f Dockerfile.ktools .
 ~~~
 
 To run the API client tester, run the following commands.
