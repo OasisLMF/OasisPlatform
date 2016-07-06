@@ -533,7 +533,7 @@ original_directory = os.getcwd()
 try:
     # Set the number of partitions
     if number_of_partitions == -1:
-        number_of_partitions = cpu_count
+        number_of_partitions = cpu_count()
     if not os.path.exists(analysis_settings_json):
         raise Exception(
             'Analysis settings file does not exist:{}'
