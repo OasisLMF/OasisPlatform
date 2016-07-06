@@ -494,7 +494,7 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
             getModelTeePipes += [pipe]
             os.mkfifo(pipe)
             assert_is_pipe('{}/gul{}'.format(working_directory, p))
-            gulIlCmds += ['{} -c < {} > {}/gul{} '.format(get_model_ara, pipe, working_directory, p)]
+            gulIlCmds += ['{} < {} > {}/gul{} '.format(get_model_ara, pipe, working_directory, p)]
 
         pipe = '{}/getmodeltotee{}'.format(working_directory, p)
         os.mkfifo(pipe)
