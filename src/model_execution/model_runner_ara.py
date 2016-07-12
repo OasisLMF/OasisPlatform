@@ -483,19 +483,24 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
         getModelTeePipes = []
         gulIlCmds = []
         if 'il_summaries' in analysis_settings:
+            """
             pipe = '{}/getmodeltoil{}'.format(working_directory, p)
             getModelTeePipes += [pipe]
             os.mkfifo(pipe)
+            """
             assert_is_pipe('{}/il{}'.format(working_directory, p))
-            gulIlCmds += ['{} -i < {} | fmcalc > {}/il{}'.format(get_model_ara, pipe, working_directory, p)]
+            gulIlCmds += ['{} -i | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
 
         if 'gul_summaries' in analysis_settings:
+            """
             pipe = '{}/getmodeltogul{}'.format(working_directory, p)
             getModelTeePipes += [pipe]
             os.mkfifo(pipe)
+            """
             assert_is_pipe('{}/gul{}'.format(working_directory, p))
-            gulIlCmds += ['{} < {} > {}/gul{} '.format(get_model_ara, pipe, working_directory, p)]
+            gulIlCmds += ['{} > {}/gul{} '.format(get_model_ara, working_directory, p)]
 
+        """
         pipe = '{}/getmodeltotee{}'.format(working_directory, p)
         os.mkfifo(pipe)
 
@@ -509,15 +514,18 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
         elif len(getModelTeePipes) == 1:
             getModelTee += " > {}".format(getModelTeePipes[0])
         procs += [open_process(getModelTee, model_root, log_command)]
+        """
 
         for s in gulIlCmds:
             procs += [open_process(s, model_root, log_command)]
 
+        """ remove me
         assert_is_pipe('{}/getmodeltotee{}'.format(working_directory, p))
         s = 'eve {} {} > {}/getmodeltotee{}'.format(
             p, number_of_processes,
             working_directory, p)
         procs += [open_process(s, model_root, log_command)]
+        """
 
     waitForSubprocesses(procs)
 
@@ -537,3 +545,4 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
     end = time.time()
     logging.info("COMPLETED: {} in {}s".format(
         func_name, round(end - start, 2)))
+
