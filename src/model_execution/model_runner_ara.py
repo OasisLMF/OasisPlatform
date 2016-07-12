@@ -488,7 +488,7 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
             os.mkfifo(pipe)
             """
             assert_is_pipe('{}/il{}'.format(working_directory, p))
-            gulIlCmds += ['{} | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
+            gulIlCmds += ['{} -i | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
 
         if 'gul_summaries' in analysis_settings:
             """
@@ -497,7 +497,7 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
             os.mkfifo(pipe)
             """
             assert_is_pipe('{}/gul{}'.format(working_directory, p))
-            gulIlCmds += ['{} -i > {}/gul{} '.format(get_model_ara, working_directory, p)]
+            gulIlCmds += ['{} > {}/gul{} '.format(get_model_ara, working_directory, p)]
 
         """
         pipe = '{}/getmodeltotee{}'.format(working_directory, p)
