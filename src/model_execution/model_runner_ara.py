@@ -69,7 +69,7 @@ def open_process(s, dir, log_command):
     p = subprocess.Popen(s, shell=True, cwd=dir)
     if log_command:
         log_command(s)
-    logging.debug('{} - process number={}'.format(s, p.pid))
+    logging.info('{} - process number={}'.format(s, p.pid))
     return p
 
 
@@ -167,7 +167,6 @@ def build_get_model_cmd(session_id, partition_id, number_of_partitions, do_wind,
     number_of_samples_in_batch = number_of_samples
 
     gul_loss_threhold = 0
-#    output_flag = "-i"
     peril_flags = ('-w ' if do_stormsurge else '') + \
                   ('-W ' if do_wind else '') + \
                   ('-D ' if do_wind else '')
@@ -184,22 +183,21 @@ def build_get_model_cmd(session_id, partition_id, number_of_partitions, do_wind,
                         '-d{} -s{} -n{} -N{} -K{} -k{} -C{} -c{} ' + \
                         '-S{} -B{} -T{} {} -Y {}'
                     
-    get_model_cmd = get_model_cmd.format(
-                        input_data_directory,
-                        session_id,
-                        num_chunks,
-                        chunk_id,
-                        num_sub2_chunks,
-                        sub2_Chunk_id,
-                        num_sub_chunks,
-                        sub_chunk_id,
-                        number_of_samples,
-                        number_of_samples_in_batch,
-                        gul_loss_threhold,
-#                        output_flag,
-                        peril_flags,
-                        handleString)
-    
+    get_model_cmd = 'getmodelara ' + \
+                    "-s{} ".format(session_id) + \
+                    "-n{} ".format(num_chunks) + \
+                    "-N{} ".format(chunk_id) + \
+                    "-K{} ".format(num_sub2_chunks) + \
+                    "-k{} ".format(sub2_Chunk_id) + \
+                    "-C{} ".format(num_sub_chunks) + \
+                    "-c{} ".format(sub_chunk_id) + \
+                    "-S{} ".format(number_of_samples) + \
+                    "-B{} ".format(number_of_samples_in_batch) + \
+                    "-T{} ".format(gul_loss_threhold) + \
+                    "{} ".format(peril_flags) + \
+                    "{} ".format(handleString) + \
+                    "-Y "
+
     return get_model_cmd
 
 def outputString(
@@ -467,7 +465,8 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
 
         partition_id = p
         number_of_partitions = number_of_processes
-        input_data_directory = os.path.join(os.getcwd(), "data")
+#        input_data_directory = os.path.join(os.getcwd(), "data")
+        input_data_directory = os.path.join(os.getcwd())
         session_id = model_settings["session_id"]
         do_wind = bool(model_settings["peril_wind"])
         do_stormsurge = bool(model_settings["peril_surge"])
