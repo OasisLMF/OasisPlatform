@@ -1,4 +1,5 @@
 import inspect
+import itertools
 import time
 import uuid
 from functools import wraps
@@ -37,16 +38,20 @@ def oasis_log(logger):
         def wrapper(*args, **kwargs):
             func_name = func.__name__
             logger.info("STARTED: {}".format(func.__name__))
-            args, _, _, values = \
-                inspect.getargvalues(inspect.currentframe())
-            for i in args:
-                if i == "self":
+
+            args_name = inspect.getargspec(func)[0]
+            args_dict = dict(itertools.izip(args_name, args))
+
+            for key, value in args_dict.iteritems():
+                if key == "self":
                     continue
-                logger.info("{}={}").format(i, values[i])
+                logger.debug("{} == {}".format(key,value))
+
+            for key, value in kwargs.iteritems():
+                logger.debug("{} == {}".format(key,value))
+
             start = time.time()
-
             result = func(*args, **kwargs)
-
             end = time.time()
             logger.info(
                 "COMPLETED: {} in {}s".format(
