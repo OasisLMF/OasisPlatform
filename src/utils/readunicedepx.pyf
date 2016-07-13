@@ -1,0 +1,278 @@
+!    -*- f90 -*-
+python module readunicedepx ! in 
+    interface  ! in :ReadUnicedePX.for
+        integer function GetUpxRecordType(upx_str, polid60) ! in :GetUpxRecordType:ReadUnicedePX.for
+            character*(*) :: upx_str
+            character*(*), intent(out) :: polid60 
+        end function GetUpxRecordType
+
+
+
+
+      integer function ParseLocationRecord(upx_str,iversion,polid,locid, &
+             AreaScheme,StateFIPS,CountyFIPS,ZIP5,GeoLat,GeoLong, &
+             RiskCount,RepValBldg,RepValOStr,RepValCont,RepValTime, &
+             RVDaysCovered,ConType,ConBldg,ConOStr,OccType,Occ, &
+             YearBuilt,Stories,GrossArea,PerilCount,Peril,LimitType, &
+             Limits,Participation,DedType,Deds,territory,subArea, &
+             ReinsCount,ReinsOrder,ReinsType,ReinsCID, &
+             ReinsField1,ReinsField2,ReinsField3,ReinsField4) 
+
+		integer, parameter :: maxre=5 ! maximum number of ceded reinsurance contracts that protect any one layer
+
+	      character*(*) upx_str       ! upx location record string
+	      integer iversion            ! upx file verion x 10 (must be 90, 95, 100, 105, 110, 115, 120, 125, 130, or 140)
+
+	      character*(32), intent(out) :: polid         ! 02/02/02/02 policy ID (up to 32 characters)
+	      character*(60), intent(out) :: locid         ! 03/03/03/03 location ID (up to 60 characters)
+	      character*(60), intent(out) :: ISOBIN       ! xx/xx/xx/04 ISO building ID number (up to ** characters)
+	      character*(60), intent(out) :: name         ! 04/04/04/05 location name (up to 60 characters)
+	      character*(60), intent(out) :: address      ! 05/05/05/06 location street address (up to 60 characters)
+	      character*(60), intent(out) :: city         ! 06/06/06/07 location city (up to 60 characters)
+	      integer, intent(out) :: AreaScheme          ! 07/07/07/08 type of area codes; must be 1003 (ZIP5) or 1008 (ZIP9)
+	      integer, intent(out) :: StateFIPS           ! 08/08/08/09 area (2-digit state FIPS)
+	      integer, intent(out) :: CountyFIPS          ! 09/09/09/10 subArea (3-digit county FIPS)
+	      integer, intent(out) :: ZIP5                ! 10/10/10/11 postalArea (5-digit ZIP Code)
+	      integer, intent(out) :: country							! 11/11/11/12 country code (US=1)
+	      real, intent(out) :: GeoLat                 ! 12/12/12/13 latitude (degrees North; south is negative)
+	      real, intent(out) :: GeoLong                ! 13/13/13/14 longitude (degrees East; west is negative)
+	      integer, intent(out) :: RiskCount           ! 18/18/18/19 number of risks (positive integer)
+	      real, intent(out) :: RepValBldg             ! 19/19/19/20 total replacement value of the building(s) or ITV if value given is between 0 and 1
+	      real, intent(out) :: RepValOStr             ! 20/20/20/21 total replacement value of other structures or ITV if value given is between 0 and 1
+	      real, intent(out) :: RepValCont             ! 21/21/21/22 sum of replacement values or ACVs of the contents or ITV if value given is between 0 and 1
+	      real, intent(out) :: RepValTime             ! 22/22/22/23 total time element coverage for a period of RVDaysCovered
+	      real, intent(out) :: RVDaysCovered          ! 23/23/23/24 number of days represented by the value in RepValTime
+	      character*(3), intent(out) :: ConType       ! 25/25/25/26 construction code source: AIR, ITC, ISE, ISF, ISW, RMI, or RMS
+	      integer, intent(out) :: ConBldg             ! 26/26/26/27 construction class (*** are non-AIR classes coded as integers? ***)
+	      integer, intent(out) :: ConOStr             ! 27/27/27/28 construction class (*** are non-AIR classes coded as integers? ***)
+	      character*(3), intent(out) :: OccType       ! 29/29/29/30 occupancy code source: AIR, ITC, ISB, ISC, ISO, RMI, RMS, RWC, SIC
+	      integer, intent(out) :: Occ                 ! 30/30/30/31 occupancy class (*** are non-AIR classes coded as integers? ***)
+	      integer, intent(out) :: YearBuilt           ! 31/31/31/32 year built or year of last major upgrade
+	      real, intent(out) :: Stories                ! 32/32/32/33 number of floors
+	      real, intent(out) :: GrossArea              ! 35/35/35/36 total area of the building, in square feet or square meters (???)
+	      integer, intent(out) :: PerilCount					! 36/36/36/37 number perils for which insurance terms are unique
+	      character*30, intent(out) :: Peril          ! 37/37/37/38 peril code (up to 30 characters)
+	      character*1, intent(out) :: LimitType       ! 38/38/38/39 limit type: N=none (see layer record), C=by coverage, S=sum of coverages
+	      real, intent(out) :: Limits(4)              ! 39/39/39/40 building or site limit
+																! 40/40/40/41 other structures limit 
+																! 41/41/41/42 contents limit 
+																! 42/42/42/43 time element limit 
+	      real, intent(out) :: Participation          ! xx/43/43/44 fraction of risk covered by the insurer (0.0 to 1.0)
+	      real, intent(out) :: Participation2         ! xx/xx/44/45 fraction of risk owned by the insured party or working interest (0.0 to 1.0)
+	      character*2, intent(out) :: DedType         ! 43/44/45/46 deductible type: NO, BA, BP, CA, CP, DA, DP, FR, MA, ML, MP, SA, SP, SL, AA
+	      real, intent(out) :: Deds(4)                ! 44/45/46/47 building or site deductible
+																! 45/46/47/48 other structures deductible (SA,SP,C*,D*,B*) or fraction of A+B+C loss (ML)
+																! 46/47/48/49 contents deductible (SA,SP,C*,D*,B*)
+																! 47/48/49/50 time element deductible (SA,SP,C*,D*,ML)
+	      character*30, intent(out) :: territory			! 48/49/50/51 user defined territory (up to 30 characters)
+	      character*30, intent(out) :: subArea				! 49/50/51/52 user defined sublimit area code (up to 30 characters)
+
+	      integer, intent(out) :: ReinsCount          ! 50/51/52/53 number of ceded reinsurance contracts that protect this location (if none enter 0 and stop parsing record; otherwise, repeat fields 23-29 for each contract)
+	      integer, intent(out) :: ReinsOrder(maxre)     ! 51/52/53/54 reinsurance order
+	      character*4, intent(out) :: ReinsType(maxre)  ! 52/53/54/55 ceded reinsurance type (up to 4 characters): PFCP=proportional facultative as ceded %, PFCA=proportional facultative as ceded amount, NFG=non-proportional facultative in terms of insurers gross limit; SS=surplus share treaty
+	      character*32, intent(out) :: ReinsCID(maxre)  ! 53/54/55/56 reinsurance certificate or program ID (up to 32 characters)
+	      real, intent(out) :: ReinsField1(maxre)       ! 54/55/56/57 ceded reinsurance field 1 for types PFCP (fraction ceded), PFCA (amount ceded), NFG or SS (layer number of ceded excess)
+	      real, intent(out) :: ReinsField2(maxre)       ! 55/56/57/58 ceded reinsurance field 2 for types NFG or SS (gross limit of the layer)
+	      real, intent(out) :: ReinsField3(maxre)       ! 56/57/58/59 ceded reinsurance field 3 for types NFG or SS (attachment point of the layer) 
+	      real, intent(out) :: ReinsField4(maxre)       ! 57/58/59/60 ceded reinsurance field 4 for types NFG or SS (fraction of the layer ceded)
+
+	end function ParseLocationRecord
+
+      integer function ParsePolicyRecord(upx_str,iversion,polid, &
+              Name,Address,UDF1,UDF2,UDF3,UDF4,UDF5, &
+              InsuredIDType,InsuredID,EffFrom,EffTo, &
+              Currency,ExchRate,UserLOB,Peril, &
+              PolForm,Status,ContractType) ! in :ParsePolicyRecord:ReadUnicedePX.for
+	      character*(*) :: upx_str
+		integer :: iversion   
+
+	      character*(32), intent(out)  :: polid  
+	      character*(60), intent(out) :: Name   
+	      character*(100), intent(out) :: Address
+	      character*(20), intent(out) :: UDF1   
+	      character*(20), intent(out) :: UDF2   
+	      character*(20), intent(out) :: UDF3   
+	      character*(20), intent(out) :: UDF4   
+	      character*(20), intent(out) :: UDF5   
+	      character*(6), intent(out) :: InsuredIDType
+	      character*(20), intent(out) :: InsuredID   
+	      integer, intent(out) :: EffFrom           
+	      integer, intent(out) :: EffTo             
+	      character*(3), intent(out) :: Currency    
+	      integer, intent(out) :: ExchRate          
+	      character*(10), intent(out) :: UserLOB     
+	      character*(30), intent(out) :: Peril       
+	      character*(10), intent(out) :: PolForm     
+	      character(len=1), intent(out) :: Status      
+	      character*(3), intent(out) :: ContractType
+
+	end function ParsePolicyRecord
+
+	integer function ParseLayerRecord(upx_str,iversion,polid, &
+	     layerid,Premium,Peril,LimitType,Limit1,Limit2, &
+	     AttachPt,LimitA,LimitB,LimitC,LimitD, &
+	     AttachPtA,AttachPtB,AttachPtC,AttachPtD, &
+	     DedType,DedAmt1,DedAmt2,Reinst, &
+	     ReinsCount,ReinsOrder,ReinsType,ReinsCID, &
+	     ReinsField1,ReinsField2,ReinsField3,ReinsField4) ! in :ParseLayerRecord:ReadUnicedePX.for
+
+
+	      character*(*) upx_str       ! upx location record string
+		integer iversion            ! upx file verion x 10 (must be 90, 95, 100, 105, 110, 115, 120, 125, 130 or 140)
+
+	      character*(32), intent(out) :: polid         ! 02 policy ID (up to 32 characters)
+	      character*(60), intent(out) :: layerid       ! 03 layer ID (up to 60 characters)
+		real, intent(out) :: Premium                ! 04 total premium received for this layer
+	      character*(30), intent(out) :: Peril         ! 05 layer peril code (up to 30 characters)
+	      character*(6), intent(out) :: LimitType     ! 06 layer limit type (up to 6 characters): B=blanket, E=excess, *** not supported *** C=limit by coverage, CB=combined limit for A+B+C with separate for D, CSL100=offshore, CSLAI=offshore
+	      real, intent(out) :: Limit1                 ! 07 layer limit field 1 for layer types B (total insured or "blanket" limit) or E (primary limit), CSL100 or CSLAI (layer limit) -- not use for layer types C or CB
+	      real, intent(out) :: Limit2                 ! 08 layer limit field 2 for layer types E or C (gross limit)
+	      real, intent(out) :: AttachPt               ! 09 attachment point fo this layer
+
+	      real, intent(out) :: LimitA                 ! XX/10 layer limit field for layer types C, CB, CSL100, or CSLAI (enter 0 for types B and E)
+	      real, intent(out) :: LimitB                 ! XX/11 layer limit field for layer types C, CSL100, or CSLAI (enter 0 for other types)
+	      real, intent(out) :: LimitC                 ! XX/12 layer limit field for layer types C, CSL100, or CSLAI (enter 0 for other types)
+	      real, intent(out) :: LimitD                 ! XX/13 layer limit field for layer types C, CB, CSL100, or CSLAI (enter 0 for types B and E)
+	      real, intent(out) :: AttachPtA              ! XX/14 attachment point for layer types C, CB (enter 0 for other types)
+	      real, intent(out) :: AttachPtB              ! XX/15 attachment point for layer type C (enter 0 for other types)
+	      real, intent(out) :: AttachPtC              ! XX/16 attachment point for layer type C (enter 0 for other types)
+	      real, intent(out) :: AttachPtD              ! XX/17 attachment point for layer types C, CB (enter 0 for other types)
+
+	      character*(3), intent(out) :: DedType       ! 10/18 deductible type: NO, AP, BL, FR, MA, MA2, MM, MM2, MI, MI2, PL (up to 3 characters)
+	      real, intent(out) :: DedAmt1                ! 11/19 deductible amount 1: minimum for types MM, MM2, MI, MI2; maximum for MA, MA2; blanket deduc for BL, FR, percentage for PL
+	      real, intent(out) :: DedAmt2                ! 12/20 deductible amount 2: maximum for types MM, MM2
+	      integer, intent(out) :: Reinst              ! 13/21 maximum number of reinstatements (reserved for future use, enter 0)
+
+	      integer, intent(out) :: ReinsCount          ! 14/22 number of ceded reinsurance contracts that protect this layer (if none enter 0 and stop parsing record; otherwise, repeat fields 23-29 for each contract)
+	      integer, intent(out) :: ReinsOrder     ! 15/23 reinsurance order
+	      character*(4), intent(out) :: ReinsType  ! 16/24 ceded reinsurance type (up to 4 characters): PFCP=proportional facultative as ceded %, PFCA=proportional facultative as ceded amount, NFG=non-proportional facultative in terms of insurers gross limit; SS=surplus share treaty
+	      character*(32), intent(out) :: ReinsCID  ! 17/25 reinsurance certificate or program ID (up to 32 characters)
+	      real, intent(out) :: ReinsField1       ! 18/26 ceded reinsurance field 1 for types PFCP (fraction ceded), PFCA (amount ceded), NFG or SS (layer number of ceded excess)
+	      real, intent(out) :: ReinsField2       ! 19/27 ceded reinsurance field 2 for types NFG or SS (gross limit of the layer)
+	      real, intent(out) :: ReinsField3       ! 20/28 ceded reinsurance field 3 for types NFG or SS (attachment point of the layer) 
+	      real, intent(out) :: ReinsField4       ! 21/29 ceded reinsurance field 4 for types NFG or SS (fraction of the layer ceded)
+	end function ParseLayerRecord
+
+      integer function ParseSublimitRecord(upx_str,iversion,polid, &
+	     layerid,AreaCode,Peril,LimitType,Limit1,Limit2, &
+	     LimitA,LimitB,LimitC,LimitD,AttachPt, &
+	     AttachPtA,AttachPtB,AttachPtC,AttachPtD, &
+	     DedType,DedAmt1,DedAmt2,Reinst) ! in :ParseSublimitRecord:ReadUnicedePX.for
+
+
+	      character*(*) upx_str       ! upx location record string
+		integer iversion            ! upx file verion x 10 (must be 90, 95, 100, 105, 110, 115, 120, 125, 130 or 140)
+
+	      character*(32), intent(out) :: polid         ! 02 policy ID (up to 32 characters)
+	      character*(60), intent(out) :: layerid       ! 03 layer ID (up to 60 characters)
+	      character*(20), intent(out) :: AreaCode      ! 04 sublimit area code (up to 20 characters)
+	      character*(30), intent(out) :: Peril         ! 05 sublimit peril code (up to 30 characters)
+	      character*(6), intent(out) :: LimitType     ! 06 sublimit type (up to 6 characters): B=blanket, E=excess, *** not supported *** C=limit by coverage, CB=combined limit for A+B+C with separate for D, CSL100=offshore, CSLAI=offshore
+	      real, intent(out) :: Limit1                 ! 07 sublimit field 1 for sublimit types B or E
+	      real, intent(out) :: Limit2                 ! 08 sublimit field 2 for sublimit type E
+	      real, intent(out) :: LimitA                 ! XX/09/09 sublimit field for sublimit types C, CB, CSL100, or CSLAI
+	      real, intent(out) :: LimitB                 ! XX/10/10 sublimit field for sublimit types 
+	      real, intent(out) :: LimitC                 ! XX/11/11 sublimit field for sublimit types C, CSL100, or CSLAI
+	      real, intent(out) :: LimitD                 ! XX/12/12 sublimit field for sublimit types C, CB, CSL100, or CSLAI
+	      real, intent(out) :: AttachPt               ! 09/13/13 attachment point for sublimit types B or E
+	      real, intent(out) :: AttachPtA              ! XX/XX/14 attachment point for sublimit types C, CB, CSL100, or CSLAI
+	      real, intent(out) :: AttachPtB              ! XX/XX/15 attachment point for sublimit types C, CSL100, or CSLAI
+	      real, intent(out) :: AttachPtC              ! XX/XX/16 attachment point for sublimit types C, CSL100, or CSLAI
+	      real, intent(out) :: AttachPtD              ! XX/XX/17 attachment point for sublimit types C, CB, CSL100, or CSLAI
+	      character*(3), intent(out) :: DedType       ! 10/14/18 deductible type: NO, MM, MM2, MI, MI2, MA, MA2 (up to 3 characters)
+	      real, intent(out) :: DedAmt1                ! 11/15/19 deductible amount 1: minimum for types MM, MM2, MI, MI2; maximum for MA, MA2
+	      real, intent(out) :: DedAmt2                ! 12/16/20 deductible amount 2: maximum for types MM, MM2
+	      integer, intent(out) :: Reinst              ! 13/17/21 maximum number of reinstatements (reserved for future use, enter 0)
+
+	end function ParseSublimitRecord
+
+
+      integer function ParseLocationDetailRecord(upx_str,iversion, &
+             polid64,locid64, &
+             IrFloorOfInterest,IrTreeExposure,IrSmallDebris, &
+             IrLargeDebris,IrTerrainRoughness,IrAdBldHeight,IrFFE, &
+             IrRoofGeometry,IrRoofPitch,IrRoofCover,IrRoofDeck, &
+             IrRoofCoverAttach,IrRoofDeckAttach,IrRoofAnchorage, &
+             IrRoofBuilt,IrWall,IrWallSiding,IrGlassType, &
+             IrGlassPercent,IrWindowProt,IrExteriorDoors, &
+             IrBldFndConn,IrFoundation,IrAttachStruct,IrAppurtStruct, &
+             IrMechSystem) 
+
+	      character*(*) upx_str       ! upx location record string
+		integer iversion            ! upx file verion x 10 (must be 90, 95, 100, 105, 110, 115, 120, 125, 130 or 140)
+
+	      character*32, intent(out) :: polid64        !  2 policy ID (up to 32 characters)
+	      character*60, intent(out) :: locid64        !  3 location ID (up to 60 characters)
+	      integer, intent(out) :: IrFloorOfInterest   !  5 identifies floof of concern if coverage is not for entire building
+	      integer, intent(out) :: IrTreeExposure      !  8 tree hazard near building:           0=unknown, 1=no, 2=yes
+	      integer, intent(out) :: IrSmallDebris       !  9 small missile hazard within 200 ft:  0=unknown, 1=no, 2=yes
+	      integer, intent(out) :: IrLargeDebris       ! 10 large missile hazard within 200 ft:  0=unknown, 1=no, 2=yes
+	      integer, intent(out) :: IrTerrainRoughness  ! 11 terrain conditions near building:    0=unknown, 1=A, 2=B, 3=C (or HVHZ), 4=D
+	      integer, intent(out) :: IrAdBldHeight       ! 12 average height of adjacent buildings:0=unknown, N=number of stories
+	      
+	      integer, intent(out) :: IrFFE               ! 18 IrSpecial (special EQ-resistant systems) field used as back door to input First Floor Elevation
+		                          ! For known FFE (w.r.t. NAVD88), then IrFFE=nint(10.*FFE+10000.) else IrFFE=0 (unknown) where FFE is in feet above (positive) or below (negative) NAVD88
+		                          ! If (IrFFE>5000) then FFE=real(IrFFE-10000)/10. else FFE=-99. (unknown) 
+		                          ! Example1: FFE=3.5 feet below NAVD88, then IrFFE=9965
+		                          ! Example2: FFE=3.5 feet above NAVD88, then IrFFE=10035
+		                          ! Example3: FFE=unknown, then IrFFE=0
+	      
+	      integer, intent(out) :: IrRoofGeometry      ! 20 roof shape:   0=unk, 1=flat, 2=unbr gable, 3=hip, 4=complex, 
+		                          !                  5=stepped, 6=shed, 7=mansard, 8=br gable, 
+		                          !                  9=pyramid, 10=gambrel
+	      integer, intent(out) :: IrRoofPitch         ! 21 roof slope:   0=unk, 1=low (<10deg), 2=med (10-30deg), 3=high (>30deg)
+	      integer, intent(out) :: IrRoofCover         ! 22 roof cover:   0=unk, 1=asphalt shingles, 2=wood shingles, 
+		                          !                  3=clay/conc tiles, 4=metal panels, 5=slate, 
+		                          !                  6=BUR w/ gravel, 7=SPM, 8=standing seam, 
+		                          !                  9=BUR w/o gravel, 10=SPM ballasted, 11=FBC equiv.
+			                    !                  ADDED: 12=FBC-Shingle, 13=FBC-Tile, 14=poured concrete
+	      integer, intent(out) :: IrRoofDeck          ! 23 roof deck:    0=unk, 1=plywood, 2=wood planks, 3=OSB/particle board,
+		                          !                  4=metal deck with insulation board, 5=concrete on metal forms,
+		                          !                  6=precast concrete, 7=reinf. concrete, 8=light metal
+	      integer, intent(out) :: IrRoofCoverAttach   ! 24 RC fasteners: 0=unk, 1=screws, 2=nails/staples, 3=adhesive/epoxy,
+		                          !                  4=mortar
+	      integer, intent(out) :: IrRoofDeckAttach    ! 25 RD fasteners: 0=unk, 1=screws/bolts, 2=nails, 3=adhesive/epoxy,
+		                          !                  4=structurally connected, 5=6d@6/12, 6=8d@6/12,
+		                          !                  7=8d@6/6
+	      integer, intent(out) :: IrRoofAnchorage     ! 26 roof-wall:    0=unk, 1=hurricane ties, 2=nails/screws, 3=anchor bolts,
+		                          !                  4=gravity, 5=adhesive/epoxy, 6=structurally connected,
+		                          !                  7=clips, ADDED: 8=double wraps 
+	      integer, intent(out) :: IrRoofBuilt         ! 27 roof year:    0=unk, NNNN=year built/installed
+	      integer, intent(out) :: IrWall              ! 28 wall type:    0=unk, 1=brick/URM, 2=RM, 3=plywood, 4=wood planks,
+		                          !                  5=OSB/particle board, 6=metal panels, 7=precast concrete,
+		                          !                  8=cast-in-place concrete, 9=gypsum board
+	      integer, intent(out) :: IrWallSiding        ! 29 wall siding:  0=unk, 1=veneer brick/masonry, 2=wood shingles, 3=clapboards,
+		                          !                  4=aluminum/vinyl siding, 5=stone panels, 6=EIFS, 7=stucco
+	      integer, intent(out) :: IrGlassType         ! 30 glass type:   0=unk, 1=annealed, 2=tempered, 3=heat strengthened,
+		                          !                  4=laminated, 5=insulating glass units
+	      integer, intent(out) :: IrGlassPercent      ! 31 % wall area:  0=unk, 1=<5%, 2=5-20%, 3=20-60%, 4=>60%
+	      integer, intent(out) :: IrWindowProt        ! 32 protection:   0=unk, 1=none, 2=non-engineered (ARA ordinary), 3=engineered, ADDED: 4=basic, 5=plywood, 6=OSB
+	      integer, intent(out) :: IrExteriorDoors     ! 33 ext. doors    0=unk, 1=single width, 2=double width, 3=reinf. single,
+		                          !                  4=reinf. double, 5=sliders, 6=reinf. sliders
+	      integer, intent(out) :: IrBldFndConn        ! 34 connection    0=unk, 1=hurricane ties, 2=nails/screws, 3=anchor bolts,
+		                          !                  4=gravity, 5=adhesive/epoxy, 6=structurally connected
+	      
+	      integer, intent(out) :: IrFoundation        ! 35 Foundation   0= unknown/default, 1= Masonry basement, 2= concrete basement, 3= NOT USED
+		                          !                 4= Crawlspace-cripple wall (wood), 5= Crawlspace-masonry (wood), 6= Post & Pier
+		                          !                 7= Footing, 8= Mat/slab, 9=Pile, 10= No basement, 11= Engineering foundation, 
+		                          !                 12= Crawlspace-raised (wood)   .....Added by ***DRM*** 11/19/2013
+	      
+	      integer, intent(out) :: IrAttachStruct      ! 37 attached str. 0=unk, 1=carports/canopies/porches, 2=single door garage,
+		                          !                  3=double door garage, 4=reinf. single garage, 
+		                          !                  5=reinf, double garage, 6=screened porches/glass patio doors,
+		                          !                  7=balcony, 8=none
+	      integer, intent(out) :: IrAppurtStruct      ! 38 detached str. 0=unk, 1=detached garage, 2=pool enclosures, 3=shed,
+		                          !                  4=masonry boundary wall, 5=other fence, 6=no appurt str,
+		                          !                  7=no pool enclosures
+	      integer, intent(out) :: IrMechSystem        ! 39 roof top eq.  0=unk, 1=chimneys, 2=a/c units, 3=skylights, 4=parapets,
+		                          !                  5=overhang/rake (8"-36"), 6=dormers, 7=other, 
+		                          !                  8=no attached structures, 9=overhang/rake (<8"),
+		                          !                  10=overhang/rake (>36"), 11=waterproof membrane/fabric,
+		                          !                  12=SWR, 13=No SWR
+
+	end function ParseLocationDetailRecord
+    end interface 
+
+end python module readunicedepx
+
+
