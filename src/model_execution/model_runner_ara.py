@@ -225,6 +225,9 @@ def outputString(
             output_pipe = "{}/{}_{}_{}{}_{}".format(
                 working_directory, pipe_prefix, summary, output_command, "", proc_number)
             os.mkfifo(output_pipe)
+        elif output_command == 'aalcalc':
+            output_filename = "p{}.bin".format(proc_number)
+            # output_filename = os.path.join(dir, file)
         else:
             file = "{}_{}_{}{}_{}.csv".format(
                 pipe_prefix, summary, output_command, "", proc_number)
@@ -271,7 +274,14 @@ def outputString(
             elif r == "return_period_file":
                 str += '-r '
     elif output_command == "aalcalc":
-        str = 'aalcalc < {} > {}'.format(input_pipe, output_filename)
+        myDirShort = os.path.join('work', "{}aalSummary{}".format(pipe_prefix, summary))
+        myDir = os.path.join(os.getcwd(), myDirShort)
+        for d in [os.path.join(os.getcwd(), 'work'), myDir]:
+            if not os.path.isdir(d):
+                logging.debug('mkdir {}\n'.format(d))
+                os.mkdir(d, 0777)
+
+        str = 'aalcalc < {} > {}'.format(input_pipe, os.path.join(myDirShort, output_filename))
     elif output_command == "pltcalc":
         str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "summarycalc":
@@ -407,16 +417,20 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
                                     os.mkfifo(summaryPipes[-1])
                                     output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], proc_number=p)]
 
-                                    if a in ['eltcalc', 'pltcalc'] and p == number_of_processes:
-                                        spCmd = output_commands[-1].split('>')
-                                        if len(spCmd) >= 2:
-                                            postOutputCmd = "cat "
-                                            for inputPipeNumber in range(1, number_of_processes + 1):
-                                                postOutputCmd += "{} ".format(spCmd[-1].replace(str(p), str(inputPipeNumber)))
-                                            spCmd2 = spCmd[-1].split('/')
-                                            if len(spCmd2) >= 2:
-                                                postOutputCmd += "> {}.csv".format(os.path.join(output_directory, spCmd2[-1].replace("_"+str(p),'')))
-                                        procs += [open_process(postOutputCmd, model_root, log_command)]
+                                    if p == number_of_processes:
+                                        if a in ['eltcalc', 'pltcalc']:
+                                            spCmd = output_commands[-1].split('>')
+                                            if len(spCmd) >= 2:
+                                                postOutputCmd = "cat "
+                                                for inputPipeNumber in range(1, number_of_processes + 1):
+                                                    postOutputCmd += "{} ".format(spCmd[-1].replace(str(p), str(inputPipeNumber)))
+                                                spCmd2 = spCmd[-1].split('/')
+                                                if len(spCmd2) >= 2:
+                                                    postOutputCmd += "> {}.csv".format(os.path.join(output_directory, spCmd2[-1].replace("_"+str(p),'')))
+                                            procs += [open_process(postOutputCmd, model_root, log_command)]
+                                        elif a == 'aalcalc':
+                                            aalfile = "{}/{}_{}_aalcalc.csv".format(output_directory, pipe_prefix, s['id'])
+                                            output_commands += ["aalsummary -K{}aalSummary{} > {}".format(pipe_prefix, s['id'], aalfile)]
 
                                 elif isinstance(s[a], dict):
                                     if a == "leccalc":
@@ -456,7 +470,7 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
         # now run them in reverse order from consumers to producers
         for cmds in [tee_commands, output_commands]:
             for s in cmds:
-                if 'leccalc' not in s:
+                if 'leccalc' not in s and 'aalsummary' not in s:
                     procs += [open_process(s, model_root, log_command)]
 
         for summaryFlag, pipe_prefix in [("-g", "gul"), ("-f", "il")]:
@@ -550,7 +564,7 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
     # Run leccalc as it reads from a file produced by tee processors and
     # is run just once for ALL processors
     for s in output_commands:
-        if 'leccalc' in s:
+        if 'leccalc' in s or 'aalsummary' in s:
             logging.info("{}".format(s))
             procs += [open_process(s, model_root, log_command)]
 
