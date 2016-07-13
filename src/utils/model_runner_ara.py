@@ -89,69 +89,47 @@ def extract_tivs(upx_filename):
 
 
 @helpers.oasis_log(logging.getLogger())
-def write_exposure_files(api1a_json, tivs, item_filename, coverage_filename):
+def write_exposure_files(api1a_json, tivs, item_filename):
     ''' Write out the Oasis item and coverage files given an API1a response'''
 
     # For now groupID = itemID
-    with open(item_filename, "w") as item_file,\
-            open(coverage_filename, "w") as coverage_file:
+    with open(item_filename, "w") as item_file:
         item_id = 1
         coverage_id = 1
         for loc in api1a_json['Locations']:
             for av in loc['AVs']:
-                if av["PerilID"] == PERIL_WIND:
+                if av["PerilID"] == PERIL_WIND:                    
                     for covs in av['CoverageAndVulnerabilities']:
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Bldg')]
-                        coverage_file.write(
-                            struct.pack('if', coverage_id+0, myTIV))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Ostr')]
-                        coverage_file.write(
-                            struct.pack('if', coverage_id+1, myTIV))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Cont')]
-                        coverage_file.write(
-                            struct.pack('if', coverage_id+2, myTIV))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Time')]
-                        coverage_file.write(
-                            struct.pack('if', coverage_id+3, myTIV))
-                    for covs in av['CoverageAndVulnerabilities']:
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Bldg')]
                         item_file.write(struct.pack(
                             'iiiii',
                             item_id+0, coverage_id+0, av['AreaPerilID'],
                             covs['VulnerabilityID'], item_id))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Ostr')]
                         item_file.write(struct.pack(
                             'iiiii',
                             item_id+1, coverage_id+1, av['AreaPerilID'],
                             covs['VulnerabilityID'], item_id))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Cont')]
                         item_file.write(struct.pack(
                             'iiiii',
                             item_id+2, coverage_id+2, av['AreaPerilID'],
                             covs['VulnerabilityID'], item_id))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Time')]
                         item_file.write(struct.pack(
                             'iiiii',
                             item_id+3, coverage_id+3, av['AreaPerilID'],
                             covs['VulnerabilityID'], item_id))
                 elif av["PerilID"] == PERIL_STORMSURGE:
-                    for covs in av['CoverageAndVulnerabilities']:
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Bldg')]
+                    for covs in av['CoverageAndVulnerabilities']:                        
                         item_file.write(struct.pack(
                             'iiiii',
                             item_id+4, coverage_id+0, av['AreaPerilID'],
                             covs['VulnerabilityID'], item_id))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Ostr')]
                         item_file.write(struct.pack(
                             'iiiii',
                             item_id+5, coverage_id+1, av['AreaPerilID'],
                             covs['VulnerabilityID'], item_id))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Cont')]
                         item_file.write(struct.pack(
                             'iiiii',
                             item_id+6, coverage_id+2, av['AreaPerilID'],
                             covs['VulnerabilityID'], item_id))
-                        myTIV = tivs[(loc['PolID'], loc['LocID'], 'Time')]
                         item_file.write(struct.pack(
                             'iiiii',
                             item_id+7, coverage_id+3, av['AreaPerilID'],
@@ -448,15 +426,13 @@ def create_session(url, upx_file, verify_string, do_stormsurge):
     api1a_json = do_api1(url, upx_file, verify_string, do_stormsurge)
     session_id = int(api1a_json['SessionID'])
     logging.debug("Session ID={}".format(session_id))
-
     if event_set_type not in (EVENT_SET_HISTORICAL, EVENT_SET_PROBABILISTIC):
         raise Exception("Unknown event set type:{}".format(event_set_type))
 
     items_filename = os.path.join(data_directory, 'items.bin')
-    coverages_filename = os.path.join(data_directory, 'coverages.bin')
 
     tivs = extract_tivs(upx_file)
-    write_exposure_files(api1a_json, tivs, items_filename, coverages_filename)
+    write_exposure_files(api1a_json, tivs, items_filename)
 
     return session_id
 
@@ -616,8 +592,8 @@ try:
     analysis_settings['session_id'] = session_id
 
     shutil.copyfile(
-        os.path.join(analysis_root_directory, "data", "coverages.bin"),
-        os.path.join(analysis_root_directory, "input", "coverages.bin"))
+        os.path.join(analysis_root_directory, "input", "coverages.bin"),
+        os.path.join(analysis_root_directory, "data", "coverages.bin"))
 
     shutil.copyfile(
         os.path.join(analysis_root_directory, "data", "items.bin"),
