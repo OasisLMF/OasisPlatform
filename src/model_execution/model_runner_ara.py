@@ -4,6 +4,7 @@ import time
 import logging
 import stat
 import subprocess
+import re
 '''
 TODO: Module description
 '''
@@ -201,7 +202,7 @@ def build_get_model_cmd(session_id, partition_id, number_of_partitions, do_wind,
     return get_model_cmd
 
 def outputString(
-        dir, pipe_prefix, summary, output_command, input_pipe,
+        working_directory, dir, pipe_prefix, summary, output_command, input_pipe,
         rs=[], proc_number=None):
     '''
     TODO
@@ -220,9 +221,14 @@ def outputString(
     '''
 
     if rs == []:
-        file = "{}_{}_{}{}_{}.csv".format(
-            pipe_prefix, summary, output_command, "", proc_number)
-        output_filename = os.path.join(dir, file)
+        if output_command in ['eltcalc', 'pltcalc']:
+            output_pipe = "{}/{}_{}_{}{}_{}".format(
+                working_directory, pipe_prefix, summary, output_command, "", proc_number)
+            os.mkfifo(output_pipe)
+        else:
+            file = "{}_{}_{}{}_{}.csv".format(
+                pipe_prefix, summary, output_command, "", proc_number)
+            output_filename = os.path.join(dir, file)
 
     # validation
     #! TODO tidy up
@@ -235,7 +241,7 @@ def outputString(
 
     # generate cmd
     if output_command == "eltcalc":
-        str = 'eltcalc < {} > {}'.format(input_pipe, output_filename)
+        str = 'eltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "leccalc":
         str = 'leccalc -K{} '.format(input_pipe)
         for r in rs:
@@ -267,7 +273,7 @@ def outputString(
     elif output_command == "aalcalc":
         str = 'aalcalc < {} > {}'.format(input_pipe, output_filename)
     elif output_command == "pltcalc":
-        str = 'pltcalc < {} > {}'.format(input_pipe, output_filename)
+        str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "summarycalc":
         str = '{} < {}'.format(output_filename, input_pipe)
 
@@ -399,7 +405,19 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
                                     summaryPipes += ['{}/{}{}summary{}{}'.format(working_directory, pipe_prefix, p, s["id"], a)]
                                     logging.debug('new pipe: {}\n'.format(summaryPipes[-1]))
                                     os.mkfifo(summaryPipes[-1])
-                                    output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], proc_number=p)]
+                                    output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], proc_number=p)]
+
+                                    if a in ['eltcalc', 'pltcalc'] and p == number_of_processes:
+                                        spCmd = output_commands[-1].split('>')
+                                        if len(spCmd) >= 2:
+                                            postOutputCmd = "cat "
+                                            for inputPipeNumber in range(1, number_of_processes + 1):
+                                                postOutputCmd += "{} ".format(spCmd[-1].replace(str(p), str(inputPipeNumber)))
+                                            spCmd2 = spCmd[-1].split('/')
+                                            if len(spCmd2) >= 2:
+                                                postOutputCmd += "> {}.csv".format(os.path.join(output_directory, spCmd2[-1].replace("_"+str(p),'')))
+                                        procs += [open_process(postOutputCmd, model_root, log_command)]
+
                                 elif isinstance(s[a], dict):
                                     if a == "leccalc":
                                         requiredRs = []
@@ -420,7 +438,7 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
                                             summaryPipes += [myFile]
                                         if p == number_of_processes:   # because leccalc integrates input for all processors
                                             logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, myDirShort, requiredRs)))
-                                            output_commands += [outputString(output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), requiredRs)]
+                                            output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), requiredRs)]
                                     else:
                                         # TODO what is this? Should it be an error?
                                         logging.info('Unexpectedly found analysis {} with results dict {}\n'.format(a, rs))
