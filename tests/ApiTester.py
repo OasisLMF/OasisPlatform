@@ -23,23 +23,43 @@ parser.add_argument(
     '-u', '--url', metavar='N', type=str, default='http://localhost:8001', required=False,
     help='The base URL for the API.')
 parser.add_argument(
+    '-a', '--analysis_settings_json', type=str, default='', 
+    help="The analysis settings JSON file.")
+parser.add_argument(
+    '-d', '--input_data_directory', type=str, default='', 
+    help="The input data directory.")
+parser.add_argument(
     '-n', '--num_analyses', metavar='N', type=int, default='1', required=False,
     help='The number of analyses to run.')
 
 args = parser.parse_args()
 
 base_url = args.url
+analysis_settings_json_filepath = args.analysis_settings_json
 num_analyses = args.num_analyses
+input_data_directory = args.input_data_directory
 
 sys.path.append(os.path.join(TEST_DIRECTORY, '..', 'src'))
 #input_data_directory = os.path.join(TEST_DIRECTORY, '..', 'example_data', 'inputs', 'nationwide')
-input_data_directory = TEST_DATA_DIRECTORY
+
+if input_data_directory == "":
+    input_data_directory = TEST_DATA_DIRECTORY
+if not os.path.exists(input_data_directory):
+    print "Input data directory does not exist: {}".format(analysis_settings_json_filepath)
+    exit()
+
+if analysis_settings_json_filepath == "":
+    analysis_settings_json_filepath = os.path.join(TEST_DATA_DIRECTORY, "analysis_settings.json")
+if not os.path.exists(analysis_settings_json_filepath):
+    print "Analysis settings file does not exist: {}".format(analysis_settings_json_filepath)
+    exit()
 
 output_data_directory = os.path.join(TEST_DIRECTORY, 'outputs')
 if not os.path.exists(output_data_directory):
     os.makedirs(output_data_directory)
 
-analysis_settings_data_directory = os.path.join(TEST_DIRECTORY, '..', 'example_data', 'analysis_settings_csv')
+#analysis_settings_data_directory = os.path.join(TEST_DIRECTORY, '..', 'example_data', 'analysis_settings_csv')
+
 upload_directory = os.path.join("upload", str(uuid.uuid1()))
 
 shutil.copytree(
@@ -56,7 +76,7 @@ for analysis_id in range(num_analyses):
     try:
         client = OasisApiClient.OasisApiClient(base_url, logger)
         input_location = client.upload_inputs_from_directory(upload_directory, do_validation=False)
-        with open(os.path.join(TEST_DATA_DIRECTORY, "analysis_settings.json")) as json_file:
+        with open(analysis_settings_json_filepath) as json_file:
             analysis_settings_json = json.load(json_file)
 
         client.run_analysis(analysis_settings_json, input_location, output_data_directory, do_clean=False)
