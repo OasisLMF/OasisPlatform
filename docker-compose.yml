@@ -20,6 +20,7 @@ services:
 #     - ./log:/var/log/oasis:rw
      - ./upload:/var/oasis/upload:rw
      - ./download:/var/oasis/download:rw
+     - ./ara_data/static:/var/oasis/model_data/ARA/1:rw     
      - ./data/static:/var/oasis/model_data/OasisIM/1:rw
   mysql:
     image: mysql
