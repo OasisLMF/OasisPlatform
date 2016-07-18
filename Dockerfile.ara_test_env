@@ -1,0 +1,25 @@
+FROM aratools
+
+RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev
+RUN apt-get install -y vim iputils-ping
+
+COPY ./src/model_execution_worker/requirements.txt /tmp/
+RUN pip install -r /tmp/requirements.txt
+
+RUN mkdir /var/log/oasis
+
+RUN useradd -ms /bin/bash ara
+RUN chown ara /var/log/oasis
+
+COPY ./src/common /home/ara/common/
+COPY ./src/model_execution/  /home/ara/model_execution/
+COPY ./src/utils/ /home/ara/utils/
+COPY ./ara_data/ /home/ara/ara_data/
+COPY ./ara_tests/ /home/ara/ara_tests/
+
+RUN chmod -R a+w /home/ara/ara_data
+RUN chmod -R a+w /home/ara/ara_tests
+
+USER ara
+WORKDIR /home/ara
+ENV ARA_SERVER="10.1.0.110:8080"
