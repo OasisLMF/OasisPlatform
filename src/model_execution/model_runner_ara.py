@@ -413,9 +413,10 @@ def waitForSubprocesses(procs):
     logging.info('Done waiting for processes.')
 
 
-def build_get_model_cmd(session_id, partition_id, number_of_partitions, do_wind,
-                        do_stormsurge, do_demand_surge, input_data_directory, handles):
-
+def build_get_model_cmd(session_id, partition_id, number_of_partitions, 
+                        do_wind, do_stormsurge, do_demand_surge, 
+                        number_of_samples, gul_threshold,
+                        input_data_directory, handles):
     '''
     GetModelARA parameters:
 
@@ -466,13 +467,11 @@ def build_get_model_cmd(session_id, partition_id, number_of_partitions, do_wind,
     sub_chunk_id = partition_id
     num_sub_chunks = number_of_partitions
 
-    number_of_samples = 20
     number_of_samples_in_batch = number_of_samples
 
-    gul_loss_threhold = 0
     peril_flags = ('-w ' if do_stormsurge else '') + \
                   ('-W ' if do_wind else '') + \
-                  ('-D ' if do_wind else '')
+                  ('-D ' if do_stormsurge else '')
     handleString = ''
 
     if do_wind:
@@ -496,7 +495,7 @@ def build_get_model_cmd(session_id, partition_id, number_of_partitions, do_wind,
                     "-c{} ".format(sub_chunk_id) + \
                     "-S{} ".format(number_of_samples) + \
                     "-B{} ".format(number_of_samples_in_batch) + \
-                    "-T{} ".format(gul_loss_threhold) + \
+                    "-T{} ".format(gul_threshold) + \
                     "{} ".format(peril_flags) + \
                     "{} ".format(handleString) + \
                     "-Y "
@@ -549,6 +548,7 @@ def outputString(
         str = 'eltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "leccalc":
         str = 'leccalc -K{} '.format(input_pipe)
+        
         for r in rs:
             if output_command == "leccalc":
                 if r not in LEC_RESULT_TYPES:
@@ -575,6 +575,7 @@ def outputString(
                 str += '-s {} '.format(output_filename)
             elif r == "return_period_file":
                 str += '-r '
+
     elif output_command == "aalcalc":
         myDirShort = os.path.join('work', "{}aalSummary{}".format(pipe_prefix, summary))
         myDir = os.path.join(os.getcwd(), myDirShort)
@@ -659,10 +660,7 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
 
     model_settings = analysis_settings["model_settings"]
     session_id = model_settings["session_id"]
-    do_wind = bool(model_settings["peril_wind"])
     do_stormsurge = bool(model_settings["peril_surge"])
-    do_demand_surge = bool(model_settings["demand_surge"])
-    leakage_factor = float(model_settings["leakage_factor"])
     event_set_type = model_settings["event_set"]
 
     ea_wind_filename = os.path.join(
@@ -842,17 +840,16 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
                 s = "summarycalc {} {} < {}".format(summaryFlag, summaryString, myPipe)
                 procs += [open_process(s, model_root, log_command)]
 
-        gulFlags = "-S{} ".format(analysis_settings['number_of_samples'])
-        if 'gul_threshold' in analysis_settings:
-            gulFlags += " -L{}".format(analysis_settings['gul_threshold'])
-        if 'model_settings' in analysis_settings:
-            if "use_random_number_file" in analysis_settings['model_settings']:
-                if analysis_settings['model_settings']['use_random_number_file']:
-                    gulFlags += ' -r'
+        # gulFlags = "-S{} ".format(analysis_settings['number_of_samples'])
+        # if 'gul_threshold' in analysis_settings:
+        #     gulFlags += " -L{}".format(analysis_settings['gul_threshold'])
+        # if 'model_settings' in analysis_settings:
+        #     if "use_random_number_file" in analysis_settings['model_settings']:
+        #         if analysis_settings['model_settings']['use_random_number_file']:
+        #             gulFlags += ' -r'
 
         partition_id = p
         number_of_partitions = number_of_processes
-#        input_data_directory = os.path.join(os.getcwd(), "data")
         input_data_directory = os.path.join(os.getcwd())
         session_id = model_settings["session_id"]
         do_wind = bool(model_settings["peril_wind"])
@@ -860,10 +857,13 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
         do_demand_surge = bool(model_settings["demand_surge"])
         leakage_factor = float(model_settings["leakage_factor"])
         event_set_type = model_settings["event_set"]
+        number_of_samples = int(analysis_settings['number_of_samples'])
+        gul_threshold = float(analysis_settings['gul_threshold'])
 
         get_model_ara = build_get_model_cmd(
                             session_id, partition_id, number_of_partitions, 
                             do_wind, do_stormsurge, do_demand_surge, 
+                            number_of_samples, gul_threshold,
                             input_data_directory, handles)
 
         getModelTeePipes = []
