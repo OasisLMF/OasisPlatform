@@ -738,21 +738,27 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
 
         tee_commands = []
         output_commands = []
+        gul_output = False
+        il_output = False
 
-        if 'gul_summaries' in analysis_settings:
-            pipe = '{}/gul{}'.format(working_directory, p)
-            os.mkfifo(pipe)
+        if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
+            if analysis_settings['gul_output']:
+                pipe = '{}/gul{}'.format(working_directory, p)
+                os.mkfifo(pipe)
+                gul_output = True
 
-        if 'il_summaries' in analysis_settings:
-            pipe = '{}/il{}'.format(working_directory, p)
-            os.mkfifo(pipe)
+        if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
+            if analysis_settings['il_output']:
+                pipe = '{}/il{}'.format(working_directory, p)
+                os.mkfifo(pipe)
+                il_output = True
 
-        for pipe_prefix, key in [
-                ("gul", "gul_summaries"),
-                ("il", "il_summaries")
+        for pipe_prefix, key, output_flag in [
+                ("gul", "gul_summaries", gul_output),
+                ("il", "il_summaries", il_output)
                 ]:
 
-            if key in analysis_settings:
+            if output_flag:
                 for s in analysis_settings[key]:
                     summaryLevelPipe = '{}/{}{}summary{}'.format(working_directory, pipe_prefix, p, s["id"])
                     os.mkfifo(summaryLevelPipe)
@@ -786,26 +792,27 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
                                             output_commands += ["aalsummary -K{}aalSummary{} > {}".format(pipe_prefix, s['id'], aalfile)]
 
                                 elif isinstance(s[a], dict):
-                                    if a == "leccalc":
-                                        requiredRs = []
-                                        for r in rs:
-                                            if r in s[a]:
-                                                if s[a][r]:
-                                                    requiredRs += [r]
+                                    if a == "leccalc" and 'lec_output' in s:
+                                        if s['lec_output']:
+                                            requiredRs = []
+                                            for r in rs:
+                                                if r in s[a]:
+                                                    if s[a][r]:
+                                                        requiredRs += [r]
 
-                                        # write to file rather than use named pipe
-                                        myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
-                                        myDir = os.path.join(model_root, myDirShort)
-                                        for d in [os.path.join(model_root, 'work'), myDir]:
-                                            if not os.path.isdir(d):
-                                                logging.debug('mkdir {}\n'.format(d))
-                                                os.mkdir(d, 0777)
-                                        myFile = os.path.join(myDirShort, "p{}.bin".format(p))
-                                        if myFile not in summaryPipes:
-                                            summaryPipes += [myFile]
-                                        if p == number_of_processes:   # because leccalc integrates input for all processors
-                                            logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, myDirShort, requiredRs)))
-                                            output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), requiredRs)]
+                                            # write to file rather than use named pipe
+                                            myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
+                                            myDir = os.path.join(model_root, myDirShort)
+                                            for d in [os.path.join(model_root, 'work'), myDir]:
+                                                if not os.path.isdir(d):
+                                                    logging.debug('mkdir {}\n'.format(d))
+                                                    os.mkdir(d, 0777)
+                                            myFile = os.path.join(myDirShort, "p{}.bin".format(p))
+                                            if myFile not in summaryPipes:
+                                                summaryPipes += [myFile]
+                                            if p == number_of_processes:   # because leccalc integrates input for all processors
+                                                logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, myDirShort, requiredRs)))
+                                                output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), requiredRs)]
                                     else:
                                         # TODO what is this? Should it be an error?
                                         logging.info('Unexpectedly found analysis {} with results dict {}\n'.format(a, rs))
@@ -826,9 +833,9 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
                 if 'leccalc' not in s and 'aalsummary' not in s:
                     procs += [open_process(s, model_root, log_command)]
 
-        for summaryFlag, pipe_prefix in [("-g", "gul"), ("-f", "il")]:
+        for summaryFlag, pipe_prefix, output_flag in [("-g", "gul", gul_output), ("-f", "il", il_output)]:
             myKey = pipe_prefix+'_summaries'
-            if myKey in analysis_settings:
+            if myKey in analysis_settings and output_flag:
                 summaryString = ""
                 for sum in analysis_settings[myKey]:
                     myPipe = "{}/{}{}summary{}".format(working_directory, pipe_prefix, p, sum["id"])
@@ -868,7 +875,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
 
         getModelTeePipes = []
         gulIlCmds = []
-        if 'il_summaries' in analysis_settings:
+        if il_output:
             """
             pipe = '{}/getmodeltoil{}'.format(working_directory, p)
             getModelTeePipes += [pipe]
@@ -877,7 +884,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
             assert_is_pipe('{}/il{}'.format(working_directory, p))
             gulIlCmds += ['{} -i | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
 
-        if 'gul_summaries' in analysis_settings:
+        if gul_output:
             """
             pipe = '{}/getmodeltogul{}'.format(working_directory, p)
             getModelTeePipes += [pipe]
