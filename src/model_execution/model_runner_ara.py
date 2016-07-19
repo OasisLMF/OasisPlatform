@@ -34,6 +34,10 @@ if verify_mode == "certifi":
 if not verify_string:
     requests.packages.urllib3.disable_warnings()
 
+def is_valid_event_set_type(event_set_type):
+    return event_set_type in (model_runner_ara.EVENT_SET_HISTORICAL, 
+                              model_runner_ara.EVENT_SET_PROBABILISTIC)
+
 @helpers.oasis_log(logging.getLogger())
 def do_api1(url, upx_file, verify_string, do_surge):
     ''' Call API1, which returns the area peril and vulnerability IDs'''
