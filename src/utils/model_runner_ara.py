@@ -328,7 +328,7 @@ try:
 
     os.chdir(analysis_root_directory)
     model_runner_ara.run_analysis_only(
-        analysis_settings, number_of_partitions, log_command)
+        analysis_settings, number_of_partitions, log_command if do_command_output else None)
     os.chdir(original_directory)
 
 except Exception as e:

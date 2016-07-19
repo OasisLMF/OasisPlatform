@@ -369,10 +369,12 @@ ANALYSIS_TYPES = [
 
 def open_process(s, dir, log_command):
     ''' Wrap subprocess.Open. Returns the Popen object. '''
-    p = subprocess.Popen(s, shell=True, cwd=dir)
     if log_command:
         log_command(s)
-    logging.info('{} - process number={}'.format(s, p.pid))
+        p = None
+    else:
+        p = subprocess.Popen(s, shell=True, cwd=dir)
+        logging.info('{} - process number={}'.format(s, p.pid))
     return p
 
 
@@ -388,27 +390,29 @@ def waitForSubprocesses(procs):
 
 
     for p in procs:
-        if p.poll() is None:
-            status = 'Running'
-        else:
-            status = 'Exited with status {}'.format(p.poll())
-        logging.debug('Process # {}: {}'.format(p.pid, status))
+        if p != None:
+            if p.poll() is None:
+                status = 'Running'
+            else:
+                status = 'Exited with status {}'.format(p.poll())
+            logging.debug('Process # {}: {}'.format(p.pid, status))
 
     for p in procs:
-        command = "{}".format(p.pid)
-        try:
-            with open('/proc/{}/cmdline'.format(p.pid), 'r') as cmdF:
-                command = cmdF.read()
-        except:
-            pass
-        return_code = p.wait()
-        if return_code == 0:
-            logging.debug(
-                '{} process #{} ended\n'.format(command, p.pid))
-        else:
-            raise Exception(
-                '{} process #{} returned error return code {}'.format(
-                    command, p.pid, return_code))
+        if p != None:
+            command = "{}".format(p.pid)
+            try:
+                with open('/proc/{}/cmdline'.format(p.pid), 'r') as cmdF:
+                    command = cmdF.read()
+            except:
+                pass
+            return_code = p.wait()
+            if return_code == 0:
+                logging.debug(
+                    '{} process #{} ended\n'.format(command, p.pid))
+            else:
+                raise Exception(
+                    '{} process #{} returned error return code {}'.format(
+                        command, p.pid, return_code))
 
     logging.info('Done waiting for processes.')
 
