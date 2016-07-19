@@ -12,6 +12,8 @@ import requests
 import shutil
 import certifi
 from threading import Thread
+from model_runner_common import open_process, assert_is_pipe, waitForSubprocesses, outputString, ANALYSIS_TYPES
+
 '''
 TODO: Module description
 '''
@@ -311,111 +313,6 @@ def post(url, files=[], body=None, return_file=None, verify=False):
     return j
 
 
-class PerspOpts:
-    GUL = 1
-    FM = 2
-    GULFM = 3
-
-
-class AnalysisOpts:
-    ELT = 1
-    LEC_FULL = 2
-    LEC_WHEATSHEAF = 3
-    LEC_WHEATSHEAF_MEAN = 4
-    LEC_SAMPLE_MEAN = 5
-    AAL = 6
-    PLT = 7
-    ELH = 8
-
-
-max_analysis_opt = AnalysisOpts.ELH
-
-
-class resultsOpts:
-    EBE = 1
-    AGGREGATE = 2
-    MAXIMUM = 3
-
-
-max_result_opt = resultsOpts.MAXIMUM
-
-
-# ("summarycalc", []), <- RK special case deal with in code
-resultsLoc = 0
-analysisLoc = 1
-summaryLoc = 2
-
-
-# definitions for output types and results types for each
-LEC_RESULT_TYPES = [
-    "return_period_file",
-    "full_uncertainty_aep",
-    "full_uncertainty_oep",
-    "wheatsheaf_aep",
-    "wheatsheaf_oep",
-    "wheatsheaf_mean_aep",
-    "wheatsheaf_mean_oep",
-    "sample_mean_aep",
-    "sample_mean_oep"]
-
-
-ANALYSIS_TYPES = [
-    ("summarycalc", []),
-    ("eltcalc", []),
-    ("leccalc", LEC_RESULT_TYPES),
-    ("aalcalc", []),
-    ("pltcalc", [])]
-
-
-def open_process(s, dir, log_command):
-    ''' Wrap subprocess.Open. Returns the Popen object. '''
-    if log_command:
-        log_command(s)
-        p = None
-    else:
-        p = subprocess.Popen(s, shell=True, cwd=dir)
-        logging.info('{} - process number={}'.format(s, p.pid))
-    return p
-
-
-def assert_is_pipe(p):
-    ''' Check whether pipes used have been created'''
-    assert stat.S_ISFIFO(os.stat(p).st_mode)
-
-
-def waitForSubprocesses(procs):
-    ''' Wait for a set of subprocesses. '''
-
-    logging.info('Waiting for {} processes.'.format(len(procs)))
-
-
-    for p in procs:
-        if p != None:
-            if p.poll() is None:
-                status = 'Running'
-            else:
-                status = 'Exited with status {}'.format(p.poll())
-            logging.debug('Process # {}: {}'.format(p.pid, status))
-
-    for p in procs:
-        if p != None:
-            command = "{}".format(p.pid)
-            try:
-                with open('/proc/{}/cmdline'.format(p.pid), 'r') as cmdF:
-                    command = cmdF.read()
-            except:
-                pass
-            return_code = p.wait()
-            if return_code == 0:
-                logging.debug(
-                    '{} process #{} ended\n'.format(command, p.pid))
-            else:
-                raise Exception(
-                    '{} process #{} returned error return code {}'.format(
-                        command, p.pid, return_code))
-
-    logging.info('Done waiting for processes.')
-
 
 def build_get_model_cmd(session_id, partition_id, number_of_partitions, 
                         do_wind, do_stormsurge, do_demand_surge, 
@@ -505,96 +402,6 @@ def build_get_model_cmd(session_id, partition_id, number_of_partitions,
                     "-Y "
 
     return get_model_cmd
-
-def outputString(
-        working_directory, dir, pipe_prefix, summary, output_command, input_pipe,
-        rs=[], proc_number=None):
-    '''
-    TODO
-    Creates the output command string for running ktools.
-
-    args:
-    dir (string):
-    pipe_prefix (string):   gul or fm
-    summary (string):      summary id for input summary (0-9)
-    output_command (string):    executable to use (leccalc, etc)
-    input_pipe:
-    rs (string) (optional): results parameter - relevant for leccalc only.
-    procNumber (string) (optional):
-    returns:
-    Command string (for example 'leccalc -F < tmp/pipe > fileName.csv')
-    '''
-
-    if rs == []:
-        if output_command in ['eltcalc', 'pltcalc']:
-            output_pipe = "{}/{}_{}_{}{}_{}".format(
-                working_directory, pipe_prefix, summary, output_command, "", proc_number)
-            os.mkfifo(output_pipe)
-        elif output_command == 'aalcalc':
-            output_filename = "p{}.bin".format(proc_number)
-            # output_filename = os.path.join(dir, file)
-        else:
-            file = "{}_{}_{}{}_{}.csv".format(
-                pipe_prefix, summary, output_command, "", proc_number)
-            output_filename = os.path.join(dir, file)
-
-    # validation
-    #! TODO tidy up
-    found = False
-    for a, _ in ANALYSIS_TYPES:
-        if a == output_command:
-            found = True
-    if not found:
-        raise Exception("Unknown analysis type: {}".format(a))
-
-    # generate cmd
-    if output_command == "eltcalc":
-        str = 'eltcalc < {} > {}'.format(input_pipe, output_pipe)
-    elif output_command == "leccalc":
-        str = 'leccalc -K{} '.format(input_pipe)
-        
-        for r in rs:
-            if output_command == "leccalc":
-                if r not in LEC_RESULT_TYPES:
-                    raise Exception('Unknown result type: {}'.format(r))
-
-            file = "{}_{}_{}_{}.csv".format(
-                pipe_prefix, summary, output_command, r)
-            output_filename = os.path.join(dir, file)
-            if r == "full_uncertainty_aep":
-                str += '-F {} '.format(output_filename)
-            elif r == "full_uncertainty_oep":
-                str += '-f {} '.format(output_filename)
-            elif r == "wheatsheaf_aep":
-                str += '-W {} '.format(output_filename)
-            elif r == "wheatsheaf_oep":
-                str += '-w {} '.format(output_filename)
-            elif r == "wheatsheaf_mean_aep":
-                str += '-M {} '.format(output_filename)
-            elif r == "wheatsheaf_mean_oep":
-                str += '-m {} '.format(output_filename)
-            elif r == "sample_mean_aep":
-                str += '-S {} '.format(output_filename)
-            elif r == "sample_mean_oep":
-                str += '-s {} '.format(output_filename)
-            elif r == "return_period_file":
-                str += '-r '
-
-    elif output_command == "aalcalc":
-        myDirShort = os.path.join('work', "{}aalSummary{}".format(pipe_prefix, summary))
-        myDir = os.path.join(os.getcwd(), myDirShort)
-        for d in [os.path.join(os.getcwd(), 'work'), myDir]:
-            if not os.path.isdir(d):
-                logging.debug('mkdir {}\n'.format(d))
-                os.mkdir(d, 0777)
-
-        str = 'aalcalc < {} > {}'.format(input_pipe, os.path.join(myDirShort, output_filename))
-    elif output_command == "pltcalc":
-        str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
-    elif output_command == "summarycalc":
-        str = 'summarycalctocsv < {} > {}'.format(input_pipe, output_filename)
-
-    return str
 
 #@helpers.oasis_log(logging.getLogger())
 def create_shared_memory(
@@ -914,49 +721,15 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
         getModelTeePipes = []
         gulIlCmds = []
         if il_output:
-            """
-            pipe = '{}/getmodeltoil{}'.format(working_directory, p)
-            getModelTeePipes += [pipe]
-            os.mkfifo(pipe)
-            """
             assert_is_pipe('{}/il{}'.format(working_directory, p))
             gulIlCmds += ['{} -i | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
 
         if gul_output:
-            """
-            pipe = '{}/getmodeltogul{}'.format(working_directory, p)
-            getModelTeePipes += [pipe]
-            os.mkfifo(pipe)
-            """
             assert_is_pipe('{}/gul{}'.format(working_directory, p))
             gulIlCmds += ['{} > {}/gul{} '.format(get_model_ara, working_directory, p)]
 
-        """
-        pipe = '{}/getmodeltotee{}'.format(working_directory, p)
-        os.mkfifo(pipe)
-
-        assert_is_pipe(pipe)
-        for tp in getModelTeePipes:
-            assert_is_pipe(tp)
-
-        getModelTee = "tee < {}".format(pipe)
-        if len(getModelTeePipes) == 2:
-            getModelTee += " {} > {}".format(getModelTeePipes[0], getModelTeePipes[1])
-        elif len(getModelTeePipes) == 1:
-            getModelTee += " > {}".format(getModelTeePipes[0])
-        procs += [open_process(getModelTee, model_root, log_command)]
-        """
-
         for s in gulIlCmds:
             procs += [open_process(s, model_root, log_command)]
-
-        """ remove me
-        assert_is_pipe('{}/getmodeltotee{}'.format(working_directory, p))
-        s = 'eve {} {} > {}/getmodeltotee{}'.format(
-            p, number_of_processes,
-            working_directory, p)
-        procs += [open_process(s, model_root, log_command)]
-        """
 
     waitForSubprocesses(procs)
 
@@ -976,4 +749,3 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     end = time.time()
     logging.info("COMPLETED: {} in {}s".format(
         func_name, round(end - start, 2)))
-
