@@ -5,13 +5,14 @@ import sys
 import json
 import logging
 from multiprocessing import cpu_count
-import struct
 import certifi
 import requests
 import argparse
 import readunicedepx as upx
 import inspect
 import shutil
+import csv
+from subprocess import Popen
 
 CURRENT_DIRECTORY = \
     os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -77,57 +78,104 @@ def extract_tivs(upx_filename):
 
 
 @helpers.oasis_log(logging.getLogger())
-def write_exposure_files(api1a_json, tivs, item_filename):
+def write_exposure_files(api1a_json, tivs, data_directory):
     ''' Write out the Oasis item and coverage files given an API1a response'''
+    
+    items_csv_filename = os.path.join(data_directory, "items.csv")
+    coverages_csv_filename = os.path.join(data_directory, "coverages.csv")
 
     # For now groupID = itemID
-    with open(item_filename, "w") as item_file:
+    with open(items_csv_filename, "w") as items_file,\
+             open(coverages_csv_filename, "w") as coverages_file:
+
+        items_csv_writer = csv.writer(items_file)
+        coverages_csv_writer = csv.writer(coverages_file)
+
+        # Write headers
+        items_csv_writer.writerow(["item_id", "coverage_id", "areaperil_id", "vulnerability_id", "group_id"])
+        coverages_csv_writer.writerow(["coverage_id","tiv"])
+
         item_id = 1
         coverage_id = 1
         for loc in api1a_json['Locations']:
             for av in loc['AVs']:
                 if av["PerilID"] == model_runner_ara.PERIL_WIND:
                     for covs in av['CoverageAndVulnerabilities']:
-                        item_file.write(struct.pack(
-                            'iiiii',
+                        tiv = tivs[(loc['PolID'], loc['LocID'], 'Bldg')]
+                        coverages_csv_writer.writerow([coverage_id + 0, tiv])
+                        items_csv_writer.writerow([
                             item_id+0, coverage_id+0, av['AreaPerilID'],
-                            covs['VulnerabilityID'], item_id))
-                        item_file.write(struct.pack(
-                            'iiiii',
+                            covs['VulnerabilityID'], item_id])                        
+                        
+                        tiv = tivs[(loc['PolID'], loc['LocID'], 'Ostr')]
+                        coverages_csv_writer.writerow([coverage_id + 1, tiv])
+                        items_csv_writer.writerow([
                             item_id+1, coverage_id+1, av['AreaPerilID'],
-                            covs['VulnerabilityID'], item_id))
-                        item_file.write(struct.pack(
-                            'iiiii',
+                            covs['VulnerabilityID'], item_id])
+
+                        tiv = tivs[(loc['PolID'], loc['LocID'], 'Cont')]
+                        coverages_csv_writer.writerow([coverage_id + 2, tiv])
+                        items_csv_writer.writerow([
                             item_id+2, coverage_id+2, av['AreaPerilID'],
-                            covs['VulnerabilityID'], item_id))
-                        item_file.write(struct.pack(
-                            'iiiii',
+                            covs['VulnerabilityID'], item_id])
+                        
+                        tiv = tivs[(loc['PolID'], loc['LocID'], 'Time')]
+                        coverages_csv_writer.writerow([coverage_id + 3, tiv])
+                        items_csv_writer.writerow([
                             item_id+3, coverage_id+3, av['AreaPerilID'],
-                            covs['VulnerabilityID'], item_id))
+                            covs['VulnerabilityID'], item_id])
+
                 elif av["PerilID"] == model_runner_ara.PERIL_STORMSURGE:
                     for covs in av['CoverageAndVulnerabilities']:
-                        item_file.write(struct.pack(
-                            'iiiii',
+                        tiv = tivs[(loc['PolID'], loc['LocID'], 'Bldg')]
+                        items_csv_writer.writerow([
                             item_id+4, coverage_id+0, av['AreaPerilID'],
-                            covs['VulnerabilityID'], item_id))
-                        item_file.write(struct.pack(
-                            'iiiii',
+                            covs['VulnerabilityID'], item_id])
+                        
+                        tiv = tivs[(loc['PolID'], loc['LocID'], 'Ostr')]
+                        items_csv_writer.writerow([
                             item_id+5, coverage_id+1, av['AreaPerilID'],
-                            covs['VulnerabilityID'], item_id))
-                        item_file.write(struct.pack(
-                            'iiiii',
+                            covs['VulnerabilityID'], item_id])
+                        
+                        tiv = tivs[(loc['PolID'], loc['LocID'], 'Cont')]
+                        items_csv_writer.writerow([
                             item_id+6, coverage_id+2, av['AreaPerilID'],
-                            covs['VulnerabilityID'], item_id))
-                        item_file.write(struct.pack(
-                            'iiiii',
+                            covs['VulnerabilityID'], item_id])
+                        
+                        tiv = tivs[(loc['PolID'], loc['LocID'], 'Time')]
+                        items_csv_writer.writerow([
                             item_id+7, coverage_id+3, av['AreaPerilID'],
-                            covs['VulnerabilityID'], item_id))
+                            covs['VulnerabilityID'], item_id])
+
                 else:
                     raise Exception(
                         "Unknown peril code:{}".format(av["PerilID"]))
 
             item_id = item_id + 8
-    return
+            coverage_id = coverage_id + 4
+
+    items_bin_filename = os.path.join(data_directory, "items.bin")
+    coverages_bin_filename = os.path.join(data_directory, "coverages.bin")
+
+    items_to_bin_cmd = "itemtobin < {} > {}".format(items_csv_filename, items_bin_filename)
+    coverages_to_bin_cmd = "coveragetobin < {} > {}".format(coverages_csv_filename, coverages_bin_filename)
+
+    logging.info("Creating items binary file")
+    logging.info("Cmd: {}".format(items_to_bin_cmd))
+    p = Popen(items_to_bin_cmd, shell=True)
+    p.wait()
+    if p.returncode > 0:
+        raise Exception("Items to bin convesrion failed: {}".format(p.returncode))
+
+    logging.info("Creating coverage binary file")
+    logging.info("Cmd: {}".format(coverages_to_bin_cmd))
+    p = Popen(coverages_to_bin_cmd, shell=True)
+    p.wait()
+    if p.returncode > 0:
+        raise Exception("Coverages to bin convesrion failed: {}".format(p.returncode))
+
+    os.remove(items_csv_filename)
+    os.remove(coverages_csv_filename)
 
 @helpers.oasis_log(logging.getLogger())
 def create_session(url, upx_file, verify_string, do_stormsurge):
@@ -139,10 +187,8 @@ def create_session(url, upx_file, verify_string, do_stormsurge):
     if event_set_type not in (model_runner_ara.EVENT_SET_HISTORICAL, model_runner_ara.EVENT_SET_PROBABILISTIC):
         raise Exception("Unknown event set type:{}".format(event_set_type))
 
-    items_filename = os.path.join(data_directory, 'items.bin')
-
     tivs = extract_tivs(upx_file)
-    write_exposure_files(api1a_json, tivs, items_filename)
+    write_exposure_files(api1a_json, tivs, data_directory)
 
     return session_id
 
@@ -220,6 +266,9 @@ logging.basicConfig(stream=sys.stdout, level=log_level, format=log_format)
 original_directory = os.getcwd()
 
 try:
+
+    logging.info("Do create session: {}".format(do_create_session))
+
     # Set the number of partitions
     if number_of_partitions == -1:
         number_of_partitions = cpu_count()
@@ -311,8 +360,8 @@ try:
 
     if do_create_session:
         shutil.copyfile(
-            os.path.join(analysis_root_directory, "input", "coverages.bin"),
-            os.path.join(analysis_root_directory, "data", "coverages.bin"))
+            os.path.join(analysis_root_directory, "data", "coverages.bin"),
+            os.path.join(analysis_root_directory, "input", "coverages.bin"))
 
         shutil.copyfile(
             os.path.join(analysis_root_directory, "data", "items.bin"),
@@ -328,7 +377,7 @@ try:
 
     os.chdir(analysis_root_directory)
     model_runner_ara.run_analysis_only(
-        analysis_settings, number_of_partitions, log_command if do_command_output else None)
+         analysis_settings, number_of_partitions, log_command if do_command_output else None)
     os.chdir(original_directory)
 
 except Exception as e:
