@@ -17,26 +17,6 @@ sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
 
 from model_execution import model_runner_ara, ara_session_utils
 
-'''
-Funcitionaity for calling ARA apis to genererate Hurloss
-event footprints and vulneravility matrices.
-
-API 1a -
-
-API 1b -
-
-API 2 -
-
-API 3 -
-
-API 1c -
-
-
-The following acronyms are used:
-EA - exposure area perils
-EF - event footprint
-VM - vulnerability matrix
-'''
 parser = argparse.ArgumentParser(description='Run ARA Hurloss.')
 
 parser.add_argument('-i', '--ara_server_ip',
@@ -128,7 +108,7 @@ try:
             .format(analysis_root_directory))
     analysis_root_directory = os.path.abspath(analysis_root_directory)
 
-    if command_debug_file:
+    if do_command_output:
         fully_qualified_command_debug_file = \
             os.path.abspath(command_debug_file)
         with open(fully_qualified_command_debug_file, "w") as file:
@@ -137,6 +117,8 @@ try:
         def log_command(command):
             with open(fully_qualified_command_debug_file, "a") as file:
                 file.writelines(command + os.linesep)
+    else:
+        log_command = None
 
     # Parse the analysis settings file
     with open(analysis_settings_json) as file:
@@ -223,7 +205,7 @@ try:
 
     os.chdir(analysis_root_directory)
     model_runner_ara.run_analysis_only(
-        analysis_settings, number_of_partitions, log_command)
+         analysis_settings, number_of_partitions, log_command)
     os.chdir(original_directory)
 
 except Exception as e:
