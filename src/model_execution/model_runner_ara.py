@@ -59,7 +59,7 @@ def do_api1(url, upx_file, verify_string, do_surge):
         verify=verify_string
     )
 
-    logging.info("Response: {}".format(api1a_json))
+    logging.debug("Response: {}".format(api1a_json))
 
     session_id = int(api1a_json['SessionID'])
     if session_id == -1:

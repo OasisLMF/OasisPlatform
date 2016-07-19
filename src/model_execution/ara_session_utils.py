@@ -36,12 +36,20 @@ def _extract_tivs(upx_filename):
             tivs[(polid, locid, 'Time')] = RepValTime
     return tivs
 
+def is_bin_file_type(file_type):
+    return file_type == "bin"
 
-def _write_exposure_files(api1a_json, tivs, data_directory):
+def is_csv_file_type(file_type):
+    return file_type == "csv"
+
+def _write_exposure_files(api1a_json, tivs, data_directory, file_type):
     ''' Write out the Oasis item and coverage files given an API1a response'''
     
     items_csv_filename = os.path.join(data_directory, "items.csv")
     coverages_csv_filename = os.path.join(data_directory, "coverages.csv")
+
+    if not (is_bin_file_type(file_type) or is_csv_file_type(file_type)):
+        raise Exception("Unknown file type: {}".format(file_type))
 
     # For now groupID = itemID
     with open(items_csv_filename, "w") as items_file,\
@@ -119,25 +127,33 @@ def _write_exposure_files(api1a_json, tivs, data_directory):
     items_to_bin_cmd = "itemtobin < {} > {}".format(items_csv_filename, items_bin_filename)
     coverages_to_bin_cmd = "coveragetobin < {} > {}".format(coverages_csv_filename, coverages_bin_filename)
 
-    logging.info("Creating items binary file")
-    logging.info("Cmd: {}".format(items_to_bin_cmd))
-    p = Popen(items_to_bin_cmd, shell=True)
-    p.wait()
-    if p.returncode > 0:
-        raise Exception("Items to bin convesrion failed: {}".format(p.returncode))
+    if is_bin_file_type(file_type):
+        logging.debug("Cmd: {}".format(items_to_bin_cmd))
+        p = Popen(items_to_bin_cmd, shell=True)
+        p.wait()
+        if p.returncode > 0:
+            raise Exception("Items to bin conversion failed: {}".format(p.returncode))
 
-    logging.info("Creating coverage binary file")
-    logging.info("Cmd: {}".format(coverages_to_bin_cmd))
-    p = Popen(coverages_to_bin_cmd, shell=True)
-    p.wait()
-    if p.returncode > 0:
-        raise Exception("Coverages to bin convesrion failed: {}".format(p.returncode))
+        logging.debug("Cmd: {}".format(coverages_to_bin_cmd))
+        p = Popen(coverages_to_bin_cmd, shell=True)
+        p.wait()
+        if p.returncode > 0:
+            raise Exception("Coverages to bin conversion failed: {}".format(p.returncode))
 
-    os.remove(items_csv_filename)
-    os.remove(coverages_csv_filename)
+        os.remove(items_csv_filename)
+        os.remove(coverages_csv_filename)
+
+        logging.info("Created items binary file: {}".format(items_bin_filename))
+        logging.info("Created coverages binary file: {}".format(coverages_bin_filename))
+    
+    elif is_csv_file_type(file_type):
+
+        logging.info("Created items CSV file: {}".format(items_csv_filename))
+        logging.info("Created coverages CSV file: {}".format(coverages_csv_filename))
+
 
 @helpers.oasis_log(logging.getLogger())
-def create_session(url, upx_file, verify_string, do_stormsurge, data_directory):
+def create_session(url, upx_file, verify_string, do_stormsurge, data_directory, file_type="bin"):
     ''' 
     Create a session; create the associated data files in the specified 
     data directory and return the session ID.  
@@ -146,8 +162,8 @@ def create_session(url, upx_file, verify_string, do_stormsurge, data_directory):
     api1a_json = model_runner_ara.do_api1(url, upx_file, verify_string, do_stormsurge)
     session_id = int(api1a_json['SessionID'])
     tivs = _extract_tivs(upx_file)
-    _write_exposure_files(api1a_json, tivs, data_directory)
+    _write_exposure_files(api1a_json, tivs, data_directory, file_type)
 
-    logging.debug("Session ID={}".format(session_id))
+    logging.info("Created session ID={}".format(session_id))
 
     return session_id
