@@ -598,57 +598,91 @@ def outputString(
 
 #@helpers.oasis_log(logging.getLogger())
 def create_shared_memory(
-    session_id, do_wind, do_stormsurge):
+    session_id, do_wind, do_stormsurge, log_command):
     ''' Create the shared memory segments for a session'''
 
     handles = dict()
 
     if do_wind:
         cmd = 'getmodelara -M -W -s{0} -C1'.format(session_id)
-        logging.info("Running getmodel command: {}".format(cmd))
-        p = subprocess.Popen(cmd, shell=True)
-        handles["VMWind"] = p.wait()
+        if log_command:
+            log_command(cmd)
+            handles["VMWind"] = 1
+        else:
+            logging.info("Running getmodel command: {}".format(cmd))
+            p = subprocess.Popen(cmd, shell=True)
+            handles["VMWind"] = p.wait()
+            
         cmd = 'getmodelara -m -W -s{0} -C1'.format(session_id)
-        logging.info("Running getmodel command: {}".format(cmd))
-        p = subprocess.Popen(cmd, shell=True)
-        handles["CTWind"] = p.wait()
+        if log_command:
+            log_command(cmd)
+            handles["CTWind"] = 2
+        else:
+            logging.info("Running getmodel command: {}".format(cmd))
+            p = subprocess.Popen(cmd, shell=True)
+            handles["CTWind"] = p.wait()
+            
     if do_stormsurge:
         cmd = 'getmodelara -M -w -s{0} -C1'.format(session_id)
-        logging.info("Running getmodel command: {}".format(cmd))
-        p = subprocess.Popen(cmd, shell=True)
-        handles["VMStormSurge"] = p.wait()
+        if log_command:
+            log_command(cmd)
+            handles["VMStormSurge"] = 3
+        else:
+            logging.info("Running getmodel command: {}".format(cmd))
+            p = subprocess.Popen(cmd, shell=True)
+            handles["VMStormSurge"] = p.wait()
+        
         cmd = 'getmodelara -m -w -s{0} -C1'.format(session_id)
-        logging.info("Running getmodel command: {}".format(cmd))
-        p = subprocess.Popen(cmd, shell=True)
-        handles["CTStormSurge"] = p.wait()
+        if log_command:
+            log_command(cmd)
+            handles["CTStormSurge"] = 4
+        else:
+            logging.info("Running getmodel command: {}".format(cmd))
+            p = subprocess.Popen(cmd, shell=True)
+            handles["CTStormSurge"] = p.wait()
 
     return handles
 
 
 #@helpers.oasis_log(logging.getLogger())
-def free_shared_memory(session_id, handles, do_wind, do_stormsurge):
+def free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command):
     if do_wind:
         cmd = 'getmodelara -L -W -s{} -C1 -H{}'.format(
             session_id, handles["VMWind"])
-        logging.info("Running getmodel command: {}".format(cmd))
-        p = subprocess.Popen(cmd, shell=True)
-        p.wait()
+        if log_command:
+            log_command(cmd)
+        else:
+            logging.info("Running getmodel command: {}".format(cmd))
+            p = subprocess.Popen(cmd, shell=True)
+            p.wait()
+
         cmd = 'getmodelara -l -W -s{} -C1 -J{}'.format(
             session_id, handles["CTWind"])
-        logging.info("Running getmodel command: {}".format(cmd))
-        p = subprocess.Popen(cmd, shell=True)
-        p.wait()
+        if log_command:
+            log_command(cmd)
+        else:
+            logging.info("Running getmodel command: {}".format(cmd))
+            p = subprocess.Popen(cmd, shell=True)
+            p.wait()
+
     if do_stormsurge:
         cmd = 'getmodelara -L -w -s{} -C1 -h{}'.format(
             session_id, handles["VMStormSurge"])
-        logging.info("Running getmodel command: {}".format(cmd))
-        p = subprocess.Popen(cmd, shell=True)
-        p.wait()
+        if log_command:
+            log_command(cmd)
+        else:
+            logging.info("Running getmodel command: {}".format(cmd))
+            p = subprocess.Popen(cmd, shell=True)
+            p.wait()
+
         cmd = 'getmodelara -l -w -s{} -C1 -j{}'.format(
             session_id, handles["CTStormSurge"])
-        logging.info("Running getmodel command: {}".format(cmd))
-        p = subprocess.Popen(cmd, shell=True)
-        p.wait()
+        if log_command:
+            log_command(cmd)
+        else:
+            logging.info("Running getmodel command: {}".format(cmd))
+            p = subprocess.Popen(cmd, shell=True)
+            p.wait()
 
 def run_analysis(analysis_settings, number_of_partitions, log_command=None):
 
@@ -734,7 +768,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     leakage_factor = float(model_settings["leakage_factor"])
     event_set_type = model_settings["event_set"]
 
-    handles = create_shared_memory(session_id, do_wind, do_stormsurge)
+    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command)
 
     for p in range(1, number_of_processes + 1):
 
@@ -937,7 +971,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     waitForSubprocesses(procs)
 
     # Put in error handler
-#    free_shared_memory(session_id, handles)
+    # free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
 
     end = time.time()
     logging.info("COMPLETED: {} in {}s".format(
