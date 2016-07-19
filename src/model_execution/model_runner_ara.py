@@ -684,8 +684,8 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
                                     verify_string, PERIL_STORMSURGE)
 
     shutil.copyfile(
-        os.path.join(os.getcwd(), "data", "coverages.bin"),
-        os.path.join(os.getcwd(), "input", "coverages.bin"))
+        os.path.join(os.getcwd(), "input", "coverages.bin"),
+        os.path.join(os.getcwd(), "data", "coverages.bin"))
 
     shutil.copyfile(
         os.path.join(os.getcwd(), "input", "items.bin"),
