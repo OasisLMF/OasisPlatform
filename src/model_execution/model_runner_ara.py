@@ -738,21 +738,27 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
 
         tee_commands = []
         output_commands = []
+        gul_output = False
+        il_output = False
 
-        if 'gul_summaries' in analysis_settings:
-            pipe = '{}/gul{}'.format(working_directory, p)
-            os.mkfifo(pipe)
+        if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
+            if analysis_settings['gul_output']:
+                pipe = '{}/gul{}'.format(working_directory, p)
+                os.mkfifo(pipe)
+                gul_output = True
 
-        if 'il_summaries' in analysis_settings:
-            pipe = '{}/il{}'.format(working_directory, p)
-            os.mkfifo(pipe)
+        if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
+            if analysis_settings['il_output']:
+                pipe = '{}/il{}'.format(working_directory, p)
+                os.mkfifo(pipe)
+                il_output = True
 
-        for pipe_prefix, key in [
-                ("gul", "gul_summaries"),
-                ("il", "il_summaries")
+        for pipe_prefix, key, output_flag in [
+                ("gul", "gul_summaries", gul_output),
+                ("il", "il_summaries", il_output)
                 ]:
 
-            if key in analysis_settings:
+            if output_flag:
                 for s in analysis_settings[key]:
                     summaryLevelPipe = '{}/{}{}summary{}'.format(working_directory, pipe_prefix, p, s["id"])
                     os.mkfifo(summaryLevelPipe)
@@ -826,9 +832,9 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
                 if 'leccalc' not in s and 'aalsummary' not in s:
                     procs += [open_process(s, model_root, log_command)]
 
-        for summaryFlag, pipe_prefix in [("-g", "gul"), ("-f", "il")]:
+        for summaryFlag, pipe_prefix, output_flag in [("-g", "gul", gul_output), ("-f", "il", il_output)]:
             myKey = pipe_prefix+'_summaries'
-            if myKey in analysis_settings:
+            if myKey in analysis_settings and output_flag:
                 summaryString = ""
                 for sum in analysis_settings[myKey]:
                     myPipe = "{}/{}{}summary{}".format(working_directory, pipe_prefix, p, sum["id"])
@@ -868,7 +874,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
 
         getModelTeePipes = []
         gulIlCmds = []
-        if 'il_summaries' in analysis_settings:
+        if il_output:
             """
             pipe = '{}/getmodeltoil{}'.format(working_directory, p)
             getModelTeePipes += [pipe]
@@ -877,7 +883,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
             assert_is_pipe('{}/il{}'.format(working_directory, p))
             gulIlCmds += ['{} -i | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
 
-        if 'gul_summaries' in analysis_settings:
+        if gul_output:
             """
             pipe = '{}/getmodeltogul{}'.format(working_directory, p)
             getModelTeePipes += [pipe]
