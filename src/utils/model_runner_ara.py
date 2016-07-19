@@ -174,8 +174,8 @@ def write_exposure_files(api1a_json, tivs, data_directory):
     if p.returncode > 0:
         raise Exception("Coverages to bin convesrion failed: {}".format(p.returncode))
 
-    # os.remove(items_csv_filename)
-    # os.remove(coverages_csv_filename)
+    os.remove(items_csv_filename)
+    os.remove(coverages_csv_filename)
 
 @helpers.oasis_log(logging.getLogger())
 def create_session(url, upx_file, verify_string, do_stormsurge):
