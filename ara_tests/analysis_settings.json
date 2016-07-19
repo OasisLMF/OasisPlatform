@@ -3,7 +3,7 @@
     "prog_id": 1,
     "module_supplier_id": "ARA",
     "model_version_id": "1",
-    "number_of_samples": 100,
+    "number_of_samples": 5,
     "gul_threshold": 100,
     "model_settings": {
 	"event_occurrence_file_id": 1,
