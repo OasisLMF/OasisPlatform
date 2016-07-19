@@ -792,26 +792,27 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
                                             output_commands += ["aalsummary -K{}aalSummary{} > {}".format(pipe_prefix, s['id'], aalfile)]
 
                                 elif isinstance(s[a], dict):
-                                    if a == "leccalc":
-                                        requiredRs = []
-                                        for r in rs:
-                                            if r in s[a]:
-                                                if s[a][r]:
-                                                    requiredRs += [r]
+                                    if a == "leccalc" and 'lec_output' in s:
+                                        if s['lec_output']:
+                                            requiredRs = []
+                                            for r in rs:
+                                                if r in s[a]:
+                                                    if s[a][r]:
+                                                        requiredRs += [r]
 
-                                        # write to file rather than use named pipe
-                                        myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
-                                        myDir = os.path.join(model_root, myDirShort)
-                                        for d in [os.path.join(model_root, 'work'), myDir]:
-                                            if not os.path.isdir(d):
-                                                logging.debug('mkdir {}\n'.format(d))
-                                                os.mkdir(d, 0777)
-                                        myFile = os.path.join(myDirShort, "p{}.bin".format(p))
-                                        if myFile not in summaryPipes:
-                                            summaryPipes += [myFile]
-                                        if p == number_of_processes:   # because leccalc integrates input for all processors
-                                            logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, myDirShort, requiredRs)))
-                                            output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), requiredRs)]
+                                            # write to file rather than use named pipe
+                                            myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
+                                            myDir = os.path.join(model_root, myDirShort)
+                                            for d in [os.path.join(model_root, 'work'), myDir]:
+                                                if not os.path.isdir(d):
+                                                    logging.debug('mkdir {}\n'.format(d))
+                                                    os.mkdir(d, 0777)
+                                            myFile = os.path.join(myDirShort, "p{}.bin".format(p))
+                                            if myFile not in summaryPipes:
+                                                summaryPipes += [myFile]
+                                            if p == number_of_processes:   # because leccalc integrates input for all processors
+                                                logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, myDirShort, requiredRs)))
+                                                output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), requiredRs)]
                                     else:
                                         # TODO what is this? Should it be an error?
                                         logging.info('Unexpectedly found analysis {} with results dict {}\n'.format(a, rs))
