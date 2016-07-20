@@ -209,58 +209,7 @@ def outputString(
 
     return str
 
-"""
-def run_analysis(analysis_settings, number_of_partitions, log_command=None):
-
-    url = "https://10.1.0.110:8080/oasis/"
-    api3_ef_request_concurency = 1
-
-    data_directory = os.path.join(os.getcwd(), "data")
-
-    if not os.path.exists(data_directory):
-        os.mkdir(data_directory)
-
-    logging.debug("Data directory: {}".format(data_directory))
-
-    model_settings = analysis_settings["model_settings"]
-    session_id = model_settings["session_id"]
-    do_stormsurge = bool(model_settings["peril_surge"])
-    event_set_type = model_settings["event_set"]
-
-    ea_wind_filename = os.path.join(
-        data_directory, 'EA_Wind_Chunk_1.csv')
-    ea_surge_filename = os.path.join(
-        data_directory, 'EA_StormSurge_Chunk_1.csv')
-
-    do_api2(url, session_id, event_set_type, do_stormsurge,
-            ea_wind_filename, ea_surge_filename, verify_string)
-
-    do_api3_vm(url, session_id, event_set_type, do_stormsurge,
-               data_directory, "testVM.tar.gz", verify_string)
-
-    do_api3_ef(number_of_partitions, api3_ef_request_concurency,
-                                session_id, event_set_type, url, data_directory,
-                                verify_string, PERIL_WIND)
-
-    if do_stormsurge:
-        do_api3_ef(number_of_partitions, api3_ef_request_concurency,
-                                    session_id, event_set_type, url, data_directory,
-                                    verify_string, PERIL_STORMSURGE)
-
-    shutil.copyfile(
-        os.path.join(os.getcwd(), "input", "coverages.bin"),
-        os.path.join(os.getcwd(), "data", "coverages.bin"))
-
-    shutil.copyfile(
-        os.path.join(os.getcwd(), "input", "items.bin"),
-        os.path.join(os.getcwd(), "data", "items.bin"))
-
-    run_analysis_only(
-        analysis_settings, number_of_partitions, log_command)
-
-    do_api1c(url, session_id, verify_string)
-
-def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
+def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
@@ -268,6 +217,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     Args:
         analysis_settings (string): the analysis settings.
         number_of_processes: the number of processes to spawn.
+        get_gul_and_il_cmds (function): called to construct workflow up to and including GULs/ILs
     '''
     
     frame = inspect.currentframe()
@@ -285,16 +235,6 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     output_directory = 'output'
 
     procs = []
-
-    model_settings = analysis_settings["model_settings"]
-    session_id = model_settings["session_id"]
-    do_wind = bool(model_settings["peril_wind"])
-    do_stormsurge = bool(model_settings["peril_surge"])
-    do_demand_surge = bool(model_settings["demand_surge"])
-    leakage_factor = float(model_settings["leakage_factor"])
-    event_set_type = model_settings["event_set"]
-
-    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command)
 
     for p in range(1, number_of_processes + 1):
 
@@ -411,43 +351,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
                 s = "summarycalc {} {} < {}".format(summaryFlag, summaryString, myPipe)
                 procs += [open_process(s, model_root, log_command)]
 
-        # gulFlags = "-S{} ".format(analysis_settings['number_of_samples'])
-        # if 'gul_threshold' in analysis_settings:
-        #     gulFlags += " -L{}".format(analysis_settings['gul_threshold'])
-        # if 'model_settings' in analysis_settings:
-        #     if "use_random_number_file" in analysis_settings['model_settings']:
-        #         if analysis_settings['model_settings']['use_random_number_file']:
-        #             gulFlags += ' -r'
-
-        partition_id = p
-        number_of_partitions = number_of_processes
-        input_data_directory = os.path.join(os.getcwd())
-        session_id = model_settings["session_id"]
-        do_wind = bool(model_settings["peril_wind"])
-        do_stormsurge = bool(model_settings["peril_surge"])
-        do_demand_surge = bool(model_settings["demand_surge"])
-        leakage_factor = float(model_settings["leakage_factor"])
-        event_set_type = model_settings["event_set"]
-        number_of_samples = int(analysis_settings['number_of_samples'])
-        gul_threshold = float(analysis_settings['gul_threshold'])
-
-        get_model_ara = build_get_model_cmd(
-                            session_id, partition_id, number_of_partitions, 
-                            do_wind, do_stormsurge, do_demand_surge, 
-                            number_of_samples, gul_threshold,
-                            input_data_directory, handles)
-
-        getModelTeePipes = []
-        gulIlCmds = []
-        if il_output:
-            assert_is_pipe('{}/il{}'.format(working_directory, p))
-            gulIlCmds += ['{} -i | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
-
-        if gul_output:
-            assert_is_pipe('{}/gul{}'.format(working_directory, p))
-            gulIlCmds += ['{} > {}/gul{} '.format(get_model_ara, working_directory, p)]
-
-        for s in gulIlCmds:
+        for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory):
             procs += [open_process(s, model_root, log_command)]
 
     waitForSubprocesses(procs)
@@ -468,4 +372,3 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     end = time.time()
     logging.info("COMPLETED: {} in {}s".format(
         func_name, round(end - start, 2)))
-"""
