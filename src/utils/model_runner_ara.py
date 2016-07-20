@@ -4,54 +4,48 @@ import os
 import sys
 import json
 import logging
-from multiprocessing import cpu_count
 import certifi
 import requests
 import argparse
 import inspect
 import shutil
-
+from multiprocessing import cpu_count
 CURRENT_DIRECTORY = \
     os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
-
 from model_execution import model_runner_ara, ara_session_utils
+
+'''
+Test utility for running an ara analysis directly.
+'''
 
 parser = argparse.ArgumentParser(description='Run ARA Hurloss.')
 
-parser.add_argument('-i', '--ara_server_ip',
-                    type=str,
-                    required=True,
-                    help="The IP address of the ARA server.")
-parser.add_argument('-u', '--upx_file',
-                    type=str,
-                    default = "",
-                    help="The UPX file containing the exposure data.")
-parser.add_argument('-a', '--analysis_settings_json',
-                    type=str,
-                    required=True,
-                    help="The analysis settings JSON file.")
-parser.add_argument('-d', '--analysis_root_directory',
-                    type=str,
-                    default=os.getcwd(),
-                    help="The analysis root directory.")
-parser.add_argument('-p', '--number_of_partitions',
-                    type=int,
-                    default=-1,
-                    help="The number of processes to use. " +
-                    "Defaults to the number of available cores.")
-parser.add_argument('-n', '--number_of_ara_server_cores',
-                    type=int,
-                    default=12,
-                    help="The number of ARA server cores. " +
-                    "Defaults to 12.")
-parser.add_argument('-c', '--command_debug_file',
-                    type=str,
-                    default='',
-                    help="Debug file for the generated commands.")
-parser.add_argument('-v', '--verbose',
-                    action='store_true',
-                    help='Verbose logging.')
+parser.add_argument(
+    '-i', '--ara_server_ip', type=str, required=True,
+    help="The IP address of the ARA server.")
+parser.add_argument(
+    '-u', '--upx_file', type=str, default="",
+    help="The UPX file containing the exposure data.")
+parser.add_argument(
+    '-a', '--analysis_settings_json', type=str, required=True,
+    help="The analysis settings JSON file.")
+parser.add_argument(
+    '-d', '--analysis_root_directory', type=str, default=os.getcwd(),
+    help="The analysis root directory.")
+parser.add_argument(
+    '-p', '--number_of_partitions', type=int, default=-1,
+    help="The number of processes to use. " +
+         "Defaults to the number of available cores.")
+parser.add_argument(
+    '-n', '--number_of_ara_server_cores', type=int, default=12,
+    help="The number of ARA server cores. Defaults to 12.")
+parser.add_argument(
+    '-c', '--command_debug_file', type=str, default='',
+    help="Debug file for the generated commands.")
+parser.add_argument(
+    '-v', '--verbose', action='store_true',
+    help='Verbose logging.')
 
 args = parser.parse_args()
 
@@ -155,12 +149,12 @@ try:
     event_set_type = model_settings["event_set"]
 
     logging.info("Session ID: {}".format(session_id))
-    logging.info("Do wind: {}".format(do_wind))    
+    logging.info("Do wind: {}".format(do_wind))
     logging.info("Do surge: {}".format(do_stormsurge))
-    
+
     if do_create_session:
         session_id = ara_session_utils.create_session(
-                        url, upx_file, verify_string, do_stormsurge, data_directory)
+            url, upx_file, verify_string, do_stormsurge, data_directory)
         analysis_settings['session_id'] = session_id
 
     ea_wind_filename = os.path.join(
@@ -168,20 +162,24 @@ try:
     ea_surge_filename = os.path.join(
         data_directory, 'EA_StormSurge_Chunk_1.csv')
 
-    model_runner_ara.do_api2(url, session_id, event_set_type, do_stormsurge,
-            ea_wind_filename, ea_surge_filename, verify_string)
+    model_runner_ara.do_api2(
+        url, session_id, event_set_type, do_stormsurge,
+        ea_wind_filename, ea_surge_filename, verify_string)
 
-    model_runner_ara.do_api3_vm(url, session_id, event_set_type, do_stormsurge,
-               data_directory, "testVM.tar.gz", verify_string)
+    model_runner_ara.do_api3_vm(
+        url, session_id, event_set_type, do_stormsurge,
+        data_directory, "testVM.tar.gz", verify_string)
 
-    model_runner_ara.do_api3_ef(number_of_partitions, api3_ef_request_concurency,
-                                session_id, event_set_type, url, data_directory,
-                                verify_string, model_runner_ara.PERIL_WIND)
+    model_runner_ara.do_api3_ef(
+        number_of_partitions, api3_ef_request_concurency, session_id,
+        event_set_type, url, data_directory, verify_string,
+        model_runner_ara.PERIL_WIND)
 
     if do_stormsurge:
-        model_runner_ara.do_api3_ef(number_of_partitions, api3_ef_request_concurency,
-                                    session_id, event_set_type, url, data_directory,
-                                    verify_string, model_runner_ara.PERIL_STORMSURGE)
+        model_runner_ara.do_api3_ef(
+            number_of_partitions, api3_ef_request_concurency, session_id,
+            event_set_type, url, data_directory, verify_string,
+            model_runner_ara.PERIL_STORMSURGE)
 
     if do_create_session:
         model_runner_ara.do_api1c(url, session_id, verify_string)
