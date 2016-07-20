@@ -541,6 +541,54 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
 
     do_api1c(url, session_id, verify_string)
 
+def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory):
+    '''
+    ARA specifics factored out of run_analysis_only().
+    Args:
+        p (int): process number
+        number_of_processes (int): number of processes in machine on which this is running
+        analysis_settings (string): the analysis settings.
+        gul_output (boolean): whether GUL outputs are required.
+        il_output (boolean): whether IL outputs are required.
+        log_command: a logger function.
+    Returns:
+        List of processes to run
+    '''
+    model_settings = analysis_settings["model_settings"]
+    session_id = model_settings["session_id"]
+    do_wind = bool(model_settings["peril_wind"])
+    do_stormsurge = bool(model_settings["peril_surge"])
+    do_demand_surge = bool(model_settings["demand_surge"])
+    leakage_factor = float(model_settings["leakage_factor"])
+    event_set_type = model_settings["event_set"]
+    number_of_samples = int(analysis_settings['number_of_samples'])
+    gul_threshold = float(analysis_settings['gul_threshold'])
+
+    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command)
+    number_of_partitions = number_of_processes
+    input_data_directory = os.path.join(os.getcwd())
+
+    partition_id = p
+
+    get_model_ara = build_get_model_cmd(
+                        session_id, partition_id, number_of_partitions, 
+                        do_wind, do_stormsurge, do_demand_surge, 
+                        number_of_samples, gul_threshold,
+                        input_data_directory, handles)
+
+    gulIlCmds = []
+    if il_output:
+        assert_is_pipe('{}/il{}'.format(working_directory, p))
+        gulIlCmds += ['{} -i | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
+
+    if gul_output:
+        assert_is_pipe('{}/gul{}'.format(working_directory, p))
+        gulIlCmds += ['{} > {}/gul{} '.format(get_model_ara, working_directory, p)]
+        
+    return gulIlCmds
+
+
+
 def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
@@ -566,16 +614,6 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     output_directory = 'output'
 
     procs = []
-
-    model_settings = analysis_settings["model_settings"]
-    session_id = model_settings["session_id"]
-    do_wind = bool(model_settings["peril_wind"])
-    do_stormsurge = bool(model_settings["peril_surge"])
-    do_demand_surge = bool(model_settings["demand_surge"])
-    leakage_factor = float(model_settings["leakage_factor"])
-    event_set_type = model_settings["event_set"]
-
-    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command)
 
     for p in range(1, number_of_processes + 1):
 
@@ -692,43 +730,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
                 s = "summarycalc {} {} < {}".format(summaryFlag, summaryString, myPipe)
                 procs += [open_process(s, model_root, log_command)]
 
-        # gulFlags = "-S{} ".format(analysis_settings['number_of_samples'])
-        # if 'gul_threshold' in analysis_settings:
-        #     gulFlags += " -L{}".format(analysis_settings['gul_threshold'])
-        # if 'model_settings' in analysis_settings:
-        #     if "use_random_number_file" in analysis_settings['model_settings']:
-        #         if analysis_settings['model_settings']['use_random_number_file']:
-        #             gulFlags += ' -r'
-
-        partition_id = p
-        number_of_partitions = number_of_processes
-        input_data_directory = os.path.join(os.getcwd())
-        session_id = model_settings["session_id"]
-        do_wind = bool(model_settings["peril_wind"])
-        do_stormsurge = bool(model_settings["peril_surge"])
-        do_demand_surge = bool(model_settings["demand_surge"])
-        leakage_factor = float(model_settings["leakage_factor"])
-        event_set_type = model_settings["event_set"]
-        number_of_samples = int(analysis_settings['number_of_samples'])
-        gul_threshold = float(analysis_settings['gul_threshold'])
-
-        get_model_ara = build_get_model_cmd(
-                            session_id, partition_id, number_of_partitions, 
-                            do_wind, do_stormsurge, do_demand_surge, 
-                            number_of_samples, gul_threshold,
-                            input_data_directory, handles)
-
-        getModelTeePipes = []
-        gulIlCmds = []
-        if il_output:
-            assert_is_pipe('{}/il{}'.format(working_directory, p))
-            gulIlCmds += ['{} -i | fmcalc > {}/il{}'.format(get_model_ara, working_directory, p)]
-
-        if gul_output:
-            assert_is_pipe('{}/gul{}'.format(working_directory, p))
-            gulIlCmds += ['{} > {}/gul{} '.format(get_model_ara, working_directory, p)]
-
-        for s in gulIlCmds:
+        for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory):
             procs += [open_process(s, model_root, log_command)]
 
     waitForSubprocesses(procs)
