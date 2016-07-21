@@ -142,8 +142,8 @@ def outputString(
         if output_command in ['eltcalc', 'pltcalc']:
             output_pipe = "{}/{}_{}_{}{}_{}".format(
                 working_directory, pipe_prefix, summary, output_command, "", proc_number)
-            os.mkfifo(output_pipe)
-        elif output_command == 'aalcalc':
+            # os.mkfifo(output_pipe)
+        if output_command == 'aalcalc':
             output_filename = "p{}.bin".format(proc_number)
             # output_filename = os.path.join(dir, file)
         else:
@@ -235,6 +235,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
     output_directory = 'output'
 
     procs = []
+    postOutputCmds = []
 
     for p in range(1, number_of_processes + 1):
 
@@ -278,18 +279,26 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                     summaryPipes += ['{}/{}{}summary{}{}'.format(working_directory, pipe_prefix, p, s["id"], a)]
                                     logging.debug('new pipe: {}\n'.format(summaryPipes[-1]))
                                     os.mkfifo(summaryPipes[-1])
+
                                     output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], proc_number=p)]
 
-                                    if p == number_of_processes:
+                                    if p == 1:
                                         if a in ['eltcalc', 'pltcalc']:
+                                            for pp in range(1, number_of_processes + 1):
+                                                output_pipe = "{}/{}_{}_{}{}_{}".format(
+                                                    working_directory, pipe_prefix, s['id'], a, "", pp)
+                                                os.mkfifo(output_pipe)
+
                                             spCmd = output_commands[-1].split('>')
                                             if len(spCmd) >= 2:
                                                 postOutputCmd = "cat "
                                                 for inputPipeNumber in range(1, number_of_processes + 1):
-                                                    postOutputCmd += "{} ".format(spCmd[-1].replace(str(p), str(inputPipeNumber)))
+                                                    postOutputCmd += "{} ".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber)))
                                                 spCmd2 = spCmd[-1].split('/')
                                                 if len(spCmd2) >= 2:
                                                     postOutputCmd += "> {}.csv".format(os.path.join(output_directory, spCmd2[-1].replace("_"+str(p),'')))
+                                            # output_commands += [postOutputCmd]
+                                            # postOutputCmds += [postOutputCmd]
                                             procs += [open_process(postOutputCmd, model_root, log_command)]
                                         elif a == 'aalcalc':
                                             aalfile = "{}/{}_{}_aalcalc.csv".format(output_directory, pipe_prefix, s['id'])
@@ -334,7 +343,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
         # now run them in reverse order from consumers to producers
         for cmds in [tee_commands, output_commands]:
             for s in cmds:
-                if 'leccalc' not in s and 'aalsummary' not in s:
+                if 'leccalc' not in s and 'aalsummary' not in s and not s.startswith("cat "):
                     procs += [open_process(s, model_root, log_command)]
 
         for summaryFlag, pipe_prefix, output_flag in [("-g", "gul", gul_output), ("-f", "il", il_output)]:
@@ -353,14 +362,18 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
 
         for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory):
             procs += [open_process(s, model_root, log_command)]
-
+        
+        """    
+        for s in postOutputCmds:
+            procs += [open_process(s, model_root, log_command)]
+        """
     waitForSubprocesses(procs)
 
     procs = []
     # Run leccalc as it reads from a file produced by tee processors and
     # is run just once for ALL processors
-    for s in output_commands:
-        if 'leccalc' in s or 'aalsummary' in s:
+    for s in output_commands + postOutputCmds:
+        if 'leccalc' in s or 'aalsummary' in s or s.startswith("cat "):
             logging.info("{}".format(s))
             procs += [open_process(s, model_root, log_command)]
 

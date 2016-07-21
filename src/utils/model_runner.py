@@ -101,7 +101,7 @@ try:
         shutil.rmtree('working')
     os.mkdir("working")
     
-    model_runner.run_analysis(analysis_settings, number_of_processes, log_command)
+    model_runner.run_analysis(analysis_settings, number_of_processes, log_command if do_command_output else None)  
 
 except Exception as e:
     logging.exception("Model execution task failed.")

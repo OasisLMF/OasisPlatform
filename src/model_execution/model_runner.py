@@ -22,6 +22,7 @@ def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, i
     Returns:
         List of processes to run
     '''
+
     gulFlags = "-S{} ".format(analysis_settings['number_of_samples'])
     if 'gul_threshold' in analysis_settings:
         gulFlags += " -L{}".format(analysis_settings['gul_threshold'])
@@ -32,19 +33,21 @@ def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, i
 
     getModelTeePipes = []
     gulIlCmds = []
-    if 'il_summaries' in analysis_settings:
-        pipe = '{}/getmodeltoil{}'.format(working_directory, p)
-        getModelTeePipes += [pipe]
-        os.mkfifo(pipe)
-        assert_is_pipe('{}/il{}'.format(working_directory, p))
-        gulIlCmds += ['gulcalc {} -i - < {} | fmcalc > {}/il{}'.format(gulFlags, pipe, working_directory, p)]
+    if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
+        if analysis_settings['il_output']:
+            pipe = '{}/getmodeltoil{}'.format(working_directory, p)
+            getModelTeePipes += [pipe]
+            os.mkfifo(pipe)
+            assert_is_pipe('{}/il{}'.format(working_directory, p))
+            gulIlCmds += ['gulcalc {} -i - < {} | fmcalc > {}/il{}'.format(gulFlags, pipe, working_directory, p)]
 
-    if 'gul_summaries' in analysis_settings:
-        pipe = '{}/getmodeltogul{}'.format(working_directory, p)
-        getModelTeePipes += [pipe]
-        os.mkfifo(pipe)
-        assert_is_pipe('{}/gul{}'.format(working_directory, p))
-        gulIlCmds += ['gulcalc {} -c - < {} > {}/gul{} '.format(gulFlags, pipe, working_directory, p)]
+    if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
+        if analysis_settings['gul_output']:
+            pipe = '{}/getmodeltogul{}'.format(working_directory, p)
+            getModelTeePipes += [pipe]
+            os.mkfifo(pipe)
+            assert_is_pipe('{}/gul{}'.format(working_directory, p))
+            gulIlCmds += ['gulcalc {} -c - < {} > {}/gul{} '.format(gulFlags, pipe, working_directory, p)]
 
     pipe = '{}/getmodeltotee{}'.format(working_directory, p)
     os.mkfifo(pipe)
@@ -74,8 +77,9 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
     inputs/outputs and the spawning of subprocesses to call xtools
     across processors.
     Args:
-        analysis_settings (string): the analysis settings.
+        analysis_settings (string): the analysis settings. 
         number_of_processes: the number of processes to spawn.
     '''
+    # number_of_processes = 12
     
     common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command)
