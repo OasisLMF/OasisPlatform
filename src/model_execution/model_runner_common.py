@@ -372,7 +372,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
     procs = []
     # Run leccalc as it reads from a file produced by tee processors and
     # is run just once for ALL processors
-    for s in output_commands:
+    for s in output_commands + postOutputCmds:
         if 'leccalc' in s or 'aalsummary' in s or s.startswith("cat "):
             logging.info("{}".format(s))
             procs += [open_process(s, model_root, log_command)]
