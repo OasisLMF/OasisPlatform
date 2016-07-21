@@ -16,6 +16,7 @@ COPY ./src/model_execution/  /home/ara/model_execution/
 COPY ./src/utils/ /home/ara/utils/
 COPY ./ara_data/ /home/ara/ara_data/
 COPY ./ara_tests/ /home/ara/ara_tests/
+COPY ./run_test_ara_analysis.sh /home/ara/
 
 RUN chmod -R a+w /home/ara/ara_data
 RUN chmod -R a+w /home/ara/ara_tests
