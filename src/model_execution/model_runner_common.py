@@ -90,31 +90,31 @@ def waitForSubprocesses(procs):
 
     logging.info('Waiting for {} processes.'.format(len(procs)))
 
+    for p in procs:
+        if p != None:
+            if p.poll() is not None:
+                logging.info('Process # {} existed with status={}'.format(p.pid, p.poll()))
+            # logging.info('Process # {}: {}'.format(p.pid, status))
 
     for p in procs:
         if p != None:
-            if p.poll() is None:
-                status = 'Running'
-            else:
-                status = 'Exited with status {}'.format(p.poll())
-            logging.debug('Process # {}: {}'.format(p.pid, status))
-
-    for p in procs:
-        if p != None:
+            """
             command = "{}".format(p.pid)
             try:
                 with open('/proc/{}/cmdline'.format(p.pid), 'r') as cmdF:
                     command = cmdF.read()
             except:
                 pass
+            """
+            logging.info('waiting for process # {}'.format(p.pid))
             return_code = p.wait()
             if return_code == 0:
-                logging.debug(
-                    '{} process #{} ended\n'.format(command, p.pid))
+                logging.info(
+                    'process #{} ended\n'.format(p.pid))
             else:
                 raise Exception(
-                    '{} process #{} returned error return code {}'.format(
-                        command, p.pid, return_code))
+                    'process #{} returned error return code {}'.format(
+                        p.pid, return_code))
 
     logging.info('Done waiting for processes.')
 
