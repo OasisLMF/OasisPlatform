@@ -8,6 +8,7 @@ from common import helpers
 import sys
 import json
 import shutil
+import re
 from threading import Thread
 '''
 TODO: Module description
@@ -298,7 +299,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                                     postOutputCmd += "{} ".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber)))
                                                 spCmd2 = spCmd[-1].split('/')
                                                 if len(spCmd2) >= 2:
-                                                    postOutputCmd += "> {}.csv".format(os.path.join(output_directory, spCmd2[-1].replace("_"+str(p),'')))
+                                                    postOutputCmd += "> {}.csv".format(os.path.join(output_directory, re.sub("_"+str(p)+"$", '', spCmd2[-1])))
                                             # output_commands += [postOutputCmd]
                                             # postOutputCmds += [postOutputCmd]
                                             procs += [open_process(postOutputCmd, model_root, log_command)]
