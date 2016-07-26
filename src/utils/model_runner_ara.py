@@ -141,21 +141,21 @@ try:
         requests.packages.urllib3.disable_warnings()
 
     model_settings = analysis_settings["model_settings"]
-    session_id = model_settings["session_id"]
     do_wind = bool(model_settings["peril_wind"])
     do_stormsurge = bool(model_settings["peril_surge"])
     do_demand_surge = bool(model_settings["demand_surge"])
     leakage_factor = float(model_settings["leakage_factor"])
     event_set_type = model_settings["event_set"]
 
-    logging.info("Session ID: {}".format(session_id))
     logging.info("Do wind: {}".format(do_wind))
     logging.info("Do surge: {}".format(do_stormsurge))
 
     if do_create_session:
         session_id = ara_session_utils.create_session(
             url, upx_file, verify_string, do_stormsurge, data_directory)
-        analysis_settings['session_id'] = session_id
+        model_settings['session_id'] = session_id
+    else:
+        session_id = model_settings["session_id"]
 
     ea_wind_filename = os.path.join(
         data_directory, 'EA_Wind_Chunk_1.csv')
