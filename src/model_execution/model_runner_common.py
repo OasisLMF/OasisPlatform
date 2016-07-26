@@ -89,6 +89,7 @@ def waitForSubprocesses(procs):
     ''' Wait for a set of subprocesses. '''
 
     logging.info('Waiting for {} processes.'.format(len(procs)))
+    # logging.info('still here')
 
     for p in procs:
         if p != None:
@@ -96,6 +97,7 @@ def waitForSubprocesses(procs):
                 logging.info('Process # {} existed with status={}'.format(p.pid, p.poll()))
             # logging.info('Process # {}: {}'.format(p.pid, status))
 
+    # logging.info('still here #2')
     for p in procs:
         if p != None:
             """
@@ -194,9 +196,9 @@ def outputString(
                 str += '-r '
 
     elif output_command == "aalcalc":
-        myDirShort = os.path.join('work', "{}aalSummary{}".format(pipe_prefix, summary))
+        myDirShort = os.path.join('working', "{}aalSummary{}".format(pipe_prefix, summary))
         myDir = os.path.join(os.getcwd(), myDirShort)
-        for d in [os.path.join(os.getcwd(), 'work'), myDir]:
+        for d in [os.path.join(os.getcwd(), 'working'), myDir]:
             if not os.path.isdir(d):
                 logging.debug('mkdir {}\n'.format(d))
                 os.mkdir(d, 0777)
@@ -300,9 +302,9 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                             # output_commands += [postOutputCmd]
                                             # postOutputCmds += [postOutputCmd]
                                             procs += [open_process(postOutputCmd, model_root, log_command)]
-                                        elif a == 'aalcalc':
-                                            aalfile = "{}/{}_{}_aalcalc.csv".format(output_directory, pipe_prefix, s['id'])
-                                            output_commands += ["aalsummary -K{}aalSummary{} > {}".format(pipe_prefix, s['id'], aalfile)]
+                                    elif p == number_of_processes and a == 'aalcalc':
+                                        aalfile = "{}/{}_{}_aalcalc.csv".format(output_directory, pipe_prefix, s['id'])
+                                        output_commands += ["aalsummary -K{}aalSummary{} > {}".format(pipe_prefix, s['id'], aalfile)]
 
                                 elif isinstance(s[a], dict):
                                     if a == "leccalc" and 'lec_output' in s:
@@ -314,9 +316,9 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                                         requiredRs += [r]
 
                                             # write to file rather than use named pipe
-                                            myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
+                                            myDirShort = os.path.join('working', "{}summary{}".format(pipe_prefix, s['id']))
                                             myDir = os.path.join(model_root, myDirShort)
-                                            for d in [os.path.join(model_root, 'work'), myDir]:
+                                            for d in [os.path.join(model_root, 'working'), myDir]:
                                                 if not os.path.isdir(d):
                                                     logging.debug('mkdir {}\n'.format(d))
                                                     os.mkdir(d, 0777)
@@ -372,10 +374,11 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
     procs = []
     # Run leccalc as it reads from a file produced by tee processors and
     # is run just once for ALL processors
-    for s in output_commands + postOutputCmds:
-        if 'leccalc' in s or 'aalsummary' in s or s.startswith("cat "):
-            logging.info("{}".format(s))
-            procs += [open_process(s, model_root, log_command)]
+    for cmds in [tee_commands, output_commands]:
+        for s in cmds:
+            if 'leccalc' in s or 'aalsummary' in s:
+                logging.info("{}".format(s))
+                procs += [open_process(s, model_root, log_command)]
 
     waitForSubprocesses(procs)
 
