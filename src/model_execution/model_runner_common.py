@@ -97,7 +97,7 @@ def waitForSubprocesses(procs):
                 logging.info('Process # {} existed with status={}'.format(p.pid, p.poll()))
             # logging.info('Process # {}: {}'.format(p.pid, status))
 
-    # logging.info('still here #2')
+    logging.info('still here #2')
     for p in procs:
         if p != None:
             """
@@ -141,7 +141,7 @@ def outputString(
     '''
 
     if rs == []:
-        if output_command in ['eltcalc', 'pltcalc']:
+        if output_command in ['eltcalc', 'pltcalc', 'summarycalc']:
             output_pipe = "{}/{}_{}_{}{}_{}".format(
                 working_directory, pipe_prefix, summary, output_command, "", proc_number)
             # os.mkfifo(output_pipe)
@@ -207,7 +207,7 @@ def outputString(
     elif output_command == "pltcalc":
         str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "summarycalc":
-        str = 'summarycalctocsv < {} > {}'.format(input_pipe, output_filename)
+        str = 'summarycalctocsv < {} > {}'.format(input_pipe, output_pipe)
 
     return str
 
@@ -285,7 +285,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                     output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], proc_number=p)]
 
                                     if p == 1:
-                                        if a in ['eltcalc', 'pltcalc']:
+                                        if a in ['eltcalc', 'pltcalc', 'summarycalc']:
                                             for pp in range(1, number_of_processes + 1):
                                                 output_pipe = "{}/{}_{}_{}{}_{}".format(
                                                     working_directory, pipe_prefix, s['id'], a, "", pp)
