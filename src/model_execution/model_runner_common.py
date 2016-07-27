@@ -165,6 +165,7 @@ def outputString(
 
     # generate cmd
     if output_command == "eltcalc":
+        # assert_is_pipe(output_pipe)
         str = 'eltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "leccalc":
         str = 'leccalc -K{} '.format(input_pipe)
@@ -206,8 +207,10 @@ def outputString(
 
         str = 'aalcalc < {} > {}'.format(input_pipe, os.path.join(myDirShort, output_filename))
     elif output_command == "pltcalc":
+        # assert_is_pipe(output_pipe)
         str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "summarycalc":
+        # assert_is_pipe(output_pipe)
         str = 'summarycalctocsv < {} > {}'.format(input_pipe, output_pipe)
 
     return str
@@ -238,10 +241,10 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
     output_directory = 'output'
 
     procs = []
-    postOutputCmds = []
 
     for p in range(1, number_of_processes + 1):
 
+        postOutputCmds = []
         logging.debug('Process {} of {}'.format(p, number_of_processes))
 
         tee_commands = []
@@ -296,13 +299,15 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                             if len(spCmd) >= 2:
                                                 postOutputCmd = "cat "
                                                 for inputPipeNumber in range(1, number_of_processes + 1):
-                                                    postOutputCmd += "{} ".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber)))
+                                                    myPipe = "{}".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber))).lstrip()
+                                                    assert_is_pipe(myPipe)
+                                                    postOutputCmd += "{} ".format(myPipe)
                                                 spCmd2 = spCmd[-1].split('/')
                                                 if len(spCmd2) >= 2:
                                                     postOutputCmd += "> {}.csv".format(os.path.join(output_directory, re.sub("_"+str(p)+"$", '', spCmd2[-1])))
                                             # output_commands += [postOutputCmd]
-                                            # postOutputCmds += [postOutputCmd]
-                                            procs += [open_process(postOutputCmd, model_root, log_command)]
+                                            postOutputCmds += [postOutputCmd]
+                                            # procs += [open_process(postOutputCmd, model_root, log_command)]
                                     elif p == number_of_processes and a == 'aalcalc':
                                         aalfile = "{}/{}_{}_aalcalc.csv".format(output_directory, pipe_prefix, s['id'])
                                         output_commands += ["aalsummary -K{}aalSummary{} > {}".format(pipe_prefix, s['id'], aalfile)]
@@ -344,9 +349,9 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                         tee_commands[-1] += " > {}".format(summaryPipes[-1])
 
         # now run them in reverse order from consumers to producers
-        for cmds in [tee_commands, output_commands]:
+        for cmds in [tee_commands, postOutputCmds, output_commands]:
             for s in cmds:
-                if 'leccalc' not in s and 'aalsummary' not in s and not s.startswith("cat "):
+                if 'leccalc' not in s and 'aalsummary' not in s: # and not s.startswith("cat "):
                     procs += [open_process(s, model_root, log_command)]
 
         for summaryFlag, pipe_prefix, output_flag in [("-g", "gul", gul_output), ("-f", "il", il_output)]:
