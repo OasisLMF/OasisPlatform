@@ -86,6 +86,30 @@ def assert_is_pipe(p):
     assert stat.S_ISFIFO(os.stat(p).st_mode)
 
 
+def create_pipe(p, log_command):
+    ''' Check whether pipes used have been created'''
+    if not os.path.exists(p):
+        if log_command:
+            log_command("mkfifo {}".format(p))
+
+        os.mkfifo(p)
+
+
+def check_pipes(s, log_command):
+    logging.info('s = {}'.format(s))
+    sps = re.split('working|\s+', s)
+    logging.info('sps = {}'.format(sps))
+    for sp in sps:
+        if '/' in sp:
+            spsp = re.split('/', sp)
+            logging.info('spsp = {}'.format(spsp))
+            for x in spsp:
+                if len(x) > 0:
+                    p = os.path.join('working', x)
+                    logging.info('assert pipe ***{}***'.format(p))
+                    create_pipe(p, log_command)
+
+
 def waitForSubprocesses(procs):
     ''' Wait for a set of subprocesses. '''
 
@@ -124,7 +148,7 @@ def waitForSubprocesses(procs):
 
 def outputString(
         working_directory, dir, pipe_prefix, summary, output_command, input_pipe,
-        rs=[], proc_number=None):
+        log_command, rs=[], proc_number=None):
     '''
     TODO
     Creates the output command string for running ktools.
@@ -145,7 +169,7 @@ def outputString(
         if output_command in ['eltcalc', 'pltcalc', 'summarycalc']:
             output_pipe = "{}/{}_{}_{}{}_{}".format(
                 working_directory, pipe_prefix, summary, output_command, "", proc_number)
-            # os.mkfifo(output_pipe)
+            create_pipe(output_pipe, log_command)
         if output_command == 'aalcalc':
             output_filename = "p{}.bin".format(proc_number)
             # output_filename = os.path.join(dir, file)
@@ -255,13 +279,13 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
         if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
             if analysis_settings['gul_output']:
                 pipe = '{}/gul{}'.format(working_directory, p)
-                os.mkfifo(pipe)
+                create_pipe(pipe, log_command)
                 gul_output = True
 
         if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
             if analysis_settings['il_output']:
                 pipe = '{}/il{}'.format(working_directory, p)
-                os.mkfifo(pipe)
+                create_pipe(pipe, log_command)
                 il_output = True
 
         for pipe_prefix, key, output_flag in [
@@ -272,7 +296,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
             if output_flag:
                 for s in analysis_settings[key]:
                     summaryLevelPipe = '{}/{}{}summary{}'.format(working_directory, pipe_prefix, p, s["id"])
-                    os.mkfifo(summaryLevelPipe)
+                    create_pipe(summaryLevelPipe, log_command)
 
                     summaryPipes = []
                     for a, rs in ANALYSIS_TYPES:
@@ -284,16 +308,16 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                 if rs == []:
                                     summaryPipes += ['{}/{}{}summary{}{}'.format(working_directory, pipe_prefix, p, s["id"], a)]
                                     logging.debug('new pipe: {}\n'.format(summaryPipes[-1]))
-                                    os.mkfifo(summaryPipes[-1])
+                                    create_pipe(summaryPipes[-1], log_command)
 
-                                    output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], proc_number=p)]
+                                    output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], log_command, proc_number=p)]
 
                                     if p == 1:
                                         if a in ['eltcalc', 'pltcalc', 'summarycalc']:
                                             for pp in range(1, number_of_processes + 1):
                                                 output_pipe = "{}/{}_{}_{}{}_{}".format(
                                                     working_directory, pipe_prefix, s['id'], a, "", pp)
-                                                os.mkfifo(output_pipe)
+                                                create_pipe(output_pipe, log_command)
 
                                             spCmd = output_commands[-1].split('>')
                                             if len(spCmd) >= 2:
@@ -333,7 +357,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                                 summaryPipes += [myFile]
                                             if p == number_of_processes:   # because leccalc integrates input for all processors
                                                 logging.debug('calling outputString({})\n'.format((pipe_prefix, s['id'], a, myDirShort, requiredRs)))
-                                                output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), requiredRs)]
+                                                output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, "{}summary{}".format(pipe_prefix, s['id']), log_command, requiredRs)]
                                     else:
                                         # TODO what is this? Should it be an error?
                                         logging.info('Unexpectedly found analysis {} with results dict {}\n'.format(a, rs))
@@ -394,3 +418,4 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
     end = time.time()
     logging.info("COMPLETED: {} in {}s".format(
         func_name, round(end - start, 2)))
+        
