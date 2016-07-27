@@ -74,10 +74,16 @@ def open_process(s, dir, log_command):
     ''' Wrap subprocess.Open. Returns the Popen object. '''
     if log_command:
         log_command(s)
+    """
         p = None
     else:
+        check_pipes(s, log_command)
         p = subprocess.Popen(s, shell=True, cwd=dir)
         logging.info('{} - process number={}'.format(s, p.pid))
+    """
+    check_pipes(s, log_command)
+    p = subprocess.Popen(s, shell=True, cwd=dir)
+    logging.info('{} - process number={}'.format(s, p.pid))
     return p
 
 
