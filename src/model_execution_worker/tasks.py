@@ -142,9 +142,19 @@ def start_analysis(analysis_settings, input_location):
     if not os.path.exists(os.path.join(working_directory, 'input')):
         raise Exception("Input archive did not extract correctly")
 
+
     # TODO Uncomment for Linux
     # os.symlink(model_data_path, os.path.join(working_directory, "static"))
     shutil.copytree(model_data_path, os.path.join(working_directory, "static"))
+
+    # If an events file has not been included in the analysis input,
+    # then use the default file with all events from the model data.
+    analysis_events_filepath = os.path.join(working_directory, 'input', 'events.bin')
+    model_data_events_filepath = os.path.join(working_directory, 'static', 'events.bin')
+    if not os.path.exists(analysis_events_filepath):
+        logging.info("Using default events.bin")
+        shutil.copyfile(model_data_events_filepath, analysis_events_filepath)
+
 
     model_runner_module = __import__(
         "{}.{}".format(module_supplier_id, "supplier_model_runner"),
