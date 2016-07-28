@@ -81,9 +81,6 @@ logging.basicConfig(stream=sys.stdout, level=log_level, format=log_format)
 with open(analysis_settings_json_filepath) as file:
     analysis_settings = json.load(file)
 
-model_settings = analysis_settings['analysis_settings']['model_settings']
-do_stormsurge = bool(model_settings["peril_surge"])
-
 for analysis_id in range(num_analyses):
     try:
         client = OasisApiClient.OasisApiClient(api_url, logging.getLogger())
