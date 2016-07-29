@@ -243,7 +243,6 @@ def do_api3_ef(
 def do_api1c(url, session_id, verify_string):
     ''' Call API 1c '''
 
-    sys.stderr.write('Calling API1c')
     get("{0}api1c/{1}".format(url, session_id), verify=verify_string)
     return
 
@@ -452,8 +451,7 @@ def create_shared_memory(
 
     return handles
 
-
-#@helpers.oasis_log(logging.getLogger())
+@helpers.oasis_log(logging.getLogger())
 def free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command):
     if do_wind:
         cmd = 'getmodelara -L -W -s{} -C1 -H{}'.format(
@@ -493,6 +491,8 @@ def free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
             p = subprocess.Popen(cmd, shell=True)
             p.wait()
 
+
+@helpers.oasis_log(logging.getLogger())
 def run_analysis(analysis_settings, number_of_partitions, log_command=None):
 
     url = "https://10.1.0.110:8080/oasis/"
@@ -538,18 +538,9 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
         os.path.join(os.getcwd(), "input", "items.bin"),
         os.path.join(os.getcwd(), "data", "items.bin"))
 
-    do_wind = bool(model_settings["peril_wind"])
-    do_stormsurge = bool(model_settings["peril_surge"])
-
-    handles = create_shared_memory(
-        session_id, do_wind, do_stormsurge, log_command) 
-
-    run_analysis_only(analysis_settings, number_of_partitions, log_command)
-
     free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
 
-    do_api1c(url, session_id, verify_string)
-
+@helpers.oasis_log(logging.getLogger())
 def get_gul_and_il_cmds(
     p, number_of_processes, analysis_settings, gul_output, 
     il_output, log_command, working_directory, handles):
@@ -599,7 +590,9 @@ def get_gul_and_il_cmds(
         
     return gulIlCmds
 
-def run_analysis_only(analysis_settings, number_of_partitions, log_command=None):
+
+@helpers.oasis_log(logging.getLogger())
+def run_analysis_only(analysis_settings, number_of_partitions, log_command=None, handles=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
@@ -609,6 +602,17 @@ def run_analysis_only(analysis_settings, number_of_partitions, log_command=None)
         number_of_partitions: the number of partitions to run.
         get_gul_and_il_cmds (function): called to construct workflow up to and including GULs/ILs
     '''
-    
+
+    model_settings = analysis_settings["model_settings"]
+    session_id = model_settings["session_id"]
+    do_wind = bool(model_settings["peril_wind"])
+    do_stormsurge = bool(model_settings["peril_surge"])
+
+    handles = create_shared_memory(
+        session_id, do_wind, do_stormsurge, log_command) 
+
     common_run_analysis_only(
         analysis_settings, number_of_partitions, get_gul_and_il_cmds, log_command, handles)
+
+    # TODO: errro handling
+    free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)

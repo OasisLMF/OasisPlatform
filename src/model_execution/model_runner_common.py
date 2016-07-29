@@ -69,7 +69,7 @@ ANALYSIS_TYPES = [
     ("aalcalc", []),
     ("pltcalc", [])]
 
-
+@helpers.oasis_log(logging.getLogger())
 def open_process(s, dir, log_command):
     ''' Wrap subprocess.Open. Returns the Popen object. '''
     if log_command:
@@ -86,7 +86,7 @@ def open_process(s, dir, log_command):
     """
     return p
 
-
+@helpers.oasis_log(logging.getLogger())
 def assert_is_pipe(p):
     ''' Check whether pipes used have been created'''
     assert stat.S_ISFIFO(os.stat(p).st_mode)
@@ -114,7 +114,7 @@ def check_pipes(s, log_command):
                     logging.info('assert pipe ***{}***'.format(p))
                     create_pipe(p, log_command)
 
-
+@helpers.oasis_log(logging.getLogger())
 def waitForSubprocesses(procs):
     ''' Wait for a set of subprocesses. '''
 
@@ -150,7 +150,7 @@ def waitForSubprocesses(procs):
 
     logging.info('Done waiting for processes.')
 
-
+@helpers.oasis_log(logging.getLogger())
 def outputString(
         working_directory, dir, pipe_prefix, summary, output_command, input_pipe,
         log_command, rs=[], proc_number=None):
@@ -244,8 +244,9 @@ def outputString(
 
     return str
 
+@helpers.oasis_log(logging.getLogger())
 def common_run_analysis_only(
-    analysis_settings, number_of_processes, get_gul_and_il_cmds, handles, log_command=None):
+    analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command=None, handles=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
