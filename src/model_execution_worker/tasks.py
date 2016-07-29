@@ -124,7 +124,7 @@ def start_analysis(analysis_settings, input_location):
                      module_supplier_id,
                      model_version_id)
     if not os.path.exists(model_data_path):
-        raise Exception("Model data not found: {}".format(model_data_directory))
+        raise Exception("Model data not found: {}".format(model_data_path))
 
     logging.info("Setting up analysis working directory")
 
