@@ -545,7 +545,9 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
 
     do_api1c(url, session_id, verify_string)
 
-def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory):
+def get_gul_and_il_cmds(
+    p, number_of_processes, analysis_settings, gul_output, 
+    il_output, log_command, working_directory, handles):
     '''
     ARA specifics factored out of run_analysis_only().
     Args:
@@ -555,6 +557,8 @@ def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, i
         gul_output (boolean): whether GUL outputs are required.
         il_output (boolean): whether IL outputs are required.
         log_command: a logger function.
+        working_directory: the analysis working directory
+        handles: the shared memory handles
     Returns:
         List of processes to run
     '''
@@ -568,7 +572,6 @@ def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, i
     number_of_samples = int(analysis_settings['number_of_samples'])
     gul_threshold = float(analysis_settings['gul_threshold'])
 
-    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command)
     number_of_partitions = number_of_processes
     input_data_directory = os.path.join(os.getcwd())
 
@@ -591,8 +594,6 @@ def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, i
         
     return gulIlCmds
 
-
-
 def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
@@ -604,4 +605,7 @@ def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
         get_gul_and_il_cmds (function): called to construct workflow up to and including GULs/ILs
     '''
     
-    common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command)
+    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command)
+    common_run_analysis_only(
+        analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command, handles)
+    free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)

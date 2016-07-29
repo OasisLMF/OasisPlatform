@@ -244,7 +244,8 @@ def outputString(
 
     return str
 
-def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command=None):
+def common_run_analysis_only(
+    analysis_settings, number_of_processes, get_gul_and_il_cmds, handles, log_command=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
@@ -252,7 +253,9 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
     Args:
         analysis_settings (string): the analysis settings.
         number_of_processes: the number of processes to spawn.
-        get_gul_and_il_cmds (function): called to construct workflow up to and including GULs/ILs
+        get_gul_and_il_cmds (function): called to construct workflow up to and including GULs/ILs,
+        handles: the shared memory handles
+        log_command: command to log process calls
     '''
     
     frame = inspect.currentframe()
@@ -351,7 +354,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                                                         requiredRs += [r]
 
                                             # write to file rather than use named pipe
-                                            myDirShort = os.path.join('working', "{}summary{}".format(pipe_prefix, s['id']))
+                                            myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
                                             myDir = os.path.join(model_root, myDirShort)
                                             for d in [os.path.join(model_root, 'working'), myDir]:
                                                 if not os.path.isdir(d):
@@ -397,7 +400,7 @@ def common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and
                 s = "summarycalc {} {} < {}".format(summaryFlag, summaryString, myPipe)
                 procs += [open_process(s, model_root, log_command)]
 
-        for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory):
+        for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory, handles):
             procs += [open_process(s, model_root, log_command)]
         
         """    
