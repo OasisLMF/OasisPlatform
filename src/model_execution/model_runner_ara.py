@@ -1,8 +1,6 @@
 import os
-import inspect
 import time
 import logging
-import stat
 import subprocess
 from common import helpers
 import sys
@@ -12,7 +10,7 @@ import requests
 import shutil
 import certifi
 from threading import Thread
-from model_runner_common import open_process, assert_is_pipe, waitForSubprocesses, outputString, ANALYSIS_TYPES, common_run_analysis_only
+from model_runner_common import assert_is_pipe, common_run_analysis_only
 
 '''
 TODO: Module description
@@ -37,8 +35,8 @@ if not verify_string:
     requests.packages.urllib3.disable_warnings()
 
 def is_valid_event_set_type(event_set_type):
-    return event_set_type in (model_runner_ara.EVENT_SET_HISTORICAL, 
-                              model_runner_ara.EVENT_SET_PROBABILISTIC)
+    return event_set_type in (EVENT_SET_HISTORICAL, 
+                              EVENT_SET_PROBABILISTIC)
 
 @helpers.oasis_log(logging.getLogger())
 def do_api1(url, upx_file, verify_string, do_surge):
@@ -540,10 +538,15 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
         os.path.join(os.getcwd(), "input", "items.bin"),
         os.path.join(os.getcwd(), "data", "items.bin"))
 
-    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command) 
+    do_wind = bool(model_settings["peril_wind"])
+    do_stormsurge = bool(model_settings["peril_surge"])
+
+    handles = create_shared_memory(
+        session_id, do_wind, do_stormsurge, log_command) 
 
     common_run_analysis_only(
-        analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command, handles)
+        analysis_settings, number_of_partitions, get_gul_and_il_cmds, 
+        log_command, handles)
 
     free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
 
