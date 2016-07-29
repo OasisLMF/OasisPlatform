@@ -540,8 +540,12 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
         os.path.join(os.getcwd(), "input", "items.bin"),
         os.path.join(os.getcwd(), "data", "items.bin"))
 
-    run_analysis_only(
-        analysis_settings, number_of_partitions, log_command)
+    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command) 
+
+    common_run_analysis_only(
+        analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command, handles)
+
+    free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
 
     do_api1c(url, session_id, verify_string)
 
@@ -593,19 +597,3 @@ def get_gul_and_il_cmds(
         gulIlCmds += ['{} > {}/gul{} '.format(get_model_ara, working_directory, p)]
         
     return gulIlCmds
-
-def run_analysis_only(analysis_settings, number_of_processes, log_command=None):
-    '''
-    Worker function for supplier OasisIM. It orchestrates data
-    inputs/outputs and the spawning of subprocesses to call xtools
-    across processors.
-    Args:
-        analysis_settings (string): the analysis settings.
-        number_of_processes: the number of processes to spawn.
-        get_gul_and_il_cmds (function): called to construct workflow up to and including GULs/ILs
-    '''
-    
-    handles = create_shared_memory(session_id, do_wind, do_stormsurge, log_command)
-    common_run_analysis_only(
-        analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command, handles)
-    free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
