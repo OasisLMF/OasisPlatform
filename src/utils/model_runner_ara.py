@@ -44,6 +44,10 @@ parser.add_argument(
     '-c', '--command_debug_file', type=str, default='',
     help="Debug file for the generated commands.")
 parser.add_argument(
+    '-a', '--aratools_only', action='store_true',
+    help="Only run the aratools commands, " + 
+          "assuming that the model data is in place")
+parser.add_argument(
     '-v', '--verbose', action='store_true',
     help='Verbose logging.')
 
@@ -57,6 +61,7 @@ api3_ef_request_concurency = args.number_of_ara_server_cores
 command_debug_file = args.command_debug_file
 do_verbose = args.verbose
 analysis_root_directory = args.analysis_root_directory
+do_ara_api = not args.aratools_only
 
 do_create_session = True
 if upx_file == "":
@@ -150,56 +155,58 @@ try:
     logging.info("Do wind: {}".format(do_wind))
     logging.info("Do surge: {}".format(do_stormsurge))
 
-    if do_create_session:
-        session_id = ara_session_utils.create_session(
-            url, upx_file, verify_string, do_stormsurge, data_directory)
-        model_settings['session_id'] = session_id
-    else:
-        session_id = model_settings["session_id"]
+    if do_ara_api:
 
-    ea_wind_filename = os.path.join(
-        data_directory, 'EA_Wind_Chunk_1.csv')
-    ea_surge_filename = os.path.join(
-        data_directory, 'EA_StormSurge_Chunk_1.csv')
+        if do_create_session:
+            session_id = ara_session_utils.create_session(
+                url, upx_file, verify_string, do_stormsurge, data_directory)
+            model_settings['session_id'] = session_id
+        else:
+            session_id = model_settings["session_id"]
 
-    model_runner_ara.do_api2(
-        url, session_id, event_set_type, do_stormsurge,
-        ea_wind_filename, ea_surge_filename, verify_string)
+        ea_wind_filename = os.path.join(
+            data_directory, 'EA_Wind_Chunk_1.csv')
+        ea_surge_filename = os.path.join(
+            data_directory, 'EA_StormSurge_Chunk_1.csv')
 
-    model_runner_ara.do_api3_vm(
-        url, session_id, event_set_type, do_stormsurge,
-        data_directory, "testVM.tar.gz", verify_string)
+        model_runner_ara.do_api2(
+            url, session_id, event_set_type, do_stormsurge,
+            ea_wind_filename, ea_surge_filename, verify_string)
 
-    model_runner_ara.do_api3_ef(
-        number_of_partitions, api3_ef_request_concurency, session_id,
-        event_set_type, url, data_directory, verify_string,
-        model_runner_ara.PERIL_WIND)
+        model_runner_ara.do_api3_vm(
+            url, session_id, event_set_type, do_stormsurge,
+            data_directory, "testVM.tar.gz", verify_string)
 
-    if do_stormsurge:
         model_runner_ara.do_api3_ef(
             number_of_partitions, api3_ef_request_concurency, session_id,
             event_set_type, url, data_directory, verify_string,
-            model_runner_ara.PERIL_STORMSURGE)
+            model_runner_ara.PERIL_WIND)
 
-    if do_create_session:
-        model_runner_ara.do_api1c(url, session_id, verify_string)
+        if do_stormsurge:
+            model_runner_ara.do_api3_ef(
+                number_of_partitions, api3_ef_request_concurency, session_id,
+                event_set_type, url, data_directory, verify_string,
+                model_runner_ara.PERIL_STORMSURGE)
 
-    if do_create_session:
-        shutil.copyfile(
-            os.path.join(analysis_root_directory, "data", "coverages.bin"),
-            os.path.join(analysis_root_directory, "input", "coverages.bin"))
+        if do_create_session:
+            model_runner_ara.do_api1c(url, session_id, verify_string)
 
-        shutil.copyfile(
-            os.path.join(analysis_root_directory, "data", "items.bin"),
-            os.path.join(analysis_root_directory, "input", "items.bin"))
-    else:
-        shutil.copyfile(
-            os.path.join(analysis_root_directory, "input", "coverages.bin"),
-            os.path.join(analysis_root_directory, "data", "coverages.bin"))
+        if do_create_session:
+            shutil.copyfile(
+                os.path.join(analysis_root_directory, "data", "coverages.bin"),
+                os.path.join(analysis_root_directory, "input", "coverages.bin"))
 
-        shutil.copyfile(
-            os.path.join(analysis_root_directory, "input", "items.bin"),
-            os.path.join(analysis_root_directory, "data", "items.bin"))
+            shutil.copyfile(
+                os.path.join(analysis_root_directory, "data", "items.bin"),
+                os.path.join(analysis_root_directory, "input", "items.bin"))
+        else:
+            shutil.copyfile(
+                os.path.join(analysis_root_directory, "input", "coverages.bin"),
+                os.path.join(analysis_root_directory, "data", "coverages.bin"))
+
+            shutil.copyfile(
+                os.path.join(analysis_root_directory, "input", "items.bin"),
+                os.path.join(analysis_root_directory, "data", "items.bin"))
 
     os.chdir(analysis_root_directory)
     model_runner_ara.run_analysis_only(
