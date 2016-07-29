@@ -44,7 +44,7 @@ parser.add_argument(
     '-c', '--command_debug_file', type=str, default='',
     help="Debug file for the generated commands.")
 parser.add_argument(
-    '-a', '--aratools_only', action='store_true',
+    '-o', '--aratools_only', action='store_true',
     help="Only run the aratools commands, " + 
           "assuming that the model data is in place")
 parser.add_argument(
