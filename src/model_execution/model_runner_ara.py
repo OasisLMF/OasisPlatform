@@ -538,15 +538,7 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
         os.path.join(os.getcwd(), "input", "items.bin"),
         os.path.join(os.getcwd(), "data", "items.bin"))
 
-    do_wind = bool(model_settings["peril_wind"])
-    do_stormsurge = bool(model_settings["peril_surge"])
-
-    handles = create_shared_memory(
-        session_id, do_wind, do_stormsurge, log_command) 
-
     run_analysis_only(analysis_settings, number_of_partitions, log_command)
-
-    free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
 
     do_api1c(url, session_id, verify_string)
 
@@ -599,7 +591,8 @@ def get_gul_and_il_cmds(
         
     return gulIlCmds
 
-def run_analysis_only(analysis_settings, number_of_partitions, log_command=None):
+def run_analysis_only(
+    analysis_settings, number_of_partitions, log_command=None, handles=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
@@ -609,6 +602,17 @@ def run_analysis_only(analysis_settings, number_of_partitions, log_command=None)
         number_of_partitions: the number of partitions to run.
         get_gul_and_il_cmds (function): called to construct workflow up to and including GULs/ILs
     '''
-    
+   
+    model_settings = analysis_settings["model_settings"]
+    session_id = bool(model_settings["session_id"])
+    do_wind = bool(model_settings["peril_wind"])
+    do_stormsurge = bool(model_settings["peril_surge"])
+
+    handles = create_shared_memory(
+        session_id, do_wind, do_stormsurge, log_command)
+ 
     common_run_analysis_only(
         analysis_settings, number_of_partitions, get_gul_and_il_cmds, log_command, handles)
+
+    free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
+

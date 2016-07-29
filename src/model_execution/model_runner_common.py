@@ -245,7 +245,7 @@ def outputString(
     return str
 
 def common_run_analysis_only(
-    analysis_settings, number_of_processes, get_gul_and_il_cmds, handles, log_command=None):
+    analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command=None, handles=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
