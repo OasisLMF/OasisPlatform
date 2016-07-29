@@ -81,11 +81,13 @@ logging.basicConfig(stream=sys.stdout, level=log_level, format=log_format)
 with open(analysis_settings_json_filepath) as file:
     analysis_settings = json.load(file)
 
+do_il = bool(analysis_settings['analysis_settings']["il_output"])
+
 for analysis_id in range(num_analyses):
     try:
         client = OasisApiClient.OasisApiClient(api_url, logging.getLogger())
         input_location = client.upload_inputs_from_directory(
-            upload_directory, do_validation=False)
+            upload_directory, do_il, do_validation=False)
         client.run_analysis(
             analysis_settings, input_location,
             output_data_directory, do_clean=False)

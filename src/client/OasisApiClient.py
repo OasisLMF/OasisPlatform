@@ -17,16 +17,20 @@ class OasisApiClient(object):
     Client for Oasis API
     '''
 
-    INPUTS_FILES = {
+    GUL_INPUTS_FILES = [
             'coverages',
-            'events',
+            'gulsummaryxref',
+            'items']
+
+    IL_INPUTS_FILES = [
             'fm_policytc',
             'fm_profile',
             'fm_programme',
             'fm_xref',
-            'fmsummaryxref',
-            'gulsummaryxref',
-            'items'}
+            'fmsummaryxref']
+
+    OPTIONAL_INPUTS_FILES = [
+            'events']
 
     CONVERSION_TOOLS = {
             'coverages': 'coveragetobin',
@@ -61,7 +65,7 @@ class OasisApiClient(object):
         self._logger = logger
         # Check that the conversion tools are available
         for tool in self.CONVERSION_TOOLS.itervalues():
-            if shutilwhich.which(tool) == "":
+            if shutilwhich.which(tool) is None:
                 error_message = "Failed to find conversion tool: {}"\
                                 .format(tool)
                 self._logger.error(error_message)
@@ -74,11 +78,13 @@ class OasisApiClient(object):
                                 request_url, str(response.status_code)))
             raise Exception("API healthcheck failed.")
 
-    def upload_inputs_from_directory(self, directory, do_validation=False):
+    def upload_inputs_from_directory(
+            self, directory, do_il=True, do_validation=False):
         '''
         Upload the CSV files from a specified directory.
         Args:
             directory (string): the directory containting the CSVs.
+            do_il: if True, require files for insured loss (IL) calculation.
             do_validation (bool): if True, validate the data intrgrity
         Returns:
             The location of the uploaded inputs.
@@ -93,10 +99,10 @@ class OasisApiClient(object):
             self._logger.info("{}={}".format(i, values[i]))
         start = time.time()
 
-        self._check_inputs_directory(directory)
+        self._check_inputs_directory(directory, do_il)
         if do_validation:
             self._validate_inputs(directory)
-        self._create_binary_files(directory)
+        self._create_binary_files(directory, do_il)
         self._create_tar_file(directory)
 
         self._logger.debug("Uploading inputs")
@@ -283,7 +289,7 @@ class OasisApiClient(object):
 
         if os.path.exists(localfile):
             error_message = 'Local file alreday exists: {}'.format(localfile)
-            _logger.error(error_message)
+            self._logger.error(error_message)
             raise Exception(error_message)
 
         response = requests.get(
@@ -380,13 +386,19 @@ class OasisApiClient(object):
 
         return json
 
-    def _check_inputs_directory(self, directory_to_check):
+    def _check_inputs_directory(self, directory_to_check, do_il):
         ''' Check the directory state.'''
         file_path = os.path.join(directory_to_check, self.TAR_FILE)
         if os.path.exists(file_path):
             raise Exception(
                 "Inputs tar file already exists: {}".format(file_path))
-        for file in self.INPUTS_FILES:
+
+        if do_il:
+            input_files = self.GUL_INPUTS_FILES + self.IL_INPUTS_FILES
+        else:
+            input_files = self.GUL_INPUTS_FILES
+
+        for file in input_files:
             file_path = os.path.join(directory_to_check, file + ".csv")
             if not os.path.exists(file_path):
                 raise Exception(
@@ -401,11 +413,22 @@ class OasisApiClient(object):
         # TODO
         pass
 
-    def _create_binary_files(self, directory):
+    def _create_binary_files(self, directory, do_il):
         ''' Create the binary files.'''
-        for file in self.INPUTS_FILES:
+        if do_il:
+            input_files = self.GUL_INPUTS_FILES + \
+                          self.IL_INPUTS_FILES + \
+                          self.OPTIONAL_INPUTS_FILES
+        else:
+            input_files = self.GUL_INPUTS_FILES + \
+                          self.OPTIONAL_INPUTS_FILES
+
+        for file in input_files:
             conversion_tool = self.CONVERSION_TOOLS[file]
             input_file_path = os.path.join(directory, file + ".csv")
+            if not os.path.exists(input_file_path):
+                continue
+
             output_file_path = os.path.join(directory, file + ".bin")
             command = "{} < {} > {}".format(
                 conversion_tool, input_file_path, output_file_path)
@@ -413,18 +436,22 @@ class OasisApiClient(object):
             proc = subprocess.Popen(command, shell=True)
             proc.wait()
             if proc.returncode != 0:
-                self._logger.exception(
-                    "Failed to convert {}".format(input_file_path))
+                raise Exception(
+                    "Failed to convert {}: {}".format(input_file_path, command))
                 break
 
     def _create_tar_file(self, directory):
         ''' Package the binaries in a gzipped tar. '''
         original_cwd = os.getcwd()
         os.chdir(directory)
+
         with tarfile.open(self.TAR_FILE, "w:gz") as tar:
-            for file in self.INPUTS_FILES:
+            for file in self.GUL_INPUTS_FILES + \
+                        self.IL_INPUTS_FILES + \
+                        self.OPTIONAL_INPUTS_FILES:
                 bin_file = file + ".bin"
-                tar.add(bin_file)
+                if os.path.exists(bin_file):
+                    tar.add(bin_file)
         os.chdir(original_cwd)
 
     def _clean_directory(self, directory_to_check):
@@ -432,7 +459,9 @@ class OasisApiClient(object):
         file_path = os.path.join(directory_to_check, self.TAR_FILE)
         if os.path.exists(file_path):
             os.remove(file_path)
-        for file in self.INPUTS_FILES:
+        for file in self.GUL_INPUTS_FILES + \
+                    self.IL_INPUTS_FILES + \
+                    self.OPTIONAL_INPUTS_FILES:
             file_path = os.path.join(directory_to_check, file + ".bin")
             if os.path.exists(file_path):
                 os.remove(file_path)
