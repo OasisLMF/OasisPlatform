@@ -107,7 +107,7 @@ def do_api2(url, session_id, event_set_type, do_surge,
     request_body = json.dumps({
             "SessionID": session_id,
             "W": event_set_type,
-            "PerilType": PERIL_STORMSURGE}),
+            "PerilType": PERIL_STORMSURGE})
     if do_surge:
         api2StormSurgeJSON = post(
             '{0}api2'.format(url),
