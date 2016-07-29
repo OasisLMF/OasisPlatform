@@ -1,7 +1,8 @@
 FROM aratools
 
+RUN apt-get update
 RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev
-RUN apt-get install -y vim iputils-ping
+RUN apt-get install -y vim iputils-ping gdb
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
