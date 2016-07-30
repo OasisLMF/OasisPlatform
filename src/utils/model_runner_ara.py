@@ -126,13 +126,13 @@ try:
     data_directory = os.path.join(analysis_root_directory, "data")
     working_directory = os.path.join(analysis_root_directory, "working")
 
-    if os.path.exists(working_directory):
-        shutil.rmtree(working_directory)
-    os.mkdir(working_directory)
-
-    if os.path.exists(data_directory):
-        shutil.rmtree(data_directory)
-    os.mkdir(data_directory)
+    if do_ara_api:
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+        os.mkdir(working_directory)
+        if os.path.exists(data_directory):
+            shutil.rmtree(data_directory)
+        os.mkdir(data_directory)
 
     url = 'https://{0}/oasis/'.format(ara_server_ip)
     upx_file = upx_file
