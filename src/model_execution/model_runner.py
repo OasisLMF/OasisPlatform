@@ -1,10 +1,12 @@
 import os
+from common import helpers
 from model_runner_common import assert_is_pipe, common_run_analysis_only
 '''
 Model runner for sdtandard ktools pipeline.
 '''
 
 
+@helpers.oasis_log(logging.getLogger())
 def get_gul_and_il_cmds(
         p, number_of_processes, analysis_settings, gul_output,
         il_output, log_command, working_directory, handles=None):
@@ -70,6 +72,7 @@ def get_gul_and_il_cmds(
     return [getModelTee] + gulIlCmds + [s]
 
 
+@helpers.oasis_log(logging.getLogger())
 def run_analysis(analysis_settings, number_of_processes, log_command=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
