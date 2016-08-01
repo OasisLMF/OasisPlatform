@@ -71,12 +71,13 @@ class OasisApiClient(object):
                 self._logger.error(error_message)
                 raise Exception(error_message)
         # Check the API
-        request_url = "/healthcheck"
-        response = requests.get(self._oasis_api_url + request_url)
-        if response.status_code != 200:
-            self._logger.error("GET {} failed: {}".format(
-                                request_url, str(response.status_code)))
-            raise Exception("API healthcheck failed.")
+        if oasis_api_url is not None:
+            request_url = "/healthcheck"
+            response = requests.get(self._oasis_api_url + request_url)
+            if response.status_code != 200:
+                self._logger.error("GET {} failed: {}".format(
+                                    request_url, str(response.status_code)))
+                raise Exception("API healthcheck failed.")
 
     def upload_inputs_from_directory(
             self, directory, do_il=True, do_validation=False):
@@ -99,10 +100,10 @@ class OasisApiClient(object):
             self._logger.info("{}={}".format(i, values[i]))
         start = time.time()
 
-        self._check_inputs_directory(directory, do_il)
+        self.check_inputs_directory(directory, do_il)
         if do_validation:
             self._validate_inputs(directory)
-        self._create_binary_files(directory, do_il)
+        self.create_binary_files(directory, do_il)
         self._create_tar_file(directory)
 
         self._logger.debug("Uploading inputs")
@@ -386,35 +387,15 @@ class OasisApiClient(object):
 
         return json
 
-    def _check_inputs_directory(self, directory_to_check, do_il):
-        ''' Check the directory state.'''
-        file_path = os.path.join(directory_to_check, self.TAR_FILE)
-        if os.path.exists(file_path):
-            raise Exception(
-                "Inputs tar file already exists: {}".format(file_path))
-
-        if do_il:
-            input_files = self.GUL_INPUTS_FILES + self.IL_INPUTS_FILES
-        else:
-            input_files = self.GUL_INPUTS_FILES
-
-        for file in input_files:
-            file_path = os.path.join(directory_to_check, file + ".csv")
-            if not os.path.exists(file_path):
-                raise Exception(
-                    "Failed to find {}".format(file_path))
-            file_path = os.path.join(directory_to_check, file + ".bin")
-            if os.path.exists(file_path):
-                raise Exception(
-                    "Binary file already exists: {}".format(file_path))
-
-    def _validate_inputs(self, directory):
-        ''' Validate the input files.'''
-        # TODO
-        pass
-
-    def _create_binary_files(self, directory, do_il):
-        ''' Create the binary files.'''
+    def create_binary_files(self, directory, do_il):
+        ''' 
+        Create the binary files.
+        Args:
+            directory (string): the directory containing the CSV files.
+            do_il (bool): do insured loss. If True, FM file must be present.
+        Returns:
+            None
+        '''
         if do_il:
             input_files = self.GUL_INPUTS_FILES + \
                           self.IL_INPUTS_FILES + \
@@ -439,6 +420,40 @@ class OasisApiClient(object):
                 raise Exception(
                     "Failed to convert {}: {}".format(input_file_path, command))
                 break
+
+    def check_inputs_directory(self, directory_to_check, do_il):
+        ''' 
+        Check that all the required csv files are present in the directory.
+        Args:
+            directory (string): the directory containing the CSV files.
+            do_il (bool): do insured loss. If True, FM file must be present.
+        Returns:
+            None        
+        '''
+        file_path = os.path.join(directory_to_check, self.TAR_FILE)
+        if os.path.exists(file_path):
+            raise Exception(
+                "Inputs tar file already exists: {}".format(file_path))
+
+        if do_il:
+            input_files = self.GUL_INPUTS_FILES + self.IL_INPUTS_FILES
+        else:
+            input_files = self.GUL_INPUTS_FILES
+
+        for file in input_files:
+            file_path = os.path.join(directory_to_check, file + ".csv")
+            if not os.path.exists(file_path):
+                raise Exception(
+                    "Failed to find {}".format(file_path))
+            file_path = os.path.join(directory_to_check, file + ".bin")
+            if os.path.exists(file_path):
+                raise Exception(
+                    "Binary file already exists: {}".format(file_path))
+
+    def _validate_inputs(self, directory):
+        ''' Validate the input files.'''
+        # TODO
+        pass
 
     def _create_tar_file(self, directory):
         ''' Package the binaries in a gzipped tar. '''
