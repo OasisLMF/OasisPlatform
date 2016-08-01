@@ -383,6 +383,9 @@ def build_get_model_cmd(session_id, partition_id, number_of_partitions,
         handleString = handleString + '-h{0} '.format(handles["VMStormSurge"])
         handleString = handleString + '-j{0} '.format(handles["CTStormSurge"])
 
+    if do_demand_surge:
+        handleString = handleString + " -D "
+
     get_model_cmd = 'getmodelara ' + \
                         '-d{} -s{} -n{} -N{} -K{} -k{} -C{} -c{} ' + \
                         '-S{} -B{} -T{} {} -Y {}'
