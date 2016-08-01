@@ -3,7 +3,6 @@ import time
 import logging
 import subprocess
 from common import helpers
-import sys
 import json
 import tarfile
 import requests
@@ -541,7 +540,7 @@ def run_analysis(analysis_settings, number_of_partitions, log_command=None):
         os.path.join(os.getcwd(), "input", "items.bin"),
         os.path.join(os.getcwd(), "data", "items.bin"))
 
-    free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
+    run_analysis_only(analysis_settings, number_of_partitions, log_command)
 
 @helpers.oasis_log(logging.getLogger())
 def get_gul_and_il_cmds(
@@ -566,8 +565,11 @@ def get_gul_and_il_cmds(
     do_wind = bool(model_settings["peril_wind"])
     do_stormsurge = bool(model_settings["peril_surge"])
     do_demand_surge = bool(model_settings["demand_surge"])
+    
+    # TODO
     leakage_factor = float(model_settings["leakage_factor"])
     event_set_type = model_settings["event_set"]
+
     number_of_samples = int(analysis_settings['number_of_samples'])
     gul_threshold = float(analysis_settings['gul_threshold'])
 
@@ -595,7 +597,7 @@ def get_gul_and_il_cmds(
 
 
 @helpers.oasis_log(logging.getLogger())
-def run_analysis_only(analysis_settings, number_of_partitions, log_command=None, handles=None):
+def run_analysis_only(analysis_settings, number_of_partitions, log_command=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
@@ -603,7 +605,8 @@ def run_analysis_only(analysis_settings, number_of_partitions, log_command=None,
     Args:
         analysis_settings (string): the analysis settings.
         number_of_partitions: the number of partitions to run.
-        get_gul_and_il_cmds (function): called to construct workflow up to and including GULs/ILs
+
+
     '''
 
     model_settings = analysis_settings["model_settings"]
