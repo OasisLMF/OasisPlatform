@@ -5,11 +5,8 @@ import logging
 import stat
 import subprocess
 from common import helpers
-import sys
-import json
-import shutil
 import re
-from threading import Thread
+
 '''
 TODO: Module description
 '''
@@ -227,7 +224,7 @@ def outputString(
                 str += '-r '
 
     elif output_command == "aalcalc":
-        myDirShort = os.path.join('working', "{}aalSummary{}".format(pipe_prefix, summary))
+        myDirShort = os.path.join('work', "{}aalSummary{}".format(pipe_prefix, summary))
         myDir = os.path.join(os.getcwd(), myDirShort)
         for d in [os.path.join(os.getcwd(), 'working'), myDir]:
             if not os.path.isdir(d):
