@@ -8,8 +8,11 @@ from common import helpers
 import re
 
 '''
-TODO: Module description
+Core functions for generating the ktools commands for an analysis
+settings. Some of the components, such as the getmodel
+commands, may be model specific and need custom handling.
 '''
+
 
 class PerspOpts:
     GUL = 1
@@ -66,6 +69,7 @@ ANALYSIS_TYPES = [
     ("aalcalc", []),
     ("pltcalc", [])]
 
+
 @helpers.oasis_log(logging.getLogger())
 def open_process(s, dir, log_command):
     ''' Wrap subprocess.Open. Returns the Popen object. '''
@@ -82,6 +86,7 @@ def open_process(s, dir, log_command):
     logging.info('{} - process number={}'.format(s, p.pid))
     """
     return p
+
 
 @helpers.oasis_log(logging.getLogger())
 def assert_is_pipe(p):
@@ -111,6 +116,7 @@ def check_pipes(s, log_command):
                     logging.info('assert pipe ***{}***'.format(p))
                     create_pipe(p, log_command)
 
+
 @helpers.oasis_log(logging.getLogger())
 def waitForSubprocesses(procs):
     ''' Wait for a set of subprocesses. '''
@@ -119,14 +125,14 @@ def waitForSubprocesses(procs):
     # logging.info('still here')
 
     for p in procs:
-        if p != None:
+        if p is not None:
             if p.poll() is not None:
                 logging.info('Process # {} existed with status={}'.format(p.pid, p.poll()))
             # logging.info('Process # {}: {}'.format(p.pid, status))
 
     logging.info('still here #2')
     for p in procs:
-        if p != None:
+        if p is not None:
             """
             command = "{}".format(p.pid)
             try:
@@ -146,6 +152,7 @@ def waitForSubprocesses(procs):
                         p.pid, return_code))
 
     logging.info('Done waiting for processes.')
+
 
 @helpers.oasis_log(logging.getLogger())
 def outputString(
@@ -181,7 +188,7 @@ def outputString(
             output_filename = os.path.join(dir, file)
 
     # validation
-    #! TODO tidy up
+    # TODO tidy up
     found = False
     for a, _ in ANALYSIS_TYPES:
         if a == output_command:
@@ -195,7 +202,7 @@ def outputString(
         str = 'eltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "leccalc":
         str = 'leccalc -K{} '.format(input_pipe)
-        
+
         for r in rs:
             if output_command == "leccalc":
                 if r not in LEC_RESULT_TYPES:
@@ -241,9 +248,11 @@ def outputString(
 
     return str
 
+
 @helpers.oasis_log(logging.getLogger())
 def common_run_analysis_only(
-    analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command=None, handles=None):
+        analysis_settings, number_of_processes,
+        get_gul_and_il_cmds, log_command=None, handles=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
@@ -255,7 +264,7 @@ def common_run_analysis_only(
         handles: the shared memory handles
         log_command: command to log process calls
     '''
-    
+
     frame = inspect.currentframe()
     func_name = inspect.getframeinfo(frame)[2]
     logging.info("STARTED: {}".format(func_name))
@@ -381,7 +390,7 @@ def common_run_analysis_only(
         # now run them in reverse order from consumers to producers
         for cmds in [tee_commands, postOutputCmds, output_commands]:
             for s in cmds:
-                if 'leccalc' not in s and 'aalsummary' not in s: # and not s.startswith("cat "):
+                if 'leccalc' not in s and 'aalsummary' not in s:
                     procs += [open_process(s, model_root, log_command)]
 
         for summaryFlag, pipe_prefix, output_flag in [("-g", "gul", gul_output), ("-f", "il", il_output)]:
@@ -400,8 +409,8 @@ def common_run_analysis_only(
 
         for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory, handles):
             procs += [open_process(s, model_root, log_command)]
-        
-        """    
+
+        """
         for s in postOutputCmds:
             procs += [open_process(s, model_root, log_command)]
         """
@@ -424,4 +433,3 @@ def common_run_analysis_only(
     end = time.time()
     logging.info("COMPLETED: {} in {}s".format(
         func_name, round(end - start, 2)))
-        

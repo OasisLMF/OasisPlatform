@@ -1,26 +1,25 @@
 import os
-import inspect
-import time
-import logging
-import stat
-import subprocess
-from model_runner_common import open_process, assert_is_pipe, waitForSubprocesses, outputString, ANALYSIS_TYPES, common_run_analysis_only
+from model_runner_common import assert_is_pipe, common_run_analysis_only
 '''
-TODO: Module description
+Model runner for sdtandard ktools pipeline.
 '''
 
-def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory):
+
+def get_gul_and_il_cmds(
+        p, number_of_processes, analysis_settings, gul_output,
+        il_output, log_command, working_directory, handles=None):
     '''
-    Generic specifics factored out of run_analysis_only().
+    Generate base IL and GUL commands.
     Args:
         p (int): process number
-        number_of_processes (int): number of processes in machine on which this is running
-        analysis_settings (string): the analysis settings.
-        gul_output (boolean): whether GUL outputs are required.
-        il_output (boolean): whether IL outputs are required.
-        log_command: a logger function.
+        number_of_processes (int): The number of processes to run.
+        analysis_settings (string): The analysis settings.
+        gul_output (bool): True if GUL outputs are required.
+        il_output (bool): True if IL outputs are required.
+        log_command: Logger function for ktools commands.
+        handles: NOT USED
     Returns:
-        List of processes to run
+        List of processes to run.
     '''
 
     gulFlags = "-S{} ".format(analysis_settings['number_of_samples'])
@@ -62,7 +61,7 @@ def get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, i
     elif len(getModelTeePipes) == 1:
         getModelTee += " > {}".format(getModelTeePipes[0])
     # procs += [open_process(getModelTee, model_root, log_command)]
-    
+
     assert_is_pipe('{}/getmodeltotee{}'.format(working_directory, p))
     s = 'eve {} {} | getmodel > {}/getmodeltotee{}'.format(
         p, number_of_processes,
@@ -77,9 +76,13 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
     inputs/outputs and the spawning of subprocesses to call xtools
     across processors.
     Args:
-        analysis_settings (string): the analysis settings. 
-        number_of_processes: the number of processes to spawn.
+        analysis_settings (string): The analysis settings.
+        number_of_processes (int): The number of processes to run.
+        get_gul_and_il_cmds (function): The function to generate base
+                                        ktools commands.
+        log_cmmand (functiokn): Logger function for ktools commands.
     '''
-    # number_of_processes = 12
-    
-    common_run_analysis_only(analysis_settings, number_of_processes, get_gul_and_il_cmds, log_command)
+
+    common_run_analysis_only(
+        analysis_settings, number_of_processes,
+        get_gul_and_il_cmds, log_command)

@@ -1,1 +1,1 @@
-python utils/model_runner.py -a analysis_root/analysis_settings.json -d analysis_root
+python src/utils/model_runner.py -a tests/data/analysis_settings.json -d tests/data
