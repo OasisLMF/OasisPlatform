@@ -1,5 +1,0 @@
-celery==3.1.23
-SQLAlchemy==1.0.12
-MySQL-python==1.2.5
-jsonpickle==0.9.3
-numpy==1.11.0
