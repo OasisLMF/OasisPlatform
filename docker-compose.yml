@@ -1,7 +1,11 @@
 version: '2'
 services:
+  runner:
+   image: api_runner
+   links:
+    - server:oasis_api_server
   server:
-   image: my_server
+   image: oasis_api_server
    ports:
      - "8001:80"
    links:
