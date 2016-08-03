@@ -1,7 +1,7 @@
 import os
 import logging
 from common import helpers
-from model_runner_common import assert_is_pipe, common_run_analysis_only
+from model_runner_common import assert_is_pipe, common_run_analysis_only, create_pipe
 '''
 Model runner for sdtandard ktools pipeline.
 '''
@@ -39,7 +39,7 @@ def get_gul_and_il_cmds(
         if analysis_settings['il_output']:
             pipe = '{}/getmodeltoil{}'.format(working_directory, p)
             getModelTeePipes += [pipe]
-            os.mkfifo(pipe)
+            create_pipe(pipe, log_command)
             assert_is_pipe('{}/il{}'.format(working_directory, p))
             gulIlCmds += ['gulcalc {} -i - < {} | fmcalc > {}/il{}'.format(gulFlags, pipe, working_directory, p)]
 
@@ -47,12 +47,12 @@ def get_gul_and_il_cmds(
         if analysis_settings['gul_output']:
             pipe = '{}/getmodeltogul{}'.format(working_directory, p)
             getModelTeePipes += [pipe]
-            os.mkfifo(pipe)
+            create_pipe(pipe, log_command)
             assert_is_pipe('{}/gul{}'.format(working_directory, p))
             gulIlCmds += ['gulcalc {} -c - < {} > {}/gul{} '.format(gulFlags, pipe, working_directory, p)]
 
     pipe = '{}/getmodeltotee{}'.format(working_directory, p)
-    os.mkfifo(pipe)
+    create_pipe(pipe, log_command)
 
     assert_is_pipe(pipe)
     for tp in getModelTeePipes:
