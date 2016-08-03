@@ -25,52 +25,28 @@ def get_gul_and_il_cmds(
         List of processes to run.
     '''
 
-    gulFlags = "-S{} ".format(analysis_settings['number_of_samples'])
+    gulOptions = "-S{} ".format(analysis_settings['number_of_samples'])
     if 'gul_threshold' in analysis_settings:
-        gulFlags += " -L{}".format(analysis_settings['gul_threshold'])
+        gulOptions += " -L{}".format(analysis_settings['gul_threshold'])
     if 'model_settings' in analysis_settings:
         if "use_random_number_file" in analysis_settings['model_settings']:
             if analysis_settings['model_settings']['use_random_number_file']:
-                gulFlags += ' -r'
-
-    getModelTeePipes = []
-    gulIlCmds = []
-    if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
-        if analysis_settings['il_output']:
-            pipe = '{}/getmodeltoil{}'.format(working_directory, p)
-            getModelTeePipes += [pipe]
-            create_pipe(pipe, log_command)
-            assert_is_pipe('{}/il{}'.format(working_directory, p))
-            gulIlCmds += ['gulcalc {} -i - < {} | fmcalc > {}/il{}'.format(gulFlags, pipe, working_directory, p)]
+                gulOptions += ' -r'
 
     if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
         if analysis_settings['gul_output']:
-            pipe = '{}/getmodeltogul{}'.format(working_directory, p)
-            getModelTeePipes += [pipe]
-            create_pipe(pipe, log_command)
             assert_is_pipe('{}/gul{}'.format(working_directory, p))
-            gulIlCmds += ['gulcalc {} -c - < {} > {}/gul{} '.format(gulFlags, pipe, working_directory, p)]
+            gulOptions = gulOptions + ' -c {}/gul{} '.format(working_directory, p)
 
-    pipe = '{}/getmodeltotee{}'.format(working_directory, p)
-    create_pipe(pipe, log_command)
+    if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
+        if analysis_settings['il_output']:
+            assert_is_pipe('{}/il{}'.format(working_directory, p))
+            gulOptions = gulOptions + ' -i - | fmcalc > {}/il{}'.format(working_directory, p)
 
-    assert_is_pipe(pipe)
-    for tp in getModelTeePipes:
-        assert_is_pipe(tp)
+    s = 'eve {} {} | getmodel | gulcalc {}'.format(
+        p, number_of_processes, gulOptions)
 
-    getModelTee = "tee < {}".format(pipe)
-    if len(getModelTeePipes) == 2:
-        getModelTee += " {} > {}".format(getModelTeePipes[0], getModelTeePipes[1])
-    elif len(getModelTeePipes) == 1:
-        getModelTee += " > {}".format(getModelTeePipes[0])
-    # procs += [open_process(getModelTee, model_root, log_command)]
-
-    assert_is_pipe('{}/getmodeltotee{}'.format(working_directory, p))
-    s = 'eve {} {} | getmodel > {}/getmodeltotee{}'.format(
-        p, number_of_processes,
-        working_directory, p)
-
-    return [getModelTee] + gulIlCmds + [s]
+    return [s]
 
 
 @helpers.oasis_log(logging.getLogger())
