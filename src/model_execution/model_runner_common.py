@@ -1,4 +1,5 @@
 import os
+import sys
 import inspect
 import time
 import logging
@@ -303,6 +304,27 @@ def common_run_analysis_only(
                 create_pipe(pipe, log_command)
                 il_output = True
 
+        if p == 1:
+            outputs = False
+            for o, key in [(gul_output, 'gul_summaries'), (il_output, 'il_summaries')]:
+                if o:
+                    for level in analysis_settings[key]:
+                        for a, rs in ANALYSIS_TYPES:
+                            if a in level:
+                                if level[a]:
+                                    if rs == []:
+                                        outputs = True 
+                                    else:
+                                        if 'lec_output' in level:
+                                            if level['lec_output']:
+                                                for r in rs:
+                                                    outputs = outputs or level[a][r]
+                            
+            if not outputs:
+                msg = 'No outputs specified by JSON'
+                logging.error('{}\n'.format(msg))
+                raise Exception(msg)
+                
         for pipe_prefix, key, output_flag in [
                 ("gul", "gul_summaries", gul_output),
                 ("il", "il_summaries", il_output)
