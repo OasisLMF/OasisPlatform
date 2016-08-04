@@ -17,6 +17,7 @@
         "eltcalc": true,
         "aalcalc": false,
         "pltcalc": false,
+        "lec_output":true,
         "leccalc": {
             "return_period_file": false,
             "full_uncertainty_aep": true,
@@ -38,6 +39,7 @@
         "eltcalc": true,
         "aalcalc": false,
         "pltcalc": false,
+        "lec_output":true,
         "leccalc": {
             "return_period_file": false,
             "full_uncertainty_aep": false,
