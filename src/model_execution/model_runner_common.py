@@ -74,18 +74,24 @@ ANALYSIS_TYPES = [
 @helpers.oasis_log(logging.getLogger())
 def open_process(s, dir, log_command):
     ''' Wrap subprocess.Open. Returns the Popen object. '''
+    p = None
     if log_command:
         log_command(s)
-        p = None
     else:
         check_pipes(s, log_command)
+        s_split = s.split('|')
+        for s_split_split in s_split:
+            cmd = s_split_split.lstrip().split(' ')
+            x = subprocess.Popen("which {}".format(cmd[0]), shell=True, cwd=dir)
+            x.wait()
+            if x.poll() != 0:
+                msg = '{} not installed'.format(cmd[0])
+                logging.error(msg)
+                raise Exception(msg)
+
         p = subprocess.Popen(s, shell=True, cwd=dir)
         logging.info('{} - process number={}'.format(s, p.pid))
-    """
-    check_pipes(s, log_command)
-    p = subprocess.Popen(s, shell=True, cwd=dir)
-    logging.info('{} - process number={}'.format(s, p.pid))
-    """
+
     return p
 
 
