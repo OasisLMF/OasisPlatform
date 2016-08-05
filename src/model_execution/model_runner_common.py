@@ -110,17 +110,17 @@ def create_pipe(p, log_command):
 
 
 def check_pipes(s, log_command):
-    logging.info('s = {}'.format(s))
+    # logging.info('s = {}'.format(s))
     sps = re.split('working|\s+', s)
-    logging.info('sps = {}'.format(sps))
+    # logging.info('sps = {}'.format(sps))
     for sp in sps:
         if '/' in sp:
             spsp = re.split('/', sp)
-            logging.info('spsp = {}'.format(spsp))
+            # logging.info('spsp = {}'.format(spsp))
             for x in spsp:
                 if len(x) > 0:
                     p = os.path.join('working', x)
-                    logging.info('assert pipe ***{}***'.format(p))
+                    # logging.info('assert pipe ***{}***'.format(p))
                     create_pipe(p, log_command)
 
 
@@ -356,6 +356,7 @@ def common_run_analysis_only(
                                     output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], log_command, proc_number=p)]
 
                                     if p == 1:
+                                        # logging.info('*** p == 1 ***')
                                         if a in ['eltcalc', 'pltcalc', 'summarycalc']:
                                             for pp in range(1, number_of_processes + 1):
                                                 output_pipe = "{}/{}_{}_{}{}_{}".format(
@@ -375,9 +376,11 @@ def common_run_analysis_only(
                                             # output_commands += [postOutputCmd]
                                             postOutputCmds += [postOutputCmd]
                                             # procs += [open_process(postOutputCmd, model_root, log_command)]
-                                    elif p == number_of_processes and a == 'aalcalc':
+                                    if p == number_of_processes and a == 'aalcalc':
+                                        # logging.info('*** p == number_of_processes and a == aalcalc ***')
                                         aalfile = "{}/{}_{}_aalcalc.csv".format(output_directory, pipe_prefix, s['id'])
                                         output_commands += ["aalsummary -K{}aalSummary{} > {}".format(pipe_prefix, s['id'], aalfile)]
+                                        # logging.info('adding {}'.format(output_commands[-1]))
 
                                 elif isinstance(s[a], dict):
                                     if a == "leccalc" and 'lec_output' in s:
@@ -418,6 +421,7 @@ def common_run_analysis_only(
         # now run them in reverse order from consumers to producers
         for cmds in [tee_commands, postOutputCmds, output_commands]:
             for s in cmds:
+                # logging.info('found command = {}'.format(s))
                 if 'leccalc' not in s and 'aalsummary' not in s:
                     procs += [open_process(s, model_root, log_command)]
 
@@ -449,8 +453,10 @@ def common_run_analysis_only(
     # is run just once for ALL processors
     for cmds in [tee_commands, output_commands]:
         for s in cmds:
+            # logging.info('found command = {}'.format(s))
+
             if 'leccalc' in s or 'aalsummary' in s:
-                logging.info("{}".format(s))
+                # logging.info("{}".format(s))
                 procs += [open_process(s, model_root, log_command)]
 
     waitForSubprocesses(procs)
