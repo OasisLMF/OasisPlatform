@@ -131,6 +131,7 @@ def start_analysis(analysis_settings, input_location):
     working_directory = \
         os.path.join(WORKING_DIRECTORY, helpers.generate_unique_filename())
     os.mkdir(working_directory)
+    os.mkdir(os.path.join(working_directory, "work"))
     os.mkdir(os.path.join(working_directory, "working"))
     output_directory = os.path.join(working_directory, "output")
     os.mkdir(output_directory)
