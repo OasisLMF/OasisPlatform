@@ -1,5 +1,4 @@
 import os
-import sys
 import inspect
 import time
 import logging
@@ -246,12 +245,12 @@ def outputString(
                 os.mkdir(d, 0777)
 
         str = 'aalcalc < {} > {}'.format(input_pipe, os.path.join(myDirShort, output_filename))
-    elif output_command == "pltcalc":
-        # assert_is_pipe(output_pipe)
+    elif output_command == "pltcalc": 
         str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "summarycalc":
-        # assert_is_pipe(output_pipe)
-        str = 'summarycalctocsv < {} > {}'.format(input_pipe, output_pipe)
+        # cat is required to prevent blocking when running across many 
+        # processes. Investigating why this is necessary.
+        str = 'cat < {} | summarycalctocsv > {}'.format(input_pipe, output_pipe)
 
     return str
 
