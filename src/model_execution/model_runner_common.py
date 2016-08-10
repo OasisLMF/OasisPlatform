@@ -7,6 +7,7 @@ import stat
 import subprocess
 from common import helpers
 import re
+import signal
 
 '''
 Core functions for generating the ktools commands for an analysis
@@ -272,179 +273,213 @@ def common_run_analysis_only(
         log_command: command to log process calls
     '''
 
-    frame = inspect.currentframe()
-    func_name = inspect.getframeinfo(frame)[2]
-    logging.info("STARTED: {}".format(func_name))
-    args, _, _, values = inspect.getargvalues(frame)
-    for i in args:
-        if i == 'self':
-            continue
-        logging.debug("{}={}".format(i, values[i]))
-    start = time.time()
+    try:
+        procs = []
 
-    working_directory = 'working'
-    model_root = os.getcwd()
-    output_directory = 'output'
+        frame = inspect.currentframe()
+        func_name = inspect.getframeinfo(frame)[2]
+        logging.info("STARTED: {}".format(func_name))
+        args, _, _, values = inspect.getargvalues(frame)
+        for i in args:
+            if i == 'self':
+                continue
+            logging.debug("{}={}".format(i, values[i]))
+        start = time.time()
 
-    procs = []
+        working_directory = 'working'
+        model_root = os.getcwd()
+        output_directory = 'output'
 
-    for p in range(1, number_of_processes + 1):
+        for p in range(1, number_of_processes + 1):
 
-        postOutputCmds = []
-        logging.debug('Process {} of {}'.format(p, number_of_processes))
+            postOutputCmds = []
+            logging.debug('Process {} of {}'.format(p, number_of_processes))
 
-        tee_commands = []
-        output_commands = []
-        gul_output = False
-        il_output = False
+            tee_commands = []
+            output_commands = []
+            gul_output = False
+            il_output = False
 
-        if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
-            if analysis_settings['gul_output']:
-                pipe = '{}/gul{}'.format(working_directory, p)
-                create_pipe(pipe, log_command)
-                gul_output = True
+            if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
+                if analysis_settings['gul_output']:
+                    pipe = '{}/gul{}'.format(working_directory, p)
+                    create_pipe(pipe, log_command)
+                    gul_output = True
 
-        if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
-            if analysis_settings['il_output']:
-                pipe = '{}/il{}'.format(working_directory, p)
-                create_pipe(pipe, log_command)
-                il_output = True
+            if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
+                if analysis_settings['il_output']:
+                    pipe = '{}/il{}'.format(working_directory, p)
+                    create_pipe(pipe, log_command)
+                    il_output = True
 
-        if p == 1:
-            outputs = False
-            for o, key in [(gul_output, 'gul_summaries'), (il_output, 'il_summaries')]:
-                if o:
-                    for level in analysis_settings[key]:
+            if p == 1:
+                outputs = False
+                for o, key in [(gul_output, 'gul_summaries'), (il_output, 'il_summaries')]:
+                    if o:
+                        for level in analysis_settings[key]:
+                            for a, rs in ANALYSIS_TYPES:
+                                if a in level:
+                                    if level[a]:
+                                        if rs == []:
+                                            outputs = True 
+                                        else:
+                                            if 'lec_output' in level:
+                                                if level['lec_output']:
+                                                    for r in rs:
+                                                        outputs = outputs or level[a][r]
+
+                if not outputs:
+                    msg = 'No outputs specified by JSON'
+                    logging.error('{}\n'.format(msg))
+                    raise Exception(msg)
+                    
+            for pipe_prefix, key, output_flag in [
+                    ("gul", "gul_summaries", gul_output),
+                    ("il", "il_summaries", il_output)
+                    ]:
+
+                if output_flag:
+                    for s in analysis_settings[key]:
+                        summaryLevelPipe = '{}/{}{}summary{}'.format(working_directory, pipe_prefix, p, s["id"])
+                        create_pipe(summaryLevelPipe, log_command)
+
+                        summaryPipes = []
                         for a, rs in ANALYSIS_TYPES:
-                            if a in level:
-                                if level[a]:
+                            if a in s:
+                                logging.debug(
+                                    'a = {}, s[a] = {} , type(s[a]) = {}, rs = {}\n'.format(
+                                        a, s[a], type(s[a]), rs))
+                                if s[a] or rs != []:
                                     if rs == []:
-                                        outputs = True 
-                                    else:
-                                        if 'lec_output' in level:
-                                            if level['lec_output']:
-                                                for r in rs:
-                                                    outputs = outputs or level[a][r]
+                                        summaryPipes += ['{}/{}{}summary{}{}'.format(working_directory, pipe_prefix, p, s["id"], a)]
+                                        logging.debug('new pipe: {}\n'.format(summaryPipes[-1]))
+                                        create_pipe(summaryPipes[-1], log_command)
 
-            if not outputs:
-                msg = 'No outputs specified by JSON'
-                logging.error('{}\n'.format(msg))
-                raise Exception(msg)
-                
-        for pipe_prefix, key, output_flag in [
-                ("gul", "gul_summaries", gul_output),
-                ("il", "il_summaries", il_output)
-                ]:
+                                        output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], log_command, proc_number=p)]
 
-            if output_flag:
-                for s in analysis_settings[key]:
-                    summaryLevelPipe = '{}/{}{}summary{}'.format(working_directory, pipe_prefix, p, s["id"])
-                    create_pipe(summaryLevelPipe, log_command)
+                                        if p == 1:
+                                            # logging.info('*** p == 1 ***')
+                                            if a in ['eltcalc', 'pltcalc', 'summarycalc']:
+                                                for pp in range(1, number_of_processes + 1):
+                                                    output_pipe = "{}/{}_{}_{}{}_{}".format(
+                                                        working_directory, pipe_prefix, s['id'], a, "", pp)
+                                                    create_pipe(output_pipe, log_command)
 
-                    summaryPipes = []
-                    for a, rs in ANALYSIS_TYPES:
-                        if a in s:
-                            logging.debug(
-                                'a = {}, s[a] = {} , type(s[a]) = {}, rs = {}\n'.format(
-                                    a, s[a], type(s[a]), rs))
-                            if s[a] or rs != []:
-                                if rs == []:
-                                    summaryPipes += ['{}/{}{}summary{}{}'.format(working_directory, pipe_prefix, p, s["id"], a)]
-                                    logging.debug('new pipe: {}\n'.format(summaryPipes[-1]))
-                                    create_pipe(summaryPipes[-1], log_command)
+                                                spCmd = output_commands[-1].split('>')
+                                                if len(spCmd) >= 2:
+                                                    postOutputCmd = "cat "
+                                                    for inputPipeNumber in range(1, number_of_processes + 1):
+                                                        myPipe = "{}".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber))).lstrip()
+                                                        assert_is_pipe(myPipe)
+                                                        postOutputCmd += "{} ".format(myPipe)
+                                                    spCmd2 = spCmd[-1].split('/')
+                                                    if len(spCmd2) >= 2:
+                                                        postOutputCmd += "> {}.csv".format(os.path.join(output_directory, re.sub("_"+str(p)+"$", '', spCmd2[-1])))
+                                                # output_commands += [postOutputCmd]
+                                                postOutputCmds += [postOutputCmd]
+                                                # procs += [open_process(postOutputCmd, model_root, log_command)]
 
-                                    output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], log_command, proc_number=p)]
+                                    elif isinstance(s[a], dict):
+                                        if a == "leccalc" and 'lec_output' in s:
+                                            if s['lec_output']:
+                                                # write to file rather than use named pipe
+                                                myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
+                                                myDir = os.path.join(model_root, myDirShort)
+                                                for d in [os.path.join(model_root, 'working'), myDir]:
+                                                    if not os.path.isdir(d):
+                                                        logging.debug('mkdir {}\n'.format(d))
+                                                        os.mkdir(d, 0777)
+                                                myFile = os.path.join(myDirShort, "p{}.bin".format(p))
+                                                if myFile not in summaryPipes:
+                                                    summaryPipes += [myFile]
+                                        else:
+                                            # TODO what is this? Should it be an error?
+                                            logging.info('Unexpectedly found analysis {} with results dict {}\n'.format(a, rs))
+                        if len(summaryPipes) > 0:
+                            assert_is_pipe(summaryLevelPipe)
+                            tee_commands += ["tee < {} ".format(summaryLevelPipe)]
+                            for sp in summaryPipes[:-1]:
+                                if ".bin" not in sp:
+                                    assert_is_pipe(sp)
+                                tee_commands[-1] += "{} ".format(sp)
+                            if ".bin" not in summaryPipes[-1]:
+                                assert_is_pipe(summaryPipes[-1])
+                            tee_commands[-1] += " > {}".format(summaryPipes[-1])
 
-                                    if p == 1:
-                                        # logging.info('*** p == 1 ***')
-                                        if a in ['eltcalc', 'pltcalc', 'summarycalc']:
-                                            for pp in range(1, number_of_processes + 1):
-                                                output_pipe = "{}/{}_{}_{}{}_{}".format(
-                                                    working_directory, pipe_prefix, s['id'], a, "", pp)
-                                                create_pipe(output_pipe, log_command)
+            # now run them in reverse order from consumers to producers
+            for cmds in [tee_commands, postOutputCmds, output_commands]:
+                for s in cmds:
+                    # logging.info('found command = {}'.format(s))
+                    procs += [open_process(s, model_root, log_command)]
+                    
+            tee_commands = []
+            postOutputCmds = []
+            output_commands = []
 
-                                            spCmd = output_commands[-1].split('>')
-                                            if len(spCmd) >= 2:
-                                                postOutputCmd = "cat "
-                                                for inputPipeNumber in range(1, number_of_processes + 1):
-                                                    myPipe = "{}".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber))).lstrip()
-                                                    assert_is_pipe(myPipe)
-                                                    postOutputCmd += "{} ".format(myPipe)
-                                                spCmd2 = spCmd[-1].split('/')
-                                                if len(spCmd2) >= 2:
-                                                    postOutputCmd += "> {}.csv".format(os.path.join(output_directory, re.sub("_"+str(p)+"$", '', spCmd2[-1])))
-                                            # output_commands += [postOutputCmd]
-                                            postOutputCmds += [postOutputCmd]
-                                            # procs += [open_process(postOutputCmd, model_root, log_command)]
+            for summaryFlag, pipe_prefix, output_flag in [("-g", "gul", gul_output), ("-f", "il", il_output)]:
+                myKey = pipe_prefix+'_summaries'
+                if myKey in analysis_settings and output_flag:
+                    summaryString = ""
+                    for sum in analysis_settings[myKey]:
+                        myPipe = "{}/{}{}summary{}".format(working_directory, pipe_prefix, p, sum["id"])
+                        assert_is_pipe(myPipe)
 
-                                elif isinstance(s[a], dict):
-                                    if a == "leccalc" and 'lec_output' in s:
-                                        if s['lec_output']:
-                                            # write to file rather than use named pipe
-                                            myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
-                                            myDir = os.path.join(model_root, myDirShort)
-                                            for d in [os.path.join(model_root, 'working'), myDir]:
-                                                if not os.path.isdir(d):
-                                                    logging.debug('mkdir {}\n'.format(d))
-                                                    os.mkdir(d, 0777)
-                                            myFile = os.path.join(myDirShort, "p{}.bin".format(p))
-                                            if myFile not in summaryPipes:
-                                                summaryPipes += [myFile]
-                                    else:
-                                        # TODO what is this? Should it be an error?
-                                        logging.info('Unexpectedly found analysis {} with results dict {}\n'.format(a, rs))
-                    if len(summaryPipes) > 0:
-                        assert_is_pipe(summaryLevelPipe)
-                        tee_commands += ["tee < {} ".format(summaryLevelPipe)]
-                        for sp in summaryPipes[:-1]:
-                            if ".bin" not in sp:
-                                assert_is_pipe(sp)
-                            tee_commands[-1] += "{} ".format(sp)
-                        if ".bin" not in summaryPipes[-1]:
-                            assert_is_pipe(summaryPipes[-1])
-                        tee_commands[-1] += " > {}".format(summaryPipes[-1])
-
-        # now run them in reverse order from consumers to producers
-        for cmds in [tee_commands, postOutputCmds, output_commands]:
-            for s in cmds:
-                # logging.info('found command = {}'.format(s))
-                procs += [open_process(s, model_root, log_command)]
-                
-        tee_commands = []
-        postOutputCmds = []
-        output_commands = []
-
-        for summaryFlag, pipe_prefix, output_flag in [("-g", "gul", gul_output), ("-f", "il", il_output)]:
-            myKey = pipe_prefix+'_summaries'
-            if myKey in analysis_settings and output_flag:
-                summaryString = ""
-                for sum in analysis_settings[myKey]:
-                    myPipe = "{}/{}{}summary{}".format(working_directory, pipe_prefix, p, sum["id"])
+                        summaryString += " -{} {}".format(sum["id"], myPipe)
+                    myPipe = "{}/{}{}".format(working_directory, pipe_prefix, p)
                     assert_is_pipe(myPipe)
+                    s = "summarycalc {} {} < {}".format(summaryFlag, summaryString, myPipe)
+                    procs += [open_process(s, model_root, log_command)]
 
-                    summaryString += " -{} {}".format(sum["id"], myPipe)
-                myPipe = "{}/{}{}".format(working_directory, pipe_prefix, p)
-                assert_is_pipe(myPipe)
-                s = "summarycalc {} {} < {}".format(summaryFlag, summaryString, myPipe)
+            for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory, handles):
                 procs += [open_process(s, model_root, log_command)]
 
-        for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory, handles):
-            procs += [open_process(s, model_root, log_command)]
+            """
+            for s in postOutputCmds:
+                procs += [open_process(s, model_root, log_command)]
+            """
+        waitForSubprocesses(procs)
 
-        """
-        for s in postOutputCmds:
-            procs += [open_process(s, model_root, log_command)]
-        """
-    waitForSubprocesses(procs)
+        run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings)
 
-    run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings)
+        # Put in error handler
+        # free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
 
-    # Put in error handler
-    # free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
+        end = time.time()
+        logging.info("COMPLETED: {} in {}s".format(
+            func_name, round(end - start, 2)))
+    except Exception as e:
+        logging.error('Exception : {}'.format(e))
+        kill_all_processes(procs)
+        raise e
+    except:
+        logging.error('Exception')
+        kill_all_processes(procs)
+        raise Exception
 
-    end = time.time()
-    logging.info("COMPLETED: {} in {}s".format(
-        func_name, round(end - start, 2)))
+
+def kill_all_processes(procs):
+    '''
+    Error Handling (EH) function - kills all processes spawned by the worker.
+    Args:
+        procs: list of all processes to be killed
+    '''
+    count = 0
+    logging.info('going to kill all worker processes')
+    for p in procs:
+        if p.poll() == None:
+            count += 1
+            try:
+                res = os.kill(os.getpgid(p.pid), signal.SIGKILL)
+            except OSError:
+                pass
+    logging.info('sent SIGKILL signal to {} worker processes'.format(count))
+    if count > 0:
+        time.sleep(1)
+        count = 0
+        for p in procs:
+            if p.poll() == None:
+                count += 1
+        logging.info('one second later, {} processes out of {} still alive'.format(count, len(procs)))
 
 
 def run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings):
@@ -483,3 +518,4 @@ def run_second_stage(model_root, log_command, working_directory, output_director
                         procs += [open_process(outputString(working_directory, output_directory, pipe_prefix, s['id'], 'leccalc', "{}summary{}".format(pipe_prefix, s['id']), log_command, requiredRs), model_root, log_command)]
 
     waitForSubprocesses(procs)
+
