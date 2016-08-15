@@ -70,6 +70,67 @@ ANALYSIS_TYPES = [
     ("aalcalc", []),
     ("pltcalc", [])]
 
+STATIC_DIR = 'static'
+INPUT_DIR = 'input'
+
+REQUIRED_INPUT_FILES = [
+      os.path.join(INPUT_DIR, "events.bin"), 
+      os.path.join(INPUT_DIR, "items.bin"), 
+      os.path.join(STATIC_DIR, "damage_bin_dict.bin"), 
+      os.path.join(STATIC_DIR, "footprint.bin"),  
+      os.path.join(STATIC_DIR, "footprint.idx"), 
+      os.path.join(STATIC_DIR, "vulnerability.bin"), 
+      os.path.join(INPUT_DIR, "items.bin"), 
+      os.path.join(STATIC_DIR, "damage_bin_dict.bin"), 
+      os.path.join(STATIC_DIR, "random.bin"), 
+      os.path.join(INPUT_DIR, "coverages.bin")]
+      
+FMCALC_INPUT_FILES = [
+      os.path.join(INPUT_DIR, "fm_profile.bin"),
+      os.path.join(INPUT_DIR, "fm_policytc.bin"),
+      os.path.join(INPUT_DIR, "fm_programme.bin"),
+      os.path.join(INPUT_DIR, "fm_xref.bin")]
+
+IL_SUMMARYCALC_INPUT_FILES = [os.path.join(INPUT_DIR, "fmsummaryxref.bin")]
+GUL_SUMMARYCALC_INPUT_FILES = [os.path.join(INPUT_DIR, "gulsummaryxref.bin")]   
+LECCALC_INPUT_FILES = [os.path.join(INPUT_DIR, "returnperiods.bin")]
+AAL_LEC_PLTCALC_INPUT_FILES = [os.path.join(STATIC_DIR, "occurrence.bin")]
+
+@helpers.oasis_log(logging.getLogger())
+def check_input_files(json, gul_output, il_output):
+    ''' Raises an Exception if any required input files are missing BEFORE the calculation starts. '''
+
+    files_to_check = REQUIRED_INPUT_FILES
+            
+    if il_output:
+        files_to_check += FMCALC_INPUT_FILES
+        
+    for o, key, files in [(gul_output, 'gul_summaries', GUL_SUMMARYCALC_INPUT_FILES), (il_output, 'il_summaries', IL_SUMMARYCALC_INPUT_FILES)]:
+        if o:
+            files_to_check += files
+                        
+            for level in json[key]:
+                leccalc = False
+                if 'lec_output' in level and 'leccalc' in level:
+                    if level['lec_output']:
+                        for r in LEC_RESULT_TYPES:
+                            leccalc = leccalc or level['leccalc'][r]
+                            
+                plt_or_aalcalc = False
+                for calc in ['pltcalc', 'aalcalc']:
+                    if calc in level:
+                        plt_or_aalcalc = plt_or_aalcalc or level[calc] 
+
+                if leccalc:
+                    files_to_check += LECCALC_INPUT_FILES
+                            
+                if leccalc or plt_or_aalcalc:
+                    files_to_check += AAL_LEC_PLTCALC_INPUT_FILES
+
+    for f in files_to_check:
+        if not os.path.exists(f):
+            raise Exception('Cannot find {}'.format(f))
+
 
 @helpers.oasis_log(logging.getLogger())
 def open_process(s, dir, log_command):
@@ -310,7 +371,7 @@ def common_run_analysis_only(
                     pipe = '{}/il{}'.format(working_directory, p)
                     create_pipe(pipe, log_command)
                     il_output = True
-
+                    
             if p == 1:
                 outputs = False
                 for o, key in [(gul_output, 'gul_summaries'), (il_output, 'il_summaries')]:
@@ -322,7 +383,7 @@ def common_run_analysis_only(
                                         if rs == []:
                                             outputs = True 
                                         else:
-                                            if 'lec_output' in level:
+                                            if 'lec_output' in level and 'leccalc' in level:
                                                 if level['lec_output']:
                                                     for r in rs:
                                                         outputs = outputs or level[a][r]
@@ -331,6 +392,8 @@ def common_run_analysis_only(
                     msg = 'No outputs specified by JSON'
                     logging.error('{}\n'.format(msg))
                     raise Exception(msg)
+                    
+                check_input_files(analysis_settings, gul_output, il_output)
                     
             for pipe_prefix, key, output_flag in [
                     ("gul", "gul_summaries", gul_output),
