@@ -100,6 +100,9 @@ try:
     if os.path.exists("working"):
         shutil.rmtree('working')
     os.mkdir("working")
+    if os.path.exists("work"):
+        shutil.rmtree('work')
+    os.mkdir("work")
     
     model_runner.run_analysis(analysis_settings, number_of_processes, log_command if do_command_output else None)  
 
