@@ -1,11 +1,23 @@
 import os
 import logging
 from common import helpers
-from model_runner_common import assert_is_pipe, common_run_analysis_only, create_pipe
+from model_runner_common import assert_is_pipe, common_run_analysis_only, create_pipe, INPUT_DIR, STATIC_DIR
 '''
 Model runner for sdtandard ktools pipeline.
 '''
 
+GENERIC_REQUIRED_INPUT_FILES = [
+      os.path.join(INPUT_DIR, "events.bin"), 
+      os.path.join(INPUT_DIR, "items.bin"), 
+      os.path.join(STATIC_DIR, "damage_bin_dict.bin"), 
+      os.path.join(STATIC_DIR, "footprint.bin"),  
+      os.path.join(STATIC_DIR, "footprint.idx"), 
+      os.path.join(STATIC_DIR, "vulnerability.bin"), 
+      os.path.join(INPUT_DIR, "items.bin"), 
+      os.path.join(STATIC_DIR, "damage_bin_dict.bin"), 
+      os.path.join(STATIC_DIR, "random.bin"), 
+      os.path.join(INPUT_DIR, "coverages.bin")]
+      
 
 @helpers.oasis_log(logging.getLogger())
 def get_gul_and_il_cmds(
@@ -65,4 +77,4 @@ def run_analysis(analysis_settings, number_of_processes, log_command=None):
 
     common_run_analysis_only(
         analysis_settings, number_of_processes,
-        get_gul_and_il_cmds, log_command)
+        get_gul_and_il_cmds, GENERIC_REQUIRED_INPUT_FILES, log_command)

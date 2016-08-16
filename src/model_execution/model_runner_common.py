@@ -74,15 +74,7 @@ STATIC_DIR = 'static'
 INPUT_DIR = 'input'
 
 REQUIRED_INPUT_FILES = [
-      os.path.join(INPUT_DIR, "events.bin"), 
       os.path.join(INPUT_DIR, "items.bin"), 
-      os.path.join(STATIC_DIR, "damage_bin_dict.bin"), 
-      os.path.join(STATIC_DIR, "footprint.bin"),  
-      os.path.join(STATIC_DIR, "footprint.idx"), 
-      os.path.join(STATIC_DIR, "vulnerability.bin"), 
-      os.path.join(INPUT_DIR, "items.bin"), 
-      os.path.join(STATIC_DIR, "damage_bin_dict.bin"), 
-      os.path.join(STATIC_DIR, "random.bin"), 
       os.path.join(INPUT_DIR, "coverages.bin")]
       
 FMCALC_INPUT_FILES = [
@@ -97,10 +89,10 @@ LECCALC_INPUT_FILES = [os.path.join(INPUT_DIR, "returnperiods.bin")]
 AAL_LEC_PLTCALC_INPUT_FILES = [os.path.join(STATIC_DIR, "occurrence.bin")]
 
 @helpers.oasis_log(logging.getLogger())
-def check_input_files(json, gul_output, il_output):
+def check_input_files(json, gul_output, il_output, supplier_specific_input_files):
     ''' Raises an Exception if any required input files are missing BEFORE the calculation starts. '''
 
-    files_to_check = REQUIRED_INPUT_FILES
+    files_to_check = REQUIRED_INPUT_FILES + supplier_specific_input_files;
             
     if il_output:
         files_to_check += FMCALC_INPUT_FILES
@@ -320,7 +312,7 @@ def outputString(
 @helpers.oasis_log(logging.getLogger())
 def common_run_analysis_only(
         analysis_settings, number_of_processes,
-        get_gul_and_il_cmds, log_command=None, handles=None):
+        get_gul_and_il_cmds, supplier_specific_input_files=[], log_command=None, handles=None):
     '''
     Worker function for supplier OasisIM. It orchestrates data
     inputs/outputs and the spawning of subprocesses to call xtools
@@ -393,7 +385,7 @@ def common_run_analysis_only(
                     logging.error('{}\n'.format(msg))
                     raise Exception(msg)
                     
-                check_input_files(analysis_settings, gul_output, il_output)
+                check_input_files(analysis_settings, gul_output, il_output, supplier_specific_input_files)
                     
             for pipe_prefix, key, output_flag in [
                     ("gul", "gul_summaries", gul_output),
