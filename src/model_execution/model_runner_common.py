@@ -523,7 +523,7 @@ def kill_all_processes(procs):
         if p.poll() == None:
             count += 1
             try:
-                res = os.kill(os.getpgid(p.pid), signal.SIGKILL)
+                os.kill(os.getpgid(p.pid), signal.SIGKILL)
             except OSError:
                 pass
     logging.info('sent SIGKILL signal to {} worker processes'.format(count))

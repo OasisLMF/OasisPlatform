@@ -1,7 +1,7 @@
 import os
 import logging
 from common import helpers
-from model_runner_common import assert_is_pipe, common_run_analysis_only, create_pipe, INPUT_DIR, STATIC_DIR
+from model_runner_common import assert_is_pipe, common_run_analysis_only, INPUT_DIR, STATIC_DIR
 '''
 Model runner for sdtandard ktools pipeline.
 '''
