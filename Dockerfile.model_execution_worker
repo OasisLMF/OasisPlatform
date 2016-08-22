@@ -14,6 +14,8 @@ RUN useradd -ms /bin/bash worker
 RUN chown worker /var/log/oasis
 RUN chown worker /var/oasis/working
 
+COPY ./data/static /var/oasis/model_data/OasisIM/1
+
 USER worker
 WORKDIR /home/worker
 
