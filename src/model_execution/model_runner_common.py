@@ -239,7 +239,7 @@ def outputString(
 #            output_pipe = "{}/{}_{}_{}{}_{}".format(
 #                working_directory, pipe_prefix, summary, output_command, "", proc_number)
 #            create_pipe(output_pipe, log_command)
-            file = "{}/{}_{}_{}{}_{}".format(
+            output_pipe = "{}/{}_{}_{}{}_{}".format(
                 "work", pipe_prefix, summary, output_command, "", proc_number)
         if output_command == 'aalcalc':
             output_filename = "p{}.bin".format(proc_number)
@@ -427,7 +427,7 @@ def common_run_analysis_only(
                                                     postOutputCmd = "cat "
                                                     for inputPipeNumber in range(1, number_of_processes + 1):
                                                         myPipe = "{}".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber))).lstrip()
-                                                        assert_is_pipe(myPipe)
+                                                        #assert_is_pipe(myPipe)
                                                         postOutputCmd += "{} ".format(myPipe)
                                                     spCmd2 = spCmd[-1].split('/')
                                                     if len(spCmd2) >= 2:
