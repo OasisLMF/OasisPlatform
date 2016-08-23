@@ -236,9 +236,11 @@ def outputString(
 
     if rs == []:
         if output_command in ['eltcalc', 'pltcalc', 'summarycalc']:
-            output_pipe = "{}/{}_{}_{}{}_{}".format(
-                working_directory, pipe_prefix, summary, output_command, "", proc_number)
-            create_pipe(output_pipe, log_command)
+#            output_pipe = "{}/{}_{}_{}{}_{}".format(
+#                working_directory, pipe_prefix, summary, output_command, "", proc_number)
+#            create_pipe(output_pipe, log_command)
+            file = "{}/{}_{}_{}{}_{}".format(
+                "work", pipe_prefix, summary, output_command, "", proc_number)
         if output_command == 'aalcalc':
             output_filename = "p{}.bin".format(proc_number)
             # output_filename = os.path.join(dir, file)
@@ -342,9 +344,10 @@ def common_run_analysis_only(
         model_root = os.getcwd()
         output_directory = 'output'
 
+        postOutputCmds = []
+
         for p in range(1, number_of_processes + 1):
 
-            postOutputCmds = []
             logging.debug('Process {} of {}'.format(p, number_of_processes))
 
             tee_commands = []
@@ -416,8 +419,8 @@ def common_run_analysis_only(
                                             if a in ['eltcalc', 'pltcalc', 'summarycalc']:
                                                 for pp in range(1, number_of_processes + 1):
                                                     output_pipe = "{}/{}_{}_{}{}_{}".format(
-                                                        working_directory, pipe_prefix, s['id'], a, "", pp)
-                                                    create_pipe(output_pipe, log_command)
+                                                        "work", pipe_prefix, s['id'], a, "", pp)
+                                                    #create_pipe(output_pipe, log_command)
 
                                                 spCmd = output_commands[-1].split('>')
                                                 if len(spCmd) >= 2:
@@ -461,13 +464,13 @@ def common_run_analysis_only(
                             tee_commands[-1] += " > {}".format(summaryPipes[-1])
 
             # now run them in reverse order from consumers to producers
-            for cmds in [tee_commands, postOutputCmds, output_commands]:
+            for cmds in [tee_commands, output_commands]:
                 for s in cmds:
                     # logging.info('found command = {}'.format(s))
                     procs += [open_process(s, model_root, log_command)]
                     
             tee_commands = []
-            postOutputCmds = []
+            #postOutputCmds = []
             output_commands = []
 
             for summaryFlag, pipe_prefix, output_flag in [("-g", "gul", gul_output), ("-f", "il", il_output)]:
@@ -487,10 +490,14 @@ def common_run_analysis_only(
             for s in get_gul_and_il_cmds(p, number_of_processes, analysis_settings, gul_output, il_output, log_command, working_directory, handles):
                 procs += [open_process(s, model_root, log_command)]
 
-            """
-            for s in postOutputCmds:
+        waitForSubprocesses(procs)
+
+        # now run them in reverse order from consumers to producers
+        for cmds in [postOutputCmds]:
+            for s in cmds:
+                # logging.info('found command = {}'.format(s))
                 procs += [open_process(s, model_root, log_command)]
-            """
+
         waitForSubprocesses(procs)
 
         run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings)
@@ -554,6 +561,7 @@ def run_second_stage(model_root, log_command, working_directory, output_director
     for pipe_prefix, o, key in [('gul', gul_output, 'gul_summaries'), ('il', il_output, 'il_summaries')]:
         if o:
             for s in analysis_settings[key]:
+
                 if 'aalcalc' in s:
                     if s['aalcalc']:
                         # logging.info('*** p == number_of_processes and a == aalcalc ***')
@@ -568,8 +576,13 @@ def run_second_stage(model_root, log_command, working_directory, output_director
                             if r in s['leccalc']:
                                 if s['leccalc'][r]:
                                     requiredRs += [r]
+                        
+                        command = outputString(
+                            working_directory, output_directory, pipe_prefix, s['id'], 
+                            'leccalc', "{}summary{}".format(pipe_prefix, s['id']), log_command, requiredRs) 
 
-                        procs += [open_process(outputString(working_directory, output_directory, pipe_prefix, s['id'], 'leccalc', "{}summary{}".format(pipe_prefix, s['id']), log_command, requiredRs), model_root, log_command)]
+                        procs += [
+                            open_process(command, model_root, log_command)]
 
     waitForSubprocesses(procs)
 
