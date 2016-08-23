@@ -23,5 +23,5 @@ COPY ./run_test_analysis.sh /home/oasis/
 #RUN chmod -R a+w /home/oasis/tests
 RUN chmod -R a+w /home/oasis
 
-USER oasis
-WORKDIR /home/oasis
+#USER oasis
+#WORKDIR /home/oasis
