@@ -297,14 +297,11 @@ def outputString(
             if not os.path.isdir(d):
                 logging.debug('mkdir {}\n'.format(d))
                 os.mkdir(d, 0777)
-
         str = 'aalcalc < {} > {}'.format(input_pipe, os.path.join(myDirShort, output_filename))
     elif output_command == "pltcalc": 
         str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "summarycalc":
-        # cat is required to prevent blocking when running across many 
-        # processes. Investigating why this is necessary.
-        str = 'cat < {} | summarycalctocsv > {}'.format(input_pipe, output_pipe)
+        str = 'summarycalctocsv > {}'.format(input_pipe, output_pipe)
 
     return str
 
@@ -421,7 +418,7 @@ def common_run_analysis_only(
 
                                                 spCmd = output_commands[-1].split('>')
                                                 if len(spCmd) >= 2:
-                                                    postOutputCmd = "cat "
+                                                    postOutputCmd = "kat "
                                                     for inputPipeNumber in range(1, number_of_processes + 1):
                                                         myPipe = "{}".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber))).lstrip()
                                                         assert_is_pipe(myPipe)
