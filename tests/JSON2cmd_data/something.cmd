@@ -2,9 +2,8 @@
 mkfifo working/gul1
 mkfifo working/gul1summary1
 mkfifo working/gul1summary1eltcalc
-mkfifo working/gul_1_eltcalc_1
 tee < working/gul1summary1  > working/gul1summary1eltcalc
-cat working/gul_1_eltcalc_1 > output/gul_1_eltcalc.csv
-eltcalc < working/gul1summary1eltcalc > working/gul_1_eltcalc_1
+eltcalc < working/gul1summary1eltcalc > work/gul_1_eltcalc_1
 summarycalc -g  -1 working/gul1summary1 < working/gul1
 eve 1 1 | getmodel | gulcalc -S100  -L100 -c working/gul1 
+cat work/gul_1_eltcalc_1 > output/gul_1_eltcalc.csv
