@@ -301,7 +301,7 @@ def outputString(
     elif output_command == "pltcalc": 
         str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "summarycalc":
-        str = 'summarycalctocsv > {}'.format(input_pipe, output_pipe)
+        str = 'summarycalctocsv < {} > {}'.format(input_pipe, output_pipe)
 
     return str
 
