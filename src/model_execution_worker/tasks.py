@@ -156,6 +156,13 @@ def start_analysis(analysis_settings, input_location):
         logging.info("Using default events.bin")
         shutil.copyfile(model_data_events_filepath, analysis_events_filepath)
 
+    # If a return periods file has not been included in the analysis input,
+    # then use the default from the model data.
+    analysis_returnperiods_filepath = os.path.join(working_directory, 'input', 'returnperiods.bin')
+    model_data_returnperiods_filepath = os.path.join(working_directory, 'static', 'returnperiods.bin')
+    if not os.path.exists(analysis_returnperiods_filepath):
+        logging.info("Using default returnperiods.bin")
+        shutil.copyfile(model_data_returnperiods_filepath, analysis_returnperiods_filepath)
 
     model_runner_module = __import__(
         "{}.{}".format(module_supplier_id, "supplier_model_runner"),
