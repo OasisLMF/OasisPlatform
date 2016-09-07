@@ -339,7 +339,67 @@ def common_run_analysis_only(
         handles: the shared memory handles
         log_command: command to log process calls
     '''
+    il_output = False
+    gul_output = False
+    working_directory = 'working'
+    model_root = os.getcwd()
+    output_directory = 'output'
 
+    start = time.time()
+
+    print 'FIRST STAGE:'
+    cmds = run_first_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings, number_of_processes, supplier_specific_input_files, get_gul_and_il_cmds, handles)
+    procs = spawnSubprocesses(cmds)
+    waitForSubprocesses(procs)
+
+    print 'SECOND STAGE:'
+    cmds = run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings)
+    procs = spawnSubprocesses(cmds)
+    waitForSubprocesses(procs)
+
+    # Put in error handler
+    # free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
+
+    end = time.time()
+    logging.info("COMPLETED: {} secs".format(round(end - start, 2)))
+    """
+    TEMP COMMENT OUT
+    except Exception as e:
+        logging.error('Exception : {}'.format(e))
+        kill_all_processes(procs)
+        raise e
+    except:
+        logging.error('Exception')
+        kill_all_processes(procs)
+        raise Exception
+    """
+
+def kill_all_processes(procs):
+    '''
+    Error Handling (EH) function - kills all processes spawned by the worker.
+    Args:
+        procs: list of all processes to be killed
+    '''
+    count = 0
+    logging.info('going to kill all worker processes')
+    for p in procs:
+        if p.poll() == None:
+            count += 1
+            try:
+                os.kill(os.getpgid(p.pid), signal.SIGKILL)
+            except OSError:
+                pass
+    logging.info('sent SIGKILL signal to {} worker processes'.format(count))
+    if count > 0:
+        time.sleep(1)
+        count = 0
+        for p in procs:
+            if p.poll() == None:
+                count += 1
+        logging.info('one second later, {} processes out of {} still alive'.format(count, len(procs)))
+
+
+def run_first_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings, number_of_processes, supplier_specific_input_files, get_gul_and_il_cmds, handles):
     #  TEMP COMMENT OUT try:
     procs = []
 
@@ -351,11 +411,6 @@ def common_run_analysis_only(
         if i == 'self':
             continue
         logging.debug("{}={}".format(i, values[i]))
-    start = time.time()
-
-    working_directory = 'working'
-    model_root = os.getcwd()
-    output_directory = 'output'
 
     postOutputCmds = []
     
@@ -517,54 +572,9 @@ def common_run_analysis_only(
 
     for c in cmds:
         print ('c = {}'.format(c))
-    procs = spawnSubprocesses(cmds)
-    waitForSubprocesses(procs)
-
-    print 'SECOND STAGE:'
-    run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings)
-
-    # Put in error handler
-    # free_shared_memory(session_id, handles, do_wind, do_stormsurge, log_command)
-
-    end = time.time()
-    logging.info("COMPLETED: {} in {}s".format(
-        func_name, round(end - start, 2)))
-    """
-    TEMP COMMENT OUT
-    except Exception as e:
-        logging.error('Exception : {}'.format(e))
-        kill_all_processes(procs)
-        raise e
-    except:
-        logging.error('Exception')
-        kill_all_processes(procs)
-        raise Exception
-    """
-
-def kill_all_processes(procs):
-    '''
-    Error Handling (EH) function - kills all processes spawned by the worker.
-    Args:
-        procs: list of all processes to be killed
-    '''
-    count = 0
-    logging.info('going to kill all worker processes')
-    for p in procs:
-        if p.poll() == None:
-            count += 1
-            try:
-                os.kill(os.getpgid(p.pid), signal.SIGKILL)
-            except OSError:
-                pass
-    logging.info('sent SIGKILL signal to {} worker processes'.format(count))
-    if count > 0:
-        time.sleep(1)
-        count = 0
-        for p in procs:
-            if p.poll() == None:
-                count += 1
-        logging.info('one second later, {} processes out of {} still alive'.format(count, len(procs)))
-
+        
+    return cmds
+        
 
 def run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings):
     '''
@@ -601,6 +611,4 @@ def run_second_stage(model_root, log_command, working_directory, output_director
                                     requiredRs += [r]
 
                         open_process(command, model_root, log_command, cmds)
-
-    procs = spawnSubprocesses(cmds)
-    waitForSubprocesses(procs)
+    return cmds
