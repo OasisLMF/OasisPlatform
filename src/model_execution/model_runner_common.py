@@ -255,11 +255,8 @@ def outputString(
 
     if rs == []:
         if output_command in ['eltcalc', 'pltcalc', 'summarycalc']:
-#            output_pipe = "{}/{}_{}_{}{}_{}".format(
-#                working_directory, pipe_prefix, summary, output_command, "", proc_number)
-#            create_pipe(output_pipe, log_command)
             output_pipe = "{}/{}_{}_{}{}_{}".format(
-                "working", pipe_prefix, summary, output_command, "", proc_number)
+                working_directory, pipe_prefix, summary, output_command, "", proc_number)
         if output_command == 'aalcalc':
             output_filename = "p{}.bin".format(proc_number)
             # output_filename = os.path.join(dir, file)
@@ -318,14 +315,11 @@ def outputString(
             if not os.path.isdir(d):
                 logging.debug('mkdir {}\n'.format(d))
                 os.mkdir(d, 0777)
-
         str = 'aalcalc < {} > {}'.format(input_pipe, os.path.join(myDirShort, output_filename))
     elif output_command == "pltcalc": 
         str = 'pltcalc < {} > {}'.format(input_pipe, output_pipe)
     elif output_command == "summarycalc":
-        # cat is required to prevent blocking when running across many 
-        # processes. Investigating why this is necessary.
-        str = 'cat < {} | summarycalctocsv > {}'.format(input_pipe, output_pipe)
+        str = 'summarycalctocsv < {} > {}'.format(input_pipe, output_pipe)
 
     return str
 
@@ -445,7 +439,7 @@ def common_run_analysis_only(
 
                                             spCmd = output_commands[-1].split('>')
                                             if len(spCmd) >= 2:
-                                                postOutputCmd = "cat "
+                                                postOutputCmd = "kat "
                                                 for inputPipeNumber in range(1, number_of_processes + 1):
                                                     myPipe = "{}".format(spCmd[-1].replace(a + '_' + str(p), a + '_' + str(inputPipeNumber))).lstrip()
                                                     #assert_is_pipe(myPipe)
@@ -591,7 +585,6 @@ def run_second_stage(model_root, log_command, working_directory, output_director
     for pipe_prefix, o, key in [('gul', gul_output, 'gul_summaries'), ('il', il_output, 'il_summaries')]:
         if o:
             for s in analysis_settings[key]:
-
                 if 'aalcalc' in s:
                     if s['aalcalc']:
                         # logging.info('*** p == number_of_processes and a == aalcalc ***')
@@ -606,10 +599,6 @@ def run_second_stage(model_root, log_command, working_directory, output_director
                             if r in s['leccalc']:
                                 if s['leccalc'][r]:
                                     requiredRs += [r]
-                        
-                        command = outputString(
-                            working_directory, output_directory, pipe_prefix, s['id'], 
-                            'leccalc', "{}summary{}".format(pipe_prefix, s['id']), log_command, requiredRs) 
 
                         open_process(command, model_root, log_command, cmds)
 

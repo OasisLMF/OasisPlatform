@@ -6,4 +6,4 @@ tee < working/gul1summary1  > working/gul1summary1eltcalc
 eltcalc < working/gul1summary1eltcalc > working/gul_1_eltcalc_1
 summarycalc -g  -1 working/gul1summary1 < working/gul1
 eve 1 1 | getmodel | gulcalc -S100  -L100 -c working/gul1 
-cat working/gul_1_eltcalc_1 > output/gul_1_eltcalc.csv
+kat working/gul_1_eltcalc_1 > output/gul_1_eltcalc.csv
