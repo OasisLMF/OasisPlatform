@@ -348,12 +348,12 @@ def common_run_analysis_only(
     start = time.time()
 
     print 'FIRST STAGE:'
-    cmds = run_first_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings, number_of_processes, supplier_specific_input_files, get_gul_and_il_cmds, handles)
+    cmds = run_first_stage(model_root, log_command, working_directory, output_directory, analysis_settings, number_of_processes, supplier_specific_input_files, get_gul_and_il_cmds, handles)
     procs = spawnSubprocesses(cmds)
     waitForSubprocesses(procs)
 
     print 'SECOND STAGE:'
-    cmds = run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings)
+    cmds = run_second_stage(model_root, log_command, working_directory, output_directory, analysis_settings)
     procs = spawnSubprocesses(cmds)
     waitForSubprocesses(procs)
 
@@ -398,8 +398,22 @@ def kill_all_processes(procs):
                 count += 1
         logging.info('one second later, {} processes out of {} still alive'.format(count, len(procs)))
 
+def get_gul_output(analysis_settings):
+    gul_output = False
+    if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
+        if analysis_settings['gul_output']:
+            gul_output = True
+    return gul_output
 
-def run_first_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings, number_of_processes, supplier_specific_input_files, get_gul_and_il_cmds, handles):
+def get_il_output(analysis_settings):
+    il_output = False
+    if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
+        if analysis_settings['il_output']:
+            il_output = True
+    return il_output
+
+
+def run_first_stage(model_root, log_command, working_directory, output_directory, analysis_settings, number_of_processes, supplier_specific_input_files, get_gul_and_il_cmds, handles):
     #  TEMP COMMENT OUT try:
     procs = []
 
@@ -422,20 +436,16 @@ def run_first_stage(model_root, log_command, working_directory, output_directory
 
         tee_commands = []
         output_commands = []
-        gul_output = False
-        il_output = False
+        gul_output = get_gul_output(analysis_settings)
+        il_output = get_il_output(analysis_settings)
 
-        if 'gul_summaries' in analysis_settings and 'gul_output' in analysis_settings:
-            if analysis_settings['gul_output']:
-                pipe = '{}/gul{}'.format(working_directory, p)
-                create_pipe(pipe, log_command, cmds)
-                gul_output = True
+        if gul_output:
+            pipe = '{}/gul{}'.format(working_directory, p)
+            create_pipe(pipe, log_command, cmds)
 
-        if 'il_summaries' in analysis_settings and 'il_output' in analysis_settings:
-            if analysis_settings['il_output']:
-                pipe = '{}/il{}'.format(working_directory, p)
-                create_pipe(pipe, log_command, cmds)
-                il_output = True
+        if il_output:
+            pipe = '{}/il{}'.format(working_directory, p)
+            create_pipe(pipe, log_command, cmds)
                 
         if p == 1:
             outputs = False
@@ -576,7 +586,7 @@ def run_first_stage(model_root, log_command, working_directory, output_directory
     return cmds
         
 
-def run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings):
+def run_second_stage(model_root, log_command, working_directory, output_directory, analysis_settings):
     '''
     Worker function running second stage executables - aalsummary and leccalc.
     Args:
@@ -589,8 +599,9 @@ def run_second_stage(model_root, log_command, working_directory, output_director
         analysis_settings (string): the analysis settings.
     '''
 
-    procs = []
     cmds = []
+    gul_output = get_gul_output(analysis_settings)
+    il_output = get_il_output(analysis_settings)
 
     for pipe_prefix, o, key in [('gul', gul_output, 'gul_summaries'), ('il', il_output, 'il_summaries')]:
         if o:
