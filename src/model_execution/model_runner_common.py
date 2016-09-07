@@ -303,9 +303,9 @@ def outputString(
                 str += '-r '
 
     elif output_command == "aalcalc":
-        myDirShort = os.path.join('working', "{}aalSummary{}".format(pipe_prefix, summary))
+        myDirShort = os.path.join('work', "{}aalSummary{}".format(pipe_prefix, summary))
         myDir = os.path.join(os.getcwd(), myDirShort)
-        for d in [os.path.join(os.getcwd(), 'working'), myDir]:
+        for d in [os.path.join(os.getcwd(), 'work'), myDir]:
             if not os.path.isdir(d):
                 logging.debug('mkdir {}\n'.format(d))
                 os.mkdir(d, 0777)
@@ -513,9 +513,9 @@ def run_first_stage(model_root, log_command, working_directory, output_directory
                                     if a == "leccalc" and 'lec_output' in s:
                                         if s['lec_output']:
                                             # write to file rather than use named pipe
-                                            myDirShort = os.path.join('working', "{}summary{}".format(pipe_prefix, s['id']))
+                                            myDirShort = os.path.join('work', "{}summary{}".format(pipe_prefix, s['id']))
                                             myDir = os.path.join(model_root, myDirShort)
-                                            for d in [os.path.join(model_root, 'working'), myDir]:
+                                            for d in [os.path.join(model_root, 'work'), myDir]:
                                                 if not os.path.isdir(d):
                                                     logging.debug('mkdir {}\n'.format(d))
                                                     os.mkdir(d, 0777)
