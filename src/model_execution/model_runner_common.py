@@ -526,6 +526,7 @@ def common_run_analysis_only(
     procs = spawnSubprocesses(cmds)
     waitForSubprocesses(procs)
 
+    print 'SECOND STAGE:'
     run_second_stage(model_root, log_command, working_directory, output_directory, gul_output, il_output, analysis_settings)
 
     # Put in error handler
