@@ -31,3 +31,6 @@ kat working/il_1_summarycalc_1 > output/il_1_summarycalc.csv
 kat working/il_1_eltcalc_1 > output/il_1_eltcalc.csv
 kat working/il_1_pltcalc_1 > output/il_1_pltcalc.csv
 aalsummary -KgulaalSummary1 > output/gul_1_aalcalc.csv
+leccalc -Kgulsummary1 -F output/gul_1_leccalc_full_uncertainty_aep.csv -f output/gul_1_leccalc_full_uncertainty_oep.csv -W output/gul_1_leccalc_wheatsheaf_aep.csv -w output/gul_1_leccalc_wheatsheaf_oep.csv -M output/gul_1_leccalc_wheatsheaf_mean_aep.csv -m output/gul_1_leccalc_wheatsheaf_mean_oep.csv -S output/gul_1_leccalc_sample_mean_aep.csv -s output/gul_1_leccalc_sample_mean_oep.csv 
+aalsummary -KilaalSummary1 > output/il_1_aalcalc.csv
+leccalc -Kilsummary1 -F output/il_1_leccalc_full_uncertainty_aep.csv -f output/il_1_leccalc_full_uncertainty_oep.csv -W output/il_1_leccalc_wheatsheaf_aep.csv -w output/il_1_leccalc_wheatsheaf_oep.csv -M output/il_1_leccalc_wheatsheaf_mean_aep.csv -m output/il_1_leccalc_wheatsheaf_mean_oep.csv -S output/il_1_leccalc_sample_mean_aep.csv -s output/il_1_leccalc_sample_mean_oep.csv 

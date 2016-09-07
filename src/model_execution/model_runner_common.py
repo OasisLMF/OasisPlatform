@@ -2,7 +2,6 @@ import os
 import inspect
 import time
 import logging
-import stat
 import subprocess
 from common import helpers
 import re
@@ -144,7 +143,6 @@ def spawnSubprocesses(cmds):
 def open_process(s, dir, log_command, cmds):
     ''' Wrap subprocess.Open. Returns the Popen object. '''
     print ('open_process({}, {}, {}, {})'.format(s, dir, log_command, 'cmds'))
-    p = None
     if log_command:
         log_command(s)
     else:
@@ -159,10 +157,6 @@ def open_process(s, dir, log_command, cmds):
                 logging.error(msg)
                 raise Exception(msg)
         cmds += [{'cmd' : s , 'dir' : dir}]
-        # p = subprocess.Popen(s, shell=True, cwd=dir)
-        # logging.info('{} - process number={}'.format(s, p.pid))
-
-    # return p
 
 
 @helpers.oasis_log(logging.getLogger())
@@ -339,8 +333,6 @@ def common_run_analysis_only(
         handles: the shared memory handles
         log_command: command to log process calls
     '''
-    il_output = False
-    gul_output = False
     working_directory = 'working'
     model_root = os.getcwd()
     output_directory = 'output'
@@ -415,7 +407,6 @@ def get_il_output(analysis_settings):
 
 def run_first_stage(model_root, log_command, working_directory, output_directory, analysis_settings, number_of_processes, supplier_specific_input_files, get_gul_and_il_cmds, handles):
     #  TEMP COMMENT OUT try:
-    procs = []
 
     frame = inspect.currentframe()
     func_name = inspect.getframeinfo(frame)[2]
@@ -497,10 +488,12 @@ def run_first_stage(model_root, log_command, working_directory, output_directory
                                     if p == 1:
                                         # logging.info('*** p == 1 ***')
                                         if a in ['eltcalc', 'pltcalc', 'summarycalc']:
+                                            """
                                             for pp in range(1, number_of_processes + 1):
                                                 output_pipe = "{}/{}_{}_{}{}_{}".format(
                                                     "working", pipe_prefix, s['id'], a, "", pp)
                                                 #create_pipe(output_pipe, log_command)
+                                            """
 
                                             spCmd = output_commands[-1].split('>')
                                             if len(spCmd) >= 2:
@@ -620,6 +613,10 @@ def run_second_stage(model_root, log_command, working_directory, output_director
                             if r in s['leccalc']:
                                 if s['leccalc'][r]:
                                     requiredRs += [r]
-
+                                    
+                        command = outputString(working_directory, output_directory, pipe_prefix, s['id'], 'leccalc', "{}summary{}".format(pipe_prefix, s['id']), log_command, requiredRs)
                         open_process(command, model_root, log_command, cmds)
     return cmds
+"""
+                                    output_commands += [outputString(working_directory, output_directory, pipe_prefix, s['id'], a, summaryPipes[-1], log_command, proc_number=p)]
+"""
