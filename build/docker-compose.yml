@@ -1,0 +1,26 @@
+version: '2'
+services:
+  runner:
+   image: coreoasis/api_runner:RELEASE_TAG
+   links:
+     - server:oasis_api_server
+  server:
+   image: coreoasis/oasis_api_server:RELEASE_TAG
+   ports:
+     - "8001:80"
+   links:
+     - rabbit:rabbit
+   volumes:
+     - ./upload:/var/www/oasis/upload:rw
+     - ./download:/var/www/oasis/download:rw
+  worker:
+    image: coreoasis/model_execution_worker:RELEASE_TAG
+    links:
+     - rabbit:myrabbit
+    volumes:
+     - ./upload:/var/oasis/upload:rw
+     - ./download:/var/oasis/download:rw
+  rabbit:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
