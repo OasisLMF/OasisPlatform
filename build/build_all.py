@@ -67,8 +67,6 @@ if do_clean_docker:
         "Delete all docker images",
         "docker images -q | xargs docker rmi -f", False)
 
-if do_build:
-
     run_command(
         "Remove existing directories",
         "rm -rf ktools; rm -rf oasisapi; rm -rf ara")
@@ -82,6 +80,8 @@ if do_build:
         "Clone oasisapi",
         "git clone https://{}:{}@github.com/oasislmf/oasisapi".format(
             github_uname, github_password))
+
+if do_build:
 
     os.chdir("ktools")
     run_command(
