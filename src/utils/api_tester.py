@@ -6,6 +6,7 @@ import shutil
 import uuid
 import logging
 import argparse
+import threading
 CURRENT_DIRECTORY = \
     os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
@@ -59,12 +60,6 @@ if not os.path.exists(analysis_settings_json_filepath):
 if not os.path.exists(output_data_directory):
     os.makedirs(output_data_directory)
 
-upload_directory = os.path.join("upload", str(uuid.uuid1()))
-
-shutil.copytree(
-    os.path.join(input_data_directory, "csv"),
-    upload_directory)
-
 num_failed = 0
 num_completed = 0
 
@@ -83,17 +78,52 @@ with open(analysis_settings_json_filepath) as file:
 
 do_il = bool(analysis_settings['analysis_settings']["il_output"])
 
-for analysis_id in range(num_analyses):
+
+class Counter:
+
+    def __init__(self):
+        self.num_failed = 0
+        self.num_completed = 0
+
+    def increment_num_completed(self):
+        self.num_completed = self.num_completed + 1
+
+    def increment_num_failed(self):
+        self.num_failed = self.num_failed + 1
+
+
+def run_analysis(c):
     try:
+
+        upload_directory = os.path.join("upload", str(uuid.uuid1()))
+
+        shutil.copytree(
+            os.path.join(input_data_directory, "csv"),
+            upload_directory)
+
         client = OasisApiClient.OasisApiClient(api_url, logging.getLogger())
         input_location = client.upload_inputs_from_directory(
             upload_directory, do_il, do_validation=False)
         client.run_analysis(
             analysis_settings, input_location,
             output_data_directory, do_clean=False)
-        num_completed = num_completed + 1
+        c.increment_num_completed()
+
     except Exception as e:
         logging.exception("API test failed")
-        num_failed = num_failed + 1
+        c.increment_num_failed()
 
-print "Done. Num completed={}; Num failed={}".format(num_completed, num_failed)
+analysis_threads = list()
+c = Counter()
+for analysis_id in range(num_analyses):
+    analysis_threads.append(
+        threading.Thread(target=run_analysis, args=[c])
+    )
+
+for t in analysis_threads:
+    t.start()
+for t in analysis_threads:
+    t.join()
+
+print "Done. Num completed={}; Num failed={}".format(
+    c.num_completed, c.num_failed)

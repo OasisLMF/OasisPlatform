@@ -457,17 +457,18 @@ class OasisApiClient(object):
 
     def _create_tar_file(self, directory):
         ''' Package the binaries in a gzipped tar. '''
-        original_cwd = os.getcwd()
-        os.chdir(directory)
 
-        with tarfile.open(self.TAR_FILE, "w:gz") as tar:
+        tarfile_path = os.path.join(
+            directory, self.TAR_FILE)
+        with tarfile.open(tarfile_path, "w:gz") as tar:
             for file in self.GUL_INPUTS_FILES + \
                         self.IL_INPUTS_FILES + \
                         self.OPTIONAL_INPUTS_FILES:
                 bin_file = file + ".bin"
-                if os.path.exists(bin_file):
-                    tar.add(bin_file)
-        os.chdir(original_cwd)
+                bin_file_path = os.path.join(
+                    directory, bin_file)
+                if os.path.exists(bin_file_path):
+                    tar.add(bin_file_path, arcname=bin_file)
 
     def _clean_directory(self, directory_to_check):
         ''' Clean the tar and binary files. '''
