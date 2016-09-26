@@ -59,13 +59,13 @@ def run_command(desc, cmd, exit_on_fail=True, retry=False):
             exit(255)
 
 if do_clean_docker:
-    run_command(
-        "Stop all running docker containers",
-        "docker ps -aq | xargs docker rm -f", False)
+    # run_command(
+    #     "Stop all running docker containers",
+    #     "docker ps -aq | xargs docker rm -f", False)
 
-    run_command(
-        "Delete all docker images",
-        "docker images -q | xargs docker rmi -f", False)
+    # run_command(
+    #     "Delete all docker images",
+    #     "docker images -q | xargs docker rmi -f", False)
 
     run_command(
         "Remove existing directories",
@@ -91,7 +91,7 @@ if do_build:
     if do_github_tags:
         run_command(
             "Tag ktools repo",
-            "git tag {}".format(release_tag))        
+            "git tag -f {}".format(release_tag))        
         run_command(
             "Push ktools tag",
             "git push origin {}".format(release_tag))        
@@ -114,7 +114,7 @@ if do_build:
     if do_github_tags:
         run_command(
             "Tag oasisapi repo",
-            "git tag {}".format(release_tag))        
+            "git tag -f {}".format(release_tag))        
         run_command(
             "Push oasisapi tag",
             "git push origin {}".format(release_tag))        
