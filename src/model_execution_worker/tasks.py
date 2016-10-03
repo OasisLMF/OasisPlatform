@@ -33,7 +33,6 @@ ARCHIVE_FILE_SUFFIX = '.tar'
 CELERY = Celery()
 CELERY.config_from_object('common.CeleryConfig')
 
-
 @task(name='run_analysis', bind=True)
 def start_analysis_task(self, input_location, analysis_settings_json):
     '''
@@ -107,6 +106,13 @@ def start_analysis(analysis_settings, input_location):
         raise Exception(
             "Inputs location not a tarfile: {}".format(input_archive))
 
+    source_tag = \
+        analysis_settings['analysis_settings']['source_tag']
+    analysis_tag = \
+        analysis_settings['analysis_settings']['analysis_tag']
+    logging.info("Source tag = {}; Analysis tag: {}"
+                 .format(analysis_tag, source_tag))
+
     module_supplier_id = \
         analysis_settings['analysis_settings']['module_supplier_id']
     model_version_id = \
@@ -128,8 +134,10 @@ def start_analysis(analysis_settings, input_location):
 
     logging.info("Setting up analysis working directory")
 
+    directory_name = "{}_{}_{}".format(
+        source_tag, analysis_tag, helpers.generate_unique_filename())
     working_directory = \
-        os.path.join(WORKING_DIRECTORY, helpers.generate_unique_filename())
+        os.path.join(WORKING_DIRECTORY, directory_name)
     os.mkdir(working_directory)
     os.mkdir(os.path.join(working_directory, "work"))
     os.mkdir(os.path.join(working_directory, "working"))
@@ -139,14 +147,10 @@ def start_analysis(analysis_settings, input_location):
     with tarfile.open(input_archive) as input_tarfile:
         input_tarfile.extractall(
             path=(os.path.join(working_directory, 'input')))
-    # TODO: check that all the inputs are created
     if not os.path.exists(os.path.join(working_directory, 'input')):
         raise Exception("Input archive did not extract correctly")
 
-
-    # TODO Uncomment for Linux
-    # os.symlink(model_data_path, os.path.join(working_directory, "static"))
-    shutil.copytree(model_data_path, os.path.join(working_directory, "static"))
+    os.symlink(model_data_path, os.path.join(working_directory, "static"))
 
     # If an events file has not been included in the analysis input,
     # then use the default file with all events from the model data.

@@ -1,5 +1,7 @@
 {
   "analysis_settings": {
+    "source_tag": "test_source",
+    "analysis_tag": "test_analysis",
     "prog_id": 1,
     "module_supplier_id": "OasisIM",
     "model_version_id": "1",
@@ -13,11 +15,11 @@
     "gul_summaries": [
       {
         "id": 1,
-        "summarycalc": false,
-        "eltcalc": true,
+        "summarycalc": true,
+        "eltcalc": false,
         "aalcalc": false,
         "pltcalc": false,
-        "lec_output":true,
+        "lec_output":false,
         "leccalc": {
             "return_period_file": false,
             "full_uncertainty_aep": true,
@@ -31,7 +33,7 @@
         }
       }
     ],
-    "il_output": true,
+    "il_output": false,
     "il_summaries": [
       {
         "id": 1,
@@ -39,7 +41,7 @@
         "eltcalc": true,
         "aalcalc": false,
         "pltcalc": false,
-        "lec_output":true,
+        "lec_output":false,
         "leccalc": {
             "return_period_file": false,
             "full_uncertainty_aep": false,
