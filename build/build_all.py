@@ -130,6 +130,9 @@ run_command(
 run_command(
     "Tag model_execution_worker image",
     "docker tag model_execution_worker coreoasis/model_execution_worker:{}".format(release_tag))
+run_command(
+    "Tag test_env image",
+    "docker tag test_env coreoasis/test_env:{}".format(release_tag))
 
 if do_publish:
     run_command(
@@ -147,6 +150,10 @@ if do_publish:
     run_command(
         "Push model_execution_worker to DockerHub",
     	"docker push coreoasis/model_execution_worker:{}".format(release_tag),
+        True)
+    run_command(
+        "Push test_env to DockerHub",
+    	"docker push coreoasis/test_env:{}".format(release_tag),
         True)
 
 # Create the docker-compose file
