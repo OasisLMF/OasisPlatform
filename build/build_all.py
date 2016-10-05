@@ -59,9 +59,9 @@ def run_command(desc, cmd, exit_on_fail=True, retry=False):
             exit(255)
 
 if do_clean_docker:
-    # run_command(
-    #     "Stop all running docker containers",
-    #     "docker ps -aq | xargs docker rm -f", False)
+    run_command(
+        "Stop all running docker containers",
+        "docker ps -aq | xargs docker rm -f", False)
 
     # run_command(
     #     "Delete all docker images",
