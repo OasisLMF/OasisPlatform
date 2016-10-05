@@ -1,8 +1,5 @@
 FROM ktools
 
-RUN apt-get update 
-RUN apt-get install -y vim iputils-ping
-
 RUN mkdir /var/log/oasis
 
 RUN useradd -ms /bin/bash api

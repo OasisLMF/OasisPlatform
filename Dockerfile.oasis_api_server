@@ -1,6 +1,5 @@
-FROM python:2.7
+FROM coreoasis/oasis_base:R_0_0_0_1
 
-RUN apt-get update
 RUN apt-get install -y \
 	apache2 \
 	apache2-utils \

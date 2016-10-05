@@ -1,7 +1,4 @@
-FROM aratools
-
-RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev
-RUN apt-get install -y vim iputils-ping
+FROM ktools
 
 RUN mkdir /var/log/oasis
 
