@@ -1,5 +1,8 @@
 FROM ktools
 
+RUN apt-get install -y \
+	libmysqlclient-dev
+
 COPY ./src/model_execution_worker/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
