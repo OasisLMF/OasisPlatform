@@ -4,7 +4,8 @@ RUN apt-get install -y \
 	apache2 \
 	apache2-utils \
 	libapache2-mod-wsgi \
-    python-flask
+    python-flask \
+	libmysqlclient-dev
 
 RUN mkdir /var/www/oasis
 RUN mkdir /var/www/oasis/server
