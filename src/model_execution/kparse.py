@@ -186,11 +186,11 @@ def do_any(runtype,data,process_id):
 				if summary.get("aalcalc") == True:
 					pid_monitor_count = pid_monitor_count + 1
 					print "aalcalc < fifo/{0}_S{1}_summaryaalcalc_P{2} > work/{0}_S{1}_aalcalc_P{2} & pid{2}=$!".format(runtype,summary_set,process_id,pid_monitor_count)
-			print ""
+			
 
 		do_tees(runtype,data,process_id)
 		do_summarycalcs(runtype,data,process_id)
-
+		print ""
 
 def do_il(data,max_process_id):	
 	for process_id in range (1, max_process_id+1):
