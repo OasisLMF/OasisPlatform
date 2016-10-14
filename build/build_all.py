@@ -1,6 +1,7 @@
 import shutil
 import argparse
 import os
+import time
 from subprocess import Popen
 
 parser = argparse.ArgumentParser(description='Build and publish Oasis ARA.')
@@ -166,6 +167,7 @@ if do_integration_tests:
     run_command(
         "Start docker images",
         "docker-compose -f docker-compose:{}.yml up -d".format(release_tag))
+    time.sleep(5)
     run_command(
         "Run integration tests",
-        "docker exec -it build_runner_1 sh run_api_test_analysis.sh")
+        "docker exec build_runner_1 sh run_api_test_analysis.sh")
