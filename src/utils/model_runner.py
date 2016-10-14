@@ -6,14 +6,14 @@ import json
 import inspect
 import shutil
 import logging
+import argparse
+
 from multiprocessing import cpu_count
 
 CURRENT_DIRECTORY = \
     os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
 from model_execution import model_runner
-
-import argparse
 
 parser = argparse.ArgumentParser(description='Run a model using ktools.')
 
@@ -79,7 +79,7 @@ try:
     if os.path.exists("work"):
         shutil.rmtree('work')
     os.mkdir("work")
-    
+
     model_runner.run_analysis(analysis_settings, number_of_processes)  
 
 except Exception as e:
