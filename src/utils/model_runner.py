@@ -37,7 +37,7 @@ parser.add_argument('-v', '--verbose',
 args = parser.parse_args()
 
 analysis_settings_json = args.analysis_settings_json
-analysis_rot_directory = args.analysis_root_directory
+analysis_root_directory = args.analysis_root_directory
 number_of_processes = args.number_of_processes
 do_verbose = args.verbose
 
@@ -62,23 +62,25 @@ try:
             'Analysis settings file does not exist:{}'
             .format(analysis_settings_json))
 
-    if not os.path.exists(analysis_rot_directory):
+    if not os.path.exists(analysis_root_directory):
         raise Exception(
             'Analysis root directory does not exist:{}'
-            .format(analysis_rot_directory))
+            .format(analysis_root_directory))
 
     # Parse the analysis settings file
     with open(analysis_settings_json) as file:
         json = json.load(file)
         analysis_settings = json['analysis_settings']
 
-    os.chdir(analysis_rot_directory)
-    if os.path.exists("working"):
-        shutil.rmtree('working')
-    os.mkdir("working")
+    os.chdir(analysis_root_directory)
     if os.path.exists("work"):
         shutil.rmtree('work')
     os.mkdir("work")
+    if os.path.exists("fifo"):
+        shutil.rmtree('fifo')
+    os.mkdir("fifo")
+    if os.path.exists("run_ktools.sh"):
+        os.remove("run_ktools.sh")
 
     model_runner.run_analysis(analysis_settings, number_of_processes)  
 

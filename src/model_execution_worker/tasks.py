@@ -93,7 +93,8 @@ def start_analysis(analysis_settings, input_location):
     #   |-output  (model results will be written into
     #   |          this folder then archived to the
     #   |          download directory)
-    #   |-working (scratch directory for model execution)
+    #   |-fifo (scratch directory for named pipes)
+    #   |-work (scratch directory for intermediate files)
     #
 
     # Check that the input archive exists and is valid
@@ -140,7 +141,7 @@ def start_analysis(analysis_settings, input_location):
         os.path.join(WORKING_DIRECTORY, directory_name)
     os.mkdir(working_directory)
     os.mkdir(os.path.join(working_directory, "work"))
-    os.mkdir(os.path.join(working_directory, "working"))
+    os.mkdir(os.path.join(working_directory, "fifo"))
     output_directory = os.path.join(working_directory, "output")
     os.mkdir(output_directory)
 
