@@ -1,0 +1,184 @@
+import io
+import os
+import inspect
+import sys
+import unittest
+import shutil
+import tarfile
+import time
+import json
+import hashlib
+
+TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
+LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
+sys.path.append(LIB_PATH)
+
+from model_execution import kparse
+
+KPARSE_INPUT_FOLDER = os.path.join(TEST_DIRECTORY, "kparse_input")
+KPARSE_OUTPUT_FOLDER = os.path.join(TEST_DIRECTORY, "kparse_output")
+KPARSE_REFERENCE_FOLDER = os.path.join(TEST_DIRECTORY, "kparse_reference")
+
+
+class Test_KparseTests(unittest.TestCase):
+    '''
+    KParse tests - converting analysis settings to Ktools execution bash script
+    '''
+
+    @classmethod
+    def setUpClass(cls):
+        if os.path.exists(KPARSE_OUTPUT_FOLDER):
+            shutil.rmtree(KPARSE_OUTPUT_FOLDER)
+        os.makedirs(KPARSE_OUTPUT_FOLDER)
+
+    def md5(self, fname):
+        hash_md5 = hashlib.md5()
+        with open(fname, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+
+    def run_kparse(self, name, num_partitions):
+
+        input_filename = os.path.join(
+            KPARSE_INPUT_FOLDER, 
+            "{}.json".format(name))
+        output_filename = os.path.join(
+            KPARSE_OUTPUT_FOLDER,
+            "{}_{}_partition.sh".format(name, num_partitions))
+
+        with open(input_filename) as file:
+            analysis_settings = json.load(file)['analysis_settings']
+
+        kparse.genbash(
+            num_partitions,
+            analysis_settings,
+            output_filename)
+
+    def check(self, name):
+        output_filename = os.path.join(
+            KPARSE_OUTPUT_FOLDER, 
+            "{}.sh".format(name))
+        reference_filename = os.path.join(
+            KPARSE_REFERENCE_FOLDER, 
+            "{}.sh".format(name))
+        output_md5 = self.md5(output_filename)
+        reference_md5 = self.md5(reference_filename)
+
+        return (output_md5 == reference_md5)
+
+    # def test_no_outputs(self):
+    #     assert(True)
+
+    def test_gul_no_lec_1_output_1_partition(self):
+        self.run_kparse("gul_no_lec_1_output", 1)
+        assert(self.check("gul_no_lec_1_output_1_partition"))
+
+    def test_gul_no_lec_1_output_2_partition(self):
+        self.run_kparse("gul_no_lec_1_output", 2)
+        assert(self.check("gul_no_lec_1_output_2_partition"))
+
+    def test_gul_no_lec_2_output_1_partition(self):
+        self.run_kparse("gul_no_lec_2_output", 1)
+        assert(self.check("gul_no_lec_2_output_1_partition"))
+
+    def test_gul_no_lec_2_output_2_partitions(self):
+        self.run_kparse("gul_no_lec_2_output", 2)
+        assert(self.check("gul_no_lec_2_output_2_partition"))
+
+    def test_gul_lec_1_output_1_partition(self):
+        self.run_kparse("gul_lec_1_output", 1)
+        assert(self.check("gul_lec_1_output_1_partition"))
+
+    def test_gul_lec_1_output_2_partitions(self):
+        self.run_kparse("gul_lec_1_output", 2)
+        assert(self.check("gul_lec_1_output_2_partition"))
+
+    def test_gul_lec_2_output_1_partition(self):
+        self.run_kparse("gul_lec_2_output", 1)
+        assert(self.check("gul_lec_2_output_1_partition"))
+
+    def test_gul_lec_2_output_2_partitions(self):
+        self.run_kparse("gul_lec_2_output", 2)
+        assert(self.check("gul_lec_2_output_2_partition"))
+
+    def test_il_no_lec_1_output_1_partition(self):
+        self.run_kparse("il_no_lec_1_output", 1)
+        assert(self.check("il_no_lec_1_output_1_partition"))
+
+    def test_il_no_lec_1_output_2_partition(self):
+        self.run_kparse("il_no_lec_1_output", 2)
+        assert(self.check("il_no_lec_1_output_2_partition"))
+
+    def test_il_no_lec_2_output_1_partition(self):
+        self.run_kparse("il_no_lec_2_output", 1)
+        assert(self.check("il_no_lec_2_output_1_partition"))
+
+    def test_il_no_lec_2_output_2_partitions(self):
+        self.run_kparse("il_no_lec_2_output", 2)
+        assert(self.check("il_no_lec_2_output_2_partition"))
+
+    def test_il_lec_1_output_1_partition(self):
+        self.run_kparse("il_lec_1_output", 1)
+        assert(self.check("il_lec_1_output_1_partition"))
+
+    def test_il_lec_1_output_2_partitions(self):
+        self.run_kparse("il_lec_1_output", 2)
+        assert(self.check("il_lec_1_output_2_partition"))
+
+    def test_il_lec_2_output_1_partition(self):
+        self.run_kparse("il_lec_2_output", 1)
+        assert(self.check("il_lec_2_output_1_partition"))
+
+    def test_il_lec_2_output_2_partitions(self):
+        self.run_kparse("il_lec_2_output", 2)
+        assert(self.check("il_lec_2_output_2_partition"))
+
+    def test_gul_il_no_lec_1_output_1_partition(self):
+        self.run_kparse("gul_il_no_lec_1_output", 1)
+        assert(self.check("gul_il_no_lec_1_output_1_partition"))
+
+    def test_gul_il_no_lec_1_output_2_partition(self):
+        self.run_kparse("gul_il_no_lec_1_output", 2)
+        assert(self.check("gul_il_no_lec_1_output_2_partition"))
+
+    def test_gul_il_no_lec_2_output_1_partition(self):
+        self.run_kparse("gul_il_no_lec_2_output", 1)
+        assert(self.check("gul_il_no_lec_2_output_1_partition"))
+
+    def test_gul_il_no_lec_2_output_2_partitions(self):
+        self.run_kparse("gul_il_no_lec_2_output", 2)
+        assert(self.check("gul_il_no_lec_2_output_2_partition"))
+
+    def test_gul_il_lec_1_output_1_partition(self):
+        self.run_kparse("gul_il_lec_1_output", 1)
+        assert(self.check("gul_il_lec_1_output_1_partition"))
+
+    def test_gul_il_lec_1_output_2_partitions(self):
+        self.run_kparse("gul_il_lec_1_output", 2)
+        assert(self.check("gul_il_lec_1_output_2_partition"))
+
+    def test_gul_il_lec_2_output_1_partition(self):
+        self.run_kparse("gul_il_lec_2_output", 1)
+        assert(self.check("gul_il_lec_2_output_1_partition"))
+
+    def test_gul_il_lec_2_output_2_partitions(self):
+        self.run_kparse("gul_il_lec_2_output", 2)
+        assert(self.check("gul_il_lec_2_output_2_partition"))
+
+    def test_gul_il_lec_2_output_10_partitions(self):
+        self.run_kparse("gul_il_lec_2_output", 10)
+        assert(self.check("gul_il_lec_2_output_10_partition"))
+
+    def test_analysis_settings_1(self):
+        self.run_kparse("analysis_settings_1", 1)
+        assert(self.check("analysis_settings_1_1_partition"))
+
+    def test_analysis_settings_2(self):
+        self.run_kparse("analysis_settings_2", 1)
+        assert(self.check("analysis_settings_2_1_partition"))
+
+if __name__ == '__main__':
+    unittest.main()
+
