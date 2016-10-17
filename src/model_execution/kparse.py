@@ -33,8 +33,7 @@ def do_post_wait_processing(runtype, analysis_settings):
             if summary.get("aalcalc"):
                 apid_monitor_count = apid_monitor_count + 1
                 print_command(
-                    "aalsummary -K{0}_S{1}_aalcalc > " +
-                    "output/{0}_S{1}_aalcalc.csv & apid{2}=$!".format(
+                    "aalsummary -K{0}_S{1}_aalcalc > output/{0}_S{1}_aalcalc.csv & apid{2}=$!".format(
                         runtype, summary_set, apid_monitor_count))
             if summary.get("lec_output"):
                 if "leccalc" in summary:
@@ -356,6 +355,8 @@ def get_getmodel_cmd(
 def genbash(
         max_process_id, analysis_settings, output_filename,
         get_getmodel_cmd=get_getmodel_cmd):
+
+    print max_process_id
 
     global command_file
     command_file = output_filename
