@@ -1,10 +1,13 @@
 FROM ktools
 
 RUN apt-get update
-RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev
+RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev python-flask
 RUN apt-get install -y vim iputils-ping gdb
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
+RUN pip install -r /tmp/requirements.txt
+
+COPY ./src/server/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
 RUN mkdir /var/log/oasis
@@ -15,9 +18,11 @@ RUN chown oasis /var/log/oasis
 COPY ./src/common /home/oasis/src/common/
 COPY ./src/model_execution/  /home/oasis/src/model_execution/
 COPY ./src/utils/ /home/oasis/src/utils/
+COPY ./src/server/ /home/oasis/src/server/
 COPY ./data/ /home/oasis/data/
 COPY ./tests/ /home/oasis/tests/
 COPY ./run_test_analysis.sh /home/oasis/
+
 
 #RUN chmod -R a+w /home/oasis/data
 #RUN chmod -R a+w /home/oasis/tests
@@ -25,3 +30,6 @@ RUN chmod -R a+w /home/oasis
 
 #USER oasis
 #WORKDIR /home/oasis
+
+RUN python /home/oasis/tests/KparseTests.py 
+RUN python /home/oasis/tests/ExposureTests.py 
