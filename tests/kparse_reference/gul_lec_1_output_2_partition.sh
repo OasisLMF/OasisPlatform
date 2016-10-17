@@ -62,16 +62,7 @@ wait $pid1 $pid2 $pid3 $pid4 $pid5 $pid6 $pid7 $pid8 $pid9 $pid10 $pid11 $pid12 
 
 
 aalsummary -Kgul_S1_aalcalc > output/gul_S1_aalcalc.csv & apid32=$!
-leccalc -r -Kgul_S1_summaryleccalc
- -s output/gul_S1_leccalc_sample_mean_oep.csv
- -S output/gul_S1_leccalc_sample_mean_aep.csv
- -f output/gul_S1_leccalc_full_uncertainty_oep.csv
- -W output/gul_S1_leccalc_wheatsheaf_aep.csv
- -M output/gul_S1_leccalc_wheatsheaf_mean_aep.csv
- -F output/gul_S1_leccalc_full_uncertainty_aep.csv
- -m output/gul_S1_leccalc_wheatsheaf_mean_oep.csv
- -w output/gul_S1_leccalc_wheatsheaf_oep.csv
-  &  lpid18=$!
+leccalc -r -Kgul_S1_summaryleccalc -s output/gul_S1_leccalc_sample_mean_oep.csv -S output/gul_S1_leccalc_sample_mean_aep.csv -f output/gul_S1_leccalc_full_uncertainty_oep.csv -W output/gul_S1_leccalc_wheatsheaf_aep.csv -M output/gul_S1_leccalc_wheatsheaf_mean_aep.csv -F output/gul_S1_leccalc_full_uncertainty_aep.csv -m output/gul_S1_leccalc_wheatsheaf_mean_oep.csv -w output/gul_S1_leccalc_wheatsheaf_oep.csv  &  lpid18=$!
 wait $apid1 $apid2 $apid3 $apid4 $apid5 $apid6 $apid7 $apid8 $apid9 $apid10 $apid11 $apid12 $apid13 $apid14 $apid15 $apid16 $apid17 $apid18 $apid19 $apid20 $apid21 $apid22 $apid23 $apid24 $apid25 $apid26 $apid27 $apid28 $apid29 $apid30 $apid31 $apid32 
 
 wait $lpid1 $lpid2 $lpid3 $lpid4 $lpid5 $lpid6 $lpid7 $lpid8 $lpid9 $lpid10 $lpid11 $lpid12 $lpid13 $lpid14 $lpid15 $lpid16 $lpid17 $lpid18 
