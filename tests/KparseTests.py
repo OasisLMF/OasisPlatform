@@ -71,6 +71,214 @@ class Test_KparseTests(unittest.TestCase):
     # def test_no_outputs(self):
     #     assert(True)
 
+    def test_gul_summarycalc_1_partition(self):
+        self.run_kparse("gul_summarycalc_1_output", 1)
+        assert(self.check("gul_summarycalc_1_output_1_partition"))
+
+    def test_gul_summarycalc_20_partition(self):
+        self.run_kparse("gul_summarycalc_1_output", 20)
+        assert(self.check("gul_summarycalc_1_output_20_partition"))
+
+    def test_gul_eltcalc_1_partition(self):
+        self.run_kparse("gul_eltcalc_1_output", 1)
+        assert(self.check("gul_eltcalc_1_output_1_partition"))
+
+    def test_gul_eltcalc_20_partition(self):
+        self.run_kparse("gul_eltcalc_1_output", 20)
+        assert(self.check("gul_eltcalc_1_output_20_partition"))
+
+    def test_gul_aalcalc_1_partition(self):
+        self.run_kparse("gul_aalcalc_1_output", 1)
+        assert(self.check("gul_aalcalc_1_output_1_partition"))
+
+    def test_gul_aalcalc_20_partition(self):
+        self.run_kparse("gul_aalcalc_1_output", 20)
+        assert(self.check("gul_aalcalc_1_output_20_partition"))
+
+    def test_gul_pltcalc_1_partition(self):
+        self.run_kparse("gul_pltcalc_1_output", 1)
+        assert(self.check("gul_pltcalc_1_output_1_partition"))
+
+    def test_gul_pltcalc_20_partition(self):
+        self.run_kparse("gul_pltcalc_1_output", 20)
+        assert(self.check("gul_pltcalc_1_output_20_partition"))
+
+    def test_gul_agg_fu_lec_1_partition(self):
+        self.run_kparse("gul_agg_fu_lec_1_output", 1)
+        assert(self.check("gul_agg_fu_lec_1_output_1_partition"))
+
+    def test_gul_agg_fu_lec_20_partition(self):
+        self.run_kparse("gul_agg_fu_lec_1_output", 20)
+        assert(self.check("gul_agg_fu_lec_1_output_20_partition"))
+
+    def test_gul_agg_fu_lec_1_partition(self):
+        self.run_kparse("gul_occ_fu_lec_1_output", 1)
+        assert(self.check("gul_occ_fu_lec_1_output_1_partition"))
+
+    def test_gul_agg_fu_lec_20_partition(self):
+        self.run_kparse("gul_occ_fu_lec_1_output", 20)
+        assert(self.check("gul_occ_fu_lec_1_output_20_partition"))
+
+    def test_gul_agg_ws_lec_1_partition(self):
+        self.run_kparse("gul_agg_ws_lec_1_output", 1)
+        assert(self.check("gul_agg_ws_lec_1_output_1_partition"))
+
+    def test_gul_agg_ws_lec_20_partition(self):
+        self.run_kparse("gul_agg_ws_lec_1_output", 20)
+        assert(self.check("gul_agg_ws_lec_1_output_20_partition"))
+
+    def test_gul_occ_ws_lec_1_partition(self):
+        self.run_kparse("gul_occ_ws_lec_1_output", 1)
+        assert(self.check("gul_occ_ws_lec_1_output_1_partition"))
+
+    def test_gul_occ_ws_lec_20_partition(self):
+        self.run_kparse("gul_occ_ws_lec_1_output", 20)
+        assert(self.check("gul_occ_ws_lec_1_output_20_partition"))
+
+    def test_gul_agg_ws_mean_lec_1_partition(self):
+        self.run_kparse("gul_agg_ws_mean_lec_1_output", 1)
+        assert(self.check("gul_agg_ws_mean_lec_1_output_1_partition"))
+
+    def test_gul_agg_ws_mean_lec_20_partition(self):
+        self.run_kparse("gul_agg_ws_mean_lec_1_output", 20)
+        assert(self.check("gul_agg_ws_mean_lec_1_output_20_partition"))
+
+    def test_gul_occ_ws_mean_lec_1_partition(self):
+        self.run_kparse("gul_occ_ws_mean_lec_1_output", 1)
+        assert(self.check("gul_occ_ws_mean_lec_1_output_1_partition"))
+
+    def test_gul_occ_ws_mean_lec_20_partition(self):
+        self.run_kparse("gul_occ_ws_mean_lec_1_output", 20)
+        assert(self.check("gul_occ_ws_mean_lec_1_output_20_partition"))
+
+    def test_il_agg_sample_mean_lec_1_partition(self):
+        self.run_kparse("il_agg_sample_mean_lec_1_output", 1)
+        assert(self.check("il_agg_sample_mean_lec_1_output_1_partition"))
+
+    def test_il_agg_sample_mean_lec_20_partition(self):
+        self.run_kparse("il_agg_sample_mean_lec_1_output", 20)
+        assert(self.check("il_agg_sample_mean_lec_1_output_20_partition"))
+
+    def test_il_occ_sample_mean_lec_1_partition(self):
+        self.run_kparse("il_occ_sample_mean_lec_1_output", 1)
+        assert(self.check("il_occ_sample_mean_lec_1_output_1_partition"))
+
+    def test_il_occ_sample_mean_lec_20_partition(self):
+        self.run_kparse("il_occ_sample_mean_lec_1_output", 20)
+        assert(self.check("il_occ_sample_mean_lec_1_output_20_partition"))
+
+    def test_il_summarycalc_1_partition(self):
+        self.run_kparse("il_summarycalc_1_output", 1)
+        assert(self.check("il_summarycalc_1_output_1_partition"))
+
+    def test_il_summarycalc_20_partition(self):
+        self.run_kparse("il_summarycalc_1_output", 20)
+        assert(self.check("il_summarycalc_1_output_20_partition"))
+
+    def test_il_eltcalc_1_partition(self):
+        self.run_kparse("il_eltcalc_1_output", 1)
+        assert(self.check("il_eltcalc_1_output_1_partition"))
+
+    def test_il_eltcalc_20_partition(self):
+        self.run_kparse("il_eltcalc_1_output", 20)
+        assert(self.check("il_eltcalc_1_output_20_partition"))
+
+    def test_il_aalcalc_1_partition(self):
+        self.run_kparse("il_aalcalc_1_output", 1)
+        assert(self.check("il_aalcalc_1_output_1_partition"))
+
+    def test_il_aalcalc_20_partition(self):
+        self.run_kparse("il_aalcalc_1_output", 20)
+        assert(self.check("il_aalcalc_1_output_20_partition"))
+
+    def test_il_pltcalc_1_partition(self):
+        self.run_kparse("il_pltcalc_1_output", 1)
+        assert(self.check("il_pltcalc_1_output_1_partition"))
+
+    def test_il_pltcalc_20_partition(self):
+        self.run_kparse("il_pltcalc_1_output", 20)
+        assert(self.check("il_pltcalc_1_output_20_partition"))
+
+    def test_il_agg_fu_lec_1_partition(self):
+        self.run_kparse("il_agg_fu_lec_1_output", 1)
+        assert(self.check("il_agg_fu_lec_1_output_1_partition"))
+
+    def test_il_agg_fu_lec_20_partition(self):
+        self.run_kparse("il_agg_fu_lec_1_output", 20)
+        assert(self.check("il_agg_fu_lec_1_output_20_partition"))
+
+    def test_il_agg_fu_lec_1_partition(self):
+        self.run_kparse("il_occ_fu_lec_1_output", 1)
+        assert(self.check("il_occ_fu_lec_1_output_1_partition"))
+
+    def test_il_agg_fu_lec_20_partition(self):
+        self.run_kparse("il_occ_fu_lec_1_output", 20)
+        assert(self.check("il_occ_fu_lec_1_output_20_partition"))
+
+    def test_il_agg_ws_lec_1_partition(self):
+        self.run_kparse("il_agg_ws_lec_1_output", 1)
+        assert(self.check("il_agg_ws_lec_1_output_1_partition"))
+
+    def test_il_agg_ws_lec_20_partition(self):
+        self.run_kparse("il_agg_ws_lec_1_output", 20)
+        assert(self.check("il_agg_ws_lec_1_output_20_partition"))
+
+    def test_il_occ_ws_lec_1_partition(self):
+        self.run_kparse("il_occ_ws_lec_1_output", 1)
+        assert(self.check("il_occ_ws_lec_1_output_1_partition"))
+
+    def test_il_occ_ws_lec_20_partition(self):
+        self.run_kparse("il_occ_ws_lec_1_output", 20)
+        assert(self.check("il_occ_ws_lec_1_output_20_partition"))
+
+    def test_il_agg_ws_mean_lec_1_partition(self):
+        self.run_kparse("il_agg_ws_mean_lec_1_output", 1)
+        assert(self.check("il_agg_ws_mean_lec_1_output_1_partition"))
+
+    def test_il_agg_ws_mean_lec_20_partition(self):
+        self.run_kparse("il_agg_ws_mean_lec_1_output", 20)
+        assert(self.check("il_agg_ws_mean_lec_1_output_20_partition"))
+
+    def test_il_occ_ws_mean_lec_1_partition(self):
+        self.run_kparse("il_occ_ws_mean_lec_1_output", 1)
+        assert(self.check("il_occ_ws_mean_lec_1_output_1_partition"))
+
+    def test_il_occ_ws_mean_lec_20_partition(self):
+        self.run_kparse("il_occ_ws_mean_lec_1_output", 20)
+        assert(self.check("il_occ_ws_mean_lec_1_output_20_partition"))
+
+    def test_il_agg_sample_mean_lec_1_partition(self):
+        self.run_kparse("il_agg_sample_mean_lec_1_output", 1)
+        assert(self.check("il_agg_sample_mean_lec_1_output_1_partition"))
+
+    def test_il_agg_sample_mean_lec_20_partition(self):
+        self.run_kparse("il_agg_sample_mean_lec_1_output", 20)
+        assert(self.check("il_agg_sample_mean_lec_1_output_20_partition"))
+
+    def test_il_occ_sample_mean_lec_1_partition(self):
+        self.run_kparse("il_occ_sample_mean_lec_1_output", 1)
+        assert(self.check("il_occ_sample_mean_lec_1_output_1_partition"))
+
+    def test_il_occ_sample_mean_lec_20_partition(self):
+        self.run_kparse("il_occ_sample_mean_lec_1_output", 20)
+        assert(self.check("il_occ_sample_mean_lec_1_output_20_partition"))
+
+    def test_il_occ_sample_mean_lec_20_partition(self):
+        self.run_kparse("il_occ_sample_mean_lec_1_output", 20)
+        assert(self.check("il_occ_sample_mean_lec_1_output_20_partition"))
+
+    def test_all_calcs_1_partition(self):
+        self.run_kparse("all_calcs_1_output", 1)
+        assert(self.check("all_calcs_1_output_1_partition"))
+
+    def test_all_calcs_20_partition(self):
+        self.run_kparse("all_calcs_1_output", 20)
+        assert(self.check("all_calcs_1_output_20_partition"))
+
+    def test_all_calcs_40_partition(self):
+        self.run_kparse("all_calcs_1_output", 40)
+        assert(self.check("all_calcs_1_output_40_partition"))
+
     def test_gul_no_lec_1_output_1_partition(self):
         self.run_kparse("gul_no_lec_1_output", 1)
         assert(self.check("gul_no_lec_1_output_1_partition"))
