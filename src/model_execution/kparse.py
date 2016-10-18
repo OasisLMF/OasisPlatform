@@ -1,6 +1,3 @@
-import sys
-import json
-
 pid_monitor_count = 0
 apid_monitor_count = 0
 lpid_monitor_count = 0
@@ -41,35 +38,36 @@ def do_post_wait_processing(runtype, analysis_settings):
                         return_period_option = ""
                         if summary["leccalc"]["return_period_file"]:
                             return_period_option = "-r"
-                        print_command(
-                            "leccalc {0} -K{1}_S{2}_summaryleccalc".format(
-                                return_period_option, runtype, summary_set))
+                        cmd = "leccalc {0} -K{1}_S{2}_summaryleccalc".format(
+                                return_period_option, runtype, summary_set)
                         lpid_monitor_count = lpid_monitor_count + 1
                         for option in summary["leccalc"]["outputs"]:
                             switch = ""
                             if summary["leccalc"]["outputs"][option]:
                                 if option == "full_uncertainty_aep":
-                                    switch = "-F"
+                                    switch="-F"
                                 if option == "wheatsheaf_aep":
-                                    switch = "-W"
+                                    switch="-W"
                                 if option == "sample_mean_aep":
-                                    switch = "-S"
+                                    switch="-S"
                                 if option == "full_uncertainty_oep":
-                                    switch = "-f"
+                                    switch="-f"
                                 if option == "wheatsheaf_oep":
-                                    switch = "-w"
+                                    switch="-w"
                                 if option == "sample_mean_oep":
-                                    switch = "-s"
+                                    switch="-s"
                                 if option == "wheatsheaf_mean_aep":
-                                    switch = "-M"
+                                    switch="-M"
                                 if option == "wheatsheaf_mean_oep":
-                                    switch = "-m"
-                                print_command(
+                                    switch="-m"
+                                cmd=cmd + \
                                     " {0} output/{1}_S{2}_leccalc_{3}.csv".format(
-                                        switch, runtype, summary_set, option))
-                        print_command("  &  lpid{3}=$!".format(
-                            runtype, summary_set, option,
-                            lpid_monitor_count, return_period_option))
+                                        switch, runtype, summary_set, option)
+                        cmd=cmd + \
+                            "  &  lpid{3}=$!".format(
+                                runtype, summary_set, option,
+                                lpid_monitor_count, return_period_option)
+                        print_command(cmd)
 
 
 def do_fifos(action, runtype, analysis_settings, process_id):
@@ -156,9 +154,6 @@ def do_remove_fifos(runtype, analysis_settings, process_id):
 def do_kats(runtype, analysis_settings, max_process_id, background):
     global pid_monitor_count
     anykats = False
-    strback = ""
-    if background:
-        strback = "& pid"
     if "{0}_summaries".format(runtype) not in analysis_settings:
         return anykats
 
@@ -249,9 +244,6 @@ def do_tees(runtype, analysis_settings, process_id):
 
 def do_any(runtype, analysis_settings, process_id):
     global pid_monitor_count
-    summarycalc_switch = "-g"
-    if runtype == "il":
-        summarycalc_switch = "-f"
 
     summary_set = 0
     if "{0}_summaries".format(runtype) not in analysis_settings:
@@ -336,7 +328,9 @@ def do_lwaits():
 
 
 def get_getmodel_cmd(
-        number_of_samples, gul_threshold, use_random_number_file,
+        process_id, max_process_id,
+        number_of_samples, gul_threshold, 
+        use_random_number_file,
         coverage_output, item_output):
 
     cmd = "getmodel | gulcalc -S{0} -L{1}".format(
@@ -356,7 +350,12 @@ def genbash(
         max_process_id, analysis_settings, output_filename,
         get_getmodel_cmd=get_getmodel_cmd):
 
-    print max_process_id
+    global pid_monitor_count
+    pid_monitor_count = 0
+    global apid_monitor_count
+    apid_monitor_count = 0
+    global lpid_monitor_count
+    lpid_monitor_count = 0
 
     global command_file
     command_file = output_filename
@@ -433,6 +432,7 @@ def genbash(
     for process_id in range(1, max_process_id + 1):
         if gul_output and il_output:
             getmodel_cmd = get_getmodel_cmd(
+                process_id, max_process_id,
                 number_of_samples, gul_threshold, use_random_number_file,
                 "fifo/gul_P{}".format(process_id),
                 "-")
@@ -447,6 +447,7 @@ def genbash(
                 if "gul_summaries" in analysis_settings:
                     for x in analysis_settings["gul_summaries"]:
                         getmodel_cmd = get_getmodel_cmd(
+                            process_id, max_process_id,
                             number_of_samples, gul_threshold,
                             use_random_number_file,
                             "-",
@@ -459,13 +460,13 @@ def genbash(
                 if "il_summaries" in analysis_settings:
                     for x in analysis_settings["il_summaries"]:
                         getmodel_cmd = get_getmodel_cmd(
+                            process_id, max_process_id,
                             number_of_samples, gul_threshold,
                             use_random_number_file,
                             "",
                             "-")
                         print_command(
-                            "eve {0} {1} | {2} | " +
-                            "fmcalc > fifo/il_P{0}  &".format(
+                            "eve {0} {1} | {2} | fmcalc > fifo/il_P{0}  &".format(
                                 process_id, max_process_id, getmodel_cmd))
 
     print_command("")
