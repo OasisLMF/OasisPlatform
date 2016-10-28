@@ -19,6 +19,7 @@ sleep 2
 # --- Do insured loss computes ---
 
 eltcalc < fifo/il_S1_summaryeltcalc_P1 > fifo/il_S1_eltcalc_P1 &
+aalcalc < fifo/il_S1_summaryaalcalc_P1 > work/il_S1_aalcalc/P1.bin & pid1=$!
 
 tee < fifo/il_S1_summary_P1 fifo/il_S1_summaryeltcalc_P1  > /dev/null & pid2=$!
 summarycalc -f -1 fifo/il_S1_summary_P1  < fifo/il_P1 &
