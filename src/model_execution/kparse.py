@@ -267,9 +267,11 @@ def do_any(runtype, analysis_settings, process_id):
                         runtype, summary_set, process_id))
             if summary.get("aalcalc"):
                 pid_monitor_count = pid_monitor_count + 1
-                print_command(
-                    "aalcalc < fifo/{0}_S{1}_summaryaalcalc_P{2} > work/{0}_S{1}_aalcalc_P{2} & pid{2}=$!".format(
-                        runtype, summary_set, process_id, pid_monitor_count))
+
+            print_command(
+                "aalcalc < fifo/{0}_S{1}_summaryaalcalc_P{2} > work/{0}_S{1}_aalcalc/P{2}.bin & pid{2}=$!".format(
+                    runtype, summary_set, process_id, pid_monitor_count))
+
         print_command("")
 
     do_tees(runtype, analysis_settings, process_id)
