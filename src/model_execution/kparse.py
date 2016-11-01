@@ -125,6 +125,10 @@ def create_workfolders(runtype, analysis_settings):
                     print_command(
                         "mkdir work/{0}_S{1}_summaryleccalc".format(
                             runtype, summary_set))
+            if summary.get("aalcalc") == True:
+                print_command(
+                    "mkdir work/{0}_S{1}_summaryaalcalc".format(
+                    runtype,summary_set))
 
 
 def remove_workfolders(runtype, analysis_settings):
@@ -141,6 +145,12 @@ def remove_workfolders(runtype, analysis_settings):
                     print_command(
                         "rmdir work/{0}_S{1}_summaryleccalc".format(
                             runtype, summary_set))
+            if summary.get("aalcalc") == True:
+                print_command(
+                    "rm work/{0}_S{1}_summaryaalcalc/*".format(
+                        runtype,summary_set))
+                print_command("rmdir work/{0}_S{1}_summaryaalcalc".format(
+                    runtype,summary_set))
 
 
 def do_make_fifos(runtype, analysis_settings, process_id):
