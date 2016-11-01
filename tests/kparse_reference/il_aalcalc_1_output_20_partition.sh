@@ -100,6 +100,7 @@ mkfifo fifo/il_P20
 mkfifo fifo/il_S1_summary_P20
 mkfifo fifo/il_S1_summaryaalcalc_P20
 
+mkdir work/il_S1_summaryaalcalc
 
 # --- Do insured loss kats ---
 
@@ -322,3 +323,5 @@ rm fifo/il_P20
 rm fifo/il_S1_summary_P20
 rm fifo/il_S1_summaryaalcalc_P20
 
+rm work/il_S1_summaryaalcalc/*
+rmdir work/il_S1_summaryaalcalc

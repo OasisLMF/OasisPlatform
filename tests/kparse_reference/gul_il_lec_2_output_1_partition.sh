@@ -19,7 +19,9 @@ mkfifo fifo/gul_S2_pltcalc_P1
 mkfifo fifo/gul_S2_summaryaalcalc_P1
 
 mkdir work/gul_S1_summaryleccalc
+mkdir work/gul_S1_summaryaalcalc
 mkdir work/gul_S2_summaryleccalc
+mkdir work/gul_S2_summaryaalcalc
 
 mkfifo fifo/il_P1
 
@@ -41,7 +43,9 @@ mkfifo fifo/il_S2_pltcalc_P1
 mkfifo fifo/il_S2_summaryaalcalc_P1
 
 mkdir work/il_S1_summaryleccalc
+mkdir work/il_S1_summaryaalcalc
 mkdir work/il_S2_summaryleccalc
+mkdir work/il_S2_summaryaalcalc
 
 # --- Do insured loss kats ---
 
@@ -133,8 +137,12 @@ rm fifo/gul_S2_summaryaalcalc_P1
 
 rm work/gul_S1_summaryleccalc/*
 rmdir work/gul_S1_summaryleccalc
+rm work/gul_S1_summaryaalcalc/*
+rmdir work/gul_S1_summaryaalcalc
 rm work/gul_S2_summaryleccalc/*
 rmdir work/gul_S2_summaryleccalc
+rm work/gul_S2_summaryaalcalc/*
+rmdir work/gul_S2_summaryaalcalc
 
 rm fifo/il_P1
 
@@ -157,5 +165,9 @@ rm fifo/il_S2_summaryaalcalc_P1
 
 rm work/il_S1_summaryleccalc/*
 rmdir work/il_S1_summaryleccalc
+rm work/il_S1_summaryaalcalc/*
+rmdir work/il_S1_summaryaalcalc
 rm work/il_S2_summaryleccalc/*
 rmdir work/il_S2_summaryleccalc
+rm work/il_S2_summaryaalcalc/*
+rmdir work/il_S2_summaryaalcalc

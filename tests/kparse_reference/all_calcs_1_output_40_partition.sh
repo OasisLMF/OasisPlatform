@@ -440,6 +440,7 @@ mkfifo fifo/gul_S1_pltcalc_P40
 mkfifo fifo/gul_S1_summaryaalcalc_P40
 
 mkdir work/gul_S1_summaryleccalc
+mkdir work/gul_S1_summaryaalcalc
 
 mkfifo fifo/il_P1
 
@@ -882,6 +883,7 @@ mkfifo fifo/il_S1_pltcalc_P40
 mkfifo fifo/il_S1_summaryaalcalc_P40
 
 mkdir work/il_S1_summaryleccalc
+mkdir work/il_S1_summaryaalcalc
 
 # --- Do insured loss kats ---
 
@@ -1957,6 +1959,8 @@ rm fifo/gul_S1_summaryaalcalc_P40
 
 rm work/gul_S1_summaryleccalc/*
 rmdir work/gul_S1_summaryleccalc
+rm work/gul_S1_summaryaalcalc/*
+rmdir work/gul_S1_summaryaalcalc
 
 rm fifo/il_P1
 
@@ -2400,3 +2404,5 @@ rm fifo/il_S1_summaryaalcalc_P40
 
 rm work/il_S1_summaryleccalc/*
 rmdir work/il_S1_summaryleccalc
+rm work/il_S1_summaryaalcalc/*
+rmdir work/il_S1_summaryaalcalc

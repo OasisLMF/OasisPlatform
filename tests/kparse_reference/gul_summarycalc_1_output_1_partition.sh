@@ -22,7 +22,6 @@ sleep 2
 # --- Do ground up loss  computes ---
 
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P1 > fifo/gul_S1_summarycalc_P1 &
-aalcalc < fifo/gul_S1_summaryaalcalc_P1 > work/gul_S1_aalcalc/P1.bin & pid1=$!
 
 tee < fifo/gul_S1_summary_P1 fifo/gul_S1_summarysummarycalc_P1  > /dev/null & pid2=$!
 summarycalc -g -1 fifo/gul_S1_summary_P1  < fifo/gul_P1 &

@@ -18,7 +18,6 @@ mkdir work/gul_S1_summaryleccalc
 
 # --- Do ground up loss  computes ---
 
-aalcalc < fifo/gul_S1_summaryaalcalc_P1 > work/gul_S1_aalcalc/P1.bin & pid1=$!
 
 tee < fifo/gul_S1_summary_P1 work/gul_S1_summaryleccalc/P1.bin  > /dev/null & pid1=$!
 summarycalc -g -1 fifo/gul_S1_summary_P1  < fifo/gul_P1 &
