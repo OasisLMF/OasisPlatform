@@ -45,26 +45,24 @@ def do_post_wait_processing(runtype, analysis_settings):
                             switch = ""
                             if summary["leccalc"]["outputs"][option]:
                                 if option == "full_uncertainty_aep":
-                                    switch="-F"
+                                    switch = "-F"
                                 if option == "wheatsheaf_aep":
-                                    switch="-W"
+                                    switch = "-W"
                                 if option == "sample_mean_aep":
-                                    switch="-S"
+                                    switch = "-S"
                                 if option == "full_uncertainty_oep":
-                                    switch="-f"
+                                    switch = "-f"
                                 if option == "wheatsheaf_oep":
-                                    switch="-w"
+                                    switch = "-w"
                                 if option == "sample_mean_oep":
-                                    switch="-s"
+                                    switch = "-s"
                                 if option == "wheatsheaf_mean_aep":
-                                    switch="-M"
+                                    switch = "-M"
                                 if option == "wheatsheaf_mean_oep":
-                                    switch="-m"
-                                cmd=cmd + \
-                                    " {0} output/{1}_S{2}_leccalc_{3}.csv".format(
+                                    switch = "-m"
+                                cmd = cmd + " {0} output/{1}_S{2}_leccalc_{3}.csv".format(
                                         switch, runtype, summary_set, option)
-                        cmd=cmd + \
-                            "  &  lpid{3}=$!".format(
+                        cmd = cmd + "  &  lpid{3}=$!".format(
                                 runtype, summary_set, option,
                                 lpid_monitor_count, return_period_option)
                         print_command(cmd)
@@ -127,7 +125,7 @@ def create_workfolders(runtype, analysis_settings):
                             runtype, summary_set))
             if summary.get("aalcalc") == True:
                 print_command(
-                    "mkdir work/{0}_S{1}_summaryaalcalc".format(
+                    "mkdir work/{0}_S{1}_aalcalc".format(
                     runtype,summary_set))
 
 
@@ -145,12 +143,12 @@ def remove_workfolders(runtype, analysis_settings):
                     print_command(
                         "rmdir work/{0}_S{1}_summaryleccalc".format(
                             runtype, summary_set))
-            if summary.get("aalcalc") == True:
+            if summary.get("aalcalc"):
                 print_command(
-                    "rm work/{0}_S{1}_summaryaalcalc/*".format(
-                        runtype,summary_set))
-                print_command("rmdir work/{0}_S{1}_summaryaalcalc".format(
-                    runtype,summary_set))
+                    "rm work/{0}_S{1}_aalcalc/*".format(
+                        runtype, summary_set))
+                print_command("rmdir work/{0}_S{1}_aalcalc".format(
+                    runtype, summary_set))
 
 
 def do_make_fifos(runtype, analysis_settings, process_id):
