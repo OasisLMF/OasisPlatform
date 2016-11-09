@@ -38,8 +38,8 @@ mkfifo fifo/il_S2_summarypltcalc_P2
 mkfifo fifo/il_S2_pltcalc_P2
 mkfifo fifo/il_S2_summaryaalcalc_P2
 
-mkdir work/il_S1_summaryaalcalc
-mkdir work/il_S2_summaryaalcalc
+mkdir work/il_S1_aalcalc
+mkdir work/il_S2_aalcalc
 
 # --- Do insured loss kats ---
 
@@ -136,7 +136,7 @@ rm fifo/il_S2_summarypltcalc_P2
 rm fifo/il_S2_pltcalc_P2
 rm fifo/il_S2_summaryaalcalc_P2
 
-rm work/il_S1_summaryaalcalc/*
-rmdir work/il_S1_summaryaalcalc
-rm work/il_S2_summaryaalcalc/*
-rmdir work/il_S2_summaryaalcalc
+rm work/il_S1_aalcalc/*
+rmdir work/il_S1_aalcalc
+rm work/il_S2_aalcalc/*
+rmdir work/il_S2_aalcalc

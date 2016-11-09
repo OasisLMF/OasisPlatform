@@ -38,9 +38,9 @@ mkfifo fifo/gul_S2_pltcalc_P2
 mkfifo fifo/gul_S2_summaryaalcalc_P2
 
 mkdir work/gul_S1_summaryleccalc
-mkdir work/gul_S1_summaryaalcalc
+mkdir work/gul_S1_aalcalc
 mkdir work/gul_S2_summaryleccalc
-mkdir work/gul_S2_summaryaalcalc
+mkdir work/gul_S2_aalcalc
 
 
 # --- Do insured loss kats ---
@@ -145,10 +145,10 @@ rm fifo/gul_S2_summaryaalcalc_P2
 
 rm work/gul_S1_summaryleccalc/*
 rmdir work/gul_S1_summaryleccalc
-rm work/gul_S1_summaryaalcalc/*
-rmdir work/gul_S1_summaryaalcalc
+rm work/gul_S1_aalcalc/*
+rmdir work/gul_S1_aalcalc
 rm work/gul_S2_summaryleccalc/*
 rmdir work/gul_S2_summaryleccalc
-rm work/gul_S2_summaryaalcalc/*
-rmdir work/gul_S2_summaryaalcalc
+rm work/gul_S2_aalcalc/*
+rmdir work/gul_S2_aalcalc
 
