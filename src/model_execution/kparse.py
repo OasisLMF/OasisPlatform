@@ -438,7 +438,7 @@ def genbash(
 
     print_command("")
 
-    for process_id in range(1, max_process_id + 1):
+    for process_id in range(1, max_process_id + 1):        
         if gul_output and il_output:
             getmodel_cmd = get_getmodel_cmd(
                 process_id, max_process_id,
@@ -454,29 +454,27 @@ def genbash(
             #  Now the mainprocessing
             if gul_output:
                 if "gul_summaries" in analysis_settings:
-                    for x in analysis_settings["gul_summaries"]:
-                        getmodel_cmd = get_getmodel_cmd(
-                            process_id, max_process_id,
-                            number_of_samples, gul_threshold,
-                            use_random_number_file,
-                            "-",
-                            "")
-                        print_command(
-                            "eve {0} {1} | {2} > fifo/gul_P{0}  &".format(
-                                process_id, max_process_id, getmodel_cmd))
+                    getmodel_cmd = get_getmodel_cmd(
+                        process_id, max_process_id,
+                        number_of_samples, gul_threshold,
+                        use_random_number_file,
+                        "-",
+                        "")
+                    print_command(
+                        "eve {0} {1} | {2} > fifo/gul_P{0}  &".format(
+                            process_id, max_process_id, getmodel_cmd))
 
             if il_output:
-                if "il_summaries" in analysis_settings:
-                    for x in analysis_settings["il_summaries"]:
-                        getmodel_cmd = get_getmodel_cmd(
-                            process_id, max_process_id,
-                            number_of_samples, gul_threshold,
-                            use_random_number_file,
-                            "",
-                            "-")
-                        print_command(
-                            "eve {0} {1} | {2} | fmcalc > fifo/il_P{0}  &".format(
-                                process_id, max_process_id, getmodel_cmd))
+                if "il_summaries" in analysis_settings:                    
+                    getmodel_cmd = get_getmodel_cmd(
+                        process_id, max_process_id,
+                        number_of_samples, gul_threshold,
+                        use_random_number_file,
+                        "",
+                        "-")
+                    print_command(
+                        "eve {0} {1} | {2} | fmcalc > fifo/il_P{0}  &".format(
+                            process_id, max_process_id, getmodel_cmd))
 
     print_command("")
 
