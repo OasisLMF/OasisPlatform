@@ -26,10 +26,19 @@ COPY ./utils/wait-for-it.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/startup.sh
 RUN chmod +x /usr/local/bin/wait-for-it.sh
 
+RUN touch /var/log/oasis/oasis_api.log
+RUN chmod a+w /var/log/oasis/oasis_api.log
+
 RUN pip install -r ./requirements.txt
 
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 EXPOSE 80
 
-ENTRYPOINT wait-for-it.sh rabbit:5672; startup.sh; tail -f /dev/null
+ENTRYPOINT \
+	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /var/www/oasis/common/CeleryConfig.py && \
+	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /var/www/oasis/common/CeleryConfig.py && \
+	wait-for-it.sh "rabbit:$RABBIT_PORT" && \
+	wait-for-it.sh "mysql:$MYSQL_PORT" && \	
+	startup.sh && \
+	tail -f /var/log/oasis/oasis_api.log

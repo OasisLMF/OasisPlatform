@@ -12,17 +12,28 @@ RUN mkdir /var/oasis/working
 RUN useradd -ms /bin/bash worker
 RUN chown worker /var/log/oasis
 RUN chown worker /var/oasis/working
+RUN touch /var/log/oasis/celery_worker.log
+RUN chmod a+w /var/log/oasis/celery_worker.log
+
+WORKDIR /home/worker
 
 COPY ./data/static /var/oasis/model_data/OasisIM/1
-
-USER worker
-WORKDIR /home/worker
 
 COPY ./src/model_execution_worker/startup.sh  ./
 
 COPY ./src/common ./common/
-COPY ./src/model_execution_worker/  ./model_execution_worker/
-COPY ./src/model_execution/  ./model_execution/
+COPY ./src/model_execution_worker/ ./model_execution_worker/
+COPY ./src/model_execution/ ./model_execution/
 COPY ./src/utils/ ./utils/
 
-ENTRYPOINT ./utils/wait-for-it.sh rabbit:5672; ./utils/wait-for-it.sh mysql:3306; ./startup.sh; tail -f /dev/null
+RUN chmod -R 777 /home/worker/common
+
+USER worker
+
+ENTRYPOINT \
+	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /home/worker/common/CeleryConfig.py && \
+	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py && \
+	./utils/wait-for-it.sh "rabbit:$RABBIT_PORT" && \
+	./utils/wait-for-it.sh "mysql:$MYSQL_PORT" && \
+	./startup.sh && \ 
+	tail -f /var/log/oasis/celery_worker.log
