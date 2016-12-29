@@ -28,10 +28,20 @@ OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'OUTPUTS_DATA_DIRECTORY')
 MODEL_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'MODEL_DATA_DIRECTORY')
 WORKING_DIRECTORY = CONFIG_PARSER.get('Default', 'WORKING_DIRECTORY')
 
+KTOOLS_BATCH_COUNT = int(os.environ.get("KTOOLS_BATCH_COUNT")) or -1
+
 ARCHIVE_FILE_SUFFIX = '.tar'
 
 CELERY = Celery()
 CELERY.config_from_object('common.CeleryConfig')
+
+logging.info("Started worker")
+
+logging.info("INPUTS_DATA_DIRECTORY: {}".format(INPUTS_DATA_DIRECTORY))
+logging.info("OUTPUTS_DATA_DIRECTORY: {}".format(OUTPUTS_DATA_DIRECTORY))
+logging.info("MODEL_DATA_DIRECTORY: {}".format(MODEL_DATA_DIRECTORY))
+logging.info("WORKING_DIRECTORY: {}".format(WORKING_DIRECTORY))
+logging.info("KTOOLS_BATCH_COUNT: {}".format(KTOOLS_BATCH_COUNT))
 
 @task(name='run_analysis', bind=True)
 def start_analysis_task(self, input_location, analysis_settings_json):
@@ -62,8 +72,9 @@ def start_analysis_task(self, input_location, analysis_settings_json):
         raise e
 
     end = time.time()
-    logging.info("COMPLETED: {} in {}s"
-                 .format(func_name, round(end - start, 2)))
+    logging.info(
+        "COMPLETED: {} in {}s".format(
+            func_name, round(end - start, 2)))
 
     return output_location
 
@@ -111,15 +122,17 @@ def start_analysis(analysis_settings, input_location):
         analysis_settings['analysis_settings']['source_tag']
     analysis_tag = \
         analysis_settings['analysis_settings']['analysis_tag']
-    logging.info("Source tag = {}; Analysis tag: {}"
-                 .format(analysis_tag, source_tag))
+    logging.info(
+        "Source tag = {}; Analysis tag: {}".format(
+            analysis_tag, source_tag))
 
     module_supplier_id = \
         analysis_settings['analysis_settings']['module_supplier_id']
     model_version_id = \
         analysis_settings['analysis_settings']['model_version_id']
-    logging.info("Model supplier - version = {} {}"
-                 .format(module_supplier_id, model_version_id))
+    logging.info(
+        "Model supplier - version = {} {}".format(
+            module_supplier_id, model_version_id))
 
     # Get the supplier module and call it
     if not os.path.exists(os.path.join(
@@ -163,8 +176,10 @@ def start_analysis(analysis_settings, input_location):
 
     # If a return periods file has not been included in the analysis input,
     # then use the default from the model data.
-    analysis_returnperiods_filepath = os.path.join(working_directory, 'input', 'returnperiods.bin')
-    model_data_returnperiods_filepath = os.path.join(working_directory, 'static', 'returnperiods.bin')
+    analysis_returnperiods_filepath = os.path.join(
+        working_directory, 'input', 'returnperiods.bin')
+    model_data_returnperiods_filepath = os.path.join(
+        working_directory, 'static', 'returnperiods.bin')
     if not os.path.exists(analysis_returnperiods_filepath):
         logging.info("Using default returnperiods.bin")
         shutil.copyfile(model_data_returnperiods_filepath, analysis_returnperiods_filepath)
@@ -174,12 +189,12 @@ def start_analysis(analysis_settings, input_location):
         globals(),
         locals(),
         ['run'],
-        -1)
+        KTOOLS_BATCH_COUNT)
 
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
 
-    # Persist the analysis_settings 
+    # Persist the analysis_settings
     with open("analysis_settings.json", "w") as json_file:
         json.dump(analysis_settings, json_file)
 
