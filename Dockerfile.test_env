@@ -18,6 +18,7 @@ RUN chown oasis /var/log/oasis
 COPY ./src/common /home/oasis/src/common/
 COPY ./src/model_execution/  /home/oasis/src/model_execution/
 COPY ./src/utils/ /home/oasis/src/utils/
+COPY ./src/oasis_utils/ /home/oasis/src/oasis_utils/
 COPY ./src/server/ /home/oasis/src/server/
 COPY ./data/ /home/oasis/data/
 COPY ./tests/ /home/oasis/tests/
