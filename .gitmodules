@@ -1,0 +1,3 @@
+[submodule "src/oasis_utils"]
+	path = src/oasis_utils
+	url = git@github.com:OasisLMF/oasis_utils.git

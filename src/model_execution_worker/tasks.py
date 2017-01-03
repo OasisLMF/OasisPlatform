@@ -9,7 +9,7 @@ import sys
 
 from celery import Celery
 from celery.task import task
-from common import helpers
+from oasis_utils import oasis_utils, oasis_log_utils
 from ConfigParser import ConfigParser
 
 '''
@@ -36,7 +36,6 @@ CELERY = Celery()
 CELERY.config_from_object('common.CeleryConfig')
 
 logging.info("Started worker")
-
 logging.info("INPUTS_DATA_DIRECTORY: {}".format(INPUTS_DATA_DIRECTORY))
 logging.info("OUTPUTS_DATA_DIRECTORY: {}".format(OUTPUTS_DATA_DIRECTORY))
 logging.info("MODEL_DATA_DIRECTORY: {}".format(MODEL_DATA_DIRECTORY))
@@ -52,29 +51,21 @@ def start_analysis_task(self, input_location, analysis_settings_json):
     Returns:
         (string) The location of the outputs.
     '''
-    frame = inspect.currentframe()
-    func_name = inspect.getframeinfo(frame)[2]
-    logging.info("STARTED: {}".format(func_name))
-    args, _, _, values = inspect.getargvalues(frame)
-    for i in args:
-        if i == 'self':
-            continue
-        logging.info("{}={}".format(i, values[i]))
-    start = time.time()
-
     try:
-        self.update_state(state=helpers.TASK_STATUS_RUNNING)
+
+        logging.info("INPUTS_DATA_DIRECTORY: {}".format(INPUTS_DATA_DIRECTORY))
+        logging.info("OUTPUTS_DATA_DIRECTORY: {}".format(OUTPUTS_DATA_DIRECTORY))
+        logging.info("MODEL_DATA_DIRECTORY: {}".format(MODEL_DATA_DIRECTORY))
+        logging.info("WORKING_DIRECTORY: {}".format(WORKING_DIRECTORY))
+        logging.info("KTOOLS_BATCH_COUNT: {}".format(KTOOLS_BATCH_COUNT))
+
+        self.update_state(state=oasis_utils.STATUS_RUNNING)
         output_location = start_analysis(
             analysis_settings_json[0],
             input_location)
     except Exception as e:
         logging.exception("Model execution task failed.")
         raise e
-
-    end = time.time()
-    logging.info(
-        "COMPLETED: {} in {}s".format(
-            func_name, round(end - start, 2)))
 
     return output_location
 
@@ -84,7 +75,7 @@ def get_current_module_directory():
     return os.path.dirname(
         os.path.abspath(inspect.getfile(inspect.currentframe())))
 
-
+@oasis_log_utils.oasis_log()
 def start_analysis(analysis_settings, input_location):
     '''
     Run an analysis.
@@ -149,7 +140,7 @@ def start_analysis(analysis_settings, input_location):
     logging.info("Setting up analysis working directory")
 
     directory_name = "{}_{}_{}".format(
-        source_tag, analysis_tag, helpers.generate_unique_filename())
+        source_tag, analysis_tag, oasis_utils.generate_unique_filename())
     working_directory = \
         os.path.join(WORKING_DIRECTORY, directory_name)
     os.mkdir(working_directory)
@@ -189,7 +180,7 @@ def start_analysis(analysis_settings, input_location):
         globals(),
         locals(),
         ['run'],
-        KTOOLS_BATCH_COUNT)
+        -1)
 
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
@@ -198,9 +189,10 @@ def start_analysis(analysis_settings, input_location):
     with open("analysis_settings.json", "w") as json_file:
         json.dump(analysis_settings, json_file)
 
-    model_runner_module.run(analysis_settings['analysis_settings'])
+    model_runner_module.run(
+        analysis_settings['analysis_settings'], KTOOLS_BATCH_COUNT)
 
-    output_location = helpers.generate_unique_filename()
+    output_location = oasis_utils.generate_unique_filename()
     output_filepath = os.path.join(
         OUTPUTS_DATA_DIRECTORY, output_location + ARCHIVE_FILE_SUFFIX)
     with tarfile.open(output_filepath, "w:gz") as tar:

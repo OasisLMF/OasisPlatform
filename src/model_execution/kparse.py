@@ -1,3 +1,5 @@
+from oasis_utils import oasis_log_utils
+
 pid_monitor_count = 0
 apid_monitor_count = 0
 lpid_monitor_count = 0
@@ -354,7 +356,7 @@ def get_getmodel_cmd(
 
     return cmd
 
-
+@oasis_log_utils.oasis_log()
 def genbash(
         max_process_id, analysis_settings, output_filename,
         get_getmodel_cmd=get_getmodel_cmd):

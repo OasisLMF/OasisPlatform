@@ -12,12 +12,11 @@ import traceback
 
 from celery import Celery
 from common import data
-from common import helpers
 from ConfigParser import ConfigParser
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
-from logging.handlers import RotatingFileHandler
+from oasis_utils import oasis_utils, oasis_log_utils
 
 APP = Flask(__name__)
 
@@ -25,18 +24,7 @@ CONFIG_PARSER = ConfigParser()
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 INI_PATH = os.path.abspath(os.path.join(CURRENT_DIRECTORY, 'OasisApi.ini'))
 CONFIG_PARSER.read(INI_PATH)
-LOG_FILE = CONFIG_PARSER.get('Default', 'LOG_FILE')
-LOG_LEVEL = CONFIG_PARSER.get('Default', 'LOG_LEVEL')
-LOG_NUMERIC_LEVEL = getattr(logging, LOG_LEVEL.upper(), logging.DEBUG)
-LOG_MAX_SIZE_IN_BYTES = CONFIG_PARSER.get('Default', 'LOG_MAX_SIZE_IN_BYTES')
-LOG_BACKUP_COUNT = CONFIG_PARSER.get('Default', 'LOG_BACKUP_COUNT')
-
-HANDLER = RotatingFileHandler(
-    LOG_FILE, maxBytes=LOG_MAX_SIZE_IN_BYTES, backupCount=LOG_BACKUP_COUNT)
-APP.logger.setLevel(logging.DEBUG)
-APP.logger.addHandler(HANDLER)
-FORMATTER = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-HANDLER.setFormatter(FORMATTER)
+oasis_log_utils.read_log_config(CONFIG_PARSER)
 
 INPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'INPUTS_DATA_DIRECTORY')
 OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'OUTPUTS_DATA_DIRECTORY')
@@ -49,7 +37,7 @@ CELERY.config_from_object('common.CeleryConfig')
 
 @APP.route('/exposure_summary', defaults={'location': None}, methods=["GET"])
 @APP.route('/exposure_summary/<location>', methods=["GET"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def get_exposure_summary(location):
     """
     Get exposure summary
@@ -88,8 +76,11 @@ def get_exposure_summary(location):
       required: true
       type: string
     """
+
+    oasis_log_utils.read_log_config(CONFIG_PARSER)
+
     try:
-        APP.logger.debug("Location: {}".format(location))
+        logging.debug("Location: {}".format(location))
         if location is None:
             exposure_summaries = list()
             for filename in os.listdir(INPUTS_DATA_DIRECTORY):
@@ -111,7 +102,7 @@ def get_exposure_summary(location):
             filename = str(location) + TAR_FILE_SUFFIX
             filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
             if not os.path.exists(filepath):
-                response = Response(status=helpers.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+                response = Response(status=oasis_utils.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
             else:
                 size_in_bytes = os.path.getsize(filepath)
                 created_date = time.ctime(os.path.getctime(filepath))
@@ -120,15 +111,15 @@ def get_exposure_summary(location):
                     size=size_in_bytes,
                     created_date=created_date)
                 response = jsonify({"exposures": [exposure_summary.__dict__]})
-                APP.logger.debug("Exposures: " + response.data)
+                logging.debug("Exposures: " + response.data)
     except:
-        APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
+        logging.exception("Failed to get exposure summary")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
     return response
 
 @APP.route('/exposure/<location>', methods=["GET"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def get_exposure(location):
     """
     Get an exposure resource
@@ -149,26 +140,26 @@ def get_exposure(location):
       type: string
     """
     try:
-        APP.logger.debug("Location: {}".format(location))
+        logging.debug("Location: {}".format(location))
         if location is None:
-                response = Response(status=helpers.HTTP_RESPONSE_BAD_REQUEST)
+                response = Response(status=oasis_utils.HTTP_RESPONSE_BAD_REQUEST)
         else:
             filename = str(location) + TAR_FILE_SUFFIX
             filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
             if not os.path.exists(filepath):
                 response = Response(
-                    status=helpers.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+                    status=oasis_utils.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
             else:
                 response = send_from_directory(
                     INPUTS_DATA_DIRECTORY, location + TAR_FILE_SUFFIX)
     except:
-        APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
+        logging.exception("Failed to get exposure")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_ERROR)
 
     return response
 
 @APP.route('/exposure', methods=["POST"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def post_exposure():
     """
     Upload an exposure resource
@@ -195,7 +186,7 @@ def post_exposure():
             is_gzipped = (content_encoding == 'gzip')
 
         file = request.files['file']
-        filename = helpers.generate_unique_filename()
+        filename = oasis_utils.generate_unique_filename()
         filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename) + TAR_FILE_SUFFIX
         file.save(filepath)
 
@@ -215,14 +206,14 @@ def post_exposure():
 
         response = jsonify({'exposures': [exposure]})
     except:
-        APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
+        logging.exception("Failed to post exposure")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_ERROR)
 
     return response
 
 @APP.route('/exposure', defaults={'location': None}, methods=["DELETE"])
 @APP.route('/exposure/<location>', methods=["DELETE"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def delete_exposure(location):
     """
     Delete an exposure resource
@@ -243,7 +234,7 @@ def delete_exposure(location):
       type: string
     """
     try:
-        APP.logger.debug("Location: {}".format(location))
+        logging.debug("Location: {}".format(location))
         if location is None:
 
             for filename in os.listdir(INPUTS_DATA_DIRECTORY):
@@ -255,7 +246,7 @@ def delete_exposure(location):
                 if not os.path.isfile(filepath):
                     continue
                 os.remove(filepath)
-            response = Response(status=helpers.HTTP_RESPONSE_OK)
+            response = Response(status=oasis_utils.HTTP_RESPONSE_OK)
         
         else:
             
@@ -263,18 +254,18 @@ def delete_exposure(location):
             filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
 
             if not os.path.exists(filepath):
-                response = Response(status=helpers.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+                response = Response(status=oasis_utils.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
             else:
                 os.remove(filepath)
-                response = Response(status=helpers.HTTP_RESPONSE_OK)
+                response = Response(status=oasis_utils.HTTP_RESPONSE_OK)
     except:
-        APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR) 
+        logging.exception("Failed to delete exposure")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_ERROR) 
 
     return response
 
 @APP.route('/analysis/<input_location>', methods=["POST"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def post_analysis(input_location):
     """
     Start an analysis
@@ -304,18 +295,18 @@ def post_analysis(input_location):
     try:
         analysis_settings = request.json
         if not validate_analysis_settings(analysis_settings):
-            response = Response(status_code = helpers.HTTP_RESPONSE_BAD_REQUEST)
+            response = Response(status_code = oasis_utils.HTTP_RESPONSE_BAD_REQUEST)
         else:
             result = CELERY.send_task("run_analysis", (input_location, [analysis_settings]))
             task_id = result.task_id
             response = jsonify({'location': task_id})
     except:
-        APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
+        logging.exception("Failed to post analysis")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_ERROR)
     return response
 
 @APP.route('/analysis_status/<location>', methods=["GET"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def get_analysis_status(location):
     """
     Get an analysis status resource
@@ -371,19 +362,19 @@ def get_analysis_status(location):
     """
     try:
         result = CELERY.AsyncResult(location)
-        APP.logger.debug("celery result:{}".format(result.result))
+        logging.debug("celery result:{}".format(result.result))
        
-        if result.state == helpers.TASK_STATUS_SUCCESS: 
+        if result.state == oasis_utils.STATUS_SUCCESS: 
             analysis_status = data.AnalysisStatus(
                 id = -1,
                 status = result.state,
                 message="",             
                 outputs_location=result.result)
-        elif result.state == helpers.TASK_STATUS_FAILURE: 
+        elif result.state == oasis_utils.STATUS_FAILURE: 
             analysis_status = data.AnalysisStatus(
                 id = -1,
                 status = result.state,
-                message=helpers.escape_string_for_json(repr(result.result)),             
+                message=oasis_utils.escape_string_for_json(repr(result.result)),             
                 outputs_location=None)
         else: 
             analysis_status = data.AnalysisStatus(
@@ -393,15 +384,15 @@ def get_analysis_status(location):
                 outputs_location=None)
          
         response = jsonify(analysis_status.__dict__)
-        APP.logger.debug("Response: {}".format(response.data))
+        logging.debug("Response: {}".format(response.data))
     except:
-        APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
+        logging.exception("Failed to get analysis status")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
     return response
 
 @APP.route('/analysis_status', methods=["DELETE"])
 @APP.route('/analysis_status/<location>', methods=["DELETE"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def delete_analysis_status(location):
     """
     Delete an analysis status resource
@@ -421,16 +412,18 @@ def delete_analysis_status(location):
       required: true
       type: string
     """
+    
+    raise Exception("Not implemented")
+    
     try:
-        #TODO
-        APP.logger.debug("Location: {}".format(location))
+        logging.debug("Location: {}".format(location))
     except:
-        APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
+        logging.exception("Failed to delete analysis status")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_ERROR)
     return response
 
 @APP.route('/outputs/<location>', methods=["GET"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def get_outputs(location):
     """
     Get a outputs resource
@@ -451,20 +444,20 @@ def get_outputs(location):
         type: string
     """
     try:
-        APP.logger.debug("Location: {}".format(location))
+        logging.debug("Location: {}".format(location))
         file_path = os.path.join(OUTPUTS_DATA_DIRECTORY, location + ".tar") 
         if not os.path.exists(file_path):
-            response = Response(status_code = helpers.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+            response = Response(status_code = oasis_utils.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
         else:
             response = send_from_directory(OUTPUTS_DATA_DIRECTORY, location + ".tar")
     except:
-        APP.log_exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
+        logging.exception("Failed to get outputs")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_ERROR)
     return response
 
 @APP.route('/outputs', methods=["DELETE"])
 @APP.route('/outputs/<location>', methods=["DELETE"])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def delete_outputs(location):
     """
     download_directory = '/var/www/oasis/download'
@@ -486,7 +479,7 @@ def delete_outputs(location):
       type: string
     """
     try:
-        APP.logger.debug("Location: {}".format(location))
+        logging.debug("Location: {}".format(location))
         if location is None:
 
             for filename in os.listdir(OUTPUTS_DATA_DIRECTORY):
@@ -498,7 +491,7 @@ def delete_outputs(location):
                 if not os.path.isfile(filepath):
                     continue
                 os.remove(filepath)
-            response = Response(status=helpers.HTTP_RESPONSE_OK)
+            response = Response(status=oasis_utils.HTTP_RESPONSE_OK)
         
         else:
             
@@ -506,19 +499,19 @@ def delete_outputs(location):
             filepath = os.path.join(OUTPUTS_DATA_DIRECTORY, filename)
 
             if not os.path.exists(filepath):
-                response = Response(status=helpers.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+                response = Response(status=oasis_utils.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
             else:
                 os.remove(filepath)
-                response = Response(status=helpers.HTTP_RESPONSE_OK)
+                response = Response(status=oasis_utils.HTTP_RESPONSE_OK)
         
     except:
-        APP.logger.exception(traceback.format_exc())
-        response = Response(status=helpers.HTTP_RESPONSE_INTERNAL_ERROR)
+        logging.exception("Failed to delete outputs")
+        response = Response(status=oasis_utils.HTTP_RESPONSE_INTERNAL_ERROR)
 
     return response
 
 @APP.route("/spec")
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def spec():
     swag = swagger(APP)
     swag['info']['version'] = "0.1"
@@ -526,7 +519,7 @@ def spec():
     return jsonify(swag)
 
 @APP.route('/healthcheck', methods=['GET'])
-@helpers.oasis_log(APP.logger)
+@oasis_log_utils.oasis_log()
 def get_healthcheck():
     '''
     Basic healthcheck response.

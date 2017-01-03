@@ -12,8 +12,8 @@ RUN mkdir /var/oasis/working
 RUN useradd -ms /bin/bash worker
 RUN chown worker /var/log/oasis
 RUN chown worker /var/oasis/working
-RUN touch /var/log/oasis/celery_worker.log
-RUN chmod a+w /var/log/oasis/celery_worker.log
+RUN touch /var/log/oasis/worker.log
+RUN chmod a+w /var/log/oasis/worker.log
 
 WORKDIR /home/worker
 
@@ -25,6 +25,7 @@ COPY ./src/common ./common/
 COPY ./src/model_execution_worker/ ./model_execution_worker/
 COPY ./src/model_execution/ ./model_execution/
 COPY ./src/utils/ ./utils/
+COPY ./src/oasis_utils/ ./oasis_utils/
 
 RUN chmod -R 777 /home/worker/common
 
@@ -36,4 +37,4 @@ ENTRYPOINT \
 	./utils/wait-for-it.sh "rabbit:$RABBIT_PORT" && \
 	./utils/wait-for-it.sh "mysql:$MYSQL_PORT" && \
 	./startup.sh && \ 
-	tail -f /var/log/oasis/celery_worker.log
+	tail -f /var/log/oasis/worker.log

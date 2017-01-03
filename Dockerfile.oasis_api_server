@@ -17,7 +17,7 @@ RUN mkdir /var/log/oasis
 COPY ./src/server_config/oasis.conf /etc/apache2/sites-available/oasis.conf
 COPY ./src/server_config/oasis.wsgi /var/www/oasis/oasis.wsgi
 COPY ./src/server /var/www/oasis/server/
-
+COPY ./src/oasis_utils /var/www/oasis/oasis_utils/
 COPY ./src/common /var/www/oasis/common/
 COPY ./src/server/requirements.txt ./
 
@@ -26,8 +26,8 @@ COPY ./utils/wait-for-it.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/startup.sh
 RUN chmod +x /usr/local/bin/wait-for-it.sh
 
-RUN touch /var/log/oasis/oasis_api.log
-RUN chmod a+w /var/log/oasis/oasis_api.log
+RUN touch /var/log/oasis/oasis_api_server.log
+RUN chmod a+w /var/log/oasis/oasis_api_server.log
 
 RUN pip install -r ./requirements.txt
 
@@ -41,4 +41,4 @@ ENTRYPOINT \
 	wait-for-it.sh "rabbit:$RABBIT_PORT" && \
 	wait-for-it.sh "mysql:$MYSQL_PORT" && \	
 	startup.sh && \
-	tail -f /var/log/oasis/oasis_api.log
+	tail -f /var/log/oasis/oasis_api_server.log
