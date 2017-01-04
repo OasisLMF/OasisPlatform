@@ -72,14 +72,14 @@ if do_clean_docker:
         "Remove existing directories",
         "rm -rf ktools; rm -rf oasisapi; rm -rf ara")
 
-    run_command(
+    sun_command(
         "Clone ktools",
-        "git clone https://{}:{}@github.com/oasislmf/ktools".format(
+        "git clone --recursive https://{}:{}@github.com/oasislmf/ktools".format(
             github_uname, github_password))
 
     run_command(
         "Clone oasisapi",
-        "git clone https://{}:{}@github.com/oasislmf/oasisapi".format(
+        "git clone --recursive https://{}:{}@github.com/oasislmf/oasisapi".format(
             github_uname, github_password))
 
 if do_build:
