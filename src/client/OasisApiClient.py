@@ -8,8 +8,8 @@ import tarfile
 import time
 import requests
 import shutilwhich
+from oasis_utils import oasis_utils
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from common import helpers
 
 
 class OasisApiClient(object):
@@ -173,7 +173,7 @@ class OasisApiClient(object):
                     request_url, str(response.status_code)))
             raise Exception("Failed to start analysis")
         analysis_status_location = response.json()['location']
-        status = helpers.TASK_STATUS_PENDING
+        status = oasis_utils.STATUS_PENDING
         self._logger.info("Analysis started")
         analysis_poll_interval_in_seconds = 5
         request_url = "/analysis_status/"
@@ -193,9 +193,9 @@ class OasisApiClient(object):
             status = response.json()['status']
             message = response.json()['message']
             self._logger.debug("Analysis status: " + status)
-            if status == helpers.TASK_STATUS_SUCCESS:
+            if status == oasis_utils.STATUS_SUCCESS:
                 break
-            if status == helpers.TASK_STATUS_FAILURE:
+            if status == oasis_utils.STATUS_FAILURE:
                 error_message = "Analysis failed: {}".format(message)
                 self._logger.error(error_message)
                 raise Exception(error_message)
