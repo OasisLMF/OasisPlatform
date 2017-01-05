@@ -9,7 +9,6 @@ import sys
 
 from celery import Celery
 from celery.task import task
-from oasis_utils import oasis_utils, oasis_log_utils
 from ConfigParser import ConfigParser
 
 '''
@@ -22,6 +21,8 @@ CURRENT_DIRECTORY = \
 sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
 INI_PATH = os.path.abspath(os.path.join(CURRENT_DIRECTORY, 'Tasks.ini'))
 CONFIG_PARSER.read(INI_PATH)
+
+from oasis_utils import oasis_utils, oasis_log_utils
 
 INPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'INPUTS_DATA_DIRECTORY')
 OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'OUTPUTS_DATA_DIRECTORY')
