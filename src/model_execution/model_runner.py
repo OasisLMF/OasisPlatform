@@ -2,14 +2,14 @@ import os
 import logging
 import kparse
 from subprocess import Popen, PIPE
-from common import helpers
+from oasis_utils import oasis_log_utils 
 
 '''
 Model runner for standard ktools pipeline.
 '''
 
 
-@helpers.oasis_log(logging.getLogger())
+@oasis_log_utils.oasis_log()
 def run_analysis(analysis_settings, number_of_processes):
     '''
     Worker function for supplier OasisIM. It orchestrates data
