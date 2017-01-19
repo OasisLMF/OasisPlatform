@@ -29,7 +29,10 @@ OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'OUTPUTS_DATA_DIRECTORY')
 MODEL_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'MODEL_DATA_DIRECTORY')
 WORKING_DIRECTORY = CONFIG_PARSER.get('Default', 'WORKING_DIRECTORY')
 
+WORKING_DIRECTORY = CONFIG_PARSER.get('Default', 'WORKING_DIRECTORY')
+
 KTOOLS_BATCH_COUNT = int(os.environ.get("KTOOLS_BATCH_COUNT")) or -1
+IS_WINDOWS_HOST = bool(os.environ.get("IS_WINDOWS_HOST")) or False
 
 ARCHIVE_FILE_SUFFIX = '.tar'
 
@@ -156,7 +159,11 @@ def start_analysis(analysis_settings, input_location):
     if not os.path.exists(os.path.join(working_directory, 'input')):
         raise Exception("Input archive did not extract correctly")
 
-    os.symlink(model_data_path, os.path.join(working_directory, "static"))
+    analysis_model_data_path = os.path.join(working_directory, "static")
+    if IS_WINDOWS_HOST:
+        shutil.copytree(model_data_path, analysis_model_data_path)
+    else:
+        os.symlink(model_data_path, analysis_model_data_path)
 
     # If an events file has not been included in the analysis input,
     # then use the default file with all events from the model data.
@@ -176,6 +183,18 @@ def start_analysis(analysis_settings, input_location):
         logging.info("Using default returnperiods.bin")
         shutil.copyfile(model_data_returnperiods_filepath, analysis_returnperiods_filepath)
 
+    # Get the occurrence file from the static.
+    occurrence_id = analysis_settings["model_settings"]["occurrence_id"]
+    analysis_occurrence_filepath = os.path.join(
+        working_directory, 'input', 'occurrence.bin')
+    if occurrence_id is None:
+        model_data_occurrence_filepath = os.path.join(
+            working_directory, 'static', 'occurrence.bin')
+    else:
+        model_data_occurrence_filepath = os.path.join(
+            working_directory, 'static', 'occurrence{}.bin'.format(occurrence_id))
+    shutil.copyfile(model_data_occurrence_filepath, analysis_occurrence_filepath)
+    
     model_runner_module = __import__(
         "{}.{}".format(module_supplier_id, "supplier_model_runner"),
         globals(),
