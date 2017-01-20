@@ -184,7 +184,7 @@ def start_analysis(analysis_settings, input_location):
         shutil.copyfile(model_data_returnperiods_filepath, analysis_returnperiods_filepath)
 
     # Get the occurrence file from the static.
-    occurrence_id = analysis_settings["model_settings"]["occurrence_id"]
+    occurrence_id = analysis_settings['analysis_settings']["model_settings"].get("event_occurrence_id")
     analysis_occurrence_filepath = os.path.join(
         working_directory, 'input', 'occurrence.bin')
     if occurrence_id is None:
