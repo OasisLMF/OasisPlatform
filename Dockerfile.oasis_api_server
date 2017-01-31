@@ -38,7 +38,7 @@ EXPOSE 80
 ENTRYPOINT \
 	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /var/www/oasis/common/CeleryConfig.py && \
 	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /var/www/oasis/common/CeleryConfig.py && \
-	wait-for-it.sh "rabbit:$RABBIT_PORT" && \
-	wait-for-it.sh "mysql:$MYSQL_PORT" && \	
+	wait-for-it.sh "rabbit:$RABBIT_PORT" -t 60 && \
+	wait-for-it.sh "mysql:$MYSQL_PORT" -t 60 && \	
 	startup.sh && \
 	tail -f /var/log/oasis/oasis_api_server.log
