@@ -278,24 +278,32 @@ def do_any(runtype, analysis_settings, process_id):
             if summary.get("aalcalc"):
                 pid_monitor_count = pid_monitor_count + 1
                 print_command(
-                    "aalcalc < fifo/{0}_S{1}_summaryaalcalc_P{2} > work/{0}_S{1}_aalcalc/P{2}.bin & pid{2}=$!".format(
+                    "aalcalc < fifo/{0}_S{1}_summaryaalcalc_P{2} > work/{0}_S{1}_aalcalc/P{2}.bin & pid{3}=$!".format(
                         runtype, summary_set, process_id, pid_monitor_count))
 
         print_command("")
 
-    do_tees(runtype, analysis_settings, process_id)
-    do_summarycalcs(runtype, analysis_settings, process_id)
-
+    
 
 def do_il(analysis_settings, max_process_id):
     for process_id in range(1, max_process_id + 1):
         do_any("il", analysis_settings, process_id)
-
+    print_command("sleep 3")
+    for process_id in range(1, max_process_id + 1):
+        do_tees("il", analysis_settings, process_id)
+    print_command("sleep 1")
+    for process_id in range(1, max_process_id + 1):
+        do_summarycalcs("il", analysis_settings, process_id)
 
 def do_gul(analysis_settings, max_process_id):
     for process_id in range(1, max_process_id + 1):
         do_any("gul", analysis_settings, process_id)
-
+    print_command("sleep 3")
+    for process_id in range(1, max_process_id + 1):
+        do_tees("gul", analysis_settings, process_id)
+    print_command("sleep 1")
+    for process_id in range(1, max_process_id + 1):
+        do_summarycalcs("gul", analysis_settings, process_id)
 
 def do_il_make_fifo(analysis_settings, max_process_id):
     for process_id in range(1, max_process_id + 1):
@@ -396,6 +404,12 @@ def genbash(
 
     print_command("#!/bin/bash")
 
+    print_command("")
+    print_command("rm -R -f output/*")
+    print_command("rm -R -f fifo/*")
+    print_command("rm -R -f work/*")
+    print_command("")
+
     if gul_output:
         do_gul_make_fifo(analysis_settings, max_process_id)
         create_workfolders("gul", analysis_settings)
@@ -414,6 +428,7 @@ def genbash(
     print_command("")
     if il_output:
         il_anykats = do_kats("il", analysis_settings, max_process_id, True)
+
 
     print_command("")
     print_command("# --- Do ground up loss kats ---")
