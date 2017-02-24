@@ -1,4 +1,9 @@
 #!/bin/bash
+
+rm -R -f output/*
+rm -R -f fifo/*
+rm -R -f work/*
+
 mkfifo fifo/gul_P1
 
 mkfifo fifo/gul_S1_summary_P1
@@ -34,8 +39,6 @@ kat fifo/gul_S2_eltcalc_P1 > output/gul_S2_eltcalc.csv & pid4=$!
 kat fifo/gul_S2_pltcalc_P1 > output/gul_S2_pltcalc.csv & pid5=$!
 kat fifo/gul_S2_summarycalc_P1 > output/gul_S2_summarycalc.csv & pid6=$!
 
-sleep 2
-
 # --- Do insured loss computes ---
 
 
@@ -44,12 +47,12 @@ sleep 2
 eltcalc < fifo/gul_S1_summaryeltcalc_P1 > fifo/gul_S1_eltcalc_P1 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P1 > fifo/gul_S1_summarycalc_P1 &
 pltcalc < fifo/gul_S1_summarypltcalc_P1 > fifo/gul_S1_pltcalc_P1 &
-aalcalc < fifo/gul_S1_summaryaalcalc_P1 > work/gul_S1_aalcalc/P1.bin & pid1=$!
+aalcalc < fifo/gul_S1_summaryaalcalc_P1 > work/gul_S1_aalcalc/P1.bin & pid7=$!
 
 eltcalc < fifo/gul_S2_summaryeltcalc_P1 > fifo/gul_S2_eltcalc_P1 &
 summarycalctocsv < fifo/gul_S2_summarysummarycalc_P1 > fifo/gul_S2_summarycalc_P1 &
 pltcalc < fifo/gul_S2_summarypltcalc_P1 > fifo/gul_S2_pltcalc_P1 &
-aalcalc < fifo/gul_S2_summaryaalcalc_P1 > work/gul_S2_aalcalc/P1.bin & pid1=$!
+aalcalc < fifo/gul_S2_summaryaalcalc_P1 > work/gul_S2_aalcalc/P1.bin & pid8=$!
 
 tee < fifo/gul_S1_summary_P1 fifo/gul_S1_summaryeltcalc_P1 fifo/gul_S1_summarypltcalc_P1 fifo/gul_S1_summarysummarycalc_P1 fifo/gul_S1_summaryaalcalc_P1  > /dev/null & pid9=$!
 tee < fifo/gul_S2_summary_P1 fifo/gul_S2_summaryeltcalc_P1 fifo/gul_S2_summarypltcalc_P1 fifo/gul_S2_summarysummarycalc_P1 fifo/gul_S2_summaryaalcalc_P1  > /dev/null & pid10=$!

@@ -1,4 +1,9 @@
 #!/bin/bash
+
+rm -R -f output/*
+rm -R -f fifo/*
+rm -R -f work/*
+
 mkfifo fifo/gul_P1
 
 mkfifo fifo/gul_S1_summary_P1
@@ -11,7 +16,6 @@ mkdir work/gul_S1_aalcalc
 
 
 # --- Do ground up loss kats ---
-
 
 
 # --- Do insured loss computes ---

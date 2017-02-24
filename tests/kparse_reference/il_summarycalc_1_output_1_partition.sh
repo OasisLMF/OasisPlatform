@@ -1,5 +1,10 @@
 #!/bin/bash
 
+rm -R -f output/*
+rm -R -f fifo/*
+rm -R -f work/*
+
+
 mkfifo fifo/il_P1
 
 mkfifo fifo/il_S1_summary_P1
@@ -13,8 +18,6 @@ kat fifo/il_S1_summarycalc_P1 > output/il_S1_summarycalc.csv & pid1=$!
 
 # --- Do ground up loss kats ---
 
-
-sleep 2
 
 # --- Do insured loss computes ---
 

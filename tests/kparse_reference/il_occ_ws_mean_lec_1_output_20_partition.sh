@@ -1,5 +1,10 @@
 #!/bin/bash
 
+rm -R -f output/*
+rm -R -f fifo/*
+rm -R -f work/*
+
+
 mkfifo fifo/il_P1
 
 mkfifo fifo/il_S1_summary_P1
@@ -88,68 +93,67 @@ mkdir work/il_S1_summaryleccalc
 # --- Do ground up loss kats ---
 
 
-
 # --- Do insured loss computes ---
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 tee < fifo/il_S1_summary_P1 work/il_S1_summaryleccalc/P1.bin  > /dev/null & pid1=$!
-summarycalc -f -1 fifo/il_S1_summary_P1  < fifo/il_P1 &
-
 tee < fifo/il_S1_summary_P2 work/il_S1_summaryleccalc/P2.bin  > /dev/null & pid2=$!
-summarycalc -f -1 fifo/il_S1_summary_P2  < fifo/il_P2 &
-
 tee < fifo/il_S1_summary_P3 work/il_S1_summaryleccalc/P3.bin  > /dev/null & pid3=$!
-summarycalc -f -1 fifo/il_S1_summary_P3  < fifo/il_P3 &
-
 tee < fifo/il_S1_summary_P4 work/il_S1_summaryleccalc/P4.bin  > /dev/null & pid4=$!
-summarycalc -f -1 fifo/il_S1_summary_P4  < fifo/il_P4 &
-
 tee < fifo/il_S1_summary_P5 work/il_S1_summaryleccalc/P5.bin  > /dev/null & pid5=$!
-summarycalc -f -1 fifo/il_S1_summary_P5  < fifo/il_P5 &
-
 tee < fifo/il_S1_summary_P6 work/il_S1_summaryleccalc/P6.bin  > /dev/null & pid6=$!
-summarycalc -f -1 fifo/il_S1_summary_P6  < fifo/il_P6 &
-
 tee < fifo/il_S1_summary_P7 work/il_S1_summaryleccalc/P7.bin  > /dev/null & pid7=$!
-summarycalc -f -1 fifo/il_S1_summary_P7  < fifo/il_P7 &
-
 tee < fifo/il_S1_summary_P8 work/il_S1_summaryleccalc/P8.bin  > /dev/null & pid8=$!
-summarycalc -f -1 fifo/il_S1_summary_P8  < fifo/il_P8 &
-
 tee < fifo/il_S1_summary_P9 work/il_S1_summaryleccalc/P9.bin  > /dev/null & pid9=$!
-summarycalc -f -1 fifo/il_S1_summary_P9  < fifo/il_P9 &
-
 tee < fifo/il_S1_summary_P10 work/il_S1_summaryleccalc/P10.bin  > /dev/null & pid10=$!
-summarycalc -f -1 fifo/il_S1_summary_P10  < fifo/il_P10 &
-
 tee < fifo/il_S1_summary_P11 work/il_S1_summaryleccalc/P11.bin  > /dev/null & pid11=$!
-summarycalc -f -1 fifo/il_S1_summary_P11  < fifo/il_P11 &
-
 tee < fifo/il_S1_summary_P12 work/il_S1_summaryleccalc/P12.bin  > /dev/null & pid12=$!
-summarycalc -f -1 fifo/il_S1_summary_P12  < fifo/il_P12 &
-
 tee < fifo/il_S1_summary_P13 work/il_S1_summaryleccalc/P13.bin  > /dev/null & pid13=$!
-summarycalc -f -1 fifo/il_S1_summary_P13  < fifo/il_P13 &
-
 tee < fifo/il_S1_summary_P14 work/il_S1_summaryleccalc/P14.bin  > /dev/null & pid14=$!
-summarycalc -f -1 fifo/il_S1_summary_P14  < fifo/il_P14 &
-
 tee < fifo/il_S1_summary_P15 work/il_S1_summaryleccalc/P15.bin  > /dev/null & pid15=$!
-summarycalc -f -1 fifo/il_S1_summary_P15  < fifo/il_P15 &
-
 tee < fifo/il_S1_summary_P16 work/il_S1_summaryleccalc/P16.bin  > /dev/null & pid16=$!
-summarycalc -f -1 fifo/il_S1_summary_P16  < fifo/il_P16 &
-
 tee < fifo/il_S1_summary_P17 work/il_S1_summaryleccalc/P17.bin  > /dev/null & pid17=$!
-summarycalc -f -1 fifo/il_S1_summary_P17  < fifo/il_P17 &
-
 tee < fifo/il_S1_summary_P18 work/il_S1_summaryleccalc/P18.bin  > /dev/null & pid18=$!
-summarycalc -f -1 fifo/il_S1_summary_P18  < fifo/il_P18 &
-
 tee < fifo/il_S1_summary_P19 work/il_S1_summaryleccalc/P19.bin  > /dev/null & pid19=$!
-summarycalc -f -1 fifo/il_S1_summary_P19  < fifo/il_P19 &
-
 tee < fifo/il_S1_summary_P20 work/il_S1_summaryleccalc/P20.bin  > /dev/null & pid20=$!
+summarycalc -f -1 fifo/il_S1_summary_P1  < fifo/il_P1 &
+summarycalc -f -1 fifo/il_S1_summary_P2  < fifo/il_P2 &
+summarycalc -f -1 fifo/il_S1_summary_P3  < fifo/il_P3 &
+summarycalc -f -1 fifo/il_S1_summary_P4  < fifo/il_P4 &
+summarycalc -f -1 fifo/il_S1_summary_P5  < fifo/il_P5 &
+summarycalc -f -1 fifo/il_S1_summary_P6  < fifo/il_P6 &
+summarycalc -f -1 fifo/il_S1_summary_P7  < fifo/il_P7 &
+summarycalc -f -1 fifo/il_S1_summary_P8  < fifo/il_P8 &
+summarycalc -f -1 fifo/il_S1_summary_P9  < fifo/il_P9 &
+summarycalc -f -1 fifo/il_S1_summary_P10  < fifo/il_P10 &
+summarycalc -f -1 fifo/il_S1_summary_P11  < fifo/il_P11 &
+summarycalc -f -1 fifo/il_S1_summary_P12  < fifo/il_P12 &
+summarycalc -f -1 fifo/il_S1_summary_P13  < fifo/il_P13 &
+summarycalc -f -1 fifo/il_S1_summary_P14  < fifo/il_P14 &
+summarycalc -f -1 fifo/il_S1_summary_P15  < fifo/il_P15 &
+summarycalc -f -1 fifo/il_S1_summary_P16  < fifo/il_P16 &
+summarycalc -f -1 fifo/il_S1_summary_P17  < fifo/il_P17 &
+summarycalc -f -1 fifo/il_S1_summary_P18  < fifo/il_P18 &
+summarycalc -f -1 fifo/il_S1_summary_P19  < fifo/il_P19 &
 summarycalc -f -1 fifo/il_S1_summary_P20  < fifo/il_P20 &
 
 # --- Do ground up loss  computes ---

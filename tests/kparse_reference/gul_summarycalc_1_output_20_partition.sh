@@ -1,4 +1,9 @@
 #!/bin/bash
+
+rm -R -f output/*
+rm -R -f fifo/*
+rm -R -f work/*
+
 mkfifo fifo/gul_P1
 
 mkfifo fifo/gul_S1_summary_P1
@@ -128,8 +133,6 @@ mkfifo fifo/gul_S1_summarycalc_P20
 
 kat fifo/gul_S1_summarycalc_P1 fifo/gul_S1_summarycalc_P2 fifo/gul_S1_summarycalc_P3 fifo/gul_S1_summarycalc_P4 fifo/gul_S1_summarycalc_P5 fifo/gul_S1_summarycalc_P6 fifo/gul_S1_summarycalc_P7 fifo/gul_S1_summarycalc_P8 fifo/gul_S1_summarycalc_P9 fifo/gul_S1_summarycalc_P10 fifo/gul_S1_summarycalc_P11 fifo/gul_S1_summarycalc_P12 fifo/gul_S1_summarycalc_P13 fifo/gul_S1_summarycalc_P14 fifo/gul_S1_summarycalc_P15 fifo/gul_S1_summarycalc_P16 fifo/gul_S1_summarycalc_P17 fifo/gul_S1_summarycalc_P18 fifo/gul_S1_summarycalc_P19 fifo/gul_S1_summarycalc_P20 > output/gul_S1_summarycalc.csv & pid1=$!
 
-sleep 2
-
 # --- Do insured loss computes ---
 
 
@@ -137,83 +140,83 @@ sleep 2
 
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P1 > fifo/gul_S1_summarycalc_P1 &
 
-tee < fifo/gul_S1_summary_P1 fifo/gul_S1_summarysummarycalc_P1  > /dev/null & pid2=$!
-summarycalc -g -1 fifo/gul_S1_summary_P1  < fifo/gul_P1 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P2 > fifo/gul_S1_summarycalc_P2 &
 
-tee < fifo/gul_S1_summary_P2 fifo/gul_S1_summarysummarycalc_P2  > /dev/null & pid3=$!
-summarycalc -g -1 fifo/gul_S1_summary_P2  < fifo/gul_P2 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P3 > fifo/gul_S1_summarycalc_P3 &
 
-tee < fifo/gul_S1_summary_P3 fifo/gul_S1_summarysummarycalc_P3  > /dev/null & pid4=$!
-summarycalc -g -1 fifo/gul_S1_summary_P3  < fifo/gul_P3 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P4 > fifo/gul_S1_summarycalc_P4 &
 
-tee < fifo/gul_S1_summary_P4 fifo/gul_S1_summarysummarycalc_P4  > /dev/null & pid5=$!
-summarycalc -g -1 fifo/gul_S1_summary_P4  < fifo/gul_P4 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P5 > fifo/gul_S1_summarycalc_P5 &
 
-tee < fifo/gul_S1_summary_P5 fifo/gul_S1_summarysummarycalc_P5  > /dev/null & pid6=$!
-summarycalc -g -1 fifo/gul_S1_summary_P5  < fifo/gul_P5 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P6 > fifo/gul_S1_summarycalc_P6 &
 
-tee < fifo/gul_S1_summary_P6 fifo/gul_S1_summarysummarycalc_P6  > /dev/null & pid7=$!
-summarycalc -g -1 fifo/gul_S1_summary_P6  < fifo/gul_P6 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P7 > fifo/gul_S1_summarycalc_P7 &
 
-tee < fifo/gul_S1_summary_P7 fifo/gul_S1_summarysummarycalc_P7  > /dev/null & pid8=$!
-summarycalc -g -1 fifo/gul_S1_summary_P7  < fifo/gul_P7 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P8 > fifo/gul_S1_summarycalc_P8 &
 
-tee < fifo/gul_S1_summary_P8 fifo/gul_S1_summarysummarycalc_P8  > /dev/null & pid9=$!
-summarycalc -g -1 fifo/gul_S1_summary_P8  < fifo/gul_P8 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P9 > fifo/gul_S1_summarycalc_P9 &
 
-tee < fifo/gul_S1_summary_P9 fifo/gul_S1_summarysummarycalc_P9  > /dev/null & pid10=$!
-summarycalc -g -1 fifo/gul_S1_summary_P9  < fifo/gul_P9 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P10 > fifo/gul_S1_summarycalc_P10 &
 
-tee < fifo/gul_S1_summary_P10 fifo/gul_S1_summarysummarycalc_P10  > /dev/null & pid11=$!
-summarycalc -g -1 fifo/gul_S1_summary_P10  < fifo/gul_P10 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P11 > fifo/gul_S1_summarycalc_P11 &
 
-tee < fifo/gul_S1_summary_P11 fifo/gul_S1_summarysummarycalc_P11  > /dev/null & pid12=$!
-summarycalc -g -1 fifo/gul_S1_summary_P11  < fifo/gul_P11 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P12 > fifo/gul_S1_summarycalc_P12 &
 
-tee < fifo/gul_S1_summary_P12 fifo/gul_S1_summarysummarycalc_P12  > /dev/null & pid13=$!
-summarycalc -g -1 fifo/gul_S1_summary_P12  < fifo/gul_P12 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P13 > fifo/gul_S1_summarycalc_P13 &
 
-tee < fifo/gul_S1_summary_P13 fifo/gul_S1_summarysummarycalc_P13  > /dev/null & pid14=$!
-summarycalc -g -1 fifo/gul_S1_summary_P13  < fifo/gul_P13 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P14 > fifo/gul_S1_summarycalc_P14 &
 
-tee < fifo/gul_S1_summary_P14 fifo/gul_S1_summarysummarycalc_P14  > /dev/null & pid15=$!
-summarycalc -g -1 fifo/gul_S1_summary_P14  < fifo/gul_P14 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P15 > fifo/gul_S1_summarycalc_P15 &
 
-tee < fifo/gul_S1_summary_P15 fifo/gul_S1_summarysummarycalc_P15  > /dev/null & pid16=$!
-summarycalc -g -1 fifo/gul_S1_summary_P15  < fifo/gul_P15 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P16 > fifo/gul_S1_summarycalc_P16 &
 
-tee < fifo/gul_S1_summary_P16 fifo/gul_S1_summarysummarycalc_P16  > /dev/null & pid17=$!
-summarycalc -g -1 fifo/gul_S1_summary_P16  < fifo/gul_P16 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P17 > fifo/gul_S1_summarycalc_P17 &
 
-tee < fifo/gul_S1_summary_P17 fifo/gul_S1_summarysummarycalc_P17  > /dev/null & pid18=$!
-summarycalc -g -1 fifo/gul_S1_summary_P17  < fifo/gul_P17 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P18 > fifo/gul_S1_summarycalc_P18 &
 
-tee < fifo/gul_S1_summary_P18 fifo/gul_S1_summarysummarycalc_P18  > /dev/null & pid19=$!
-summarycalc -g -1 fifo/gul_S1_summary_P18  < fifo/gul_P18 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P19 > fifo/gul_S1_summarycalc_P19 &
 
-tee < fifo/gul_S1_summary_P19 fifo/gul_S1_summarysummarycalc_P19  > /dev/null & pid20=$!
-summarycalc -g -1 fifo/gul_S1_summary_P19  < fifo/gul_P19 &
 summarycalctocsv < fifo/gul_S1_summarysummarycalc_P20 > fifo/gul_S1_summarycalc_P20 &
 
+tee < fifo/gul_S1_summary_P1 fifo/gul_S1_summarysummarycalc_P1  > /dev/null & pid2=$!
+tee < fifo/gul_S1_summary_P2 fifo/gul_S1_summarysummarycalc_P2  > /dev/null & pid3=$!
+tee < fifo/gul_S1_summary_P3 fifo/gul_S1_summarysummarycalc_P3  > /dev/null & pid4=$!
+tee < fifo/gul_S1_summary_P4 fifo/gul_S1_summarysummarycalc_P4  > /dev/null & pid5=$!
+tee < fifo/gul_S1_summary_P5 fifo/gul_S1_summarysummarycalc_P5  > /dev/null & pid6=$!
+tee < fifo/gul_S1_summary_P6 fifo/gul_S1_summarysummarycalc_P6  > /dev/null & pid7=$!
+tee < fifo/gul_S1_summary_P7 fifo/gul_S1_summarysummarycalc_P7  > /dev/null & pid8=$!
+tee < fifo/gul_S1_summary_P8 fifo/gul_S1_summarysummarycalc_P8  > /dev/null & pid9=$!
+tee < fifo/gul_S1_summary_P9 fifo/gul_S1_summarysummarycalc_P9  > /dev/null & pid10=$!
+tee < fifo/gul_S1_summary_P10 fifo/gul_S1_summarysummarycalc_P10  > /dev/null & pid11=$!
+tee < fifo/gul_S1_summary_P11 fifo/gul_S1_summarysummarycalc_P11  > /dev/null & pid12=$!
+tee < fifo/gul_S1_summary_P12 fifo/gul_S1_summarysummarycalc_P12  > /dev/null & pid13=$!
+tee < fifo/gul_S1_summary_P13 fifo/gul_S1_summarysummarycalc_P13  > /dev/null & pid14=$!
+tee < fifo/gul_S1_summary_P14 fifo/gul_S1_summarysummarycalc_P14  > /dev/null & pid15=$!
+tee < fifo/gul_S1_summary_P15 fifo/gul_S1_summarysummarycalc_P15  > /dev/null & pid16=$!
+tee < fifo/gul_S1_summary_P16 fifo/gul_S1_summarysummarycalc_P16  > /dev/null & pid17=$!
+tee < fifo/gul_S1_summary_P17 fifo/gul_S1_summarysummarycalc_P17  > /dev/null & pid18=$!
+tee < fifo/gul_S1_summary_P18 fifo/gul_S1_summarysummarycalc_P18  > /dev/null & pid19=$!
+tee < fifo/gul_S1_summary_P19 fifo/gul_S1_summarysummarycalc_P19  > /dev/null & pid20=$!
 tee < fifo/gul_S1_summary_P20 fifo/gul_S1_summarysummarycalc_P20  > /dev/null & pid21=$!
+summarycalc -g -1 fifo/gul_S1_summary_P1  < fifo/gul_P1 &
+summarycalc -g -1 fifo/gul_S1_summary_P2  < fifo/gul_P2 &
+summarycalc -g -1 fifo/gul_S1_summary_P3  < fifo/gul_P3 &
+summarycalc -g -1 fifo/gul_S1_summary_P4  < fifo/gul_P4 &
+summarycalc -g -1 fifo/gul_S1_summary_P5  < fifo/gul_P5 &
+summarycalc -g -1 fifo/gul_S1_summary_P6  < fifo/gul_P6 &
+summarycalc -g -1 fifo/gul_S1_summary_P7  < fifo/gul_P7 &
+summarycalc -g -1 fifo/gul_S1_summary_P8  < fifo/gul_P8 &
+summarycalc -g -1 fifo/gul_S1_summary_P9  < fifo/gul_P9 &
+summarycalc -g -1 fifo/gul_S1_summary_P10  < fifo/gul_P10 &
+summarycalc -g -1 fifo/gul_S1_summary_P11  < fifo/gul_P11 &
+summarycalc -g -1 fifo/gul_S1_summary_P12  < fifo/gul_P12 &
+summarycalc -g -1 fifo/gul_S1_summary_P13  < fifo/gul_P13 &
+summarycalc -g -1 fifo/gul_S1_summary_P14  < fifo/gul_P14 &
+summarycalc -g -1 fifo/gul_S1_summary_P15  < fifo/gul_P15 &
+summarycalc -g -1 fifo/gul_S1_summary_P16  < fifo/gul_P16 &
+summarycalc -g -1 fifo/gul_S1_summary_P17  < fifo/gul_P17 &
+summarycalc -g -1 fifo/gul_S1_summary_P18  < fifo/gul_P18 &
+summarycalc -g -1 fifo/gul_S1_summary_P19  < fifo/gul_P19 &
 summarycalc -g -1 fifo/gul_S1_summary_P20  < fifo/gul_P20 &
 
 eve 1 20 | getmodel | gulcalc -S100 -L100 -r -c - > fifo/gul_P1  &

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+rm -R -f output/*
+rm -R -f fifo/*
+rm -R -f work/*
+
+
 mkfifo fifo/il_P1
 
 mkfifo fifo/il_S1_summary_P1
@@ -23,14 +28,12 @@ kat fifo/il_S1_summarycalc_P1 > output/il_S1_summarycalc.csv & pid3=$!
 # --- Do ground up loss kats ---
 
 
-sleep 2
-
 # --- Do insured loss computes ---
 
 eltcalc < fifo/il_S1_summaryeltcalc_P1 > fifo/il_S1_eltcalc_P1 &
 summarycalctocsv < fifo/il_S1_summarysummarycalc_P1 > fifo/il_S1_summarycalc_P1 &
 pltcalc < fifo/il_S1_summarypltcalc_P1 > fifo/il_S1_pltcalc_P1 &
-aalcalc < fifo/il_S1_summaryaalcalc_P1 > work/il_S1_aalcalc/P1.bin & pid1=$!
+aalcalc < fifo/il_S1_summaryaalcalc_P1 > work/il_S1_aalcalc/P1.bin & pid4=$!
 
 tee < fifo/il_S1_summary_P1 fifo/il_S1_summaryeltcalc_P1 fifo/il_S1_summarypltcalc_P1 fifo/il_S1_summarysummarycalc_P1 fifo/il_S1_summaryaalcalc_P1 work/il_S1_summaryleccalc/P1.bin  > /dev/null & pid5=$!
 summarycalc -f -1 fifo/il_S1_summary_P1  < fifo/il_P1 &
