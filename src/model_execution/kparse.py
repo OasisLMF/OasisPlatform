@@ -288,20 +288,20 @@ def do_any(runtype, analysis_settings, process_id):
 def do_il(analysis_settings, max_process_id):
     for process_id in range(1, max_process_id + 1):
         do_any("il", analysis_settings, process_id)
-    print_command("sleep 3")
+    
     for process_id in range(1, max_process_id + 1):
         do_tees("il", analysis_settings, process_id)
-    print_command("sleep 1")
+    
     for process_id in range(1, max_process_id + 1):
         do_summarycalcs("il", analysis_settings, process_id)
 
 def do_gul(analysis_settings, max_process_id):
     for process_id in range(1, max_process_id + 1):
         do_any("gul", analysis_settings, process_id)
-    print_command("sleep 3")
+
     for process_id in range(1, max_process_id + 1):
         do_tees("gul", analysis_settings, process_id)
-    print_command("sleep 1")
+    
     for process_id in range(1, max_process_id + 1):
         do_summarycalcs("gul", analysis_settings, process_id)
 
@@ -435,12 +435,7 @@ def genbash(
     print_command("")
     if gul_output:
         gul_anykats = do_kats("gul", analysis_settings, max_process_id, True)
-
-    print_command("")
-    # Sleep to let kats initialize
-    if il_anykats or gul_anykats:
-        print_command("sleep 2")
-
+    
     print_command("")
     print_command("# --- Do insured loss computes ---")
     print_command("")
