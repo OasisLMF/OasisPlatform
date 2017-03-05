@@ -1,0 +1,3 @@
+*.sh linguist-language=python
+* text=auto
+*.py diff=python
