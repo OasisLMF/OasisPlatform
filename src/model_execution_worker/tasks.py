@@ -182,7 +182,7 @@ def start_analysis(analysis_settings, input_location):
             model_data_events_filepath = os.path.join(
                 working_directory, 'static', 'events_{}.bin'.format(event_set))
         logging.info("Using event file: {}".format(model_data_events_filepath))
-        if not os.path.exists(analysis_events_filepath):
+        if not os.path.exists(model_data_events_filepath):
             raise Exception(
                 "Could not find events data file: {}".format(model_data_events_filepath))
         shutil.copyfile(model_data_events_filepath, analysis_events_filepath)
