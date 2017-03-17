@@ -4,7 +4,6 @@ import json
 import os
 import shutil
 import tarfile
-import time
 import sys
 
 from celery import Celery
@@ -73,11 +72,14 @@ def start_analysis_task(self, input_location, analysis_settings_json):
 
     return output_location
 
-
 def get_current_module_directory():
     ''' Get the directory of the current module.'''
     return os.path.dirname(
         os.path.abspath(inspect.getfile(inspect.currentframe())))
+
+def format_setting_for_file(setting):
+    ''' Format a setting for selecting a data file '''
+    return setting.replace(' ', '_').lower()
 
 @oasis_log_utils.oasis_log()
 def start_analysis(analysis_settings, input_location):
@@ -168,9 +170,21 @@ def start_analysis(analysis_settings, input_location):
     # If an events file has not been included in the analysis input,
     # then use the default file with all events from the model data.
     analysis_events_filepath = os.path.join(working_directory, 'input', 'events.bin')
-    model_data_events_filepath = os.path.join(working_directory, 'static', 'events.bin')
     if not os.path.exists(analysis_events_filepath):
         logging.info("Using default events.bin")
+        event_set = analysis_settings['analysis_settings']["model_settings"].get("event_set")
+        if event_set is None:
+            model_data_events_filepath = os.path.join(
+                working_directory, 'static', 'events.bin')
+        else:
+            # Format for data file names
+            event_set = format_setting_for_file(event_set)
+            model_data_events_filepath = os.path.join(
+                working_directory, 'static', 'events_{}.bin'.format(event_set))
+        logging.info("Using event file: {}".format(model_data_events_filepath))
+        if not os.path.exists(analysis_events_filepath):
+            raise Exception(
+                "Could not find events data file: {}".format(model_data_events_filepath))
         shutil.copyfile(model_data_events_filepath, analysis_events_filepath)
 
     # If a return periods file has not been included in the analysis input,
@@ -191,10 +205,14 @@ def start_analysis(analysis_settings, input_location):
         model_data_occurrence_filepath = os.path.join(
             working_directory, 'static', 'occurrence.bin')
     else:
+        occurrence_id = format_setting_for_file(occurrence_id)
         model_data_occurrence_filepath = os.path.join(
             working_directory, 'static', 'occurrence{}.bin'.format(occurrence_id))
+    if not os.path.exists(analysis_events_filepath):
+        raise Exception(
+            "Could not find occurrence data file: {}".format(model_data_occurrence_filepath))
     shutil.copyfile(model_data_occurrence_filepath, analysis_occurrence_filepath)
-    
+
     model_runner_module = __import__(
         "{}.{}".format(module_supplier_id, "supplier_model_runner"),
         globals(),
