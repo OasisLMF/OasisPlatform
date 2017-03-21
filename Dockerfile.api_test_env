@@ -1,4 +1,4 @@
-FROM ktools
+FROM coreoasis/ktools:R_0_0_0_1
 
 RUN mkdir /var/log/oasis
 
