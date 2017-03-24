@@ -1,11 +1,12 @@
 import inspect
 import logging
+import fasteners
 import json
 import os
 import shutil
 import tarfile
 import sys
-
+import supplier_model_runner
 from celery import Celery
 from celery.task import task
 from ConfigParser import ConfigParser
@@ -28,10 +29,12 @@ OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'OUTPUTS_DATA_DIRECTORY')
 MODEL_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'MODEL_DATA_DIRECTORY')
 WORKING_DIRECTORY = CONFIG_PARSER.get('Default', 'WORKING_DIRECTORY')
 
-WORKING_DIRECTORY = CONFIG_PARSER.get('Default', 'WORKING_DIRECTORY')
-
-KTOOLS_BATCH_COUNT = int(os.environ.get("KTOOLS_BATCH_COUNT")) or -1
-IS_WINDOWS_HOST = bool(os.environ.get("IS_WINDOWS_HOST")) or False
+KTOOLS_BATCH_COUNT = int(os.environ.get("KTOOLS_BATCH_COUNT") or -1)
+IS_WINDOWS_HOST = bool(os.environ.get("IS_WINDOWS_HOST") or False)
+MODEL_SUPPLIER_ID = os.environ.get("MODEL_SUPPLIER_ID")
+MODEL_VERSION_ID = os.environ.get("MODEL_VERSION_ID")
+LOCK_FILE = os.environ.get("LOCK_FILE") or '/tmp/tmp_lock_file'
+LOCK_TIMEOUT_IN_SECS = os.environ.get("LOCK_TIMEOUT_IN_SECS") or 30 * 60
 
 ARCHIVE_FILE_SUFFIX = '.tar'
 
@@ -54,8 +57,16 @@ def start_analysis_task(self, input_location, analysis_settings_json):
     Returns:
         (string) The location of the outputs.
     '''
-    try:
 
+    a_lock = fasteners.InterProcessLock(LOCK_FILE)
+    gotten = a_lock.acquire(blocking=False, timeout=LOCK_TIMEOUT_IN_SECS)
+    if not gotten:
+        logging.info("Failed to get resource lock - retry task")
+        retry_countdown_in_secs=10
+        raise self.retry(countdown=retry_countdown_in_secs)
+    logging.info("Acquired resource lock")
+
+    try:
         logging.info("INPUTS_DATA_DIRECTORY: {}".format(INPUTS_DATA_DIRECTORY))
         logging.info("OUTPUTS_DATA_DIRECTORY: {}".format(OUTPUTS_DATA_DIRECTORY))
         logging.info("MODEL_DATA_DIRECTORY: {}".format(MODEL_DATA_DIRECTORY))
@@ -66,9 +77,9 @@ def start_analysis_task(self, input_location, analysis_settings_json):
         output_location = start_analysis(
             analysis_settings_json[0],
             input_location)
-    except Exception as e:
+    except Exception as exc:
         logging.exception("Model execution task failed.")
-        raise e
+        raise exc
 
     return output_location
 
@@ -123,23 +134,24 @@ def start_analysis(analysis_settings, input_location):
         "Source tag = {}; Analysis tag: {}".format(
             analysis_tag, source_tag))
 
-    module_supplier_id = \
+    MODULE_SUPPLIER_ID = \
         analysis_settings['analysis_settings']['module_supplier_id']
-    model_version_id = \
+    MODEL_VERSION_ID = \
         analysis_settings['analysis_settings']['model_version_id']
     logging.info(
         "Model supplier - version = {} {}".format(
-            module_supplier_id, model_version_id))
+            MODULE_SUPPLIER_ID, MODEL_VERSION_ID))
 
     # Get the supplier module and call it
-    if not os.path.exists(os.path.join(
+    use_default_model_runner = True
+    if os.path.exists(os.path.join(
             get_current_module_directory(),
-            module_supplier_id)):
-        raise Exception("Supplier module not found.")
+            MODULE_SUPPLIER_ID)):
+        use_default_model_runner = False
     model_data_path = \
         os.path.join(MODEL_DATA_DIRECTORY,
-                     module_supplier_id,
-                     model_version_id)
+                     MODULE_SUPPLIER_ID,
+                     MODEL_VERSION_ID)
     if not os.path.exists(model_data_path):
         raise Exception("Model data not found: {}".format(model_data_path))
 
@@ -213,13 +225,6 @@ def start_analysis(analysis_settings, input_location):
             "Could not find occurrence data file: {}".format(model_data_occurrence_filepath))
     shutil.copyfile(model_data_occurrence_filepath, analysis_occurrence_filepath)
 
-    model_runner_module = __import__(
-        "{}.{}".format(module_supplier_id, "supplier_model_runner"),
-        globals(),
-        locals(),
-        ['run'],
-        -1)
-
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
 
@@ -227,6 +232,15 @@ def start_analysis(analysis_settings, input_location):
     with open("analysis_settings.json", "w") as json_file:
         json.dump(analysis_settings, json_file)
 
+    if use_default_model_runner:
+        model_runner_module = supplier_model_runner
+    else:
+        model_runner_module = __import__(
+            "{}.{}".format(MODULE_SUPPLIER_ID, "supplier_model_runner"),
+            globals(),
+            locals(),
+            ['run'],
+            -1)
     model_runner_module.run(
         analysis_settings['analysis_settings'], KTOOLS_BATCH_COUNT)
 

@@ -292,7 +292,17 @@ def post_analysis(input_location):
         if not validate_analysis_settings(analysis_settings):
             response = Response(status_code=oasis_utils.HTTP_RESPONSE_BAD_REQUEST)
         else:
-            result = CELERY.send_task("run_analysis", (input_location, [analysis_settings]))
+            module_supplier_id = \
+                analysis_settings['analysis_settings']['module_supplier_id']
+            model_version_id = \
+                analysis_settings['analysis_settings']['model_version_id']
+            logging.info(
+                "Model supplier - version = {} {}".format(
+                    module_supplier_id, model_version_id))
+            result = CELERY.send_task(
+                "run_analysis",
+                (input_location, [analysis_settings]),
+                queue="{}-{}".format(module_supplier_id, model_version_id))
             task_id = result.task_id
             response = jsonify({'location': task_id})
     except:
@@ -327,7 +337,6 @@ def _get_analysis_status(location):
             message="",
             outputs_location=None)
     return analysis_status
-
 
 @APP.route('/analysis_status/<location>', methods=["GET"])
 @oasis_log_utils.oasis_log()
