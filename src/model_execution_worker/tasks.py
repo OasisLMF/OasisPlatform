@@ -35,6 +35,7 @@ MODEL_SUPPLIER_ID = os.environ.get("MODEL_SUPPLIER_ID")
 MODEL_VERSION_ID = os.environ.get("MODEL_VERSION_ID")
 LOCK_FILE = os.environ.get("LOCK_FILE") or '/tmp/tmp_lock_file'
 LOCK_TIMEOUT_IN_SECS = os.environ.get("LOCK_TIMEOUT_IN_SECS") or 30 * 60
+DO_CLEAR_WORKING = bool(os.environ.get("DO_CLEAR_WORKING") or False)
 
 ARCHIVE_FILE_SUFFIX = '.tar'
 
@@ -251,6 +252,9 @@ def start_analysis(analysis_settings, input_location):
         tar.add(output_directory, arcname="output")
 
     os.chdir(WORKING_DIRECTORY)
+
+    if DO_CLEAR_WORKING:
+        shutil.rmtree(working_directory, ignore_errors=True)
 
     logging.info("Output location = {}".format(output_location))
 
