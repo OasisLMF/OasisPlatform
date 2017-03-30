@@ -1,4 +1,9 @@
+"""
+    Code to generate bash script for execution from json
+"""
 from oasis_utils import oasis_log_utils
+
+#pylint: disable=I0011,C0111,C0103,C0301,W0603
 
 pid_monitor_count = 0
 apid_monitor_count = 0
@@ -7,7 +12,6 @@ command_file = ""
 
 
 def print_command(cmd):
-    global command_file
     with open(command_file, "a") as myfile:
         myfile.writelines(cmd + "\n")
 
@@ -40,8 +44,7 @@ def do_post_wait_processing(runtype, analysis_settings):
                         return_period_option = ""
                         if summary["leccalc"]["return_period_file"]:
                             return_period_option = "-r"
-                        cmd = "leccalc {0} -K{1}_S{2}_summaryleccalc".format(
-                                return_period_option, runtype, summary_set)
+                        cmd = "leccalc {0} -K{1}_S{2}_summaryleccalc".format(return_period_option, runtype, summary_set)
                         lpid_monitor_count = lpid_monitor_count + 1
                         for option in summary["leccalc"]["outputs"]:
                             switch = ""
@@ -62,11 +65,8 @@ def do_post_wait_processing(runtype, analysis_settings):
                                     switch = "-M"
                                 if option == "wheatsheaf_mean_oep":
                                     switch = "-m"
-                                cmd = cmd + " {0} output/{1}_S{2}_leccalc_{3}.csv".format(
-                                        switch, runtype, summary_set, option)
-                        cmd = cmd + "  &  lpid{3}=$!".format(
-                                runtype, summary_set, option,
-                                lpid_monitor_count, return_period_option)
+                                cmd = cmd + " {0} output/{1}_S{2}_leccalc_{3}.csv".format(switch, runtype, summary_set, option)
+                        cmd = cmd + "  &  lpid{0}=$!".format(lpid_monitor_count)
                         print_command(cmd)
 
 
@@ -125,10 +125,8 @@ def create_workfolders(runtype, analysis_settings):
                     print_command(
                         "mkdir work/{0}_S{1}_summaryleccalc".format(
                             runtype, summary_set))
-            if summary.get("aalcalc") == True:
-                print_command(
-                    "mkdir work/{0}_S{1}_aalcalc".format(
-                    runtype,summary_set))
+            if summary.get("aalcalc") is True:
+                print_command("mkdir work/{0}_S{1}_aalcalc".format(runtype, summary_set))
 
 
 def remove_workfolders(runtype, analysis_settings):
@@ -161,7 +159,7 @@ def do_remove_fifos(runtype, analysis_settings, process_id):
     do_fifos("rm", runtype, analysis_settings, process_id)
 
 
-def do_kats(runtype, analysis_settings, max_process_id, background):
+def do_kats(runtype, analysis_settings, max_process_id):
     global pid_monitor_count
     anykats = False
     if "{0}_summaries".format(runtype) not in analysis_settings:
@@ -205,7 +203,6 @@ def do_kats(runtype, analysis_settings, max_process_id, background):
 
 
 def do_summarycalcs(runtype, analysis_settings, process_id):
-    global pid_monitor_count
     summarycalc_switch = "-g"
     if runtype == "il":
         summarycalc_switch = "-f"
@@ -263,18 +260,26 @@ def do_any(runtype, analysis_settings, process_id):
         if "id" in summary:
             summary_set = summary["id"]
             if summary.get("eltcalc"):
+                cmd = "eltcalc -s"
+                if process_id == 1:
+                    cmd = "eltcalc"
                 print_command(
-                    "eltcalc < fifo/{0}_S{1}_summaryeltcalc_P{2} > fifo/{0}_S{1}_eltcalc_P{2} &".format(
-                        runtype, summary_set, process_id))
+                    "{3} < fifo/{0}_S{1}_summaryeltcalc_P{2} > fifo/{0}_S{1}_eltcalc_P{2} &".format(
+                        runtype, summary_set, process_id, cmd))
             if summary.get("summarycalc"):
+                cmd = "summarycalctocsv -s"
+                if process_id == 1:
+                    cmd = "summarycalctocsv"
                 print_command(
-                    "summarycalctocsv < " +
-                    "fifo/{0}_S{1}_summarysummarycalc_P{2} > fifo/{0}_S{1}_summarycalc_P{2} &".format(
-                        runtype, summary_set, process_id))
+                    "{3} < fifo/{0}_S{1}_summarysummarycalc_P{2} > fifo/{0}_S{1}_summarycalc_P{2} &".format(
+                        runtype, summary_set, process_id, cmd))
             if summary.get("pltcalc"):
+                cmd = "pltcalc -s"
+                if process_id == 1:
+                    cmd = "pltcalc"
                 print_command(
-                    "pltcalc < fifo/{0}_S{1}_summarypltcalc_P{2} > fifo/{0}_S{1}_pltcalc_P{2} &".format(
-                        runtype, summary_set, process_id))
+                    "{3} < fifo/{0}_S{1}_summarypltcalc_P{2} > fifo/{0}_S{1}_pltcalc_P{2} &".format(
+                        runtype, summary_set, process_id, cmd))
             if summary.get("aalcalc"):
                 pid_monitor_count = pid_monitor_count + 1
                 print_command(
@@ -283,15 +288,14 @@ def do_any(runtype, analysis_settings, process_id):
 
         print_command("")
 
-    
 
 def do_il(analysis_settings, max_process_id):
     for process_id in range(1, max_process_id + 1):
         do_any("il", analysis_settings, process_id)
-    
+
     for process_id in range(1, max_process_id + 1):
         do_tees("il", analysis_settings, process_id)
-    
+
     for process_id in range(1, max_process_id + 1):
         do_summarycalcs("il", analysis_settings, process_id)
 
@@ -301,7 +305,7 @@ def do_gul(analysis_settings, max_process_id):
 
     for process_id in range(1, max_process_id + 1):
         do_tees("gul", analysis_settings, process_id)
-    
+
     for process_id in range(1, max_process_id + 1):
         do_summarycalcs("gul", analysis_settings, process_id)
 
@@ -347,13 +351,12 @@ def do_lwaits():
 
 
 def get_getmodel_cmd(
-        process_id, max_process_id,
-        number_of_samples, gul_threshold, 
+        process_id_, max_process_id,
+        number_of_samples, gul_threshold,
         use_random_number_file,
         coverage_output, item_output):
-
-    cmd = "getmodel | gulcalc -S{0} -L{1}".format(
-            number_of_samples, gul_threshold)
+    #pylint: disable=I0011, W0613
+    cmd = "getmodel | gulcalc -S{0} -L{1}".format(number_of_samples, gul_threshold)
 
     if use_random_number_file:
         cmd = cmd + " -r"
@@ -368,7 +371,7 @@ def get_getmodel_cmd(
 def genbash(
         max_process_id, analysis_settings, output_filename,
         get_getmodel_cmd=get_getmodel_cmd):
-
+    #pylint: disable=I0011, W0621
     global pid_monitor_count
     pid_monitor_count = 0
     global apid_monitor_count
@@ -420,22 +423,19 @@ def genbash(
         do_il_make_fifo(analysis_settings, max_process_id)
         create_workfolders("il", analysis_settings)
 
-    il_anykats = False
-    gul_anykats = False
-
     print_command("")
     print_command("# --- Do insured loss kats ---")
     print_command("")
     if il_output:
-        il_anykats = do_kats("il", analysis_settings, max_process_id, True)
+        do_kats("il", analysis_settings, max_process_id)
 
 
     print_command("")
     print_command("# --- Do ground up loss kats ---")
     print_command("")
     if gul_output:
-        gul_anykats = do_kats("gul", analysis_settings, max_process_id, True)
-    
+        do_kats("gul", analysis_settings, max_process_id)
+
     print_command("")
     print_command("# --- Do insured loss computes ---")
     print_command("")
@@ -450,7 +450,7 @@ def genbash(
 
     print_command("")
 
-    for process_id in range(1, max_process_id + 1):        
+    for process_id in range(1, max_process_id + 1):
         if gul_output and il_output:
             getmodel_cmd = get_getmodel_cmd(
                 process_id, max_process_id,
@@ -461,7 +461,6 @@ def genbash(
                 "eve {0} {1} | {2} | fmcalc > fifo/il_P{0}  &".format(
                     process_id, max_process_id, getmodel_cmd))
 
-            pass
         else:
             #  Now the mainprocessing
             if gul_output:
@@ -477,7 +476,7 @@ def genbash(
                             process_id, max_process_id, getmodel_cmd))
 
             if il_output:
-                if "il_summaries" in analysis_settings:                    
+                if "il_summaries" in analysis_settings:
                     getmodel_cmd = get_getmodel_cmd(
                         process_id, max_process_id,
                         number_of_samples, gul_threshold,
