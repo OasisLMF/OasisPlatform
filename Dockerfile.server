@@ -1,4 +1,4 @@
-FROM coreoasis/oasis_base:R_0_0_0_8
+FROM coreoasis/oasis_base:R_0_0_0_10
 
 RUN apt-get install -y \
 	apache2 \
