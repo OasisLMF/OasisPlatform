@@ -18,7 +18,7 @@
 #
 import os
 import sys
-cwd = os.path.dirname(__file__)
+cwd = os.getcwd()
 sys.path.insert(0, os.path.abspath(cwd))
 sys.path.insert(0, os.path.abspath(os.path.join(cwd, '..')))
 sys.path.insert(0, os.path.abspath(os.path.join(cwd, '..', 'src')))
