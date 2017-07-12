@@ -28,6 +28,6 @@ Note that ktools must be installed and the ktools docker image available. To cre
 
 To run the API client tester, run the following commands.
 ~~~
-pip install -r src/cleint/requirements.py
+pip install -r src/client/requirements.py
 python tests/ApiTester.py --url http://127.0.0.1:8001
 ~~~
