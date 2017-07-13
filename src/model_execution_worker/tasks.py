@@ -222,9 +222,10 @@ def start_analysis(analysis_settings, input_location):
         model_data_occurrence_filepath = os.path.join(
             working_directory, 'static', 'occurrence{}.bin'.format(occurrence_id))
     if not os.path.exists(analysis_events_filepath):
-        raise Exception(
+        logging.info(
             "Could not find occurrence data file: {}".format(model_data_occurrence_filepath))
-    shutil.copyfile(model_data_occurrence_filepath, analysis_occurrence_filepath)
+    else:
+        shutil.copyfile(model_data_occurrence_filepath, analysis_occurrence_filepath)
 
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
