@@ -1,16 +1,20 @@
+# Python 2 standard imports
 import csv
 import inspect
 import jsonpickle
-import os
-import subprocess
 import logging
-import tarfile
-import time
+import os
 import requests
 import shutilwhich
-from oasis_utils import oasis_utils
+import subprocess
+import tarfile
+import time
+
+# Python 3rd party imports
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
+# Oasis imports
+from oasis_utils import oasis_utils
 
 class OasisApiClient(object):
     '''
