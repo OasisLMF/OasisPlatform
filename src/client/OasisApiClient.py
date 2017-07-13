@@ -1,16 +1,17 @@
 # Python 2 standard imports
 import csv
 import inspect
-import jsonpickle
 import logging
 import os
-import requests
-import shutilwhich
 import subprocess
 import tarfile
 import time
 
 # Python 3rd party imports
+import jsonpickle
+import requests
+import shutilwhich
+
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 # Oasis imports
