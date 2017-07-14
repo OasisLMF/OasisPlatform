@@ -1,15 +1,18 @@
-import json
-import os
-import inspect
-import sys
-import shutil
-import uuid
-import logging
+# Python 2 standard library imports
 import argparse
+import inspect
+import json
+import logging
+import os
+import shutil
+import sys
 import threading
-CURRENT_DIRECTORY = \
-    os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+import uuid
+
+CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
+
+# Oasis Api import
 from client import OasisApiClient
 
 '''
