@@ -1,5 +1,7 @@
 FROM coreoasis/ktools:R_0_0_0_1
 
+RUN unixodbc-dev
+
 RUN mkdir /var/log/oasis
 
 RUN useradd -ms /bin/bash api
