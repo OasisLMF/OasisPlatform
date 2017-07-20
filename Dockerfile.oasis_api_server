@@ -1,4 +1,4 @@
-FROM coreoasis/oasis_base:R_0_0_0_14
+FROM coreoasis/oasis_base:R_0_0_0_17
 
 RUN apt-get install -y \
 	apache2 \
@@ -34,6 +34,8 @@ RUN pip install -r ./requirements.txt
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 EXPOSE 80
+
+USER oasis
 
 ENTRYPOINT \
 	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /var/www/oasis/common/CeleryConfig.py && \
