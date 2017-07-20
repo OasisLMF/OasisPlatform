@@ -1,6 +1,6 @@
 FROM coreoasis/ktools:R_0_0_0_1
 
-RUN unixodbc-dev
+RUN apt-get install unixodbc-dev
 
 RUN mkdir /var/log/oasis
 
