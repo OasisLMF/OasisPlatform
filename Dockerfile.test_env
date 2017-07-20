@@ -1,7 +1,7 @@
 FROM coreoasis/ktools:R_0_0_0_1
 
 RUN apt-get update
-RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev python-flask
+RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev python-flask unixodbc-dev
 RUN apt-get install -y vim iputils-ping gdb
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
