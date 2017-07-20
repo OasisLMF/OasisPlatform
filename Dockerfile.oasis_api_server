@@ -36,8 +36,6 @@ RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 EXPOSE 80
 
-USER oasis
-
 ENTRYPOINT \
 	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /var/www/oasis/common/CeleryConfig.py && \
 	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /var/www/oasis/common/CeleryConfig.py && \
