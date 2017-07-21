@@ -1,8 +1,11 @@
 FROM ktools
 
-RUN apt-get install -y libmysqlclient-dev
+RUN apt-get install -y libmysqlclient-dev unixodbc-dev
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
+RUN pip install -r /tmp/requirements.txt
+
+COPY ./src/oasis_utils/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
 RUN mkdir /var/log/oasis
