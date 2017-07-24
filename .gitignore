@@ -84,6 +84,11 @@ celerybeat-schedule
 venv/
 ENV/
 
+# Archived and compressed files
+.tar
+.gz
+.zip
+
 # Spyder project settings
 .spyderproject
 
