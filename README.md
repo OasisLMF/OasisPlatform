@@ -14,6 +14,8 @@ You may receive a password prompt - to bypass the password prompt use
 
     git clone --recursive https://<GitHub user name:GitHub password>@github.com/OasisLMF/OasisApi.git
 
+The `--recursive` option ensures the cloned repository contains the necessary Oasis repositories <a href="https://github.com/OasisLMF/oasis_utils" target="_blank">`oasis_utils`</a> as Git submodules.
+
 ## Running with Docker
 
 Create images: 
