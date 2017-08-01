@@ -94,9 +94,3 @@ ENV/
 
 # Rope project settings
 .ropeproject
-
-# Test data
-tests/data/download
-tests/data/output
-tests/data/static
-upload/
