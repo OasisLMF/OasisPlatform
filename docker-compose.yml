@@ -11,6 +11,9 @@ services:
    links:
      - mysql:mysql
      - rabbit:rabbit
+   environment:
+     - RABBIT_PORT=5672
+     - MYSQL_PORT=3306
    volumes:
 #     - ./log:/var/log/oasis:rw
      - ./upload:/var/www/oasis/upload:rw
@@ -20,6 +23,11 @@ services:
     links:
      - mysql:mysql
      - rabbit:myrabbit
+    environment:
+     - MODEL_SUPPLIER_ID=OasisIM
+     - MODEL_VERSION_ID=1
+     - RABBIT_PORT=5672
+     - MYSQL_PORT=3306
     volumes:
 #     - ./log:/var/log/oasis:rw
      - ./upload:/var/oasis/upload:rw

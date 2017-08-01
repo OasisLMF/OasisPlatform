@@ -1,8 +1,8 @@
 FROM coreoasis/oasis_base:R_0_0_0_17
 
 RUN apt update && \
-    apt-get upgrade -y && \
-    apt-get install -y \
+    apt upgrade -y && \
+    apt install -y \
 		apache2 \
 		apache2-utils \
 		libapache2-mod-wsgi \
