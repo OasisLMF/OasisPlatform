@@ -1,5 +1,5 @@
 """
-Oasis API application endpoints.
+Oasis API server application endpoints.
 """
 
 import os

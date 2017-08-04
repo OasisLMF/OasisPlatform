@@ -60,10 +60,8 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
+# Sphinx documentation - ignore build folder
 _build
-_static
-_templates
 
 # PyBuilder
 target/
