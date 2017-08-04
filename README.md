@@ -40,6 +40,28 @@ You can also update the submodules individually by pulling from within them.
 
 Unless you've been given read access to this repository on GitHub (via an OasisLMF organizational team) you should not make any local changes to these submodules because you have read-only access to their GitHub repositories. So submodule changes can only propagate from GitHub to your local repository. To detect these changes you can run `git status -uno` and to commit them you can add the paths and commit them in the normal way.
 
+## Sphinx docs
+
+This repository is enabled with <a href="https://pypi.python.org/pypi/Sphinx" target="_blank">Sphinx</a> documentation for the Python modules, and the documentation is published to <a href="https://oasislmf.github.io/Flamingo/" target="_blank">https://oasislmf.github.io/OasisApi/</a> manually using the procedure described below. (Note: GitHub pages is not enabled for this repository because it contains the private repository <a href="https://github.com/OasisLMF/oasis_utils" target="_blank">`oasis_utils`</a> as a Git submodule, which is incompatible with GitHub pages.)
+
+Firstly, to work on the Sphinx docs for this package you must have Sphinx installed on your system or in your `virtualenv` environment (recommended).
+
+You should also clone the Oasis publication repository <a href="https://github.com/OasisLMF/OasisLMF.github.io" target="_blank">OasisLMF.github.io</a>.
+
+The Sphinx documentation source files are reStructuredText files, and are contained in the `docs` subfolder, which also contains the Sphinx configuration file `conf.py` and the `Makefile` for the build. To do a new build make sure you are in the `docs` subfolder and run
+
+    make html
+
+You should see a new set of HTML files and assets in the `_build/html` subfolder (the build directory can be changed to `docs` itself in the `Makefile` but that is not recommended). The `docs` subfolder should always contain the latest copy of the built HTML and assets so first copy the files from `_build/html` to `docs` using
+
+    cp -R _build/html/* .
+
+Add and commit these files to the repository. Then copy the files to the Oasis documentation publication repository  folder using
+
+    cp -R _build/html/* /path/to/your/OasisLMF.github.io/Flamingo/
+
+Add and commit the new files in the publication repository, and GitHub pages will automatically  publish the new documents to the documentation site https://oasislmf.github.io/Flamingo/.
+
 ## Running with Docker
 
 First make sure that the ktools binaries are installed (see <a href="https://github.com/OasisLMF/ktools" target="_blank">ktools</a> GitHub repository for instructions) and the ktools docker image is available (from `coreoasis/ktools` on Docker Hub, or build locally from the ktools repository). Also ensure that API runner image has been built (from `Dockerfile.api_runner`).
