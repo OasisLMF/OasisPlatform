@@ -5,7 +5,7 @@ Introduction
 First steps
 -----------
 
-First make sure that the ktools binaries are installed (see ktools
+First make sure that the ktools binaries are installed (see the `ktools <https://github.com/OasisLMF/ktools>`_
 GitHub repository for instructions) and the ktools docker image is
 available (from ``coreoasis/ktools`` on Docker Hub, or build locally
 from the ktools repository). Also ensure that API runner image has been

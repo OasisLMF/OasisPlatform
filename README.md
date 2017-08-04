@@ -2,7 +2,7 @@
 
 ## Cloning the repository
 
-You can clone this repository using HTTPS or SSH, but it is recommended that that you use SSH: first ensure that you have generated an SSH key pair on your local machine and add the public key of that pair to your GitHub account (use the GitHub guide at https://help.github.com/articles/connecting-to-github-with-ssh/). Then run
+You can clone this repository from <a href="https://github.com/OasisLMF/OasisApi" target="_blank">GitHub</a> using HTTPS or SSH, but it is recommended that that you use SSH: first ensure that you have generated an SSH key pair on your local machine and add the public key of that pair to your GitHub account (use the GitHub guide at https://help.github.com/articles/connecting-to-github-with-ssh/). Then run
 
     git clone --recursive git+ssh://git@github.com/OasisLMF/OasisApi
 
@@ -42,7 +42,7 @@ Unless you've been given read access to this repository on GitHub (via an OasisL
 
 ## Sphinx docs
 
-This repository is enabled with <a href="https://pypi.python.org/pypi/Sphinx" target="_blank">Sphinx</a> documentation for the Python modules, and the documentation is published to <a href="https://oasislmf.github.io/Flamingo/" target="_blank">https://oasislmf.github.io/OasisApi/</a> manually using the procedure described below. (Note: GitHub pages is not enabled for this repository because it contains the private repository <a href="https://github.com/OasisLMF/oasis_utils" target="_blank">`oasis_utils`</a> as a Git submodule, which is incompatible with GitHub pages.)
+This repository is enabled with <a href="https://pypi.python.org/pypi/Sphinx" target="_blank">Sphinx</a> documentation for the Python modules, and the documentation is published to <a href="https://oasislmf.github.io/OasisLMF/OasisApi" target="_blank">https://oasislmf.github.io/OasisApi/</a> manually using the procedure described below. (Note: GitHub pages is not enabled for this repository because it contains the private repository <a href="https://github.com/OasisLMF/oasis_utils" target="_blank">`oasis_utils`</a> as a Git submodule, which is incompatible with GitHub pages.)
 
 Firstly, to work on the Sphinx docs for this package you must have Sphinx installed on your system or in your `virtualenv` environment (recommended).
 
@@ -56,7 +56,7 @@ You should see a new set of HTML files and assets in the `_build/html` subfolder
 
     cp -R _build/html/* .
 
-Add and commit these files to the repository. Then copy the files to the Oasis documentation publication repository  folder using
+Add and commit these files to the repository. Then copy the files to the Oasis API docs static subfolder in the publication repository
 
     cp -R _build/html/* /path/to/your/OasisLMF.github.io/OasisApi/
 

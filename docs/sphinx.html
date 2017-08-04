@@ -45,17 +45,16 @@
 <h1>Sphinx docs<a class="headerlink" href="#sphinx-docs" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="setting-up-sphinx">
 <h2>Setting up Sphinx<a class="headerlink" href="#setting-up-sphinx" title="Permalink to this headline">¶</a></h2>
-<p>This repository is enabled with Sphinx documentation for the Python
+<p>This repository is enabled with <a class="reference external" href="https://pypi.python.org/pypi/Sphinx">Sphinx</a> documentation for the Python
 modules, and the documentation is published to
 <a class="reference external" href="https://oasislmf.github.io/OasisApi/">https://oasislmf.github.io/OasisApi/</a> manually using the procedure
 described below. (Note: GitHub pages is not enabled for this repository
-because it contains the private repository <code class="docutils literal"><span class="pre">oasis_utils</span></code> as a Git
+because it contains the private repository <a class="reference external" href="https://github.com/OasisLMF/oasis_utils">oasis_utils</a> as a Git
 submodule, which is incompatible with GitHub pages.)</p>
 <p>Firstly, to work on the Sphinx docs for this package you must have
 Sphinx installed on your system or in your <code class="docutils literal"><span class="pre">virtualenv</span></code> environment
 (recommended).</p>
-<p>You should also clone the Oasis publication repository
-OasisLMF.github.io.</p>
+<p>You should also clone the <a class="reference external" href="https://github.com/OasisLMF/OasisLMF.github.io">Oasis publication repository</a>.</p>
 </div>
 <div class="section" id="building-and-publishing">
 <h2>Building and publishing<a class="headerlink" href="#building-and-publishing" title="Permalink to this headline">¶</a></h2>
@@ -74,8 +73,7 @@ copy the files from <code class="docutils literal"><span class="pre">_build/html
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">-</span><span class="n">R</span> <span class="n">_build</span><span class="o">/</span><span class="n">html</span><span class="o">/*</span> <span class="o">.</span>
 </pre></div>
 </div>
-<p>Add and commit these files to the repository. Then copy the files to the
-Oasis documentation publication repository folder using</p>
+<p>Add and commit these files to the repository. Then copy the files to the Oasis API docs static subfolder in the publication repository using</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">-</span><span class="n">R</span> <span class="n">_build</span><span class="o">/</span><span class="n">html</span><span class="o">/*</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">your</span><span class="o">/</span><span class="n">OasisLMF</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">OasisApi</span><span class="o">/</span>
 </pre></div>
 </div>

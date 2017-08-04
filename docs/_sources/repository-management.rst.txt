@@ -5,7 +5,7 @@ Repository management
 Cloning the repository
 ----------------------
 
-You can clone this repository using HTTPS or SSH, but it is recommended
+You can clone this repository from `GitHub <https://github.com/OasisLMF/OasisApi>`_ using HTTPS or SSH, but it is recommended
 that that you use SSH: first ensure that you have generated an SSH key
 pair on your local machine and add the public key of that pair to your
 GitHub account (use the GitHub guide at
@@ -29,7 +29,7 @@ You may receive a password prompt - to bypass the password prompt use
     git clone --recursive https://<GitHub user name:GitHub password>@github.com/OasisLMF/OasisApi
 
 The ``--recursive`` option ensures the cloned repository contains the
-necessary Oasis repositories \ ``oasis_utils``\  as Git submodules.
+necessary Oasis repositories `oasis_utils <https://github.com/OasisLMF/oasis_utils>`_  as Git submodules.
 
 Managing the submodules
 -----------------------
