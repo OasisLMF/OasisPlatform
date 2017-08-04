@@ -12,7 +12,7 @@ COPY ./data/ /home/api/data/
 COPY ./src/ /home/api/src/
 COPY ./run_api_test_analysis.sh /home/api/
 
-RUN pip install -r /home/api/src/client/requirements.txt
+RUN pip install -r /home/api/src/oasisapi_client/requirements.txt
 RUN pip install -r /home/api/src/oasis_utils/requirements.txt
 
 RUN chmod -R a+w /home/api/tests
