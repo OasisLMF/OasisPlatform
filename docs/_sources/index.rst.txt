@@ -13,6 +13,7 @@ Oasis API provides a restful interface for performing model operations - it cons
    :caption: Documentation contents:
 
    repository-management
+   sphinx
    introduction
    modules
 

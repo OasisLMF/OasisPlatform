@@ -24,7 +24,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Introduction" href="introduction.html" />
+    <link rel="next" title="Sphinx docs" href="sphinx.html" />
     <link rel="prev" title="Oasis API" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -100,38 +100,6 @@ your local repository. To detect these changes you can run
 <code class="docutils literal"><span class="pre">git</span> <span class="pre">status</span> <span class="pre">-uno</span></code> and to commit them you can add the paths and commit
 them in the normal way.</p>
 </div>
-<div class="section" id="sphinx-docs">
-<h2>Sphinx docs<a class="headerlink" href="#sphinx-docs" title="Permalink to this headline">¶</a></h2>
-<p>This repository is enabled with Sphinx documentation for the Python
-modules, and the documentation is published to
-<a class="reference external" href="https://oasislmf.github.io/OasisApi/">https://oasislmf.github.io/OasisApi/</a> manually using the procedure
-described below. (Note: GitHub pages is not enabled for this repository
-because it contains <code class="docutils literal"><span class="pre">oasis_utils</span></code> as a private repository, which
-is incompatible with GitHub pages.)</p>
-<p>Firstly, to work on the Sphinx docs for this package you must have
-Sphinx installed on your system or in your <code class="docutils literal"><span class="pre">virtualenv</span></code> environment
-(recommended).</p>
-<p>You should also clone the Oasis publication repository
-OasisLMF.github.io.</p>
-<p>The Sphinx documentation source files are reStructuredText files, and
-are contained in the <code class="docutils literal"><span class="pre">docs</span></code> subfolder, which also contains the Sphinx
-configuration file <code class="docutils literal"><span class="pre">conf.py</span></code> and the <code class="docutils literal"><span class="pre">Makefile</span></code> for the build. To do
-a new build run</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">html</span>
-</pre></div>
-</div>
-<p>in the <code class="docutils literal"><span class="pre">docs</span></code> folder. You should see a new set of HTML files and
-assets in the <code class="docutils literal"><span class="pre">_build/html</span></code> subfolder (the build directory can be
-changed to <code class="docutils literal"><span class="pre">docs</span></code> itself in the <code class="docutils literal"><span class="pre">Makefile</span></code> but that is not
-recommended). Now copy the files to the Oasis documentation publication
-repository folder using</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">-</span><span class="n">R</span> <span class="n">_build</span><span class="o">/</span><span class="n">html</span><span class="o">/*</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">your</span><span class="o">/</span><span class="n">OasisLMF</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">OasisApi</span><span class="o">/</span>
-</pre></div>
-</div>
-<p>Add and <code class="docutils literal"><span class="pre">git</span></code> commit the new files in the publication repository, and
-GitHub pages will automatically publish the new documents to the
-documentation site <a class="reference external" href="https://oasislmf.github.io/OasisApi/">https://oasislmf.github.io/OasisApi/</a>.</p>
-</div>
 </div>
 
 
@@ -155,9 +123,9 @@ documentation site <a class="reference external" href="https://oasislmf.github.i
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Repository management</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#cloning-the-repository">Cloning the repository</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#managing-the-submodules">Managing the submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#sphinx-docs">Sphinx docs</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx.html">Sphinx docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Module documentation</a></li>
 </ul>
@@ -167,7 +135,7 @@ documentation site <a class="reference external" href="https://oasislmf.github.i
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="index.html" title="previous chapter">Oasis API</a></li>
-      <li>Next: <a href="introduction.html" title="next chapter">Introduction</a></li>
+      <li>Next: <a href="sphinx.html" title="next chapter">Sphinx docs</a></li>
   </ul></li>
 </ul>
 </div>
