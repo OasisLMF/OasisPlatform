@@ -18,7 +18,7 @@ sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
 from client import OasisApiClient
 
 '''
-Test utility for running an ara analysis using the Oasis API.
+Test utility for running a model analysis using the Oasis API.
 '''
 
 parser = argparse.ArgumentParser(description='Test the Oasis API client.')

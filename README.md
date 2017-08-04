@@ -58,9 +58,9 @@ You should see a new set of HTML files and assets in the `_build/html` subfolder
 
 Add and commit these files to the repository. Then copy the files to the Oasis documentation publication repository  folder using
 
-    cp -R _build/html/* /path/to/your/OasisLMF.github.io/Flamingo/
+    cp -R _build/html/* /path/to/your/OasisLMF.github.io/OasisApi/
 
-Add and commit the new files in the publication repository, and GitHub pages will automatically  publish the new documents to the documentation site https://oasislmf.github.io/Flamingo/.
+Add and commit the new files in the publication repository, and GitHub pages will automatically  publish the new documents to the documentation site https://oasislmf.github.io/OasisApi/.
 
 ## Running with Docker
 
