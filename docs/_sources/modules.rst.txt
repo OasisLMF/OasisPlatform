@@ -15,4 +15,3 @@ Module documentation
 .. automodule:: client.OasisApiClient
    :members:
    :undoc-members:
-
