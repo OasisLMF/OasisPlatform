@@ -1,6 +1,6 @@
 [submodule "src/oasis_utils"]
 	path = src/oasis_utils
-	url = git@github.com:OasisLMF/oasis_utils.git
+	url = git+ssh://git@github.com/OasisLMF/oasis_utils
 [submodule "src/oasisapi_client"]
 	path = src/oasisapi_client
 	url = git+ssh://git@github.com/OasisLMF/OasisAPIClient

@@ -82,9 +82,12 @@ celerybeat-schedule
 venv/
 ENV/
 
-# Archived and compressed files
-.tar
+# Common archived and compressed file formats
+.bz
+.bz2
 .gz
+.tar.gz
+.tar
 .zip
 
 # Spyder project settings

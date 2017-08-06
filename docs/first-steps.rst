@@ -36,24 +36,29 @@ Check that the server is running:
 for Flower, the celery management application, browse to
 http://localhost:5555.)
 
-Calling the server
+Calling the Server
 ------------------
 
 The API server provides a REST interface which is described here. You
 can use any suitable command line client such as ``curl`` or
 `httpie <www.httpie.org>`_  to make individual API calls, but a custom Python client
-may be a better option - for this you can use the `OasisAPIClient <https://github.com/OasisLMF/OasisAPIClient>`_
-repository.
+may be a better option - for this you can use the `OasisAPIClient repository <https://github.com/OasisLMF/OasisAPIClient>`_.
 
-To run the example API client tester (located in ``src/utils``; for a
-generic Oasis model) first install the Oasis API client requirements
+Oasis provides a built-in client ``model_api_tester.py`` (located in
+``src/oasisapi_client``) which is an executable multi-threaded script
+that can generate model analyses given the locations of the model inputs
+and analysis settings JSON file (see the `OasisAPIClient repository <https://github.com/OasisLMF/OasisAPIClient>`_
+or `OasisAPIClient documentation site <https://oasislmf.github.io/OasisAPIClient/>`_ for more
+information). First install the Oasis API client requirements
 
 ::
 
     pip install -r src/oasisapi_client/requirements.py
 
-and then call the tester using
+As an example, you can run analyses for a generic Oasis model provided
+in this repository (model data and analysis settings JSON file are
+located in the ``tests/data`` subfolder) using
 
 ::
 
-    python ./src/utils/api_tester.py -i localhost:8001 -a tests/data/analysis_settings.json -d tests/data/input -o tests/data/output -n 1 -v
+    python ./src/oasisapi_client/model_api_tester.py -s <API server URL:port> -a tests/data/analysis_settings.json -i tests/data/input -o tests/data/output -n 1 -v
