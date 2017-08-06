@@ -5,7 +5,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Repository management &#8212; Oasis API 0.1 documentation</title>
+    <title>Repository Management &#8212; Oasis API 0.1 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -24,8 +24,8 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Sphinx docs" href="sphinx.html" />
-    <link rel="prev" title="Oasis API" href="index.html" />
+    <link rel="next" title="Sphinx Docs" href="sphinx.html" />
+    <link rel="prev" title="OasisApi" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -42,13 +42,13 @@
           <div class="body" role="main">
             
   <div class="section" id="repository-management">
-<h1>Repository management<a class="headerlink" href="#repository-management" title="Permalink to this headline">¶</a></h1>
+<h1>Repository Management<a class="headerlink" href="#repository-management" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="cloning-the-repository">
 <h2>Cloning the repository<a class="headerlink" href="#cloning-the-repository" title="Permalink to this headline">¶</a></h2>
-<p>You can clone this repository from <a class="reference external" href="https://github.com/OasisLMF/OasisApi">GitHub</a> using HTTPS or SSH, but it is recommended
-that that you use SSH: first ensure that you have generated an SSH key
-pair on your local machine and add the public key of that pair to your
-GitHub account (use the GitHub guide at
+<p>You can clone this repository from <a class="reference external" href="https://github.com/OasisLMF/OasisApi">GitHub</a> using HTTPS or SSH, but it is
+recommended that that you use SSH: first ensure that you have generated
+an SSH key pair on your local machine and add the public key of that
+pair to your GitHub account (use the GitHub guide at
 <a class="reference external" href="https://help.github.com/articles/connecting-to-github-with-ssh/">https://help.github.com/articles/connecting-to-github-with-ssh/</a>). Then
 run</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">recursive</span> <span class="n">git</span><span class="o">+</span><span class="n">ssh</span><span class="p">:</span><span class="o">//</span><span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">OasisLMF</span><span class="o">/</span><span class="n">OasisApi</span>
@@ -63,7 +63,8 @@ run</p>
 </pre></div>
 </div>
 <p>The <code class="docutils literal"><span class="pre">--recursive</span></code> option ensures the cloned repository contains the
-necessary Oasis repositories <a class="reference external" href="https://github.com/OasisLMF/oasis_utils">oasis_utils</a>  as Git submodules.</p>
+necessary Oasis repositories <a class="reference external" href="https://github.com/OasisLMF/oasis_utils">oasis_utils</a>  and
+<a class="reference external" href="https://github.com/OasisLMF/OasisAPIClient">OasisAPIClient</a>  as Git submodules.</p>
 </div>
 <div class="section" id="managing-the-submodules">
 <h2>Managing the submodules<a class="headerlink" href="#managing-the-submodules" title="Permalink to this headline">¶</a></h2>
@@ -82,7 +83,7 @@ not what you want. You should run the command</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">submodule</span> <span class="n">foreach</span> <span class="s1">&#39;git checkout master&#39;</span>
 </pre></div>
 </div>
-<p>to ensure that the Oasis submodules are checked out on the <code class="docutils literal"><span class="pre">master</span></code>
+<p>to ensure that the submodules are checked out on the <code class="docutils literal"><span class="pre">master</span></code>
 branches.</p>
 <p>If you’ve already cloned the repository and wish to update the
 submodules (all at once) in your working directory from their GitHub
@@ -120,13 +121,13 @@ them in the normal way.</p>
 <h3>Navigation</h3>
 <p class="caption"><span class="caption-text">Documentation contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Repository management</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Repository Management</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#cloning-the-repository">Cloning the repository</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#managing-the-submodules">Managing the submodules</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="sphinx.html">Sphinx docs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx.html">Sphinx Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First Steps</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Module documentation</a></li>
 </ul>
 
@@ -134,8 +135,8 @@ them in the normal way.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Oasis API</a></li>
-      <li>Next: <a href="sphinx.html" title="next chapter">Sphinx docs</a></li>
+      <li>Previous: <a href="index.html" title="previous chapter"><code class="docutils literal"><span class="pre">OasisApi</span></code></a></li>
+      <li>Next: <a href="sphinx.html" title="next chapter">Sphinx Docs</a></li>
   </ul></li>
 </ul>
 </div>
