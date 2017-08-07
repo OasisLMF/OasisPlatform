@@ -5,7 +5,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Sphinx docs &#8212; Oasis API 0.1 documentation</title>
+    <title>Sphinx Docs &#8212; Oasis API 0.1 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -24,8 +24,8 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Introduction" href="introduction.html" />
-    <link rel="prev" title="Repository management" href="repository-management.html" />
+    <link rel="next" title="First Steps" href="first-steps.html" />
+    <link rel="prev" title="Repository Management" href="repository-management.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -42,19 +42,20 @@
           <div class="body" role="main">
             
   <div class="section" id="sphinx-docs">
-<h1>Sphinx docs<a class="headerlink" href="#sphinx-docs" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="setting-up-sphinx">
-<h2>Setting up Sphinx<a class="headerlink" href="#setting-up-sphinx" title="Permalink to this headline">¶</a></h2>
-<p>This repository is enabled with <a class="reference external" href="https://pypi.python.org/pypi/Sphinx">Sphinx</a> documentation for the Python
+<h1>Sphinx Docs<a class="headerlink" href="#sphinx-docs" title="Permalink to this headline">¶</a></h1>
+<p>This repository is enabled with Sphinx documentation for the Python
 modules, and the documentation is published to
 <a class="reference external" href="https://oasislmf.github.io/OasisApi/">https://oasislmf.github.io/OasisApi/</a> manually using the procedure
 described below. (Note: GitHub pages is not enabled for this repository
-because it contains the private repository <a class="reference external" href="https://github.com/OasisLMF/oasis_utils">oasis_utils</a> as a Git
+because it contains the private repositories <a class="reference external" href="https://github.com/OasisLMF/oasis_utils">oasis_utils</a> and <a class="reference external" href="https://github.com/OasisLMF/OasisAPIClient">OasisAPIClient</a>  as a Git
 submodule, which is incompatible with GitHub pages.)</p>
+<div class="section" id="setting-up-sphinx">
+<h2>Setting up Sphinx<a class="headerlink" href="#setting-up-sphinx" title="Permalink to this headline">¶</a></h2>
 <p>Firstly, to work on the Sphinx docs for this package you must have
-Sphinx installed on your system or in your <code class="docutils literal"><span class="pre">virtualenv</span></code> environment
-(recommended).</p>
-<p>You should also clone the <a class="reference external" href="https://github.com/OasisLMF/OasisLMF.github.io">Oasis publication repository</a>.</p>
+<a class="reference external" href="https://pypi.python.org/pypi/Sphinx">Sphinx</a> installed on your system or in your virtual environment
+(<cite>virtualenv</cite> is recommended).</p>
+<p>You should also clone the Oasis publication repository
+<a class="reference external" href="https://github.com/OasisLMF/OasisLMF.github.io">OasisLMF.github.io</a>.</p>
 </div>
 <div class="section" id="building-and-publishing">
 <h2>Building and publishing<a class="headerlink" href="#building-and-publishing" title="Permalink to this headline">¶</a></h2>
@@ -73,13 +74,16 @@ copy the files from <code class="docutils literal"><span class="pre">_build/html
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">-</span><span class="n">R</span> <span class="n">_build</span><span class="o">/</span><span class="n">html</span><span class="o">/*</span> <span class="o">.</span>
 </pre></div>
 </div>
-<p>Add and commit these files to the repository. Then copy the files to the Oasis API docs static subfolder in the publication repository using</p>
+<p>Add and commit these files to the local repository, and then update the
+remote repository on GitHub. Then copy the same files to the Oasis API
+server docs static subfolder in the publication repository</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">-</span><span class="n">R</span> <span class="n">_build</span><span class="o">/</span><span class="n">html</span><span class="o">/*</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">your</span><span class="o">/</span><span class="n">OasisLMF</span><span class="o">.</span><span class="n">github</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">OasisApi</span><span class="o">/</span>
 </pre></div>
 </div>
-<p>Add and commit the new files in the publication repository, and GitHub
-pages will automatically publish the new documents to the documentation
-site <a class="reference external" href="https://oasislmf.github.io/OasisApi/">https://oasislmf.github.io/OasisApi/</a>.</p>
+<p>Add and commit the new files in the publication repository, and then
+update the remote repository on GitHub - GitHub pages will automatically
+publish the new documents to the documentation site
+<a class="reference external" href="https://oasislmf.github.io/OasisApi/">https://oasislmf.github.io/OasisApi/</a>.</p>
 </div>
 </div>
 
@@ -101,22 +105,22 @@ site <a class="reference external" href="https://oasislmf.github.io/OasisApi/">h
 <h3>Navigation</h3>
 <p class="caption"><span class="caption-text">Documentation contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="repository-management.html">Repository management</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Sphinx docs</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="repository-management.html">Repository Management</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Sphinx Docs</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#setting-up-sphinx">Setting up Sphinx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#building-and-publishing">Building and publishing</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">Module documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First Steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Documentation</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="repository-management.html" title="previous chapter">Repository management</a></li>
-      <li>Next: <a href="introduction.html" title="next chapter">Introduction</a></li>
+      <li>Previous: <a href="repository-management.html" title="previous chapter">Repository Management</a></li>
+      <li>Next: <a href="first-steps.html" title="next chapter">First Steps</a></li>
   </ul></li>
 </ul>
 </div>
