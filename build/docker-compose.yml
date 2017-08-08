@@ -14,6 +14,9 @@ services:
    volumes:
      - ./upload:/var/www/oasis/upload:rw
      - ./download:/var/www/oasis/download:rw
+   environment:
+    - RABBIT_PORT=5672
+    - MYSQL_PORT=3306
   worker:
     image: coreoasis/model_execution_worker:RELEASE_TAG
     links:
@@ -22,6 +25,9 @@ services:
     volumes:
      - ./upload:/var/oasis/upload:rw
      - ./download:/var/oasis/download:rw
+    environment:
+    - RABBIT_PORT=5672
+    - MYSQL_PORT=3306
   rabbit:
     image: rabbitmq:3-management
     ports:
