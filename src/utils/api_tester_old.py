@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # Python 2 standard library imports
 import argparse
 import inspect
@@ -13,10 +15,10 @@ CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.curr
 sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
 
 # Oasis Api import
-from client import OasisApiClient
+from oasisapi_client import OasisAPIClient
 
 '''
-Test utility for running an ara analysis using the Oasis API.
+Test utility for running a model analysis using the Oasis API.
 '''
 
 parser = argparse.ArgumentParser(description='Test the Oasis API client.')
@@ -48,16 +50,14 @@ input_data_directory = args.input_data_directory
 output_data_directory = args.output_data_directory
 do_verbose = args.verbose
 
-api_url = 'http://{0}'.format(api_ip)
+api_url = 'http://{}'.format(api_ip)
 
 if not os.path.exists(input_data_directory):
-    print "Input data directory does not exist: {}".format(
-        analysis_settings_json_filepath)
+    print("Input data directory does not exist: {}".format(analysis_settings_json_filepath))
     exit()
 
 if not os.path.exists(analysis_settings_json_filepath):
-    print "Analysis settings file does not exist: {}".format(
-        analysis_settings_json_filepath)
+    print("Analysis settings file does not exist: {}".format(analysis_settings_json_filepath))
     exit()
 
 if not os.path.exists(output_data_directory):
@@ -104,7 +104,7 @@ def run_analysis(c):
             os.path.join(input_data_directory, "csv"),
             upload_directory)
 
-        client = OasisApiClient.OasisApiClient(api_url, logging.getLogger())
+        client = OasisAPIClient(api_url, logging.getLogger())
         input_location = client.upload_inputs_from_directory(
             upload_directory, do_il, do_validation=False)
         client.run_analysis(
@@ -128,5 +128,4 @@ for t in analysis_threads:
 for t in analysis_threads:
     t.join()
 
-print "Done. Num completed={}; Num failed={}".format(
-    c.num_completed, c.num_failed)
+print("Done. Num completed={}; Num failed={}".format(c.num_completed, c.num_failed))

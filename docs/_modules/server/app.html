@@ -1,0 +1,685 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>server.app &#8212; Oasis API 0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for server.app</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Oasis API server application endpoints.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">tarfile</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">ConfigParser</span> <span class="k">import</span> <span class="n">ConfigParser</span>
+<span class="kn">from</span> <span class="nn">celery</span> <span class="k">import</span> <span class="n">Celery</span>
+<span class="kn">from</span> <span class="nn">common</span> <span class="k">import</span> <span class="n">data</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="k">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span>
+<span class="kn">from</span> <span class="nn">flask_swagger</span> <span class="k">import</span> <span class="n">swagger</span>
+<span class="kn">from</span> <span class="nn">flask.helpers</span> <span class="k">import</span> <span class="n">send_from_directory</span>
+<span class="kn">from</span> <span class="nn">oasis_utils</span> <span class="k">import</span> <span class="n">oasis_utils</span><span class="p">,</span> <span class="n">oasis_log_utils</span>
+
+<span class="n">APP</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">CONFIG_PARSER</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">()</span>
+<span class="n">CURRENT_DIRECTORY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">())))</span>
+<span class="n">INI_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CURRENT_DIRECTORY</span><span class="p">,</span> <span class="s1">&#39;OasisApi.ini&#39;</span><span class="p">))</span>
+<span class="n">CONFIG_PARSER</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">INI_PATH</span><span class="p">)</span>
+<span class="n">oasis_log_utils</span><span class="o">.</span><span class="n">read_log_config</span><span class="p">(</span><span class="n">CONFIG_PARSER</span><span class="p">)</span>
+
+<span class="n">INPUTS_DATA_DIRECTORY</span> <span class="o">=</span> <span class="n">CONFIG_PARSER</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Default&#39;</span><span class="p">,</span> <span class="s1">&#39;INPUTS_DATA_DIRECTORY&#39;</span><span class="p">)</span>
+<span class="n">OUTPUTS_DATA_DIRECTORY</span> <span class="o">=</span> <span class="n">CONFIG_PARSER</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Default&#39;</span><span class="p">,</span> <span class="s1">&#39;OUTPUTS_DATA_DIRECTORY&#39;</span><span class="p">)</span>
+
+<span class="n">TAR_FILE_SUFFIX</span> <span class="o">=</span> <span class="s1">&#39;.tar&#39;</span>
+<span class="n">GZIP_FILE_SUFFIX</span> <span class="o">=</span> <span class="s1">&#39;.gz&#39;</span>
+
+<span class="n">CELERY</span> <span class="o">=</span> <span class="n">Celery</span><span class="p">()</span>
+<span class="n">CELERY</span><span class="o">.</span><span class="n">config_from_object</span><span class="p">(</span><span class="s1">&#39;common.CeleryConfig&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_exposure_summary"><a class="viewcode-back" href="../../modules.html#server.app.get_exposure_summary">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/exposure_summary&#39;</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GET&quot;</span><span class="p">])</span>
+<span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/exposure_summary/&lt;location&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GET&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">get_exposure_summary</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get exposure summary</span>
+<span class="sd">    ---</span>
+<span class="sd">    definitions:</span>
+<span class="sd">     schema:</span>
+<span class="sd">        id: ExposureSummary</span>
+<span class="sd">        properties:</span>
+<span class="sd">            location:</span>
+<span class="sd">                type: string</span>
+<span class="sd">                description: The location of the exposure data.</span>
+<span class="sd">            size:</span>
+<span class="sd">                type: integer</span>
+<span class="sd">                description: The size of the uncompressed exposure data in bytes.</span>
+<span class="sd">            created_date:</span>
+<span class="sd">                type: string</span>
+<span class="sd">                format: dateTime</span>
+<span class="sd">                description: The date when the exposure data was uploaded.</span>
+<span class="sd">    description: Gets a summary of a exposure resources and their contents.</span>
+<span class="sd">                 If location parameter is not supplied returns a summary of </span>
+<span class="sd">                 all exposures.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: A list of exposure summaries.</span>
+<span class="sd">            schema:</span>
+<span class="sd">                type: array</span>
+<span class="sd">                items:</span>
+<span class="sd">                    $ref: &quot;#/definitions/ExposureSummary&quot;</span>
+<span class="sd">        404:</span>
+
+<span class="sd">            description: Resource not found</span>
+<span class="sd">    parameters:</span>
+<span class="sd">    - name: location</span>
+<span class="sd">      in: path</span>
+<span class="sd">      description: The location of the exposure resource to summarise.</span>
+<span class="sd">      required: true</span>
+<span class="sd">      type: string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">oasis_log_utils</span><span class="o">.</span><span class="n">read_log_config</span><span class="p">(</span><span class="n">CONFIG_PARSER</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Location: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">location</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">exposure_summaries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">):</span>
+                <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">TAR_FILE_SUFFIX</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">size_in_bytes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+                <span class="n">created_date</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+                <span class="n">exposure_summaries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">ExposureSummary</span><span class="p">(</span>
+                        <span class="n">location</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">TAR_FILE_SUFFIX</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                        <span class="n">size</span><span class="o">=</span><span class="n">size_in_bytes</span><span class="p">,</span>
+                        <span class="n">created_date</span><span class="o">=</span><span class="n">created_date</span><span class="p">))</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">jsonify</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;exposures&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">exposure_summary</span><span class="o">.</span><span class="vm">__dict__</span> <span class="k">for</span> <span class="n">exposure_summary</span> <span class="ow">in</span> <span class="n">exposure_summaries</span><span class="p">]})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">location</span><span class="p">)</span> <span class="o">+</span> <span class="n">TAR_FILE_SUFFIX</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_RESOURCE_NOT_FOUND</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">size_in_bytes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+                <span class="n">created_date</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+                <span class="n">exposure_summary</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">ExposureSummary</span><span class="p">(</span>
+                    <span class="n">location</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">TAR_FILE_SUFFIX</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="n">size</span><span class="o">=</span><span class="n">size_in_bytes</span><span class="p">,</span>
+                    <span class="n">created_date</span><span class="o">=</span><span class="n">created_date</span><span class="p">)</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;exposures&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">exposure_summary</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">]})</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Exposures: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to get exposure summary&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="get_exposure"><a class="viewcode-back" href="../../modules.html#server.app.get_exposure">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/exposure/&lt;location&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GET&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">get_exposure</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get an exposure resource</span>
+<span class="sd">    ---</span>
+<span class="sd">    description: Returns an exposure resource.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: A compressed tar file containing the Oasis exposure files.</span>
+<span class="sd">        404:</span>
+<span class="sd">            description: Resource not found</span>
+<span class="sd">    parameters:</span>
+<span class="sd">    - name: location</span>
+<span class="sd">      in: path</span>
+<span class="sd">      description: The location of the exposure resource.</span>
+<span class="sd">      required: true</span>
+<span class="sd">      type: string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Location: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">location</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_BAD_REQUEST</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">location</span><span class="p">)</span> <span class="o">+</span> <span class="n">TAR_FILE_SUFFIX</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_RESOURCE_NOT_FOUND</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">send_from_directory</span><span class="p">(</span>
+                    <span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">location</span> <span class="o">+</span> <span class="n">TAR_FILE_SUFFIX</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to get exposure&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="post_exposure"><a class="viewcode-back" href="../../modules.html#server.app.post_exposure">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/exposure&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;POST&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">post_exposure</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Upload an exposure resource</span>
+<span class="sd">    ---</span>
+<span class="sd">    description: Uploads an exposure resource by posting an exposure tar file.</span>
+<span class="sd">                 The tar file can be compressed or uncompressed.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: The exposure summary of the created exposure resource.</span>
+<span class="sd">            schema:</span>
+<span class="sd">                $ref: &#39;#/definitions/ExposureSummary&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;Content-Type&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="n">content_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">]</span>
+
+        <span class="c1"># is_gzipped = False</span>
+
+        <span class="k">if</span> <span class="s1">&#39;Content-Encoding&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="n">content_encoding</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-Encoding&#39;</span><span class="p">]</span>
+            <span class="n">is_gzipped</span> <span class="o">=</span> <span class="p">(</span><span class="n">content_encoding</span> <span class="o">==</span> <span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+
+        <span class="n">request_file</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">generate_unique_filename</span><span class="p">()</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="o">+</span> <span class="n">TAR_FILE_SUFFIX</span>
+        <span class="n">request_file</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+
+        <span class="c1"># If zipped, extract the tar file</span>
+        <span class="c1">#if is_gzipped:</span>
+
+        <span class="c1"># Check the content, and if invalid delete</span>
+
+        <span class="n">size_in_bytes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">created_date</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">ctime</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+
+        <span class="n">exposure</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;location&quot;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">size_in_bytes</span><span class="p">,</span>
+            <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">created_date</span>
+        <span class="p">}</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;exposures&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">exposure</span><span class="p">]})</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to post exposure&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="delete_exposure"><a class="viewcode-back" href="../../modules.html#server.app.delete_exposure">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/exposure&#39;</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">])</span>
+<span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/exposure/&lt;location&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">delete_exposure</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Delete an exposure resource</span>
+<span class="sd">    ---</span>
+<span class="sd">    description: Deletes an exposure resource. If no location is given all exposure resources will be deleted.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: OK</span>
+<span class="sd">        404:</span>
+<span class="sd">            description: Resource not found</span>
+<span class="sd">    parameters:</span>
+<span class="sd">    - name: location</span>
+<span class="sd">      in: path</span>
+<span class="sd">      description: location of exposure resource to delete.</span>
+<span class="sd">      required: true</span>
+<span class="sd">      type: string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Location: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">location</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">):</span>
+                <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">TAR_FILE_SUFFIX</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_OK</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">location</span><span class="p">)</span> <span class="o">+</span> <span class="n">TAR_FILE_SUFFIX</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">INPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_RESOURCE_NOT_FOUND</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_OK</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to delete exposure&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="post_analysis"><a class="viewcode-back" href="../../modules.html#server.app.post_analysis">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/analysis/&lt;input_location&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;POST&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">post_analysis</span><span class="p">(</span><span class="n">input_location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Start an analysis</span>
+<span class="sd">    ---</span>
+<span class="sd">    description: Starts an analysis by creating an analysis status resource.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: The analysis status resource for the new analysis.</span>
+<span class="sd">            schema:</span>
+<span class="sd">                $ref: &#39;#/definitions/AnalysisStatus&#39;</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    parameters:</span>
+<span class="sd">    -   name: input_location</span>
+<span class="sd">        in: path</span>
+<span class="sd">        description: The location of the input resource to analyse.</span>
+<span class="sd">        required: true</span>
+<span class="sd">        type: string</span>
+<span class="sd">    - name: analysis_settings</span>
+<span class="sd">      in: formData</span>
+<span class="sd">      description: The analysis settings</span>
+<span class="sd">      required: true</span>
+<span class="sd">      type: file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">analysis_settings</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">validate_analysis_settings</span><span class="p">(</span><span class="n">analysis_settings</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_BAD_REQUEST</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">module_supplier_id</span> <span class="o">=</span> \
+                <span class="n">analysis_settings</span><span class="p">[</span><span class="s1">&#39;analysis_settings&#39;</span><span class="p">][</span><span class="s1">&#39;module_supplier_id&#39;</span><span class="p">]</span>
+            <span class="n">model_version_id</span> <span class="o">=</span> \
+                <span class="n">analysis_settings</span><span class="p">[</span><span class="s1">&#39;analysis_settings&#39;</span><span class="p">][</span><span class="s1">&#39;model_version_id&#39;</span><span class="p">]</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Model supplier - version = </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">module_supplier_id</span><span class="p">,</span> <span class="n">model_version_id</span><span class="p">))</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">CELERY</span><span class="o">.</span><span class="n">send_task</span><span class="p">(</span>
+                <span class="s2">&quot;run_analysis&quot;</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">input_location</span><span class="p">,</span> <span class="p">[</span><span class="n">analysis_settings</span><span class="p">]),</span>
+                <span class="n">queue</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">module_supplier_id</span><span class="p">,</span> <span class="n">model_version_id</span><span class="p">))</span>
+            <span class="n">task_id</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">task_id</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="n">task_id</span><span class="p">})</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to post analysis&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_analysis_status</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the status of an analysis</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">CELERY</span><span class="o">.</span><span class="n">AsyncResult</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;celery result:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">result</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_SUCCESS</span><span class="p">:</span>
+        <span class="n">analysis_status</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">AnalysisStatus</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_SUCCESS</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">outputs_location</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">result</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_FAILURE</span><span class="p">:</span>
+        <span class="n">analysis_status</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">AnalysisStatus</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_FAILURE</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">escape_string_for_json</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">result</span><span class="p">)),</span>
+            <span class="n">outputs_location</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">analysis_status</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">AnalysisStatus</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">outputs_location</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">analysis_status</span>
+
+<div class="viewcode-block" id="get_analysis_status"><a class="viewcode-back" href="../../modules.html#server.app.get_analysis_status">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/analysis_status/&lt;location&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GET&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">get_analysis_status</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get an analysis status resource</span>
+<span class="sd">    ---</span>
+<span class="sd">    definitions:</span>
+<span class="sd">    - schema:</span>
+<span class="sd">        id: AnalysisStatus</span>
+<span class="sd">        properties:</span>
+<span class="sd">            id:</span>
+<span class="sd">                type: string</span>
+<span class="sd">                description: The analysis ID.</span>
+<span class="sd">            status:</span>
+<span class="sd">                type: string</span>
+<span class="sd">                description: The analysis status.</span>
+<span class="sd">            message:</span>
+<span class="sd">                type: string</span>
+<span class="sd">                description: The analysis status message.</span>
+<span class="sd">            outputs_summary:</span>
+<span class="sd">                type: OutputsSummary</span>
+<span class="sd">                description: Summary of the outputs.</span>
+<span class="sd">        id: OutputsSummary</span>
+
+<span class="sd">        properties:</span>
+<span class="sd">            location:</span>
+<span class="sd">                type: string</span>
+<span class="sd">                description: The location of the data.</span>
+<span class="sd">            size:</span>
+<span class="sd">                type: integer</span>
+<span class="sd">                description: The size of the uncompressed data in bytes.</span>
+<span class="sd">            created_date:</span>
+<span class="sd">                type: string</span>
+<span class="sd">                format: dateTime</span>
+
+<span class="sd">                description: The date when the data was created.</span>
+<span class="sd">    description: Gets an analysis status resource. If no location is given</span>
+<span class="sd">                 all exposure status resources are returned.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: A list of analysis status resources.</span>
+<span class="sd">            schema:</span>
+<span class="sd">                type: array</span>
+<span class="sd">                items:</span>
+<span class="sd">                    $ref: &#39;#/definitions/AnalysisStatus&#39;</span>
+<span class="sd">        404:</span>
+<span class="sd">            description: Resource not found.</span>
+<span class="sd">    parameters:</span>
+<span class="sd">    -   name: location</span>
+<span class="sd">        in: path</span>
+<span class="sd">        description: The location of the outputs resource to download.</span>
+<span class="sd">        required: true</span>
+<span class="sd">        type: string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">analysis_status</span> <span class="o">=</span> <span class="n">_get_analysis_status</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+
+        <span class="c1"># If there is no location for a successful analysis, retry once</span>
+        <span class="c1"># and then fail the analysis as something has gone wrong</span>
+        <span class="k">if</span> <span class="p">(</span>
+                <span class="n">analysis_status</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_SUCCESS</span> <span class="ow">and</span>
+                <span class="n">analysis_status</span><span class="o">.</span><span class="n">outputs_location</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Successful analysis has no location - retrying&quot;</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            <span class="n">analysis_status</span> <span class="o">=</span> <span class="n">_get_analysis_status</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">analysis_status</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_SUCCESS</span> <span class="ow">and</span>
+                    <span class="n">analysis_status</span><span class="o">.</span><span class="n">outputs_location</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Successful analysis still has no location - fail&quot;</span><span class="p">)</span>
+                <span class="n">analysis_status</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_FAILURE</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">analysis_status</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Response: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to get analysis status&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="delete_analysis_status"><a class="viewcode-back" href="../../modules.html#server.app.delete_analysis_status">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/analysis_status&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">])</span>
+<span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/analysis_status/&lt;location&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">delete_analysis_status</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Delete an analysis status resource</span>
+<span class="sd">    ---</span>
+<span class="sd">    description: Deletes an analysis status resource. If no location</span>
+<span class="sd">                 is given all analysis status resources will be deleted.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: OK</span>
+<span class="sd">        404:</span>
+<span class="sd">            description: Resource not found</span>
+<span class="sd">    parameters:</span>
+<span class="sd">    - name: location</span>
+<span class="sd">      in: path</span>
+<span class="sd">      description: The location of the analysis status resource to delete.</span>
+<span class="sd">      required: true</span>
+<span class="sd">      type: string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Not implemented&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Location: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">location</span><span class="p">))</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to delete analysis status&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="get_outputs"><a class="viewcode-back" href="../../modules.html#server.app.get_outputs">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/outputs/&lt;location&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GET&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">get_outputs</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a outputs resource</span>
+<span class="sd">    ---</span>
+<span class="sd">    description: Gets a outputs resource, returning a compressed outputs tar file.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: A compressed tar of the outputs generated by an analysis.</span>
+<span class="sd">        404:</span>
+<span class="sd">            description: Resource not found.</span>
+<span class="sd">    parameters:</span>
+<span class="sd">    -   name: location</span>
+<span class="sd">        in: path</span>
+<span class="sd">        description: The location of the outputs resource to download.</span>
+<span class="sd">        required: true</span>
+<span class="sd">        type: string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Location: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">location</span><span class="p">))</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">location</span> <span class="o">+</span> <span class="s2">&quot;.tar&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status_code</span> <span class="o">=</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_RESOURCE_NOT_FOUND</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">send_from_directory</span><span class="p">(</span><span class="n">OUTPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">location</span> <span class="o">+</span> <span class="s2">&quot;.tar&quot;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to get outputs&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="delete_outputs"><a class="viewcode-back" href="../../modules.html#server.app.delete_outputs">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/outputs&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">])</span>
+<span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/outputs/&lt;location&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">delete_outputs</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    download_directory = &#39;/var/www/oasis/download&#39;</span>
+<span class="sd">    Delete a outputs resource</span>
+<span class="sd">    ---</span>
+<span class="sd">    description: Deletes a outputs resource. If no location is given all</span>
+<span class="sd">                 outputs resources will be deleted.</span>
+<span class="sd">    produces:</span>
+<span class="sd">    - application/json</span>
+<span class="sd">    responses:</span>
+<span class="sd">        200:</span>
+<span class="sd">            description: OK</span>
+<span class="sd">        404:</span>
+<span class="sd">            description: Resource not found</span>
+<span class="sd">    parameters:</span>
+<span class="sd">    - name: location</span>
+<span class="sd">      in: path</span>
+<span class="sd">      description: The location of the outputs resource to delete.</span>
+<span class="sd">      required: true</span>
+<span class="sd">      type: string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Location: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">location</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">OUTPUTS_DATA_DIRECTORY</span><span class="p">):</span>
+
+                <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">TAR_FILE_SUFFIX</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_OK</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">location</span><span class="p">)</span> <span class="o">+</span> <span class="n">TAR_FILE_SUFFIX</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUTS_DATA_DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_RESOURCE_NOT_FOUND</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_OK</span><span class="p">)</span>
+
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to delete outputs&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">oasis_utils</span><span class="o">.</span><span class="n">HTTP_RESPONSE_INTERNAL_SERVER_ERROR</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="spec"><a class="viewcode-back" href="../../modules.html#server.app.spec">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/spec&quot;</span><span class="p">)</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">spec</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create Swagger docs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">swag</span> <span class="o">=</span> <span class="n">swagger</span><span class="p">(</span><span class="n">APP</span><span class="p">)</span>
+    <span class="n">swag</span><span class="p">[</span><span class="s1">&#39;info&#39;</span><span class="p">][</span><span class="s1">&#39;version&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+    <span class="n">swag</span><span class="p">[</span><span class="s1">&#39;info&#39;</span><span class="p">][</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Oasis API&quot;</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">swag</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="get_healthcheck"><a class="viewcode-back" href="../../modules.html#server.app.get_healthcheck">[docs]</a><span class="nd">@APP</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/healthcheck&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@oasis_log_utils</span><span class="o">.</span><span class="n">oasis_log</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">get_healthcheck</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Basic healthcheck response.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1">#TODO: check job management connections</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;get_healthcheck&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;OK&quot;</span></div>
+
+<div class="viewcode-block" id="validate_exposure_tar"><a class="viewcode-back" href="../../modules.html#server.app.validate_exposure_tar">[docs]</a><span class="k">def</span> <span class="nf">validate_exposure_tar</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="n">tar</span> <span class="o">=</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">members</span> <span class="o">=</span> <span class="n">tar</span><span class="o">.</span><span class="n">getmembers</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">members</span><span class="p">)</span> <span class="o">==</span> <span class="mi">7</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;items.bin&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;coverages.bin&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;summaryxref.bin&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;fm_programme.bin&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;fm_policytc.bin&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;fm_profile.bin&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span> <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;fm_summaryxref.bin&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="validate_analysis_settings"><a class="viewcode-back" href="../../modules.html#server.app.validate_analysis_settings">[docs]</a><span class="k">def</span> <span class="nf">validate_analysis_settings</span><span class="p">(</span><span class="n">analysis_settings_json</span><span class="p">):</span>
+    <span class="c1">#TODO</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Oasis API</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Documentation contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../repository-management.html">Repository Management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sphinx.html">Sphinx Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../first-steps.html">First Steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Module Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Oasis Loss Modelling Framework (v. 0.6, 31 July, 2017)..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -60,10 +60,8 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
+# Sphinx documentation - ignore build folder
 _build
-_static
-_templates
 
 # PyBuilder
 target/
@@ -83,6 +81,14 @@ celerybeat-schedule
 # virtualenv
 venv/
 ENV/
+
+# Common archived and compressed file formats
+.bz
+.bz2
+.gz
+.tar.gz
+.tar
+.zip
 
 # Spyder project settings
 .spyderproject
