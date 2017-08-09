@@ -15,7 +15,7 @@ CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.curr
 sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
 
 # Oasis Api import
-from client import OasisApiClient
+from oasisapi_client import OasisAPIClient
 
 '''
 Test utility for running a model analysis using the Oasis API.
@@ -104,7 +104,7 @@ def run_analysis(c):
             os.path.join(input_data_directory, "csv"),
             upload_directory)
 
-        client = OasisApiClient.OasisApiClient(api_url, logging.getLogger())
+        client = OasisAPIClient(api_url, logging.getLogger())
         input_location = client.upload_inputs_from_directory(
             upload_directory, do_il, do_validation=False)
         client.run_analysis(

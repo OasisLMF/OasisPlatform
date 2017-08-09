@@ -5,7 +5,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Module documentation &#8212; Oasis API 0.1 documentation</title>
+    <title>Module Documentation &#8212; Oasis API 0.1 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Introduction" href="introduction.html" />
+    <link rel="prev" title="First Steps" href="first-steps.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -41,7 +41,7 @@
           <div class="body" role="main">
             
   <div class="section" id="module-documentation">
-<h1>Module documentation<a class="headerlink" href="#module-documentation" title="Permalink to this headline">¶</a></h1>
+<h1>Module Documentation<a class="headerlink" href="#module-documentation" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-server.app">
 <span id="server-app"></span><h2><code class="docutils literal"><span class="pre">server.app</span></code><a class="headerlink" href="#module-server.app" title="Permalink to this headline">¶</a></h2>
 <p>Oasis API server application endpoints.</p>
@@ -402,158 +402,6 @@ schema:</p>
 <dd></dd></dl>
 
 </div>
-<div class="section" id="module-client.OasisApiClient">
-<span id="client-oasisapiclient"></span><h2><code class="docutils literal"><span class="pre">client.OasisApiClient</span></code><a class="headerlink" href="#module-client.OasisApiClient" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="client.OasisApiClient.OasisApiClient">
-<em class="property">class </em><code class="descclassname">client.OasisApiClient.</code><code class="descname">OasisApiClient</code><span class="sig-paren">(</span><em>oasis_api_url</em>, <em>logger</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client/OasisApiClient.html#OasisApiClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.OasisApiClient.OasisApiClient" title="Permalink to this definition">¶</a></dt>
-<dd><p>Client for Oasis API</p>
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.CONVERSION_TOOLS">
-<code class="descname">CONVERSION_TOOLS</code><em class="property"> = {'coverages': 'coveragetobin', 'fm_profile': 'fmprofiletobin', 'gulsummaryxref': 'gulsummaryxreftobin', 'fm_xref': 'fmxreftobin', 'fmsummaryxref': 'fmsummaryxreftobin', 'fm_programme': 'fmprogrammetobin', 'items': 'itemtobin', 'fm_policytc': 'fmpolicytctobin', 'events': 'evetobin'}</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.CONVERSION_TOOLS" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.DOWNLOAD_CHUCK_SIZE_IN_BYTES">
-<code class="descname">DOWNLOAD_CHUCK_SIZE_IN_BYTES</code><em class="property"> = 1024</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.DOWNLOAD_CHUCK_SIZE_IN_BYTES" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.GENERAL_SETTINGS_FILE">
-<code class="descname">GENERAL_SETTINGS_FILE</code><em class="property"> = 'general_settings.csv'</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.GENERAL_SETTINGS_FILE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.GUL_INPUTS_FILES">
-<code class="descname">GUL_INPUTS_FILES</code><em class="property"> = ['coverages', 'gulsummaryxref', 'items']</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.GUL_INPUTS_FILES" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.GUL_SUMMARIES_FILE">
-<code class="descname">GUL_SUMMARIES_FILE</code><em class="property"> = 'gul_summaries.csv'</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.GUL_SUMMARIES_FILE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.IL_INPUTS_FILES">
-<code class="descname">IL_INPUTS_FILES</code><em class="property"> = ['fm_policytc', 'fm_profile', 'fm_programme', 'fm_xref', 'fmsummaryxref']</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.IL_INPUTS_FILES" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.IL_SUMMARIES_FILE">
-<code class="descname">IL_SUMMARIES_FILE</code><em class="property"> = 'il_summaries.csv'</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.IL_SUMMARIES_FILE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.MODEL_SETTINGS_FILE">
-<code class="descname">MODEL_SETTINGS_FILE</code><em class="property"> = 'model_settings.csv'</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.MODEL_SETTINGS_FILE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.OPTIONAL_INPUTS_FILES">
-<code class="descname">OPTIONAL_INPUTS_FILES</code><em class="property"> = ['events']</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.OPTIONAL_INPUTS_FILES" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="client.OasisApiClient.OasisApiClient.TAR_FILE">
-<code class="descname">TAR_FILE</code><em class="property"> = 'inputs.tar.gz'</em><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.TAR_FILE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="client.OasisApiClient.OasisApiClient.check_inputs_directory">
-<code class="descname">check_inputs_directory</code><span class="sig-paren">(</span><em>directory_to_check</em>, <em>do_il</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client/OasisApiClient.html#OasisApiClient.check_inputs_directory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.check_inputs_directory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check that all the required csv files are present in the directory.
-Args:</p>
-<blockquote>
-<div>directory (string): the directory containing the CSV files.
-do_il (bool): do insured loss. If True, FM file must be present.</div></blockquote>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>None</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="client.OasisApiClient.OasisApiClient.create_analysis_settings_json">
-<code class="descname">create_analysis_settings_json</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client/OasisApiClient.html#OasisApiClient.create_analysis_settings_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.create_analysis_settings_json" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate an analysis settings JSON from a set of
-CSV files in a specified directory.
-Args:</p>
-<blockquote>
-<div>directory (string): the directory containing the CSV files.</div></blockquote>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>The analysis settings JSON.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="client.OasisApiClient.OasisApiClient.create_binary_files">
-<code class="descname">create_binary_files</code><span class="sig-paren">(</span><em>directory</em>, <em>do_il</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client/OasisApiClient.html#OasisApiClient.create_binary_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.create_binary_files" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create the binary files.
-Args:</p>
-<blockquote>
-<div>directory (string): the directory containing the CSV files.
-do_il (bool): do insured loss. If True, FM file must be present.</div></blockquote>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>None</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="client.OasisApiClient.OasisApiClient.download_exposure">
-<code class="descname">download_exposure</code><span class="sig-paren">(</span><em>exposure_location</em>, <em>localfile</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client/OasisApiClient.html#OasisApiClient.download_exposure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.download_exposure" title="Permalink to this definition">¶</a></dt>
-<dd><p>Download exposure data to a specified local file.
-Args:</p>
-<blockquote>
-<div>exposure_location (string): The location of the exposure resource.
-localfile (string): The localfile to download to.</div></blockquote>
-</dd></dl>
-
-<dl class="method">
-<dt id="client.OasisApiClient.OasisApiClient.download_outputs">
-<code class="descname">download_outputs</code><span class="sig-paren">(</span><em>outputs_location</em>, <em>localfile</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client/OasisApiClient.html#OasisApiClient.download_outputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.download_outputs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Download outputs data to a specified local file.
-Args:</p>
-<blockquote>
-<div>outputs_location (string): The location of the outputs resource.
-localfile (string): The localfile to download to.</div></blockquote>
-</dd></dl>
-
-<dl class="method">
-<dt id="client.OasisApiClient.OasisApiClient.run_analysis">
-<code class="descname">run_analysis</code><span class="sig-paren">(</span><em>analysis_settings_json</em>, <em>input_location</em>, <em>outputs_directory</em>, <em>do_clean=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client/OasisApiClient.html#OasisApiClient.run_analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.run_analysis" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run an analysis.
-Args:</p>
-<blockquote>
-<div>analysis_setting_json (string): The analysis settings, as JSON.
-inputs_location: The location of the inputs resource.
-outputs_directory: The local directory to save the outputs.
-do_clean (bool): if True, remove the inputs and outputs resources.</div></blockquote>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>The location of the uploaded inputs.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="client.OasisApiClient.OasisApiClient.upload_inputs_from_directory">
-<code class="descname">upload_inputs_from_directory</code><span class="sig-paren">(</span><em>directory</em>, <em>do_il=True</em>, <em>do_validation=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client/OasisApiClient.html#OasisApiClient.upload_inputs_from_directory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.OasisApiClient.OasisApiClient.upload_inputs_from_directory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Upload the CSV files from a specified directory.
-Args:</p>
-<blockquote>
-<div>directory (string): the directory containting the CSVs.
-do_il: if True, require files for insured loss (IL) calculation.
-do_validation (bool): if True, validate the data intrgrity</div></blockquote>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>The location of the uploaded inputs.</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</div>
 </div>
 
 
@@ -574,12 +422,11 @@ do_validation (bool): if True, validate the data intrgrity</div></blockquote>
 <h3>Navigation</h3>
 <p class="caption"><span class="caption-text">Documentation contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="repository-management.html">Repository management</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sphinx.html">Sphinx docs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Module documentation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="repository-management.html">Repository Management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx.html">Sphinx Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First Steps</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Module Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-server.app"><code class="docutils literal"><span class="pre">server.app</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-client.OasisApiClient"><code class="docutils literal"><span class="pre">client.OasisApiClient</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -588,7 +435,7 @@ do_validation (bool): if True, validate the data intrgrity</div></blockquote>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="introduction.html" title="previous chapter">Introduction</a></li>
+      <li>Previous: <a href="first-steps.html" title="previous chapter">First Steps</a></li>
   </ul></li>
 </ul>
 </div>
