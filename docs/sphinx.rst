@@ -1,12 +1,11 @@
 Sphinx Docs
 ===========
 
-This repository is enabled with Sphinx documentation for the Python
+This repository is enabled with `Sphinx <https://pypi.python.org/pypi/Sphinx>`_ documentation for the Python
 modules, and the documentation is published to
 https://oasislmf.github.io/OasisApi/ manually using the procedure
 described below. (Note: GitHub pages is not enabled for this repository
-because it contains the private repositories `oasis_utils <https://github.com/OasisLMF/oasis_utils>`_ and `OasisAPIClient <https://github.com/OasisLMF/OasisAPIClient>`_  as a Git
-submodule, which is incompatible with GitHub pages.)
+because it contains the private repositories `oasis_utils <https://github.com/OasisLMF/oasis_utils>`_ and `OasisAPIClient <https://github.com/OasisLMF/OasisAPIClient>`_  as a Git submodules, which is incompatible with GitHub pages.)
 
 Setting up Sphinx
 -----------------
@@ -14,6 +13,7 @@ Setting up Sphinx
 Firstly, to work on the Sphinx docs for this package you must have
 `Sphinx <https://pypi.python.org/pypi/Sphinx>`_ installed on your system or in your virtual environment
 (`virtualenv` is recommended).
+
 
 You should also clone the Oasis publication repository
 `OasisLMF.github.io <https://github.com/OasisLMF/OasisLMF.github.io>`_.
