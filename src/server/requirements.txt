@@ -1,4 +1,4 @@
-Flask==0.10.1
+Flask==0.12
 flask_swagger==0.2.12
 celery==3.1.23
 SQLAlchemy==1.0.12
