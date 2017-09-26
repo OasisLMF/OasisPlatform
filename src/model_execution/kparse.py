@@ -8,10 +8,7 @@ from oasis_utils import oasis_log_utils
 pid_monitor_count = 0
 apid_monitor_count = 0
 lpid_monitor_count = 0
-<<<<<<< HEAD
 kpid_monitor_count = 0
-=======
->>>>>>> parent of 7840066... Add tests and utils
 command_file = ""
 
 
@@ -121,10 +118,7 @@ def create_workfolders(runtype, analysis_settings):
 
     if "{0}_summaries".format(runtype) not in analysis_settings:
         return
-<<<<<<< HEAD
     print_command("mkdir work/kat")
-=======
->>>>>>> parent of 7840066... Add tests and utils
     for summary in analysis_settings["{0}_summaries".format(runtype)]:
         if "id" in summary:
             summary_set = summary["id"]
@@ -168,15 +162,7 @@ def do_remove_fifos(runtype, analysis_settings, process_id):
 
 
 def do_kats(runtype, analysis_settings, max_process_id):
-<<<<<<< HEAD
-    global kpid_monitor_count
-=======
-    global pid_monitor_count
->>>>>>> parent of 7840066... Add tests and utils
     anykats = False
-    if "{0}_summaries".format(runtype) not in analysis_settings:
-        return anykats
-
     for summary in analysis_settings["{0}_summaries".format(runtype)]:
         if "id" in summary:
             summary_set = summary["id"]
@@ -184,55 +170,31 @@ def do_kats(runtype, analysis_settings, max_process_id):
                 anykats = True
                 cmd = "kat "
                 for process_id in range(1, max_process_id + 1):
-<<<<<<< HEAD
                     cmd = cmd + "work/kat/{0}_S{1}_eltcalc_P{2} ".format(
                         runtype, summary_set, process_id)
                 kpid_monitor_count = kpid_monitor_count + 1
                 cmd = cmd + "> output/{0}_S{1}_eltcalc.csv & kpid{2}=$!".format(
                     runtype, summary_set, kpid_monitor_count)
-=======
-                    cmd = cmd + "fifo/{0}_S{1}_eltcalc_P{2} ".format(
-                        runtype, summary_set, process_id)
-                pid_monitor_count = pid_monitor_count + 1
-                cmd = cmd + "> output/{0}_S{1}_eltcalc.csv & pid{2}=$!".format(
-                    runtype, summary_set, pid_monitor_count)
->>>>>>> parent of 7840066... Add tests and utils
                 print_command(cmd)
             if summary.get("pltcalc"):
                 anykats = True
                 cmd = "kat "
                 for process_id in range(1, max_process_id + 1):
-<<<<<<< HEAD
                     cmd = cmd + "work/kat/{0}_S{1}_pltcalc_P{2} ".format(
                         runtype, summary_set, process_id)
                 kpid_monitor_count = kpid_monitor_count + 1
                 cmd = cmd + "> output/{0}_S{1}_pltcalc.csv & kpid{2}=$!".format(
                     runtype, summary_set, kpid_monitor_count)
-=======
-                    cmd = cmd + "fifo/{0}_S{1}_pltcalc_P{2} ".format(
-                        runtype, summary_set, process_id)
-                pid_monitor_count = pid_monitor_count + 1
-                cmd = cmd + "> output/{0}_S{1}_pltcalc.csv & pid{2}=$!".format(
-                    runtype, summary_set, pid_monitor_count)
->>>>>>> parent of 7840066... Add tests and utils
                 print_command(cmd)
             if summary.get("summarycalc"):
                 anykats = True
                 cmd = "kat "
                 for process_id in range(1, max_process_id + 1):
-<<<<<<< HEAD
                     cmd = cmd + "work/kat/{0}_S{1}_summarycalc_P{2} ".format(
                         runtype, summary_set, process_id)
                 kpid_monitor_count = kpid_monitor_count + 1
                 cmd = cmd + "> output/{0}_S{1}_summarycalc.csv & kpid{2}=$!".format(
                     runtype, summary_set, kpid_monitor_count)
-=======
-                    cmd = cmd + "fifo/{0}_S{1}_summarycalc_P{2} ".format(
-                        runtype, summary_set, process_id)
-                pid_monitor_count = pid_monitor_count + 1
-                cmd = cmd + "> output/{0}_S{1}_summarycalc.csv & pid{2}=$!".format(
-                    runtype, summary_set, pid_monitor_count)
->>>>>>> parent of 7840066... Add tests and utils
                 print_command(cmd)
 
     return anykats
@@ -300,33 +262,21 @@ def do_any(runtype, analysis_settings, process_id):
                 if process_id == 1:
                     cmd = "eltcalc"
                 print_command(
-<<<<<<< HEAD
                     "{3} < fifo/{0}_S{1}_summaryeltcalc_P{2} > work/kat/{0}_S{1}_eltcalc_P{2} &".format(
-=======
-                    "{3} < fifo/{0}_S{1}_summaryeltcalc_P{2} > fifo/{0}_S{1}_eltcalc_P{2} &".format(
->>>>>>> parent of 7840066... Add tests and utils
                         runtype, summary_set, process_id, cmd))
             if summary.get("summarycalc"):
                 cmd = "summarycalctocsv -s"
                 if process_id == 1:
                     cmd = "summarycalctocsv"
                 print_command(
-<<<<<<< HEAD
                     "{3} < fifo/{0}_S{1}_summarysummarycalc_P{2} > work/kat/{0}_S{1}_summarycalc_P{2} &".format(
-=======
-                    "{3} < fifo/{0}_S{1}_summarysummarycalc_P{2} > fifo/{0}_S{1}_summarycalc_P{2} &".format(
->>>>>>> parent of 7840066... Add tests and utils
                         runtype, summary_set, process_id, cmd))
             if summary.get("pltcalc"):
                 cmd = "pltcalc -s"
                 if process_id == 1:
                     cmd = "pltcalc"
                 print_command(
-<<<<<<< HEAD
                     "{3} < fifo/{0}_S{1}_summarypltcalc_P{2} > work/kat/{0}_S{1}_pltcalc_P{2} &".format(
-=======
-                    "{3} < fifo/{0}_S{1}_summarypltcalc_P{2} > fifo/{0}_S{1}_pltcalc_P{2} &".format(
->>>>>>> parent of 7840066... Add tests and utils
                         runtype, summary_set, process_id, cmd))
             if summary.get("aalcalc"):
                 pid_monitor_count = pid_monitor_count + 1
@@ -397,11 +347,8 @@ def do_awaits():
 def do_lwaits():
     do_waits("lpid", lpid_monitor_count)
 
-<<<<<<< HEAD
 def do_kwaits():
     do_waits("kpid", kpid_monitor_count)
-=======
->>>>>>> parent of 7840066... Add tests and utils
 
 def get_getmodel_cmd(
         process_id_, max_process_id,
@@ -477,22 +424,6 @@ def genbash(
         create_workfolders("il", analysis_settings)
 
     print_command("")
-<<<<<<< HEAD
-=======
-    print_command("# --- Do insured loss kats ---")
-    print_command("")
-    if il_output:
-        do_kats("il", analysis_settings, max_process_id)
-
-
-    print_command("")
-    print_command("# --- Do ground up loss kats ---")
-    print_command("")
-    if gul_output:
-        do_kats("gul", analysis_settings, max_process_id)
-
-    print_command("")
->>>>>>> parent of 7840066... Add tests and utils
     print_command("# --- Do insured loss computes ---")
     print_command("")
     if il_output:
@@ -548,7 +479,6 @@ def genbash(
     do_pwaits()
 
     print_command("")
-<<<<<<< HEAD
     print_command("# --- Do insured loss kats ---")
     print_command("")
     if il_output:
@@ -564,8 +494,6 @@ def genbash(
     do_kwaits()
 
     print_command("")
-=======
->>>>>>> parent of 7840066... Add tests and utils
     do_post_wait_processing("il", analysis_settings)
     do_post_wait_processing("gul", analysis_settings)
 
