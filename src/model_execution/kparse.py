@@ -162,7 +162,11 @@ def do_remove_fifos(runtype, analysis_settings, process_id):
 
 
 def do_kats(runtype, analysis_settings, max_process_id):
+    global kpid_monitor_count
     anykats = False
+    if "{0}_summaries".format(runtype) not in analysis_settings:
+        return anykats
+
     for summary in analysis_settings["{0}_summaries".format(runtype)]:
         if "id" in summary:
             summary_set = summary["id"]
