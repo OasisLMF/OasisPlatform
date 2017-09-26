@@ -1,0 +1,173 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Repository Management &#8212; Oasis API 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Sphinx Docs" href="sphinx.html" />
+    <link rel="prev" title="OasisApi" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="repository-management">
+<h1>Repository Management<a class="headerlink" href="#repository-management" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="cloning-the-repository">
+<h2>Cloning the repository<a class="headerlink" href="#cloning-the-repository" title="Permalink to this headline">¶</a></h2>
+<p>You can clone this repository from <a class="reference external" href="https://github.com/OasisLMF/OasisApi">GitHub</a> using HTTPS or SSH, but it is
+recommended that that you use SSH: first ensure that you have generated
+an SSH key pair on your local machine and add the public key of that
+pair to your GitHub account (use the GitHub guide at
+<a class="reference external" href="https://help.github.com/articles/connecting-to-github-with-ssh/">https://help.github.com/articles/connecting-to-github-with-ssh/</a>). Then
+run</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">recursive</span> <span class="n">git</span><span class="o">+</span><span class="n">ssh</span><span class="p">:</span><span class="o">//</span><span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">OasisLMF</span><span class="o">/</span><span class="n">OasisApi</span>
+</pre></div>
+</div>
+<p>To clone over HTTPS use</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">recursive</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">OasisLMF</span><span class="o">/</span><span class="n">OasisApi</span>
+</pre></div>
+</div>
+<p>You may receive a password prompt - to bypass the password prompt use</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">recursive</span> <span class="n">https</span><span class="p">:</span><span class="o">//&lt;</span><span class="n">GitHub</span> <span class="n">user</span> <span class="n">name</span><span class="p">:</span><span class="n">GitHub</span> <span class="n">password</span><span class="o">&gt;</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">OasisLMF</span><span class="o">/</span><span class="n">OasisApi</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">--recursive</span></code> option ensures the cloned repository contains the
+necessary Oasis repositories <a class="reference external" href="https://github.com/OasisLMF/oasis_utils">oasis_utils</a>  and
+<a class="reference external" href="https://github.com/OasisLMF/OasisAPIClient">OasisAPIClient</a>  as Git submodules.</p>
+</div>
+<div class="section" id="managing-the-submodules">
+<h2>Managing the submodules<a class="headerlink" href="#managing-the-submodules" title="Permalink to this headline">¶</a></h2>
+<p>Run the command</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">submodule</span>
+</pre></div>
+</div>
+<p>to list the submodules (latest commit IDs, paths and branches). If any
+are missing then you can add them using</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">submodule</span> <span class="n">add</span> <span class="o">&lt;</span><span class="n">submodule</span> <span class="n">GitHub</span> <span class="n">repo</span> <span class="n">URL</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">local</span> <span class="n">path</span><span class="o">/</span><span class="n">destination</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>It is a quirk of Git that the first time you clone a repository with
+submodules they will be checked out as commits not branches, which is
+not what you want. You should run the command</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">submodule</span> <span class="n">foreach</span> <span class="s1">&#39;git checkout master&#39;</span>
+</pre></div>
+</div>
+<p>to ensure that the submodules are checked out on the <code class="docutils literal"><span class="pre">master</span></code>
+branches.</p>
+<p>If you’ve already cloned the repository and wish to update the
+submodules (all at once) in your working directory from their GitHub
+repositories then run</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">submodule</span> <span class="n">foreach</span> <span class="s1">&#39;git pull origin&#39;</span>
+</pre></div>
+</div>
+<p>You can also update the submodules individually by pulling from within
+them.</p>
+<p>Unless you’ve been given read access to this repository on GitHub (via
+an OasisLMF organizational team) you should not make any local changes
+to these submodules because you have read-only access to their GitHub
+repositories. So submodule changes can only propagate from GitHub to
+your local repository. To detect these changes you can run
+<code class="docutils literal"><span class="pre">git</span> <span class="pre">status</span> <span class="pre">-uno</span></code> and to commit them you can add the paths and commit
+them in the normal way.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Oasis API</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Documentation contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Repository Management</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cloning-the-repository">Cloning the repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#managing-the-submodules">Managing the submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx.html">Sphinx Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First Steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter"><code class="docutils literal"><span class="pre">OasisApi</span></code></a></li>
+      <li>Next: <a href="sphinx.html" title="next chapter">Sphinx Docs</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Oasis Loss Modelling Framework (v. 0.7, 12 August, 2017)..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/repository-management.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

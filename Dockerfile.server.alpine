@@ -1,0 +1,74 @@
+# Set the base image
+FROM alpine-ktools
+
+# Now the OASIAPI parts
+
+RUN apk add --no-cache bash git nginx uwsgi uwsgi-python
+RUN apk --no-cache add py-pip
+
+RUN apk --no-cache add py-flask
+
+RUN apk --no-cache add mysql-client
+
+RUN apk --no-cache add py-mysqldb
+RUN apk --no-cache add openrc
+
+RUN mkdir /var/www/oasis
+RUN mkdir /var/www/oasis/server
+RUN mkdir /var/www/oasis/common
+RUN mkdir /var/www/oasis/upload
+RUN mkdir /var/www/oasis/download
+RUN mkdir /var/log/oasis
+
+# application folder
+ENV APP_DIR /app
+
+# app dir
+RUN mkdir ${APP_DIR} \
+	&& chown -R nginx:nginx ${APP_DIR} \
+	&& chmod 777 /run/ -R \
+	&& chmod 777 /root/ -R
+VOLUME [${APP_DIR}]
+WORKDIR ${APP_DIR}
+
+COPY ./src/server /var/www/oasis/server/
+COPY ./src/oasis_utils /var/www/oasis/oasis_utils/
+COPY ./src/common /var/www/oasis/common/
+COPY ./src/server/requirements.txt ./
+
+COPY ./src/server/ngxstartup.sh  /usr/local/bin
+COPY ./utils/wait-for-it.sh /usr/local/bin
+RUN chmod +x /usr/local/bin/ngxstartup.sh
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
+RUN touch /var/log/oasis/oasis_api_server.log
+RUN chmod a+w /var/log/oasis/oasis_api_server.log
+
+RUN pip install -r ./requirements.txt
+
+RUN apk --no-cache del py-mysqldb
+RUN apk --no-cache add mysql-client
+
+RUN rm -rf /var/cache/apk/*
+RUN rm -rf /var/cache/misc/*
+
+EXPOSE 80
+
+# copy config files into filesystem
+COPY ./ngx/nginx.conf /etc/nginx/nginx.conf
+COPY ./ngx/app.ini /app.ini
+# COPY ./ngx/entrypoint.sh /entrypoint.sh
+COPY ./src/server_config/oasis.wsgi /app/app.py
+
+
+ENTRYPOINT \
+	sed -i -e "s/%RABBIT_PORT%/5671/" /var/www/oasis/common/CeleryConfig.py && \
+	sed -i -e "s/%MYSQL_PORT%/3306/" /var/www/oasis/common/CeleryConfig.py && \
+	ngxstartup.sh
+# 	tail -f /var/log/oasis/oasis_api_server.log
+
+
+
+# ENTRYPOINT ["/entrypoint.sh"]
+# Dockerfile author / maintainer 
+MAINTAINER Ben Matharu <neb@sky.com> 

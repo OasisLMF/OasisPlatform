@@ -5,12 +5,7 @@
 import getopt
 import sys
 import json
-import os
 from pprint import pprint
-
-sys.path.append("/home/ben/dev/OasisApi/src/")
-sys.path.append("/home/ben/dev/")
-
 import model_execution.kparse as kparse
 
 #pylint: disable=I0011,C0111

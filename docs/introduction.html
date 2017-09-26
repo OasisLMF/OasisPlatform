@@ -1,0 +1,136 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Introduction &#8212; Oasis API 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="first-steps">
+<h2>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h2>
+<p>First make sure that the ktools binaries are installed (see the <a class="reference external" href="https://github.com/OasisLMF/ktools">ktools</a>
+GitHub repository for instructions) and the ktools docker image is
+available (from <code class="docutils literal"><span class="pre">coreoasis/ktools</span></code> on Docker Hub, or build locally
+from the ktools repository). Also ensure that API runner image has been
+built (from <code class="docutils literal"><span class="pre">Dockerfile.api_runner</span></code>).</p>
+<p>Then, build the images for the API server and model execution worker:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">build</span> <span class="o">-</span><span class="n">f</span> <span class="n">Dockerfile</span><span class="o">.</span><span class="n">oasis_api_server</span> <span class="o">-</span><span class="n">t</span> <span class="n">oasis_api_server</span> <span class="o">.</span>
+<span class="n">docker</span> <span class="n">build</span> <span class="o">-</span><span class="n">f</span> <span class="n">Dockerfile</span><span class="o">.</span><span class="n">model_execution_worker</span> <span class="o">-</span><span class="n">t</span> <span class="n">model_execution_worker</span> <span class="o">.</span>
+</pre></div>
+</div>
+<p>Run docker compose:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span> <span class="n">up</span> <span class="o">-</span><span class="n">d</span>
+</pre></div>
+</div>
+<p>Check that the server is running:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">curl</span> <span class="n">localhost</span><span class="p">:</span><span class="mi">8001</span><span class="o">/</span><span class="n">healthcheck</span>
+</pre></div>
+</div>
+<p>For the Rabbit management application browse to <a class="reference external" href="http://localhost:15672">http://localhost:15672</a>.</p>
+<p>For Flower, the celery management application, browse to
+<a class="reference external" href="http://locathost:5555">http://locathost:5555</a>.</p>
+<p>To run the API client tester, run the following commands:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">src</span><span class="o">/</span><span class="n">client</span><span class="o">/</span><span class="n">requirements</span><span class="o">.</span><span class="n">py</span>
+<span class="n">python</span> <span class="o">./</span><span class="n">src</span><span class="o">/</span><span class="n">utils</span><span class="o">/</span><span class="n">api_tester</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">i</span> <span class="n">localhost</span><span class="p">:</span><span class="mi">8001</span> <span class="o">-</span><span class="n">a</span> <span class="n">tests</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">analysis_settings</span><span class="o">.</span><span class="n">json</span> <span class="o">-</span><span class="n">d</span> <span class="n">tests</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="nb">input</span> <span class="o">-</span><span class="n">o</span> <span class="n">tests</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">output</span> <span class="o">-</span><span class="n">n</span> <span class="mi">1</span> <span class="o">-</span><span class="n">v</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Oasis API</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Documentation contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="repository-management.html">Repository Management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx.html">Sphinx Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First Steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Oasis Loss Modelling Framework (v. 0.6, 31 July, 2017)..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/introduction.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

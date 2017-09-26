@@ -1,0 +1,46 @@
+FROM ktools
+
+RUN apt update && \
+    apt upgrade -y && \
+    apt install -y libmysqlclient-dev unixodbc-dev
+
+COPY ./src/model_execution_worker/requirements.txt /tmp/
+RUN pip install -r /tmp/requirements.txt
+
+COPY ./src/oasis_utils/requirements.txt /tmp/
+RUN pip install -r /tmp/requirements.txt
+
+RUN mkdir /var/log/oasis
+RUN mkdir /var/oasis/working
+
+RUN useradd -ms /bin/bash worker
+RUN chown worker /var/log/oasis
+RUN chown worker /var/oasis/working
+RUN touch /var/log/oasis/worker.log
+RUN chmod a+w /var/log/oasis/worker.log
+
+WORKDIR /home/worker
+
+COPY ./data/static /var/oasis/model_data/OasisIM/1
+COPY ./data/static /var/oasis/model_data/OasisIM/2
+
+COPY ./src/model_execution_worker/startup.sh  ./
+
+COPY ./src/common ./common/
+COPY ./src/model_execution_worker/ ./model_execution_worker/
+COPY ./src/model_execution/ ./model_execution/
+COPY ./src/utils/ ./utils/
+COPY ./src/oasis_utils/ ./oasis_utils/
+
+RUN chmod -R 777 /home/worker/common
+
+USER worker
+
+ENTRYPOINT \
+	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /home/worker/common/CeleryConfig.py && \
+	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py && \
+	sed -i -e "s/%CELERY_QUEUE%/$MODEL_SUPPLIER_ID-$MODEL_VERSION_ID/" startup.sh && \
+	./utils/wait-for-it.sh "rabbit:$RABBIT_PORT" && \
+	./utils/wait-for-it.sh "mysql:$MYSQL_PORT" && \
+	./startup.sh && \ 
+	tail -f /var/log/oasis/worker.log

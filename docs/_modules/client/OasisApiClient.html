@@ -1,0 +1,613 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>client.OasisApiClient &#8212; Oasis API 0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for client.OasisApiClient</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Python 2 standard imports</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">tarfile</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="c1"># Python 3rd party imports</span>
+<span class="kn">import</span> <span class="nn">jsonpickle</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">shutilwhich</span>
+
+<span class="kn">from</span> <span class="nn">requests_toolbelt.multipart.encoder</span> <span class="k">import</span> <span class="n">MultipartEncoder</span>
+
+<span class="c1"># Oasis imports</span>
+<span class="kn">from</span> <span class="nn">oasis_utils</span> <span class="k">import</span> <span class="n">oasis_utils</span>
+
+<div class="viewcode-block" id="OasisApiClient"><a class="viewcode-back" href="../../modules.html#client.OasisApiClient.OasisApiClient">[docs]</a><span class="k">class</span> <span class="nc">OasisApiClient</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Client for Oasis API</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">GUL_INPUTS_FILES</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;coverages&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;gulsummaryxref&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;items&#39;</span><span class="p">]</span>
+
+    <span class="n">IL_INPUTS_FILES</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;fm_policytc&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fm_profile&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fm_programme&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fm_xref&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fmsummaryxref&#39;</span><span class="p">]</span>
+
+    <span class="n">OPTIONAL_INPUTS_FILES</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;events&#39;</span><span class="p">]</span>
+
+    <span class="n">CONVERSION_TOOLS</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;coverages&#39;</span><span class="p">:</span> <span class="s1">&#39;coveragetobin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;events&#39;</span><span class="p">:</span> <span class="s1">&#39;evetobin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fm_policytc&#39;</span><span class="p">:</span> <span class="s1">&#39;fmpolicytctobin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fm_profile&#39;</span><span class="p">:</span> <span class="s1">&#39;fmprofiletobin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fm_programme&#39;</span><span class="p">:</span> <span class="s1">&#39;fmprogrammetobin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fm_xref&#39;</span><span class="p">:</span> <span class="s1">&#39;fmxreftobin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fmsummaryxref&#39;</span><span class="p">:</span> <span class="s1">&#39;fmsummaryxreftobin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;gulsummaryxref&#39;</span><span class="p">:</span> <span class="s1">&#39;gulsummaryxreftobin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;items&#39;</span><span class="p">:</span> <span class="s2">&quot;itemtobin&quot;</span><span class="p">}</span>
+
+    <span class="n">TAR_FILE</span> <span class="o">=</span> <span class="s2">&quot;inputs.tar.gz&quot;</span>
+
+    <span class="c1"># Analysis settings files</span>
+    <span class="n">GENERAL_SETTINGS_FILE</span> <span class="o">=</span> <span class="s2">&quot;general_settings.csv&quot;</span>
+    <span class="n">MODEL_SETTINGS_FILE</span> <span class="o">=</span> <span class="s2">&quot;model_settings.csv&quot;</span>
+    <span class="n">GUL_SUMMARIES_FILE</span> <span class="o">=</span> <span class="s2">&quot;gul_summaries.csv&quot;</span>
+    <span class="n">IL_SUMMARIES_FILE</span> <span class="o">=</span> <span class="s2">&quot;il_summaries.csv&quot;</span>
+
+    <span class="n">DOWNLOAD_CHUCK_SIZE_IN_BYTES</span> <span class="o">=</span> <span class="mi">1024</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oasis_api_url</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Construct the client.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            oasis_api_url: the URL for the API.</span>
+<span class="sd">            logger: the logger.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">=</span> <span class="n">oasis_api_url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logger</span>
+        <span class="c1"># Check that the conversion tools are available</span>
+        <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONVERSION_TOOLS</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">shutilwhich</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="n">tool</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Failed to find conversion tool: </span><span class="si">{}</span><span class="s2">&quot;</span>\
+                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tool</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+        <span class="c1"># Check the API</span>
+        <span class="k">if</span> <span class="n">oasis_api_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">request_url</span> <span class="o">=</span> <span class="s2">&quot;/healthcheck&quot;</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">+</span> <span class="n">request_url</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;GET </span><span class="si">{}</span><span class="s2"> failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                    <span class="n">request_url</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)))</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;API healthcheck failed.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OasisApiClient.upload_inputs_from_directory"><a class="viewcode-back" href="../../modules.html#client.OasisApiClient.OasisApiClient.upload_inputs_from_directory">[docs]</a>    <span class="k">def</span> <span class="nf">upload_inputs_from_directory</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">do_il</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">do_validation</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Upload the CSV files from a specified directory.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            directory (string): the directory containting the CSVs.</span>
+<span class="sd">            do_il: if True, require files for insured loss (IL) calculation.</span>
+<span class="sd">            do_validation (bool): if True, validate the data intrgrity</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The location of the uploaded inputs.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getframeinfo</span><span class="p">(</span><span class="n">frame</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;STARTED: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func_name</span><span class="p">))</span>
+        <span class="n">args</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargvalues</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s1">&#39;self&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_inputs_directory</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">do_il</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_validation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inputs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_binary_files</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">do_il</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_tar_file</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Uploading inputs&quot;</span><span class="p">)</span>
+        <span class="n">tar_file</span> <span class="o">=</span> <span class="s1">&#39;inputs.tar.gz&#39;</span>
+        <span class="n">inputs_tar_to_upload</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">tar_file</span><span class="p">)</span>
+        <span class="n">inputs_multipart_data</span> <span class="o">=</span> <span class="n">MultipartEncoder</span><span class="p">(</span>
+            <span class="n">fields</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;file&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">tar_file</span><span class="p">,</span>
+                         <span class="nb">open</span><span class="p">(</span><span class="n">inputs_tar_to_upload</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">),</span>
+                         <span class="s1">&#39;text/plain&#39;</span><span class="p">)})</span>
+        <span class="n">request_url</span> <span class="o">=</span> <span class="s2">&quot;/exposure&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">+</span> <span class="n">request_url</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">inputs_multipart_data</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="n">inputs_multipart_data</span><span class="o">.</span><span class="n">content_type</span><span class="p">})</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;POST </span><span class="si">{}</span><span class="s2"> failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">request_url</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)))</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Failed to save exposure.&quot;</span><span class="p">)</span>
+        <span class="n">exposure_location</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;exposures&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Uploaded exposure. Location: &quot;</span> <span class="o">+</span> <span class="n">exposure_location</span><span class="p">)</span>
+
+        <span class="c1"># Tidy up</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clean_directory</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;COMPLETED: </span><span class="si">{}</span><span class="s2"> in </span><span class="si">{}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+
+        <span class="c1"># Return the location of the uploaded inputs</span>
+        <span class="k">return</span> <span class="n">exposure_location</span></div>
+
+<div class="viewcode-block" id="OasisApiClient.run_analysis"><a class="viewcode-back" href="../../modules.html#client.OasisApiClient.OasisApiClient.run_analysis">[docs]</a>    <span class="k">def</span> <span class="nf">run_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">analysis_settings_json</span><span class="p">,</span>
+                     <span class="n">input_location</span><span class="p">,</span>
+                     <span class="n">outputs_directory</span><span class="p">,</span>
+                     <span class="n">do_clean</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Run an analysis.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_setting_json (string): The analysis settings, as JSON.</span>
+<span class="sd">            inputs_location: The location of the inputs resource.</span>
+<span class="sd">            outputs_directory: The local directory to save the outputs.</span>
+<span class="sd">            do_clean (bool): if True, remove the inputs and outputs resources.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The location of the uploaded inputs.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getframeinfo</span><span class="p">(</span><span class="n">frame</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;STARTED: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func_name</span><span class="p">))</span>
+        <span class="n">args</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargvalues</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s1">&#39;self&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="n">request_url</span> <span class="o">=</span> <span class="s2">&quot;/analysis/&quot;</span> <span class="o">+</span> <span class="n">input_location</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">+</span> <span class="n">request_url</span><span class="p">,</span>
+            <span class="n">json</span><span class="o">=</span><span class="n">analysis_settings_json</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;POST </span><span class="si">{}</span><span class="s2"> failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">request_url</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)))</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Failed to start analysis&quot;</span><span class="p">)</span>
+        <span class="n">analysis_status_location</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;location&#39;</span><span class="p">]</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_PENDING</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Analysis started&quot;</span><span class="p">)</span>
+        <span class="n">analysis_poll_interval_in_seconds</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="n">request_url</span> <span class="o">=</span> <span class="s2">&quot;/analysis_status/&quot;</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Polling analysis status for: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">analysis_status_location</span><span class="p">))</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">+</span> <span class="n">request_url</span> <span class="o">+</span> <span class="n">analysis_status_location</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;GET analysis status failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Response: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()))</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Analysis status: &quot;</span> <span class="o">+</span> <span class="n">status</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_SUCCESS</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">oasis_utils</span><span class="o">.</span><span class="n">STATUS_FAILURE</span><span class="p">:</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Analysis failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">analysis_poll_interval_in_seconds</span><span class="p">)</span>
+        <span class="n">outputs_location</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;outputs_location&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Analysis completed&quot;</span><span class="p">)</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">func_name</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Downloading outputs&quot;</span><span class="p">)</span>
+        <span class="n">outputs_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">outputs_directory</span><span class="p">,</span> <span class="n">outputs_location</span> <span class="o">+</span> <span class="s2">&quot;.tar.gz&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_outputs</span><span class="p">(</span><span class="n">outputs_location</span><span class="p">,</span> <span class="n">outputs_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Downloaded outputs&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Deleting exposure&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">+</span> <span class="s2">&quot;/exposure/&quot;</span> <span class="o">+</span> <span class="n">input_location</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="c1"># Do not fail if tidy up fails</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;DELETE /exposure failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Deleted exposure&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Deleting outputs&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">+</span> <span class="s2">&quot;/outputs/&quot;</span> <span class="o">+</span> <span class="n">outputs_location</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="c1"># Do not fail if tidy up fails</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;DELETE /outputs failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Deleted outputs&quot;</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;COMPLETED: OasisApiClient.run_analysis in </span><span class="si">{}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">round</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="OasisApiClient.download_exposure"><a class="viewcode-back" href="../../modules.html#client.OasisApiClient.OasisApiClient.download_exposure">[docs]</a>    <span class="k">def</span> <span class="nf">download_exposure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exposure_location</span><span class="p">,</span> <span class="n">localfile</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Download exposure data to a specified local file.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            exposure_location (string): The location of the exposure resource.</span>
+<span class="sd">            localfile (string): The localfile to download to.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getframeinfo</span><span class="p">(</span><span class="n">frame</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;STARTED: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func_name</span><span class="p">))</span>
+        <span class="n">args</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargvalues</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s1">&#39;self&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">+</span> <span class="s2">&quot;/exposure/&quot;</span> <span class="o">+</span> <span class="n">exposure_location</span><span class="p">,</span>
+            <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">exception_message</span> <span class="o">=</span> <span class="s2">&quot;GET /exposure failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">exception_message</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">exception_message</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">localfile</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span>
+                    <span class="n">chunk_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DOWNLOAD_CHUCK_SIZE_IN_BYTES</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;COMPLETED: </span><span class="si">{}</span><span class="s2"> in </span><span class="si">{}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">func_name</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="OasisApiClient.download_outputs"><a class="viewcode-back" href="../../modules.html#client.OasisApiClient.OasisApiClient.download_outputs">[docs]</a>    <span class="k">def</span> <span class="nf">download_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs_location</span><span class="p">,</span> <span class="n">localfile</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Download outputs data to a specified local file.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            outputs_location (string): The location of the outputs resource.</span>
+<span class="sd">            localfile (string): The localfile to download to.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getframeinfo</span><span class="p">(</span><span class="n">frame</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;STARTED: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func_name</span><span class="p">))</span>
+        <span class="n">args</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargvalues</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s1">&#39;self&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">localfile</span><span class="p">):</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s1">&#39;Local file alreday exists: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">localfile</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_oasis_api_url</span> <span class="o">+</span> <span class="s2">&quot;/outputs/&quot;</span> <span class="o">+</span> <span class="n">outputs_location</span><span class="p">,</span>
+            <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">exception_message</span> <span class="o">=</span> <span class="s2">&quot;GET /outputs failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">exception_message</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">exception_message</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">localfile</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span>
+                    <span class="n">chunk_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DOWNLOAD_CHUCK_SIZE_IN_BYTES</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;COMPLETED: </span><span class="si">{}</span><span class="s2"> in </span><span class="si">{}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">func_name</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="OasisApiClient.create_analysis_settings_json"><a class="viewcode-back" href="../../modules.html#client.OasisApiClient.OasisApiClient.create_analysis_settings_json">[docs]</a>    <span class="k">def</span> <span class="nf">create_analysis_settings_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Generate an analysis settings JSON from a set of</span>
+<span class="sd">        CSV files in a specified directory.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            directory (string): the directory containing the CSV files.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The analysis settings JSON.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getframeinfo</span><span class="p">(</span><span class="n">frame</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;STARTED: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func_name</span><span class="p">))</span>
+        <span class="n">args</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargvalues</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s1">&#39;self&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Directory does not exist: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+
+        <span class="n">general_settings_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GENERAL_SETTINGS_FILE</span><span class="p">)</span>
+        <span class="n">model_settings_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MODEL_SETTINGS_FILE</span><span class="p">)</span>
+        <span class="n">gul_summaries_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GUL_SUMMARIES_FILE</span><span class="p">)</span>
+        <span class="n">il_summaries_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IL_SUMMARIES_FILE</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="n">general_settings_file</span><span class="p">,</span>
+                <span class="n">model_settings_file</span><span class="p">,</span>
+                <span class="n">gul_summaries_file</span><span class="p">,</span>
+                <span class="n">il_summaries_file</span>
+                <span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;File does not exist: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+
+        <span class="n">general_settings</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">general_settings_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="n">general_settings</span><span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> \
+                    <span class="nb">eval</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">(&#39;</span><span class="si">{}</span><span class="s2">&#39;)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+        <span class="n">model_settings</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_settings_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="n">model_settings</span><span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> \
+                    <span class="nb">eval</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">(&#39;</span><span class="si">{}</span><span class="s2">&#39;)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+        <span class="n">gul_summaries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_summaries</span><span class="p">(</span><span class="n">gul_summaries_file</span><span class="p">)</span>
+        <span class="n">il_summaries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_summaries</span><span class="p">(</span><span class="n">il_summaries_file</span><span class="p">)</span>
+
+        <span class="n">analysis_settings</span> <span class="o">=</span> <span class="n">general_settings</span>
+        <span class="n">analysis_settings</span><span class="p">[</span><span class="s1">&#39;model_settings&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_settings</span>
+        <span class="n">analysis_settings</span><span class="p">[</span><span class="s1">&#39;gul_summaries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gul_summaries</span>
+        <span class="n">analysis_settings</span><span class="p">[</span><span class="s1">&#39;il_summaries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">il_summaries</span>
+        <span class="n">json</span> <span class="o">=</span> <span class="n">jsonpickle</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">analysis_settings</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Analysis settings json: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">json</span><span class="p">))</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;COMPLETED: </span><span class="si">{}</span><span class="s2"> in </span><span class="si">{}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">json</span></div>
+
+<div class="viewcode-block" id="OasisApiClient.create_binary_files"><a class="viewcode-back" href="../../modules.html#client.OasisApiClient.OasisApiClient.create_binary_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_binary_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">do_il</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; </span>
+<span class="sd">        Create the binary files.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            directory (string): the directory containing the CSV files.</span>
+<span class="sd">            do_il (bool): do insured loss. If True, FM file must be present.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">do_il</span><span class="p">:</span>
+            <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GUL_INPUTS_FILES</span> <span class="o">+</span> \
+                          <span class="bp">self</span><span class="o">.</span><span class="n">IL_INPUTS_FILES</span> <span class="o">+</span> \
+                          <span class="bp">self</span><span class="o">.</span><span class="n">OPTIONAL_INPUTS_FILES</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GUL_INPUTS_FILES</span> <span class="o">+</span> \
+                          <span class="bp">self</span><span class="o">.</span><span class="n">OPTIONAL_INPUTS_FILES</span>
+
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">:</span>
+            <span class="n">conversion_tool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONVERSION_TOOLS</span><span class="p">[</span><span class="n">file</span><span class="p">]</span>
+            <span class="n">input_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">file</span> <span class="o">+</span> <span class="s2">&quot;.csv&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">output_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">file</span> <span class="o">+</span> <span class="s2">&quot;.bin&quot;</span><span class="p">)</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> &lt; </span><span class="si">{}</span><span class="s2"> &gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">conversion_tool</span><span class="p">,</span> <span class="n">input_file_path</span><span class="p">,</span> <span class="n">output_file_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Running command: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">command</span><span class="p">))</span>
+            <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Failed to convert </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">,</span> <span class="n">command</span><span class="p">))</span>
+                <span class="k">break</span></div>
+
+<div class="viewcode-block" id="OasisApiClient.check_inputs_directory"><a class="viewcode-back" href="../../modules.html#client.OasisApiClient.OasisApiClient.check_inputs_directory">[docs]</a>    <span class="k">def</span> <span class="nf">check_inputs_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory_to_check</span><span class="p">,</span> <span class="n">do_il</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; </span>
+<span class="sd">        Check that all the required csv files are present in the directory.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            directory (string): the directory containing the CSV files.</span>
+<span class="sd">            do_il (bool): do insured loss. If True, FM file must be present.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_to_check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAR_FILE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Inputs tar file already exists: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">do_il</span><span class="p">:</span>
+            <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GUL_INPUTS_FILES</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">IL_INPUTS_FILES</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">input_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GUL_INPUTS_FILES</span>
+
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_to_check</span><span class="p">,</span> <span class="n">file</span> <span class="o">+</span> <span class="s2">&quot;.csv&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Failed to find </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_to_check</span><span class="p">,</span> <span class="n">file</span> <span class="o">+</span> <span class="s2">&quot;.bin&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Binary file already exists: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_validate_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Validate the input files.&#39;&#39;&#39;</span>
+        <span class="c1"># TODO</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_create_tar_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Package the binaries in a gzipped tar. &#39;&#39;&#39;</span>
+
+        <span class="n">tarfile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">directory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAR_FILE</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">tarfile_path</span><span class="p">,</span> <span class="s2">&quot;w:gz&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tar</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GUL_INPUTS_FILES</span> <span class="o">+</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">IL_INPUTS_FILES</span> <span class="o">+</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">OPTIONAL_INPUTS_FILES</span><span class="p">:</span>
+                <span class="n">bin_file</span> <span class="o">=</span> <span class="n">file</span> <span class="o">+</span> <span class="s2">&quot;.bin&quot;</span>
+                <span class="n">bin_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">directory</span><span class="p">,</span> <span class="n">bin_file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">bin_file_path</span><span class="p">):</span>
+                    <span class="n">tar</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">bin_file_path</span><span class="p">,</span> <span class="n">arcname</span><span class="o">=</span><span class="n">bin_file</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_clean_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory_to_check</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Clean the tar and binary files. &#39;&#39;&#39;</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_to_check</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TAR_FILE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GUL_INPUTS_FILES</span> <span class="o">+</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">IL_INPUTS_FILES</span> <span class="o">+</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">OPTIONAL_INPUTS_FILES</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_to_check</span><span class="p">,</span> <span class="n">file</span> <span class="o">+</span> <span class="s2">&quot;.bin&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_summaries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">summary_file</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Get a list representation of a summary file. &#39;&#39;&#39;</span>
+        <span class="n">summaries_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">summary_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="nb">id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">summaries_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                    <span class="n">summaries_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                    <span class="n">summaries_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s1">&#39;leccalc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;leccalc&#39;</span><span class="p">):</span>
+                    <span class="n">summaries_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s1">&#39;leccalc&#39;</span><span class="p">][</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">summaries_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">summaries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">summaries_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">summaries_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">id</span>
+            <span class="n">summaries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summaries_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">summaries</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Oasis API</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Documentation contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../repository-management.html">Repository Management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sphinx.html">Sphinx Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../first-steps.html">First Steps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Module Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Oasis Loss Modelling Framework (v. 0.7, 12 August, 2017)..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

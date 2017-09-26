@@ -1,0 +1,387 @@
+{
+  "definitions": {
+    "AnalysisStatus": {
+      "properties": {
+        "id": {
+          "description": "The analysis ID.", 
+          "type": "string"
+        }, 
+        "message": {
+          "description": "The analysis status message.", 
+          "type": "string"
+        }, 
+        "outputs_summary_location": {
+          "description": "The location of the analysis outputs.", 
+          "type": "string"
+        }, 
+        "status": {
+          "description": "The analysis status.", 
+          "type": "string"
+        }
+      }
+    }, 
+    "ExposureSummary": {
+      "properties": {
+        "created_date": {
+          "description": "The date when the exposure data was uploaded.", 
+          "format": "dateTime", 
+          "type": "string"
+        }, 
+        "location": {
+          "description": "The location of the exposure data.", 
+          "type": "string"
+        }, 
+        "size": {
+          "description": "The size of the uncompressed exposure data in bytes.", 
+          "type": "integer"
+        }
+      }
+    }
+  }, 
+  "info": {
+    "title": "Oasis API", 
+    "version": "0.1"
+  }, 
+  "paths": {
+    "/analysis": {
+      "post": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The analysis settings", 
+            "in": "formData", 
+            "name": "analysis_settings", 
+            "required": true, 
+            "type": "file"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "The analysis_queue resource for the new analysis.", 
+            "schema": {
+              "$ref": "#/definitions/AnalysisQueue"
+            }
+          }
+        }, 
+        "summary": "Start an analysis"
+      }
+    }, 
+    "/analysis_status": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the analysis status resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete an analysis status resource"
+      }
+    }, 
+    "/analysis_status/{location}": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the analysis status resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete an analysis status resource"
+      }, 
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the outputs resource to download.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A list of analysis status resources.", 
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Analysisstatus"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "404": {
+            "description": "Resource not found."
+          }
+        }, 
+        "summary": "Get an analysis status resource"
+      }
+    }, 
+    "/exposure": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "location of exposure resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete an exposure resource"
+      }, 
+      "post": {
+        "description": "", 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "The exposure summary of the created exposure resource.", 
+            "schema": {
+              "$ref": "#/definitions/ExposureSummary"
+            }
+          }
+        }, 
+        "summary": "Upload an exposure resource"
+      }
+    }, 
+    "/exposure/{location}": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "location of exposure resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete an exposure resource"
+      }, 
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the exposure resource.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A compressed tar file containing the Oasis exposure files."
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Get an exposure resource"
+      }
+    }, 
+    "/exposure_summary": {
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the exposure resource to summarise.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A list of exposure summaries.", 
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/ExposureSummary"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Get exposure summary"
+      }
+    }, 
+    "/exposure_summary/{location}": {
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the exposure resource to summarise.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A list of exposure summaries.", 
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/ExposureSummary"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Get exposure summary"
+      }
+    }, 
+    "/outputs": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the outputs resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete a outputs resource"
+      }
+    }, 
+    "/outputs/{location}": {
+      "delete": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the outputs resource to delete.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "OK"
+          }, 
+          "404": {
+            "description": "Resource not found"
+          }
+        }, 
+        "summary": "Delete a outputs resource"
+      }, 
+      "get": {
+        "description": "", 
+        "parameters": [
+          {
+            "description": "The location of the outputs resource to download.", 
+            "in": "path", 
+            "name": "location", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "A compressed tar of the outputs generated by an analysis."
+          }, 
+          "404": {
+            "description": "Resource not found."
+          }
+        }, 
+        "summary": "Get a outputs resource"
+      }
+    }
+  }, 
+  "swagger": "2.0"
+}

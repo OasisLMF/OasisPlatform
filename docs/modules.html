@@ -1,0 +1,472 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Module Documentation &#8212; Oasis API 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="First Steps" href="first-steps.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-documentation">
+<h1>Module Documentation<a class="headerlink" href="#module-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-server.app">
+<span id="server-app"></span><h2><code class="docutils literal"><span class="pre">server.app</span></code><a class="headerlink" href="#module-server.app" title="Permalink to this headline">¶</a></h2>
+<p>Oasis API server application endpoints.</p>
+<dl class="function">
+<dt id="server.app.delete_analysis_status">
+<code class="descclassname">server.app.</code><code class="descname">delete_analysis_status</code><span class="sig-paren">(</span><em>location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#delete_analysis_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.delete_analysis_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete an analysis status resource
+—
+description: Deletes an analysis status resource. If no location</p>
+<blockquote>
+<div>is given all analysis status resources will be deleted.</div></blockquote>
+<p>produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd>description: OK</dd>
+<dt>404:</dt>
+<dd>description: Resource not found</dd>
+</dl>
+</div></blockquote>
+<p>parameters:
+- name: location</p>
+<blockquote>
+<div>in: path
+description: The location of the analysis status resource to delete.
+required: true
+type: string</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.delete_exposure">
+<code class="descclassname">server.app.</code><code class="descname">delete_exposure</code><span class="sig-paren">(</span><em>location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#delete_exposure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.delete_exposure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete an exposure resource
+—
+description: Deletes an exposure resource. If no location is given all exposure resources will be deleted.
+produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd>description: OK</dd>
+<dt>404:</dt>
+<dd>description: Resource not found</dd>
+</dl>
+</div></blockquote>
+<p>parameters:
+- name: location</p>
+<blockquote>
+<div>in: path
+description: location of exposure resource to delete.
+required: true
+type: string</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.delete_outputs">
+<code class="descclassname">server.app.</code><code class="descname">delete_outputs</code><span class="sig-paren">(</span><em>location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#delete_outputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.delete_outputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>download_directory = ‘/var/www/oasis/download’
+Delete a outputs resource
+—
+description: Deletes a outputs resource. If no location is given all</p>
+<blockquote>
+<div>outputs resources will be deleted.</div></blockquote>
+<p>produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd>description: OK</dd>
+<dt>404:</dt>
+<dd>description: Resource not found</dd>
+</dl>
+</div></blockquote>
+<p>parameters:
+- name: location</p>
+<blockquote>
+<div>in: path
+description: The location of the outputs resource to delete.
+required: true
+type: string</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.get_analysis_status">
+<code class="descclassname">server.app.</code><code class="descname">get_analysis_status</code><span class="sig-paren">(</span><em>location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#get_analysis_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.get_analysis_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an analysis status resource
+—
+definitions:
+- schema:</p>
+<blockquote>
+<div><p>id: AnalysisStatus
+properties:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>id:</dt>
+<dd>type: string
+description: The analysis ID.</dd>
+<dt>status:</dt>
+<dd>type: string
+description: The analysis status.</dd>
+<dt>message:</dt>
+<dd>type: string
+description: The analysis status message.</dd>
+<dt>outputs_summary:</dt>
+<dd>type: OutputsSummary
+description: Summary of the outputs.</dd>
+</dl>
+</div></blockquote>
+<p>id: OutputsSummary</p>
+<dl class="docutils">
+<dt>properties:</dt>
+<dd><dl class="first last docutils">
+<dt>location:</dt>
+<dd>type: string
+description: The location of the data.</dd>
+<dt>size:</dt>
+<dd>type: integer
+description: The size of the uncompressed data in bytes.</dd>
+<dt>created_date:</dt>
+<dd><p class="first">type: string
+format: dateTime</p>
+<p class="last">description: The date when the data was created.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>description: Gets an analysis status resource. If no location is given</dt>
+<dd>all exposure status resources are returned.</dd>
+</dl>
+<p>produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd><p class="first">description: A list of analysis status resources.
+schema:</p>
+<blockquote class="last">
+<div><p>type: array
+items:</p>
+<blockquote>
+<div>$ref: ‘#/definitions/AnalysisStatus’</div></blockquote>
+</div></blockquote>
+</dd>
+<dt>404:</dt>
+<dd>description: Resource not found.</dd>
+</dl>
+</div></blockquote>
+<p>parameters:
+-   name: location</p>
+<blockquote>
+<div>in: path
+description: The location of the outputs resource to download.
+required: true
+type: string</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.get_exposure">
+<code class="descclassname">server.app.</code><code class="descname">get_exposure</code><span class="sig-paren">(</span><em>location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#get_exposure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.get_exposure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an exposure resource
+—
+description: Returns an exposure resource.
+produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd>description: A compressed tar file containing the Oasis exposure files.</dd>
+<dt>404:</dt>
+<dd>description: Resource not found</dd>
+</dl>
+</div></blockquote>
+<p>parameters:
+- name: location</p>
+<blockquote>
+<div>in: path
+description: The location of the exposure resource.
+required: true
+type: string</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.get_exposure_summary">
+<code class="descclassname">server.app.</code><code class="descname">get_exposure_summary</code><span class="sig-paren">(</span><em>location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#get_exposure_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.get_exposure_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get exposure summary
+—
+definitions:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>schema:</dt>
+<dd><p class="first">id: ExposureSummary
+properties:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>location:</dt>
+<dd>type: string
+description: The location of the exposure data.</dd>
+<dt>size:</dt>
+<dd>type: integer
+description: The size of the uncompressed exposure data in bytes.</dd>
+<dt>created_date:</dt>
+<dd>type: string
+format: dateTime
+description: The date when the exposure data was uploaded.</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>description: Gets a summary of a exposure resources and their contents.</dt>
+<dd>If location parameter is not supplied returns a summary of 
+all exposures.</dd>
+</dl>
+<p>produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd><p class="first">description: A list of exposure summaries.
+schema:</p>
+<blockquote class="last">
+<div><p>type: array
+items:</p>
+<blockquote>
+<div>$ref: “#/definitions/ExposureSummary”</div></blockquote>
+</div></blockquote>
+</dd>
+</dl>
+<p>404:</p>
+<blockquote>
+<div>description: Resource not found</div></blockquote>
+</div></blockquote>
+<p>parameters:
+- name: location</p>
+<blockquote>
+<div>in: path
+description: The location of the exposure resource to summarise.
+required: true
+type: string</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.get_healthcheck">
+<code class="descclassname">server.app.</code><code class="descname">get_healthcheck</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#get_healthcheck"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.get_healthcheck" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basic healthcheck response.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.get_outputs">
+<code class="descclassname">server.app.</code><code class="descname">get_outputs</code><span class="sig-paren">(</span><em>location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#get_outputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.get_outputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a outputs resource
+—
+description: Gets a outputs resource, returning a compressed outputs tar file.
+produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd>description: A compressed tar of the outputs generated by an analysis.</dd>
+<dt>404:</dt>
+<dd>description: Resource not found.</dd>
+</dl>
+</div></blockquote>
+<p>parameters:
+-   name: location</p>
+<blockquote>
+<div>in: path
+description: The location of the outputs resource to download.
+required: true
+type: string</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.post_analysis">
+<code class="descclassname">server.app.</code><code class="descname">post_analysis</code><span class="sig-paren">(</span><em>input_location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#post_analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.post_analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start an analysis
+—
+description: Starts an analysis by creating an analysis status resource.
+produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd><p class="first">description: The analysis status resource for the new analysis.
+schema:</p>
+<blockquote class="last">
+<div>$ref: ‘#/definitions/AnalysisStatus’</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+<p>produces:
+- application/json
+parameters:
+-   name: input_location</p>
+<blockquote>
+<div>in: path
+description: The location of the input resource to analyse.
+required: true
+type: string</div></blockquote>
+<ul class="simple">
+<li>name: analysis_settings
+in: formData
+description: The analysis settings
+required: true
+type: file</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.post_exposure">
+<code class="descclassname">server.app.</code><code class="descname">post_exposure</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#post_exposure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.post_exposure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload an exposure resource
+—
+description: Uploads an exposure resource by posting an exposure tar file.</p>
+<blockquote>
+<div>The tar file can be compressed or uncompressed.</div></blockquote>
+<p>produces:
+- application/json
+responses:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>200:</dt>
+<dd><p class="first">description: The exposure summary of the created exposure resource.
+schema:</p>
+<blockquote class="last">
+<div>$ref: ‘#/definitions/ExposureSummary’</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.spec">
+<code class="descclassname">server.app.</code><code class="descname">spec</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Swagger docs</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="server.app.validate_analysis_settings">
+<code class="descclassname">server.app.</code><code class="descname">validate_analysis_settings</code><span class="sig-paren">(</span><em>analysis_settings_json</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#validate_analysis_settings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.validate_analysis_settings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="server.app.validate_exposure_tar">
+<code class="descclassname">server.app.</code><code class="descname">validate_exposure_tar</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/server/app.html#validate_exposure_tar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#server.app.validate_exposure_tar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Oasis API</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Documentation contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="repository-management.html">Repository Management</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx.html">Sphinx Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First Steps</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Module Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-server.app"><code class="docutils literal"><span class="pre">server.app</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="first-steps.html" title="previous chapter">First Steps</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Oasis Loss Modelling Framework (v. 0.7, 12 August, 2017)..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/modules.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

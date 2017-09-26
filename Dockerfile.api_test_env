@@ -1,0 +1,17 @@
+FROM coreoasis/ktools:R_0_0_0_1
+
+RUN mkdir /var/log/oasis
+
+RUN useradd -ms /bin/bash api
+RUN chown api /var/log/oasis
+
+COPY ./tests/ /home/api/tests/
+COPY ./src/common/ /home/api/src/common/
+COPY ./src/ /home/api/src/
+COPY ./ara_data/ /home/api/ara_data/
+
+RUN chmod -R a+w /home/api/tests
+RUN chmod -R a+w /home/api/ara_data
+
+USER api
+WORKDIR /home/api
