@@ -8,24 +8,31 @@ import logging
 import tarfile
 import time
 
-from ConfigParser import ConfigParser
 from celery import Celery
 from common import data
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
-from oasis_utils import oasis_utils, oasis_log_utils
+
+from oasis_utils import (
+    oasis_utils,
+    oasis_log_utils,
+    oasis_sys_utils,
+)
 
 APP = Flask(__name__)
 
-CONFIG_PARSER = ConfigParser()
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
 INI_PATH = os.path.abspath(os.path.join(CURRENT_DIRECTORY, 'OasisApi.ini'))
-CONFIG_PARSER.read(INI_PATH)
+
+CONFIG_PARSER = oasis_sys_utils.load_ini_file(INI_PATH)
+CONFIG_PARSER['LOG_FILE'] = CONFIG_PARSER['LOG_FILE'].replace('%LOG_DIRECTORY%', CONFIG_PARSER['LOG_DIRECTORY'])
+
 oasis_log_utils.read_log_config(CONFIG_PARSER)
 
-INPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'INPUTS_DATA_DIRECTORY')
-OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'OUTPUTS_DATA_DIRECTORY')
+INPUTS_DATA_DIRECTORY = CONFIG_PARSER['INPUTS_DATA_DIRECTORY']
+OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER['OUTPUTS_DATA_DIRECTORY']
 
 TAR_FILE_SUFFIX = '.tar'
 GZIP_FILE_SUFFIX = '.gz'
