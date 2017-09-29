@@ -57,7 +57,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Oasis API'
-copyright = u'2017, Oasis Loss Modelling Framework (v. 0.7, 12 August, 2017).'
+copyright = u'2017, Oasis Loss Modelling Framework (v. 0.8, 28 September, 2017).'
 author = u'Sandeep Murthy'
 
 # The version info for the project you're documenting, acts as replacement for

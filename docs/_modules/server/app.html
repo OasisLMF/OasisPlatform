@@ -50,24 +50,34 @@
 <span class="kn">import</span> <span class="nn">tarfile</span>
 <span class="kn">import</span> <span class="nn">time</span>
 
-<span class="kn">from</span> <span class="nn">ConfigParser</span> <span class="k">import</span> <span class="n">ConfigParser</span>
 <span class="kn">from</span> <span class="nn">celery</span> <span class="k">import</span> <span class="n">Celery</span>
 <span class="kn">from</span> <span class="nn">common</span> <span class="k">import</span> <span class="n">data</span>
 <span class="kn">from</span> <span class="nn">flask</span> <span class="k">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span>
 <span class="kn">from</span> <span class="nn">flask_swagger</span> <span class="k">import</span> <span class="n">swagger</span>
 <span class="kn">from</span> <span class="nn">flask.helpers</span> <span class="k">import</span> <span class="n">send_from_directory</span>
-<span class="kn">from</span> <span class="nn">oasis_utils</span> <span class="k">import</span> <span class="n">oasis_utils</span><span class="p">,</span> <span class="n">oasis_log_utils</span>
+
+<span class="kn">from</span> <span class="nn">oasis_utils</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">oasis_utils</span><span class="p">,</span>
+    <span class="n">oasis_log_utils</span><span class="p">,</span>
+    <span class="n">oasis_sys_utils</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">APP</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">CONFIG_PARSER</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">()</span>
 <span class="n">CURRENT_DIRECTORY</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">())))</span>
+
 <span class="n">INI_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CURRENT_DIRECTORY</span><span class="p">,</span> <span class="s1">&#39;OasisApi.ini&#39;</span><span class="p">))</span>
-<span class="n">CONFIG_PARSER</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">INI_PATH</span><span class="p">)</span>
+
+<span class="n">CONFIG_PARSER</span> <span class="o">=</span> <span class="n">oasis_sys_utils</span><span class="o">.</span><span class="n">load_ini_file</span><span class="p">(</span><span class="n">INI_PATH</span><span class="p">)</span>
+<span class="n">CONFIG_PARSER</span><span class="p">[</span><span class="s1">&#39;LOG_FILE&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+    <span class="n">CONFIG_PARSER</span><span class="p">[</span><span class="s1">&#39;LOG_FILE&#39;</span><span class="p">],</span>
+    <span class="n">CONFIG_PARSER</span><span class="p">[</span><span class="s1">&#39;LOG_FILE&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;%LOG_DIRECTORY%&#39;</span><span class="p">,</span> <span class="n">CONFIG_PARSER</span><span class="p">[</span><span class="s1">&#39;LOG_DIRECTORY&#39;</span><span class="p">])</span>
+<span class="p">)</span>
+
 <span class="n">oasis_log_utils</span><span class="o">.</span><span class="n">read_log_config</span><span class="p">(</span><span class="n">CONFIG_PARSER</span><span class="p">)</span>
 
-<span class="n">INPUTS_DATA_DIRECTORY</span> <span class="o">=</span> <span class="n">CONFIG_PARSER</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Default&#39;</span><span class="p">,</span> <span class="s1">&#39;INPUTS_DATA_DIRECTORY&#39;</span><span class="p">)</span>
-<span class="n">OUTPUTS_DATA_DIRECTORY</span> <span class="o">=</span> <span class="n">CONFIG_PARSER</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Default&#39;</span><span class="p">,</span> <span class="s1">&#39;OUTPUTS_DATA_DIRECTORY&#39;</span><span class="p">)</span>
+<span class="n">INPUTS_DATA_DIRECTORY</span> <span class="o">=</span> <span class="n">CONFIG_PARSER</span><span class="p">[</span><span class="s1">&#39;INPUTS_DATA_DIRECTORY&#39;</span><span class="p">]</span>
+<span class="n">OUTPUTS_DATA_DIRECTORY</span> <span class="o">=</span> <span class="n">CONFIG_PARSER</span><span class="p">[</span><span class="s1">&#39;OUTPUTS_DATA_DIRECTORY&#39;</span><span class="p">]</span>
 
 <span class="n">TAR_FILE_SUFFIX</span> <span class="o">=</span> <span class="s1">&#39;.tar&#39;</span>
 <span class="n">GZIP_FILE_SUFFIX</span> <span class="o">=</span> <span class="s1">&#39;.gz&#39;</span>
@@ -670,7 +680,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2017, Oasis Loss Modelling Framework (v. 0.7, 12 August, 2017)..
+      &copy;2017, Oasis Loss Modelling Framework (v. 0.8, 28 September, 2017)..
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
