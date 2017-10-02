@@ -27,9 +27,10 @@ CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.curr
 INI_PATH = os.path.abspath(os.path.join(CURRENT_DIRECTORY, 'OasisApi.ini'))
 
 CONFIG_PARSER = oasis_sys_utils.load_ini_file(INI_PATH)
-CONFIG_PARSER['LOG_FILE'].replace(
-    CONFIG_PARSER['LOG_FILE'],
-    CONFIG_PARSER['LOG_FILE'].replace('%LOG_DIRECTORY%', CONFIG_PARSER['LOG_DIRECTORY'])
+CONFIG_PARSER.update(
+    {
+        'LOG_FILE':CONFIG_PARSER['LOG_FILE'].replace('%LOG_DIRECTORY%', CONFIG_PARSER['LOG_DIRECTORY'])
+    }
 )
 
 oasis_log_utils.read_log_config(CONFIG_PARSER)
