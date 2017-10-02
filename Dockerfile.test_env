@@ -36,4 +36,4 @@ RUN chmod -R a+w /home/oasis
 #WORKDIR /home/oasis
 
 #RUN python /home/oasis/tests/KparseTests.py 
-RUN python /home/oasis/tests/ExposureTests.py 
+#RUN python /home/oasis/tests/ExposureTests.py 
