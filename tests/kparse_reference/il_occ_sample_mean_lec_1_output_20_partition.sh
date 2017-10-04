@@ -4,6 +4,7 @@ rm -R -f output/*
 rm -R -f fifo/*
 rm -R -f work/*
 
+mkdir work/kat
 
 mkfifo fifo/il_P1
 
@@ -86,12 +87,6 @@ mkfifo fifo/il_P20
 mkfifo fifo/il_S1_summary_P20
 
 mkdir work/il_S1_summaryleccalc
-
-# --- Do insured loss kats ---
-
-
-# --- Do ground up loss kats ---
-
 
 # --- Do insured loss computes ---
 
@@ -181,6 +176,12 @@ eve 19 20 | getmodel | gulcalc -S100 -L100 -r -i - | fmcalc > fifo/il_P19  &
 eve 20 20 | getmodel | gulcalc -S100 -L100 -r -i - | fmcalc > fifo/il_P20  &
 
 wait $pid1 $pid2 $pid3 $pid4 $pid5 $pid6 $pid7 $pid8 $pid9 $pid10 $pid11 $pid12 $pid13 $pid14 $pid15 $pid16 $pid17 $pid18 $pid19 $pid20 
+
+
+# --- Do insured loss kats ---
+
+
+# --- Do ground up loss kats ---
 
 
 leccalc -r -Kil_S1_summaryleccalc -s output/il_S1_leccalc_sample_mean_oep.csv  &  lpid1=$!
