@@ -86,3 +86,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+kparse_output
+g

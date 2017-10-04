@@ -117,8 +117,7 @@ def do_fifos(action, runtype, analysis_settings, process_id):
 def create_workfolders(runtype, analysis_settings):
 
     if "{0}_summaries".format(runtype) not in analysis_settings:
-        return
-    print_command("mkdir work/kat")
+        return    
     for summary in analysis_settings["{0}_summaries".format(runtype)]:
         if "id" in summary:
             summary_set = summary["id"]
@@ -265,23 +264,26 @@ def do_any(runtype, analysis_settings, process_id):
                 cmd = "eltcalc -s"
                 if process_id == 1:
                     cmd = "eltcalc"
+                pid_monitor_count = pid_monitor_count + 1
                 print_command(
-                    "{3} < fifo/{0}_S{1}_summaryeltcalc_P{2} > work/kat/{0}_S{1}_eltcalc_P{2} &".format(
-                        runtype, summary_set, process_id, cmd))
+                    "{3} < fifo/{0}_S{1}_summaryeltcalc_P{2} > work/kat/{0}_S{1}_eltcalc_P{2} & pid{4}=$!".format(
+                        runtype, summary_set, process_id, cmd,pid_monitor_count))
             if summary.get("summarycalc"):
                 cmd = "summarycalctocsv -s"
                 if process_id == 1:
                     cmd = "summarycalctocsv"
+                pid_monitor_count = pid_monitor_count + 1
                 print_command(
-                    "{3} < fifo/{0}_S{1}_summarysummarycalc_P{2} > work/kat/{0}_S{1}_summarycalc_P{2} &".format(
-                        runtype, summary_set, process_id, cmd))
+                    "{3} < fifo/{0}_S{1}_summarysummarycalc_P{2} > work/kat/{0}_S{1}_summarycalc_P{2} & pid{4}=$!".format(
+                        runtype, summary_set, process_id, cmd,pid_monitor_count))
             if summary.get("pltcalc"):
                 cmd = "pltcalc -s"
                 if process_id == 1:
                     cmd = "pltcalc"
+                pid_monitor_count = pid_monitor_count + 1
                 print_command(
-                    "{3} < fifo/{0}_S{1}_summarypltcalc_P{2} > work/kat/{0}_S{1}_pltcalc_P{2} &".format(
-                        runtype, summary_set, process_id, cmd))
+                    "{3} < fifo/{0}_S{1}_summarypltcalc_P{2} > work/kat/{0}_S{1}_pltcalc_P{2} & pid{4}=$!".format(
+                        runtype, summary_set, process_id, cmd,pid_monitor_count))
             if summary.get("aalcalc"):
                 pid_monitor_count = pid_monitor_count + 1
                 print_command(
@@ -382,7 +384,9 @@ def genbash(
     apid_monitor_count = 0
     global lpid_monitor_count
     lpid_monitor_count = 0
-
+    global kpid_monitor_count
+    kpid_monitor_count = 0
+    
     global command_file
     command_file = output_filename
 
@@ -417,6 +421,8 @@ def genbash(
     print_command("rm -R -f work/*")
     print_command("")
 
+    print_command("mkdir work/kat")
+    
     if gul_output:
         do_gul_make_fifo(analysis_settings, max_process_id)
         create_workfolders("gul", analysis_settings)
