@@ -26,6 +26,8 @@ services:
      - ./upload:/var/oasis/upload:rw
      - ./download:/var/oasis/download:rw
     environment:
+    - MODEL_SUPPLIER_ID=OasisIM
+    - MODEL_VERSION_ID=1
     - RABBIT_PORT=5672
     - MYSQL_PORT=3306
   rabbit:
