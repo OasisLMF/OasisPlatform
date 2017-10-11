@@ -34,9 +34,6 @@ RUN chmod a+w /var/log/oasis/oasis_api_server.log
 RUN pip install -r /var/www/oasis/server/requirements.txt
 RUN pip install -r /var/www/oasis/oasis_utils/requirements.txt
 
-# Temporary fix for HTTP error
-RUN echo 'HttpProtocolOptions Unsafe' >> /etc/apache2/apache2.conf
-
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 EXPOSE 80
