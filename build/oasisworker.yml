@@ -1,0 +1,21 @@
+version: '2' 
+services:
+
+  oasis_model_execution_worker:
+    restart: always
+    image: coreoasis/model_execution_worker:__oasis_release_tag__
+    container_name: oasis_worker
+    volumes:
+     - ./upload:/var/oasis/upload:rw
+     - ./download:/var/oasis/download:rw
+     - /tmp:/tmp
+    links:
+     - mysql:mysql
+     - rabbit:rabbit
+    environment:
+     - KTOOLS_BATCH_COUNT=-1
+     - MODEL_SUPPLIER_ID=__model_supplier__
+     - MODEL_VERSION_ID=__model_version__
+     - LOCK_FILE='/tmp/tmp_ktools_lock_file'
+     - RABBIT_PORT=5672
+     - MYSQL_PORT=3306
