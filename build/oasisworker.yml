@@ -9,9 +9,9 @@ services:
      - ./upload:/var/oasis/upload:rw
      - ./download:/var/oasis/download:rw
      - /tmp:/tmp
-    links:
-     - mysql:mysql
-     - rabbit:rabbit
+    extra_hosts:
+     - mysql:__ip_address__
+     - rabbit:__ip_address__
     environment:
      - KTOOLS_BATCH_COUNT=-1
      - MODEL_SUPPLIER_ID=__model_supplier__
