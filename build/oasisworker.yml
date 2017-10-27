@@ -8,6 +8,7 @@ services:
     volumes:
      - ./upload:/var/oasis/upload:rw
      - ./download:/var/oasis/download:rw
+     - ./model_data:/var/oasis/model_data/__model_supplier__/__model_version__:rw
      - /tmp:/tmp
     extra_hosts:
      - mysql:__ip_address__
