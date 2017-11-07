@@ -117,7 +117,7 @@ def do_fifos(action, runtype, analysis_settings, process_id):
 def create_workfolders(runtype, analysis_settings):
 
     if "{0}_summaries".format(runtype) not in analysis_settings:
-        return    
+        return
     for summary in analysis_settings["{0}_summaries".format(runtype)]:
         if "id" in summary:
             summary_set = summary["id"]
@@ -131,6 +131,7 @@ def create_workfolders(runtype, analysis_settings):
 
 
 def remove_workfolders(runtype, analysis_settings):
+    print_command("rm -rf work/kat")
     if "{0}_summaries".format(runtype) not in analysis_settings:
         return
     for summary in analysis_settings["{0}_summaries".format(runtype)]:
@@ -386,7 +387,7 @@ def genbash(
     lpid_monitor_count = 0
     global kpid_monitor_count
     kpid_monitor_count = 0
-    
+
     global command_file
     command_file = output_filename
 
@@ -422,7 +423,7 @@ def genbash(
     print_command("")
 
     print_command("mkdir work/kat")
-    
+
     if gul_output:
         do_gul_make_fifo(analysis_settings, max_process_id)
         create_workfolders("gul", analysis_settings)
