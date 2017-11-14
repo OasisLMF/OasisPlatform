@@ -1,4 +1,4 @@
-FROM coreoasis/oasis_base:R_0_0_0_17
+FROM coreoasis/ktools:R_0_0_0_17
 
 RUN apt update && \
     apt upgrade -y && \
