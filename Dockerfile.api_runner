@@ -1,4 +1,4 @@
-FROM coreoasis/ktools:R_0_0_0_2
+FROM ktools
 
 RUN apt install -y unixodbc-dev
 
