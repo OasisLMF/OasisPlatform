@@ -1,4 +1,4 @@
-FROM ktools
+FROM coreoasis/ktools
 
 RUN apt update && \
     apt upgrade -y && \
