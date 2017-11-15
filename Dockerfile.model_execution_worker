@@ -1,4 +1,4 @@
-FROM coreoasis/ktools:R_0_0_0_2
+FROM coreoasis/ktools:%RELEASE_TAG%
 
 RUN apt update && \
     apt upgrade -y && \
@@ -42,5 +42,5 @@ ENTRYPOINT \
 	sed -i -e "s/%CELERY_QUEUE%/$MODEL_SUPPLIER_ID-$MODEL_VERSION_ID/" startup.sh && \
 	./utils/wait-for-it.sh "rabbit:$RABBIT_PORT" && \
 	./utils/wait-for-it.sh "mysql:$MYSQL_PORT" && \
-	./startup.sh && \ 
+	./startup.sh && \
 	tail -f /var/log/oasis/worker.log

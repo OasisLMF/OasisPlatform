@@ -1,4 +1,4 @@
-FROM coreoasis/oasis_base:R_0_0_0_17
+FROM coreoasis/oasis_base:%RELEASE_TAG%
 
 RUN apt update && \
     apt upgrade -y && \
@@ -42,6 +42,6 @@ ENTRYPOINT \
 	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /var/www/oasis/common/CeleryConfig.py && \
 	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /var/www/oasis/common/CeleryConfig.py && \
 	wait-for-it.sh "rabbit:$RABBIT_PORT" -t 60 && \
-	wait-for-it.sh "mysql:$MYSQL_PORT" -t 60 && \	
+	wait-for-it.sh "mysql:$MYSQL_PORT" -t 60 && \
 	startup.sh && \
 	tail -f /var/log/oasis/oasis_api_server.log
