@@ -1,4 +1,4 @@
-FROM ktools
+FROM coreoasis/ktools:%RELEASE_TAG%
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
