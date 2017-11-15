@@ -1,15 +1,5 @@
 FROM coreoasis/oasis_base:latest
 
-RUN apt update && \
-    apt upgrade -y && \
-    apt install -y \
-		apache2 \
-		apache2-utils \
-		libapache2-mod-wsgi \
-        python-flask \
-		libmysqlclient-dev \
-		unixodbc-dev
-
 RUN mkdir /var/www/oasis
 RUN mkdir /var/www/oasis/server
 RUN mkdir /var/www/oasis/common

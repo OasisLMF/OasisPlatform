@@ -1,7 +1,5 @@
 FROM coreoasis/ktools:%RELEASE_TAG%
 
-RUN apt install -y unixodbc-dev
-
 RUN mkdir /var/log/oasis
 
 RUN useradd -ms /bin/bash api
