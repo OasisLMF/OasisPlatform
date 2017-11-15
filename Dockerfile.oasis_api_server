@@ -1,4 +1,4 @@
-FROM coreoasis/oasis_base:%RELEASE_TAG%
+FROM coreoasis/oasis_base:latest
 
 RUN apt update && \
     apt upgrade -y && \
