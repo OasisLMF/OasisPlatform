@@ -5,18 +5,19 @@ import sys
 import unittest
 import shutil
 import tarfile
-import time
 
 from flask import json
 from random import randint
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
-LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
+src_path = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
+LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..'))
+if (os.path.isdir(src_path)):
+    LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
 sys.path.append(LIB_PATH)
 
 from server import app
-from common import data
 
 class Test_ExposureTests(unittest.TestCase):
     ''' 
