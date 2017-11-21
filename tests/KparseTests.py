@@ -14,7 +14,10 @@ import unittest
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
-LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
+src_path = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
+LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..'))
+if (os.path.isdir(src_path)):
+    LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
 sys.path.append(LIB_PATH)
 
 import oasis_utils.kparse as kparse
@@ -45,7 +48,7 @@ class Test_KparseTests(unittest.TestCase):
     def run_kparse(self, name, num_partitions):
 
         input_filename = os.path.join(
-            KPARSE_INPUT_FOLDER, 
+            KPARSE_INPUT_FOLDER,
             "{}.json".format(name))
         output_filename = os.path.join(
             KPARSE_OUTPUT_FOLDER,
@@ -61,10 +64,10 @@ class Test_KparseTests(unittest.TestCase):
 
     def check(self, name):
         output_filename = os.path.join(
-            KPARSE_OUTPUT_FOLDER, 
+            KPARSE_OUTPUT_FOLDER,
             "{}.sh".format(name))
         reference_filename = os.path.join(
-            KPARSE_REFERENCE_FOLDER, 
+            KPARSE_REFERENCE_FOLDER,
             "{}.sh".format(name))
         output_md5 = self.md5(output_filename)
         reference_md5 = self.md5(reference_filename)
@@ -392,4 +395,3 @@ class Test_KparseTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

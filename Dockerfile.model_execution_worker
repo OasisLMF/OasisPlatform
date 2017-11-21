@@ -1,4 +1,6 @@
-FROM coreoasis/ktools:%RELEASE_TAG%
+FROM coreoasis/ktools:R_0_0_0_23
+
+WORKDIR /home/worker
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
@@ -8,27 +10,24 @@ RUN pip install -r /tmp/requirements.txt
 
 RUN mkdir /var/log/oasis
 RUN mkdir /var/oasis/working
-
 RUN useradd -ms /bin/bash worker
 RUN chown worker /var/log/oasis
 RUN chown worker /var/oasis/working
 RUN touch /var/log/oasis/worker.log
 RUN chmod a+w /var/log/oasis/worker.log
 
-WORKDIR /home/worker
-
 COPY ./data/static /var/oasis/model_data/OasisIM/1
 COPY ./data/static /var/oasis/model_data/OasisIM/2
-
-COPY ./src/model_execution_worker/startup.sh  ./
-
+COPY ./src/model_execution_worker/startup.sh ./
 COPY ./src/common ./common/
 COPY ./src/model_execution_worker/ ./model_execution_worker/
 COPY ./src/model_execution/ ./model_execution/
 COPY ./src/utils/ ./utils/
 COPY ./src/oasis_utils/ ./oasis_utils/
+COPY ./tests /home/worker/tests
 
 RUN chmod -R 777 /home/worker/common
+RUN python /home/worker/tests/KparseTests.py
 
 USER worker
 
