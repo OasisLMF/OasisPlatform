@@ -39,6 +39,7 @@ rm fifo/gul_P1
 
 rm fifo/gul_S1_summary_P1
 
+rm -rf work/kat
 rm work/gul_S1_summaryleccalc/*
 rmdir work/gul_S1_summaryleccalc
 

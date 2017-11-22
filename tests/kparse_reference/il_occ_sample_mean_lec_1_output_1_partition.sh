@@ -40,5 +40,6 @@ rm fifo/il_P1
 
 rm fifo/il_S1_summary_P1
 
+rm -rf work/kat
 rm work/il_S1_summaryleccalc/*
 rmdir work/il_S1_summaryleccalc

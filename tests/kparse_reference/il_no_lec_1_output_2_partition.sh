@@ -70,6 +70,7 @@ wait $kpid1 $kpid2 $kpid3
 aalsummary -Kil_S1_aalcalc > output/il_S1_aalcalc.csv & apid1=$!
 wait $apid1 
 
+rm -rf work/kat
 
 rm fifo/il_P1
 
@@ -93,5 +94,6 @@ rm fifo/il_S1_summarypltcalc_P2
 rm fifo/il_S1_pltcalc_P2
 rm fifo/il_S1_summaryaalcalc_P2
 
+rm -rf work/kat
 rm work/il_S1_aalcalc/*
 rmdir work/il_S1_aalcalc

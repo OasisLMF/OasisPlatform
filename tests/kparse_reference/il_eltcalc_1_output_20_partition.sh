@@ -367,3 +367,4 @@ rm fifo/il_S1_summary_P20
 rm fifo/il_S1_summaryeltcalc_P20
 rm fifo/il_S1_eltcalc_P20
 
+rm -rf work/kat

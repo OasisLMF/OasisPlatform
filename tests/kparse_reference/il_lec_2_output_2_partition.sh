@@ -148,6 +148,7 @@ rm fifo/il_S2_summarypltcalc_P2
 rm fifo/il_S2_pltcalc_P2
 rm fifo/il_S2_summaryaalcalc_P2
 
+rm -rf work/kat
 rm work/il_S1_summaryleccalc/*
 rmdir work/il_S1_summaryleccalc
 rm work/il_S1_aalcalc/*

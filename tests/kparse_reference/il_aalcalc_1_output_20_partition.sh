@@ -328,5 +328,6 @@ rm fifo/il_P20
 rm fifo/il_S1_summary_P20
 rm fifo/il_S1_summaryaalcalc_P20
 
+rm -rf work/kat
 rm work/il_S1_aalcalc/*
 rmdir work/il_S1_aalcalc

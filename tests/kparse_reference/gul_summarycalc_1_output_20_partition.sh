@@ -366,4 +366,5 @@ rm fifo/gul_S1_summary_P20
 rm fifo/gul_S1_summarysummarycalc_P20
 rm fifo/gul_S1_summarycalc_P20
 
+rm -rf work/kat
 

@@ -267,6 +267,7 @@ rm fifo/gul_P20
 
 rm fifo/gul_S1_summary_P20
 
+rm -rf work/kat
 rm work/gul_S1_summaryleccalc/*
 rmdir work/gul_S1_summaryleccalc
 

@@ -44,3 +44,4 @@ rm fifo/il_S1_summary_P1
 rm fifo/il_S1_summarypltcalc_P1
 rm fifo/il_S1_pltcalc_P1
 
+rm -rf work/kat

@@ -43,4 +43,5 @@ rm fifo/gul_S1_summary_P1
 rm fifo/gul_S1_summarysummarycalc_P1
 rm fifo/gul_S1_summarycalc_P1
 
+rm -rf work/kat
 

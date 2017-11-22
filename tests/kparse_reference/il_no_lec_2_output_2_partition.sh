@@ -103,6 +103,7 @@ aalsummary -Kil_S1_aalcalc > output/il_S1_aalcalc.csv & apid1=$!
 aalsummary -Kil_S2_aalcalc > output/il_S2_aalcalc.csv & apid2=$!
 wait $apid1 $apid2 
 
+rm -rf work/kat
 
 rm fifo/il_P1
 
@@ -142,6 +143,7 @@ rm fifo/il_S2_summarypltcalc_P2
 rm fifo/il_S2_pltcalc_P2
 rm fifo/il_S2_summaryaalcalc_P2
 
+rm -rf work/kat
 rm work/il_S1_aalcalc/*
 rmdir work/il_S1_aalcalc
 rm work/il_S2_aalcalc/*

@@ -139,6 +139,7 @@ rm fifo/gul_S1_summarypltcalc_P2
 rm fifo/gul_S1_pltcalc_P2
 rm fifo/gul_S1_summaryaalcalc_P2
 
+rm -rf work/kat
 rm work/gul_S1_summaryleccalc/*
 rmdir work/gul_S1_summaryleccalc
 rm work/gul_S1_aalcalc/*
@@ -166,6 +167,7 @@ rm fifo/il_S1_summarypltcalc_P2
 rm fifo/il_S1_pltcalc_P2
 rm fifo/il_S1_summaryaalcalc_P2
 
+rm -rf work/kat
 rm work/il_S1_summaryleccalc/*
 rmdir work/il_S1_summaryleccalc
 rm work/il_S1_aalcalc/*
