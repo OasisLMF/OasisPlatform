@@ -32,7 +32,7 @@ RUN pip install -r /var/www/oasis/oasis_utils/requirements.txt
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 
-RUN ls -larht && python /var/www/oasis/tests/ExposureTests.py
+RUN python /var/www/oasis/tests/ExposureTests.py
 
 EXPOSE 80
 
