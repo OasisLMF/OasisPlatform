@@ -26,7 +26,7 @@ COPY ./src/utils/ ./utils/
 COPY ./src/oasis_utils/ ./oasis_utils/
 COPY ./tests /home/worker/tests
 
-RUN chmod -R 777 /home/worker/common
+RUN chmod -R 777 /home/worker/common /home/worker/
 RUN python /home/worker/tests/KparseTests.py || true
 
 USER worker
@@ -35,7 +35,7 @@ ENTRYPOINT \
 	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /home/worker/common/CeleryConfig.py && \
 	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py && \
 	sed -i -e "s/%CELERY_QUEUE%/$MODEL_SUPPLIER_ID-$MODEL_VERSION_ID/" startup.sh && \
-	./utils/wait-for-it.sh "rabbit:$RABBIT_PORT" && \
-	./utils/wait-for-it.sh "mysql:$MYSQL_PORT" && \
+	./utils/wait-for-it.sh "oasis_rabbit:$RABBIT_PORT" && \
+	./utils/wait-for-it.sh "oasis_mysql:$MYSQL_PORT" && \
 	./startup.sh && \
 	tail -f /var/log/oasis/worker.log
