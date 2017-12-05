@@ -230,6 +230,17 @@ def start_analysis(analysis_settings, input_location):
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
 
+    # Get the periods file from static
+    analysis_periods_filepath = os.path.join(
+        working_directory, 'input', 'periods.bin')
+    model_data_periods_filepath = os.path.join(
+        working_directory, 'static', 'periods.bin')
+    shutil.copyfile(model_data_periods_filepath, analysis_periods_filepath)
+
+    os.chdir(working_directory)
+    logging.info("Working directory = {}".format(working_directory))
+
+    
     # Persist the analysis_settings
     with open("analysis_settings.json", "w") as json_file:
         json.dump(analysis_settings, json_file)
