@@ -235,7 +235,8 @@ def start_analysis(analysis_settings, input_location):
         working_directory, 'input', 'periods.bin')
     model_data_periods_filepath = os.path.join(
         working_directory, 'static', 'periods.bin')
-    shutil.copyfile(model_data_periods_filepath, analysis_periods_filepath)
+    if os.path.exists(model_data_periods_filepath):
+        shutil.copyfile(model_data_periods_filepath, analysis_periods_filepath)
 
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
