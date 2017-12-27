@@ -1,13 +1,17 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import io
-import os
 import inspect
-import sys
-import unittest
+import os
 import shutil
+import sys
 import tarfile
+import unittest
+
+from random import randint
 
 from flask import json
-from random import randint
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
@@ -18,6 +22,7 @@ if (os.path.isdir(src_path)):
 sys.path.append(LIB_PATH)
 
 from server import app
+
 
 class Test_ExposureTests(unittest.TestCase):
     ''' 

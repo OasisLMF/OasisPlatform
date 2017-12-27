@@ -1,27 +1,29 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import io
-import os
 import inspect
-import sys
-import unittest
-from flask import json
+import os
 import shutil
+import sys
 import tarfile
 import time
+import unittest
+
 from random import randint
-import StringIO
-#from threading import Thread
-#import threading
+
 import requests
-#from requests import Request,Session
+import requests_toolbelt
+
+from flask import json
+
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from requests_toolbelt import threaded
-import requests_toolbelt
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 UPLOAD_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'testupload'))
 LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, '..', 'src'))
 sys.path.append(LIB_PATH)
-
 
 from server import app
 

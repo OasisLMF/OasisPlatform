@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import hashlib
 import io
-import os
 import inspect
-import sys
-import unittest
+import json
+import os
 import shutil
+import sys
 import tarfile
 import time
-import json
-import hashlib
+import unittest
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
