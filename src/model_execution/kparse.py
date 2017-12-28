@@ -10,8 +10,7 @@ import logging
 import os
 import sys
 
-if os.getcwd().split(os.path.sep)[-1] == 'model_execution':
-    sys.path.insert(0, os.path.abspath(os.pardir))
+sys.path.insert(0, os.path.abspath(os.pardir))
 
 from oasis_utils import (
     oasis_log_utils,
@@ -393,6 +392,11 @@ def get_getmodel_cmd(
 def genbash(
         max_process_id=None, analysis_settings=None, output_filename=None,
         get_getmodel_cmd=get_getmodel_cmd):
+    """
+    Generates a bash script containing ktools calculation instructions for an
+    Oasis model, provided its analysis settings JSON file, the number of processes
+    to use, and the path and name of the output script.
+    """
     #pylint: disable=I0011, W0621
     global pid_monitor_count
     pid_monitor_count = 0
