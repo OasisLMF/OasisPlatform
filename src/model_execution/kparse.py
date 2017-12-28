@@ -1,7 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
     Code to generate bash script for execution from json
 """
-from oasis_utils import oasis_log_utils
+import argparse
+import io
+import json
+import logging
+import os
+import sys
+
+if os.getcwd().split(os.path.sep)[-1] == 'model_execution':
+    sys.path.insert(0, os.path.abspath(os.pardir))
+
+from oasis_utils import (
+    oasis_log_utils,
+    OasisException,
+)
 
 #pylint: disable=I0011,C0111,C0103,C0301,W0603
 
@@ -376,7 +391,7 @@ def get_getmodel_cmd(
 
 @oasis_log_utils.oasis_log()
 def genbash(
-        max_process_id, analysis_settings, output_filename,
+        max_process_id=None, analysis_settings=None, output_filename=None,
         get_getmodel_cmd=get_getmodel_cmd):
     #pylint: disable=I0011, W0621
     global pid_monitor_count
@@ -521,3 +536,93 @@ def genbash(
         do_il_remove_fifo(analysis_settings, max_process_id)
         remove_workfolders("il", analysis_settings)
 
+
+SCRIPT_RESOURCES = {
+    'num_processes': {
+        'arg_name': 'num_processes',
+        'flag': 'n',
+        'type': int,
+        'help_text': 'Number of processes to use',
+        'required': True
+    },
+    'analysis_settings_json_file_path': {
+        'arg_name': 'analysis_settings_json_file_path',
+        'flag': 'a',
+        'type': str,
+        'help_text': 'Relative or absolute path of the model analysis settings JSON file',
+        'required': True
+    },
+    'output_file_path': {
+        'arg_name': 'output_file_path',
+        'flag': 'o',
+        'type': str,
+        'help_text': 'Relative or absolute path of the output file',
+        'required': True
+    }
+}
+
+
+def set_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        filemode='w'
+    )
+
+
+def parse_args():
+    """
+    Parses script arguments and constructs and returns an arguments dict.
+    """
+    parser = argparse.ArgumentParser(description='Run kparse')
+
+    di = SCRIPT_RESOURCES
+
+    map(
+        lambda res: parser.add_argument(
+            '-{}'.format(di[res]['flag']),
+            '--{}'.format(di[res]['arg_name']),
+            type=di[res]['type'],
+            required=di[res]['required'],
+            help=di[res]['help_text']
+        ),
+        di
+    )
+
+    args = parser.parse_args()
+
+    args_dict = vars(args)
+
+    map(
+        lambda arg: args_dict.update({arg: os.path.abspath(args_dict[arg])}) if arg.endswith('path') and args_dict[arg] else None,
+        args_dict
+    )
+
+    return args_dict
+
+
+if __name__ == '__main__':
+
+    set_logging()
+
+    logging.info('Parsing script arguments')
+    args = parse_args()
+    logging.info(args)
+
+    try:
+        with io.open(args['analysis_settings_json_file_path'], 'r', encoding='utf-8') as f:
+            analysis_settings = json.load(f)['analysis_settings']
+    except (IOError, ValueError):
+        raise OasisException("Invalid analysis settings JSON file or file path: {}.".format(args['analysis_settings_json_file_path']))    
+
+    logging.info('Analysis settings: {}'.format(analysis_settings))
+    try:
+        genbash(
+            max_process_id=args['num_processes'],
+            analysis_settings=analysis_settings,
+            output_filename=args['output_file_path']
+        )
+    except Exception as e:
+        raise OasisException(e)
+
+    logging.info('Generated script {}'.format(args['output_file_path']))
