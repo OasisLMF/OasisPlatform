@@ -3,12 +3,16 @@
         Test harness for kparse.py
 """
 import getopt
-import sys
 import json
 import os
+import sys
+
 from pprint import pprint
 
-import model_execution.kparse as kparse
+parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+sys.path.insert(0, parent_dir)
+
+import oasis_utils.kparse as kparse
 
 #pylint: disable=I0011,C0111
 
