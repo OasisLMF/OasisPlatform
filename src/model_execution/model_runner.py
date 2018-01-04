@@ -1,7 +1,19 @@
+import inspect
 import os
+import sys
 import logging
-import kparse
-from subprocess import Popen, PIPE
+
+from subprocess import (
+    Popen,
+    PIPE,
+)
+
+cwd = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parent_dir = os.path.abspath(os.path.join(cwd, os.pardir))
+sys.path.insert(0, parent_dir)
+
+import oasis_utils.kparse as kparse
+
 from oasis_utils import oasis_log_utils 
 
 '''

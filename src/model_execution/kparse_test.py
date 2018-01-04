@@ -1,15 +1,21 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
         Test harness for kparse.py
 """
+
+from __future__ import print_function
+
 import getopt
+import inspect
 import json
 import os
 import sys
 
 from pprint import pprint
 
-parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+cwd = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parent_dir = os.path.abspath(os.path.join(cwd, os.pardir))
 sys.path.insert(0, parent_dir)
 
 import oasis_utils.kparse as kparse
@@ -17,8 +23,8 @@ import oasis_utils.kparse as kparse
 #pylint: disable=I0011,C0111
 
 def usage():
-    print "-a analysis settings"
-    print "-p No of Processors"
+    print("-a analysis settings")
+    print("-p No of Processors")
 
 def main(argv):
     processor_count = 1
@@ -29,7 +35,7 @@ def main(argv):
 
     except getopt.GetoptError:
         usage()
-        sys.exit()
+        sys.exit(-1)
 
     for opt, arg in opts:
         if opt in "-p":
