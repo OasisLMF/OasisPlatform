@@ -1,8 +1,4 @@
-FROM ktools
-
-RUN apt-get update
-RUN apt-get install -y python-pip python-dev build-essential libmysqlclient-dev python-flask unixodbc-dev
-RUN apt-get install -y vim iputils-ping gdb
+FROM coreoasis/ktools:%RELEASE_TAG%
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
@@ -35,5 +31,5 @@ RUN chmod -R a+w /home/oasis
 #USER oasis
 #WORKDIR /home/oasis
 
-#RUN python /home/oasis/tests/KparseTests.py 
-#RUN python /home/oasis/tests/ExposureTests.py 
+#RUN python /home/oasis/tests/KparseTests.py
+#RUN python /home/oasis/tests/ExposureTests.py

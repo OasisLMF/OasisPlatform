@@ -1,6 +1,4 @@
-FROM ktools
-
-RUN apt install -y unixodbc-dev
+FROM coreoasis/ktools:%RELEASE_TAG%
 
 RUN mkdir /var/log/oasis
 
