@@ -14,11 +14,10 @@ import sys
 
 from pprint import pprint
 
-cwd = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parent_dir = os.path.abspath(os.path.join(cwd, os.pardir))
-sys.path.insert(0, parent_dir)
+SRC_PATH = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+sys.path.insert(0, SRC_PATH)
 
-import oasis_utils.kparse as kparse
+import model_execution.kparse as kparse
 
 #pylint: disable=I0011,C0111
 

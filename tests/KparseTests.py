@@ -20,7 +20,7 @@ if (os.path.isdir(src_path)):
     LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, os.pardir, 'src'))
 sys.path.append(LIB_PATH)
 
-import oasis_utils.kparse as kparse
+from model_execution import kparse
 
 KPARSE_INPUT_FOLDER = os.path.join(TEST_DIRECTORY, "kparse_input")
 KPARSE_OUTPUT_FOLDER = os.path.join(TEST_DIRECTORY, "kparse_output")
