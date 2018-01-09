@@ -14,10 +14,7 @@ import unittest
 
 TEST_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
-src_path = os.path.abspath(os.path.join(TEST_DIRECTORY, os.pardir, 'src'))
 LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, os.pardir, 'src'))
-if (os.path.isdir(src_path)):
-    LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, os.pardir, 'src'))
 sys.path.append(LIB_PATH)
 
 from model_execution import kparse
