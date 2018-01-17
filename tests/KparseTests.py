@@ -17,7 +17,7 @@ TEST_DATA_DIRECTORY = os.path.abspath(os.path.join(TEST_DIRECTORY, 'data'))
 LIB_PATH = os.path.abspath(os.path.join(TEST_DIRECTORY, os.pardir, 'src'))
 sys.path.append(LIB_PATH)
 
-from model_execution import kparse
+import kparse
 
 KPARSE_INPUT_FOLDER = os.path.join(TEST_DIRECTORY, "kparse_input")
 KPARSE_OUTPUT_FOLDER = os.path.join(TEST_DIRECTORY, "kparse_output")
