@@ -12,9 +12,9 @@ cwd = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parent_dir = os.path.abspath(os.path.join(cwd, os.pardir))
 sys.path.insert(0, parent_dir)
 
-import oasis_utils.kparse as kparse
+import kparse
 
-from oasis_utils import oasis_log_utils 
+from oasis_utils import oasis_log_utils
 
 '''
 Model runner for standard ktools pipeline.
