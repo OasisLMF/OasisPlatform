@@ -27,7 +27,7 @@ COPY ./src/oasis_utils/ ./oasis_utils/
 COPY ./tests /home/worker/tests
 
 RUN chmod -R 777 /home/worker/common /home/worker/
-RUN python /home/worker/tests/KparseTests.py || true
+#RUN python /home/worker/tests/KparseTests.py || true
 
 USER worker
 
