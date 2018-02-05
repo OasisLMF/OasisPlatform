@@ -9,16 +9,6 @@ RUN pip install -r /tmp/requirements.txt
 COPY ./src/oasis_utils/requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
-RUN mkdir /var/log/oasis
-RUN mkdir /var/oasis/working
-
-RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker
-
-RUN chown worker /var/log/oasis
-RUN chown worker /var/oasis/working
-RUN touch /var/log/oasis/worker.log
-RUN chmod a+w /var/log/oasis/worker.log
-
 COPY ./data/static /var/oasis/model_data/OasisIM/1
 COPY ./data/static /var/oasis/model_data/OasisIM/2
 COPY ./src/model_execution_worker/startup.sh ./
@@ -29,14 +19,19 @@ COPY ./src/utils/ ./utils/
 COPY ./src/oasis_utils/ ./oasis_utils/
 COPY ./tests /home/worker/tests
 
-RUN chown -R worker:worker /home/worker && \
-    chown -R worker:worker /var/oasis
+RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker
 
-RUN chmod -R 777 /home/worker/common /home/worker/
+RUN mkdir -p /var/oasis/working && \
+    mkdir -p /var/log/oasis \
+    ln -sf /proc/self/fd/1 /var/log/oasis/worker.log
+
+RUN chmod -R 777 /home/worker/common /home/worker && \
+    chown -R worker:worker /home/worker && \
+    chown -R worker:worker /var/oasis && \
+		chown -R worker:worker /var/log && \
+		chown -R worker:worker /var/oasis/working
+
 #RUN python /home/worker/tests/KparseTests.py || true
-
-
-
 
 USER worker
 ENTRYPOINT \
@@ -45,5 +40,4 @@ ENTRYPOINT \
 	sed -i -e "s/%CELERY_QUEUE%/$MODEL_SUPPLIER_ID-$MODEL_VERSION_ID/" startup.sh && \
 	./utils/wait-for-it.sh "oasis_rabbit:$RABBIT_PORT" && \
 	./utils/wait-for-it.sh "oasis_mysql:$MYSQL_PORT" && \
-	./startup.sh && \
-	tail -f /var/log/oasis/worker.log
+	./startup.sh

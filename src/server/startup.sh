@@ -1,6 +1,7 @@
 #!/bin/bash
 chmod a+w /var/www/oasis/upload
 chmod a+w /var/www/oasis/download
-chmod a+w /var/log/oasis
+chown -R worker:worker /var/www/oasis/upload
+chown -R worker:worker /var/www/oasis/download
 
-apachectl start
+apachectl start -DFOREGROUND
