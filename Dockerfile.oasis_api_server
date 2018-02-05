@@ -29,8 +29,9 @@ RUN a2ensite oasis.conf
 RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasis && \
 
     chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
-    ln -sf /proc/self/fd/1 /var/log/oasis/oasis_api_server.log && \
+    ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
     chmod 777 /var/log/oasis && \
+    chmod 777 /var/log/apache2 && \
     chown -R oasis:oasis /var/www/oasis && \
     chown -R oasis:oasis /var/log/oasis
 
