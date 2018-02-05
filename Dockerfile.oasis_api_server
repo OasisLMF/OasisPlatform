@@ -1,6 +1,7 @@
 FROM coreoasis/ktools:R_0_0_0_23
 
 ARG USER_ID
+
 WORKDIR /var/www/oasis
 
 RUN mkdir -p /var/www/oasis/common \
@@ -32,8 +33,6 @@ RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasi
     chmod 777 /var/log/oasis && \
     chown -R oasis:oasis /var/www/oasis && \
     chown -R oasis:oasis /var/log/oasis
-
-USER oasis
 
 RUN python /var/www/oasis/tests/ExposureTests.py
 
