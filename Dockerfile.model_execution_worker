@@ -32,7 +32,7 @@ RUN chmod -R 777 /home/worker/common /home/worker/
 
 RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" jenkins && \
     chown -R jenkins:jenkins /home/worker && \
-		chown -R jenkins:jenkins /var/oasis/common
+		chown -R jenkins:jenkins /var/oasis
 
 
 USER jenkins
