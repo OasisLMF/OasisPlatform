@@ -22,7 +22,7 @@ COPY ./tests /home/worker/tests
 RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker
 
 RUN mkdir -p /var/oasis/working && \
-    mkdir -p /var/log/oasis \
+    mkdir -p /var/log/oasis && \
     ln -sf /proc/self/fd/1 /var/log/oasis/worker.log
 
 RUN chmod -R 777 /home/worker/common /home/worker && \
