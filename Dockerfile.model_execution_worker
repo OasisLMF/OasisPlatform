@@ -12,9 +12,7 @@ RUN pip install -r /tmp/requirements.txt
 RUN mkdir /var/log/oasis
 RUN mkdir /var/oasis/working
 
-RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker && \
-    chown -R worker:worker /home/worker && \
-		chown -R worker:worker /var/oasis
+RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker
 
 RUN chown worker /var/log/oasis
 RUN chown worker /var/oasis/working
@@ -30,6 +28,9 @@ COPY ./src/model_execution/ ./model_execution/
 COPY ./src/utils/ ./utils/
 COPY ./src/oasis_utils/ ./oasis_utils/
 COPY ./tests /home/worker/tests
+
+RUN chown -R worker:worker /home/worker && \
+    chown -R worker:worker /var/oasis
 
 RUN chmod -R 777 /home/worker/common /home/worker/
 #RUN python /home/worker/tests/KparseTests.py || true
