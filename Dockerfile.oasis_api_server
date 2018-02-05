@@ -25,14 +25,13 @@ RUN pip install -r /var/www/oasis/server/requirements.txt && \
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 
-USER oasis
-
 RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasis && \
+    chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
+    ln -sf /proc/self/fd/1 /var/log/oasis/oasis_api_server.log && \
+    chmod a+x /var/log/oasis/oasis_api_server.log && \
     chown -R oasis:oasis /var/www/oasis
 
-RUN ln -sf /proc/self/fd/1 /var/log/oasis/oasis_api_server.log && \
-    chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
-    chmod a+w /var/log/oasis/oasis_api_server.log
+USER oasis
 
 RUN python /var/www/oasis/tests/ExposureTests.py
 
