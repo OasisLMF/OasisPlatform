@@ -19,8 +19,9 @@ COPY ./src/utils/ ./utils/
 COPY ./src/oasis_utils/ ./oasis_utils/
 COPY ./tests /home/worker/tests
 
-RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker
-
+RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker && \
+    usermod -a -G www-data worker
+    
 RUN mkdir -p /var/oasis/working && \
     mkdir -p /var/log/oasis && \
     ln -sf /proc/self/fd/1 /var/log/oasis/worker.log

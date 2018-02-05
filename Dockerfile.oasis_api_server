@@ -27,7 +27,8 @@ RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 
 RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasis && \
-
+    usermod -a -G www-data oasis && \
+    
     chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
     ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
     chmod 777 /dev/stdout && \
