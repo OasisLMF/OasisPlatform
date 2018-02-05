@@ -4,4 +4,4 @@ chmod a+w /var/www/oasis/download
 chown -R worker:worker /var/www/oasis/upload
 chown -R worker:worker /var/www/oasis/download
 
-apachectl start -DFOREGROUND
+apachectl -k start -DFOREGROUND
