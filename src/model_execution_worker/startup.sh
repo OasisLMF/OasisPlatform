@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Delete celeryd.pid file - fix que pickup issues on reboot of server
-rm /home/worker/celeryd.pid
+rm -f /home/worker/celeryd.pid
 
 
 # Start worker on init

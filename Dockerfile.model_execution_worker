@@ -1,5 +1,6 @@
 FROM coreoasis/ktools:R_0_0_0_23
 
+ARG USER_ID
 WORKDIR /home/worker
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
@@ -29,8 +30,14 @@ COPY ./tests /home/worker/tests
 RUN chmod -R 777 /home/worker/common /home/worker/
 #RUN python /home/worker/tests/KparseTests.py || true
 
-USER worker
+RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" jenkins && \
+    chown -R jenkins:jenkins /home/worker && \
+		chown -R jenkins:jenkins /var/oasis/upload && \
+		chown -R jenkins:jenkins /var/oasis/download && \
+		chown -R jenkins:jenkins /var/oasis/common
 
+
+USER jenkins
 ENTRYPOINT \
 	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /home/worker/common/CeleryConfig.py && \
 	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py && \

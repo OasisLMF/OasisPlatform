@@ -1,5 +1,6 @@
 FROM coreoasis/ktools:R_0_0_0_23
 
+ARG USER_ID
 WORKDIR /var/www/oasis
 
 RUN mkdir -p /var/www/oasis/{server,common,upload,download} && \
@@ -27,6 +28,10 @@ RUN a2ensite oasis.conf
 
 RUN python /var/www/oasis/tests/ExposureTests.py
 
+RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" jenkins && \
+    chown -R jenkins:jenkins /var/www/oasis
+
+USER jenkins
 EXPOSE 80
 
 ENTRYPOINT \
