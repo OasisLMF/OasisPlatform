@@ -28,10 +28,10 @@ RUN a2ensite oasis.conf
 
 RUN python /var/www/oasis/tests/ExposureTests.py
 
-RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" jenkins && \
-    chown -R jenkins:jenkins /var/www/oasis
+RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasis && \
+    chown -R oasis:oasis /var/www/oasis
 
-USER jenkins
+USER oasis
 EXPOSE 80
 
 ENTRYPOINT \
