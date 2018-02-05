@@ -1,4 +1,4 @@
-FROM coreoasis/ktools:R_0_0_0_23
+FROM coreoasis/ktools:R_0_0_0_225
 
 ARG USER_ID
 
@@ -30,6 +30,8 @@ RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasi
 
     chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
     ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
+    chmod 777 /dev/stdout && \
+    chmod 777 /dev/stderr && \
     chmod -R 777 /var/log/oasis && \
     chmod -R 777 /var/log/apache2 && \
     chown -R oasis:oasis /var/www/oasis && \
