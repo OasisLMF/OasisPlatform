@@ -26,10 +26,12 @@ RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 
 RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasis && \
+
     chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
     ln -sf /proc/self/fd/1 /var/log/oasis/oasis_api_server.log && \
-    chmod a+x /var/log/oasis/oasis_api_server.log && \
-    chown -R oasis:oasis /var/www/oasis
+    chmod 777 /var/log/oasis && \
+    chown -R oasis:oasis /var/www/oasis && \
+    chown -R oasis:oasis /var/log/oasis
 
 USER oasis
 
