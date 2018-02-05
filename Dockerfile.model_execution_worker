@@ -33,7 +33,6 @@ RUN chmod -R 777 /home/worker/common /home/worker && \
 
 #RUN python /home/worker/tests/KparseTests.py || true
 
-USER worker
 ENTRYPOINT \
 	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /home/worker/common/CeleryConfig.py && \
 	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py && \
