@@ -5,4 +5,4 @@ rm -f /home/worker/celeryd.pid
 
 
 # Start worker on init
-celery worker -A model_execution_worker.tasks --detach --loglevel=INFO --logfile="/dev/stdout" -Q %CELERY_QUEUE%
+celery worker -A model_execution_worker.tasks --loglevel=INFO --logfile="/dev/stdout" -Q %CELERY_QUEUE%
