@@ -5,4 +5,4 @@ chown -R oasis:www-data /var/www/oasis/upload
 chown -R oasis:www-data /var/www/oasis/download
 
 # apachectl -k start -DFOREGROUND
-apachectl
+apachectl start
