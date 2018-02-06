@@ -19,13 +19,19 @@ COPY ./src/utils/ ./utils/
 COPY ./src/oasis_utils/ ./oasis_utils/
 COPY ./tests /home/worker/tests
 
+# add worker user to group www-data
 RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker && \
     usermod -a -G www-data worker
-    
+
 RUN mkdir -p /var/oasis/working && \
     mkdir -p /var/log/oasis && \
-    ln -sf /proc/self/fd/1 /var/log/oasis/worker.log
 
+# api server log
+RUN touch /var/log/oasis/oasis_api_server.log && \
+    chmod a+w /var/log/oasis/oasis_api_server.log && \
+    chown -R oasis:www-data /var/log/oasis
+
+# home dirs permissions
 RUN chmod -R 777 /home/worker/common /home/worker && \
     chown -R worker:worker /home/worker && \
     chown -R worker:worker /var/oasis && \
