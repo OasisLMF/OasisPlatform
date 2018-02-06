@@ -29,7 +29,7 @@ RUN mkdir -p /var/oasis/working && \
     # api server log
     touch /var/log/oasis/oasis_api_server.log && \
     chmod a+w /var/log/oasis/oasis_api_server.log && \
-    chown -R oasis:www-data /var/log/oasis
+    chown -R oasis:www-data /var/log/oasis && \
 
     # home dirs permissions
     chmod -R 777 /home/worker/common /home/worker && \
