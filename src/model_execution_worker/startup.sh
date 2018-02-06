@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # Delete celeryd.pid file - fix que pickup issues on reboot of server
 rm -f /home/worker/celeryd.pid

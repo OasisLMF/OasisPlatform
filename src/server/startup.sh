@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 chmod a+w /var/www/oasis/upload
 chmod a+w /var/www/oasis/download
 chown -R oasis:www-data /var/www/oasis/upload
