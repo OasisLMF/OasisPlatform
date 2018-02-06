@@ -48,4 +48,5 @@ ENTRYPOINT \
 	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /var/www/oasis/common/CeleryConfig.py && \
 	wait-for-it.sh "oasis_rabbit:$RABBIT_PORT" -t 60 && \
 	wait-for-it.sh "oasis_mysql:$MYSQL_PORT" -t 60 && \
-	startup.sh
+	startup.sh && \
+  tail -f /var/log/oasis/oasis_api_server.log
