@@ -11,6 +11,6 @@ sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py
 ./utils/wait-for-it.sh "oasis_mysql:$MYSQL_PORT"
 
 # Start worker on init
-celery worker -A model_execution_worker.tasks --detach --loglevel=INFO --logfile="/var/log/oasis/worker.log" -Q ${MODEL_SUPPLIER_ID}/${MODEL_VERSION_ID}
+celery worker -A model_execution_worker.tasks --detach --loglevel=INFO --logfile="/var/log/oasis/worker.log" -Q "${MODEL_SUPPLIER_ID}-${MODEL_VERSION_ID}"
 
 tail -f /var/log/oasis/worker.log
