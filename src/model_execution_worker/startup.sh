@@ -13,4 +13,6 @@ sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py
 # Start worker on init
 celery worker -A model_execution_worker.tasks --detach --loglevel=INFO --logfile="/var/log/oasis/worker.log" -Q "${MODEL_SUPPLIER_ID}-${MODEL_VERSION_ID}"
 
+sleep 5
+
 tail -f /var/log/oasis/worker.log
