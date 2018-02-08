@@ -1,0 +1,11 @@
+-e git+ssh://git@github.com/OasisLMF/OasisLMF.git#egg=oasislmf
+celery
+SQLAlchemy
+MySQL-python
+jsonpickle
+requests
+shutilwhich
+certifi
+numpy
+fasteners
+

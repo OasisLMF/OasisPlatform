@@ -1,0 +1,6 @@
+-r ./requirements-server.in
+-r ./requirements-execution-worker.in
+
+pytest
+coverage
+flake8

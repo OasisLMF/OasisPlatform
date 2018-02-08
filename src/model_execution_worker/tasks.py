@@ -1,11 +1,16 @@
 import inspect
 import logging
+import uuid
+
 import fasteners
 import json
 import os
 import shutil
 import tarfile
-import sys
+
+from oasislmf.utils import status
+from oasislmf.utils.log import oasis_log
+
 import supplier_model_runner
 from celery import Celery
 from celery.task import task
@@ -16,13 +21,9 @@ Celery task wrapper for Oasis ktools calculation.
 '''
 
 CONFIG_PARSER = ConfigParser()
-CURRENT_DIRECTORY = \
-    os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
+CURRENT_DIRECTORY = os.path.dirname(__file__)
 INI_PATH = os.path.abspath(os.path.join(CURRENT_DIRECTORY, 'Tasks.ini'))
 CONFIG_PARSER.read(INI_PATH)
-
-from oasis_utils import oasis_utils, oasis_log_utils
 
 INPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'INPUTS_DATA_DIRECTORY')
 OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER.get('Default', 'OUTPUTS_DATA_DIRECTORY')
@@ -74,7 +75,7 @@ def start_analysis_task(self, input_location, analysis_settings_json):
         logging.info("WORKING_DIRECTORY: {}".format(WORKING_DIRECTORY))
         logging.info("KTOOLS_BATCH_COUNT: {}".format(KTOOLS_BATCH_COUNT))
 
-        self.update_state(state=oasis_utils.STATUS_RUNNING)
+        self.update_state(state=status.STATUS_RUNNING)
         output_location = start_analysis(
             analysis_settings_json[0],
             input_location)
@@ -93,7 +94,7 @@ def format_setting_for_file(setting):
     ''' Format a setting for selecting a data file '''
     return setting.replace(' ', '_').lower()
 
-@oasis_log_utils.oasis_log()
+@oasis_log()
 def start_analysis(analysis_settings, input_location):
     '''
     Run an analysis.
@@ -158,10 +159,8 @@ def start_analysis(analysis_settings, input_location):
 
     logging.info("Setting up analysis working directory")
 
-    directory_name = "{}_{}_{}".format(
-        source_tag, analysis_tag, oasis_utils.generate_unique_filename())
-    working_directory = \
-        os.path.join(WORKING_DIRECTORY, directory_name)
+    directory_name = "{}_{}_{}".format(source_tag, analysis_tag, uuid.uuid4().hex)
+    working_directory = os.path.join(WORKING_DIRECTORY, directory_name)
     os.mkdir(working_directory)
     os.mkdir(os.path.join(working_directory, "work"))
     os.mkdir(os.path.join(working_directory, "fifo"))
@@ -231,10 +230,8 @@ def start_analysis(analysis_settings, input_location):
     logging.info("Working directory = {}".format(working_directory))
 
     # Get the periods file from static
-    analysis_periods_filepath = os.path.join(
-        working_directory, 'input', 'periods.bin')
-    model_data_periods_filepath = os.path.join(
-        working_directory, 'static', 'periods.bin')
+    analysis_periods_filepath = os.path.join(working_directory, 'input', 'periods.bin')
+    model_data_periods_filepath = os.path.join(working_directory, 'static', 'periods.bin')
     if os.path.exists(model_data_periods_filepath):
         shutil.copyfile(model_data_periods_filepath, analysis_periods_filepath)
 
@@ -258,7 +255,7 @@ def start_analysis(analysis_settings, input_location):
     model_runner_module.run(
         analysis_settings['analysis_settings'], KTOOLS_BATCH_COUNT)
 
-    output_location = oasis_utils.generate_unique_filename()
+    output_location = uuid.uuid4().hex
     output_filepath = os.path.join(
         OUTPUTS_DATA_DIRECTORY, output_location + ARCHIVE_FILE_SUFFIX)
     with tarfile.open(output_filepath, "w:gz") as tar:
