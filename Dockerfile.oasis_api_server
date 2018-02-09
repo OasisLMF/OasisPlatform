@@ -26,18 +26,23 @@ RUN pip install -r /var/www/oasis/server/requirements.txt && \
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 
-RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasis && \
-    usermod -a -G www-data oasis && \
+#RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasis && \
+#    usermod -a -G www-data oasis && \
 
-    chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
+RUN groupmod -g $USER_ID www-data \
+  && usermod -u $USER_ID -g $USER_ID www-data
+
+
+
+RUN  chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
 #    ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
     chmod -R 777 /var/log/oasis && \
     chmod -R 777 /var/log/apache2 && \
-    chown -R oasis:oasis /var/www/oasis
+    chown -R www-data:www-data /var/www/oasis
 
 RUN touch /var/log/oasis/oasis_api_server.log && \
     chmod a+w /var/log/oasis/oasis_api_server.log && \
-    chown -R oasis:www-data /var/log/oasis
+    chown -R www-data:www-data /var/log/oasis
 
 RUN python /var/www/oasis/tests/ExposureTests.py
 
