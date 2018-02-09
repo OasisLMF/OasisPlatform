@@ -34,7 +34,7 @@ RUN groupmod -g $USER_ID www-data \
 
 
 
-    chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
+RUN  chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
 #    ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
     chmod -R 777 /var/log/oasis && \
     chmod -R 777 /var/log/apache2 && \
