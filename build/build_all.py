@@ -18,7 +18,7 @@ parser.add_argument(
     '-D', '--docker_password', type=str, default='',
     help="The password for DockerHub.")
 parser.add_argument(
-    '-r', '--release_tag', type=str,  default='',
+    '-r', '--release_tag', type=str, default='',
     help="The release tag.")
 parser.add_argument(
     '-b', '--build', action='store_true',
@@ -35,7 +35,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-github_uname = args.github_uname 
+github_uname = args.github_uname
 github_password = args.github_password
 docker_uname = args.docker_uname
 docker_password = args.docker_password
@@ -48,6 +48,7 @@ do_build = args.build
 do_github_tags = True
 do_docker_tags = True
 
+
 def run_command(desc, cmd, exit_on_fail=True, retry=False):
     proc = Popen(cmd, shell=True)
     proc.wait()
@@ -58,6 +59,7 @@ def run_command(desc, cmd, exit_on_fail=True, retry=False):
             run_command(desc, cmd, True, False)
         else:
             exit(255)
+
 
 if do_clean_docker:
     run_command(
@@ -88,14 +90,14 @@ if do_build:
     run_command(
         "Build ktools image",
         "docker build --no-cache=true -t ktools -f Dockerfile.ktools .")
-    
+
     if do_github_tags:
         run_command(
             "Tag ktools repo",
-            "git tag -f {}".format(release_tag))        
+            "git tag -f {}".format(release_tag))
         run_command(
             "Push ktools tag",
-            "git push origin {}".format(release_tag))        
+            "git push origin {}".format(release_tag))
 
     os.chdir("..")
 
@@ -115,10 +117,10 @@ if do_build:
     if do_github_tags:
         run_command(
             "Tag oasisapi repo",
-            "git tag -f {}".format(release_tag))        
+            "git tag -f {}".format(release_tag))
         run_command(
             "Push oasisapi tag",
-            "git push origin {}".format(release_tag))        
+            "git push origin {}".format(release_tag))
 
     os.chdir("..")
 
@@ -138,23 +140,23 @@ run_command(
 if do_publish:
     run_command(
         "Login to DockerHub",
-    	"docker login -p {} -u {}".format(docker_password, docker_uname),
+        "docker login -p {} -u {}".format(docker_password, docker_uname),
         True)
     run_command(
         "Push oasis_api_server to DockerHub",
-    	"docker push coreoasis/oasis_api_server:{}".format(release_tag),
+        "docker push coreoasis/oasis_api_server:{}".format(release_tag),
         True)
     run_command(
         "Push api_runner to DockerHub",
-    	"docker push coreoasis/api_runner:{}".format(release_tag),
+        "docker push coreoasis/api_runner:{}".format(release_tag),
         True)
     run_command(
         "Push model_execution_worker to DockerHub",
-    	"docker push coreoasis/model_execution_worker:{}".format(release_tag),
+        "docker push coreoasis/model_execution_worker:{}".format(release_tag),
         True)
     run_command(
         "Push test_env to DockerHub",
-    	"docker push coreoasis/test_env:{}".format(release_tag),
+        "docker push coreoasis/test_env:{}".format(release_tag),
         True)
 
 # Create the docker-compose file

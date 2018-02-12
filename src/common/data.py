@@ -1,9 +1,22 @@
-class ExposureSummary(object):
-
+class ExposureSummary(dict):
     def __init__(self, location, size, created_date):
-        self.location = location
-        self.size = size
-        self.created_date = created_date
+        super(ExposureSummary, self).__init__({
+            'location': location,
+            'size': size,
+            'created_date': created_date,
+        })
+
+    @property
+    def location(self):
+        return self['location']
+
+    @property
+    def size(self):
+        return self['size']
+
+    @property
+    def created_date(self):
+        return self['created_date']
 
 
 class OutputsSummary(object):

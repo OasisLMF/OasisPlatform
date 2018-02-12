@@ -4,3 +4,6 @@
 pytest
 coverage
 flake8
+backports.tempfile
+pathlib2
+hypothesis

@@ -7,7 +7,7 @@
 -e git+ssh://git@github.com/OasisLMF/OasisLMF.git#egg=oasislmf
 amqp==2.2.2               # via kombu
 argparsetree==0.0.5
-attrs==17.4.0             # via pytest
+attrs==17.4.0             # via hypothesis, pytest
 backports.tempfile==1.0
 backports.weakref==1.0.post1  # via backports.tempfile
 billiard==3.5.0.3         # via celery
@@ -18,13 +18,14 @@ chardet==3.0.4            # via requests
 click==6.7                # via flask
 configparser==3.5.0       # via flake8
 coverage==4.5
-enum34==1.1.6             # via flake8
+enum34==1.1.6             # via flake8, hypothesis
 fasteners==0.14.1
 flake8==3.5.0
 flask-swagger==0.2.13
 flask==0.12.2
 funcsigs==1.0.2           # via pytest, python-interface
 geopy==1.11.0
+hypothesis==3.44.26
 idna==2.6                 # via requests
 itsdangerous==0.24        # via flask
 jinja2==2.10              # via flask

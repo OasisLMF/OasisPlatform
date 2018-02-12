@@ -10,4 +10,4 @@ tox
 
 # get full coverage stats
 coverage combine
-coverage report -i oasislmf/*/*.py oasislmf/*.py
+coverage report

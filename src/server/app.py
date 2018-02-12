@@ -1,42 +1,26 @@
 """
 Oasis API server application endpoints.
 """
+from __future__ import absolute_import
+
 import json
 import os
-import inspect
 import logging
-import tarfile
 import time
 import uuid
 
 from celery import Celery
 from oasislmf.utils import http, status
-from oasislmf.utils.conf import load_ini_file
-from oasislmf.utils.log import read_log_config, oasis_log
+from oasislmf.utils.log import oasis_log
 
-from common import data
+from ..common import data
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
 
+from .settings import settings
 
 APP = Flask(__name__)
-
-CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-
-INI_PATH = os.path.abspath(os.path.join(CURRENT_DIRECTORY, 'OasisApi.ini'))
-
-CONFIG_PARSER = load_ini_file(INI_PATH)
-CONFIG_PARSER.update(
-    {
-        'LOG_FILE':CONFIG_PARSER['LOG_FILE'].replace('%LOG_DIRECTORY%', CONFIG_PARSER['LOG_DIRECTORY'])
-    }
-)
-
-read_log_config(CONFIG_PARSER)
-
-INPUTS_DATA_DIRECTORY = CONFIG_PARSER['INPUTS_DATA_DIRECTORY']
-OUTPUTS_DATA_DIRECTORY = CONFIG_PARSER['OUTPUTS_DATA_DIRECTORY']
 
 TAR_FILE_SUFFIX = '.tar'
 GZIP_FILE_SUFFIX = '.gz'
@@ -88,47 +72,37 @@ def get_exposure_summary(location):
       required: true
       type: string
     """
+    def _get_exposure_summary(filename):
+        filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
+        if not filepath.endswith(TAR_FILE_SUFFIX):
+            return None
+        if not os.path.isfile(filepath):
+            return None
 
-    read_log_config(CONFIG_PARSER)
+        size_in_bytes = os.path.getsize(filepath)
+        created_date = time.ctime(os.path.getctime(filepath))
+
+        return data.ExposureSummary(
+            location=str.replace(filename, TAR_FILE_SUFFIX, ''),
+            size=size_in_bytes,
+            created_date=created_date
+        )
 
     try:
         logging.debug("Location: {}".format(location))
         if location is None:
-            exposure_summaries = list()
-            for filename in os.listdir(INPUTS_DATA_DIRECTORY):
-                filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
-                if not filepath.endswith(TAR_FILE_SUFFIX):
-                    continue
-                if not os.path.isfile(filepath):
-                    continue
-                size_in_bytes = os.path.getsize(filepath)
-                created_date = time.ctime(os.path.getctime(filepath))
-                exposure_summaries.append(
-                    data.ExposureSummary(
-                        location=str.replace(filename, TAR_FILE_SUFFIX, ''),
-                        size=size_in_bytes,
-                        created_date=created_date))
-            response = jsonify(
-                {"exposures": [exposure_summary.__dict__ for exposure_summary in exposure_summaries]})
+            return jsonify({
+                'exposures': [ex for ex in map(_get_exposure_summary, sorted(os.listdir(settings['INPUTS_DATA_DIRECTORY']))) if ex]
+            })
         else:
-            filename = str(location) + TAR_FILE_SUFFIX
-            filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
-            if not os.path.exists(filepath):
-                response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
-            else:
-                size_in_bytes = os.path.getsize(filepath)
-                created_date = time.ctime(os.path.getctime(filepath))
-                exposure_summary = data.ExposureSummary(
-                    location=str.replace(filename, TAR_FILE_SUFFIX, ''),
-                    size=size_in_bytes,
-                    created_date=created_date)
-                response = jsonify({"exposures": [exposure_summary.__dict__]})
-                logging.debug("Exposures: " + response.data)
+            exposure = _get_exposure_summary('{}{}'.format(location, TAR_FILE_SUFFIX))
+            if not exposure:
+                return Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+
+            return jsonify({'exposures': [exposure]})
     except:
         logging.exception("Failed to get exposure summary")
-        response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
-
-    return response
+        return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
 
 @APP.route('/exposure/<location>', methods=["GET"])
@@ -155,21 +129,17 @@ def get_exposure(location):
     try:
         logging.debug("Location: {}".format(location))
         if location is None:
-            response = Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
+            return Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
+
+        filename = str(location) + TAR_FILE_SUFFIX
+        filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
+        if not os.path.exists(filepath):
+            return Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
         else:
-            filename = str(location) + TAR_FILE_SUFFIX
-            filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
-            if not os.path.exists(filepath):
-                response = Response(
-                    status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
-            else:
-                response = send_from_directory(
-                    INPUTS_DATA_DIRECTORY, location + TAR_FILE_SUFFIX)
+            return send_from_directory(settings['INPUTS_DATA_DIRECTORY'], location + TAR_FILE_SUFFIX)
     except:
         logging.exception("Failed to get exposure")
-        response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
-
-    return response
+        return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
 
 @APP.route('/exposure', methods=["POST"])
@@ -201,7 +171,7 @@ def post_exposure():
 
         request_file = request.files['file']
         filename = uuid.uuid4().hex
-        filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename) + TAR_FILE_SUFFIX
+        filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename) + TAR_FILE_SUFFIX
         request_file.save(filepath)
 
         # If zipped, extract the tar file
@@ -251,8 +221,8 @@ def delete_exposure(location):
     try:
         logging.debug("Location: {}".format(location))
         if location is None:
-            for filename in os.listdir(INPUTS_DATA_DIRECTORY):
-                filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
+            for filename in os.listdir(settings['INPUTS_DATA_DIRECTORY']):
+                filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
                 if not filepath.endswith(TAR_FILE_SUFFIX):
                     continue
                 if not os.path.isfile(filepath):
@@ -261,7 +231,7 @@ def delete_exposure(location):
             response = Response(status=http.HTTP_RESPONSE_OK)
         else:
             filename = str(location) + TAR_FILE_SUFFIX
-            filepath = os.path.join(INPUTS_DATA_DIRECTORY, filename)
+            filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
 
             if not os.path.exists(filepath):
                 response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
@@ -306,7 +276,7 @@ def post_analysis(input_location):
     try:
         analysis_settings = request.json
         if not validate_analysis_settings(analysis_settings):
-            response = Response(status_code=http.HTTP_RESPONSE_BAD_REQUEST)
+            response = Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
         else:
             module_supplier_id = \
                 analysis_settings['analysis_settings']['module_supplier_id']
@@ -495,11 +465,11 @@ def get_outputs(location):
     """
     try:
         logging.debug("Location: {}".format(location))
-        file_path = os.path.join(OUTPUTS_DATA_DIRECTORY, location + ".tar")
+        file_path = os.path.join(settings['OUTPUTS_DATA_DIRECTORY'], location + TAR_FILE_SUFFIX)
         if not os.path.exists(file_path):
             response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
         else:
-            response = send_from_directory(OUTPUTS_DATA_DIRECTORY, location + ".tar")
+            response = send_from_directory(settings['OUTPUTS_DATA_DIRECTORY'], location + TAR_FILE_SUFFIX)
     except:
         logging.exception("Failed to get outputs")
         response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
@@ -534,9 +504,9 @@ def delete_outputs(location):
         logging.debug("Location: {}".format(location))
         if location is None:
 
-            for filename in os.listdir(OUTPUTS_DATA_DIRECTORY):
+            for filename in os.listdir(settings['OUTPUTS_DATA_DIRECTORY']):
 
-                filepath = os.path.join(OUTPUTS_DATA_DIRECTORY, filename)
+                filepath = os.path.join(settings['OUTPUTS_DATA_DIRECTORY'], filename)
 
                 if not filepath.endswith(TAR_FILE_SUFFIX):
                     continue
@@ -548,7 +518,7 @@ def delete_outputs(location):
         else:
 
             filename = str(location) + TAR_FILE_SUFFIX
-            filepath = os.path.join(OUTPUTS_DATA_DIRECTORY, filename)
+            filepath = os.path.join(settings['OUTPUTS_DATA_DIRECTORY'], filename)
 
             if not os.path.exists(filepath):
                 response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
@@ -585,19 +555,6 @@ def get_healthcheck():
     #TODO: check job management connections
     logging.info("get_healthcheck")
     return "OK"
-
-
-def validate_exposure_tar(filepath):
-    tar = tarfile.open(filepath)
-    members = tar.getmembers()
-    return (len(members) == 7) and \
-        (sum(1 for member in members if member.name == 'items.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'coverages.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'summaryxref.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'fm_programme.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'fm_policytc.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'fm_profile.bin') == 1) and \
-        (sum(1 for member in members if member.name == 'fm_summaryxref.bin') == 1)
 
 
 def validate_analysis_settings(analysis_settings_json):
