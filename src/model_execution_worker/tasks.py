@@ -50,6 +50,7 @@ logging.info("MODEL_DATA_DIRECTORY: {}".format(MODEL_DATA_DIRECTORY))
 logging.info("WORKING_DIRECTORY: {}".format(WORKING_DIRECTORY))
 logging.info("KTOOLS_BATCH_COUNT: {}".format(KTOOLS_BATCH_COUNT))
 
+
 @task(name='run_analysis', bind=True)
 def start_analysis_task(self, input_location, analysis_settings_json):
     '''
@@ -64,7 +65,7 @@ def start_analysis_task(self, input_location, analysis_settings_json):
     gotten = a_lock.acquire(blocking=False, timeout=LOCK_TIMEOUT_IN_SECS)
     if not gotten:
         logging.info("Failed to get resource lock - retry task")
-        retry_countdown_in_secs=10
+        retry_countdown_in_secs = 10
         raise self.retry(countdown=retry_countdown_in_secs)
     logging.info("Acquired resource lock")
 
@@ -85,14 +86,17 @@ def start_analysis_task(self, input_location, analysis_settings_json):
 
     return output_location
 
+
 def get_current_module_directory():
     ''' Get the directory of the current module.'''
     return os.path.dirname(
         os.path.abspath(inspect.getfile(inspect.currentframe())))
 
+
 def format_setting_for_file(setting):
     ''' Format a setting for selecting a data file '''
     return setting.replace(' ', '_').lower()
+
 
 @oasis_log()
 def start_analysis(analysis_settings, input_location):
@@ -238,7 +242,6 @@ def start_analysis(analysis_settings, input_location):
     os.chdir(working_directory)
     logging.info("Working directory = {}".format(working_directory))
 
-    
     # Persist the analysis_settings
     with open("analysis_settings.json", "w") as json_file:
         json.dump(analysis_settings, json_file)

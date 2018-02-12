@@ -4,11 +4,9 @@ from __future__ import absolute_import
 import os
 import sys
 import json
-import shutil
 import logging
 import argparse
 
-from multiprocessing import cpu_count
 
 from ..model_execution_worker.supplier_model_runner import run
 

@@ -4,7 +4,6 @@ import argparse
 import csv
 import os
 import random
-import struct
 import time
 import subprocess
 from numpy import random as np_random
@@ -103,7 +102,6 @@ def generate_test_data(
 
     # Data files
     CSV_FILE_SUFFIX = ".csv"
-    INDEX_FILE_SUFFIX = ".idx"
 
     # Check the data files
     if not os.path.isdir(data_dir):
@@ -115,7 +113,6 @@ def generate_test_data(
     item_filename_csv = data_dir + "items" + CSV_FILE_SUFFIX
     vulnerability_filename_csv = data_dir + "vulnerability" + CSV_FILE_SUFFIX
     event_filename_csv = data_dir + "footprint" + CSV_FILE_SUFFIX
-    event_index_filename_bin = data_dir + "footprint" + INDEX_FILE_SUFFIX
     damage_bin_dict_csv = data_dir + "damage_bin_dict" + CSV_FILE_SUFFIX
     fm_policytc_filename_csv = data_dir + "fm_policytc" + CSV_FILE_SUFFIX
     fm_profile_filename_csv = data_dir + "fm_profile" + CSV_FILE_SUFFIX
@@ -521,7 +518,7 @@ def generate_test_data(
                 for damage_bin_index in range(1,
                                               num_damage_bins + 1):
                     if vulnerability[
-                            intensity_bin_index-1][damage_bin_index-1] == 0:
+                            intensity_bin_index - 1][damage_bin_index - 1] == 0:
                         probability = 0
                     else:
                         probability = vulnerability[
@@ -554,7 +551,6 @@ def generate_test_data(
             event_csv_writer.writerow(["event_id", "area_peril_id",
                                        "intensity_bin_index", "prob"])
             events_csv_writer = csv.writer(events_file_csv)
-        intensity_by_area_peril_by_event = dict()
         for event_id in range(1, num_events + 1):
             if do_csv:
                 events_csv_writer.writerow([event_id])
@@ -756,6 +752,7 @@ def generate_test_data(
     except Exception, e:
         print Exception, ":", e
         exit()
+
 
 generate_test_data(
     allocrule,

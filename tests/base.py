@@ -1,5 +1,5 @@
 import string
-from random import randint, choice
+from random import choice
 from unittest import TestCase
 
 import os

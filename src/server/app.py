@@ -3,7 +3,6 @@ Oasis API server application endpoints.
 """
 from __future__ import absolute_import
 
-import json
 import os
 import logging
 import time
@@ -68,7 +67,7 @@ def get_exposure_summary(location):
                 format: dateTime
                 description: The date when the exposure data was uploaded.
     description: Gets a summary of a exposure resources and their contents.
-                 If location parameter is not supplied returns a summary of 
+                 If location parameter is not supplied returns a summary of
                  all exposures.
     produces:
     - application/json
@@ -101,7 +100,7 @@ def get_exposure_summary(location):
                 return Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
 
             return jsonify({'exposures': [exposure]})
-    except:
+    except Exception:
         logging.exception("Failed to get exposure summary")
         return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
@@ -138,7 +137,7 @@ def get_exposure(location):
             return Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
         else:
             return send_from_directory(settings['INPUTS_DATA_DIRECTORY'], location + TAR_FILE_SUFFIX)
-    except:
+    except Exception:
         logging.exception("Failed to get exposure")
         return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
@@ -160,23 +159,10 @@ def post_exposure():
                 $ref: '#/definitions/ExposureSummary'
     """
     try:
-        content_type = ''
-        if 'Content-Type' in request.headers:
-            content_type = request.headers['Content-Type']
-
-        # is_gzipped = False
-
-        if 'Content-Encoding' in request.headers:
-            content_encoding = request.headers['Content-Encoding']
-            is_gzipped = (content_encoding == 'gzip')
-
         request_file = request.files['file']
         filename = uuid.uuid4().hex
         filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename) + TAR_FILE_SUFFIX
         request_file.save(filepath)
-
-        # If zipped, extract the tar file
-        #if is_gzipped:
 
         # Check the content, and if invalid delete
 
@@ -190,7 +176,7 @@ def post_exposure():
         }
 
         response = jsonify({'exposures': [exposure]})
-    except:
+    except Exception:
         logging.exception("Failed to post exposure")
         response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
@@ -239,7 +225,7 @@ def delete_exposure(location):
             else:
                 os.remove(filepath)
                 response = Response(status=http.HTTP_RESPONSE_OK)
-    except:
+    except Exception:
         logging.exception("Failed to delete exposure")
         response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
@@ -291,7 +277,7 @@ def post_analysis(input_location):
 
             task_id = result.task_id
             return jsonify({'location': task_id})
-    except:
+    except Exception:
         logging.exception("Failed to post analysis")
         return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
@@ -396,7 +382,7 @@ def get_analysis_status(location):
 
         response = jsonify(analysis_status)
         logging.debug("Response: {}".format(response.data))
-    except:
+    except Exception:
         logging.exception("Failed to get analysis status")
         response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
     return response
@@ -430,7 +416,7 @@ def delete_analysis_status(location):
 
     try:
         logging.debug("Location: {}".format(location))
-    except:
+    except Exception:
         logging.exception("Failed to delete analysis status")
         response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
     return response
@@ -464,7 +450,7 @@ def get_outputs(location):
             response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
         else:
             response = send_from_directory(settings['OUTPUTS_DATA_DIRECTORY'], location + TAR_FILE_SUFFIX)
-    except:
+    except Exception:
         logging.exception("Failed to get outputs")
         response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
     return response
@@ -520,7 +506,7 @@ def delete_outputs(location):
                 os.remove(filepath)
                 response = Response(status=http.HTTP_RESPONSE_OK)
 
-    except:
+    except Exception:
         logging.exception("Failed to delete outputs")
         response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
@@ -546,7 +532,7 @@ def get_healthcheck():
     Basic healthcheck response.
     '''
 
-    #TODO: check job management connections
+    # TODO: check job management connections
     logging.info("get_healthcheck")
     return "OK"
 

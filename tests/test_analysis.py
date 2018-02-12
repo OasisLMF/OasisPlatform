@@ -4,7 +4,6 @@
 from __future__ import print_function
 
 import string
-import time
 from collections import namedtuple
 
 from backports.tempfile import TemporaryDirectory
@@ -86,7 +85,7 @@ class PostAnalysis(AppTestCase):
                 response = self.app.post(
                     '/analysis/{}'.format(location),
                     data=json.dumps(analysis_settings),
-                    content_type = 'application/json',
+                    content_type='application/json',
                 )
 
                 celery_mock.send_task.assert_called_once_with(
