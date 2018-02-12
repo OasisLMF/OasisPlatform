@@ -1,7 +1,7 @@
 -e git+ssh://git@github.com/OasisLMF/OasisLMF.git#egg=oasislmf
 celery
 SQLAlchemy
-MySQL-python
+pymysql
 jsonpickle
 requests
 shutilwhich

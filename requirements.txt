@@ -35,7 +35,6 @@ markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
 monotonic==1.4            # via fasteners
-mysql-python==1.2.5
 numpy==1.14.0
 pandas==0.22.0
 pathlib2==2.3.0
@@ -44,6 +43,7 @@ pluggy==0.6.0             # via pytest, tox
 py==1.5.2                 # via pytest, tox
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.6.0           # via flake8
+pymysql==0.8.0
 pyodbc==4.0.22
 pytest-cov==2.5.1         # via pytest-cover
 pytest-cover==3.0.0       # via pytest-coverage

@@ -1,4 +1,5 @@
-from random import randint
+import string
+from random import randint, choice
 from unittest import TestCase
 
 import os
@@ -19,7 +20,7 @@ class AppTestCase(TestCase):
         path = os.path.join(settings['INPUTS_DATA_DIRECTORY'], path)
 
         with open(path, 'wb') as outfile:
-            for x in xrange(size_in_bytes or 0):
-                outfile.write(chr(randint(0, 255)))
+            for x in range(size_in_bytes or 0):
+                outfile.write(choice(string.ascii_letters).encode())
 
             outfile.write(data)

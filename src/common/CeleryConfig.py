@@ -12,7 +12,7 @@ BROKER_URL = "amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".
 )
 
 #: Celery config - result backend URI
-CELERY_RESULT_BACKEND = 'db+mysql://{CELERY_MYSQL_USER}:{CELERY_MYSQL_PASS}@{MYSQL_HOST}:{MYSQL_PORT}/celery'.format(
+CELERY_RESULT_BACKEND = 'db+mysql+pymysql://{CELERY_MYSQL_USER}:{CELERY_MYSQL_PASS}@{MYSQL_HOST}:{MYSQL_PORT}/celery'.format(
     CELERY_MYSQL_USER=environ.get('CELERY_MYSQL_USER', 'celery'),
     CELERY_MYSQL_PASS=environ.get('CELERY_MYSQL_PASS', 'password'),
     MYSQL_HOST=environ.get('MYSQL_HOST', 'oasis_mysql'),

@@ -3,5 +3,5 @@ Flask
 flask_swagger
 celery
 SQLAlchemy
-MySQL-python
+pymysql
 jsonpickle
