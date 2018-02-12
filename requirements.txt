@@ -40,11 +40,14 @@ numpy==1.14.0
 pandas==0.22.0
 pathlib2==2.3.0
 pbr==3.1.1                # via mock
-pluggy==0.6.0             # via pytest
-py==1.5.2                 # via pytest
+pluggy==0.6.0             # via pytest, tox
+py==1.5.2                 # via pytest, tox
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.6.0           # via flake8
 pyodbc==4.0.22
+pytest-cov==2.5.1         # via pytest-cover
+pytest-cover==3.0.0       # via pytest-coverage
+pytest-coverage==0.0
 pytest==3.4.0
 python-dateutil==2.6.1    # via pandas
 python-interface==1.4.0
@@ -54,9 +57,11 @@ requests-toolbelt==0.8.0
 requests==2.18.4
 scandir==1.6              # via pathlib2
 shutilwhich==1.1.0
-six==1.11.0               # via fasteners, mock, pathlib2, pytest, python-dateutil, python-interface
+six==1.11.0               # via fasteners, mock, pathlib2, pytest, python-dateutil, python-interface, tox
 sqlalchemy==1.2.2
+tox==2.9.1
 typing==3.6.4             # via python-interface
 urllib3==1.22             # via requests
 vine==1.1.4               # via amqp
+virtualenv==15.1.0        # via tox
 werkzeug==0.14.1          # via flask

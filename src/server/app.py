@@ -26,7 +26,7 @@ TAR_FILE_SUFFIX = '.tar'
 GZIP_FILE_SUFFIX = '.gz'
 
 CELERY = Celery()
-CELERY.config_from_object('common.CeleryConfig')
+CELERY.config_from_object('src.common.CeleryConfig')
 
 
 def _get_exposure_summary(filename):

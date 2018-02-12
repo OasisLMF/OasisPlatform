@@ -2,9 +2,11 @@
 -r ./requirements-execution-worker.in
 
 pytest
+pytest-coverage
 coverage
 flake8
 backports.tempfile
 pathlib2
 hypothesis
 mock
+tox
