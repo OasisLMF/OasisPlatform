@@ -93,7 +93,7 @@ class Exposure(AppTestCase):
                 with io.open(filepath, 'rb') as file_to_upload:
                     response = self.app.post(
                         "/exposure",
-                        data = {
+                        data={
                             'file': (file_to_upload, filepath),
                         },
                         content_type='multipart/form-data'

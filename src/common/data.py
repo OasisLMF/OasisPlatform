@@ -27,10 +27,31 @@ class OutputsSummary(object):
         self.created_date = created_date
 
 
-class AnalysisStatus(object):
-
+class AnalysisStatus(dict):
     def __init__(self, id, status, message, outputs_location):
-        self.id = id
-        self.status = status
-        self.message = message
-        self.outputs_location = outputs_location
+        super(AnalysisStatus, self).__init__({
+            'id': id,
+            'status': status,
+            'message': message,
+            'outputs_location': outputs_location,
+        })
+
+    @property
+    def id(self):
+        return self['id']
+
+    @property
+    def status(self):
+        return self['status']
+
+    @status.setter
+    def status(self, val):
+        self['status'] = val
+
+    @property
+    def message(self):
+        return self['message']
+
+    @property
+    def outputs_location(self):
+        return self['outputs_location']

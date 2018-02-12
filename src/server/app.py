@@ -29,6 +29,23 @@ CELERY = Celery()
 CELERY.config_from_object('common.CeleryConfig')
 
 
+def _get_exposure_summary(filename):
+    filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
+    if not filepath.endswith(TAR_FILE_SUFFIX):
+        return None
+    if not os.path.isfile(filepath):
+        return None
+
+    size_in_bytes = os.path.getsize(filepath)
+    created_date = time.ctime(os.path.getctime(filepath))
+
+    return data.ExposureSummary(
+        location=str.replace(filename, TAR_FILE_SUFFIX, ''),
+        size=size_in_bytes,
+        created_date=created_date
+    )
+
+
 @APP.route('/exposure_summary', defaults={'location': None}, methods=["GET"])
 @APP.route('/exposure_summary/<location>', methods=["GET"])
 @oasis_log()
@@ -72,22 +89,6 @@ def get_exposure_summary(location):
       required: true
       type: string
     """
-    def _get_exposure_summary(filename):
-        filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
-        if not filepath.endswith(TAR_FILE_SUFFIX):
-            return None
-        if not os.path.isfile(filepath):
-            return None
-
-        size_in_bytes = os.path.getsize(filepath)
-        created_date = time.ctime(os.path.getctime(filepath))
-
-        return data.ExposureSummary(
-            location=str.replace(filename, TAR_FILE_SUFFIX, ''),
-            size=size_in_bytes,
-            created_date=created_date
-        )
-
     try:
         logging.debug("Location: {}".format(location))
         if location is None:
@@ -274,27 +275,25 @@ def post_analysis(input_location):
       type: file
     """
     try:
-        analysis_settings = request.json
-        if not validate_analysis_settings(analysis_settings):
-            response = Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
+        analysis_settings = request.json or {}
+        if not validate_analysis_settings(analysis_settings) or not _get_exposure_summary('{}.tar'.format(input_location)):
+            return Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
         else:
-            module_supplier_id = \
-                analysis_settings['analysis_settings']['module_supplier_id']
-            model_version_id = \
-                analysis_settings['analysis_settings']['model_version_id']
-            logging.info(
-                "Model supplier - version = {} {}".format(
-                    module_supplier_id, model_version_id))
+            module_supplier_id = analysis_settings['analysis_settings']['module_supplier_id']
+            model_version_id = analysis_settings['analysis_settings']['model_version_id']
+
+            logging.info("Model supplier - version = {} {}".format(module_supplier_id, model_version_id))
             result = CELERY.send_task(
-                "run_analysis",
+                'run_analysis',
                 (input_location, [analysis_settings]),
-                queue="{}-{}".format(module_supplier_id, model_version_id))
+                queue='{}-{}'.format(module_supplier_id, model_version_id)
+            )
+
             task_id = result.task_id
-            response = jsonify({'location': task_id})
+            return jsonify({'location': task_id})
     except:
         logging.exception("Failed to post analysis")
-        response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
-    return response
+        return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
 
 
 def _get_analysis_status(location):
@@ -386,21 +385,16 @@ def get_analysis_status(location):
 
         # If there is no location for a successful analysis, retry once
         # and then fail the analysis as something has gone wrong
-        if (
-                analysis_status.status == status.STATUS_SUCCESS and
-                analysis_status.outputs_location is None):
-            logging.info(
-                "Successful analysis has no location - retrying")
+        if (analysis_status.status == status.STATUS_SUCCESS and analysis_status.outputs_location is None):
+            logging.info("Successful analysis has no location - retrying")
             time.sleep(5)
+
             analysis_status = _get_analysis_status(location)
-            if (
-                    analysis_status.status == status.STATUS_SUCCESS and
-                    analysis_status.outputs_location is None):
-                logging.info(
-                    "Successful analysis still has no location - fail")
+            if (analysis_status.status == status.STATUS_SUCCESS and analysis_status.outputs_location is None):
+                logging.info("Successful analysis still has no location - fail")
                 analysis_status.status = status.STATUS_FAILURE
 
-        response = json.dumps(analysis_status.__dict__)
+        response = jsonify(analysis_status)
         logging.debug("Response: {}".format(response.data))
     except:
         logging.exception("Failed to get analysis status")
@@ -557,6 +551,9 @@ def get_healthcheck():
     return "OK"
 
 
-def validate_analysis_settings(analysis_settings_json):
-    #TODO
-    return True
+def validate_analysis_settings(analysis_settings):
+    return (
+        'analysis_settings' in analysis_settings and
+        'module_supplier_id' in analysis_settings['analysis_settings'] and
+        'model_version_id' in analysis_settings['analysis_settings']
+    )

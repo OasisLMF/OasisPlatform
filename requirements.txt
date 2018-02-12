@@ -23,7 +23,7 @@ fasteners==0.14.1
 flake8==3.5.0
 flask-swagger==0.2.13
 flask==0.12.2
-funcsigs==1.0.2           # via pytest, python-interface
+funcsigs==1.0.2           # via mock, pytest, python-interface
 geopy==1.11.0
 hypothesis==3.44.26
 idna==2.6                 # via requests
@@ -33,11 +33,13 @@ jsonpickle==0.9.5
 kombu==4.1.0              # via celery
 markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
+mock==2.0.0
 monotonic==1.4            # via fasteners
 mysql-python==1.2.5
 numpy==1.14.0
 pandas==0.22.0
 pathlib2==2.3.0
+pbr==3.1.1                # via mock
 pluggy==0.6.0             # via pytest
 py==1.5.2                 # via pytest
 pycodestyle==2.3.1        # via flake8
@@ -52,7 +54,7 @@ requests-toolbelt==0.8.0
 requests==2.18.4
 scandir==1.6              # via pathlib2
 shutilwhich==1.1.0
-six==1.11.0               # via fasteners, pathlib2, pytest, python-dateutil, python-interface
+six==1.11.0               # via fasteners, mock, pathlib2, pytest, python-dateutil, python-interface
 sqlalchemy==1.2.2
 typing==3.6.4             # via python-interface
 urllib3==1.22             # via requests
