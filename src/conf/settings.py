@@ -10,8 +10,6 @@ from oasislmf.utils.log import read_log_config
 
 
 class Settings(ConfigParser):
-    default_log_format = '%(asctime)s - %(levelname)s - %(message)s'
-
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('default_section', 'default')
 
@@ -38,23 +36,19 @@ class Settings(ConfigParser):
         kwargs.setdefault('vars', self._get_section_env_vars(section))
         return super(Settings, self).get(section, option, **kwargs)
 
-    def replace(self, new):
-        self.clear()
-        self.update(new)
-
     def setup_logging(self, section):
         """
         Read an Oasis standard logging config
         """
-        log_dir = self.get(section, 'LOG_DIRECTORY', fallback=self.default_log_format)
-        log_filename = self.get(section, 'LOG_FILENAME', fallback=self.default_log_format)
+        log_dir = self.get(section, 'LOG_DIRECTORY')
+        log_filename = self.get(section, 'LOG_FILE_NAME')
         log_path = os.path.join(log_dir, log_filename)
 
         read_log_config({
             'LOG_FILE': log_path,
-            'LOG_LEVEL': self.get(section, 'LOG_LEVEL', fallback='DEBUG'),
-            'LOG_MAX_SIZE_IN_BYTES': self.getint(section, 'LOG_MAX_SIZE_IN_BYTES', fallback=10240),
-            'LOG_BACKUP_COUNT': self.getint(section, 'LOG_BACKUP_COUNT', fallback=5),
+            'LOG_LEVEL': self.get(section, 'LOG_LEVEL'),
+            'LOG_MAX_SIZE_IN_BYTES': self.getint(section, 'LOG_MAX_SIZE_IN_BYTES'),
+            'LOG_BACKUP_COUNT': self.getint(section, 'LOG_BACKUP_COUNT'),
         })
 
 
@@ -62,18 +56,13 @@ settings = Settings()
 
 
 class SettingsPatcher(object):
-    def __init__(self, to_patch=None, **globals):
+    def __init__(self, **to_patch):
         self._initial = {k: dict(v.items()) for k, v in settings.items()}
-        self._to_patch = to_patch or {}
-        self._globals = globals
+        self._to_patch = to_patch
 
     def __enter__(self):
-        if self._globals:
-            for k, v in settings.items():
-                v.update(self._globals)
-
-        if self._to_patch:
-            settings.update(self._to_patch)
+        for k, v in settings.items():
+            v.update(self._to_patch)
 
         return self
 

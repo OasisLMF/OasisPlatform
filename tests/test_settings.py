@@ -1,9 +1,13 @@
+from __future__ import unicode_literals, absolute_import
+
 import string
+from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
 import os
 from hypothesis import given
-from hypothesis.strategies import text
+from hypothesis.strategies import text, integers
+from mock import patch
 
 from src.conf.settings import Settings
 
@@ -68,3 +72,44 @@ class SettingsGet(TestCase):
         })
 
         self.assertEqual(settings.get('section', 'foo'), section_env)
+
+    @given(setting_text())
+    def test_config_file_is_set_in_environment_variable___specified_values_are_from_new_config_others_are_default(self, value):
+        with NamedTemporaryFile('w') as f:
+            f.writelines([
+                '[default]\n',
+                'LOG_LEVEL = {}\n'.format(value)
+            ])
+            f.flush()
+            os.environ['OASIS_API_INI_PATH'] = f.name
+
+            settings = Settings()
+
+            self.assertEqual(settings.get('default', 'LOG_LEVEL'), value)
+            self.assertEqual(settings.get('default', 'INPUTS_DATA_DIRECTORY'), '/var/www/oasis/upload')
+
+
+class SettingsSetupLogging(TestCase):
+    @given(setting_text(), setting_text(), setting_text(), integers(), integers())
+    def test_oasis_logging_is_setup_correctly(self, path, name, level, size, count):
+        with patch('src.conf.settings.read_log_config') as log_conf_mock:
+            settings = Settings()
+            settings.add_section('newsection')
+            settings.update({
+                'newsection': {
+                    'LOG_FILE_NAME': name,
+                    'LOG_DIRECTORY': path,
+                    'LOG_LEVEL': level,
+                    'LOG_MAX_SIZE_IN_BYTES': size,
+                    'LOG_BACKUP_COUNT': count,
+                }
+            })
+
+            settings.setup_logging('newsection')
+
+            log_conf_mock.assert_called_once_with({
+                'LOG_FILE': os.path.join(path, name),
+                'LOG_LEVEL': level,
+                'LOG_MAX_SIZE_IN_BYTES': size,
+                'LOG_BACKUP_COUNT': count,
+            })
