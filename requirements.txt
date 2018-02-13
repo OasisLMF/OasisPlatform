@@ -16,7 +16,7 @@ certifi==2018.1.18
 chainmap==1.0.2
 chardet==3.0.4            # via requests
 click==6.7                # via flask
-configparser==3.5.0       # via flake8
+configparser==3.5.0
 coverage==4.5
 enum34==1.1.6             # via flake8, hypothesis
 fasteners==0.14.1

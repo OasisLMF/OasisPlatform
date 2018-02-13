@@ -11,7 +11,7 @@ from hypothesis import given
 from hypothesis.strategies import text, integers, binary, lists
 from pathlib2 import Path
 
-from src.server.settings import SettingsPatcher
+from src.settings import SettingsPatcher
 from .base import AppTestCase
 
 

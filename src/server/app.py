@@ -1,7 +1,7 @@
 """
 Oasis API server application endpoints.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 import logging
@@ -17,7 +17,7 @@ from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
 
-from .settings import settings
+from src.settings import settings
 
 APP = Flask(__name__)
 
@@ -29,7 +29,7 @@ CELERY.config_from_object('src.common.CeleryConfig')
 
 
 def _get_exposure_summary(filename):
-    filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
+    filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename)
     if not filepath.endswith(TAR_FILE_SUFFIX):
         return None
     if not os.path.isfile(filepath):
@@ -39,7 +39,7 @@ def _get_exposure_summary(filename):
     created_date = time.ctime(os.path.getctime(filepath))
 
     return data.ExposureSummary(
-        location=str.replace(filename, TAR_FILE_SUFFIX, ''),
+        location=filename.replace(TAR_FILE_SUFFIX, ''),
         size=size_in_bytes,
         created_date=created_date
     )
@@ -92,7 +92,7 @@ def get_exposure_summary(location):
         logging.debug("Location: {}".format(location))
         if location is None:
             return jsonify({
-                'exposures': [ex for ex in map(_get_exposure_summary, sorted(os.listdir(settings['INPUTS_DATA_DIRECTORY']))) if ex]
+                'exposures': [ex for ex in map(_get_exposure_summary, sorted(os.listdir(settings.get('server', 'INPUTS_DATA_DIRECTORY')))) if ex]
             })
         else:
             exposure = _get_exposure_summary('{}{}'.format(location, TAR_FILE_SUFFIX))
@@ -132,11 +132,11 @@ def get_exposure(location):
             return Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
 
         filename = str(location) + TAR_FILE_SUFFIX
-        filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
+        filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename)
         if not os.path.exists(filepath):
             return Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
         else:
-            return send_from_directory(settings['INPUTS_DATA_DIRECTORY'], location + TAR_FILE_SUFFIX)
+            return send_from_directory(settings.get('server', 'INPUTS_DATA_DIRECTORY'), location + TAR_FILE_SUFFIX)
     except Exception:
         logging.exception("Failed to get exposure")
         return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
@@ -161,7 +161,7 @@ def post_exposure():
     try:
         request_file = request.files['file']
         filename = uuid.uuid4().hex
-        filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename) + TAR_FILE_SUFFIX
+        filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename) + TAR_FILE_SUFFIX
         request_file.save(filepath)
 
         # Check the content, and if invalid delete
@@ -208,8 +208,8 @@ def delete_exposure(location):
     try:
         logging.debug("Location: {}".format(location))
         if location is None:
-            for filename in os.listdir(settings['INPUTS_DATA_DIRECTORY']):
-                filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
+            for filename in os.listdir(settings.get('server', 'INPUTS_DATA_DIRECTORY')):
+                filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename)
                 if not filepath.endswith(TAR_FILE_SUFFIX):
                     continue
                 if not os.path.isfile(filepath):
@@ -218,7 +218,7 @@ def delete_exposure(location):
             response = Response(status=http.HTTP_RESPONSE_OK)
         else:
             filename = str(location) + TAR_FILE_SUFFIX
-            filepath = os.path.join(settings['INPUTS_DATA_DIRECTORY'], filename)
+            filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename)
 
             if not os.path.exists(filepath):
                 response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
@@ -445,11 +445,11 @@ def get_outputs(location):
     """
     try:
         logging.debug("Location: {}".format(location))
-        file_path = os.path.join(settings['OUTPUTS_DATA_DIRECTORY'], location + TAR_FILE_SUFFIX)
+        file_path = os.path.join(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), location + TAR_FILE_SUFFIX)
         if not os.path.exists(file_path):
             response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
         else:
-            response = send_from_directory(settings['OUTPUTS_DATA_DIRECTORY'], location + TAR_FILE_SUFFIX)
+            response = send_from_directory(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), location + TAR_FILE_SUFFIX)
     except Exception:
         logging.exception("Failed to get outputs")
         response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
@@ -484,9 +484,9 @@ def delete_outputs(location):
         logging.debug("Location: {}".format(location))
         if location is None:
 
-            for filename in os.listdir(settings['OUTPUTS_DATA_DIRECTORY']):
+            for filename in os.listdir(settings.get('server', 'OUTPUTS_DATA_DIRECTORY')):
 
-                filepath = os.path.join(settings['OUTPUTS_DATA_DIRECTORY'], filename)
+                filepath = os.path.join(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), filename)
 
                 if not filepath.endswith(TAR_FILE_SUFFIX):
                     continue
@@ -498,7 +498,7 @@ def delete_outputs(location):
         else:
 
             filename = str(location) + TAR_FILE_SUFFIX
-            filepath = os.path.join(settings['OUTPUTS_DATA_DIRECTORY'], filename)
+            filepath = os.path.join(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), filename)
 
             if not os.path.exists(filepath):
                 response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)

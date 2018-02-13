@@ -1,7 +1,0 @@
--e git+ssh://git@github.com/OasisLMF/OasisLMF.git#egg=oasislmf
-Flask
-flask_swagger
-celery
-SQLAlchemy
-pymysql
-jsonpickle

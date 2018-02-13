@@ -13,7 +13,7 @@ from hypothesis.strategies import text, integers
 from mock import patch, Mock
 from oasislmf.utils import status
 
-from src.server.settings import SettingsPatcher
+from src.settings import SettingsPatcher
 from .base import AppTestCase
 
 

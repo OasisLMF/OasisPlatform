@@ -1,11 +1,21 @@
--r ./requirements-server.in
--r ./requirements-execution-worker.in
-
+-e git+ssh://git@github.com/OasisLMF/OasisLMF.git#egg=oasislmf
+Flask
+flask_swagger
+celery
+SQLAlchemy
+pymysql
+jsonpickle
+requests
+shutilwhich
+certifi
+numpy
+fasteners
 pytest
 pytest-coverage
 coverage
 flake8
 backports.tempfile
+configparser
 pathlib2
 hypothesis
 mock
