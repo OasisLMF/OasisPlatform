@@ -5,7 +5,7 @@ from unittest import TestCase
 import os
 
 from src.server import app
-from src.settings import settings
+from src.conf.settings import settings
 
 
 class AppTestCase(TestCase):

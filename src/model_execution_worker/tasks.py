@@ -41,7 +41,7 @@ DO_CLEAR_WORKING = bool(os.environ.get("DO_CLEAR_WORKING") or False)
 ARCHIVE_FILE_SUFFIX = '.tar'
 
 CELERY = Celery()
-CELERY.config_from_object('common.CeleryConfig')
+CELERY.config_from_object('src.conf.celery')
 
 logging.info("Started worker")
 logging.info("INPUTS_DATA_DIRECTORY: {}".format(INPUTS_DATA_DIRECTORY))

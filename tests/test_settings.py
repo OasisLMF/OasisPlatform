@@ -5,7 +5,7 @@ import os
 from hypothesis import given
 from hypothesis.strategies import text
 
-from src.settings import Settings
+from src.conf.settings import Settings
 
 
 def setting_text():

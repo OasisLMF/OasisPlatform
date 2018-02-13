@@ -17,7 +17,7 @@ from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
 
-from src.settings import settings
+from src.conf.settings import settings
 
 APP = Flask(__name__)
 
@@ -25,7 +25,7 @@ TAR_FILE_SUFFIX = '.tar'
 GZIP_FILE_SUFFIX = '.gz'
 
 CELERY = Celery()
-CELERY.config_from_object('src.common.CeleryConfig')
+CELERY.config_from_object('src.conf.celery')
 
 
 def _get_exposure_summary(filename):
