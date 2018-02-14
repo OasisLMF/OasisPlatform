@@ -10,4 +10,4 @@ tox
 
 # get full coverage stats
 coverage combine
-coverage report
+coverage report  -i src/*/*.py src/*.py

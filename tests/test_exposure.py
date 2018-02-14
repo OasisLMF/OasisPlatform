@@ -80,7 +80,7 @@ class Exposure(AppTestCase):
         with TemporaryDirectory() as inputs_dir:
             with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
                 Path(os.path.join(inputs_dir, 'test1.tar')).touch()
-                response = self.app.get("/exposure_summary/test2")
+                response = self.app.get("/exposure/test2")
                 self.assertEqual(response._status_code, 404)
 
     @given(binary(min_size=1, max_size=200))
@@ -118,6 +118,20 @@ class Exposure(AppTestCase):
                 self.assertEqual(response._status_code, 200)
                 self.assertEqual(len(exposures), 0)
 
+    def test_no_location_is_given_on_delete___non_tar_files_and_child_dirs_are_left(self):
+        with TemporaryDirectory() as inputs_dir:
+            with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
+                Path(os.path.join(inputs_dir, 'test1.tar')).touch()
+                Path(os.path.join(inputs_dir, 'test2.tar')).touch()
+                Path(os.path.join(inputs_dir, 'test.nottar')).touch()
+                os.makedirs(os.path.join(inputs_dir, 'child.tar'))
+                Path(os.path.join(inputs_dir, 'child.tar', 'test3.tar')).touch()
+
+                self.app.delete("/exposure")
+
+                self.assertTrue(os.path.exists(os.path.join(inputs_dir, 'test.nottar')))
+                self.assertTrue(os.path.exists(os.path.join(inputs_dir, 'child.tar', 'test3.tar')))
+
     @given(lists(text(alphabet=string.ascii_letters, min_size=1), unique=True, min_size=2, max_size=2))
     def test_location_is_given_on_delete___only_named_location_is_deleted(self, locations):
         first_location, second_location = locations
@@ -127,11 +141,28 @@ class Exposure(AppTestCase):
                 Path(os.path.join(inputs_dir, '{}.tar'.format(first_location))).touch()
                 Path(os.path.join(inputs_dir, '{}.tar'.format(second_location))).touch()
 
-                self.app.delete("/exposure/{}".format(first_location))
+                response = self.app.delete("/exposure/{}".format(first_location))
+                self.assertEqual(response._status_code, 200)
 
                 response = self.app.get("/exposure_summary")
                 exposures = json.loads(response.data.decode('utf-8'))['exposures']
 
-                self.assertEqual(response._status_code, 200)
                 self.assertEqual(len(exposures), 1)
                 self.assertEqual(second_location, exposures[0]['location'])
+
+    @given(lists(text(alphabet=string.ascii_letters, min_size=1), unique=True, min_size=2, max_size=2))
+    def test_location_does_not_exist_on_delete___response_is_404(self, locations):
+        first_location, second_location = locations
+
+        with TemporaryDirectory() as inputs_dir:
+            with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
+                Path(os.path.join(inputs_dir, '{}.tar'.format(first_location))).touch()
+
+                response = self.app.delete("/exposure/{}".format(second_location))
+                self.assertEqual(response._status_code, 404)
+
+                response = self.app.get("/exposure_summary")
+                exposures = json.loads(response.data.decode('utf-8'))['exposures']
+
+                self.assertEqual(len(exposures), 1)
+                self.assertEqual(first_location, exposures[0]['location'])

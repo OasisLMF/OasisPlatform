@@ -88,21 +88,17 @@ def get_exposure_summary(location):
       required: true
       type: string
     """
-    try:
-        logging.debug("Location: {}".format(location))
-        if location is None:
-            return jsonify({
-                'exposures': [ex for ex in map(_get_exposure_summary, sorted(os.listdir(settings.get('server', 'INPUTS_DATA_DIRECTORY')))) if ex]
-            })
-        else:
-            exposure = _get_exposure_summary('{}{}'.format(location, TAR_FILE_SUFFIX))
-            if not exposure:
-                return Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+    logging.debug("Location: {}".format(location))
+    if location is None:
+        return jsonify({
+            'exposures': [ex for ex in map(_get_exposure_summary, sorted(os.listdir(settings.get('server', 'INPUTS_DATA_DIRECTORY')))) if ex]
+        })
+    else:
+        exposure = _get_exposure_summary('{}{}'.format(location, TAR_FILE_SUFFIX))
+        if not exposure:
+            return Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
 
-            return jsonify({'exposures': [exposure]})
-    except Exception:
-        logging.exception("Failed to get exposure summary")
-        return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
+        return jsonify({'exposures': [exposure]})
 
 
 @APP.route('/exposure/<location>', methods=["GET"])
@@ -126,20 +122,8 @@ def get_exposure(location):
       required: true
       type: string
     """
-    try:
-        logging.debug("Location: {}".format(location))
-        if location is None:
-            return Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
-
-        filename = str(location) + TAR_FILE_SUFFIX
-        filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename)
-        if not os.path.exists(filepath):
-            return Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
-        else:
-            return send_from_directory(settings.get('server', 'INPUTS_DATA_DIRECTORY'), location + TAR_FILE_SUFFIX)
-    except Exception:
-        logging.exception("Failed to get exposure")
-        return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
+    logging.debug("Location: {}".format(location))
+    return send_from_directory(settings.get('server', 'INPUTS_DATA_DIRECTORY'), location + TAR_FILE_SUFFIX)
 
 
 @APP.route('/exposure', methods=["POST"])
@@ -158,29 +142,23 @@ def post_exposure():
             schema:
                 $ref: '#/definitions/ExposureSummary'
     """
-    try:
-        request_file = request.files['file']
-        filename = uuid.uuid4().hex
-        filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename) + TAR_FILE_SUFFIX
-        request_file.save(filepath)
+    request_file = request.files['file']
+    filename = uuid.uuid4().hex
+    filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename) + TAR_FILE_SUFFIX
+    request_file.save(filepath)
 
-        # Check the content, and if invalid delete
+    # Check the content, and if invalid delete
 
-        size_in_bytes = os.path.getsize(filepath)
-        created_date = time.ctime(os.path.getctime(filepath))
+    size_in_bytes = os.path.getsize(filepath)
+    created_date = time.ctime(os.path.getctime(filepath))
 
-        exposure = {
-            "location": filename,
-            "size": size_in_bytes,
-            "created_date": created_date
-        }
+    exposure = {
+        "location": filename,
+        "size": size_in_bytes,
+        "created_date": created_date
+    }
 
-        response = jsonify({'exposures': [exposure]})
-    except Exception:
-        logging.exception("Failed to post exposure")
-        response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
-
-    return response
+    return jsonify({'exposures': [exposure]})
 
 
 @APP.route('/exposure', defaults={'location': None}, methods=["DELETE"])
@@ -205,29 +183,25 @@ def delete_exposure(location):
       required: true
       type: string
     """
-    try:
-        logging.debug("Location: {}".format(location))
-        if location is None:
-            for filename in os.listdir(settings.get('server', 'INPUTS_DATA_DIRECTORY')):
-                filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename)
-                if not filepath.endswith(TAR_FILE_SUFFIX):
-                    continue
-                if not os.path.isfile(filepath):
-                    continue
-                os.remove(filepath)
-            response = Response(status=http.HTTP_RESPONSE_OK)
-        else:
-            filename = str(location) + TAR_FILE_SUFFIX
+    logging.debug("Location: {}".format(location))
+    if location is None:
+        for filename in os.listdir(settings.get('server', 'INPUTS_DATA_DIRECTORY')):
             filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename)
+            if not filepath.endswith(TAR_FILE_SUFFIX):
+                continue
+            if not os.path.isfile(filepath):
+                continue
+            os.remove(filepath)
+        response = Response(status=http.HTTP_RESPONSE_OK)
+    else:
+        filename = str(location) + TAR_FILE_SUFFIX
+        filepath = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), filename)
 
-            if not os.path.exists(filepath):
-                response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
-            else:
-                os.remove(filepath)
-                response = Response(status=http.HTTP_RESPONSE_OK)
-    except Exception:
-        logging.exception("Failed to delete exposure")
-        response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
+        if not os.path.exists(filepath):
+            response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+        else:
+            os.remove(filepath)
+            response = Response(status=http.HTTP_RESPONSE_OK)
 
     return response
 
@@ -260,26 +234,22 @@ def post_analysis(input_location):
       required: true
       type: file
     """
-    try:
-        analysis_settings = request.json or {}
-        if not validate_analysis_settings(analysis_settings) or not _get_exposure_summary('{}.tar'.format(input_location)):
-            return Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
-        else:
-            module_supplier_id = analysis_settings['analysis_settings']['module_supplier_id']
-            model_version_id = analysis_settings['analysis_settings']['model_version_id']
+    analysis_settings = request.json or {}
+    if not validate_analysis_settings(analysis_settings) or not _get_exposure_summary('{}.tar'.format(input_location)):
+        return Response(status=http.HTTP_RESPONSE_BAD_REQUEST)
+    else:
+        module_supplier_id = analysis_settings['analysis_settings']['module_supplier_id']
+        model_version_id = analysis_settings['analysis_settings']['model_version_id']
 
-            logging.info("Model supplier - version = {} {}".format(module_supplier_id, model_version_id))
-            result = CELERY.send_task(
-                'run_analysis',
-                (input_location, [analysis_settings]),
-                queue='{}-{}'.format(module_supplier_id, model_version_id)
-            )
+        logging.info("Model supplier - version = {} {}".format(module_supplier_id, model_version_id))
+        result = CELERY.send_task(
+            'run_analysis',
+            (input_location, [analysis_settings]),
+            queue='{}-{}'.format(module_supplier_id, model_version_id)
+        )
 
-            task_id = result.task_id
-            return jsonify({'location': task_id})
-    except Exception:
-        logging.exception("Failed to post analysis")
-        return Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
+        task_id = result.task_id
+        return jsonify({'location': task_id})
 
 
 def _get_analysis_status(location):
@@ -366,32 +336,29 @@ def get_analysis_status(location):
         required: true
         type: string
     """
-    try:
+    analysis_status = _get_analysis_status(location)
+
+    # If there is no location for a successful analysis, retry once
+    # and then fail the analysis as something has gone wrong
+    if (analysis_status.status == status.STATUS_SUCCESS and analysis_status.outputs_location is None):
+        logging.info("Successful analysis has no location - retrying")
+        time.sleep(5)
+
         analysis_status = _get_analysis_status(location)
-
-        # If there is no location for a successful analysis, retry once
-        # and then fail the analysis as something has gone wrong
         if (analysis_status.status == status.STATUS_SUCCESS and analysis_status.outputs_location is None):
-            logging.info("Successful analysis has no location - retrying")
-            time.sleep(5)
+            logging.info("Successful analysis still has no location - fail")
+            analysis_status.status = status.STATUS_FAILURE
 
-            analysis_status = _get_analysis_status(location)
-            if (analysis_status.status == status.STATUS_SUCCESS and analysis_status.outputs_location is None):
-                logging.info("Successful analysis still has no location - fail")
-                analysis_status.status = status.STATUS_FAILURE
+    response = jsonify(analysis_status)
+    logging.debug("Response: {}".format(response.data))
 
-        response = jsonify(analysis_status)
-        logging.debug("Response: {}".format(response.data))
-    except Exception:
-        logging.exception("Failed to get analysis status")
-        response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
     return response
 
 
 @APP.route('/analysis_status', methods=["DELETE"])
 @APP.route('/analysis_status/<location>', methods=["DELETE"])
 @oasis_log()
-def delete_analysis_status(location):
+def delete_analysis_status(location):  # pragma: no cover
     """
     Delete an analysis status resource
     ---
@@ -443,20 +410,11 @@ def get_outputs(location):
         required: true
         type: string
     """
-    try:
-        logging.debug("Location: {}".format(location))
-        file_path = os.path.join(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), location + TAR_FILE_SUFFIX)
-        if not os.path.exists(file_path):
-            response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
-        else:
-            response = send_from_directory(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), location + TAR_FILE_SUFFIX)
-    except Exception:
-        logging.exception("Failed to get outputs")
-        response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
-    return response
+    logging.debug("Location: {}".format(location))
+    return send_from_directory(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), location + TAR_FILE_SUFFIX)
 
 
-@APP.route('/outputs', methods=["DELETE"])
+@APP.route('/outputs', defaults={'location': None}, methods=["DELETE"])
 @APP.route('/outputs/<location>', methods=["DELETE"])
 @oasis_log()
 def delete_outputs(location):
@@ -480,35 +438,30 @@ def delete_outputs(location):
       required: true
       type: string
     """
-    try:
-        logging.debug("Location: {}".format(location))
-        if location is None:
+    logging.debug("Location: {}".format(location))
+    if location is None:
 
-            for filename in os.listdir(settings.get('server', 'OUTPUTS_DATA_DIRECTORY')):
+        for filename in os.listdir(settings.get('server', 'OUTPUTS_DATA_DIRECTORY')):
 
-                filepath = os.path.join(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), filename)
-
-                if not filepath.endswith(TAR_FILE_SUFFIX):
-                    continue
-                if not os.path.isfile(filepath):
-                    continue
-                os.remove(filepath)
-            response = Response(status=http.HTTP_RESPONSE_OK)
-
-        else:
-
-            filename = str(location) + TAR_FILE_SUFFIX
             filepath = os.path.join(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), filename)
 
-            if not os.path.exists(filepath):
-                response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
-            else:
-                os.remove(filepath)
-                response = Response(status=http.HTTP_RESPONSE_OK)
+            if not filepath.endswith(TAR_FILE_SUFFIX):
+                continue
+            if not os.path.isfile(filepath):
+                continue
+            os.remove(filepath)
+        response = Response(status=http.HTTP_RESPONSE_OK)
 
-    except Exception:
-        logging.exception("Failed to delete outputs")
-        response = Response(status=http.HTTP_RESPONSE_INTERNAL_SERVER_ERROR)
+    else:
+
+        filename = str(location) + TAR_FILE_SUFFIX
+        filepath = os.path.join(settings.get('server', 'OUTPUTS_DATA_DIRECTORY'), filename)
+
+        if not os.path.exists(filepath):
+            response = Response(status=http.HTTP_RESPONSE_RESOURCE_NOT_FOUND)
+        else:
+            os.remove(filepath)
+            response = Response(status=http.HTTP_RESPONSE_OK)
 
     return response
 
