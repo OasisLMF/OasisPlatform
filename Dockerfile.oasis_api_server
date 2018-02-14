@@ -1,4 +1,4 @@
-FROM coreoasis/ktools:R_0_0_0_225
+FROM coreoasis/ktools:R_0_0_0_23
 
 ARG USER_ID
 
@@ -32,6 +32,8 @@ RUN a2ensite oasis.conf
 RUN groupmod -g $USER_ID www-data \
   && usermod -u $USER_ID -g $USER_ID www-data
 
+RUN chown -R www-data:www-data /var/www/oasis/upload \
+                               /var/www/oasis/download
 
 RUN  chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
 #    ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
