@@ -11,12 +11,12 @@ import tarfile
 
 import sys
 from oasislmf.model_execution.bin import prepare_model_run_directory, prepare_model_run_inputs
+from oasislmf.model_execution import runner
 from oasislmf.utils import status
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from pathlib2 import Path
 
-from . import supplier_model_runner
 from celery import Celery
 from celery.task import task
 
@@ -159,13 +159,13 @@ def start_analysis(analysis_settings, input_location):
             json.dump(analysis_settings, json_file)
 
         if use_default_model_runner:
-            model_runner_module = supplier_model_runner
+            model_runner_module = runner
         else:
             sys.path.append(settings.get('worker', 'SUPPLIER_MODULE_DIRECTORY'))
             model_runner_module = importlib.import_module('{}.supplier_model_runner'.format(module_supplier_id))
 
         model_runner_module.run(
-            analysis_settings['analysis_settings'], settings.get('worker', 'KTOOLS_BATCH_COUNT'))
+            analysis_settings['analysis_settings'], settings.getint('worker', 'KTOOLS_BATCH_COUNT'))
 
         output_location = uuid.uuid4().hex
         output_filepath = os.path.join(

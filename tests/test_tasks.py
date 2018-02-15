@@ -71,7 +71,7 @@ class StartAnalysis(TestCase):
                 self.create_tar(str(Path(inputs_dir, 'location.tar')))
                 Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
 
-                with patch('src.model_execution_worker.tasks.supplier_model_runner') as default_mock:
+                with patch('src.model_execution_worker.tasks.runner') as default_mock:
                     start_analysis({
                         'analysis_settings': {
                             'source_tag': 'source',
@@ -88,7 +88,7 @@ class StartAnalysis(TestCase):
                             'module_supplier_id': 'supplier',
                             'model_version_id': 'version'
                         },
-                        settings.get('worker', 'KTOOLS_BATCH_COUNT')
+                        settings.getint('worker', 'KTOOLS_BATCH_COUNT')
                     )
 
     def test_custom_model_runner_exists___custom_runner_is_used(self):
@@ -140,7 +140,7 @@ class StartAnalysis(TestCase):
                 self.create_tar(str(Path(inputs_dir, 'location.tar')))
                 Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
 
-                with patch('src.model_execution_worker.tasks.supplier_model_runner'):
+                with patch('src.model_execution_worker.tasks.runner'):
                     start_analysis({
                         'analysis_settings': {
                             'source_tag': 'source',
@@ -167,7 +167,7 @@ class StartAnalysis(TestCase):
                 self.create_tar(str(Path(inputs_dir, 'location.tar')))
                 Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
 
-                with patch('src.model_execution_worker.tasks.supplier_model_runner'):
+                with patch('src.model_execution_worker.tasks.runner'):
                     start_analysis({
                         'analysis_settings': {
                             'source_tag': 'source',
