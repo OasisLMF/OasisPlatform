@@ -1,6 +1,7 @@
 import importlib
 import logging
 import uuid
+from contextlib import contextmanager
 
 import fasteners
 import json
@@ -54,6 +55,16 @@ class MissingModelDataException(OasisException):
         super(MissingModelDataException, self).__init__('Model data not found: {}'.format(model_data_path))
 
 
+@contextmanager
+def get_lock():
+    lock = fasteners.InterProcessLock(settings.get('worker', 'LOCK_FILE'))
+    gotten = lock.acquire(blocking=False, timeout=settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS'))
+    yield gotten
+
+    if gotten:
+        lock.release()
+
+
 @task(name='run_analysis', bind=True)
 def start_analysis_task(self, input_location, analysis_settings_json):
     '''
@@ -64,28 +75,28 @@ def start_analysis_task(self, input_location, analysis_settings_json):
         (string) The location of the outputs.
     '''
 
-    a_lock = fasteners.InterProcessLock(settings.get('worker', 'LOCK_FILE'))
-    gotten = a_lock.acquire(blocking=False, timeout=settings.get('worker', 'LOCK_TIMEOUT_IN_SECS'))
-    if not gotten:
-        logging.info("Failed to get resource lock - retry task")
-        retry_countdown_in_secs = 10
-        raise self.retry(countdown=retry_countdown_in_secs)
-    logging.info("Acquired resource lock")
+    with get_lock() as gotten:
+        if not gotten:
+            logging.info("Failed to get resource lock - retry task")
+            retry_countdown_in_secs = 10
+            raise self.retry(countdown=retry_countdown_in_secs)
 
-    try:
-        logging.info("INPUTS_DATA_DIRECTORY: {}".format(settings.get('worker', 'INPUTS_DATA_DIRECTORY')))
-        logging.info("OUTPUTS_DATA_DIRECTORY: {}".format(settings.get('worker', 'OUTPUTS_DATA_DIRECTORY')))
-        logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
-        logging.info("WORKING_DIRECTORY: {}".format(settings.get('worker', 'WORKING_DIRECTORY')))
-        logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
+        logging.info("Acquired resource lock")
 
-        self.update_state(state=status.STATUS_RUNNING)
-        output_location = start_analysis(analysis_settings_json[0], input_location)
-    except Exception as exc:
-        logging.exception("Model execution task failed.")
-        raise exc
+        try:
+            logging.info("INPUTS_DATA_DIRECTORY: {}".format(settings.get('worker', 'INPUTS_DATA_DIRECTORY')))
+            logging.info("OUTPUTS_DATA_DIRECTORY: {}".format(settings.get('worker', 'OUTPUTS_DATA_DIRECTORY')))
+            logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
+            logging.info("WORKING_DIRECTORY: {}".format(settings.get('worker', 'WORKING_DIRECTORY')))
+            logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 
-    return output_location
+            self.update_state(state=status.STATUS_RUNNING)
+            output_location = start_analysis(analysis_settings_json[0], input_location)
+        except Exception:
+            logging.exception("Model execution task failed.")
+            raise
+
+        return output_location
 
 
 @oasis_log()

@@ -3,12 +3,16 @@ from unittest import TestCase
 
 import os
 from backports.tempfile import TemporaryDirectory
-from mock import patch
+from celery.exceptions import Retry
+from hypothesis import given
+from hypothesis.strategies import text, dictionaries
+from mock import patch, Mock
+from oasislmf.utils import status
 from pathlib2 import Path
 
 from src.conf.settings import SettingsPatcher, settings
 from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, MissingInputsException, \
-    MissingModelDataException
+    MissingModelDataException, start_analysis_task
 
 
 class StartAnalysis(TestCase):
@@ -175,3 +179,20 @@ class StartAnalysis(TestCase):
                     )
 
                 self.assertGreater(len(os.listdir(work_dir)), 0)
+
+
+class StartAnalysisTask(TestCase):
+    @given(text(), dictionaries(text(), text()))
+    def test_lock_is_not_acquireable___retry_esception_is_raised(self, location, analysis_settings):
+        with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)):
+            with self.assertRaises(Retry):
+                start_analysis_task(location, [analysis_settings])
+
+    @given(text(), dictionaries(text(), text()))
+    def test_lock_is_acquireable___start_analysis_is_ran(self, location, analysis_settings):
+        with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=True)) as start_analysis_mock:
+            start_analysis_task.update_state = Mock()
+            start_analysis_task(location, [analysis_settings])
+
+            start_analysis_task.update_state.assert_called_once_with(state=status.STATUS_RUNNING)
+            start_analysis_mock.assert_called_once_with(analysis_settings, location)
