@@ -3,6 +3,7 @@ ARG KTOOLS_TAG=R_0_0_0_23
 
 FROM coreoasis/ktools:$KTOOLS_TAG
 
+RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
@@ -21,8 +22,6 @@ COPY ./src/utils/ ./utils/
 COPY ./src/oasis_utils/ ./oasis_utils/
 COPY ./tests /home/worker/tests
 
-RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" worker && \
-    usermod -a -G adm worker
 
 RUN mkdir -p /var/oasis/working && \
     mkdir -p /var/log/oasis && \
