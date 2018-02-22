@@ -1,6 +1,8 @@
-FROM coreoasis/ktools:${RELEASE_TAG}
-
 ARG USER_ID
+ARG KTOOLS_TAG=R_0_0_0_23
+
+FROM coreoasis/ktools:$KTOOLS_TAG
+
 WORKDIR /home/worker
 
 COPY ./src/model_execution_worker/requirements.txt /tmp/
