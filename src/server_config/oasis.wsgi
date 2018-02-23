@@ -4,7 +4,7 @@ import logging
 
 from src.conf.settings import settings
 
-logging.basicConfig(stream=sys.stderr)
+logging.basicConfig(stream=sys.stdout)
 settings.setup_logging('server')
 
 sys.path.insert(0, '/var/www/oasis/')
