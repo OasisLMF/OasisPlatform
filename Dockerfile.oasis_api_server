@@ -1,6 +1,7 @@
-FROM coreoasis/ktools:R_0_0_0_23
+ARG KTOOLS_TAG=R_0_0_0_23
 
-ARG USER_ID
+FROM coreoasis/ktools:$KTOOLS_TAG
+
 WORKDIR /var/www/oasis
 
 RUN mkdir -p /var/www/oasis/common \
@@ -25,14 +26,13 @@ RUN pip install -r /var/www/oasis/server/requirements.txt && \
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 
-USER oasis
+RUN  chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
+#    ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
+    chmod -R 777 /var/log/oasis /var/log/apache2
 
-RUN adduser --shell /bin/bash --uid $USER_ID --disabled-password --gecos "" oasis && \
-    chown -R oasis:oasis /var/www/oasis
-
-RUN ln -sf /proc/self/fd/1 /var/log/oasis/oasis_api_server.log && \
-    chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
-    chmod a+w /var/log/oasis/oasis_api_server.log
+RUN touch /var/log/oasis/oasis_api_server.log && \
+    chmod a+w /var/log/oasis/oasis_api_server.log && \
+    chown -R www-data:www-data /var/log/oasis
 
 RUN python /var/www/oasis/tests/ExposureTests.py
 
@@ -43,4 +43,5 @@ ENTRYPOINT \
 	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /var/www/oasis/common/CeleryConfig.py && \
 	wait-for-it.sh "oasis_rabbit:$RABBIT_PORT" -t 60 && \
 	wait-for-it.sh "oasis_mysql:$MYSQL_PORT" -t 60 && \
-	startup.sh
+	startup.sh && \
+  tail -f /var/log/oasis/oasis_api_server.log

@@ -1,6 +1,6 @@
-FROM coreoasis/ktools:R_0_0_0_23
+ARG KTOOLS_TAG=R_0_0_0_23
 
-ARG USER_ID
+FROM coreoasis/ktools:$KTOOLS_TAG
 
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
@@ -24,21 +24,15 @@ COPY ./tests /home/worker/tests
 
 RUN mkdir -p /var/oasis/working && \
     mkdir -p /var/log/oasis && \
-    ln -sf /proc/self/fd/1 /var/log/oasis/worker.log
+    touch /var/log/oasis/worker.log && \
+    chmod 777 /var/log/oasis/worker.log
 
-RUN chmod -R 777 /home/worker/common /home/worker && \
-    chown -R worker:worker /home/worker && \
-    chown -R worker:worker /var/oasis && \
-		chown -R worker:worker /var/log && \
-		chown -R worker:worker /var/oasis/working
+RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
+    chown -R worker /home/worker && \
+    chown -R worker /var/oasis && \
+		chown -R worker /var/log && \
+    chown -R worker /var/oasis/working
 
 #RUN python /home/worker/tests/KparseTests.py || true
 
-USER worker
-ENTRYPOINT \
-	sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /home/worker/common/CeleryConfig.py && \
-	sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py && \
-	sed -i -e "s/%CELERY_QUEUE%/$MODEL_SUPPLIER_ID-$MODEL_VERSION_ID/" startup.sh && \
-	./utils/wait-for-it.sh "oasis_rabbit:$RABBIT_PORT" && \
-	./utils/wait-for-it.sh "oasis_mysql:$MYSQL_PORT" && \
-	./startup.sh
+ENTRYPOINT ./startup.sh
