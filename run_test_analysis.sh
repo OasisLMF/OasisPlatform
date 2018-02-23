@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python src/utils/model_runner.py -a tests/data/analysis_settings.json -d tests/data
+oasislmf generate-losses tests/data -j tests/data/analysis_settings.json

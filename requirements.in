@@ -1,4 +1,4 @@
--e git+ssh://git@github.com/OasisLMF/OasisLMF.git#egg=oasislmf
+oasislmf
 Flask
 flask_swagger
 celery
