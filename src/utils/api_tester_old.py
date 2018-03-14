@@ -2,7 +2,6 @@ from __future__ import print_function
 
 # Python 2 standard library imports
 import argparse
-import inspect
 import json
 import logging
 import os
@@ -11,11 +10,8 @@ import sys
 import threading
 import uuid
 
-CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-sys.path.append(os.path.join(CURRENT_DIRECTORY, ".."))
-
 # Oasis Api import
-from oasisapi_client import OasisAPIClient
+from oasislmf.api_client.client import OasisAPIClient
 
 '''
 Test utility for running a model analysis using the Oasis API.
@@ -112,9 +108,10 @@ def run_analysis(c):
             output_data_directory, do_clean=False)
         c.increment_num_completed()
 
-    except Exception as e:
+    except Exception:
         logging.exception("API test failed")
         c.increment_num_failed()
+
 
 analysis_threads = list()
 c = Counter()

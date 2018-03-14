@@ -91,8 +91,6 @@ todo_include_todos = True
 autodoc_mock_imports = [
     'celery',
     'flask_swagger',
-    'oasis_utils',
-    'oasis_log_utils'
 ]
 
 

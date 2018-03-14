@@ -5,22 +5,17 @@ FROM coreoasis/ktools:$KTOOLS_TAG
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
-COPY ./src/model_execution_worker/requirements.txt /tmp/
-RUN pip install -r /tmp/requirements.txt
-
-COPY ./src/oasis_utils/requirements.txt /tmp/
+COPY ./requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
 COPY ./data/static /var/oasis/model_data/OasisIM/1
 COPY ./data/static /var/oasis/model_data/OasisIM/2
 COPY ./src/model_execution_worker/startup.sh ./
 COPY ./src/common ./common/
+COPY ./src/conf ./conf/
 COPY ./src/model_execution_worker/ ./model_execution_worker/
-COPY ./src/model_execution/ ./model_execution/
 COPY ./src/utils/ ./utils/
-COPY ./src/oasis_utils/ ./oasis_utils/
 COPY ./tests /home/worker/tests
-
 
 RUN mkdir -p /var/oasis/working && \
     mkdir -p /var/log/oasis && \
@@ -30,9 +25,7 @@ RUN mkdir -p /var/oasis/working && \
 RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
     chown -R worker /home/worker && \
     chown -R worker /var/oasis && \
-		chown -R worker /var/log && \
+	chown -R worker /var/log && \
     chown -R worker /var/oasis/working
-
-#RUN python /home/worker/tests/KparseTests.py || true
 
 ENTRYPOINT ./startup.sh
