@@ -5,7 +5,9 @@ FROM coreoasis/ktools:$KTOOLS_TAG
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
-COPY ./requirements.txt /tmp/
+COPY ./requirements.in /tmp/
+RUN pip install pip-tools
+RUN pip-compile --output-file /tmp/requirements.txt /tmp/requirements.in
 RUN pip install -r /tmp/requirements.txt
 
 COPY ./data/static /var/oasis/model_data/OasisIM/1
