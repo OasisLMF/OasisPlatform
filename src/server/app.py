@@ -12,12 +12,12 @@ from celery import Celery
 from oasislmf.utils import http, status
 from oasislmf.utils.log import oasis_log
 
-from ..common import data
+from common import data
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
 
-from src.conf.settings import settings
+from conf.settings import settings
 
 APP = Flask(__name__)
 
@@ -25,7 +25,7 @@ TAR_FILE_SUFFIX = '.tar'
 GZIP_FILE_SUFFIX = '.gz'
 
 CELERY = Celery()
-CELERY.config_from_object('src.conf.celery')
+CELERY.config_from_object('conf.celery')
 
 
 def _get_exposure_summary(filename):
