@@ -29,13 +29,12 @@ COPY ./utils/wait-for-it.sh /usr/local/bin
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 
+RUN touch /var/log/oasis/oasis_api_server.log && \
+    chown -R www-data:www-data /var/log/oasis
+
 RUN  chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
 #    ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
     chmod -R 777 /var/log/oasis /var/log/apache2
-
-RUN touch /var/log/oasis/oasis_api_server.log && \
-    chmod a+w /var/log/oasis/oasis_api_server.log && \
-    chown -R www-data:www-data /var/log/oasis
 
 EXPOSE 80
 
