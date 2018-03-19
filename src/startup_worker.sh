@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export PYTHONPATH=$SCRIPT_DIR
+
 # Delete celeryd.pid file - fix que pickup issues on reboot of server
 rm -f /home/worker/celeryd.pid
-
-sed -i -e "s/%RABBIT_PORT%/$RABBIT_PORT/" /home/worker/common/CeleryConfig.py
-sed -i -e "s/%MYSQL_PORT%/$MYSQL_PORT/" /home/worker/common/CeleryConfig.py
 
 ./utils/wait-for-it.sh "oasis_rabbit:$RABBIT_PORT"
 ./utils/wait-for-it.sh "oasis_mysql:$MYSQL_PORT"
