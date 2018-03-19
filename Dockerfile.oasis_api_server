@@ -14,6 +14,10 @@ RUN pip install pip-tools
 RUN pip-compile --output-file /tmp/requirements.txt /tmp/requirements.in
 RUN pip install -r /tmp/requirements.txt
 
+# Copy startup script + server config
+COPY ./src/startup_server.sh ./startup.sh
+COPY ./conf.ini ./
+
 COPY ./src/server_config/oasis.conf /etc/apache2/sites-available/oasis.conf
 COPY ./src/server_config/oasis.wsgi /var/www/oasis/oasis.wsgi
 COPY ./src/server /var/www/oasis/server/
@@ -35,5 +39,5 @@ RUN touch /var/log/oasis/oasis_api_server.log && \
 
 EXPOSE 80
 
-ENTRYPOINT /var/www/oasis/server/startup.sh && \
+ENTRYPOINT /var/www/oasis/startup.sh && \
     tail -f /var/log/oasis/oasis_api_server.log

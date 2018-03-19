@@ -5,14 +5,20 @@ FROM coreoasis/ktools:$KTOOLS_TAG
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
+# Install requirments
 COPY ./requirements.in /tmp/
 RUN pip install pip-tools
 RUN pip-compile --output-file /tmp/requirements.txt /tmp/requirements.in
 RUN pip install -r /tmp/requirements.txt
 
+# Copy Static data
 COPY ./data/static /var/oasis/model_data/OasisIM/1
 COPY ./data/static /var/oasis/model_data/OasisIM/2
-COPY ./src/model_execution_worker/startup.sh ./
+
+# Copy startup script + server config
+COPY ./src/startup_worker.sh ./startup.sh
+COPY ./conf.ini ./
+
 COPY ./src/common ./common/
 COPY ./src/conf ./conf/
 COPY ./src/model_execution_worker/ ./model_execution_worker/

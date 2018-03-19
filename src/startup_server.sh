@@ -10,5 +10,8 @@ chown -R www-data:www-data /var/www/oasis/download
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export PYTHONPATH=$SCRIPT_DIR
 
+# Set the ini file path 
+OASIS_API_INI_PATH="${SCRIPT_DIR}/conf.ini"
+
 # apachectl -k start -DFOREGROUND
 apachectl start
