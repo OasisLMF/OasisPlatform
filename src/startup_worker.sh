@@ -5,7 +5,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export PYTHONPATH=$SCRIPT_DIR
 
 # Set the ini file path 
-OASIS_API_INI_PATH="${SCRIPT_DIR}/conf.ini"
+export OASIS_API_INI_PATH="${SCRIPT_DIR}/conf.ini"
 
 # Delete celeryd.pid file - fix que pickup issues on reboot of server
 rm -f /home/worker/celeryd.pid
