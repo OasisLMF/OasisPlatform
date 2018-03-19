@@ -1,4 +1,4 @@
-ARG KTOOLS_TAG=R_0_0_0_23
+ARG KTOOLS_TAG=latest
 FROM coreoasis/ktools:$KTOOLS_TAG
 
 WORKDIR /var/www/oasis
