@@ -1,6 +1,4 @@
-ARG KTOOLS_TAG=latest
-
-FROM coreoasis/ktools:$KTOOLS_TAG
+FROM coreoasis/oasis_base:latest
 
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
