@@ -28,9 +28,8 @@ COPY ./utils/wait-for-it.sh /usr/local/bin
 RUN a2dissite 000-default
 RUN a2ensite oasis.conf
 
-#RUN touch /var/log/oasis/oasis_api_server.log && \
-#    chown -R www-data:www-data /var/log/oasis
-RUN chown -R www-data:www-data /var/log/oasis
+RUN touch /var/log/oasis/oasis_api_server.log && \
+    chown -R www-data:www-data /var/log/oasis
 
 RUN  chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
 #    ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
