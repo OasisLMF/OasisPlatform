@@ -41,7 +41,7 @@ class Settings(ConfigParser):
         Read an Oasis standard logging config
         """
         log_dir = self.get(section, 'LOG_DIRECTORY')
-        log_filename = self.get(section, 'LOG_FILE_NAME')
+        log_filename = self.get(section, 'LOG_FILENAME')
         log_path = os.path.join(log_dir, log_filename)
 
         read_log_config({
