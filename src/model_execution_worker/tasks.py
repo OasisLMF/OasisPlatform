@@ -150,7 +150,7 @@ def start_analysis(analysis_settings, input_location):
     working_directory = os.path.join(settings.get('worker', 'WORKING_DIRECTORY'), directory_name)
 
     prepare_model_run_directory(working_directory, model_data_src_path=model_data_path, inputs_archive=input_archive)
-    prepare_model_run_inputs(analysis_settings, working_directory)
+    prepare_model_run_inputs(analysis_settings['analysis_settings'], working_directory)
 
     with setcwd(working_directory):
         logging.info("Working directory = {}".format(working_directory))
