@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import importlib
 import logging
 import uuid
@@ -20,8 +22,8 @@ from pathlib2 import Path
 from celery import Celery
 from celery.task import task
 
-from utils.path import setcwd
-from conf.settings import settings
+from ..utils.path import setcwd
+from ..conf.settings import settings
 
 
 '''

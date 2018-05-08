@@ -12,12 +12,12 @@ from celery import Celery
 from oasislmf.utils import http, status
 from oasislmf.utils.log import oasis_log
 
-from common import data
+from ..common import data
 from flask import Flask, Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
 
-from conf.settings import settings
+from ..conf.settings import settings
 
 APP = Flask(__name__)
 
