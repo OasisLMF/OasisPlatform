@@ -97,7 +97,7 @@ class SettingsSetupLogging(TestCase):
             settings.add_section('newsection')
             settings.update({
                 'newsection': {
-                    'LOG_FILE_NAME': name,
+                    'LOG_FILENAME': name,
                     'LOG_DIRECTORY': path,
                     'LOG_LEVEL': level,
                     'LOG_MAX_SIZE_IN_BYTES': size,
