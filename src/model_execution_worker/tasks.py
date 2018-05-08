@@ -24,6 +24,7 @@ from celery.task import task
 
 from ..utils.path import setcwd
 from ..conf.settings import settings
+from ..conf import celery as celery_conf
 
 
 '''
@@ -33,7 +34,7 @@ Celery task wrapper for Oasis ktools calculation.
 ARCHIVE_FILE_SUFFIX = '.tar'
 
 CELERY = Celery()
-CELERY.config_from_object('conf.celery')
+CELERY.config_from_object(celery_conf)
 
 logging.info("Started worker")
 logging.info("INPUTS_DATA_DIRECTORY: {}".format(settings.get('worker', 'INPUTS_DATA_DIRECTORY')))

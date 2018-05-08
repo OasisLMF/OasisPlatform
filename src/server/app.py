@@ -18,6 +18,7 @@ from flask_swagger import swagger
 from flask.helpers import send_from_directory
 
 from ..conf.settings import settings
+from ..conf import celery as celery_conf
 
 APP = Flask(__name__)
 
@@ -25,7 +26,7 @@ TAR_FILE_SUFFIX = '.tar'
 GZIP_FILE_SUFFIX = '.gz'
 
 CELERY = Celery()
-CELERY.config_from_object('conf.celery')
+CELERY.config_from_object(celery_conf)
 
 
 def _get_exposure_summary(filename):
