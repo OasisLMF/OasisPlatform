@@ -2,11 +2,9 @@ FROM coreoasis/oasis_base:latest
 
 WORKDIR /var/www/oasis
 
-RUN mkdir -p /var/www/oasis/common \
-    /var/www/oasis/server \
-    /var/www/oasis/upload \
-    /var/www/oasis/download \
-    /var/log/oasis
+RUN mkdir -p /var/www/oasis/upload \
+             /var/www/oasis/download \
+             /var/log/oasis
 
 COPY ./requirements.in /tmp/
 RUN pip install pip-tools
@@ -20,9 +18,11 @@ COPY ./conf.ini ./
 
 COPY ./src/server_config/oasis.conf /etc/apache2/sites-available/oasis.conf
 COPY ./src/server_config/oasis.wsgi /var/www/oasis/oasis.wsgi
-COPY ./src/server /var/www/oasis/server/
-COPY ./src/common /var/www/oasis/common/
-COPY ./src/conf /var/www/oasis/conf/
+COPY ./src/__init__.py /var/www/oasis/src/
+
+COPY ./src/server /var/www/oasis/src/server
+COPY ./src/common /var/www/oasis/src/common
+COPY ./src/conf /var/www/oasis/src/conf
 COPY ./utils/wait-for-it.sh /usr/local/bin
 
 RUN a2dissite 000-default
