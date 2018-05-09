@@ -17,11 +17,11 @@ COPY ./data/static /var/oasis/model_data/OasisIM/2
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./conf.ini ./
 
-COPY ./src/__init__.py .
-COPY ./src/common ./common/
-COPY ./src/conf ./conf/
-COPY ./src/model_execution_worker/ ./model_execution_worker/
-COPY ./src/utils/ ./utils/
+COPY ./src/__init__.py ./src/
+COPY ./src/common ./src/common/
+COPY ./src/conf ./src/conf/
+COPY ./src/model_execution_worker/ ./src/model_execution_worker/
+COPY ./src/utils/ ./src/utils/
 COPY ./tests /home/worker/tests
 
 RUN mkdir -p /var/oasis/working && \
