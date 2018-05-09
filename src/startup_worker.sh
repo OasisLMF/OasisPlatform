@@ -14,7 +14,8 @@ rm -f /home/worker/celeryd.pid
 ./utils/wait-for-it.sh "oasis_mysql:$MYSQL_PORT"
 
 # Start worker on init
-celery worker -A model_execution_worker.tasks --detach --loglevel=INFO --logfile="/var/log/oasis/worker.log" -Q "${MODEL_SUPPLIER_ID}-${MODEL_VERSION_ID}"
+cd /home 
+celery worker -A worker.model_execution_worker.tasks --detach --loglevel=INFO --logfile="/var/log/oasis/worker.log" -Q "${MODEL_SUPPLIER_ID}-${MODEL_VERSION_ID}"
 
 sleep 5
 
