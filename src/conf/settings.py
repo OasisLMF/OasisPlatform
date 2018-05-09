@@ -33,13 +33,8 @@ class Settings(ConfigParser):
         )
 
     def get(self, section, option, **kwargs):
-        # If an environment variable with the settings names exists,
-        # use that instead of the settings file.
-        value = os.environ.get(option)
-        if value is None:
-            kwargs.setdefault('vars', self._get_section_env_vars(section))
-            value = super(Settings, self).get(section, option, **kwargs)
-        return value
+        kwargs.setdefault('vars', self._get_section_env_vars(section))
+        return super(Settings, self).get(section, option, **kwargs)
 
     def setup_logging(self, section):
         """
