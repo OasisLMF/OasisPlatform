@@ -17,6 +17,7 @@ COPY ./data/static /var/oasis/model_data/OasisIM/2
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./conf.ini ./
 
+COPY ./src/__init__.py .
 COPY ./src/common ./common/
 COPY ./src/conf ./conf/
 COPY ./src/model_execution_worker/ ./model_execution_worker/
