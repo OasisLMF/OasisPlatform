@@ -24,7 +24,7 @@ class ExposureSummary(AppTestCase):
                 self.create_input_file('test3.tar', 300)
                 self.create_input_file('test4.tar', 400)
 
-                response = self.app.get("/exposure_summary")
+                response = self.client.get("/exposure_summary")
 
                 self.assertEqual(response._status_code, 200)
                 exposures = json.loads(response.data.decode('utf-8'))['exposures']
@@ -45,7 +45,7 @@ class ExposureSummary(AppTestCase):
             with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
                 self.create_input_file('{}.tar'.format(location), size)
 
-                response = self.app.get("/exposure_summary/{}".format(location))
+                response = self.client.get("/exposure_summary/{}".format(location))
 
                 self.assertEqual(response._status_code, 200)
 
@@ -60,7 +60,7 @@ class ExposureSummary(AppTestCase):
             with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
                 self.create_input_file('other_{}.tar'.format(location), size)
 
-                response = self.app.get("/exposure_summary/{}".format(location))
+                response = self.client.get("/exposure_summary/{}".format(location))
 
                 self.assertEqual(response._status_code, 404)
 
@@ -71,7 +71,7 @@ class Exposure(AppTestCase):
         with TemporaryDirectory() as inputs_dir:
             with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
                 self.create_input_file('{}.tar'.format(location), data=data)
-                response = self.app.get("/exposure/{}".format(location))
+                response = self.client.get("/exposure/{}".format(location))
 
                 self.assertEqual(response._status_code, 200)
                 self.assertEqual(response.data, data)
@@ -80,7 +80,7 @@ class Exposure(AppTestCase):
         with TemporaryDirectory() as inputs_dir:
             with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
                 Path(os.path.join(inputs_dir, 'test1.tar')).touch()
-                response = self.app.get("/exposure/test2")
+                response = self.client.get("/exposure/test2")
                 self.assertEqual(response._status_code, 404)
 
     @given(binary(min_size=1, max_size=200))
@@ -91,7 +91,7 @@ class Exposure(AppTestCase):
                 self.create_input_file(filepath, data=data)
 
                 with io.open(filepath, 'rb') as file_to_upload:
-                    response = self.app.post(
+                    response = self.client.post(
                         "/exposure",
                         data={
                             'file': (file_to_upload, filepath),
@@ -100,7 +100,7 @@ class Exposure(AppTestCase):
                     )
                     location = json.loads(response.data.decode('utf-8'))['exposures'][0]['location']
 
-                response = self.app.get("/exposure/{}".format(location))
+                response = self.client.get("/exposure/{}".format(location))
                 self.assertEqual(response._status_code, 200)
                 self.assertEqual(response.data, data)
 
@@ -110,9 +110,9 @@ class Exposure(AppTestCase):
                 Path(os.path.join(inputs_dir, 'test1.tar')).touch()
                 Path(os.path.join(inputs_dir, 'test2.tar')).touch()
 
-                self.app.delete("/exposure")
+                self.client.delete("/exposure")
 
-                response = self.app.get("/exposure_summary")
+                response = self.client.get("/exposure_summary")
                 exposures = json.loads(response.data.decode('utf-8'))['exposures']
 
                 self.assertEqual(response._status_code, 200)
@@ -127,7 +127,7 @@ class Exposure(AppTestCase):
                 os.makedirs(os.path.join(inputs_dir, 'child.tar'))
                 Path(os.path.join(inputs_dir, 'child.tar', 'test3.tar')).touch()
 
-                self.app.delete("/exposure")
+                self.client.delete("/exposure")
 
                 self.assertTrue(os.path.exists(os.path.join(inputs_dir, 'test.nottar')))
                 self.assertTrue(os.path.exists(os.path.join(inputs_dir, 'child.tar', 'test3.tar')))
@@ -141,10 +141,10 @@ class Exposure(AppTestCase):
                 Path(os.path.join(inputs_dir, '{}.tar'.format(first_location))).touch()
                 Path(os.path.join(inputs_dir, '{}.tar'.format(second_location))).touch()
 
-                response = self.app.delete("/exposure/{}".format(first_location))
+                response = self.client.delete("/exposure/{}".format(first_location))
                 self.assertEqual(response._status_code, 200)
 
-                response = self.app.get("/exposure_summary")
+                response = self.client.get("/exposure_summary")
                 exposures = json.loads(response.data.decode('utf-8'))['exposures']
 
                 self.assertEqual(len(exposures), 1)
@@ -158,10 +158,10 @@ class Exposure(AppTestCase):
             with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
                 Path(os.path.join(inputs_dir, '{}.tar'.format(first_location))).touch()
 
-                response = self.app.delete("/exposure/{}".format(second_location))
+                response = self.client.delete("/exposure/{}".format(second_location))
                 self.assertEqual(response._status_code, 404)
 
-                response = self.app.get("/exposure_summary")
+                response = self.client.get("/exposure_summary")
                 exposures = json.loads(response.data.decode('utf-8'))['exposures']
 
                 self.assertEqual(len(exposures), 1)

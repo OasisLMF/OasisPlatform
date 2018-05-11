@@ -7,6 +7,7 @@
 amqp==2.2.2               # via kombu
 argparsetree==0.0.5       # via oasislmf
 attrs==17.4.0             # via hypothesis, pytest
+backcall==0.1.0           # via ipython
 backports.tempfile==1.0
 backports.weakref==1.0.post1  # via backports.tempfile
 billiard==3.5.0.3         # via celery
@@ -14,19 +15,25 @@ celery==4.1.0
 certifi==2018.1.18
 chainmap==1.0.2           # via oasislmf
 chardet==3.0.4            # via requests
-click==6.7                # via flask
+click==6.7                # via flask, pip-tools
 configparser==3.5.0
 coverage==4.5
-enum34==1.1.6             # via flake8, hypothesis
+decorator==4.3.0          # via ipython, traitlets
 fasteners==0.14.1
+first==2.0.1              # via pip-tools
 flake8==3.5.0
+flask-sqlalchemy==2.3.2
 flask-swagger==0.2.13
+flask-testing==0.7.1
 flask==0.12.2
-funcsigs==1.0.2           # via mock, pytest, python-interface
 geopy==1.11.0             # via oasislmf
 hypothesis==3.44.26
 idna==2.6                 # via requests
+ipdb==0.11
+ipython-genutils==0.2.0   # via traitlets
+ipython==6.4.0            # via ipdb
 itsdangerous==0.24        # via flask
+jedi==0.12.0              # via ipython
 jinja2==2.10              # via flask
 jsonpickle==0.9.5
 kombu==4.1.0              # via celery
@@ -37,12 +44,19 @@ monotonic==1.4            # via fasteners
 numpy==1.14.0
 oasislmf==0.0.0
 pandas==0.22.0            # via oasislmf
+parso==0.2.0              # via jedi
 pathlib2==2.3.0
 pbr==3.1.1                # via mock
+pexpect==4.5.0            # via ipython
+pickleshare==0.7.4        # via ipython
+pip-tools==2.0.2
 pluggy==0.6.0             # via pytest, tox
+prompt-toolkit==1.0.15    # via ipython
+ptyprocess==0.5.2         # via pexpect
 py==1.5.2                 # via pytest, tox
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.6.0           # via flake8
+pygments==2.2.0           # via ipython
 pymysql==0.8.0
 pyodbc==4.0.22            # via oasislmf
 pytest-cov==2.5.1         # via pytest-cover
@@ -55,13 +69,14 @@ pytz==2017.3              # via celery, oasislmf, pandas
 pyyaml==3.12              # via flask-swagger
 requests-toolbelt==0.8.0  # via oasislmf
 requests==2.18.4
-scandir==1.6              # via pathlib2
 shutilwhich==1.1.0
-six==1.11.0               # via fasteners, mock, oasislmf, pathlib2, pytest, python-dateutil, python-interface, tox
+simplegeneric==0.8.1      # via ipython
+six==1.11.0               # via fasteners, mock, oasislmf, pathlib2, pip-tools, prompt-toolkit, pytest, python-dateutil, python-interface, tox, traitlets
 sqlalchemy==1.2.2
 tox==2.9.1
-typing==3.6.4             # via python-interface
+traitlets==4.3.2          # via ipython
 urllib3==1.22             # via requests
 vine==1.1.4               # via amqp
 virtualenv==15.1.0        # via tox
+wcwidth==0.1.7            # via prompt-toolkit
 werkzeug==0.14.1          # via flask

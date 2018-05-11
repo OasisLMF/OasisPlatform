@@ -3,6 +3,7 @@ Flask
 flask_swagger
 celery
 SQLAlchemy
+Flask-SQLAlchemy
 pymysql
 jsonpickle
 requests
@@ -20,3 +21,6 @@ pathlib2
 hypothesis
 mock
 tox
+pip-tools
+ipdb
+Flask-Testing

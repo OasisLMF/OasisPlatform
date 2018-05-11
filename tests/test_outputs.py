@@ -16,7 +16,7 @@ class Outputs(AppTestCase):
     def test_file_does_not_exist___response_is_404(self):
         with TemporaryDirectory() as d:
             with SettingsPatcher(OUTPUTS_DATA_DIRECTORY=d):
-                response = self.app.get('/outputs/somefile')
+                response = self.client.get('/outputs/somefile')
 
                 self.assertEqual(response._status_code, 404)
 
@@ -27,7 +27,7 @@ class Outputs(AppTestCase):
                 with open(os.path.join(d, '{}.tar'.format(location)), 'wb') as f:
                     f.write(data)
 
-                response = self.app.get('/outputs/{}'.format(location))
+                response = self.client.get('/outputs/{}'.format(location))
 
                 self.assertEqual(response._status_code, 200)
                 self.assertEqual(response.data, data)
@@ -38,7 +38,7 @@ class Outputs(AppTestCase):
                 Path(os.path.join(d, 'test1.tar')).touch()
                 Path(os.path.join(d, 'test2.tar')).touch()
 
-                response = self.app.delete("/outputs")
+                response = self.client.delete("/outputs")
 
                 self.assertEqual(response._status_code, 200)
                 self.assertEqual(len(os.listdir(d)), 0)
@@ -52,7 +52,7 @@ class Outputs(AppTestCase):
                 os.makedirs(os.path.join(d, 'child.tar'))
                 Path(os.path.join(d, 'child.tar', 'test3.tar')).touch()
 
-                self.app.delete("/outputs")
+                self.client.delete("/outputs")
 
                 self.assertTrue(os.path.exists(os.path.join(d, 'test.nottar')))
                 self.assertTrue(os.path.exists(os.path.join(d, 'child.tar', 'test3.tar')))
@@ -66,7 +66,7 @@ class Outputs(AppTestCase):
                 Path(os.path.join(d, '{}.tar'.format(first_location))).touch()
                 Path(os.path.join(d, '{}.tar'.format(second_location))).touch()
 
-                response = self.app.delete("/outputs/{}".format(first_location))
+                response = self.client.delete("/outputs/{}".format(first_location))
 
                 self.assertEqual(response._status_code, 200)
                 self.assertEqual(os.listdir(d), ['{}.tar'.format(second_location)])
@@ -79,7 +79,7 @@ class Outputs(AppTestCase):
             with SettingsPatcher(OUTPUTS_DATA_DIRECTORY=d):
                 Path(os.path.join(d, '{}.tar'.format(first_location))).touch()
 
-                response = self.app.delete("/outputs/{}".format(second_location))
+                response = self.client.delete("/outputs/{}".format(second_location))
 
                 self.assertEqual(response._status_code, 404)
                 self.assertEqual(os.listdir(d), ['{}.tar'.format(first_location)])

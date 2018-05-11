@@ -1,20 +1,36 @@
 import string
 from random import choice
-from unittest import TestCase
+# from unittest import TestCase
+from flask_testing import TestCase
 
 import os
 
-from src.server import app
 from src.conf.settings import settings
+from src.server.app import create_app
+from src.server.models import db
 
 
 class AppTestCase(TestCase):
+    SQLALCHEMY_DATABASE_URI = "sqlite://"
+    TESTING = True
+
+    def create_app(self):
+        app = create_app(self.SQLALCHEMY_DATABASE_URI, track_modifications=False)
+        return app
+
+    def setup_example(self):
+        db.create_all()
+
+    def teardown_example(self, foo):
+        db.session.remove()
+        db.drop_all()
+
     def setUp(self):
-        self._init_testing = app.APP.config['TESTING']
-        self.app = app.APP.test_client()
+        db.create_all()
 
     def tearDown(self):
-        app.APP.config['TESTING'] = self._init_testing
+        db.session.remove()
+        db.drop_all()
 
     def create_input_file(self, path, size_in_bytes=None, data=b''):
         path = os.path.join(settings.get('server', 'INPUTS_DATA_DIRECTORY'), path)
