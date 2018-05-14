@@ -6,13 +6,13 @@ services:
     image: coreoasis/model_execution_worker:__oasis_release_tag__
     container_name: oasis_worker
     volumes:
-     - ./upload:/var/oasis/upload:rw
-     - ./download:/var/oasis/download:rw
+     - ./upload:/var/www/oasis/upload:rw
+     - ./download:/var/www/oasis/download:rw
      - ./model_data:/var/oasis/model_data/__model_supplier__/__model_version__:rw
      - /tmp:/tmp
     extra_hosts:
-     - mysql:__ip_address__
-     - rabbit:__ip_address__
+     - oasis_mysql:__ip_address__
+     - oasis_rabbit:__ip_address__
     environment:
      - KTOOLS_BATCH_COUNT=-1
      - MODEL_SUPPLIER_ID=__model_supplier__
