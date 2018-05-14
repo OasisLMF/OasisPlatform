@@ -8,8 +8,8 @@ services:
     ports:
      - 8001:80
     links:
-     - mysql:mysql
-     - rabbit:rabbit
+     - mysql:oasis_mysql
+     - rabbit:oasis_rabbit
     volumes:
      - ./upload:/var/www/oasis/upload:rw
      - ./download:/var/www/oasis/download:rw
