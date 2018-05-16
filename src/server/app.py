@@ -14,7 +14,7 @@ def create_app(app_settings=None):
         app_settings['SQLALCHEMY_DATABASE_URI'] = settings.get('server', 'SQLALCHEMY_DATABASE_URI')
 
     app = Flask(__name__)
-    server_settings = {k.upper(): v for k, v in settings['server'].items()}
+    server_settings = {k.upper(): settings.try_parse('server', k) for k in settings['server'].keys()}
     app.config.update(server_settings)
     app.config.update(app_settings)
 
