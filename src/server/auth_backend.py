@@ -13,7 +13,7 @@ class InvalidUserException(Exception):
 
 class DefaultAuthBackend(object):
     def get_jwt_identity(self, user):
-        return user.username
+        return {'username': user.username}
 
     def authenticate(self, **credentials):
         from .models import check_hash
