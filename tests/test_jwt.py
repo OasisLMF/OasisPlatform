@@ -1,23 +1,22 @@
 from flask import url_for
-from src.server.models import db, user_datastore
+from flask_jwt_extended.utils import get_jwt_identity
+from base64 import decode
+from src.server.models import db, DefaultCredentials
 from .base import AppTestCase
 import json
 
 
 class AccessToken(AppTestCase):
-    def setUp(self):
-        super(AccessToken, self).setUp()
-        self.username = 'dirk'
-        self.password = 'supersecret'
-        self.user = user_datastore.create_user(username=self.username, password=self.password)
-        db.session.commit()
-
     def test_username_and_password_are_correct___returned_token_represents_the_user(self):
-        url = url_for('root.access_token')
+        username = 'dirk'
+        password = 'supersecret'
+        user = DefaultCredentials.create(username=username, password=password).user
+
+        url = url_for('root.refresh_token')
 
         response = self.client.post(
             url,
-            data=json.dumps({'username': self.username, 'password': self.password}),
+            data=json.dumps({'username': username, 'password': password}),
             content_type='application/json'
         )
         data = response.json

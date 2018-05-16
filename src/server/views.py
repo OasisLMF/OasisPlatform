@@ -3,11 +3,12 @@ from flask import current_app, Blueprint
 from flask import Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_refresh_token_required
 
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils import http, status
 
+from ..server.auth_backend import load_auth_backend, InvalidUserException
 from ..conf.settings import settings
 from ..common import data
 from .celery import CELERY
@@ -485,31 +486,35 @@ def get_healthcheck():
     return "OK"
 
 
-@root.route('/create_access_token', methods=['POST'])
-def access_token():
-    # TODO: 
-    # get_jwt_identity() needs later
-    # Make expires delta into a setting
-    # username = request.json.get('username')
-    # user_id = authenticate_user(request.json)
+@root.route('/refresh_token', methods=['POST'])
+def refresh_token():
+    try:
+        user = current_app.auth_backend.authenticate(**request.json)
+    except InvalidUserException:
+        return jsonify({'message': 'Incorrect credentials'}), 401
 
-    user_id = request.json.get('username')
     expires_delta = timedelta(seconds=3600)
-    access_token = create_access_token(identity=user_id, expires_delta=expires_delta)
+    ident = current_app.auth_backend.get_jwt_identity(user)
     data = {
-        'access_token': access_token,
+        'refresh_token': create_refresh_token(identity=ident),
+        'access_token': create_access_token(identity=ident, expires_delta=expires_delta),
         'token_type': 'Bearer',
         'expires_in': expires_delta.seconds
     }
     return jsonify(data), 200
 
 
-@root.route('/access_token', methods=['POST'])
-def request_access_token():
-    # get_jwt_identity() needs later
-    username = request.json.get('username')
-    access_token = create_access_token(identity=username)
-    return jsonify(access_token=access_token), 200
+@root.route('/access_token', methods=['post'])
+@jwt_refresh_token_required
+def access_token():
+    expires_delta = timedelta(seconds=3600)
+    ident = get_jwt_identity()
+    ret = {
+        'access_token': create_access_token(identity=ident, expires_delta=expires_delta),
+        'token_type': 'Bearer',
+        'expires_in': expires_delta.seconds,
+    }
+    return jsonify(ret), 200
 
 
 def validate_analysis_settings(analysis_settings):
