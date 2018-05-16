@@ -1,7 +1,9 @@
+from datetime import timedelta
 from flask import current_app, Blueprint
 from flask import Response, request, jsonify
 from flask_swagger import swagger
 from flask.helpers import send_from_directory
+from flask_jwt_extended import create_access_token
 
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils import http, status
@@ -481,6 +483,33 @@ def get_healthcheck():
     # TODO: check job management connections
     logging.info("get_healthcheck")
     return "OK"
+
+
+@root.route('/create_access_token', methods=['POST'])
+def access_token():
+    # TODO: 
+    # get_jwt_identity() needs later
+    # Make expires delta into a setting
+    # username = request.json.get('username')
+    # user_id = authenticate_user(request.json)
+
+    user_id = request.json.get('username')
+    expires_delta = timedelta(seconds=3600)
+    access_token = create_access_token(identity=user_id, expires_delta=expires_delta)
+    data = {
+        'access_token': access_token,
+        'token_type': 'Bearer',
+        'expires_in': expires_delta.seconds
+    }
+    return jsonify(data), 200
+
+
+@root.route('/access_token', methods=['POST'])
+def request_access_token():
+    # get_jwt_identity() needs later
+    username = request.json.get('username')
+    access_token = create_access_token(identity=username)
+    return jsonify(access_token=access_token), 200
 
 
 def validate_analysis_settings(analysis_settings):

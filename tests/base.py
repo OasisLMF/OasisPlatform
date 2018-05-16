@@ -11,11 +11,14 @@ from src.server.models import db
 
 
 class AppTestCase(TestCase):
-    SQLALCHEMY_DATABASE_URI = "sqlite://"
     TESTING = True
 
     def create_app(self):
-        app = create_app(self.SQLALCHEMY_DATABASE_URI, track_modifications=False)
+        settings = {
+            'SQLALCHEMY_DATABASE_URI': 'sqlite://',
+            'SQLALCHEMY_TRACK_MODIFICATIONS': False
+        }
+        app = create_app(settings)
         return app
 
     def setup_example(self):
@@ -27,6 +30,7 @@ class AppTestCase(TestCase):
 
     def setUp(self):
         db.create_all()
+        self._orig_app_settings = dict(self.app.config)
 
     def tearDown(self):
         db.session.remove()

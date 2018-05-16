@@ -70,4 +70,5 @@ class SettingsPatcher(object):
         self.revert()
 
     def revert(self):
+        settings.clear()
         settings.read_dict(self._initial)

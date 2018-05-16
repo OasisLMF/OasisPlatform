@@ -1,9 +1,12 @@
 oasislmf
-Flask
-flask_swagger
 celery
 SQLAlchemy
+Flask
 Flask-SQLAlchemy
+Flask-Testing
+Flask-Security
+flask-jwt-extended
+flask_swagger
 pymysql
 jsonpickle
 requests
@@ -23,4 +26,3 @@ mock
 tox
 pip-tools
 ipdb
-Flask-Testing
