@@ -1,5 +1,5 @@
-from src.server.models import db, DefaultCredentials, User
-from src.server.auth_backend import DefaultAuthBackend, load_auth_backend, InvalidAuthBackend
+from src.server.models import DefaultCredentials
+from src.server.auth_backend import load_auth_backend, InvalidAuthBackend, InvalidUserException
 from .base import AppTestCase
 
 
@@ -34,7 +34,7 @@ class Authentication(AppTestCase):
                 load_auth_backend(self.app)
             self.assertEqual('invalid AUTH_BACKEND', str(ex.exception))
 
-    def test_load_default_backend___default_backend_returned(self):
+    def test_authenticate_with_default_backend___user_returned(self):
         # Create default user
         username = 'foo'
         password = 'bar'
@@ -45,10 +45,29 @@ class Authentication(AppTestCase):
         user = backend.authenticate(username=username, password=password)
         self.assertEqual(user.id, creds.user.id)
 
-    # def test_authenticate_with_default_backend___user_id_returned(self):
-    #     raise Exception('implement this')
+    def test_authenticate_with_default_backend_and_invalid_username___exception_is_raised(self):
+        # Create default user
+        username = 'foo'
+        password = 'bar'
+        DefaultCredentials.create(username=username, password=password)
 
-    # def test_authenticate_with_custom_backend___user_id_returned(self):
+        # Authenticate user
+        backend = load_auth_backend(self.app)
+        with self.assertRaises(InvalidUserException):
+            backend.authenticate(username='invalid username', password=password)
+
+    def test_authenticate_with_default_backend_and_invalid_password___exception_is_raised(self):
+        # Create default user
+        username = 'foo'
+        password = 'bar'
+        DefaultCredentials.create(username=username, password=password)
+
+        # Authenticate user
+        backend = load_auth_backend(self.app)
+        with self.assertRaises(InvalidUserException):
+            backend.authenticate(username=username, password='invalid password')
+
+    # def test_authenticate_with_custom_backend___user_returned(self):
     #     raise Exception('implement this')
 
     # def test_fail_authenticate_with_custom_backend___exception_raised(self):

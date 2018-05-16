@@ -1,3 +1,4 @@
+from .models import User
 import importlib
 
 
@@ -6,16 +7,24 @@ class InvalidAuthBackend(ValueError):
         super(InvalidAuthBackend, self).__init__('invalid AUTH_BACKEND')
 
 
+class InvalidUserException(Exception):
+    pass
+
+
 class DefaultAuthBackend(object):
     def authenticate(**credentials):
-        from .models import User
-        user = User.query.filter_by(username=credentials.get('username')).first()
+        from .models import check_hash
+        password = credentials.get('password', '')
+        username = credentials.get('username', '')
+
+        user = User.query.filter_by(username=username).first()
+
         if user is None:
-            pass  # Handle this
-        password = credentials.get('password')
+            check_hash(password, password)
+            raise InvalidUserException()
 
         if not user.default_credentials.check_password(password):
-            pass  # Handle invalid passwird
+            raise InvalidUserException()
 
         return user
 

@@ -30,6 +30,10 @@ class User(db.Model):
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
 
 
+def check_hash(hashed, plaintext):
+    return check_password_hash(hashed, plaintext)
+
+
 class DefaultCredentials(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     password = db.Column(db.String(255), unique=False, nullable=True)
@@ -50,7 +54,7 @@ class DefaultCredentials(db.Model):
         return def_cred
 
     def check_password(self, plaintext_password):
-        return check_password_hash(self.password, plaintext_password)
+        return check_hash(self.password, plaintext_password)
 
     def set_password(self, plaintext_password):
         hashed_password = generate_password_hash(plaintext_password)
