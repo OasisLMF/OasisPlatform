@@ -1,3 +1,5 @@
+from mock import patch
+
 from src.server.models import DefaultCredentials
 from src.server.auth_backend import load_auth_backend, InvalidAuthBackend, InvalidUserException
 from .base import AppTestCase
@@ -8,12 +10,6 @@ class FakeAuthBackend(object):
 
 
 class Authentication(AppTestCase):
-    def setUp(self):
-        super(Authentication, self).setUp()
-        # self.username = 'dirk'
-        # self.user = user_datastore.create_user(username=self.username, password=self.password)
-        # db.session.commit()
-
     def test_load_authentication_backend___backend_returned(self):
         with self.app.app_context() as ctx:
             ctx.app.config['AUTH_BACKEND'] = 'tests.test_auth.FakeAuthBackend'
@@ -55,6 +51,20 @@ class Authentication(AppTestCase):
         backend = load_auth_backend(self.app)
         with self.assertRaises(InvalidUserException):
             backend.authenticate(username='invalid username', password=password)
+
+    def test_authenticate_with_default_backend_and_invalid_username___check_hash_is_still_called(self):
+        with patch('src.server.models.check_hash') as check_mock:
+            # Create default user
+            username = 'foo'
+            password = 'bar'
+            DefaultCredentials.create(username=username, password=password)
+
+            # Authenticate user
+            backend = load_auth_backend(self.app)
+            with self.assertRaises(InvalidUserException):
+                backend.authenticate(username='invalid username', password=password)
+
+            check_mock.assert_called()
 
     def test_authenticate_with_default_backend_and_invalid_password___exception_is_raised(self):
         # Create default user
