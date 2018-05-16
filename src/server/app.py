@@ -5,6 +5,7 @@ from __future__ import absolute_import, unicode_literals
 from flask import Flask
 from flask_jwt_extended import JWTManager
 
+from src.server.auth_backend import load_auth_backend
 from ..conf.settings import settings
 
 
@@ -22,11 +23,13 @@ def create_app(app_settings=None):
     from .models import db
     db.init_app(app)
 
-    # JTW
+    # JWT and auth
+    app.auth_backend = load_auth_backend(app)
     JWTManager(app)
 
     # Blueprints
     from .views import root
     app.register_blueprint(root)
+
 
     return app

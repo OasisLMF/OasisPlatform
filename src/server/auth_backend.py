@@ -12,7 +12,10 @@ class InvalidUserException(Exception):
 
 
 class DefaultAuthBackend(object):
-    def authenticate(**credentials):
+    def get_jwt_identity(self, user):
+        return user.username
+
+    def authenticate(self, **credentials):
         from .models import check_hash
         password = credentials.get('password', '')
         username = credentials.get('username', '')
@@ -31,15 +34,12 @@ class DefaultAuthBackend(object):
 
 def load_auth_backend(app):
     backend_path = app.config['AUTH_BACKEND']
-    if not backend_path:
-        return DefaultAuthBackend()
-
     if '.' not in backend_path:
         raise InvalidAuthBackend()
 
     mod, cls = backend_path.rsplit('.', 1)
     backend_mod = importlib.import_module(mod)
     try:
-        return getattr(backend_mod, cls)
+        return getattr(backend_mod, cls)()
     except AttributeError:
         raise ImportError(backend_path)

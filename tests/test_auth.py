@@ -14,7 +14,7 @@ class Authentication(AppTestCase):
         with self.app.app_context() as ctx:
             ctx.app.config['AUTH_BACKEND'] = 'tests.test_auth.FakeAuthBackend'
             backend = load_auth_backend(self.app)
-            self.assertEqual(backend, FakeAuthBackend)
+            self.assertIsInstance(backend, FakeAuthBackend)
 
     def test_load_missing_authentication_backend___exception_is_raised(self):
         with self.app.app_context() as ctx:
@@ -76,9 +76,3 @@ class Authentication(AppTestCase):
         backend = load_auth_backend(self.app)
         with self.assertRaises(InvalidUserException):
             backend.authenticate(username=username, password='invalid password')
-
-    # def test_authenticate_with_custom_backend___user_returned(self):
-    #     raise Exception('implement this')
-
-    # def test_fail_authenticate_with_custom_backend___exception_raised(self):
-    #     raise Exception('implement this')
