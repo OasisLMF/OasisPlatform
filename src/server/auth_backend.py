@@ -1,6 +1,8 @@
 from .models import User
 import importlib
 
+from interface import Interface, implements
+
 
 class InvalidAuthBackend(ValueError):
     def __init__(self, *args, **kwargs):
@@ -11,7 +13,15 @@ class InvalidUserException(Exception):
     pass
 
 
-class DefaultAuthBackend(object):
+class BaseAuthBackend(Interface):
+    def get_jwt_identity(self, user):
+        pass
+
+    def authenticate(self, **credentials):
+        pass
+
+
+class DefaultAuthBackend(implements(BaseAuthBackend)):
     def get_jwt_identity(self, user):
         return {'username': user.username}
 
