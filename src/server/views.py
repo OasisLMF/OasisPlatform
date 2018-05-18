@@ -8,7 +8,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token, get_jw
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils import http, status
 
-from ..server.auth_backend import load_auth_backend, InvalidUserException
+from ..server.auth_backend import InvalidUserException
 from ..conf.settings import settings
 from ..common import data
 from .celery import CELERY

@@ -1,6 +1,6 @@
 from flask import url_for
 from flask_jwt_extended.utils import decode_token
-from src.server.models import db, DefaultCredentials
+from src.server.models import DefaultCredentials
 from .base import AppTestCase
 import json
 

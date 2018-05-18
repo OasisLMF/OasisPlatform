@@ -6,13 +6,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 
 
-roles_users = db.Table('roles_users',
+roles_users = db.Table(
+    'roles_users',
     db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
     db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
 )
 
 
-default_credentials_users = db.Table('default_credentials_users',
+default_credentials_users = db.Table(
+    'default_credentials_users',
     db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
     db.Column('default_credentials_id', db.Integer(), db.ForeignKey('default_credentials.id'))
 )

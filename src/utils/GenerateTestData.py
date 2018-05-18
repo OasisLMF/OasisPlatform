@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+# flake8: noqa
 import argparse
 import csv
 import os

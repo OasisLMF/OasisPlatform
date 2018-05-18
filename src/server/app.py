@@ -31,5 +31,4 @@ def create_app(app_settings=None):
     from .views import root
     app.register_blueprint(root)
 
-
     return app
