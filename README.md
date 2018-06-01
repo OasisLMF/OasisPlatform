@@ -1,83 +1,19 @@
-`OasisApi`
-==========
+<img src="https://oasislmf.org/packages/oasis_theme_package/themes/oasis_theme/assets/src/oasis-lmf-colour.png" alt="Oasis LMF logo" width="250"/>
 
-`OasisApi` provides a restful interface for performing model operations - it consists of a Python Flask server that implements a REST API that can process model exposure data and running analyses. For building API clients there is a separate <a href="https://github.com/OasisLMF/OasisAPIClient>" target="_blank">repository</a>, which is included as a Git submodule of this repository.
+# Oasis Platform
+Provides core components of the Oasis platform, specifically:
+* Flask application that provides the Oasis REST API
+* Celery worker for running a model
 
-# Repository Management
+## First Steps
 
-## Cloning the repository
+### Simple environment
 
-You can clone this repository from <a href="https://github.com/OasisLMF/OasisApi" target="_blank">GitHub</a> using HTTPS or SSH, but it is recommended that that you use SSH: first ensure that you have generated an SSH key pair on your local machine and add the public key of that pair to your GitHub account (use the GitHub guide at https://help.github.com/articles/connecting-to-github-with-ssh/). Then run
+A simple environment for the testing the API and worker can be created using Docker compose.
 
-    git clone --recursive git+ssh://git@github.com/OasisLMF/OasisApi
+<img src="https://raw.githubusercontent.com/OasisLMF/OasisApi/Open_Source_prep/Oasis%20Simple%20Runner.png" alt="Simple Oasis platform test environment"/>
 
-To clone over HTTPS use
-
-    git clone --recursive https://github.com/OasisLMF/OasisApi
-
-You may receive a password prompt - to bypass the password prompt use
-
-    git clone --recursive https://<GitHub user name:GitHub password>@github.com/OasisLMF/OasisApi
-
-The `--recursive` option ensures the cloned repository contains the necessary Oasis repositories <a href="https://github.com/OasisLMF/oasis_utils" target="_blank">`oasis_utils`</a> and <a href="https://github.com/OasisLMF/OasisAPIClient" target="_blank">`OasisAPIClient`</a> as Git submodules.
-
-## Managing the submodules
-
-Run the command
-
-    git submodule
-
-to list the submodules (latest commit IDs, paths and branches). If any are missing then you can add them using
-
-	git submodule add <submodule GitHub repo URL> <local path/destination>
-
-It is a quirk of Git that the first time you clone a repository with submodules they will be checked out as commits not branches, which is not what you want. You should run the command
-
-    git submodule foreach 'git checkout master'
-
-to ensure that the submodules are checked out on the `master` branches.
-
-If you've already cloned the repository and wish to update the submodules (all at once) in your working directory from their GitHub repositories then run
-
-    git submodule foreach 'git pull origin'
-
-You can also update the submodules individually by pulling from within them.
-
-Unless you've been given read access to this repository on GitHub (via an OasisLMF organizational team) you should not make any local changes to these submodules because you have read-only access to their GitHub repositories. So submodule changes can only propagate from GitHub to your local repository. To detect these changes you can run `git status -uno` and to commit them you can add the paths and commit them in the normal way.
-
-# Sphinx Docs
-
-This repository is enabled with <a href="https://pypi.python.org/pypi/Sphinx" target="_blank">Sphinx</a> documentation for the Python modules, and the documentation is published to <a href="https://oasislmf.github.io/OasisLMF/OasisApi" target="_blank">https://oasislmf.github.io/OasisApi/</a> manually using the procedure described below. (Note: GitHub pages is not enabled for this repository because it contains the private repository <a href="https://github.com/OasisLMF/oasis_utils" target="_blank">`oasis_utils`</a> as a Git submodule, which is incompatible with GitHub pages.)
-
-## Setting up Sphinx
-
-Firstly, to work on the Sphinx docs for this package you must have Sphinx installed on your system or in your virtual environment (`virtualenv` is recommended).
-
-You should also clone the Oasis publication repository <a href="https://github.com/OasisLMF/OasisLMF.github.io" target="_blank">OasisLMF.github.io</a>.
-
-## Building and publishing
-
-The Sphinx documentation source files are reStructuredText files, and are contained in the `docs` subfolder, which also contains the Sphinx configuration file `conf.py` and the `Makefile` for the build. To do a new build make sure you are in the `docs` subfolder and run
-
-    make html
-
-You should see a new set of HTML files and assets in the `_build/html` subfolder (the build directory can be changed to `docs` itself in the `Makefile` but that is not recommended). The `docs` subfolder should always contain the latest copy of the built HTML and assets so first copy the files from `_build/html` to `docs` using
-
-    cp -R _build/html/* .
-
-Add and commit these files to the local repository, and then update the remote repository on GitHub. Then copy the same files to the Oasis API server docs static subfolder in the publication repository
-
-    cp -R _build/html/* /path/to/your/OasisLMF.github.io/OasisApi/
-
-Add and commit the new files in the publication repository, and then update the remote repository on GitHub - GitHub pages will automatically publish the new documents to the documentation site https://oasislmf.github.io/OasisApi/.
-
-# First Steps
-
-## Docker and ktools
-
-First make sure that you have Docker running. Then make sure that the ktools binaries are installed (see <a href="https://github.com/OasisLMF/ktools" target="_blank">ktools</a> GitHub repository for instructions) and the ktools docker image is available (pull from <a href="https://hub.docker.com/r/coreoasis/ktools/" target="_blank">Docker Hub</a>, or build locally from the ktools repository, and name it as `ktools` to match the reference in the `docker-compose.yml`).
-
-Then build the images for the API server, model execution worker and API runner: 
+First make sure that you have Docker running. Then build the images for the API server, model execution worker and API runner:
 
     docker build -f Dockerfile.oasis_api_server -t oasis_api_server .
     docker build -f Dockerfile.model_execution_worker -t model_execution_worker .
@@ -91,11 +27,15 @@ Check that the server is running:
 
     curl localhost:8001/healthcheck
 
-(For the Rabbit management application browse to http://localhost:15672, for Flower, the celery management application, browse to http://localhost:5555.)
+(For the Rabbit management application browse to http://localhost:15672, for Flower, the Celery management application, browse to http://localhost:5555.)
 
-## Calling the Server
+To run a test analysis using the worker image and example model data, run the following command:
+    
+    docker exec oasisapi_runner_1 sh run_api_test_analysis.sh
 
-The API server provides a REST interface which is described <a href="https://oasislmf.github.io/OasisApi/modules.html" target="_blank">here</a>. You can use any suitable command line client such as `curl` or <a href="www.httpie.org" target="_blank">`httpie`</a> to make individual API calls, but a custom Python client may be a better option - for this you can use the <a href="https://github.com/OasisLMF/OasisAPIClient" target="_blank">`OasisAPIClient` repository</a>.
+### Calling the Server
+
+The API server provides a REST interface which is described <a href="https://oasislmf.github.io/docs/oasis_rest_api.html" target="_blank">here</a>. You can use any suitable command line client such as `curl` or <a href="www.httpie.org" target="_blank">`httpie`</a> to make individual API calls, but a custom Python client may be a better option - for this you can use the <a href="https://giub.com/OasisLMF/OasisAPIClient" target="_blank">`OasisAPIClient` repository</a>.
 
 Oasis provides a built-in client `model_api_tester.py` (located in `src/oasisapi_client`) which is an executable multi-threaded script that can generate model analyses given the locations of the model inputs and analysis settings JSON file (see the <a href="https://github.com/OasisLMF/OasisAPIClient" target="_blank">`OasisAPIClient` repository</a> or <a href="https://oasislmf.github.io/OasisAPIClient/" target="_blank">`OasisAPIClient` documentation site</a> for more information). First install the Oasis API client requirements
 
@@ -104,3 +44,70 @@ Oasis provides a built-in client `model_api_tester.py` (located in `src/oasisapi
 As an example, you can run analyses for a generic Oasis model provided in this repository (model data and analysis settings JSON file are located in the `tests/data` subfolder) using
 
     python ./src/oasisapi_client/model_api_tester.py -s <API server URL:port> -a tests/data/analysis_settings.json -i tests/data/input -o tests/data/output -n 1 -v
+
+## Development
+
+### GitFlow
+
+We use the GitFlow model described <A href="http://nvie.com/posts/a-successful-git-branching-model"> here </A>.
+
+The main idea is that the central repo holds two main branches with an infinite lifetime:
+
+* master: main branch where the source code of HEAD always reflects a production-ready state
+* develop: main branch where the source code of HEAD always reflects a state with the latest delivered development changes for the next release. This is where our automatic builds are built from.
+
+When the source code in the develop branch reaches a stable point and is ready to be released, all of the changes should be merged back into master. 
+Feature branchs should be used for new features and fixes, then a Pull Request isues to merge into develop.
+
+### Dependencies
+
+Dependencies are controlled by ``pip-tools``. To install the development dependencies, first install ``pip-tools`` using:
+
+    pip install pip-tools
+
+and run:
+
+    pip-sync
+
+To add new dependencies to the development requirements add the package name to ``requirements.in`` or to add a new dependency to the installed package add the package name to ``requirements-package.in``.
+Version specifiers can be supplied to the packages but these should be kept as loose as possible so that all packages can be easily updated and there will be fewer conflict when installing.
+After adding packages to either ``*.in`` file, the following command should be ran ensuring the development dependencies are kept up to date:
+
+    pip-compile && pip-sync
+
+### Testing
+
+To test the code style run::
+
+    flake8
+
+To test against all supported python versions run::
+
+    tox
+
+To test against your currently installed version of python run::
+
+    py.test
+
+To run the full test suite run::
+
+    ./runtests.sh
+
+### Deploying
+
+The Oasis CI system builds and deploys the following Docker images to DockerHub:
+
+* <a href="https://hub.docker.com/r/coreoasis/oasis_api_server">coreoasis/oasis_api_server</a>
+* <a href="https://hub.docker.com/r/coreoasis/model_execution_worker">coreoasis/model_execution_worker</a>
+
+Note that the Dockerfiles cannot be used directly as there are version stubs that get substitued at build time by the CI system.
+
+## Documentation
+* <a href="https://github.com/OasisLMF/OasisApi/issues">Issues</a>
+* <a href="https://github.com/OasisLMF/OasisApi/releases">Releases</a>
+* <a href="https://oasislmf.github.io">General Oasis documentation</a>
+* <a href="https://oasislmf.github.io/docs/oasis_rest_api.html">Oasis API documentation</a>
+* <a href="https://oasislmf.github.io/OasisApi/modules.html">Oasis Platform module documentation</a>
+
+## License
+The code in this project is licensed under BSD 3-clause license.
