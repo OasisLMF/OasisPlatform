@@ -7,57 +7,82 @@
 amqp==2.2.2               # via kombu
 asn1crypto==0.24.0        # via cryptography
 attrs==17.4.0             # via hypothesis, pytest
+backcall==0.1.0           # via ipython
 backports.tempfile==1.0
 backports.weakref==1.0.post1  # via backports.tempfile
+beautifulsoup4==4.6.0     # via webtest
 billiard==3.5.0.3         # via celery
 celery==4.1.0
 certifi==2018.1.18
 cffi==1.11.5              # via cryptography
 chardet==3.0.4            # via requests
-click==6.7                # via flask
+click==6.7                # via pip-tools
 configparser==3.5.0
 coverage==4.5
-cryptography==2.3.1       # via pyopenssl
-enum34==1.1.6             # via cryptography, flake8, hypothesis
+decorator==4.3.0          # via ipython, traitlets
+django-extensions==2.0.7
+django-filter==1.1.0
+django-webtest==1.9.3
+django==1.11.13
+djangorestframework-simplejwt==3.2.3
+djangorestframework==3.8.2
 fasteners==0.14.1
+first==2.0.1              # via pip-tools
 flake8==3.5.0
-flask-swagger==0.2.13
-flask==0.12.3
-funcsigs==1.0.2           # via mock, pytest
+geopy==1.11.0             # via oasislmf
 hypothesis==3.44.26
-idna==2.6                 # via cryptography, requests
-ipaddress==1.0.22         # via cryptography
-itsdangerous==0.24        # via flask
-jinja2==2.10              # via flask
+idna==2.6                 # via requests
+ipdb==0.11
+ipython-genutils==0.2.0   # via traitlets
+ipython==6.4.0            # via ipdb
+jedi==0.12.0              # via ipython
 jsonpickle==0.9.5
 kombu==4.1.0              # via celery
-markupsafe==1.0           # via jinja2
+markdown==2.6.11
 mccabe==0.6.1             # via flake8
 mock==2.0.0
+model-mommy==1.6.0
 monotonic==1.4            # via fasteners
 numpy==1.14.0
+oasislmf==0.0.0
+pandas==0.22.0            # via oasislmf
+parso==0.2.0              # via jedi
 pathlib2==2.3.0
 pbr==3.1.1                # via mock
+pexpect==4.5.0            # via ipython
+pickleshare==0.7.4        # via ipython
+pip-tools==2.0.2
 pluggy==0.6.0             # via pytest, tox
+prompt-toolkit==1.0.15    # via ipython
+ptyprocess==0.5.2         # via pexpect
 py==1.5.2                 # via pytest, tox
 pycodestyle==2.3.1        # via flake8
 pycparser==2.19           # via cffi
 pyflakes==1.6.0           # via flake8
+pygments==2.2.0           # via ipython
+pyjwt==1.6.4              # via djangorestframework-simplejwt
 pymysql==0.8.0
 pyopenssl==18.0.0
 pytest-cov==2.5.1         # via pytest-cover
 pytest-cover==3.0.0       # via pytest-coverage
 pytest-coverage==0.0
 pytest==3.4.0
-pytz==2017.3              # via celery
-pyyaml==3.12              # via flask-swagger
-requests==2.20.0
-scandir==1.6              # via pathlib2
+python-dateutil==2.6.1    # via pandas
+python-interface==1.4.0   # via oasislmf
+python-magic==0.4.15
+pytz==2017.3              # via celery, django, oasislmf, pandas
+requests-toolbelt==0.8.0  # via oasislmf
+requests==2.18.4
 shutilwhich==1.1.0
-six==1.11.0               # via cryptography, fasteners, mock, pathlib2, pyopenssl, pytest, tox
+simplegeneric==0.8.1      # via ipython
+six==1.11.0               # via django-extensions, fasteners, mock, model-mommy, oasislmf, pathlib2, pip-tools, prompt-toolkit, pytest, python-dateutil, python-interface, tox, traitlets, webtest
 sqlalchemy==1.2.2
 tox==2.9.1
-urllib3==1.23             # via requests
+traitlets==4.3.2          # via ipython
+urllib3==1.22             # via requests
 vine==1.1.4               # via amqp
 virtualenv==15.1.0        # via tox
-werkzeug==0.14.1          # via flask
+waitress==1.1.0           # via webtest
+wcwidth==0.1.7            # via prompt-toolkit
+webob==1.8.1              # via webtest
+webtest==2.0.29           # via django-webtest

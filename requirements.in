@@ -1,5 +1,4 @@
-Flask
-flask_swagger
+oasislmf
 celery
 SQLAlchemy
 pymysql
@@ -20,3 +19,15 @@ pathlib2
 hypothesis
 mock
 tox
+pip-tools
+ipdb
+
+django<2.0
+djangorestframework
+markdown
+django-filter
+model_mommy
+django-webtest
+djangorestframework_simplejwt
+python-magic
+django-extensions
