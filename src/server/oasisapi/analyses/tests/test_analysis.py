@@ -10,7 +10,8 @@ from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ...portfolio.tests.fakes import fake_portfolio
+from ...analysis_models.tests.fakes import fake_analysis_model
+from ...portfolios.tests.fakes import fake_portfolio
 from ...auth.tests.fakes import fake_user
 from ..models import Analysis
 from .fakes import fake_analysis
@@ -94,11 +95,12 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual({
-            'id': analysis.pk,
-            'portfolio': portfolio.pk,
-            'name': name,
             'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
             'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+            'id': analysis.pk,
+            'name': name,
+            'portfolio': portfolio.pk,
+            'model': None,
             'settings_file': None,
             'input_file': None,
             'input_errors_file': None,
@@ -144,6 +146,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
                 analysis.refresh_from_db()
 
+                self.assertEqual(200, response.status_code)
                 self.assertEqual(analysis.settings_file.read(), file_content)
                 self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.settings_file.url)
 
@@ -186,5 +189,43 @@ class AnalysisApi(WebTestMixin, TestCase):
 
                 analysis.refresh_from_db()
 
+                self.assertEqual(200, response.status_code)
                 self.assertEqual(analysis.input_file.read(), file_content)
                 self.assertEqual(response.json['input_file'], response.request.application_url + analysis.input_file.url)
+
+    def test_model_does_not_exist___response_is_400(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        model = fake_analysis_model()
+
+        response = self.app.put(
+            analysis.get_absolute_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'model': model.pk + 1}),
+            content_type='application/json',
+            expect_errors=True,
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_model_does_exist___response_is_200(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        model = fake_analysis_model()
+
+        response = self.app.put(
+            analysis.get_absolute_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'model': model.pk}),
+            content_type='application/json',
+            expect_errors=True,
+        )
+
+        analysis.refresh_from_db()
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(analysis.model, model)

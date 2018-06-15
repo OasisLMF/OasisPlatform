@@ -11,7 +11,7 @@ from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ...analysis.models import Analysis
+from ...analyses.models import Analysis
 from ...auth.tests.fakes import fake_user
 from ..models import Portfolio
 from .fakes import fake_portfolio
@@ -354,10 +354,11 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual({
             'id': analysis.pk,
-            'portfolio': portfolio.pk,
-            'name': name,
             'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
             'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+            'name': name,
+            'portfolio': portfolio.pk,
+            'model': None,
             'input_file': None,
             'settings_file': None,
             'input_errors_file': None,

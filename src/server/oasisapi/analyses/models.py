@@ -7,14 +7,16 @@ from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
 from django_extensions.db.models import TimeStampedModel
 
+from ..analysis_models.models import AnalysisModel
 from ..files.upload import random_file_name
-from ..portfolio.models import Portfolio
+from ..portfolios.models import Portfolio
 
 
 @python_2_unicode_compatible
 class Analysis(TimeStampedModel):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses')
+    model = models.ForeignKey(AnalysisModel, on_delete=models.SET_DEFAULT, related_name='analyses', null=True, default=None)
     name = models.CharField(max_length=255)
 
     settings_file = models.FileField(

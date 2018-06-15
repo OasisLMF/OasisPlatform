@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED
 
-from ..analysis.serializers import AnalysisSerializer
+from ..analyses.serializers import AnalysisSerializer
 from .models import Portfolio
 from .serializers import PortfolioSerializer
 
