@@ -7,11 +7,12 @@ class AnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analysis
         fields = (
+            'created',
+            'modified',
             'name',
             'id',
             'portfolio',
-            'created',
-            'modified',
+            'model',
             'settings_file',
             'input_file',
             'input_errors_file',

@@ -43,8 +43,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_extensions',
 
-    'oasisapi.portfolio',
-    'oasisapi.analysis',
+    'oasisapi.portfolios',
+    'oasisapi.analyses',
+    'oasisapi.analysis_models',
 ]
 
 MIDDLEWARE = [
