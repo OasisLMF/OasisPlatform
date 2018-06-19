@@ -8,7 +8,7 @@ class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255)
     version_id = models.CharField(max_length=255)
 
-    class meta:
+    class Meta:
         unique_together = ('supplier_id', 'version_id')
 
     def __str__(self):
