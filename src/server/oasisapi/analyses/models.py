@@ -24,6 +24,7 @@ from .tasks import poll_analysis_status
 class Analysis(TimeStampedModel):
     status_choices = Choices(
         ('NOT_RAN', 'Not ran'),
+        ('PENDING', 'Pending'),
         ('STARTED', 'Started'),
         ('STOPPED_COMPLETED', 'Stopped - Completed'),
         ('STOPPED_ERROR', 'Stopped - Error'),
@@ -76,6 +77,9 @@ class Analysis(TimeStampedModel):
     def validate(self):
         errors = []
 
+        if self.status not in [self.status_choices.NOT_RAN, self.status_choices.STOPPED_COMPLETED, self.status_choices.STOPPED_ERROR]:
+            raise ValidationError({'error': ['Analysis is already running']})
+
         if not self.model:
             errors.append('"model" is not set on the analysis object')
 
@@ -100,7 +104,7 @@ class Analysis(TimeStampedModel):
     def run(self, request):
         self.validate()
 
-        self.status = self.status_choices.STARTED
+        self.status = self.status_choices.PENDING
         self.task_id = celery_app.send_task(
             'run_analysis',
             (request.build_absolute_uri(self.input_file.url), [json.loads(self.settings_file.read())]),
