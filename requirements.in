@@ -29,4 +29,4 @@ model_mommy
 django-webtest
 djangorestframework_simplejwt
 python-magic
-django-extensions
+django-model-utils

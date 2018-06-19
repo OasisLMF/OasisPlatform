@@ -17,6 +17,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'input_file',
             'input_errors_file',
             'output_file',
+            'status',
         )
 
     def create(self, validated_data):
