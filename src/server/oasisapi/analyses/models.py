@@ -33,7 +33,7 @@ class Analysis(TimeStampedModel):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses')
     model = models.ForeignKey(AnalysisModel, on_delete=models.SET_DEFAULT, related_name='analyses', null=True, default=None)
     name = models.CharField(max_length=255)
-    status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NOT_RAN)
+    status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NOT_RAN, editable=False)
     task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
 
     settings_file = models.FileField(
