@@ -1,4 +1,4 @@
-from .settings import settings
+from src.server.oasisapi.iniconf import settings
 
 #: Celery config - ignore result?
 CELERY_IGNORE_RESULT = False
@@ -12,11 +12,11 @@ BROKER_URL = "amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".
 )
 
 #: Celery config - result backend URI
-CELERY_RESULT_BACKEND = 'db+mysql+pymysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}:{MYSQL_PORT}/celery'.format(
-    MYSQL_USER=settings.get('celery', 'MYSQL_USER'),
-    MYSQL_PASS=settings.get('celery', 'MYSQL_PASS'),
-    MYSQL_HOST=settings.get('celery', 'MYSQL_HOST'),
-    MYSQL_PORT=settings.get('celery', 'MYSQL_PORT'),
+CELERY_RESULT_BACKEND = 'db+mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/celery'.format(
+    DB_USER=settings.get('celery', 'DB_USER'),
+    DB_PASS=settings.get('celery', 'DB_PASS'),
+    DB_HOST=settings.get('celery', 'DB_HOST'),
+    DB_PORT=settings.get('celery', 'DB_PORT'),
 )
 
 #: Celery config - AMQP task result expiration time

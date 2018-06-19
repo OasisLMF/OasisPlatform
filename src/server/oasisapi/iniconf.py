@@ -34,7 +34,7 @@ class Settings(ConfigParser):
                 v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
         )
 
-    def get(self, section, option, **kwargs):
+    def get(self, section: object, option: object, kwargs: object) -> object:
         kwargs.setdefault('vars', self._get_section_env_vars(section))
         return super(Settings, self).get(section, option, **kwargs)
 

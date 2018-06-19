@@ -5,7 +5,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
 from django.core.validators import FileExtensionValidator
-from django_extensions.db.models import TimeStampedModel
+from model_utils.models import TimeStampedModel
 
 from ..files.upload import random_file_name
 

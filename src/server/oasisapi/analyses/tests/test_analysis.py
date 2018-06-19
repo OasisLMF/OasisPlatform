@@ -1,13 +1,16 @@
 import json
 import string
+from tempfile import NamedTemporaryFile
 
 from backports.tempfile import TemporaryDirectory
+from django.core.files import File
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
 from hypothesis import given
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary
+from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
 from ...analysis_models.tests.fakes import fake_analysis_model
@@ -105,6 +108,7 @@ class AnalysisApi(WebTestMixin, TestCase):
             'input_file': None,
             'input_errors_file': None,
             'output_file': None,
+            'status': Analysis.status_choices.NOT_RAN,
         }, response.json)
 
     def test_settings_file_is_not_a_valid_format___response_is_400(self):
@@ -229,3 +233,107 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(analysis.model, model)
+
+
+class AnalysisRun(WebTestMixin, TestCase):
+    def test_model_is_not_set___error_is_written_to_file_status_is_error(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_run_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        analysis.refresh_from_db()
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn(
+            '"model" is not set on the analysis object',
+            json.loads(analysis.input_errors_file.read())['errors'],
+        )
+        self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
+
+    def test_input_file_is_not_set___error_is_written_to_file_status_is_error(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_run_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        analysis.refresh_from_db()
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn(
+            '"input_file" is not set on the analysis object',
+            json.loads(analysis.input_errors_file.read())['errors'],
+        )
+        self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
+
+    def test_settings_file_is_not_set___error_is_written_to_file_status_is_error(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_run_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        analysis.refresh_from_db()
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn(
+            '"settings_file" is not set on the analysis object',
+            json.loads(analysis.input_errors_file.read())['errors'],
+        )
+        self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
+
+    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_required_inputs_are_present___task_is_added(self, task_id):
+        with patch('oasisapi.analyses.models.poll_analysis_status') as poll_analysis_mock , patch('oasisapi.analyses.models.celery_app') as mock_celery:
+            with TemporaryDirectory() as d:
+                with override_settings(MEDIA_ROOT=d):
+                    mock_celery.send_task.return_value = task_id
+
+                    user = fake_user()
+                    model = fake_analysis_model()
+                    analysis = fake_analysis(model=model)
+
+                    with NamedTemporaryFile('w+') as settings, NamedTemporaryFile('w+') as inputs:
+                        settings.write('{}')
+                        analysis.settings_file = File(inputs, '{}.json'.format(settings.name))
+
+                        inputs.write('{}')
+                        analysis.input_file = File(inputs, '{}.json'.format(inputs.name))
+
+                        analysis.save()
+
+                    response = self.app.post(
+                        analysis.get_absolute_run_url(),
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                    )
+
+                    analysis.refresh_from_db()
+
+                    self.assertEqual(200, response.status_code)
+                    self.assertFalse(analysis.input_errors_file)
+                    self.assertEqual(Analysis.status_choices.STARTED, analysis.status)
+                    mock_celery.send_task.assert_called_once_with(
+                        'run_analysis',
+                        (response.json['input_file'], [json.loads(analysis.settings_file.read())]),
+                        queue='{}-{}'.format(model.supplier_id, model.version_id)
+                    )
+                    poll_analysis_mock.delay.assert_called_once_with(analysis.pk)

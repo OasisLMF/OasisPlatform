@@ -20,8 +20,8 @@ click==6.7                # via pip-tools
 configparser==3.5.0
 coverage==4.5
 decorator==4.3.0          # via ipython, traitlets
-django-extensions==2.0.7
 django-filter==1.1.0
+django-model-utils==3.1.2
 django-webtest==1.9.3
 django==1.11.13
 djangorestframework-simplejwt==3.2.3
@@ -75,7 +75,7 @@ requests-toolbelt==0.8.0  # via oasislmf
 requests==2.18.4
 shutilwhich==1.1.0
 simplegeneric==0.8.1      # via ipython
-six==1.11.0               # via django-extensions, fasteners, mock, model-mommy, oasislmf, pathlib2, pip-tools, prompt-toolkit, pytest, python-dateutil, python-interface, tox, traitlets, webtest
+six==1.11.0               # via fasteners, mock, model-mommy, oasislmf, pathlib2, pip-tools, prompt-toolkit, pytest, python-dateutil, python-interface, tox, traitlets, webtest
 sqlalchemy==1.2.2
 tox==2.9.1
 traitlets==4.3.2          # via ipython

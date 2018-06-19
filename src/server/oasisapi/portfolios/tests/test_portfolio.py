@@ -363,4 +363,5 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
             'settings_file': None,
             'input_errors_file': None,
             'output_file': None,
+            'status': Analysis.status_choices.NOT_RAN,
         }, response.json)
