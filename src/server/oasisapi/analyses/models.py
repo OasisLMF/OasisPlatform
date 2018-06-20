@@ -80,6 +80,9 @@ class Analysis(TimeStampedModel):
     def get_absolute_cancel_url(self):
         return reverse('analysis-cancel', args=[self.pk])
 
+    def get_absolute_copy_url(self):
+        return reverse('analysis-copy', args=[self.pk])
+
     def validate_run(self):
         errors = []
 
@@ -125,3 +128,14 @@ class Analysis(TimeStampedModel):
             raise ValidationError({'error': ['Analysis is not running']})
 
         AsyncResult(self.task_id).revoke(signal='SIGKILL', terminate=True)
+
+    def copy(self):
+        new_instance = self
+        new_instance.pk = None
+        new_instance.name = '{} - Copy'.format(new_instance.name)
+        new_instance.creator = None
+        new_instance.task_id = ''
+        new_instance.status = self.status_choices.NOT_RAN
+        new_instance.input_errors_file = File(None)
+        new_instance.output_file = File(None)
+        return new_instance
