@@ -3,6 +3,8 @@ from __future__ import absolute_import, print_function
 import json
 from tempfile import NamedTemporaryFile
 
+from celery.result import AsyncResult
+from celery.worker.control import revoke
 from django.conf import settings
 from django.core.files import File
 from django.core.validators import FileExtensionValidator
@@ -27,6 +29,7 @@ class Analysis(TimeStampedModel):
         ('PENDING', 'Pending'),
         ('STARTED', 'Started'),
         ('STOPPED_COMPLETED', 'Stopped - Completed'),
+        ('STOPPED_CANCELLED', 'Stopped - Cancelled'),
         ('STOPPED_ERROR', 'Stopped - Error'),
     )
 
@@ -74,7 +77,10 @@ class Analysis(TimeStampedModel):
     def get_absolute_run_url(self):
         return reverse('analysis-run', args=[self.pk])
 
-    def validate(self):
+    def get_absolute_cancel_url(self):
+        return reverse('analysis-cancel', args=[self.pk])
+
+    def validate_run(self):
         errors = []
 
         if self.status not in [self.status_choices.NOT_RAN, self.status_choices.STOPPED_COMPLETED, self.status_choices.STOPPED_ERROR]:
@@ -102,7 +108,7 @@ class Analysis(TimeStampedModel):
             raise ValidationError(detail=errors_dict)
 
     def run(self, request):
-        self.validate()
+        self.validate_run()
 
         self.status = self.status_choices.PENDING
         self.task_id = celery_app.send_task(
@@ -113,3 +119,9 @@ class Analysis(TimeStampedModel):
         poll_analysis_status.delay(self.pk)
 
         self.save()
+
+    def cancel(self):
+        if self.status not in [self.status_choices.PENDING, self.status_choices.STARTED]:
+            raise ValidationError({'error': ['Analysis is not running']})
+
+        AsyncResult(self.task_id).revoke(signal='SIGKILL', terminate=True)
