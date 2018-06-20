@@ -20,8 +20,11 @@ def poll_analysis_status(self, pk):
         analysis.status = Analysis.status_choices.STARTED
     elif res.status in [PENDING, RECEIVED, RETRY]:
         analysis.status = Analysis.status_choices.PENDING
-    elif res.status in [FAILURE, REVOKED, REJECTED]:
+    elif res.status in [FAILURE, REJECTED]:
         analysis.status = Analysis.status_choices.STOPPED_ERROR
+        reschedule = False
+    elif res.status == REVOKED:
+        analysis.status = Analysis.status_choices.STOPPED_CANCELLED
         reschedule = False
 
     analysis.save()

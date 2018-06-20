@@ -20,6 +20,27 @@ from ..models import Analysis
 from .fakes import fake_analysis
 
 
+class FakeAsyncResultFactory(object):
+    def __init__(self, target_task_id):
+        self.target_task_id = target_task_id
+        self.revoke_kwargs = {}
+        self.revoke_called = False
+
+        class FakeAsyncResult(object):
+            def __init__(_self, task_id):
+                if task_id != target_task_id:
+                    raise ValueError()
+
+            def revoke(_self, **kwargs):
+                self.revoke_called = True
+                self.revoke_kwargs = kwargs
+
+        self.fake_res = FakeAsyncResult
+
+    def __call__(self, task_id):
+        return self.fake_res(task_id)
+
+
 class AnalysisApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
         analysis = fake_analysis()
@@ -338,7 +359,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                     )
                     poll_analysis_mock.delay.assert_called_once_with(analysis.pk)
 
-    @given(status=sampled_from([Analysis.status_choices.PENDING, Analysis.status_choices.STARTED]))
+    @given(status=sampled_from([Analysis.status_choices.PENDING, Analysis.status_choices.STARTED, Analysis.status_choices.STOPPED_CANCELLED]))
     def test_required_inputs_are_present_status_is_in_progress___task_is_not_queued(self, status):
         with patch('oasisapi.analyses.models.poll_analysis_status') as poll_analysis_mock , patch('oasisapi.analyses.models.celery_app') as mock_celery:
             with TemporaryDirectory() as d:
@@ -370,3 +391,56 @@ class AnalysisRun(WebTestMixin, TestCase):
                     self.assertFalse(analysis.input_errors_file)
                     mock_celery.send_task.assert_not_called()
                     poll_analysis_mock.delay.assert_not_called()
+
+
+class AnalysisCancel(WebTestMixin, TestCase):
+    @given(
+        status=sampled_from([Analysis.status_choices.NOT_RAN, Analysis.status_choices.STOPPED_COMPLETED, Analysis.status_choices.STOPPED_ERROR, Analysis.status_choices.STOPPED_CANCELLED]),
+        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+    )
+    def test_state_is_not_running___revoke_is_not_called(self, status, task_id):
+        res_factory = FakeAsyncResultFactory(task_id)
+
+        with patch('oasisapi.analyses.models.AsyncResult', res_factory):
+            user = fake_user()
+            analysis = fake_analysis(status=status, task_id=task_id)
+
+            response = self.app.post(
+                analysis.get_absolute_cancel_url(),
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                },
+                expect_errors=True,
+            )
+
+            analysis.refresh_from_db()
+
+            self.assertEqual(400, response.status_code)
+            self.assertEqual(status, analysis.status)
+            self.assertFalse(res_factory.revoke_called)
+
+    @given(
+        status=sampled_from([Analysis.status_choices.PENDING, Analysis.status_choices.STARTED]),
+        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+    )
+    def test_state_is_running___revoke_is_called(self, status, task_id):
+        res_factory = FakeAsyncResultFactory(task_id)
+
+        with patch('oasisapi.analyses.models.AsyncResult', res_factory):
+            user = fake_user()
+            analysis = fake_analysis(status=status, task_id=task_id)
+
+            response = self.app.post(
+                analysis.get_absolute_cancel_url(),
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                },
+                expect_errors=True,
+            )
+
+            analysis.refresh_from_db()
+
+            self.assertEqual(200, response.status_code)
+            self.assertEqual(status, analysis.status)
+            self.assertTrue(res_factory.revoke_called)
+            self.assertEqual({'signal': 'SIGKILL', 'terminate': True}, res_factory.revoke_kwargs)
