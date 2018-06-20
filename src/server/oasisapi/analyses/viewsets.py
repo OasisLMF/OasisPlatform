@@ -21,3 +21,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         obj.run(request)
         return Response(self.get_serializer(instance=obj).data)
+
+    @action(methods=['post'], detail=True)
+    def cancel(self, request, pk=None):
+        obj = self.get_object()
+        obj.cancel()
+        return Response(self.get_serializer(instance=obj).data)
