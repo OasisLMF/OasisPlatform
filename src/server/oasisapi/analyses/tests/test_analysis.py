@@ -257,6 +257,27 @@ class AnalysisApi(WebTestMixin, TestCase):
 
 
 class AnalysisRun(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.post(analysis.get_absolute_run_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            reverse('analysis-run', args=[analysis.pk + 1]),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(404, response.status_code)
+
     def test_model_is_not_set___error_is_written_to_file_status_is_error(self):
         user = fake_user()
         analysis = fake_analysis()
@@ -333,7 +354,7 @@ class AnalysisRun(WebTestMixin, TestCase):
 
                     with NamedTemporaryFile('w+') as settings, NamedTemporaryFile('w+') as inputs:
                         settings.write('{}')
-                        analysis.settings_file = File(inputs, '{}.json'.format(settings.name))
+                        analysis.settings_file = File(settings, '{}.json'.format(settings.name))
 
                         inputs.write('{}')
                         analysis.input_file = File(inputs, '{}.json'.format(inputs.name))
@@ -394,6 +415,27 @@ class AnalysisRun(WebTestMixin, TestCase):
 
 
 class AnalysisCancel(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.post(analysis.get_absolute_cancel_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            reverse('analysis-cancel', args=[analysis.pk + 1]),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(404, response.status_code)
+
     @given(
         status=sampled_from([Analysis.status_choices.NOT_RAN, Analysis.status_choices.STOPPED_COMPLETED, Analysis.status_choices.STOPPED_ERROR, Analysis.status_choices.STOPPED_CANCELLED]),
         task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
@@ -444,3 +486,300 @@ class AnalysisCancel(WebTestMixin, TestCase):
             self.assertEqual(status, analysis.status)
             self.assertTrue(res_factory.revoke_called)
             self.assertEqual({'signal': 'SIGKILL', 'terminate': True}, res_factory.revoke_kwargs)
+
+
+class AnalysisCopy(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.post(analysis.get_absolute_copy_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            reverse('analysis-copy', args=[analysis.pk + 1]),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_new_object_is_created(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertNotEqual(analysis.pk, response.json['id'])
+
+    @given(name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_no_new_name_is_provided___copy_is_appended_to_name(self, name):
+        user = fake_user()
+        analysis = fake_analysis(name=name)
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, '{} - Copy'.format(name))
+
+    @given(orig_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters), new_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_new_name_is_provided___new_name_is_set_on_new_object(self, orig_name, new_name):
+        user = fake_user()
+        analysis = fake_analysis(name=orig_name)
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': new_name}),
+            content_type='application/json'
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, new_name)
+
+    @given(status=sampled_from(list(Analysis.status_choices._db_values)))
+    def test_state_is_reset(self, status):
+        user = fake_user()
+        analysis = fake_analysis(status=status)
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).status, Analysis.status_choices.NOT_RAN)
+
+    def test_creator_is_set_to_caller(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).creator, user)
+
+    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_task_id_is_reset(self, task_id):
+        user = fake_user()
+        analysis = fake_analysis(task_id=task_id)
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).task_id, '')
+
+    def test_portfolio_is_not_supplied___portfolio_is_copied(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).portfolio, analysis.portfolio)
+
+    def test_portfolio_is_supplied___portfolio_is_replaced(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        new_portfolio = fake_portfolio()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'portfolio': new_portfolio.pk}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).portfolio, new_portfolio)
+
+    def test_model_is_not_supplied___model_is_copied(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).model, analysis.model)
+
+    def test_model_is_supplied___model_is_replaced(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        new_model = fake_analysis_model()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'model': new_model.pk}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).model, new_model)
+
+    def test_settings_file_is_not_supplied___settings_file_is_copied(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                with NamedTemporaryFile('w+') as f:
+                    f.write('{}')
+                    analysis.settings_file = File(f, '{}.json'.format(f.name))
+
+                    analysis.save()
+
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    }
+                )
+
+                self.assertEqual(Analysis.objects.get(pk=response.json['id']).settings_file.url, analysis.settings_file.url)
+
+    def test_settings_file_is_supplied___settings_file_is_changed(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                with NamedTemporaryFile('w+') as f:
+                    f.write('{}')
+                    analysis.settings_file = File(f, '{}.json'.format(f.name))
+
+                    analysis.save()
+
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('settings_file', 'file.json', b'{}'),
+                    ),
+                )
+
+                self.assertNotEqual(Analysis.objects.get(pk=response.json['id']).settings_file.url, analysis.settings_file.url)
+
+    def test_input_file_is_not_supplied___input_file_is_copied(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                with NamedTemporaryFile('w+') as f:
+                    f.write('{}')
+                    analysis.input_file = File(f, '{}.json'.format(f.name))
+
+                    analysis.save()
+
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    }
+                )
+
+                self.assertEqual(Analysis.objects.get(pk=response.json['id']).input_file.url, analysis.input_file.url)
+
+    def test_input_file_is_supplied___input_file_is_changed(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                with NamedTemporaryFile('w+') as f:
+                    f.write('{}')
+                    analysis.input_file = File(f, '{}.json'.format(f.name))
+
+                    analysis.save()
+
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('input_file', 'file.tar', b'{}'),
+                    ),
+                )
+
+                self.assertNotEqual(Analysis.objects.get(pk=response.json['id']).input_file.url, analysis.input_file.url)
+
+    def test_input_errors_file_is_cleared(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                with NamedTemporaryFile('w+') as f:
+                    f.write('{}')
+                    analysis.input_errors_file = File(f, '{}.json'.format(f.name))
+
+                    analysis.save()
+
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertFalse(Analysis.objects.get(pk=response.json['id']).input_errors_file)
+
+    def test_output_file_is_cleared(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                with NamedTemporaryFile('w+') as f:
+                    f.write('{}')
+                    analysis.output_file = File(f, '{}.json'.format(f.name))
+
+                    analysis.save()
+
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertFalse(Analysis.objects.get(pk=response.json['id']).output_file)

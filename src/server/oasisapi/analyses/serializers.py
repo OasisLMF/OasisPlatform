@@ -25,3 +25,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
         if not data.get('creator') and 'request' in self.context:
             data['creator'] = self.context.get('request').user
         return super(AnalysisSerializer, self).create(data)
+
+    def save(self, **kwargs):
+        data = dict(kwargs)
+        if not data.get('creator') and 'request' in self.context:
+            data['creator'] = self.context.get('request').user
+        return super(AnalysisSerializer, self).save(**data)
