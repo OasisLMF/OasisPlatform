@@ -20,10 +20,21 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def run(self, request, pk=None):
         obj = self.get_object()
         obj.run(request)
-        return Response(self.get_serializer(instance=obj).data)
+        return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None):
         obj = self.get_object()
         obj.cancel()
-        return Response(self.get_serializer(instance=obj).data)
+        return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
+
+    @action(methods=['post'], detail=True)
+    def copy(self, request, pk=None):
+        obj = self.get_object()
+        new_obj = obj.copy()
+
+        serializer = self.get_serializer(instance=new_obj, data=request.data, context=self.get_serializer_context(), partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
