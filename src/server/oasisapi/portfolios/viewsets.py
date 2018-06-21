@@ -11,6 +11,8 @@ from .serializers import PortfolioSerializer
 
 
 class PortfolioViewSet(viewsets.ModelViewSet):
+    """ Returns a list of Portfolio objects """
+
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
 
