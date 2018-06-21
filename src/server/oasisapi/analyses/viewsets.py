@@ -1,18 +1,47 @@
 from __future__ import absolute_import
 
+from django_filters import rest_framework as filters
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from ..filters import CreatedModifiedFilterSet
 from .models import Analysis
 from .serializers import AnalysisSerializer
 
 
+class AnalysisFilter(CreatedModifiedFilterSet):
+    created_lte = filters.DateTimeFilter(name='created', lookup_expr='lte')
+    created_gte = filters.DateTimeFilter(name='created', lookup_expr='gte')
+    modified_lte = filters.DateTimeFilter(name='modified', lookup_expr='lte')
+    modified_gte = filters.DateTimeFilter(name='modified', lookup_expr='gte')
+
+    class Meta:
+        model = Analysis
+        fields = [
+            'id',
+            'name',
+            'status',
+        ]
+
+
 class AnalysisViewSet(viewsets.ModelViewSet):
-    """ Returns a list of analysis objects """
+    """ Returns a list of analysis objects
+
+        ### Available filters
+        - id
+        - name
+        - status
+        - created, created_lte, created_gte
+        - modified, modified_lte, modified_gte
+
+        `e.g. ?created_gte=2018-01-01&created_lte=2018-02-01`
+    """
 
     queryset = Analysis.objects.all()
     serializer_class = AnalysisSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_class = AnalysisFilter
 
     def update(self, request, *args, **kwargs):
         kwargs['partial'] = True
