@@ -8,20 +8,19 @@ from rest_framework.status import HTTP_201_CREATED
 
 from ..files.views import handle_related_file
 from ..analyses.serializers import AnalysisSerializer
-from ..filters import CreatedModifiedFilterSet
 from .models import Portfolio
 from .serializers import PortfolioSerializer
 
 
-class PortfolioFilter(CreatedModifiedFilterSet):
+class PortfolioFilter(filters.FilterSet):
     class Meta:
         model = Portfolio
-        fields = [
-            'id',
-            'name',
-            'created',
-            'modified',
-        ]
+        fields = {
+            'id': ['exact'],
+            'name': ['icontains'],
+            'created': ['gte', 'lte'],
+            'modified': ['gte', 'lte'],
+        }
 
 
 class PortfolioViewSet(viewsets.ModelViewSet):
@@ -38,7 +37,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
 
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
     filter_class = PortfolioFilter
 
     def update(self, request, *args, **kwargs):

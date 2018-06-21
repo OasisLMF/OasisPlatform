@@ -3,19 +3,20 @@ from __future__ import absolute_import
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
-from ..filters import CreatedModifiedFilterSet
 from .models import AnalysisModel
 from .serializers import AnalysisModelSerializer
 
 
-class AnalysisModelFilter(CreatedModifiedFilterSet):
+class AnalysisModelFilter(filters.FilterSet):
     class Meta:
         model = AnalysisModel
-        fields = [
-            'id',
-            'supplier_id',
-            'version_id',
-        ]
+        fields = {
+            'id': ['exact'],
+            'supplier_id': ['exact'],
+            'version_id': ['exact'],
+            'created': ['gte', 'lte'],
+            'modified': ['gte', 'lte'],
+        }
 
 
 class AnalysisModelViewSet(viewsets.ModelViewSet):
@@ -33,7 +34,6 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 
     queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
     filter_class = AnalysisModelFilter
 
     def update(self, request, *args, **kwargs):

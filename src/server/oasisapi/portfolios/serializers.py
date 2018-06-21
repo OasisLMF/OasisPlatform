@@ -9,8 +9,8 @@ class PortfolioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Portfolio
         fields = (
-            'name',
             'id',
+            'name',
             'created',
             'modified',
             'reinsurance_info_file',
