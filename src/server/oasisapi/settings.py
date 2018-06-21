@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
 
+    'oasisapi.files',
     'oasisapi.portfolios',
     'oasisapi.analyses',
     'oasisapi.analysis_models',

@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from django.contrib.sites.shortcuts import get_current_site
-
 from .models import Portfolio
 
 
@@ -13,10 +11,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'id',
             'created',
             'modified',
-            'accounts_file',
-            'location_file',
             'reinsurance_info_file',
-            'reinsurance_source_file',
         )
 
     def create(self, validated_data):
@@ -26,7 +21,18 @@ class PortfolioSerializer(serializers.ModelSerializer):
         return super(PortfolioSerializer, self).create(data)
 
     def to_representation(self, instance):
-        result = super(PortfolioSerializer, self).to_representation(instance)
-        domain = get_current_site(self.context.get('request')).domain
-        result.update({'create_analysis': 'http://{}{}'.format(domain, instance.get_absolute_create_analysis_url())})
-        return result
+        rep = super(PortfolioSerializer, self).to_representation(instance)
+        rep['create_analysis'] = instance.get_absolute_create_analysis_url()
+        rep['accounts_file'] = instance.get_absolute_accounts_file_url()
+        rep['location_file'] = instance.get_absolute_location_file_url()
+        rep['reinsurance_info_file'] = instance.get_absolute_reinsurance_info_file_url()
+        rep['reinsurance_source_file'] = instance.get_absolute_reinsurance_source_file_url()
+
+        if self.context.get('request'):
+            rep['create_analysis'] = self.context['request'].build_absolute_uri(rep['create_analysis'])
+            rep['accounts_file'] = self.context['request'].build_absolute_uri(rep['accounts_file'])
+            rep['location_file'] = self.context['request'].build_absolute_uri(rep['location_file'])
+            rep['reinsurance_info_file'] = self.context['request'].build_absolute_uri(rep['reinsurance_info_file'])
+            rep['reinsurance_source_file'] = self.context['request'].build_absolute_uri(rep['reinsurance_source_file'])
+
+        return rep

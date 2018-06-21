@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from django.contrib.sites.shortcuts import get_current_site
-
 from .models import Analysis
 
 
@@ -15,10 +13,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'id',
             'portfolio',
             'model',
-            'settings_file',
-            'input_file',
-            'input_errors_file',
-            'output_file',
             'status',
         )
 
@@ -35,7 +29,18 @@ class AnalysisSerializer(serializers.ModelSerializer):
         return super(AnalysisSerializer, self).save(**data)
 
     def to_representation(self, instance):
-        result = super(AnalysisSerializer, self).to_representation(instance)
-        domain = get_current_site(self.context.get('request')).domain
-        result.update({'cancel_analysis': 'http://{}{}'.format(domain, instance.get_absolute_cancel_url())})
-        return result
+        rep = super(AnalysisSerializer, self).to_representation(instance)
+        rep['cancel_analysis'] = instance.get_absolute_cancel_url()
+        rep['input_file'] = instance.get_absolute_input_file_url()
+        rep['settings_file'] = instance.get_absolute_settings_file_url()
+        rep['input_errors_file'] = instance.get_absolute_input_errors_file_url()
+        rep['output_file'] = instance.get_absolute_output_file_url()
+
+        if self.context.get('request'):
+            rep['cancel_analysis'] = self.context['request'].build_absolute_uri(rep['cancel_analysis'])
+            rep['input_file'] = self.context['request'].build_absolute_uri(rep['input_file'])
+            rep['settings_file'] = self.context['request'].build_absolute_uri(rep['settings_file'])
+            rep['input_errors_file'] = self.context['request'].build_absolute_uri(rep['input_errors_file'])
+            rep['output_file'] = self.context['request'].build_absolute_uri(rep['output_file'])
+
+        return rep

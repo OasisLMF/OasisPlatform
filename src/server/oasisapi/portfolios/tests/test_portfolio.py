@@ -98,179 +98,11 @@ class PortfolioApi(WebTestMixin, TestCase):
             'name': name,
             'created': portfolio.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
             'modified': portfolio.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-            'accounts_file': None,
-            'location_file': None,
-            'reinsurance_info_file': None,
-            'reinsurance_source_file': None,
+            'accounts_file': response.request.application_url + portfolio.get_absolute_accounts_file_url(),
+            'location_file': response.request.application_url + portfolio.get_absolute_location_file_url(),
+            'reinsurance_info_file': response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
+            'reinsurance_source_file': response.request.application_url + portfolio.get_absolute_reinsurance_source_file_url(),
         }, response.json)
-
-    def test_accounts_file_is_not_a_valid_format___response_is_400(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.put(
-                    portfolio.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('accounts_file', 'file.tar', b'content'),
-                    ),
-                    expect_errors=True,
-                )
-
-                self.assertEqual(400, response.status_code)
-
-    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
-    def test_accounts_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.put(
-                    portfolio.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('accounts_file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content,),
-                    ),
-                    content_type='application/json'
-                )
-
-                portfolio.refresh_from_db()
-
-                self.assertEqual(portfolio.accounts_file.read(), file_content)
-                self.assertEqual(response.json['accounts_file'], response.request.application_url + portfolio.accounts_file.url)
-
-    def test_location_file_is_not_a_valid_format___response_is_400(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.put(
-                    portfolio.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('location_file', 'file.tar', b'content'),
-                    ),
-                    expect_errors=True,
-                )
-
-                self.assertEqual(400, response.status_code)
-
-    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
-    def test_location_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.put(
-                    portfolio.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('location_file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content,),
-                    ),
-                    content_type='application/json'
-                )
-
-                portfolio.refresh_from_db()
-
-                self.assertEqual(portfolio.location_file.read(), file_content)
-                self.assertEqual(response.json['location_file'], response.request.application_url + portfolio.location_file.url)
-
-    def test_reinsurance_info_file_is_not_a_valid_format___response_is_400(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.put(
-                    portfolio.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('reinsurance_info_file', 'file.tar', b'content'),
-                    ),
-                    expect_errors=True,
-                )
-
-                self.assertEqual(400, response.status_code)
-
-    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
-    def test_reinsurance_info_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.put(
-                    portfolio.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('reinsurance_info_file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content,),
-                    ),
-                    content_type='application/json'
-                )
-
-                portfolio.refresh_from_db()
-
-                self.assertEqual(portfolio.reinsurance_info_file.read(), file_content)
-                self.assertEqual(response.json['reinsurance_info_file'], response.request.application_url + portfolio.reinsurance_info_file.url)
-
-    def test_reinsurance_source_file_is_not_a_valid_format___response_is_400(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.put(
-                    portfolio.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('reinsurance_source_file', 'file.tar', b'content'),
-                    ),
-                    expect_errors=True,
-                )
-
-                self.assertEqual(400, response.status_code)
-
-    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
-    def test_reinsurance_source_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.put(
-                    portfolio.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('reinsurance_source_file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content,),
-                    ),
-                    content_type='application/json'
-                )
-
-                portfolio.refresh_from_db()
-
-                self.assertEqual(portfolio.reinsurance_source_file.read(), file_content)
-                self.assertEqual(response.json['reinsurance_source_file'], response.request.application_url + portfolio.reinsurance_source_file.url)
 
 
 class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
@@ -359,9 +191,341 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
             'name': name,
             'portfolio': portfolio.pk,
             'model': None,
-            'input_file': None,
-            'settings_file': None,
-            'input_errors_file': None,
-            'output_file': None,
+            'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
+            'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
+            'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
+            'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
             'status': Analysis.status_choices.NOT_RAN,
         }, response.json)
+
+
+class PortfolioAccountsFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        portfolio = fake_portfolio()
+
+        response = self.app.get(portfolio.get_absolute_accounts_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_accounts_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.get(
+            portfolio.get_absolute_accounts_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_accounts_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.delete(
+            portfolio.get_absolute_accounts_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_accounts_file_is_not_a_valid_format___response_is_400(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.tar', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(400, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    def test_accounts_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                response = self.app.get(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
+
+
+class PortfolioLocationFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        portfolio = fake_portfolio()
+
+        response = self.app.get(portfolio.get_absolute_location_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_location_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.get(
+            portfolio.get_absolute_location_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_location_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.delete(
+            portfolio.get_absolute_location_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_location_file_is_not_a_valid_format___response_is_400(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.tar', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(400, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    def test_location_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                response = self.app.get(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
+
+
+class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        portfolio = fake_portfolio()
+
+        response = self.app.get(portfolio.get_absolute_reinsurance_source_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_reinsurance_source_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.get(
+            portfolio.get_absolute_reinsurance_source_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_reinsurance_source_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.delete(
+            portfolio.get_absolute_reinsurance_source_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_reinsurance_source_file_is_not_a_valid_format___response_is_400(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_reinsurance_source_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.tar', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(400, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    def test_reinsurance_source_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_source_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                response = self.app.get(
+                    portfolio.get_absolute_reinsurance_source_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
+
+
+class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        portfolio = fake_portfolio()
+
+        response = self.app.get(portfolio.get_absolute_reinsurance_info_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_reinsurance_info_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.get(
+            portfolio.get_absolute_reinsurance_info_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_reinsurance_info_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.delete(
+            portfolio.get_absolute_reinsurance_info_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_reinsurance_info_file_is_not_a_valid_format___response_is_400(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.tar', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(400, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    def test_reinsurance_info_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                response = self.app.get(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
