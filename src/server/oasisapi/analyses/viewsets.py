@@ -5,25 +5,21 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from ..filters import CreatedModifiedFilterSet
 from ..files.views import handle_related_file
 from .models import Analysis
 from .serializers import AnalysisSerializer
 
 
-class AnalysisFilter(CreatedModifiedFilterSet):
-    created_lte = filters.DateTimeFilter(name='created', lookup_expr='lte')
-    created_gte = filters.DateTimeFilter(name='created', lookup_expr='gte')
-    modified_lte = filters.DateTimeFilter(name='modified', lookup_expr='lte')
-    modified_gte = filters.DateTimeFilter(name='modified', lookup_expr='gte')
-
+class AnalysisFilter(filters.FilterSet):
     class Meta:
         model = Analysis
-        fields = [
-            'id',
-            'name',
-            'status',
-        ]
+        fields = {
+            'id': ['exact'],
+            'name': ['icontains'],
+            'status': ['exact'],
+            'created': ['gte', 'lte'],
+            'modified': ['gte', 'lte'],
+        }
 
 
 class AnalysisViewSet(viewsets.ModelViewSet):
@@ -41,7 +37,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     queryset = Analysis.objects.all()
     serializer_class = AnalysisSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
     filter_class = AnalysisFilter
 
     def update(self, request, *args, **kwargs):
