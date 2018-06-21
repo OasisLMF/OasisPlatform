@@ -7,6 +7,8 @@ from .serializers import AnalysisModelSerializer
 
 
 class AnalysisModelViewSet(viewsets.ModelViewSet):
+    """ Returns a list of Analysis Model objects """
+
     queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
 
