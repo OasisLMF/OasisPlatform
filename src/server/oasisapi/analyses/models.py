@@ -4,17 +4,18 @@ import json
 from tempfile import NamedTemporaryFile
 
 from celery.result import AsyncResult
-from celery.worker.control import revoke
 from django.conf import settings
 from django.core.files import File
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.six import BytesIO
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
 
+from ..files.models import RelatedFile
 from ..celery import celery_app
 from ..analysis_models.models import AnalysisModel
 from ..files.upload import random_file_name
@@ -40,30 +41,10 @@ class Analysis(TimeStampedModel):
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NOT_RAN, editable=False)
     task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
 
-    settings_file = models.FileField(
-        upload_to=random_file_name,
-        validators=[FileExtensionValidator(allowed_extensions=['json'])],
-        null=True,
-        default=None,
-    )
-    input_file = models.FileField(
-        upload_to=random_file_name,
-        validators=[FileExtensionValidator(allowed_extensions=['tar'])],
-        null=True,
-        default=None,
-    )
-    input_errors_file = models.FileField(
-        upload_to=random_file_name,
-        null=True,
-        default=None,
-        editable=False,
-    )
-    output_file = models.FileField(
-        upload_to=random_file_name,
-        null=True,
-        default=None,
-        editable=False,
-    )
+    settings_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='settings_file_analyses')
+    input_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='input_file_analyses')
+    input_errors_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='input_errors_file_analyses')
+    output_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='output_file_analyses')
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -83,6 +64,18 @@ class Analysis(TimeStampedModel):
     def get_absolute_copy_url(self):
         return reverse('analysis-copy', args=[self.pk])
 
+    def get_absolute_settings_file_url(self):
+        return reverse('analysis-settings-file', args=[self.pk])
+
+    def get_absolute_input_file_url(self):
+        return reverse('analysis-input-file', args=[self.pk])
+
+    def get_absolute_input_errors_file_url(self):
+        return reverse('analysis-input-errors-file', args=[self.pk])
+
+    def get_absolute_output_file_url(self):
+        return reverse('analysis-output-file', args=[self.pk])
+
     def validate_run(self):
         errors = []
 
@@ -99,14 +92,15 @@ class Analysis(TimeStampedModel):
             errors.append('"input_file" is not set on the analysis object')
 
         if errors:
-            self.status = self.status_choices.STOPPED_ERROR
             errors_dict = {'errors': errors}
 
-            with NamedTemporaryFile('w+') as f:
-                f.write(json.dumps(errors_dict))
-                self.input_errors_file = File(f, '{}.json'.format(f.name))
+            self.status = self.status_choices.STOPPED_ERROR
+            self.input_errors_file = RelatedFile.objects.create(
+                file=File(BytesIO(json.dumps(errors_dict).encode()), 'file.json'),
+                content_type='application/json',
+            )
 
-                self.save()
+            self.save()
 
             raise ValidationError(detail=errors_dict)
 
@@ -116,7 +110,7 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.PENDING
         self.task_id = celery_app.send_task(
             'run_analysis',
-            (request.build_absolute_uri(self.input_file.url), [json.loads(self.settings_file.read())]),
+            (request.build_absolute_uri(self.get_absolute_input_file_url()), [json.loads(self.settings_file.read())]),
             queue='{}-{}'.format(self.model.supplier_id, self.model.version_id)
         )
         poll_analysis_status.delay(self.pk)
@@ -136,6 +130,6 @@ class Analysis(TimeStampedModel):
         new_instance.creator = None
         new_instance.task_id = ''
         new_instance.status = self.status_choices.NOT_RAN
-        new_instance.input_errors_file = File(None)
-        new_instance.output_file = File(None)
+        new_instance.input_errors_file = None
+        new_instance.output_file = None
         return new_instance

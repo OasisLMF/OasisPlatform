@@ -4,6 +4,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from ..files.views import handle_related_file
 from .models import Analysis
 from .serializers import AnalysisSerializer
 
@@ -40,3 +41,19 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         serializer.save()
 
         return Response(serializer.data)
+
+    @action(methods=['get', 'post', 'delete'], detail=True)
+    def settings_file(self, request, pk=None):
+        return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
+
+    @action(methods=['get', 'post', 'delete'], detail=True)
+    def input_file(self, request, pk=None):
+        return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @action(methods=['get', 'delete'], detail=True)
+    def input_errors_file(self, request, pk=None):
+        return handle_related_file(self.get_object(), 'input_errors_file', request, ['application/json', 'text/csv'])
+
+    @action(methods=['get', 'delete'], detail=True)
+    def output_file(self, request, pk=None):
+        return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
