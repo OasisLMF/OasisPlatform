@@ -1,4 +1,5 @@
 import json
+import mimetypes
 import string
 from tempfile import NamedTemporaryFile
 
@@ -13,6 +14,7 @@ from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
+from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
 from ...portfolios.tests.fakes import fake_portfolio
 from ...auth.tests.fakes import fake_user
@@ -125,98 +127,12 @@ class AnalysisApi(WebTestMixin, TestCase):
             'name': name,
             'portfolio': portfolio.pk,
             'model': None,
-            'settings_file': None,
-            'input_file': None,
-            'input_errors_file': None,
-            'output_file': None,
+            'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
+            'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
+            'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
+            'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
             'status': Analysis.status_choices.NOT_RAN,
         }, response.json)
-
-    def test_settings_file_is_not_a_valid_format___response_is_400(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
-
-                response = self.app.put(
-                    analysis.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('settings_file', 'file.tar', b'content'),
-                    ),
-                    expect_errors=True,
-                )
-
-                self.assertEqual(400, response.status_code)
-
-    @given(file_content=binary(min_size=1))
-    def test_settings_file_is_uploaded___file_can_be_retrieved(self, file_content):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
-
-                response = self.app.put(
-                    analysis.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('settings_file', 'file.json', file_content,),
-                    ),
-                    content_type='application/json'
-                )
-
-                analysis.refresh_from_db()
-
-                self.assertEqual(200, response.status_code)
-                self.assertEqual(analysis.settings_file.read(), file_content)
-                self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.settings_file.url)
-
-    def test_input_file_is_not_a_valid_format___response_is_400(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
-
-                response = self.app.put(
-                    analysis.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('input_file', 'file.csv', b'content'),
-                    ),
-                    expect_errors=True,
-                )
-
-                self.assertEqual(400, response.status_code)
-
-    @given(file_content=binary(min_size=1))
-    def test_input_file_is_uploaded___file_can_be_retrieved(self, file_content):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
-
-                response = self.app.put(
-                    analysis.get_absolute_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('input_file', 'file.tar', file_content,),
-                    ),
-                    content_type='application/json'
-                )
-
-                analysis.refresh_from_db()
-
-                self.assertEqual(200, response.status_code)
-                self.assertEqual(analysis.input_file.read(), file_content)
-                self.assertEqual(response.json['input_file'], response.request.application_url + analysis.input_file.url)
 
     def test_model_does_not_exist___response_is_400(self):
         user = fake_user()
@@ -350,16 +266,12 @@ class AnalysisRun(WebTestMixin, TestCase):
 
                     user = fake_user()
                     model = fake_analysis_model()
-                    analysis = fake_analysis(model=model, status=status)
-
-                    with NamedTemporaryFile('w+') as settings, NamedTemporaryFile('w+') as inputs:
-                        settings.write('{}')
-                        analysis.settings_file = File(settings, '{}.json'.format(settings.name))
-
-                        inputs.write('{}')
-                        analysis.input_file = File(inputs, '{}.json'.format(inputs.name))
-
-                        analysis.save()
+                    analysis = fake_analysis(
+                        model=model,
+                        status=status,
+                        settings_file=fake_related_file(file=b'{}'),
+                        input_file=fake_related_file(),
+                    )
 
                     response = self.app.post(
                         analysis.get_absolute_run_url(),
@@ -387,16 +299,12 @@ class AnalysisRun(WebTestMixin, TestCase):
                 with override_settings(MEDIA_ROOT=d):
                     user = fake_user()
                     model = fake_analysis_model()
-                    analysis = fake_analysis(model=model, status=status)
-
-                    with NamedTemporaryFile('w+') as settings, NamedTemporaryFile('w+') as inputs:
-                        settings.write('{}')
-                        analysis.settings_file = File(inputs, '{}.json'.format(settings.name))
-
-                        inputs.write('{}')
-                        analysis.input_file = File(inputs, '{}.json'.format(inputs.name))
-
-                        analysis.save()
+                    analysis = fake_analysis(
+                        model=model,
+                        status=status,
+                        settings_file=fake_related_file(file=b'{}'),
+                        input_file=fake_related_file(),
+                    )
 
                     response = self.app.post(
                         analysis.get_absolute_run_url(),
@@ -656,13 +564,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
-                analysis = fake_analysis()
-
-                with NamedTemporaryFile('w+') as f:
-                    f.write('{}')
-                    analysis.settings_file = File(f, '{}.json'.format(f.name))
-
-                    analysis.save()
+                analysis = fake_analysis(settings_file=fake_related_file(file='{}'))
 
                 response = self.app.post(
                     analysis.get_absolute_copy_url(),
@@ -671,43 +573,13 @@ class AnalysisCopy(WebTestMixin, TestCase):
                     }
                 )
 
-                self.assertEqual(Analysis.objects.get(pk=response.json['id']).settings_file.url, analysis.settings_file.url)
-
-    def test_settings_file_is_supplied___settings_file_is_changed(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
-
-                with NamedTemporaryFile('w+') as f:
-                    f.write('{}')
-                    analysis.settings_file = File(f, '{}.json'.format(f.name))
-
-                    analysis.save()
-
-                response = self.app.post(
-                    analysis.get_absolute_copy_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('settings_file', 'file.json', b'{}'),
-                    ),
-                )
-
-                self.assertNotEqual(Analysis.objects.get(pk=response.json['id']).settings_file.url, analysis.settings_file.url)
+                self.assertEqual(Analysis.objects.get(pk=response.json['id']).settings_file.pk, analysis.settings_file.pk)
 
     def test_input_file_is_not_supplied___input_file_is_copied(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
-                analysis = fake_analysis()
-
-                with NamedTemporaryFile('w+') as f:
-                    f.write('{}')
-                    analysis.input_file = File(f, '{}.json'.format(f.name))
-
-                    analysis.save()
+                analysis = fake_analysis(input_file=fake_related_file())
 
                 response = self.app.post(
                     analysis.get_absolute_copy_url(),
@@ -716,43 +588,13 @@ class AnalysisCopy(WebTestMixin, TestCase):
                     }
                 )
 
-                self.assertEqual(Analysis.objects.get(pk=response.json['id']).input_file.url, analysis.input_file.url)
-
-    def test_input_file_is_supplied___input_file_is_changed(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
-
-                with NamedTemporaryFile('w+') as f:
-                    f.write('{}')
-                    analysis.input_file = File(f, '{}.json'.format(f.name))
-
-                    analysis.save()
-
-                response = self.app.post(
-                    analysis.get_absolute_copy_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('input_file', 'file.tar', b'{}'),
-                    ),
-                )
-
-                self.assertNotEqual(Analysis.objects.get(pk=response.json['id']).input_file.url, analysis.input_file.url)
+                self.assertEqual(Analysis.objects.get(pk=response.json['id']).input_file, analysis.input_file)
 
     def test_input_errors_file_is_cleared(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
-                analysis = fake_analysis()
-
-                with NamedTemporaryFile('w+') as f:
-                    f.write('{}')
-                    analysis.input_errors_file = File(f, '{}.json'.format(f.name))
-
-                    analysis.save()
+                analysis = fake_analysis(input_errors_file=fake_related_file())
 
                 response = self.app.post(
                     analysis.get_absolute_copy_url(),
@@ -761,19 +603,13 @@ class AnalysisCopy(WebTestMixin, TestCase):
                     },
                 )
 
-                self.assertFalse(Analysis.objects.get(pk=response.json['id']).input_errors_file)
+                self.assertIsNone(Analysis.objects.get(pk=response.json['id']).input_errors_file)
 
     def test_output_file_is_cleared(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
-                analysis = fake_analysis()
-
-                with NamedTemporaryFile('w+') as f:
-                    f.write('{}')
-                    analysis.output_file = File(f, '{}.json'.format(f.name))
-
-                    analysis.save()
+                analysis = fake_analysis(output_file=fake_related_file())
 
                 response = self.app.post(
                     analysis.get_absolute_copy_url(),
@@ -782,4 +618,316 @@ class AnalysisCopy(WebTestMixin, TestCase):
                     },
                 )
 
-                self.assertFalse(Analysis.objects.get(pk=response.json['id']).output_file)
+                self.assertIsNone(Analysis.objects.get(pk=response.json['id']).output_file)
+
+
+class AnalysisSettingsFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.get(analysis.get_absolute_settings_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_settings_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_settings_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_settings_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.delete(
+            analysis.get_absolute_settings_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_settings_file_is_not_a_valid_format___response_is_400(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                response = self.app.post(
+                    analysis.get_absolute_settings_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.tar', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(400, response.status_code)
+
+    @given(file_content=binary(min_size=1))
+    def test_settings_file_is_uploaded___file_can_be_retrieved(self, file_content):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                self.app.post(
+                    analysis.get_absolute_settings_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.json', file_content),
+                    ),
+                )
+
+                response = self.app.get(
+                    analysis.get_absolute_settings_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, 'application/json')
+
+
+class AnalysisInputFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.get(analysis.get_absolute_input_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_input_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_input_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_input_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.delete(
+            analysis.get_absolute_input_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_input_file_is_not_a_valid_format___response_is_400(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                response = self.app.post(
+                    analysis.get_absolute_input_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.csv', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(400, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
+    def test_input_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                self.app.post(
+                    analysis.get_absolute_input_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content, content_type),
+                    ),
+                )
+
+                response = self.app.get(
+                    analysis.get_absolute_input_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
+
+
+class AnalysisInputErrorsFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.get(analysis.get_absolute_input_errors_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_input_errors_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_input_errors_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_input_errors_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.delete(
+            analysis.get_absolute_input_errors_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_input_errors_file_is_not_valid_format___post_response_is_405(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                response = self.app.post(
+                    analysis.get_absolute_input_errors_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.csv', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(405, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    def test_input_errors_file_is_present___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis(input_errors_file=fake_related_file(file=file_content, content_type=content_type))
+
+                response = self.app.get(
+                    analysis.get_absolute_input_errors_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
+
+
+class AnalysisOutputFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.get(analysis.get_absolute_output_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_output_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_output_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_output_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.delete(
+            analysis.get_absolute_output_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_output_file_is_not_valid_format___post_response_is_405(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+
+                response = self.app.post(
+                    analysis.get_absolute_output_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.csv', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(405, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
+    def test_output_file_is_present___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis(output_file=fake_related_file(file=file_content, content_type=content_type))
+
+                response = self.app.get(
+                    analysis.get_absolute_output_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
