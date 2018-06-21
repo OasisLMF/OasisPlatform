@@ -13,10 +13,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'id',
             'portfolio',
             'model',
-            'settings_file',
-            'input_file',
-            'input_errors_file',
-            'output_file',
             'status',
         )
 
@@ -31,3 +27,18 @@ class AnalysisSerializer(serializers.ModelSerializer):
         if not data.get('creator') and 'request' in self.context:
             data['creator'] = self.context.get('request').user
         return super(AnalysisSerializer, self).save(**data)
+
+    def to_representation(self, instance):
+        rep = super(AnalysisSerializer, self).to_representation(instance)
+        rep['input_file'] = instance.get_absolute_input_file_url()
+        rep['settings_file'] = instance.get_absolute_settings_file_url()
+        rep['input_errors_file'] = instance.get_absolute_input_errors_file_url()
+        rep['output_file'] = instance.get_absolute_output_file_url()
+
+        if self.context.get('request'):
+            rep['input_file'] = self.context['request'].build_absolute_uri(rep['input_file'])
+            rep['settings_file'] = self.context['request'].build_absolute_uri(rep['settings_file'])
+            rep['input_errors_file'] = self.context['request'].build_absolute_uri(rep['input_errors_file'])
+            rep['output_file'] = self.context['request'].build_absolute_uri(rep['output_file'])
+
+        return rep
