@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from django_filters import rest_framework as filters
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -11,9 +12,32 @@ from .models import Portfolio
 from .serializers import PortfolioSerializer
 
 
+class PortfolioFilter(filters.FilterSet):
+    class Meta:
+        model = Portfolio
+        fields = {
+            'id': ['exact'],
+            'name': ['icontains'],
+            'created': ['gte', 'lte'],
+            'modified': ['gte', 'lte'],
+        }
+
+
 class PortfolioViewSet(viewsets.ModelViewSet):
+    """ Returns a list of Portfolio objects \n
+
+        ### Available filters
+        - id
+        - name
+        - created, created_lte, created_gte
+        - modified, modified_lte, modified_gte
+
+        `e.g. ?created_gte=2018-01-01&created_lte=2018-02-01`
+    """
+
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
+    filter_class = PortfolioFilter
 
     def update(self, request, *args, **kwargs):
         kwargs['partial'] = True
