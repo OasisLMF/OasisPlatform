@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
@@ -11,7 +12,7 @@ from ..files.models import RelatedFile
 
 @python_2_unicode_compatible
 class Portfolio(TimeStampedModel):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
 
     accounts_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='accounts_file_portfolios')

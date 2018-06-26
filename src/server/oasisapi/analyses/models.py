@@ -1,16 +1,15 @@
 from __future__ import absolute_import, print_function
 
 import json
-from tempfile import NamedTemporaryFile
 
 from celery.result import AsyncResult
 from django.conf import settings
 from django.core.files import File
-from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.six import BytesIO
+from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
@@ -18,7 +17,6 @@ from rest_framework.exceptions import ValidationError
 from ..files.models import RelatedFile
 from ..celery import celery_app
 from ..analysis_models.models import AnalysisModel
-from ..files.upload import random_file_name
 from ..portfolios.models import Portfolio
 from .tasks import poll_analysis_status
 
@@ -35,9 +33,9 @@ class Analysis(TimeStampedModel):
     )
 
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
-    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses')
-    model = models.ForeignKey(AnalysisModel, on_delete=models.SET_DEFAULT, related_name='analyses', null=True, default=None)
-    name = models.CharField(max_length=255)
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
+    model = models.ForeignKey(AnalysisModel, on_delete=models.SET_DEFAULT, related_name='analyses', null=True, default=None, help_text=_('The model to link the analysis to'))
+    name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NOT_RAN, editable=False)
     task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
 
