@@ -4,6 +4,7 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
+-e git+ssh://git@github.com/wildfish/django-rest-framework#egg=djangorestframework
 amqp==2.2.2               # via kombu
 argparsetree==0.0.5       # via oasislmf
 attrs==17.4.0             # via hypothesis, pytest
@@ -18,6 +19,8 @@ chainmap==1.0.2           # via oasislmf
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools
 configparser==3.5.0
+coreapi==2.3.3
+coreschema==0.0.4         # via coreapi
 coverage==4.5
 decorator==4.3.0          # via ipython, traitlets
 django-filter==1.1.0
@@ -25,7 +28,6 @@ django-model-utils==3.1.2
 django-webtest==1.9.3
 django==1.11.13
 djangorestframework-simplejwt==3.2.3
-djangorestframework==3.8.2
 fasteners==0.14.1
 first==2.0.1              # via pip-tools
 flake8==3.5.0
@@ -35,10 +37,13 @@ idna==2.6                 # via requests
 ipdb==0.11
 ipython-genutils==0.2.0   # via traitlets
 ipython==6.4.0            # via ipdb
+itypes==1.1.0             # via coreapi
 jedi==0.12.0              # via ipython
+jinja2==2.10              # via coreschema
 jsonpickle==0.9.5
 kombu==4.1.0              # via celery
 markdown==2.6.11
+markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
 model-mommy==1.6.0
@@ -78,6 +83,7 @@ six==1.11.0               # via fasteners, mock, model-mommy, oasislmf, pathlib2
 sqlalchemy==1.2.2
 tox==2.9.1
 traitlets==4.3.2          # via ipython
+uritemplate==3.0.0        # via coreapi
 urllib3==1.22             # via requests
 vine==1.1.4               # via amqp
 virtualenv==15.1.0        # via tox

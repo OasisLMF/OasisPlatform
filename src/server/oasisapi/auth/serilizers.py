@@ -1,3 +1,4 @@
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt import settings as jwt_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenObtainPairSerializer
@@ -6,6 +7,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
+    def __init__(self, *args, **kwargs):
+        super(TokenObtainPairSerializer, self).__init__(*args, **kwargs)
+
+        self.fields[self.username_field].help_text = _('Your username')
+        self.fields['password'].help_text = _('your password')
+
     def validate(self, attrs):
         data = super(TokenObtainPairSerializer, self).validate(attrs)
 

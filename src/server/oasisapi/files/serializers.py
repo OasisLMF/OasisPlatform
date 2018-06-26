@@ -9,17 +9,21 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         model = RelatedFile
         fields = (
             'created',
-            'creator',
             'file',
-            'content_type',
         )
 
     def __init__(self, *args, content_types=None, **kwargs):
         self.content_types = content_types or []
         super(RelatedFileSerializer, self).__init__(*args, **kwargs)
 
-    def validate_content_type(self, value):
-        if self.content_types and value not in self.content_types:
+    def validate(self, attrs):
+        attrs['creator'] = self.context['request'].user
+        attrs['content_type'] = attrs['file'].content_type
+
+        return super(RelatedFileSerializer, self).validate(attrs)
+
+    def validate_file(self, value):
+        if self.content_types and value.content_type not in self.content_types:
             raise ValidationError('File should be one of [{}]'.format(', '.join(self.content_types)))
 
         return value
