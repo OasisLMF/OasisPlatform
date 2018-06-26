@@ -23,7 +23,7 @@ pip-tools
 ipdb
 
 django<2.0
-djangorestframework
+-e git+ssh://git@github.com/wildfish/django-rest-framework#egg=djangorestframework
 markdown
 django-filter
 model_mommy
@@ -31,3 +31,4 @@ django-webtest
 djangorestframework_simplejwt
 python-magic
 django-model-utils
+coreapi

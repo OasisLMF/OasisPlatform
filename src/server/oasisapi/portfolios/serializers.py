@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from django.contrib.sites.shortcuts import get_current_site
-
+from ..analyses.serializers import AnalysisSerializer
 from .models import Portfolio
 
 
@@ -13,7 +12,6 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'name',
             'created',
             'modified',
-            'reinsurance_info_file',
         )
 
     def create(self, validated_data):
@@ -36,3 +34,16 @@ class PortfolioSerializer(serializers.ModelSerializer):
             rep['reinsurance_source_file'] = self.context['request'].build_absolute_uri(rep['reinsurance_source_file'])
 
         return rep
+
+
+class CreateAnalysisSerializer(AnalysisSerializer):
+    class Meta(AnalysisSerializer.Meta):
+        fields = ['name']
+
+    def __init__(self, portfolio=None, *args, **kwargs):
+        self.portfolio = portfolio
+        super(CreateAnalysisSerializer, self).__init__(*args, **kwargs)
+
+    def validate(self, attrs):
+        attrs['portfolio'] = self.portfolio
+        return attrs

@@ -1,41 +1,80 @@
 from __future__ import absolute_import
 
+from django.utils.translation import ugettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
+from ..filters import TimeStampedFilter
 from .models import AnalysisModel
 from .serializers import AnalysisModelSerializer
 
 
-class AnalysisModelFilter(filters.FilterSet):
+class AnalysisModelFilter(TimeStampedFilter):
+    supplier_id = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `supplier_id` equal to the given string'),
+        lookup_expr='iexact'
+    )
+    supplier_id__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `supplier_id` containing the given string'),
+        lookup_expr='icontains',
+        field_name='name'
+    )
+    version_id = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `version_id` equal to the given string'),
+        lookup_expr='iexact'
+    )
+    version_id__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `version_id` containing the given string'),
+        lookup_expr='icontains',
+        field_name='name'
+    )
+
     class Meta:
         model = AnalysisModel
-        fields = {
-            'id': ['exact'],
-            'supplier_id': ['exact'],
-            'version_id': ['exact'],
-            'created': ['gte', 'lte'],
-            'modified': ['gte', 'lte'],
-        }
+        fields = [
+            'supplier_id',
+            'supplier_id__contains',
+            'version_id',
+            'version_id__contains',
+        ]
 
 
 class AnalysisModelViewSet(viewsets.ModelViewSet):
-    """ Returns a list of Analysis Model objects
+    """
+    list:
+    Returns a list of Model objects.
 
-        ### Available filters
-        - id
-        - supplier_id
-        - version_id
-        - created, created_lte, created_gte
-        - modified, modified_lte, modified_gte
+    ### Examples
 
-        `e.g. ?created_gte=2018-01-01&created_lte=2018-02-01`
+    To get all models with 'foo' in their name
+
+        /models/?supplier_id__contains=foo
+
+    To get all models with 'bar' in their name
+
+        /models/?version_id__contains=bar
+
+    To get all models created on 1970-01-01
+
+        /models/?created__date=1970-01-01
+
+    To get all models updated before 2000-01-01
+
+        /models/?modified__lt=2000-01-01
+
+    retrieve:
+    Returns the specific model entry.
+
+    create:
+    Creates a model based on the input data
+
+    update:
+    Updates the specified model
+
+    partial_update:
+    Partially updates the specified model (only provided fields are updated)
     """
 
     queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
     filter_class = AnalysisModelFilter
-
-    def update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return super(AnalysisModelViewSet, self).update(request, *args, **kwargs)

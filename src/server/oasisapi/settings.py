@@ -64,7 +64,9 @@ ROOT_URLCONF = 'oasisapi.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -133,7 +135,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
+        'oasisapi.filters.Backend',
     ),
     'DATETIME_FORMAT': '%y-%m-%dT%H:%M:%S.%f%z',
 }

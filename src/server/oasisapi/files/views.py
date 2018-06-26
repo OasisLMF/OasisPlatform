@@ -27,10 +27,6 @@ def _handle_get_related_file(parent, field):
 def _handle_post_related_file(parent, field, request, content_types):
     data = request.data.copy()
 
-    data['creator'] = request.user.pk
-    if 'file' in data:
-        data['content_type'] = data['file'].content_type
-
     serializer = RelatedFileSerializer(data=data, content_types=content_types)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)

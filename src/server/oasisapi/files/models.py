@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel
 
 
@@ -13,11 +14,7 @@ def random_file_name(instance, filename):
 
 class RelatedFile(TimeStampedModel):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
-    file = models.FileField(
-        upload_to=random_file_name,
-        null=True,
-        default=None,
-    )
+    file = models.FileField(help_text=_('The file to store'), upload_to=random_file_name)
     content_type = models.CharField(max_length=255)
 
     def read(self, *args, **kwargs):
