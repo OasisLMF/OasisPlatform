@@ -18,17 +18,11 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'status',
         )
 
-    def create(self, validated_data):
-        data = dict(validated_data)
-        if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
-        return super(AnalysisSerializer, self).create(data)
+    def validate(self, attrs):
+        if not attrs.get('creator') and 'request' in self.context:
+            attrs['creator'] = self.context.get('request').user
 
-    def save(self, **kwargs):
-        data = dict(kwargs)
-        if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
-        return super(AnalysisSerializer, self).save(**data)
+        return attrs
 
     def to_representation(self, instance):
         rep = super(AnalysisSerializer, self).to_representation(instance)

@@ -11,6 +11,7 @@ from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
 from rest_framework_simplejwt.tokens import AccessToken
 
+from ...analysis_models.tests.fakes import fake_analysis_model
 from ...analyses.models import Analysis
 from ...auth.tests.fakes import fake_user
 from ..models import Portfolio
@@ -129,6 +130,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
 
     def test_name_is_not_provided___response_is_400(self):
         user = fake_user()
+        model = fake_analysis_model()
         portfolio = fake_portfolio()
 
         response = self.app.post(
@@ -137,7 +139,40 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
-            params={},
+            params={'model': model.pk},
+            content_type='application/json',
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_model_is_not_provided___response_is_400(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.post(
+            portfolio.get_absolute_create_analysis_url(),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={'name': 'name'},
+            content_type='application/json',
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_model_does_not_exist___response_is_400(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+        model = fake_analysis_model()
+
+        response = self.app.post(
+            portfolio.get_absolute_create_analysis_url(),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={'name': 'name', 'model': model.pk + 1},
             content_type='application/json',
         )
 
@@ -146,6 +181,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
     @given(name=text(alphabet=' \t\n\r', max_size=10))
     def test_cleaned_name_is_empty___response_is_400(self, name):
         user = fake_user()
+        model = fake_analysis_model()
         portfolio = fake_portfolio()
 
         response = self.app.post(
@@ -154,15 +190,16 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
-            params=json.dumps({'name': name}),
+            params=json.dumps({'name': name, 'model': model.pk}),
             content_type='application/json'
         )
 
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
-    def test_cleaned_name_is_present___object_is_created(self, name):
+    def test_cleaned_name_and_model_are_present___object_is_created(self, name):
         user = fake_user()
+        model = fake_analysis_model()
         portfolio = fake_portfolio()
 
         response = self.app.post(
@@ -170,7 +207,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
-            params=json.dumps({'name': name}),
+            params=json.dumps({'name': name, 'model': model.pk}),
             content_type='application/json'
         )
         self.assertEqual(201, response.status_code)
@@ -190,7 +227,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
             'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
             'name': name,
             'portfolio': portfolio.pk,
-            'model': None,
+            'model': model.pk,
             'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
             'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
             'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),

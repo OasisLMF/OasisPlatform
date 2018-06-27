@@ -87,7 +87,7 @@ class Backend(DjangoFilterBackend):
 
 class CsvMultipleChoiceMixin(object):
     def to_python(self, value):
-        if len(value) == 1 and ',' in value[0]:
+        if value and len(value) == 1 and ',' in value[0]:
             return super(CsvMultipleChoiceMixin, self).to_python(value[0].split(','))
         else:
             return super(CsvMultipleChoiceMixin, self).to_python(value)

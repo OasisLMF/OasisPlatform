@@ -38,7 +38,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
 class CreateAnalysisSerializer(AnalysisSerializer):
     class Meta(AnalysisSerializer.Meta):
-        fields = ['name']
+        fields = ['name', 'model']
 
     def __init__(self, portfolio=None, *args, **kwargs):
         self.portfolio = portfolio
@@ -46,4 +46,4 @@ class CreateAnalysisSerializer(AnalysisSerializer):
 
     def validate(self, attrs):
         attrs['portfolio'] = self.portfolio
-        return attrs
+        return super(CreateAnalysisSerializer, self).validate(attrs)
