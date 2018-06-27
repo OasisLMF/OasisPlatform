@@ -24,7 +24,7 @@ def fake_async_result_factory(target_status, target_task_id):
 class PollAnalysisStatus(TestCase):
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
     def test_celery_status_is_success___status_is_complete_and_task_is_not_rescheduled(self, task_id):
-        with patch('oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(SUCCESS, task_id)):
+        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(SUCCESS, task_id)):
             fake_task = Mock()
             analysis = fake_analysis(task_id=task_id)
 
@@ -37,7 +37,7 @@ class PollAnalysisStatus(TestCase):
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([FAILURE, REJECTED]))
     def test_celery_status_is_error___status_is_complete_and_task_is_not_rescheduled(self, task_id, status):
-        with patch('oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
+        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
             fake_task = Mock()
             analysis = fake_analysis(task_id=task_id)
 
@@ -50,7 +50,7 @@ class PollAnalysisStatus(TestCase):
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([PENDING, RECEIVED, RETRY]))
     def test_celery_status_is_pending___status_is_complete_and_task_is_not_rescheduled(self, task_id, status):
-        with patch('oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
+        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
             fake_task = Mock()
             analysis = fake_analysis(task_id=task_id)
 
@@ -63,7 +63,7 @@ class PollAnalysisStatus(TestCase):
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
     def test_celery_status_is_started___status_is_complete_and_task_is_not_rescheduled(self, task_id):
-        with patch('oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(STARTED, task_id)):
+        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(STARTED, task_id)):
             fake_task = Mock()
             analysis = fake_analysis(task_id=task_id)
 
@@ -76,7 +76,7 @@ class PollAnalysisStatus(TestCase):
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
     def test_celery_status_is_started___status_is_complete_and_task_is_not_rescheduled(self, task_id):
-        with patch('oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(REVOKED, task_id)):
+        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(REVOKED, task_id)):
             fake_task = Mock()
             analysis = fake_analysis(task_id=task_id)
 

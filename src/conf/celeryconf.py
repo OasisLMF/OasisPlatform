@@ -1,4 +1,4 @@
-from src.server.oasisapi.iniconf import settings
+from src.conf.iniconf import settings
 
 #: Celery config - ignore result?
 CELERY_IGNORE_RESULT = False
