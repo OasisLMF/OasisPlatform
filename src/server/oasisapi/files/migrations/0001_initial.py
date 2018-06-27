@@ -7,7 +7,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
 import model_utils.fields
-import oasisapi.files.models
+import src.server.oasisapi.files.models
 
 
 class Migration(migrations.Migration):
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False, verbose_name='created')),
                 ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False, verbose_name='modified')),
-                ('file', models.FileField(help_text='The file to store', upload_to=oasisapi.files.models.random_file_name)),
+                ('file', models.FileField(help_text='The file to store', upload_to=src.server.oasisapi.files.models.random_file_name)),
                 ('content_type', models.CharField(max_length=255)),
                 ('creator', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],

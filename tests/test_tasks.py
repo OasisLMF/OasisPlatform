@@ -10,7 +10,7 @@ from mock import patch, Mock
 from oasislmf.utils import status
 from pathlib2 import Path
 
-from src.conf.settings import SettingsPatcher, settings
+from src.conf.iniconf import SettingsPatcher, settings
 from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, MissingInputsException, \
     MissingModelDataException, start_analysis_task
 

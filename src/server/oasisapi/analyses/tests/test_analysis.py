@@ -239,7 +239,7 @@ class AnalysisRun(WebTestMixin, TestCase):
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([Analysis.status_choices.STOPPED_COMPLETED, Analysis.status_choices.STOPPED_ERROR, Analysis.status_choices.NOT_RAN]))
     def test_required_inputs_are_present_status_is_not_in_progress___task_is_added(self, task_id, status):
-        with patch('oasisapi.analyses.models.poll_analysis_status') as poll_analysis_mock , patch('oasisapi.analyses.models.celery_app') as mock_celery:
+        with patch('src.server.oasisapi.analyses.models.poll_analysis_status') as poll_analysis_mock , patch('src.server.oasisapi.analyses.models.celery_app') as mock_celery:
             with TemporaryDirectory() as d:
                 with override_settings(MEDIA_ROOT=d):
                     mock_celery.send_task.return_value = task_id
@@ -274,7 +274,7 @@ class AnalysisRun(WebTestMixin, TestCase):
 
     @given(status=sampled_from([Analysis.status_choices.PENDING, Analysis.status_choices.STARTED, Analysis.status_choices.STOPPED_CANCELLED]))
     def test_required_inputs_are_present_status_is_in_progress___task_is_not_queued(self, status):
-        with patch('oasisapi.analyses.models.poll_analysis_status') as poll_analysis_mock , patch('oasisapi.analyses.models.celery_app') as mock_celery:
+        with patch('src.server.oasisapi.analyses.models.poll_analysis_status') as poll_analysis_mock , patch('src.server.oasisapi.analyses.models.celery_app') as mock_celery:
             with TemporaryDirectory() as d:
                 with override_settings(MEDIA_ROOT=d):
                     user = fake_user()
@@ -331,7 +331,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
     def test_state_is_not_running___revoke_is_not_called(self, status, task_id):
         res_factory = FakeAsyncResultFactory(task_id)
 
-        with patch('oasisapi.analyses.models.AsyncResult', res_factory):
+        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
             user = fake_user()
             analysis = fake_analysis(status=status, task_id=task_id)
 
@@ -356,7 +356,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
     def test_state_is_running___revoke_is_called(self, status, task_id):
         res_factory = FakeAsyncResultFactory(task_id)
 
-        with patch('oasisapi.analyses.models.AsyncResult', res_factory):
+        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
             user = fake_user()
             analysis = fake_analysis(status=status, task_id=task_id)
 

@@ -23,8 +23,8 @@ from celery import Celery
 from celery.task import task
 
 from ..utils.path import setcwd
-from ..conf.settings import settings
-from ..conf import celery as celery_conf
+from ..conf.iniconf import settings
+from ..conf import celeryconf as celery_conf
 
 
 '''

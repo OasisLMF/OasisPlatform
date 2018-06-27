@@ -43,10 +43,10 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
 
-    'oasisapi.files',
-    'oasisapi.portfolios',
-    'oasisapi.analyses',
-    'oasisapi.analysis_models',
+    'src.server.oasisapi.files',
+    'src.server.oasisapi.portfolios',
+    'src.server.oasisapi.analyses',
+    'src.server.oasisapi.analysis_models',
 ]
 
 MIDDLEWARE = [
@@ -59,7 +59,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'oasisapi.urls'
+ROOT_URLCONF = 'src.server.oasisapi.urls'
 
 TEMPLATES = [
     {
@@ -79,7 +79,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'oasisapi.wsgi.application'
+WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 
 
 # Database
@@ -127,6 +127,9 @@ SIMPLE_JWT = {
 }
 
 REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
@@ -135,7 +138,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_FILTER_BACKENDS': (
-        'oasisapi.filters.Backend',
+        'src.server.oasisapi.filters.Backend',
     ),
     'DATETIME_FORMAT': '%y-%m-%dT%H:%M:%S.%f%z',
 }
