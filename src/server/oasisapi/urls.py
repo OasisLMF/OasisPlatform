@@ -8,6 +8,7 @@ from rest_framework.documentation import include_docs_urls
 from .analysis_models.viewsets import AnalysisModelViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .analyses.viewsets import AnalysisViewSet
+from .healthcheck.views import HealthcheckView
 
 admin.autodiscover()
 
@@ -22,6 +23,7 @@ urlpatterns = [
     #url(r'^', include('rest_framework_docs.urls')),
     url(r'^', include_docs_urls(title='Oasis Platform', public=True, permission_classes=[])),
     url(r'^', include(api_router.urls)),
+    url(r'^helthcheck/$', HealthcheckView.as_view()),
     url(r'^auth/', include('rest_framework.urls')),
     url(r'^admin/', include(admin.site.urls)),
 ]
