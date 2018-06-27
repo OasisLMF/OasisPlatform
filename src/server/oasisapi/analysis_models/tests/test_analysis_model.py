@@ -3,7 +3,7 @@ import string
 
 from django.urls import reverse
 from django_webtest import WebTest
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text
 from rest_framework_simplejwt.tokens import AccessToken
@@ -64,6 +64,7 @@ class AnalysisModelApi(WebTest, TestCase):
         version_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
         uri_part=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
+    @settings(deadline=None)
     def test_data_is_valid___object_is_created(self, supplier_id, version_id, uri_part):
         uri = 'http://{}.com'.format(uri_part)
         user = fake_user()

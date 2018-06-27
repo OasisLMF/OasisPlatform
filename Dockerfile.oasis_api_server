@@ -1,41 +1,33 @@
-FROM coreoasis/oasis_base:latest
+FROM python:3.6
+
+RUN useradd -m oasis
 
 WORKDIR /var/www/oasis
 
-RUN mkdir -p /var/www/oasis/upload \
-             /var/www/oasis/download \
-             /var/log/oasis
+RUN mkdir -p /var/log/oasis
 
-COPY ./requirements.in /tmp/
-RUN pip install pip-tools
-RUN pip-compile --output-file /tmp/requirements.txt /tmp/requirements.in
+COPY ./requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
 # Copy startup script + server config
 COPY ./src/startup_server.sh ./startup.sh
-COPY ./src/startup_server.sh  /usr/local/bin/startup.sh
 COPY ./conf.ini ./
+COPY ./uwsgi .
+COPY manage.py .
 
 COPY ./src/server_config/oasis.conf /etc/apache2/sites-available/oasis.conf
 COPY ./src/server_config/oasis.wsgi /var/www/oasis/oasis.wsgi
-COPY ./src/__init__.py /var/www/oasis/src/
+COPY ./src/ ./src
 
 COPY ./src/server /var/www/oasis/src/server
 COPY ./src/common /var/www/oasis/src/common
 COPY ./src/conf /var/www/oasis/src/conf
 COPY ./utils/wait-for-it.sh /usr/local/bin
 
-RUN a2dissite 000-default
-RUN a2ensite oasis.conf
-
-RUN touch /var/log/oasis/oasis_api_server.log && \
-    chown -R www-data:www-data /var/log/oasis
-
-RUN  chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh && \
-#    ln -sf /dev/stdout /var/log/oasis/oasis_api_server.log && \
-    chmod -R 777 /var/log/oasis /var/log/apache2
+RUN chmod +x /usr/local/bin/startup.sh /usr/local/bin/wait-for-it.sh
+RUN chown -R oasis:oasis .
 
 EXPOSE 80
 
-ENTRYPOINT /var/www/oasis/startup.sh && \
-    tail -f /var/log/oasis/oasis_api_server.log
+ENTRYPOINT /var/www/oasis/startup.sh
+CMD uwsgi --ini ${UWSGI_CONF:./uwsgi/uwsgi.ini}
