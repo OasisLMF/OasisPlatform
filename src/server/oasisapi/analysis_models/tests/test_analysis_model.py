@@ -62,8 +62,10 @@ class AnalysisModelApi(WebTest, TestCase):
     @given(
         supplier_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
         version_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        uri_part=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
-    def test_data_is_valid___object_is_created(self, supplier_id, version_id):
+    def test_data_is_valid___object_is_created(self, supplier_id, version_id, uri_part):
+        uri = 'http://{}.com'.format(uri_part)
         user = fake_user()
 
         response = self.app.post(
@@ -74,6 +76,7 @@ class AnalysisModelApi(WebTest, TestCase):
             params=json.dumps({
                 'supplier_id': supplier_id,
                 'version_id': version_id,
+                'keys_server_uri': uri,
             }),
             content_type='application/json',
         )
@@ -83,3 +86,5 @@ class AnalysisModelApi(WebTest, TestCase):
         self.assertEqual(201, response.status_code)
         self.assertEqual(model.supplier_id, supplier_id)
         self.assertEqual(model.version_id, version_id)
+        self.assertEqual(model.version_id, version_id)
+        self.assertEqual(model.keys_server_uri, uri)
