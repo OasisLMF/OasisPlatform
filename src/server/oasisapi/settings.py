@@ -29,7 +29,11 @@ DEBUG = iniconf.settings.get('server', 'debug', fallback=False)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = iniconf.settings.get('server', 'secret_key', fallback='' if not DEBUG else 'supersecret')
 
-ALLOWED_HOSTS = iniconf.settings.get('server', 'allowed_hosts', fallback='').split(',')
+_allowed_hosts = iniconf.settings.get('server', 'allowed_hosts', fallback='')
+if _allowed_hosts:
+    ALLOWED_HOSTS = _allowed_hosts.split(',')
+else:
+    ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -48,6 +52,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.portfolios',
     'src.server.oasisapi.analyses',
     'src.server.oasisapi.analysis_models',
+    'src.server.oasisapi.healthcheck',
 ]
 
 MIDDLEWARE = [
