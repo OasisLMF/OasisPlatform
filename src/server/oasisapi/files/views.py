@@ -27,7 +27,7 @@ def _handle_get_related_file(parent, field):
 def _handle_post_related_file(parent, field, request, content_types):
     data = request.data.copy()
 
-    serializer = RelatedFileSerializer(data=data, content_types=content_types)
+    serializer = RelatedFileSerializer(data=data, content_types=content_types, context={'request': request})
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
     setattr(parent, field, instance)

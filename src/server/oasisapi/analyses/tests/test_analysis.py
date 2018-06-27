@@ -97,8 +97,9 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
-    def test_cleaned_name_is_present___object_is_created(self, name):
+    def test_cleaned_name_portfolio_and_model_are_present___object_is_created(self, name):
         user = fake_user()
+        model = fake_analysis_model()
         portfolio = fake_portfolio()
 
         response = self.app.post(
@@ -106,7 +107,7 @@ class AnalysisApi(WebTestMixin, TestCase):
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
-            params=json.dumps({'name': name, 'portfolio': portfolio.pk}),
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
             content_type='application/json'
         )
         self.assertEqual(201, response.status_code)
@@ -126,7 +127,7 @@ class AnalysisApi(WebTestMixin, TestCase):
             'id': analysis.pk,
             'name': name,
             'portfolio': portfolio.pk,
-            'model': None,
+            'model': model.pk,
             'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
             'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
             'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
@@ -139,7 +140,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         analysis = fake_analysis()
         model = fake_analysis_model()
 
-        response = self.app.put(
+        response = self.app.patch(
             analysis.get_absolute_url(),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -156,7 +157,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         analysis = fake_analysis()
         model = fake_analysis_model()
 
-        response = self.app.put(
+        response = self.app.patch(
             analysis.get_absolute_url(),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -193,27 +194,6 @@ class AnalysisRun(WebTestMixin, TestCase):
         )
 
         self.assertEqual(404, response.status_code)
-
-    def test_model_is_not_set___error_is_written_to_file_status_is_error(self):
-        user = fake_user()
-        analysis = fake_analysis()
-
-        response = self.app.post(
-            analysis.get_absolute_run_url(),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-            expect_errors=True,
-        )
-
-        analysis.refresh_from_db()
-
-        self.assertEqual(400, response.status_code)
-        self.assertIn(
-            '"model" is not set on the analysis object',
-            json.loads(analysis.input_errors_file.read())['errors'],
-        )
-        self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
 
     def test_input_file_is_not_set___error_is_written_to_file_status_is_error(self):
         user = fake_user()
