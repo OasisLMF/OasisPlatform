@@ -2,11 +2,17 @@ from __future__ import absolute_import
 
 from celery.result import AsyncResult
 from celery.states import SUCCESS, STARTED, FAILURE, REJECTED, REVOKED, PENDING, RECEIVED, RETRY
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.files import File
+from pathlib2 import Path
+
+from src.server.oasisapi.files.models import RelatedFile
 from ..celery import celery_app
 
 
 @celery_app.task()
-def poll_analysis_status(self, pk):
+def poll_analysis_status(self, pk, initiator_pk):
     from .models import Analysis
 
     analysis = Analysis.objects.get(pk=pk)
@@ -15,6 +21,16 @@ def poll_analysis_status(self, pk):
     reschedule = True
     if res.status == SUCCESS:
         analysis.status = Analysis.status_choices.STOPPED_COMPLETED
+
+        output_location = res.result
+
+        analysis.output_file = RelatedFile.objects.create(
+            file=str(output_location),
+            content_type='application/gzip',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+
+        analysis.save()
         reschedule = False
     elif res.status == STARTED:
         analysis.status = Analysis.status_choices.STARTED
