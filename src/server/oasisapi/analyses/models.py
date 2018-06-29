@@ -12,6 +12,7 @@ from django.utils.six import BytesIO
 from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
+from pathlib2 import Path
 from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile
@@ -107,8 +108,7 @@ class Analysis(TimeStampedModel):
 
         self.status = self.status_choices.PENDING
         self.task_id = celery_app.send_task(
-            'run_analysis',
-            (request.build_absolute_uri(self.get_absolute_input_file_url()), [json.loads(self.settings_file.read())]),
+            'run_analysis', (self.input_file.file.name, [json.loads(self.settings_file.read())]),
             queue='{}-{}'.format(self.model.supplier_id, self.model.version_id)
         )
         poll_analysis_status.delay(self.pk)

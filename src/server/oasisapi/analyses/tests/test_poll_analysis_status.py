@@ -1,18 +1,24 @@
 import string
+from uuid import uuid4
 
+from backports.tempfile import TemporaryDirectory
 from celery.states import SUCCESS, FAILURE, REVOKED, REJECTED, RETRY, RECEIVED, PENDING, STARTED
+from django.test import override_settings
 from hypothesis import given
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, sampled_from
 from mock import patch, Mock
+from pathlib2 import Path
 
+from src.server.oasisapi.auth.tests.fakes import fake_user
 from ..tasks import poll_analysis_status
 from .fakes import fake_analysis
 
 
-def fake_async_result_factory(target_status, target_task_id):
+def fake_async_result_factory(target_status, target_task_id, target_result=None):
     class FakeAsyncResult(object):
         status = target_status
+        result = target_result
 
         def __init__(self, task_id):
             if task_id != target_task_id:
@@ -23,66 +29,87 @@ def fake_async_result_factory(target_status, target_task_id):
 
 class PollAnalysisStatus(TestCase):
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    def test_celery_status_is_success___status_is_complete_and_task_is_not_rescheduled(self, task_id):
-        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(SUCCESS, task_id)):
-            fake_task = Mock()
-            analysis = fake_analysis(task_id=task_id)
+    def test_celery_status_is_success___status_is_complete_and_task_is_not_rescheduled_output_file_is_set(self, task_id):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                output_file = Path(d, uuid4().hex)
+                output_file.touch()
 
-            poll_analysis_status(fake_task, analysis.pk)
+                with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(SUCCESS, task_id, output_file.relative_to(d))):
+                    initiator = fake_user()
+                    fake_task = Mock()
+                    analysis = fake_analysis(task_id=task_id, input_file='contents')
 
-            analysis.refresh_from_db()
+                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
 
-            fake_task.retry.assert_not_called()
-            self.assertEqual(analysis.status_choices.STOPPED_COMPLETED, analysis.status)
+                    analysis.refresh_from_db()
+
+                    fake_task.retry.assert_not_called()
+                    self.assertEqual(analysis.status_choices.STOPPED_COMPLETED, analysis.status)
+                    self.assertEqual(analysis.output_file.file.file.name, str(output_file))
+                    self.assertEqual(analysis.output_file.content_type, 'application/gzip')
+                    self.assertEqual(analysis.output_file.creator, initiator)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([FAILURE, REJECTED]))
     def test_celery_status_is_error___status_is_complete_and_task_is_not_rescheduled(self, task_id, status):
-        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
-            fake_task = Mock()
-            analysis = fake_analysis(task_id=task_id)
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
+                    initiator = fake_user()
+                    fake_task = Mock()
+                    analysis = fake_analysis(task_id=task_id, input_file='contents')
 
-            poll_analysis_status(fake_task, analysis.pk)
+                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
 
-            analysis.refresh_from_db()
+                    analysis.refresh_from_db()
 
-            fake_task.retry.assert_not_called()
-            self.assertEqual(analysis.status_choices.STOPPED_ERROR, analysis.status)
+                    fake_task.retry.assert_not_called()
+                    self.assertEqual(analysis.status_choices.STOPPED_ERROR, analysis.status)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([PENDING, RECEIVED, RETRY]))
     def test_celery_status_is_pending___status_is_complete_and_task_is_not_rescheduled(self, task_id, status):
-        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
-            fake_task = Mock()
-            analysis = fake_analysis(task_id=task_id)
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
+                    initiator = fake_user()
+                    fake_task = Mock()
+                    analysis = fake_analysis(task_id=task_id, input_file='contents')
 
-            poll_analysis_status(fake_task, analysis.pk)
+                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
 
-            analysis.refresh_from_db()
+                    analysis.refresh_from_db()
 
-            fake_task.retry.assert_called_once()
-            self.assertEqual(analysis.status_choices.PENDING, analysis.status)
-
-    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    def test_celery_status_is_started___status_is_complete_and_task_is_not_rescheduled(self, task_id):
-        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(STARTED, task_id)):
-            fake_task = Mock()
-            analysis = fake_analysis(task_id=task_id)
-
-            poll_analysis_status(fake_task, analysis.pk)
-
-            analysis.refresh_from_db()
-
-            fake_task.retry.assert_called_once()
-            self.assertEqual(analysis.status_choices.STARTED, analysis.status)
+                    fake_task.retry.assert_called_once()
+                    self.assertEqual(analysis.status_choices.PENDING, analysis.status)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
     def test_celery_status_is_started___status_is_complete_and_task_is_not_rescheduled(self, task_id):
-        with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(REVOKED, task_id)):
-            fake_task = Mock()
-            analysis = fake_analysis(task_id=task_id)
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(STARTED, task_id)):
+                    initiator = fake_user()
+                    fake_task = Mock()
+                    analysis = fake_analysis(task_id=task_id, input_file='contents')
 
-            poll_analysis_status(fake_task, analysis.pk)
+                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
 
-            analysis.refresh_from_db()
+                    analysis.refresh_from_db()
 
-            fake_task.retry.assert_not_called()
-            self.assertEqual(analysis.status_choices.STOPPED_CANCELLED, analysis.status)
+                    fake_task.retry.assert_called_once()
+                    self.assertEqual(analysis.status_choices.STARTED, analysis.status)
+
+    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_celery_status_is_started___status_is_complete_and_task_is_not_rescheduled(self, task_id):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(REVOKED, task_id)):
+                    initiator = fake_user()
+                    fake_task = Mock()
+                    analysis = fake_analysis(task_id=task_id, input_file='contents')
+
+                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
+
+                    analysis.refresh_from_db()
+
+                    fake_task.retry.assert_not_called()
+                    self.assertEqual(analysis.status_choices.STOPPED_CANCELLED, analysis.status)

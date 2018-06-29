@@ -12,6 +12,7 @@ from hypothesis import given
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
+from pathlib2 import Path
 from rest_framework_simplejwt.tokens import AccessToken
 
 from ...files.tests.fakes import fake_related_file
@@ -196,46 +197,50 @@ class AnalysisRun(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     def test_input_file_is_not_set___error_is_written_to_file_status_is_error(self):
-        user = fake_user()
-        analysis = fake_analysis()
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
 
-        response = self.app.post(
-            analysis.get_absolute_run_url(),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-            expect_errors=True,
-        )
+                response = self.app.post(
+                    analysis.get_absolute_run_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
 
-        analysis.refresh_from_db()
+                analysis.refresh_from_db()
 
-        self.assertEqual(400, response.status_code)
-        self.assertIn(
-            '"input_file" is not set on the analysis object',
-            json.loads(analysis.input_errors_file.read())['errors'],
-        )
-        self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
+                self.assertEqual(400, response.status_code)
+                self.assertIn(
+                    '"input_file" is not set on the analysis object',
+                    json.loads(analysis.input_errors_file.read())['errors'],
+                )
+                self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
 
     def test_settings_file_is_not_set___error_is_written_to_file_status_is_error(self):
-        user = fake_user()
-        analysis = fake_analysis()
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
 
-        response = self.app.post(
-            analysis.get_absolute_run_url(),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-            expect_errors=True,
-        )
+                response = self.app.post(
+                    analysis.get_absolute_run_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
 
-        analysis.refresh_from_db()
+                analysis.refresh_from_db()
 
-        self.assertEqual(400, response.status_code)
-        self.assertIn(
-            '"settings_file" is not set on the analysis object',
-            json.loads(analysis.input_errors_file.read())['errors'],
-        )
-        self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
+                self.assertEqual(400, response.status_code)
+                self.assertIn(
+                    '"settings_file" is not set on the analysis object',
+                    json.loads(analysis.input_errors_file.read())['errors'],
+                )
+                self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([Analysis.status_choices.STOPPED_COMPLETED, Analysis.status_choices.STOPPED_ERROR, Analysis.status_choices.NOT_RAN]))
     def test_required_inputs_are_present_status_is_not_in_progress___task_is_added(self, task_id, status):
@@ -267,7 +272,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                     self.assertEqual(Analysis.status_choices.PENDING, analysis.status)
                     mock_celery.send_task.assert_called_once_with(
                         'run_analysis',
-                        (response.json['input_file'], [json.loads(analysis.settings_file.read())]),
+                        (analysis.input_file.file.name, [json.loads(analysis.settings_file.read())]),
                         queue='{}-{}'.format(model.supplier_id, model.version_id)
                     )
                     poll_analysis_mock.delay.assert_called_once_with(analysis.pk)

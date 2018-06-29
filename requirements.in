@@ -20,9 +20,11 @@ mock
 tox
 pip-tools
 ipdb
+ipython<6
 
+docker-compose
 django<2.0
--e git+ssh://git@github.com/wildfish/django-rest-framework#egg=djangorestframework
+-e git+http://github.com/wildfish/django-rest-framework#egg=djangorestframework
 markdown
 django-filter
 model_mommy
@@ -31,3 +33,5 @@ djangorestframework_simplejwt
 python-magic
 django-model-utils
 coreapi
+uwsgi
+whitenoise
