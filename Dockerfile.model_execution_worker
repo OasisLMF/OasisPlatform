@@ -1,12 +1,13 @@
 FROM coreoasis/oasis_base:latest
 
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
 # Install requirments
-COPY ./requirements.in /tmp/
+COPY ./requirements.txt /tmp/
 RUN pip install pip-tools
-RUN pip-compile --output-file /tmp/requirements.txt /tmp/requirements.in
 RUN pip install -r /tmp/requirements.txt
 
 # Copy Static data

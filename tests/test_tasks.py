@@ -17,12 +17,12 @@ from src.model_execution_worker.tasks import start_analysis, InvalidInputsExcept
 
 class StartAnalysis(TestCase):
     def create_tar(self, target):
-        with TemporaryDirectory() as input_path, tarfile.open(target, 'w') as tar:
+        with TemporaryDirectory() as media_root, tarfile.open(target, 'w') as tar:
             paths = [
-                Path(input_path, 'events.bin'),
-                Path(input_path, 'returnperiods.bin'),
-                Path(input_path, 'occurrence.bin'),
-                Path(input_path, 'periods.bin'),
+                Path(media_root, 'events.bin'),
+                Path(media_root, 'returnperiods.bin'),
+                Path(media_root, 'occurrence.bin'),
+                Path(media_root, 'periods.bin'),
             ]
 
             for path in paths:
@@ -30,21 +30,21 @@ class StartAnalysis(TestCase):
                 tar.add(str(path), path.name)
 
     def test_input_tar_file_does_not_exist___exception_is_raised(self):
-        with TemporaryDirectory() as inputs_dir:
-            with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
-                self.assertRaises(MissingInputsException, start_analysis, {}, 'non-existant-location')
+        with TemporaryDirectory() as media_root:
+            with SettingsPatcher(MEDIA_ROOT=media_root):
+                self.assertRaises(MissingInputsException, start_analysis, {}, 'non-existant-location.tar')
 
     def test_input_location_is_not_a_tar___exception_is_raised(self):
-        with TemporaryDirectory() as inputs_dir:
-            with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
-                Path(inputs_dir, 'not-tar-file.tar').touch()
+        with TemporaryDirectory() as media_root:
+            with SettingsPatcher(MEDIA_ROOT=media_root):
+                Path(media_root, 'not-tar-file.tar').touch()
 
-                self.assertRaises(InvalidInputsException, start_analysis, {}, 'not-tar-file')
+                self.assertRaises(InvalidInputsException, start_analysis, {}, 'not-tar-file.tar')
 
     def test_input_model_data_does_not_exist___exception_is_raised(self):
-        with TemporaryDirectory() as inputs_dir, TemporaryDirectory() as model_data_dir:
-            with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir, MODEL_DATA_DIRECTORY=model_data_dir):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
+        with TemporaryDirectory() as media_root, TemporaryDirectory() as model_data_dir:
+            with SettingsPatcher(MEDIA_ROOT=media_root, MODEL_DATA_DIRECTORY=model_data_dir):
+                self.create_tar(str(Path(media_root, 'location.tar')))
 
                 self.assertRaises(
                     MissingModelDataException,
@@ -55,20 +55,18 @@ class StartAnalysis(TestCase):
                         'module_supplier_id': 'supplier',
                         'model_version_id': 'version'
                     }},
-                    'location',
+                    'location.tar',
                 )
 
     def test_custom_model_runner_does_not_exist___default_runner_is_used(self):
-        with TemporaryDirectory() as inputs_dir, \
+        with TemporaryDirectory() as media_root, \
                 TemporaryDirectory() as model_data_dir, \
-                TemporaryDirectory() as work_dir, \
-                TemporaryDirectory() as out_dir:
+                TemporaryDirectory() as work_dir:
             with SettingsPatcher(
-                    INPUTS_DATA_DIRECTORY=inputs_dir,
+                    MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
-                    WORKING_DIRECTORY=work_dir,
-                    OUTPUTS_DATA_DIRECTORY=out_dir):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
+                    WORKING_DIRECTORY=work_dir,):
+                self.create_tar(str(Path(media_root, 'location.tar')))
                 Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
 
                 with patch('src.model_execution_worker.tasks.runner') as default_mock:
@@ -79,7 +77,7 @@ class StartAnalysis(TestCase):
                             'module_supplier_id': 'supplier',
                             'model_version_id': 'version'
                         }},
-                        'location',
+                        'location.tar',
                     )
                     default_mock.run.assert_called_once_with(
                         {
@@ -93,18 +91,16 @@ class StartAnalysis(TestCase):
                     )
 
     def test_custom_model_runner_exists___custom_runner_is_used(self):
-        with TemporaryDirectory() as inputs_dir, \
+        with TemporaryDirectory() as media_root, \
                 TemporaryDirectory() as model_data_dir, \
                 TemporaryDirectory() as work_dir, \
-                TemporaryDirectory() as out_dir, \
                 TemporaryDirectory() as module_dir:
             with SettingsPatcher(
-                    INPUTS_DATA_DIRECTORY=inputs_dir,
+                    MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,
-                    OUTPUTS_DATA_DIRECTORY=out_dir,
                     SUPPLIER_MODULE_DIRECTORY=module_dir):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
+                self.create_tar(str(Path(media_root, 'location.tar')))
                 Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
 
                 Path(module_dir, 'supplier').mkdir()
@@ -123,22 +119,20 @@ class StartAnalysis(TestCase):
                         'module_supplier_id': 'supplier',
                         'model_version_id': 'version'
                     }},
-                    'location',
+                    'location.tar',
                 )
-                self.assertTrue(Path(out_dir, "custom_model").exists())
+                self.assertTrue(Path(media_root, "custom_model").exists())
 
     def test_do_clear_working_is_true___working_directory_is_removed_after_run(self):
-        with TemporaryDirectory() as inputs_dir, \
+        with TemporaryDirectory() as media_root, \
                 TemporaryDirectory() as model_data_dir, \
-                TemporaryDirectory() as work_dir, \
-                TemporaryDirectory() as out_dir:
+                TemporaryDirectory() as work_dir:
             with SettingsPatcher(
-                    INPUTS_DATA_DIRECTORY=inputs_dir,
+                    MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,
-                    OUTPUTS_DATA_DIRECTORY=out_dir,
                     DO_CLEAr_WORKING='True'):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
+                self.create_tar(str(Path(media_root, 'location.tar')))
                 Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
 
                 with patch('src.model_execution_worker.tasks.runner'):
@@ -149,23 +143,21 @@ class StartAnalysis(TestCase):
                             'module_supplier_id': 'supplier',
                             'model_version_id': 'version'
                         }},
-                        'location',
+                        'location.tar',
                     )
 
                 self.assertEqual(0, len(os.listdir(work_dir)))
 
     def test_do_clear_working_is_false___working_directory_is_not_removed_after_run(self):
-        with TemporaryDirectory() as inputs_dir, \
+        with TemporaryDirectory() as media_root, \
                 TemporaryDirectory() as model_data_dir, \
-                TemporaryDirectory() as work_dir, \
-                TemporaryDirectory() as out_dir:
+                TemporaryDirectory() as work_dir:
             with SettingsPatcher(
-                    INPUTS_DATA_DIRECTORY=inputs_dir,
+                    MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,
-                    OUTPUTS_DATA_DIRECTORY=out_dir,
                     DO_CLEAr_WORKING='False'):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
+                self.create_tar(str(Path(media_root, 'location.tar')))
                 Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
 
                 with patch('src.model_execution_worker.tasks.runner'):
@@ -176,7 +168,7 @@ class StartAnalysis(TestCase):
                             'module_supplier_id': 'supplier',
                             'model_version_id': 'version'
                         }},
-                        'location',
+                        'location.tar',
                     )
 
                 self.assertGreater(len(os.listdir(work_dir)), 0)

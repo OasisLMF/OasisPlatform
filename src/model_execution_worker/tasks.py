@@ -122,10 +122,7 @@ def start_analysis(analysis_settings, input_location):
         (string) The location of the outputs.
     '''
     # Check that the input archive exists and is valid
-    input_archive = os.path.join(
-        settings.get('worker', 'INPUTS_DATA_DIRECTORY'),
-        input_location + ARCHIVE_FILE_SUFFIX
-    )
+    input_archive = os.path.join(settings.get('worker', 'MEDIA_ROOT'), input_location)
 
     if not os.path.exists(input_archive):
         raise MissingInputsException(input_archive)
@@ -191,7 +188,7 @@ def start_analysis(analysis_settings, input_location):
 
         output_location = uuid.uuid4().hex
         output_filepath = os.path.join(
-            settings.get('worker', 'OUTPUTS_DATA_DIRECTORY'), output_location + ARCHIVE_FILE_SUFFIX)
+            settings.get('worker', 'MEDIA_ROOT'), output_location + ARCHIVE_FILE_SUFFIX)
 
         output_directory = os.path.join(working_directory, "output")
         with tarfile.open(output_filepath, "w:gz") as tar:

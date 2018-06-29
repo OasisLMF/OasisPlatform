@@ -103,8 +103,11 @@ if do_build:
 
     os.chdir("oasisapi")
     run_command(
-        "Build oasis_api_server image",
-        "docker build --no-cache=true -t oasis_api_server -f Dockerfile.oasis_api_server .")
+        "Build oasis_api_server base image",
+        "docker build --no-cache=true -t oasis_api_server:base -f Dockerfile.oasis_api_server.base .")
+    run_command(
+        "Build oasis_api_server mysql image",
+        "docker build --no-cache=true -t oasis_api_server:mysql -f Dockerfile.oasis_api_server.mysql .")
     run_command(
         "Build model_execution_worker image",
         "docker build --no-cache=true -t model_execution_worker -f Dockerfile.model_execution_worker .")
