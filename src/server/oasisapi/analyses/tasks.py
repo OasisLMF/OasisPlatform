@@ -12,11 +12,11 @@ from ..celery import celery_app
 
 
 @celery_app.task()
-def poll_analysis_status(self, pk, initiator_pk):
+def poll_analysis_run_status(self, pk, initiator_pk):
     from .models import Analysis
 
     analysis = Analysis.objects.get(pk=pk)
-    res = AsyncResult(analysis.task_id)
+    res = AsyncResult(analysis.run_task_id)
 
     reschedule = True
     if res.status == SUCCESS:
@@ -41,6 +41,40 @@ def poll_analysis_status(self, pk, initiator_pk):
         reschedule = False
     elif res.status == REVOKED:
         analysis.status = Analysis.status_choices.STOPPED_CANCELLED
+        reschedule = False
+
+    analysis.save()
+
+    if reschedule:
+        self.retry(countdown=5)
+
+
+@celery_app.task(bind=True)
+def poll_analysis_input_generation_status(self, pk, initiator_pk):
+    from .models import Analysis
+
+    analysis = Analysis.objects.get(pk=pk)
+    res = AsyncResult(analysis.generate_inputs_task_id)
+
+    reschedule = True
+    if res.status == SUCCESS:
+        analysis.status = Analysis.status_choices.READY
+
+        input_location = res.result
+
+        analysis.output_file = RelatedFile.objects.create(
+            file=str(input_location),
+            content_type='application/gzip',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+
+        analysis.save()
+        reschedule = False
+    elif res.status in [FAILURE, REJECTED]:
+        analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
+        reschedule = False
+    elif res.status == REVOKED:
+        analysis.status = Analysis.status_choices.INPUTS_GENERATION_CANCELED
         reschedule = False
 
     analysis.save()
