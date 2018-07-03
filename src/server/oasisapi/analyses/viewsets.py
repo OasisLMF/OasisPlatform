@@ -85,9 +85,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
         /analyses/?modified__lt=2000-01-01
 
-    To get all analyses in the `NOT_RAN` state
+    To get all analyses in the `NEW` state
 
-        /analyses/?status=NOT_RAN
+        /analyses/?status=NEW
 
     To get all started and pending tasks
 
@@ -122,7 +122,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def run(self, request, pk=None):
         """
         Runs all the analysis. The analysis must have one of the following
-        statuses, `NOT_RAN`, `STOPPED_COMPLETED`, `STOPPED_CANCELLED` or
+        statuses, `NEW`, `STOPPED_COMPLETED`, `STOPPED_CANCELLED` or
         `STOPPED_ERROR`
         """
         obj = self.get_object()
