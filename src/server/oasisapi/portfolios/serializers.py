@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from ..analyses.serializers import AnalysisSerializer
 from .models import Portfolio
@@ -38,12 +39,10 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
 class CreateAnalysisSerializer(AnalysisSerializer):
     class Meta(AnalysisSerializer.Meta):
-        fields = ['name', 'model']
+        fields = ['name', 'model', 'portfolio']
 
-    def __init__(self, portfolio=None, *args, **kwargs):
-        self.portfolio = portfolio
-        super(CreateAnalysisSerializer, self).__init__(*args, **kwargs)
+    def validate_portfolio(self, value):
+        if not value.location_file:
+            raise ValidationError('"locations_file" must not be null')
 
-    def validate(self, attrs):
-        attrs['portfolio'] = self.portfolio
-        return super(CreateAnalysisSerializer, self).validate(attrs)
+        return value
