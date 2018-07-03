@@ -9,8 +9,10 @@ from django_webtest import WebTestMixin
 from hypothesis import given
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
+from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
+from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
 from ...analyses.models import Analysis
 from ...auth.tests.fakes import fake_user
@@ -145,6 +147,24 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
 
         self.assertEqual(400, response.status_code)
 
+    def test_portfolio_does_not_have_location_file_set___response_is_400(self):
+        user = fake_user()
+        model = fake_analysis_model()
+        portfolio = fake_portfolio()
+
+        response = self.app.post(
+            portfolio.get_absolute_create_analysis_url(),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': 'name', 'model': model.pk}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('"locations_file" must not be null', response.json['portfolio'])
+
     def test_model_is_not_provided___response_is_400(self):
         user = fake_user()
         portfolio = fake_portfolio()
@@ -155,7 +175,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
-            params={'name': 'name'},
+            params=json.dumps({'name': 'name'}),
             content_type='application/json',
         )
 
@@ -172,7 +192,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
-            params={'name': 'name', 'model': model.pk + 1},
+            params=json.dumps({'name': 'name', 'model': model.pk + 1}),
             content_type='application/json',
         )
 
@@ -197,43 +217,54 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
-    def test_cleaned_name_and_model_are_present___object_is_created(self, name):
-        user = fake_user()
-        model = fake_analysis_model()
-        portfolio = fake_portfolio()
+    def test_cleaned_name_and_model_are_present___object_is_created_inputs_are_generated(self, name):
+        with patch('src.server.oasisapi.analyses.models.poll_analysis_input_generation_status') as poll_analysis_input_generation_status_mock, \
+                patch('src.server.oasisapi.analyses.models.celery_app') as mock_celery:
+            with TemporaryDirectory() as d:
+                with override_settings(MEDIA_ROOT=d):
+                    mock_celery.send_task.return_value = 'create_inputs_task_id'
+                    user = fake_user()
+                    model = fake_analysis_model()
+                    portfolio = fake_portfolio(location_file=fake_related_file())
 
-        response = self.app.post(
-            portfolio.get_absolute_create_analysis_url(),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-            params=json.dumps({'name': name, 'model': model.pk}),
-            content_type='application/json'
-        )
-        self.assertEqual(201, response.status_code)
+                    response = self.app.post(
+                        portfolio.get_absolute_create_analysis_url(),
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                        params=json.dumps({'name': name, 'model': model.pk}),
+                        content_type='application/json'
+                    )
+                    self.assertEqual(201, response.status_code)
 
-        analysis = Analysis.objects.get(pk=response.json['id'])
-        response = self.app.get(
-            analysis.get_absolute_url(),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-        )
+                    analysis = Analysis.objects.get(pk=response.json['id'])
+                    response = self.app.get(
+                        analysis.get_absolute_url(),
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                    )
 
-        self.assertEqual(200, response.status_code)
-        self.assertEqual({
-            'id': analysis.pk,
-            'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-            'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-            'name': name,
-            'portfolio': portfolio.pk,
-            'model': model.pk,
-            'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
-            'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
-            'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
-            'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
-            'status': Analysis.status_choices.NOT_RAN,
-        }, response.json)
+                    self.assertEqual(200, response.status_code)
+                    self.assertEqual({
+                        'id': analysis.pk,
+                        'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                        'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                        'name': name,
+                        'portfolio': portfolio.pk,
+                        'model': model.pk,
+                        'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
+                        'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
+                        'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
+                        'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
+                        'status': Analysis.status_choices.GENERATING_INPUTS,
+                    }, response.json)
+                    mock_celery.send_task.assert_called_once_with(
+                        'generate_inputs',
+                        (analysis.portfolio.location_file.file.name, ),
+                        queue='{}-{}-{}'.format(model.supplier_id, model.model_id, model.version_id)
+                    )
+                    poll_analysis_input_generation_status_mock.delay.assert_called_once_with(analysis.pk, user.pk)
 
 
 class PortfolioAccountsFile(WebTestMixin, TestCase):

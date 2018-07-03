@@ -126,7 +126,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         `STOPPED_ERROR`
         """
         obj = self.get_object()
-        obj.run(request)
+        obj.run(request.user)
         return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
@@ -137,6 +137,27 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         obj = self.get_object()
         obj.cancel()
+        return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
+
+    @action(methods=['post'], detail=True)
+    def generate_inputs(self, request, pk=None):
+        """
+        Generates the inputs for the analysis based on the portfolio.
+        The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
+        `INPUTS_GENERATION_CANCELED`, `READY`, `STOPPED_COMPLETED`, `STOPPED_CANCELLED` or
+        `STOPPED_ERROR`.
+        """
+        obj = self.get_object()
+        obj.generate_inputs(request.user)
+        return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
+
+    @action(methods=['post'], detail=True)
+    def cancel_generate_inputs(self, request, pk=None):
+        """
+        Cancels a currently inputs generation. The analysis status must be `GENERATING_INPUTS`
+        """
+        obj = self.get_object()
+        obj.cancel_generate_inputs()
         return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)

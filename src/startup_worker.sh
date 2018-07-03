@@ -17,7 +17,7 @@ echo "wait for db - $OASIS_API_CELERY_DB_HOST:$OASIS_API_CELERY_DB_PORT"
 ./src/utils/wait-for-it.sh "$OASIS_API_CELERY_DB_HOST:$OASIS_API_CELERY_DB_PORT" -t 60
 
 # Start worker on init
-celery worker -A src.model_execution_worker.tasks --detach --loglevel=INFO --logfile="/var/log/oasis/worker.log" -Q "${MODEL_SUPPLIER_ID}-${MODEL_VERSION_ID}"
+celery worker -A src.model_execution_worker.tasks --detach --loglevel=INFO --logfile="/var/log/oasis/worker.log" -Q "${MODEL_SUPPLIER_ID}-${MODEL_VERSION_ID}-${MODEL_VERSION_ID}"
 
 sleep 5
 

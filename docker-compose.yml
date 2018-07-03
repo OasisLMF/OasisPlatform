@@ -42,6 +42,7 @@ services:
      - rabbit:myrabbit
     environment:
      - MODEL_SUPPLIER_ID=OasisIM
+     - MODEL_ID=PiWind
      - MODEL_VERSION_ID=1
      - OASIS_API_RABBIT_HOST=rabbit
      - OASIS_API_RABBIT_PORT=5672

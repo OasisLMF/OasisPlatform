@@ -43,7 +43,12 @@ class StartAnalysis(TestCase):
 
     def test_input_model_data_does_not_exist___exception_is_raised(self):
         with TemporaryDirectory() as media_root, TemporaryDirectory() as model_data_dir:
-            with SettingsPatcher(MEDIA_ROOT=media_root, MODEL_DATA_DIRECTORY=model_data_dir):
+            with SettingsPatcher(
+                    MODEL_SUPPLIER_ID='supplier',
+                    MODEL_ID='model',
+                    MODEL_VERSION_ID='version',
+                    MEDIA_ROOT=media_root,
+                    MODEL_DATA_DIRECTORY=model_data_dir):
                 self.create_tar(str(Path(media_root, 'location.tar')))
 
                 self.assertRaises(
@@ -52,8 +57,6 @@ class StartAnalysis(TestCase):
                     {'analysis_settings': {
                         'source_tag': 'source',
                         'analysis_tag': 'source',
-                        'module_supplier_id': 'supplier',
-                        'model_version_id': 'version'
                     }},
                     'location.tar',
                 )
@@ -63,19 +66,20 @@ class StartAnalysis(TestCase):
                 TemporaryDirectory() as model_data_dir, \
                 TemporaryDirectory() as work_dir:
             with SettingsPatcher(
+                    MODEL_SUPPLIER_ID='supplier',
+                    MODEL_ID='model',
+                    MODEL_VERSION_ID='version',
                     MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,):
                 self.create_tar(str(Path(media_root, 'location.tar')))
-                Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
+                Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
 
                 with patch('src.model_execution_worker.tasks.runner') as default_mock:
                     start_analysis({
                         'analysis_settings': {
                             'source_tag': 'source',
                             'analysis_tag': 'source',
-                            'module_supplier_id': 'supplier',
-                            'model_version_id': 'version'
                         }},
                         'location.tar',
                     )
@@ -83,8 +87,6 @@ class StartAnalysis(TestCase):
                         {
                             'source_tag': 'source',
                             'analysis_tag': 'source',
-                            'module_supplier_id': 'supplier',
-                            'model_version_id': 'version'
                         },
                         settings.getint('worker', 'KTOOLS_BATCH_COUNT')
                     )
@@ -95,13 +97,16 @@ class StartAnalysis(TestCase):
                 TemporaryDirectory() as work_dir, \
                 TemporaryDirectory() as module_dir:
             with SettingsPatcher(
+                    MODEL_SUPPLIER_ID='supplier',
+                    MODEL_ID='model',
+                    MODEL_VERSION_ID='version',
                     MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,
                     SUPPLIER_MODULE_DIRECTORY=module_dir):
                 self.create_tar(str(Path(media_root, 'location.tar')))
-                Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
 
+                Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
                 Path(module_dir, 'supplier').mkdir()
                 Path(module_dir, 'supplier', '__init__.py').touch()
                 with open(str(Path(module_dir, 'supplier').joinpath('supplier_model_runner.py')), 'w') as module:
@@ -115,8 +120,6 @@ class StartAnalysis(TestCase):
                     'analysis_settings': {
                         'source_tag': 'source',
                         'analysis_tag': 'source',
-                        'module_supplier_id': 'supplier',
-                        'model_version_id': 'version'
                     }},
                     'location.tar',
                 )
@@ -127,20 +130,21 @@ class StartAnalysis(TestCase):
                 TemporaryDirectory() as model_data_dir, \
                 TemporaryDirectory() as work_dir:
             with SettingsPatcher(
+                    MODEL_SUPPLIER_ID='supplier',
+                    MODEL_ID='model',
+                    MODEL_VERSION_ID='version',
                     MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,
                     DO_CLEAr_WORKING='True'):
                 self.create_tar(str(Path(media_root, 'location.tar')))
-                Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
+                Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
 
                 with patch('src.model_execution_worker.tasks.runner'):
                     start_analysis({
                         'analysis_settings': {
                             'source_tag': 'source',
                             'analysis_tag': 'source',
-                            'module_supplier_id': 'supplier',
-                            'model_version_id': 'version'
                         }},
                         'location.tar',
                     )
@@ -152,20 +156,21 @@ class StartAnalysis(TestCase):
                 TemporaryDirectory() as model_data_dir, \
                 TemporaryDirectory() as work_dir:
             with SettingsPatcher(
+                    MODEL_SUPPLIER_ID='supplier',
+                    MODEL_ID='model',
+                    MODEL_VERSION_ID='version',
                     MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,
                     DO_CLEAr_WORKING='False'):
                 self.create_tar(str(Path(media_root, 'location.tar')))
-                Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
+                Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
 
                 with patch('src.model_execution_worker.tasks.runner'):
                     start_analysis({
                         'analysis_settings': {
                             'source_tag': 'source',
                             'analysis_tag': 'source',
-                            'module_supplier_id': 'supplier',
-                            'model_version_id': 'version'
                         }},
                         'location.tar',
                     )

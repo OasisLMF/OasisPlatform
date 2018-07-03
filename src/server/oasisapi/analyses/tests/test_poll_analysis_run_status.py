@@ -11,7 +11,7 @@ from mock import patch, Mock
 from pathlib2 import Path
 
 from src.server.oasisapi.auth.tests.fakes import fake_user
-from ..tasks import poll_analysis_status
+from ..tasks import poll_analysis_run_status
 from .fakes import fake_analysis
 
 
@@ -38,9 +38,9 @@ class PollAnalysisStatus(TestCase):
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(SUCCESS, task_id, output_file.relative_to(d))):
                     initiator = fake_user()
                     fake_task = Mock()
-                    analysis = fake_analysis(task_id=task_id, input_file='contents')
+                    analysis = fake_analysis(run_task_id=task_id, input_file='contents')
 
-                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
@@ -57,9 +57,9 @@ class PollAnalysisStatus(TestCase):
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
                     initiator = fake_user()
                     fake_task = Mock()
-                    analysis = fake_analysis(task_id=task_id, input_file='contents')
+                    analysis = fake_analysis(run_task_id=task_id, input_file='contents')
 
-                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
@@ -73,9 +73,9 @@ class PollAnalysisStatus(TestCase):
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
                     initiator = fake_user()
                     fake_task = Mock()
-                    analysis = fake_analysis(task_id=task_id, input_file='contents')
+                    analysis = fake_analysis(run_task_id=task_id, input_file='contents')
 
-                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
@@ -91,7 +91,7 @@ class PollAnalysisStatus(TestCase):
                     fake_task = Mock()
                     analysis = fake_analysis(task_id=task_id, input_file='contents')
 
-                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
@@ -105,9 +105,9 @@ class PollAnalysisStatus(TestCase):
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(REVOKED, task_id)):
                     initiator = fake_user()
                     fake_task = Mock()
-                    analysis = fake_analysis(task_id=task_id, input_file='contents')
+                    analysis = fake_analysis(run_task_id=task_id, input_file='contents')
 
-                    poll_analysis_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 

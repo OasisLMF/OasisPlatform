@@ -11,10 +11,13 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+import sys
 
 from datetime import timedelta
 from ...conf import iniconf
 from ...conf.celeryconf import *
+
+IN_TEST = 'test' in sys.argv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -164,3 +167,6 @@ REST_FRAMEWORK = {
     ),
     'DATETIME_FORMAT': '%y-%m-%dT%H:%M:%S.%f%z',
 }
+
+if IN_TEST:
+    BROKER_URL = 'memory://'

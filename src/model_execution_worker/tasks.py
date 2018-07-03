@@ -12,6 +12,9 @@ import shutil
 import tarfile
 
 import sys
+
+from backports.tempfile import TemporaryDirectory
+from oasislmf.cmd.model import GenerateOasisFilesCmd
 from oasislmf.model_execution.bin import prepare_model_run_directory, prepare_model_run_inputs
 from oasislmf.model_execution import runner
 from oasislmf.utils import status
@@ -126,19 +129,18 @@ def start_analysis(analysis_settings, input_location):
         "Source tag = {}; Analysis tag: {}".format(analysis_tag, source_tag)
     )
 
-    module_supplier_id = analysis_settings['analysis_settings']['module_supplier_id']
-    model_version_id = analysis_settings['analysis_settings']['model_version_id']
-    logging.info(
-        "Model supplier - version = {} {}".format(module_supplier_id, model_version_id)
-    )
+    model_supplier_id = settings.get('worker', 'model_supplier_id')
+    model_id = settings.get('worker', 'model_id')
+    model_version_id = settings.get('worker', 'model_version_id')
 
     # Get the supplier module and call it
-    use_default_model_runner = not Path(settings.get('worker', 'SUPPLIER_MODULE_DIRECTORY'), module_supplier_id).exists()
+    use_default_model_runner = not Path(settings.get('worker', 'SUPPLIER_MODULE_DIRECTORY'), model_supplier_id).exists()
 
     model_data_path = os.path.join(
         settings.get('worker', 'MODEL_DATA_DIRECTORY'),
-        module_supplier_id,
-        model_version_id
+        model_supplier_id,
+        model_id,
+        model_version_id,
     )
 
     if not os.path.exists(model_data_path):
@@ -163,7 +165,7 @@ def start_analysis(analysis_settings, input_location):
             model_runner_module = runner
         else:
             sys.path.append(settings.get('worker', 'SUPPLIER_MODULE_DIRECTORY'))
-            model_runner_module = importlib.import_module('{}.supplier_model_runner'.format(module_supplier_id))
+            model_runner_module = importlib.import_module('{}.supplier_model_runner'.format(model_supplier_id))
 
         model_runner_module.run(
             analysis_settings['analysis_settings'], settings.getint('worker', 'KTOOLS_BATCH_COUNT'))
@@ -182,3 +184,35 @@ def start_analysis(analysis_settings, input_location):
     logging.info("Output location = {}".format(output_location))
 
     return output_location
+
+
+@task
+def generate_inputs(exposures_file):
+    media_root = settings.get('worker', 'media_root')
+    exposures_file = os.path.join(media_root, exposures_file)
+
+    model_supplier_id = settings.get('worker', 'model_supplier_id')
+    model_id = settings.get('worker', 'model_id')
+    model_version_id = settings.get('worker', 'model_version_id')
+
+    model_data_path = os.path.join(
+        settings.get('worker', 'model_data_directory'),
+        model_supplier_id,
+        model_id,
+        model_version_id,
+    )
+
+    config_path = os.path.join(model_data_path, 'oasislmf.json')
+
+    with TemporaryDirectory() as oasis_files_dir:
+        GenerateOasisFilesCmd(argv=[
+            oasis_files_dir,
+            '--config', config_path,
+            '--source-exposures-file-path', exposures_file,
+        ]).run()
+
+        output_name = '{}.tar.gz'.format(uuid.uuid4().hex)
+        with tarfile.open(output_name, 'w') as tar:
+            tar.add(oasis_files_dir, recursive=True)
+
+        return str(Path(output_name).relative_to(media_root))
