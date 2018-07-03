@@ -9,6 +9,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'supplier_id',
+            'model_id',
             'version_id',
             'keys_server_uri',
             'created',

@@ -41,9 +41,9 @@ services:
      - celery-db
      - rabbit:myrabbit
     environment:
-     - MODEL_SUPPLIER_ID=OasisIM
-     - MODEL_ID=PiWind
-     - MODEL_VERSION_ID=1
+     - OASIS_API_MODEL_SUPPLIER_ID=OasisIM
+     - OASIS_API_MODEL_ID=PiWind
+     - OASIS_API_MODEL_VERSION_ID=1
      - OASIS_API_RABBIT_HOST=rabbit
      - OASIS_API_RABBIT_PORT=5672
      - OASIS_API_RABBIT_USER=rabbit
@@ -56,9 +56,9 @@ services:
      - OASIS_API_CELERY_DB_PORT=3306
     volumes:
 #     - ./log:/var/log/oasis:rw
-     - ./upload:/var/oasis/upload:rw
-     - ./download:/var/oasis/download:rw
-     - ./data/static:/var/oasis/model_data/OasisIM/1:rw
+#     - ./upload:/var/oasis/upload:rw
+#     - ./download:/var/oasis/download:rw
+     - ${OASIS_API_PIWIND_DATA_DIR:-./data/static}:/var/oasis/model_data/OasisIM/PiWind/1:rw
      - ${OASIS_API_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs
   server-db:
     image: mysql
