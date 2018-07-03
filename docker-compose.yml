@@ -41,9 +41,9 @@ services:
      - celery-db
      - rabbit:myrabbit
     environment:
-     - MODEL_SUPPLIER_ID=OasisIM
-     - MODEL_ID=PiWind
-     - MODEL_VERSION_ID=1
+     - OASIS_MODEL_SUPPLIER_ID=OasisIM
+     - OASIS_MODEL_ID=PiWind
+     - OASIS_MODEL_VERSION_ID=1
      - OASIS_RABBIT_HOST=rabbit
      - OASIS_RABBIT_PORT=5672
      - OASIS_RABBIT_USER=rabbit
@@ -56,30 +56,10 @@ services:
      - OASIS_CELERY_DB_PORT=3306
     volumes:
 #     - ./log:/var/log/oasis:rw
-     - /tmp:/tmp
-     - ./upload:/var/www/oasis/upload:rw
-     - ./download:/var/www/oasis/download:rw
-     - ./data/static:/var/oasis/model_data/OasisIM/2:rw
-  worker3:
-    image: model_execution_worker
-    environment:
-     - OASIS_MODEL_SUPPLIER_ID=OasisIM
-     - OASIS_MODEL_VERSION_ID=1
-     - OASIS_RABBIT_PORT=5672
-     - OASIS_MYSQL_PORT=3306
-     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
-     - OASIS_DO_CLEAR_WORKING=True
-     - OASIS_KTOOLS_BATCH_COUNT=-1
-     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
-     - OASIS_MAX_RETRIES=10
-     - OASIS_LOG_LEVEL=DEBUG
-    volumes:
-#     - ./log:/var/log/oasis:rw
-     - /tmp:/tmp
-     - ./upload:/var/www/oasis/upload:rw
-     - ./download:/var/www/oasis/download:rw
-     - ./data/static:/var/oasis/model_data/OasisIM/1:rw
-     - ${OASIS_API_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs
+#     - ./upload:/var/oasis/upload:rw
+#     - ./download:/var/oasis/download:rw
+     - ${OASIS_PIWIND_DATA_DIR:-./data/static}:/var/oasis/model_data/OasisIM/PiWind/1:rw
+     - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs
   server-db:
     image: mysql
     command:
