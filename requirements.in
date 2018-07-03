@@ -6,6 +6,7 @@ SQLAlchemy
 pymysql
 jsonpickle
 requests
+pyopenssl
 shutilwhich
 certifi
 numpy
