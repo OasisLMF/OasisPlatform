@@ -1,8 +1,8 @@
 FROM python:3.6
 
-RUN useradd -m oasis
-
 WORKDIR /var/www/oasis
+
+ENV OASIS_API_MEDIA_ROOT=/shared-fs
 
 RUN mkdir -p /var/log/oasis
 
@@ -25,11 +25,8 @@ COPY ./src/ ./src
 COPY ./src/server /var/www/oasis/src/server
 COPY ./src/common /var/www/oasis/src/common
 COPY ./src/conf /var/www/oasis/src/conf
-RUN chown -R oasis:oasis .
 
 RUN OASIS_API_SECRET_KEY=supersecret python manage.py collectstatic --noinput
-
-USER oasis
 
 EXPOSE 8000
 

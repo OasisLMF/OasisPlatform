@@ -35,3 +35,4 @@ django-model-utils
 coreapi
 uwsgi
 whitenoise
+django_celery_results
