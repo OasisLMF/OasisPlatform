@@ -39,10 +39,21 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
 class CreateAnalysisSerializer(AnalysisSerializer):
     class Meta(AnalysisSerializer.Meta):
-        fields = ['name', 'model', 'portfolio']
+        fields = ['name', 'model']
 
-    def validate_portfolio(self, value):
-        if not value.location_file:
-            raise ValidationError('"locations_file" must not be null')
+    def __init__(self, portfolio=None, *args, **kwargs):
+        self.portfolio = portfolio
+        super(CreateAnalysisSerializer, self).__init__(*args, **kwargs)
 
-        return value
+    def validate(self, attrs):
+        attrs['portfolio'] = self.portfolio
+        if not self.portfolio.location_file:
+            raise ValidationError({'portfolio': '"location_file" must not be null'})
+
+        return attrs
+
+    def create(self, validated_data):
+        data = dict(validated_data)
+        if 'request' in self.context:
+            data['creator'] = self.context.get('request').user
+        return super(CreateAnalysisSerializer, self).create(data)

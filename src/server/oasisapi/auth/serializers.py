@@ -16,12 +16,13 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
     def validate(self, attrs):
         data = super(TokenObtainPairSerializer, self).validate(attrs)
 
-        refresh = self.get_token(self.user)
-
-        data['refresh_token'] = text_type(refresh)
-        data['access_token'] = text_type(refresh.access_token)
+        data['refresh_token'] = data['refresh']
+        data['access_token'] = data['access']
         data['token_type'] = 'Bearer'
         data['expires_in'] = jwt_settings.api_settings.REFRESH_TOKEN_LIFETIME.total_seconds()
+
+        del data['refresh']
+        del data['access']
 
         return data
 
