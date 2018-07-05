@@ -1,5 +1,7 @@
 FROM coreoasis/oasis_base:latest
 
+ENV OASIS_API_MEDIA_ROOT=/shared-fs
+
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
@@ -9,10 +11,6 @@ WORKDIR /home/worker
 COPY ./requirements.txt /tmp/
 RUN pip install pip-tools
 RUN pip install -r /tmp/requirements.txt
-
-# Copy Static data
-COPY ./data/static /var/oasis/model_data/OasisIM/1
-COPY ./data/static /var/oasis/model_data/OasisIM/2
 
 # Copy startup script + server config
 COPY ./src/startup_worker.sh ./startup.sh

@@ -87,9 +87,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         """
         portfolio = self.get_object()
 
-        data = request.data.copy()
-        data['portfolio'] = portfolio.pk
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(data=request.data, portfolio=portfolio, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
         analysis = serializer.create(serializer.validated_data)
         analysis.generate_inputs(request.user)
@@ -125,7 +123,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `location_file` contents
         """
-        return handle_related_file(self.get_object(), 'accounts_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'location_file', request, ['application/json', 'text/csv'])
 
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None):

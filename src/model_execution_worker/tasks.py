@@ -145,7 +145,7 @@ def start_analysis(analysis_settings, input_location):
     use_default_model_runner = not Path(settings.get('worker', 'SUPPLIER_MODULE_DIRECTORY'), model_supplier_id).exists()
 
     model_data_path = os.path.join(
-        settings.get('worker', 'MODEL_DATA_DIRECTORY'),
+        settings.get('worker', 'model_data_directory'),
         model_supplier_id,
         model_id,
         model_version_id,
@@ -202,7 +202,7 @@ def start_analysis(analysis_settings, input_location):
     return output_location
 
 
-@task
+@task(name='generate_inputs')
 def generate_inputs(exposures_file):
     media_root = settings.get('worker', 'media_root')
     exposures_file = os.path.join(media_root, exposures_file)

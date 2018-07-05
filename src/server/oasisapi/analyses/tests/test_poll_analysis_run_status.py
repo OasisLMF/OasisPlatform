@@ -37,14 +37,14 @@ class PollAnalysisStatus(TestCase):
 
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(SUCCESS, task_id, output_file.relative_to(d))):
                     initiator = fake_user()
-                    fake_task = Mock()
                     analysis = fake_analysis(run_task_id=task_id, input_file='contents')
 
-                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status.retry = Mock()
+                    poll_analysis_run_status(analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
-                    fake_task.retry.assert_not_called()
+                    poll_analysis_run_status.retry.assert_not_called()
                     self.assertEqual(analysis.status_choices.STOPPED_COMPLETED, analysis.status)
                     self.assertEqual(analysis.output_file.file.file.name, str(output_file))
                     self.assertEqual(analysis.output_file.content_type, 'application/gzip')
@@ -56,14 +56,14 @@ class PollAnalysisStatus(TestCase):
             with override_settings(MEDIA_ROOT=d):
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
                     initiator = fake_user()
-                    fake_task = Mock()
                     analysis = fake_analysis(run_task_id=task_id, input_file='contents')
 
-                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status.retry = Mock()
+                    poll_analysis_run_status(analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
-                    fake_task.retry.assert_not_called()
+                    poll_analysis_run_status.retry.assert_not_called()
                     self.assertEqual(analysis.status_choices.STOPPED_ERROR, analysis.status)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([PENDING, RECEIVED, RETRY]))
@@ -72,14 +72,14 @@ class PollAnalysisStatus(TestCase):
             with override_settings(MEDIA_ROOT=d):
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(status, task_id)):
                     initiator = fake_user()
-                    fake_task = Mock()
                     analysis = fake_analysis(run_task_id=task_id, input_file='contents')
 
-                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status.retry = Mock()
+                    poll_analysis_run_status(analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
-                    fake_task.retry.assert_called_once()
+                    poll_analysis_run_status.retry.assert_called_once()
                     self.assertEqual(analysis.status_choices.PENDING, analysis.status)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
@@ -88,14 +88,14 @@ class PollAnalysisStatus(TestCase):
             with override_settings(MEDIA_ROOT=d):
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(STARTED, task_id)):
                     initiator = fake_user()
-                    fake_task = Mock()
                     analysis = fake_analysis(task_id=task_id, input_file='contents')
 
-                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status.retry = Mock()
+                    poll_analysis_run_status(analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
-                    fake_task.retry.assert_called_once()
+                    poll_analysis_run_status.retry.assert_called_once()
                     self.assertEqual(analysis.status_choices.STARTED, analysis.status)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
@@ -104,12 +104,12 @@ class PollAnalysisStatus(TestCase):
             with override_settings(MEDIA_ROOT=d):
                 with patch('src.server.oasisapi.analyses.tasks.AsyncResult', fake_async_result_factory(REVOKED, task_id)):
                     initiator = fake_user()
-                    fake_task = Mock()
                     analysis = fake_analysis(run_task_id=task_id, input_file='contents')
 
-                    poll_analysis_run_status(fake_task, analysis.pk, initiator.pk)
+                    poll_analysis_run_status.retry = Mock()
+                    poll_analysis_run_status(analysis.pk, initiator.pk)
 
                     analysis.refresh_from_db()
 
-                    fake_task.retry.assert_not_called()
+                    poll_analysis_run_status.retry.assert_not_called()
                     self.assertEqual(analysis.status_choices.STOPPED_CANCELLED, analysis.status)

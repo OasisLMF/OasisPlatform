@@ -11,7 +11,7 @@ from src.server.oasisapi.files.models import RelatedFile
 from ..celery import celery_app
 
 
-@celery_app.task()
+@celery_app.task(bind=True)
 def poll_analysis_run_status(self, pk, initiator_pk):
     from .models import Analysis
 
@@ -62,7 +62,7 @@ def poll_analysis_input_generation_status(self, pk, initiator_pk):
 
         input_location = res.result
 
-        analysis.output_file = RelatedFile.objects.create(
+        analysis.input_file = RelatedFile.objects.create(
             file=str(input_location),
             content_type='application/gzip',
             creator=get_user_model().objects.get(pk=initiator_pk),
