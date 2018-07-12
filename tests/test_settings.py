@@ -86,7 +86,7 @@ class SettingsGet(TestCase):
             settings = Settings()
 
             self.assertEqual(settings.get('default', 'LOG_LEVEL'), value)
-            self.assertEqual(settings.get('default', 'INPUTS_DATA_DIRECTORY'), '/var/www/oasis/upload')
+            self.assertEqual(settings.get('default', 'MEDIA_ROOT'), '/shared-fs/')
 
 
 class SettingsSetupLogging(TestCase):

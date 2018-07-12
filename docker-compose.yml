@@ -88,7 +88,7 @@ services:
 #     - ./log:/var/log/oasis:rw
 #     - ./upload:/var/oasis/upload:rw
 #     - ./download:/var/oasis/download:rw
-     - ${OASIS_PIWIND_DATA_DIR:-./data/static}:/var/oasis/model_data/OasisIM/PiWind/1:rw
+     - ${OASIS_PIWIND_DATA_DIR:-./data/static}:/var/oasis/model_data/:rw
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   server-db:
     image: mysql

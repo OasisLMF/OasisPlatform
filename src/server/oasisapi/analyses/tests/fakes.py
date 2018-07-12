@@ -5,6 +5,21 @@ from ...files.tests.fakes import fake_related_file
 from ..models import Analysis
 
 
+def fake_async_result_factory(target_status, target_task_id, target_result=None, result_traceback=None):
+    class FakeAsyncResult(object):
+        status = target_status
+        result = target_result
+
+        def __init__(self, task_id):
+            if task_id != target_task_id:
+                raise ValueError()
+
+        def traceback(self):
+            return result_traceback
+
+    return FakeAsyncResult
+
+
 def fake_analysis(**kwargs):
     if isinstance(kwargs.get('input_file'), (six.string_types, six.binary_type)):
         kwargs['input_file'] = fake_related_file(file=kwargs['input_file'])

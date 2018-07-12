@@ -256,7 +256,9 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                         'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
                         'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
                         'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
+                        'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
                         'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
+                        'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
                         'status': Analysis.status_choices.GENERATING_INPUTS,
                     }, response.json)
                     mock_celery.send_task.assert_called_once_with(
