@@ -48,7 +48,9 @@ class Analysis(TimeStampedModel):
     settings_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='settings_file_analyses')
     input_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='input_file_analyses')
     input_errors_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='input_errors_file_analyses')
+    input_generation_traceback_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='input_generation_traceback_analyses')
     output_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='output_file_analyses')
+    run_traceback_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='run_traceback_file_analyses')
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -83,8 +85,14 @@ class Analysis(TimeStampedModel):
     def get_absolute_input_errors_file_url(self):
         return reverse('analysis-input-errors-file', args=[self.pk])
 
+    def get_absolute_input_generation_traceback_file_url(self):
+        return reverse('analysis-input-generation-traceback-file', args=[self.pk])
+
     def get_absolute_output_file_url(self):
         return reverse('analysis-output-file', args=[self.pk])
+
+    def get_absolute_run_traceback_file_url(self):
+        return reverse('analysis-run-traceback-file', args=[self.pk])
 
     def validate_run(self):
         if self.status not in [self.status_choices.NEW, self.status_choices.READY, self.status_choices.STOPPED_COMPLETED, self.status_choices.STOPPED_ERROR]:

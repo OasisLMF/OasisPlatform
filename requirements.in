@@ -1,4 +1,4 @@
-oasislmf
+-e git://github.com/oasislmf/oasislmf.git@feature/relative-lookup-config#egg=oasislmf
 celery
 SQLAlchemy
 pymysql
@@ -25,7 +25,7 @@ ipython<6
 
 docker-compose
 django<2.0
--e git+http://github.com/wildfish/django-rest-framework#egg=djangorestframework
+-e git://github.com/wildfish/django-rest-framework#egg=djangorestframework
 markdown
 django-filter
 model_mommy
