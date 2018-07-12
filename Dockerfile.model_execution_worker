@@ -2,7 +2,7 @@ FROM coreoasis/oasis_base:latest
 
 ENV OASIS_API_MEDIA_ROOT=/shared-fs
 
-RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends git libspatialindex-dev && rm -rf /var/lib/apt/lists/*
 
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
