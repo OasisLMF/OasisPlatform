@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import shutil
 import argparse
 import os
@@ -53,7 +55,7 @@ def run_command(desc, cmd, exit_on_fail=True, retry=False):
     proc = Popen(cmd, shell=True)
     proc.wait()
     if (proc.returncode > 0 and exit_on_fail):
-        print ("FAIL: {}".format(desc))
+        print("FAIL: {}".format(desc))
         if retry:
             print("RETRY: {}".format(desc))
             run_command(desc, cmd, True, False)

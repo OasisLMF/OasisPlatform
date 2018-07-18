@@ -1,10 +1,8 @@
 import coreschema
 import six
-from django import forms
 from django.utils.translation import ugettext_lazy as _
 from django_filters import rest_framework as filters
-from django_filters.fields import ModelMultipleChoiceField, MultipleChoiceField, ChoiceIteratorMixin, \
-    ModelChoiceIterator
+from django_filters.fields import ModelMultipleChoiceField, MultipleChoiceField
 from django_filters.filters import QuerySetRequestMixin
 from django_filters.rest_framework import DjangoFilterBackend, MultipleChoiceFilter
 

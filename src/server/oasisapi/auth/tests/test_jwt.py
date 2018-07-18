@@ -1,7 +1,6 @@
-from django.urls import reverse
-from jwt import decode
 import json
 
+from django.urls import reverse
 from django_webtest import WebTest
 from rest_framework_simplejwt.state import token_backend
 

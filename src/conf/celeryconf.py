@@ -1,5 +1,3 @@
-import os
-
 from src.conf.iniconf import settings
 
 #: Celery config - ignore result?

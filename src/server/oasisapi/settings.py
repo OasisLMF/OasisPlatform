@@ -14,8 +14,8 @@ import os
 import sys
 
 from datetime import timedelta
-from ...conf import iniconf  # pragma: noqa
-from ...conf.celeryconf import *  # pragma: noqa
+from ...conf import iniconf  # noqa
+from ...conf.celeryconf import *  # noqa
 
 IN_TEST = 'test' in sys.argv
 
