@@ -3,6 +3,7 @@ FROM python:3.6
 WORKDIR /var/www/oasis
 
 ENV OASIS_API_MEDIA_ROOT=/shared-fs
+ENV OASIS_API_DEBUG=false
 
 RUN mkdir -p /var/log/oasis
 

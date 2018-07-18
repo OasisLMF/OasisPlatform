@@ -9,7 +9,7 @@ from django_webtest import WebTestMixin
 from hypothesis import given
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
-from mock import patch
+from mock import patch, Mock
 from rest_framework_simplejwt.tokens import AccessToken
 
 from ...files.tests.fakes import fake_related_file
@@ -218,11 +218,11 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
     def test_cleaned_name_and_model_are_present___object_is_created_inputs_are_generated(self, name):
-        with patch('src.server.oasisapi.analyses.models.poll_analysis_input_generation_status') as poll_analysis_input_generation_status_mock, \
-                patch('src.server.oasisapi.analyses.models.celery_app') as mock_celery:
+        with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True) as generate_mock:
             with TemporaryDirectory() as d:
                 with override_settings(MEDIA_ROOT=d):
-                    mock_celery.send_task.return_value = 'create_inputs_task_id'
+                    self.maxDiff = None
+
                     user = fake_user()
                     model = fake_analysis_model()
                     portfolio = fake_portfolio(location_file=fake_related_file())
@@ -246,27 +246,19 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     )
 
                     self.assertEqual(200, response.status_code)
-                    self.assertEqual({
-                        'id': analysis.pk,
-                        'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-                        'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-                        'name': name,
-                        'portfolio': portfolio.pk,
-                        'model': model.pk,
-                        'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
-                        'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
-                        'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
-                        'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
-                        'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
-                        'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
-                        'status': Analysis.status_choices.GENERATING_INPUTS,
-                    }, response.json)
-                    mock_celery.send_task.assert_called_once_with(
-                        'generate_inputs',
-                        (analysis.portfolio.location_file.file.name, ),
-                        queue='{}-{}-{}'.format(model.supplier_id, model.model_id, model.version_id)
-                    )
-                    poll_analysis_input_generation_status_mock.delay.assert_called_once_with(analysis.pk, user.pk)
+                    self.assertEqual(response.json['id'], analysis.pk)
+                    self.assertEqual(response.json['created'], analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'))
+                    self.assertEqual(response.json['modified'], analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'))
+                    self.assertEqual(response.json['name'], name)
+                    self.assertEqual(response.json['portfolio'], portfolio.pk)
+                    self.assertEqual(response.json['model'], model.pk)
+                    self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.get_absolute_settings_file_url())
+                    self.assertEqual(response.json['input_file'], response.request.application_url + analysis.get_absolute_input_file_url())
+                    self.assertEqual(response.json['input_errors_file'], response.request.application_url + analysis.get_absolute_input_errors_file_url())
+                    self.assertEqual(response.json['input_generation_traceback_file'], response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url())
+                    self.assertEqual(response.json['output_file'], response.request.application_url + analysis.get_absolute_output_file_url())
+                    self.assertEqual(response.json['run_traceback_file'], response.request.application_url + analysis.get_absolute_run_traceback_file_url())
+                    generate_mock.assert_called_once_with(analysis, user)
 
 
 class PortfolioAccountsFile(WebTestMixin, TestCase):

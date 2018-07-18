@@ -23,27 +23,6 @@ from ..models import Analysis
 from .fakes import fake_analysis
 
 
-class FakeAsyncResultFactory(object):
-    def __init__(self, target_task_id):
-        self.target_task_id = target_task_id
-        self.revoke_kwargs = {}
-        self.revoke_called = False
-
-        class FakeAsyncResult(object):
-            def __init__(_self, task_id):
-                if task_id != target_task_id:
-                    raise ValueError()
-
-            def revoke(_self, **kwargs):
-                self.revoke_called = True
-                self.revoke_kwargs = kwargs
-
-        self.fake_res = FakeAsyncResult
-
-    def __call__(self, task_id):
-        return self.fake_res(task_id)
-
-
 class AnalysisApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
         analysis = fake_analysis()
@@ -198,114 +177,19 @@ class AnalysisRun(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    def test_input_file_is_not_set___error_is_returned_status_is_error(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
+    def test_user_is_authenticated_object_exists___run_is_called(self):
+        with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True) as run_mock:
+            user = fake_user()
+            analysis = fake_analysis()
 
-                response = self.app.post(
-                    analysis.get_absolute_run_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    expect_errors=True,
-                )
+            self.app.post(
+                analysis.get_absolute_run_url(),
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
 
-                analysis.refresh_from_db()
-
-                self.assertEqual(400, response.status_code)
-                self.assertIn('Must not be null', response.json['input_file'])
-                self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
-
-    def test_settings_file_is_not_set___error_is_returned_status_is_error(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
-
-                response = self.app.post(
-                    analysis.get_absolute_run_url(),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    expect_errors=True,
-                )
-
-                analysis.refresh_from_db()
-
-                self.assertEqual(400, response.status_code)
-                self.assertIn('Must not be null', response.json['settings_file'])
-                self.assertEqual(Analysis.status_choices.STOPPED_ERROR, analysis.status)
-
-    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([Analysis.status_choices.STOPPED_COMPLETED, Analysis.status_choices.STOPPED_ERROR, Analysis.status_choices.READY]))
-    def test_required_inputs_are_present_status_is_not_in_progress___task_is_added(self, task_id, status):
-        with patch('src.server.oasisapi.analyses.models.poll_analysis_run_status') as poll_analysis_mock , patch('src.server.oasisapi.analyses.models.celery_app') as mock_celery:
-            with TemporaryDirectory() as d:
-                with override_settings(MEDIA_ROOT=d):
-                    mock_celery.send_task.return_value = task_id
-
-                    user = fake_user()
-                    model = fake_analysis_model()
-                    analysis = fake_analysis(
-                        model=model,
-                        status=status,
-                        settings_file=fake_related_file(file=b'{}'),
-                        input_file=fake_related_file(),
-                    )
-
-                    response = self.app.post(
-                        analysis.get_absolute_run_url(),
-                        headers={
-                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                        },
-                    )
-
-                    analysis.refresh_from_db()
-
-                    self.assertEqual(200, response.status_code)
-                    self.assertFalse(analysis.input_errors_file)
-                    self.assertEqual(Analysis.status_choices.PENDING, analysis.status)
-                    mock_celery.send_task.assert_called_once_with(
-                        'run_analysis',
-                        (analysis.input_file.file.name, [json.loads(analysis.settings_file.read())]),
-                        queue='{}-{}-{}'.format(model.supplier_id, model.model_id, model.version_id)
-                    )
-                    poll_analysis_mock.delay.assert_called_once_with(analysis.pk, user.pk)
-
-    @given(status=sampled_from([
-        Analysis.status_choices.GENERATING_INPUTS,
-        Analysis.status_choices.PENDING,
-        Analysis.status_choices.STARTED,
-        Analysis.status_choices.STOPPED_CANCELLED
-    ]))
-    def test_required_inputs_are_present_status_is_in_progress___task_is_not_queued(self, status):
-        with patch('src.server.oasisapi.analyses.models.poll_analysis_run_status') as poll_analysis_mock , patch('src.server.oasisapi.analyses.models.celery_app') as mock_celery:
-            with TemporaryDirectory() as d:
-                with override_settings(MEDIA_ROOT=d):
-                    user = fake_user()
-                    model = fake_analysis_model()
-                    analysis = fake_analysis(
-                        model=model,
-                        status=status,
-                        settings_file=fake_related_file(file=b'{}'),
-                        input_file=fake_related_file(),
-                    )
-
-                    response = self.app.post(
-                        analysis.get_absolute_run_url(),
-                        headers={
-                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                        },
-                        expect_errors=True,
-                    )
-
-                    analysis.refresh_from_db()
-
-                    self.assertEqual(400, response.status_code)
-                    self.assertFalse(analysis.input_errors_file)
-                    mock_celery.send_task.assert_not_called()
-                    poll_analysis_mock.delay.assert_not_called()
+            run_mock.assert_called_once_with(analysis, user)
 
 
 class AnalysisCancel(WebTestMixin, TestCase):
@@ -330,179 +214,56 @@ class AnalysisCancel(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    @given(
-        status=sampled_from([Analysis.status_choices.NEW, Analysis.status_choices.STOPPED_COMPLETED, Analysis.status_choices.STOPPED_ERROR, Analysis.status_choices.STOPPED_CANCELLED]),
-        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
-    )
-    def test_state_is_not_running___revoke_is_not_called(self, status, task_id):
-        res_factory = FakeAsyncResultFactory(task_id)
-
-        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
+    def test_user_is_authenticated_object_exists___cancel_is_called(self):
+        with patch('src.server.oasisapi.analyses.models.Analysis.cancel', autospec=True) as cancel_mock:
             user = fake_user()
-            analysis = fake_analysis(status=status, run_task_id=task_id)
+            analysis = fake_analysis()
 
-            response = self.app.post(
+            self.app.post(
                 analysis.get_absolute_cancel_url(),
                 headers={
                     'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                },
-                expect_errors=True,
+                }
             )
 
-            analysis.refresh_from_db()
-
-            self.assertEqual(400, response.status_code)
-            self.assertEqual(status, analysis.status)
-            self.assertFalse(res_factory.revoke_called)
-
-    @given(
-        status=sampled_from([Analysis.status_choices.PENDING, Analysis.status_choices.STARTED]),
-        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
-    )
-    def test_state_is_running___revoke_is_called(self, status, task_id):
-        res_factory = FakeAsyncResultFactory(task_id)
-
-        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
-            user = fake_user()
-            analysis = fake_analysis(status=status, run_task_id=task_id)
-
-            response = self.app.post(
-                analysis.get_absolute_cancel_url(),
-                headers={
-                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                },
-                expect_errors=True,
-            )
-
-            analysis.refresh_from_db()
-
-            self.assertEqual(200, response.status_code)
-            self.assertEqual(status, analysis.status)
-            self.assertTrue(res_factory.revoke_called)
-            self.assertEqual({'signal': 'SIGKILL', 'terminate': True}, res_factory.revoke_kwargs)
+            cancel_mock.assert_called_once_with(analysis)
 
 
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                analysis = fake_analysis(portfolio=fake_portfolio(location_file=fake_related_file()))
+        analysis = fake_analysis()
 
-                response = self.app.post(analysis.get_absolute_generate_inputs_url(), expect_errors=True)
+        response = self.app.post(analysis.get_absolute_generate_inputs_url(), expect_errors=True)
 
-                self.assertEqual(401, response.status_code)
-
-    def test_portfolio_does_not_have_location_file_set___response_is_400(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis(portfolio=fake_portfolio())
-
-                response = self.app.post(
-                    analysis.get_absolute_generate_inputs_url(),
-                    expect_errors=True,
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    }
-                )
-
-                self.assertEqual(400, response.status_code)
-                self.assertIn('"location_file" must not be null', response.json['portfolio'])
+        self.assertEqual(401, response.status_code)
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis(portfolio=fake_portfolio(location_file=fake_related_file()))
+        user = fake_user()
+        analysis = fake_analysis()
 
-                response = self.app.post(
-                    reverse('analysis-generate-inputs', args=[analysis.pk + 1]),
-                    expect_errors=True,
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    }
-                )
+        response = self.app.post(
+            reverse('analysis-generate-inputs', args=[analysis.pk + 1]),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
 
-                self.assertEqual(404, response.status_code)
+        self.assertEqual(404, response.status_code)
 
-    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters), status=sampled_from([
-        Analysis.status_choices.NEW,
-        Analysis.status_choices.INPUTS_GENERATION_ERROR,
-        Analysis.status_choices.INPUTS_GENERATION_CANCELED,
-        Analysis.status_choices.READY,
-        Analysis.status_choices.STOPPED_COMPLETED,
-        Analysis.status_choices.STOPPED_CANCELLED,
-        Analysis.status_choices.STOPPED_ERROR,
-    ]))
-    def test_status_is_not_in_progress___task_is_added(self, task_id, status):
-        with patch('src.server.oasisapi.analyses.models.poll_analysis_input_generation_status') as poll_analysis_input_generation_status_mock, \
-                patch('src.server.oasisapi.analyses.models.celery_app') as mock_celery:
-            with TemporaryDirectory() as d:
-                with override_settings(MEDIA_ROOT=d):
-                    mock_celery.send_task.return_value = task_id
+    def test_user_is_authenticated_object_exists___generate_inputs_is_called(self):
+        with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True) as generate_inputs_mock:
+            user = fake_user()
+            analysis = fake_analysis()
 
-                    user = fake_user()
-                    model = fake_analysis_model()
-                    analysis = fake_analysis(
-                        model=model,
-                        status=status,
-                        input_errors_file=fake_related_file(),
-                        portfolio=fake_portfolio(location_file=fake_related_file())
-                    )
+            self.app.post(
+                analysis.get_absolute_generate_inputs_url(),
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
 
-                    response = self.app.post(
-                        analysis.get_absolute_generate_inputs_url(),
-                        headers={
-                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                        },
-                    )
-
-                    analysis.refresh_from_db()
-
-                    self.assertEqual(200, response.status_code)
-                    self.assertIsNone(analysis.input_errors_file)
-                    self.assertEqual(Analysis.status_choices.GENERATING_INPUTS, analysis.status)
-                    mock_celery.send_task.assert_called_once_with(
-                        'generate_inputs',
-                        (analysis.portfolio.location_file.file.name, ),
-                        queue='{}-{}-{}'.format(model.supplier_id, model.model_id, model.version_id)
-                    )
-                    poll_analysis_input_generation_status_mock.delay.assert_called_once_with(analysis.pk, user.pk)
-
-    @given(status=sampled_from([
-        Analysis.status_choices.GENERATING_INPUTS,
-        Analysis.status_choices.PENDING,
-        Analysis.status_choices.STARTED,
-    ]))
-    def test_status_is_in_progress___task_is_not_queued(self, status):
-        with patch('src.server.oasisapi.analyses.models.poll_analysis_input_generation_status') as poll_analysis_input_generation_status_mock, \
-                patch('src.server.oasisapi.analyses.models.celery_app') as mock_celery:
-            with TemporaryDirectory() as d:
-                with override_settings(MEDIA_ROOT=d):
-                    mock_celery.send_task.return_value = 'create_inputs_task_id'
-                    user = fake_user()
-                    model = fake_analysis_model()
-                    analysis = fake_analysis(
-                        model=model,
-                        status=status,
-                        input_errors_file=fake_related_file(),
-                        portfolio=fake_portfolio(location_file=fake_related_file())
-                    )
-
-                    response = self.app.post(
-                        analysis.get_absolute_generate_inputs_url(),
-                        headers={
-                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                        },
-                        expect_errors=True,
-                    )
-
-                    analysis.refresh_from_db()
-
-                    self.assertEqual(400, response.status_code)
-                    self.assertIsNotNone(analysis.input_errors_file)
-                    mock_celery.send_task.assert_not_called()
-                    poll_analysis_input_generation_status_mock.delay.assert_not_called()
+            generate_inputs_mock.assert_called_once_with(analysis, user)
 
 
 class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
@@ -527,55 +288,19 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    @given(
-        status=sampled_from([s for s in Analysis.status_choices._db_values if s != Analysis.status_choices.GENERATING_INPUTS]),
-        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
-    )
-    def test_state_is_not_running___revoke_is_not_called(self, status, task_id):
-        res_factory = FakeAsyncResultFactory(task_id)
-
-        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
+    def test_user_is_authenticated_object_exists___generate_inputs_generation_is_called(self):
+        with patch('src.server.oasisapi.analyses.models.Analysis.cancel_generate_inputs', autospec=True) as cancel_generate_inputs:
             user = fake_user()
-            analysis = fake_analysis(status=status, generate_inputs_task_id=task_id)
+            analysis = fake_analysis()
 
-            response = self.app.post(
+            self.app.post(
                 analysis.get_absolute_cancel_inputs_generation_url(),
                 headers={
                     'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                },
-                expect_errors=True,
+                }
             )
 
-            analysis.refresh_from_db()
-
-            self.assertEqual(400, response.status_code)
-            self.assertEqual(status, analysis.status)
-            self.assertFalse(res_factory.revoke_called)
-
-    @given(
-        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
-    )
-    def test_state_is_running___revoke_is_called(self, task_id):
-        res_factory = FakeAsyncResultFactory(task_id)
-
-        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
-            user = fake_user()
-            analysis = fake_analysis(status=Analysis.status_choices.GENERATING_INPUTS, generate_inputs_task_id=task_id)
-
-            response = self.app.post(
-                analysis.get_absolute_cancel_inputs_generation_url(),
-                headers={
-                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                },
-                expect_errors=True,
-            )
-
-            analysis.refresh_from_db()
-
-            self.assertEqual(200, response.status_code)
-            self.assertEqual(Analysis.status_choices.GENERATING_INPUTS, analysis.status)
-            self.assertTrue(res_factory.revoke_called)
-            self.assertEqual({'signal': 'SIGKILL', 'terminate': True}, res_factory.revoke_kwargs)
+            cancel_generate_inputs.assert_called_once_with(analysis)
 
 
 class AnalysisCopy(WebTestMixin, TestCase):

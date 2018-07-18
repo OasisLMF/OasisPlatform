@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git libspatiali
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
-# Install requirments
+# Install requirements
 COPY ./requirements.txt /tmp/
 RUN pip install pip-tools
 RUN pip install -r /tmp/requirements.txt
