@@ -93,7 +93,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         analysis.generate_inputs(request.user)
 
         return Response(
-            AnalysisSerializer(instance=analysis).data,
+            AnalysisSerializer(instance=analysis, context=self.get_serializer_context()).data,
             status=HTTP_201_CREATED,
         )
 

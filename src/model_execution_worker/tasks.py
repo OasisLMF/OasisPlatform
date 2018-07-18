@@ -26,7 +26,7 @@ from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from pathlib2 import Path
 
-from celery import Celery
+from celery import Celery, signature
 from celery.task import task
 
 from ..utils.path import setcwd
@@ -174,8 +174,8 @@ def start_analysis(analysis_settings_file, input_location):
     return output_location
 
 
-@task(name='generate_inputs')
-def generate_inputs(exposures_file):
+@task(name='generate_input')
+def generate_input(exposures_file):
     media_root = settings.get('worker', 'media_root')
     exposures_file = os.path.join(media_root, exposures_file)
 
@@ -200,3 +200,19 @@ def generate_inputs(exposures_file):
             tar.add(oasis_files_dir, recursive=True)
 
         return str(Path(output_name).relative_to(media_root)), str(Path(error_path).relative_to(media_root))
+
+
+@task(name='on_error')
+def on_error(request, exec, traceback, record_task_name, analysis_pk, initiator_pk):
+    """
+    Because of how celery works we need to include a celery task registered in the
+    current app to pass to the `link_error` function on a chain.
+
+    This function takes the error and passes it on back to the server so that it can store
+    the info on the analysis.
+    """
+    signature(
+        record_task_name,
+        args=(analysis_pk, initiator_pk, traceback),
+        queue='celery'
+    ).delay()

@@ -17,4 +17,8 @@ class AnalysisModel(TimeStampedModel):
         unique_together = ('supplier_id', 'model_id', 'version_id')
 
     def __str__(self):
-        return '{} - {} - {}'.format(self.supplier_id, self.model_id, self.version_id)
+        return '{}-{}-{}'.format(self.supplier_id, self.model_id, self.version_id)
+
+    @property
+    def queue_name(self):
+        return str(self)

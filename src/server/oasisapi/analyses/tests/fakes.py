@@ -1,23 +1,38 @@
 import six
+from celery.states import STARTED
 from model_mommy import mommy
 
 from ...files.tests.fakes import fake_related_file
 from ..models import Analysis
 
 
-def fake_async_result_factory(target_status, target_task_id, target_result=None, result_traceback=None):
-    class FakeAsyncResult(object):
-        status = target_status
-        result = target_result
+class FakeAsyncResultFactory(object):
+    def __init__(self, target_task_id=None, target_status=STARTED, target_result=None, target_traceback=None):
+        self.target_task_id = target_task_id
+        self.revoke_kwargs = {}
+        self.revoke_called = False
+        self.target_status = target_status
+        self.target_result = target_result
+        self.target_traceback = target_traceback
 
-        def __init__(self, task_id):
-            if task_id != target_task_id:
-                raise ValueError()
+        class FakeAsyncResult(object):
+            def __init__(_self, task_id):
+                if task_id != target_task_id:
+                    raise ValueError()
 
-        def traceback(self):
-            return result_traceback
+                _self.id = task_id
+                _self.status = self.target_status
+                _self.result = self.target_result
+                _self.traceback = self.target_traceback
 
-    return FakeAsyncResult
+            def revoke(_self, **kwargs):
+                self.revoke_called = True
+                self.revoke_kwargs = kwargs
+
+        self.fake_res = FakeAsyncResult
+
+    def __call__(self, task_id):
+        return self.fake_res(task_id)
 
 
 def fake_analysis(**kwargs):

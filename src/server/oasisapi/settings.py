@@ -14,8 +14,8 @@ import os
 import sys
 
 from datetime import timedelta
-from ...conf import iniconf
-from ...conf.celeryconf import *
+from ...conf import iniconf  # pragma: noqa
+from ...conf.celeryconf import *  # pragma: noqa
 
 IN_TEST = 'test' in sys.argv
 
@@ -27,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = iniconf.settings.get('server', 'debug', fallback=False)
+DEBUG = iniconf.settings.get('server', 'debug', fallback=True)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = iniconf.settings.get('server', 'secret_key', fallback='' if not DEBUG else 'supersecret')
@@ -168,5 +168,29 @@ REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%y-%m-%dT%H:%M:%S.%f%z',
 }
 
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'root': {
+        'level': 'DEBUG',
+        'handlers': ['console'],
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        }
+    },
+}
+
+
 if IN_TEST:
     BROKER_URL = 'memory://'
+    LOGGING['root'] = {}

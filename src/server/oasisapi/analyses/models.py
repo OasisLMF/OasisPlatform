@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 import json
 
+from celery import signature
 from celery.result import AsyncResult
 from django.conf import settings
 from django.core.files import File
@@ -19,7 +20,7 @@ from ..files.models import RelatedFile
 from ..celery import celery_app
 from ..analysis_models.models import AnalysisModel
 from ..portfolios.models import Portfolio
-from .tasks import poll_analysis_run_status, poll_analysis_input_generation_status
+from .tasks import generate_input_success, run_analysis_success
 
 
 @python_2_unicode_compatible
@@ -27,14 +28,13 @@ class Analysis(TimeStampedModel):
     status_choices = Choices(
         ('NEW', 'New'),
         ('INPUTS_GENERATION_ERROR', 'Inputs generation error'),
-        ('INPUTS_GENERATION_CANCELED', 'Inputs generation canceled'),
-        ('GENERATING_INPUTS', 'Generating inputs'),
+        ('INPUTS_GENERATION_CANCELLED', 'Inputs generation cancelled'),
+        ('INPUTS_GENERATION_STARTED', 'Inputs generation started'),
         ('READY', 'Ready'),
-        ('PENDING', 'Pending'),
-        ('STARTED', 'Started'),
-        ('STOPPED_COMPLETED', 'Stopped - Completed'),
-        ('STOPPED_CANCELLED', 'Stopped - Cancelled'),
-        ('STOPPED_ERROR', 'Stopped - Error'),
+        ('RUN_STARTED', 'Run started'),
+        ('RUN_COMPLETED', 'Run completed'),
+        ('RUN_CANCELLED', 'Run cancelled'),
+        ('RUN_ERROR', 'Run error'),
     )
 
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
@@ -95,8 +95,17 @@ class Analysis(TimeStampedModel):
         return reverse('analysis-run-traceback-file', args=[self.pk])
 
     def validate_run(self):
-        if self.status not in [self.status_choices.NEW, self.status_choices.READY, self.status_choices.STOPPED_COMPLETED, self.status_choices.STOPPED_ERROR]:
-            raise ValidationError({'non_field_error': ['Analysis is already running']})
+        valid_choices = [
+            self.status_choices.READY,
+            self.status_choices.RUN_COMPLETED,
+            self.status_choices.RUN_ERROR,
+            self.status_choices.RUN_CANCELLED,
+        ]
+
+        if self.status not in valid_choices:
+            raise ValidationError(
+                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
+            )
 
         errors = {}
         if not self.settings_file:
@@ -106,7 +115,7 @@ class Analysis(TimeStampedModel):
             errors['input_file'] = ['Must not be null']
 
         if errors:
-            self.status = self.status_choices.STOPPED_ERROR
+            self.status = self.status_choices.RUN_ERROR
             self.save()
 
             raise ValidationError(detail=errors)
@@ -114,35 +123,52 @@ class Analysis(TimeStampedModel):
     def run(self, initiator):
         self.validate_run()
 
-        self.status = self.status_choices.PENDING
-        self.run_task_id = celery_app.send_task(
-            'run_analysis', (self.input_file.file.name, [json.loads(self.settings_file.read())]),
-            queue='{}-{}-{}'.format(self.model.supplier_id, self.model.model_id, self.model.version_id)
+        self.status = self.status_choices.RUN_STARTED
+        self.input_generation_traceback_file_id = None
+
+        run_analysis_signature = self.run_analysis_signature
+        run_analysis_signature.link(run_analysis_success.s(self.pk, initiator.pk))
+        run_analysis_signature.link_error(
+            signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
-        poll_analysis_run_status.delay(self.pk, initiator.pk)
+        self.run_task_id = run_analysis_signature.delay().id
 
         self.save()
 
+    @property
+    def run_analysis_signature(self):
+        return signature(
+            'run_analysis',
+            args=(self.input_file.file.name, self.settings_file.file.name),
+            queue=self.model.queue_name,
+        )
+
     def cancel(self):
-        if self.status not in [self.status_choices.PENDING, self.status_choices.STARTED]:
+        if self.status != self.status_choices.RUN_STARTED:
             raise ValidationError({'status': ['Analysis is not running']})
 
-        AsyncResult(self.run_task_id).revoke(signal='SIGKILL', terminate=True)
+        AsyncResult(self.run_task_id).revoke(
+            signal='SIGKILL',
+            terminate=True,
+        )
+
+        self.status = self.status_choices.RUN_CANCELLED
+        self.save()
 
     def generate_inputs(self, initiator):
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
-            self.status_choices.INPUTS_GENERATION_CANCELED,
+            self.status_choices.INPUTS_GENERATION_CANCELLED,
             self.status_choices.READY,
-            self.status_choices.STOPPED_COMPLETED,
-            self.status_choices.STOPPED_CANCELLED,
-            self.status_choices.STOPPED_ERROR,
+            self.status_choices.RUN_COMPLETED,
+            self.status_choices.RUN_CANCELLED,
+            self.status_choices.RUN_ERROR,
         ]
 
         errors = {}
         if self.status not in valid_choices:
-            errors['status'] = ['Analysis status must be one on [{}]'.format(', '.join(valid_choices))]
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
 
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
@@ -150,21 +176,36 @@ class Analysis(TimeStampedModel):
         if errors:
             raise ValidationError(errors)
 
-        self.status = self.status_choices.GENERATING_INPUTS
+        self.status = self.status_choices.INPUTS_GENERATION_STARTED
         self.input_errors_file = None
-        self.generate_inputs_task_id = celery_app.send_task(
-            'generate_inputs', (self.portfolio.location_file.file.name, ),
-            queue='{}-{}-{}'.format(self.model.supplier_id, self.model.model_id, self.model.version_id)
+        self.input_generation_traceback_file_id = None
+
+        generate_input_signature = self.generate_input_signature
+        generate_input_signature.link(generate_input_success.s(self.pk, initiator.pk))
+        generate_input_signature.link_error(
+            signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
-        poll_analysis_input_generation_status.delay(self.pk, initiator.pk)
+        self.generate_inputs_task_id = generate_input_signature.delay().id
 
         self.save()
 
     def cancel_generate_inputs(self):
-        if self.status != self.status_choices.GENERATING_INPUTS:
+        if self.status != self.status_choices.INPUTS_GENERATION_STARTED:
             raise ValidationError({'status': ['Analysis input generation is not running']})
 
-        AsyncResult(self.generate_inputs_task_id).revoke(signal='SIGKILL', terminate=True)
+        self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
+        AsyncResult(self.generate_inputs_task_id).revoke(
+            signal='SIGKILL',
+            terminate=True,
+        )
+
+        self.save()
+
+    @property
+    def generate_input_signature(self):
+        return signature(
+            'generate_input', args=(self.portfolio.location_file.file.name, ), queue=self.model.queue_name,
+        )
 
     def copy(self):
         new_instance = self
