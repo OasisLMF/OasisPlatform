@@ -20,7 +20,6 @@ api_router.register('models', AnalysisModelViewSet, base_name='analysis-model')
 
 urlpatterns = [
     url(r'^', include('src.server.oasisapi.auth.urls', namespace='auth')),
-    #url(r'^', include('rest_framework_docs.urls')),
     url(r'^', include_docs_urls(title='Oasis Platform', public=True, permission_classes=[])),
     url(r'^', include(api_router.urls)),
     url(r'^helthcheck/$', HealthcheckView.as_view(), name='healthcheck'),

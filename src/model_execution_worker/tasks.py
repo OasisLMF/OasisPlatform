@@ -1,38 +1,25 @@
 from __future__ import absolute_import
 
 import glob
-import importlib
 import logging
-import subprocess
-import uuid
-from contextlib import contextmanager
-from tempfile import NamedTemporaryFile
-
-import fasteners
-import json
 import os
 import shutil
 import tarfile
-import glob
+import uuid
+from contextlib import contextmanager
 
-import sys
-
+import fasteners
 from backports.tempfile import TemporaryDirectory
+from celery import Celery, signature
+from celery.task import task
 from oasislmf.cmd.model import GenerateOasisFilesCmd, GenerateLossesCmd
-from oasislmf.model_execution.bin import prepare_model_run_directory, prepare_model_run_inputs
-from oasislmf.model_execution import runner
 from oasislmf.utils import status
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from pathlib2 import Path
 
-from celery import Celery, signature
-from celery.task import task
-
-from ..utils.path import setcwd
-from ..conf.iniconf import settings
 from ..conf import celeryconf as celery_conf
-
+from ..conf.iniconf import settings
 
 '''
 Celery task wrapper for Oasis ktools calculation.
