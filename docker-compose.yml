@@ -32,6 +32,7 @@ services:
      - OASIS_CELERY_DB_USER=celery
      - OASIS_CELERY_DB_NAME=celery
      - OASIS_CELERY_DB_PORT=3306
+     - STARTUP_RUN_MIGRATIONS=true
    volumes:
 #     - ./log:/var/log/oasis:rw
      - ${OASIS_API_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
@@ -40,7 +41,7 @@ services:
    build:
      context: .
      dockerfile: Dockerfile.oasis_api_server.mysql
-   command: [celery, worker, -A, src.server.oasisapi]
+   command: [celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
    links:
      - server-db
      - celery-db
