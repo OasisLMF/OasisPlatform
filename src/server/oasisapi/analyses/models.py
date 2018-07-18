@@ -1,23 +1,17 @@
 from __future__ import absolute_import, print_function
 
-import json
-
 from celery import signature
 from celery.result import AsyncResult
 from django.conf import settings
-from django.core.files import File
 from django.db import models
 from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
-from django.utils.six import BytesIO
 from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
-from pathlib2 import Path
 from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile
-from ..celery import celery_app
 from ..analysis_models.models import AnalysisModel
 from ..portfolios.models import Portfolio
 from .tasks import generate_input_success, run_analysis_success

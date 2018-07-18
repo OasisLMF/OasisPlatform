@@ -9,7 +9,7 @@ from django_webtest import WebTestMixin
 from hypothesis import given
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
-from mock import patch, Mock
+from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
 from ...files.tests.fakes import fake_related_file

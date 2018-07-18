@@ -1,10 +1,7 @@
 import json
-import mimetypes
 import string
-from tempfile import NamedTemporaryFile
 
 from backports.tempfile import TemporaryDirectory
-from django.core.files import File
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
@@ -12,7 +9,6 @@ from hypothesis import given
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
-from pathlib2 import Path
 from rest_framework_simplejwt.tokens import AccessToken
 
 from ...files.tests.fakes import fake_related_file

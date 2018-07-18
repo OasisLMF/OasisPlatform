@@ -60,10 +60,9 @@ class AnalysisFilter(TimeStampedFilter):
             'model',
             'model__in',
         ]
-        
+
     def __init__(self, *args, **kwargs):
         super(AnalysisFilter, self).__init__(*args, **kwargs)
-        
 
 
 class AnalysisViewSet(viewsets.ModelViewSet):
@@ -113,7 +112,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     partial_update:
     Partially updates the specified analysis (only provided fields are updated)
     """
-    
+
     queryset = Analysis.objects.all()
     serializer_class = AnalysisSerializer
     filter_class = AnalysisFilter

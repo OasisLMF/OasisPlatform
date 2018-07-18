@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import uuid
 
-from celery.result import AsyncResult
-from celery.states import SUCCESS, STARTED, FAILURE, REJECTED, REVOKED, PENDING, RECEIVED, RETRY
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
 from django.core.files import File
