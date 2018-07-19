@@ -81,7 +81,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             return api_settings.DEFAULT_PARSER_CLASSES
 
     @action(methods=['post'], detail=True)
-    def create_analysis(self, request, pk=None):
+    def create_analysis(self, request, pk=None, version=None):
         """
         Creates an analysis object from the portfolio.
         """
@@ -98,7 +98,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         )
 
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def accounts_file(self, request, pk=None):
+    def accounts_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `accounts_file` contents
@@ -112,7 +112,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'accounts_file', request, ['application/json', 'text/csv'])
 
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def location_file(self, request, pk=None):
+    def location_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `location_file` contents
@@ -126,7 +126,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'location_file', request, ['application/json', 'text/csv'])
 
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def reinsurance_info_file(self, request, pk=None):
+    def reinsurance_info_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `reinsurance_info_file` contents
@@ -140,7 +140,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, ['application/json', 'text/csv'])
 
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def reinsurance_source_file(self, request, pk=None):
+    def reinsurance_source_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `reinsurance_source_file` contents

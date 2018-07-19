@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from rest_framework import routers
 from rest_framework.documentation import include_docs_urls
+from rest_framework.reverse import reverse_lazy
 
 from .analysis_models.viewsets import AnalysisModelViewSet
 from .portfolios.viewsets import PortfolioViewSet
@@ -22,6 +23,7 @@ urlpatterns = [
     url(r'^', include('src.server.oasisapi.auth.urls', namespace='auth')),
     url(r'^', include_docs_urls(title='Oasis Platform', public=True, permission_classes=[])),
     url(r'^', include(api_router.urls)),
+    url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
     url(r'^helthcheck/$', HealthcheckView.as_view(), name='healthcheck'),
     url(r'^auth/', include('rest_framework.urls')),
     url(r'^admin/', include(admin.site.urls)),
