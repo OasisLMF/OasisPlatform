@@ -5,12 +5,13 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters import rest_framework as filters
+from rest_framework.serializers import Serializer
 
 from ..analysis_models.models import AnalysisModel
 from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ..files.views import handle_related_file
 from .models import Analysis
-from .serializers import AnalysisSerializer
+from .serializers import AnalysisSerializer, AnalysisCopySerializer
 
 
 class AnalysisFilter(TimeStampedFilter):
@@ -117,6 +118,14 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filter_class = AnalysisFilter
 
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'create', 'list', 'options', 'update', 'partial_update']:
+            return super(AnalysisViewSet, self).get_serializer_class()
+        elif self.action == 'copy':
+            return AnalysisCopySerializer
+        else:
+            return Serializer
+
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None):
         """
@@ -126,7 +135,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         obj = self.get_object()
         obj.run(request.user)
-        return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None):
@@ -136,7 +145,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         obj = self.get_object()
         obj.cancel()
-        return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
     def generate_inputs(self, request, pk=None):
@@ -148,7 +157,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         obj = self.get_object()
         obj.generate_inputs(request.user)
-        return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None):
@@ -157,7 +166,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         obj = self.get_object()
         obj.cancel_generate_inputs()
-        return Response(self.get_serializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
     def copy(self, request, pk=None):

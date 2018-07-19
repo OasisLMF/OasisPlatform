@@ -150,11 +150,10 @@ def start_analysis(analysis_settings_file, input_location):
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
         ]).run()
 
-        output_location = uuid.uuid4().hex
-        output_location = os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location + ARCHIVE_FILE_SUFFIX)
+        output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
 
         output_directory = os.path.join(run_dir, "output")
-        with tarfile.open(output_location, "w:gz") as tar:
+        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
             tar.add(output_directory, arcname="output")
 
     logging.info("Output location = {}".format(output_location))
@@ -177,7 +176,7 @@ def generate_input(exposures_file):
             '--source-exposures-file-path', exposures_file
         ]).run()
 
-        error_path = next(glob.glob(os.path.join(oasis_files_dir, 'oasislmf-errors-*.csv')))
+        error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, 'oasiskeys-errors-*.csv'))), None)
         if error_path:
             saved_path = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
             shutil.copy(error_path, saved_path)
@@ -185,13 +184,13 @@ def generate_input(exposures_file):
 
         output_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
         with tarfile.open(output_name, 'w:gz') as tar:
-            tar.add(oasis_files_dir, recursive=True)
+            tar.add(oasis_files_dir, arcname='/')
 
         return str(Path(output_name).relative_to(media_root)), str(Path(error_path).relative_to(media_root))
 
 
 @task(name='on_error')
-def on_error(request, exec, traceback, record_task_name, analysis_pk, initiator_pk):
+def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk):
     """
     Because of how celery works we need to include a celery task registered in the
     current app to pass to the `link_error` function on a chain.
