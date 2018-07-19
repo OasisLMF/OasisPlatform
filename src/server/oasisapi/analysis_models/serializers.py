@@ -11,7 +11,6 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'supplier_id',
             'model_id',
             'version_id',
-            'keys_server_uri',
             'created',
             'modified',
         )
