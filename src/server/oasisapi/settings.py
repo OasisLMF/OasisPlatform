@@ -120,6 +120,7 @@ else:
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = []
+AUTHENTICATION_BACKENDS = settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
 
 
 # Internationalization
