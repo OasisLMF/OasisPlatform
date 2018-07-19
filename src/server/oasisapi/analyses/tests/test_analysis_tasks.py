@@ -1,5 +1,5 @@
 import string
-from tempfile import TemporaryDirectory
+from backports.tempfile import TemporaryDirectory
 
 from django.test import override_settings
 from hypothesis import given
