@@ -2,6 +2,7 @@ import json
 import string
 
 from backports.tempfile import TemporaryDirectory
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
@@ -74,6 +75,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
     def test_cleaned_name_portfolio_and_model_are_present___object_is_created(self, name):
+        self.maxDiff = None
         user = fake_user()
         model = fake_analysis_model()
         portfolio = fake_portfolio()
@@ -104,12 +106,12 @@ class AnalysisApi(WebTestMixin, TestCase):
             'name': name,
             'portfolio': portfolio.pk,
             'model': model.pk,
-            'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
-            'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
-            'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
-            'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
-            'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
-            'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
+            'settings_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_settings_file_url(),
+            'input_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_input_file_url(),
+            'input_errors_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_input_errors_file_url(),
+            'input_generation_traceback_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_input_generation_traceback_file_url(),
+            'output_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_output_file_url(),
+            'run_traceback_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_run_traceback_file_url(),
             'status': Analysis.status_choices.NEW,
         }, response.json)
 

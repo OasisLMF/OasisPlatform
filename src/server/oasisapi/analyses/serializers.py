@@ -24,20 +24,14 @@ class AnalysisSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super(AnalysisSerializer, self).to_representation(instance)
-        rep['input_file'] = instance.get_absolute_input_file_url()
-        rep['settings_file'] = instance.get_absolute_settings_file_url()
-        rep['input_errors_file'] = instance.get_absolute_input_errors_file_url()
-        rep['input_generation_traceback_file'] = instance.get_absolute_input_generation_traceback_file_url()
-        rep['output_file'] = instance.get_absolute_output_file_url()
-        rep['run_traceback_file'] = instance.get_absolute_run_traceback_file_url()
 
-        if self.context.get('request'):
-            rep['input_file'] = self.context['request'].build_absolute_uri(rep['input_file'])
-            rep['settings_file'] = self.context['request'].build_absolute_uri(rep['settings_file'])
-            rep['input_errors_file'] = self.context['request'].build_absolute_uri(rep['input_errors_file'])
-            rep['input_generation_traceback_file'] = self.context['request'].build_absolute_uri(rep['input_generation_traceback_file'])
-            rep['output_file'] = self.context['request'].build_absolute_uri(rep['output_file'])
-            rep['run_traceback_file'] = self.context['request'].build_absolute_uri(rep['run_traceback_file'])
+        request = self.context.get('request')
+        rep['input_file'] = instance.get_absolute_input_file_url(request=request)
+        rep['settings_file'] = instance.get_absolute_settings_file_url(request=request)
+        rep['input_errors_file'] = instance.get_absolute_input_errors_file_url(request=request)
+        rep['input_generation_traceback_file'] = instance.get_absolute_input_generation_traceback_file_url(request=request)
+        rep['output_file'] = instance.get_absolute_output_file_url(request=request)
+        rep['run_traceback_file'] = instance.get_absolute_run_traceback_file_url(request=request)
 
         return rep
 

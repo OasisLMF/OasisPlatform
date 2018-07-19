@@ -4,12 +4,12 @@ from celery import signature
 from celery.result import AsyncResult
 from django.conf import settings
 from django.db import models
-from django.urls import reverse
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
+from rest_framework.reverse import reverse
 
 from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
@@ -52,41 +52,41 @@ class Analysis(TimeStampedModel):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self):
-        return reverse('analysis-detail', args=[self.pk])
+    def get_absolute_url(self, request=None):
+        return reverse('analysis-detail', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_run_url(self):
-        return reverse('analysis-run', args=[self.pk])
+    def get_absolute_run_url(self, request=None):
+        return reverse('analysis-run', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_cancel_url(self):
-        return reverse('analysis-cancel', args=[self.pk])
+    def get_absolute_cancel_url(self, request=None):
+        return reverse('analysis-cancel', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_generate_inputs_url(self):
-        return reverse('analysis-generate-inputs', args=[self.pk])
+    def get_absolute_generate_inputs_url(self, request=None):
+        return reverse('analysis-generate-inputs', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_cancel_inputs_generation_url(self):
-        return reverse('analysis-cancel-generate-inputs', args=[self.pk])
+    def get_absolute_cancel_inputs_generation_url(self, request=None):
+        return reverse('analysis-cancel-generate-inputs', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_copy_url(self):
-        return reverse('analysis-copy', args=[self.pk])
+    def get_absolute_copy_url(self, request=None):
+        return reverse('analysis-copy', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_settings_file_url(self):
-        return reverse('analysis-settings-file', args=[self.pk])
+    def get_absolute_settings_file_url(self, request=None):
+        return reverse('analysis-settings-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_input_file_url(self):
-        return reverse('analysis-input-file', args=[self.pk])
+    def get_absolute_input_file_url(self, request=None):
+        return reverse('analysis-input-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_input_errors_file_url(self):
-        return reverse('analysis-input-errors-file', args=[self.pk])
+    def get_absolute_input_errors_file_url(self, request=None):
+        return reverse('analysis-input-errors-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_input_generation_traceback_file_url(self):
-        return reverse('analysis-input-generation-traceback-file', args=[self.pk])
+    def get_absolute_input_generation_traceback_file_url(self, request=None):
+        return reverse('analysis-input-generation-traceback-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_output_file_url(self):
-        return reverse('analysis-output-file', args=[self.pk])
+    def get_absolute_output_file_url(self, request=None):
+        return reverse('analysis-output-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_run_traceback_file_url(self):
-        return reverse('analysis-run-traceback-file', args=[self.pk])
+    def get_absolute_run_traceback_file_url(self, request=None):
+        return reverse('analysis-run-traceback-file', kwargs={'pk': self.pk}, request=request)
 
     def validate_run(self):
         valid_choices = [
