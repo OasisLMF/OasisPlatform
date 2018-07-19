@@ -10,7 +10,6 @@ class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
     version_id = models.CharField(max_length=255, help_text=_('The version ID for the model.'))
-    keys_server_uri = models.URLField(help_text=_('The root url for the model server.'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL)
 
     class Meta:
