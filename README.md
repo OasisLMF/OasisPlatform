@@ -6,7 +6,7 @@
 
 # Oasis Platform
 Provides core components of the Oasis platform, specifically:
-* Flask application that provides the Oasis REST API
+* DJango application that provides the Oasis REST API
 * Celery worker for running a model
 
 ## First Steps
@@ -17,11 +17,15 @@ A simple environment for the testing the API and worker can be created using Doc
 
 <img src="https://github.com/OasisLMF/OasisPlatform/blob/master/Oasis%20Simple%20Runner.png" alt="Simple Oasis platform test environment"/>
 
-First make sure that you have Docker running. Then build the images for the API server, model execution worker and API runner:
+First make sure that you have Docker running. Then build the images for the API server and model execution worker:
 
-    docker build -f Dockerfile.oasis_api_server -t oasis_api_server .
+    docker build -f Dockerfile.oasis_api_server.base -t oasis_api_server:base .
+    docker build -f Dockerfile.oasis_api_server.mysql -t oasis_api_server:mysql .
     docker build -f Dockerfile.model_execution_worker -t model_execution_worker .
-    docker build -f Dockerfile.api_runner -t api_runner .
+
+The docker images for the server are structured to all inherit from `oasis_api_server:base`.
+Then each child image will be setup for a specific database backend (for example 
+`oasis_api_server:mysql` uses mysql as the database backend). 
 
 Start the docker network:
 
@@ -29,7 +33,7 @@ Start the docker network:
 
 Check that the server is running:
 
-    curl localhost:8001/healthcheck
+    curl localhost:8000/healthcheck
 
 (For the Rabbit management application browse to http://localhost:15672, for Flower, the Celery management application, browse to http://localhost:5555.)
 
@@ -39,7 +43,10 @@ To run a test analysis using the worker image and example model data, run the fo
 
 ### Calling the Server
 
-The API server provides a REST interface which is described <a href="https://oasislmf.github.io/docs/oasis_rest_api.html" target="_blank">here</a>. You can use any suitable command line client such as `curl` or <a href="www.httpie.org" target="_blank">`httpie`</a> to make individual API calls, but a custom Python client may be a better option - for this you can use the <a href="https://oasislmf.github.io/OasisLmf/api/api_client/client.html" target="_blank">`api_client` repository</a> withing the oasislmf Python package.
+The API server provides a REST interface which is described on the home page of the api server at 
+<a href="http://localhost:8000/" target="_blank">http://localhost:8000/</a>. This documentation
+also provides an interactable interface to the api or you can use any command line client such as 
+curl. 
 
 ## Development
 
@@ -70,6 +77,24 @@ Version specifiers can be supplied to the packages but these should be kept as l
 After adding packages to either ``*.in`` file, the following command should be ran ensuring the development dependencies are kept up to date:
 
     pip-compile && pip-sync
+
+### Authentication
+
+By default the server uses the standard model backend, this started users with username and password in
+the database. This can be configured by setting `OASIS_API_SERVER_AUTH_BACKEND` to a comma separated 
+list of python paths. Information about django authentication backends can be found [here](https://docs.djangoproject.com/en/2.0/topics/auth/customizing/#writing-an-authentication-backend)
+
+To create an admin user call `python manage.py createsuperuser` and follow the prompts, this user
+can be used as a normal user on in the api but it also gains access to the admin interface at
+http://localhost:8000/admin/. From here you can edit entries and create new users.
+
+For authenticating with the api the `HTTP-AUTHORIZATION` header needs to be set. The token to use can
+be obtained by posting your username and password to `/refresh_token/`. This gives you both a refresh
+token and access token. The access token should be used for most requests however this will expire after
+a while. When it expires a new key can be retrieved by posting to `/access_token/` using the refresh
+token in the authorization header. 
+
+The authorization header takes the following form `Bearer <token>`.    
 
 ### Testing
 
