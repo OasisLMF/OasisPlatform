@@ -94,7 +94,20 @@ token and access token. The access token should be used for most requests howeve
 a while. When it expires a new key can be retrieved by posting to `/access_token/` using the refresh
 token in the authorization header. 
 
-The authorization header takes the following form `Bearer <token>`.    
+The authorization header takes the following form `Bearer <token>`.
+
+### Workflow
+
+The general workflow is as follows
+
+1. Create a portfolio (post to `/portfolios/`).
+2. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
+3. Create the model object for your model (post to `/models/`).
+4. Create an analysis (post to `/portfolios/<id>/create_analysis`). This will generate the input files
+    for the analysis.
+5. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
+6. Run the analysis (post to `/analyses/<pk>/run/`)
+7. Get the outputs (get `/analuses/<pk>/output_file/`) 
 
 ### Testing
 
