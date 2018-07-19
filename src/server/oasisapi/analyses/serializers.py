@@ -40,3 +40,12 @@ class AnalysisSerializer(serializers.ModelSerializer):
             rep['run_traceback_file'] = self.context['request'].build_absolute_uri(rep['run_traceback_file'])
 
         return rep
+
+
+class AnalysisCopySerializer(AnalysisSerializer):
+    def __init__(self, *args, **kwargs):
+        super(AnalysisCopySerializer, self).__init__(*args, **kwargs)
+
+        self.fields['portfolio'].required = False
+        self.fields['model'].required = False
+        self.fields['name'].required = False
