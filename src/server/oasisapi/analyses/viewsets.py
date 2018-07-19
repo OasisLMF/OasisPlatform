@@ -127,7 +127,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             return Serializer
 
     @action(methods=['post'], detail=True)
-    def run(self, request, pk=None):
+    def run(self, request, pk=None, version=None):
         """
         Runs all the analysis. The analysis must have one of the following
         statuses, `NEW`, `STOPPED_COMPLETED`, `STOPPED_CANCELLED` or
@@ -138,7 +138,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
-    def cancel(self, request, pk=None):
+    def cancel(self, request, pk=None, version=None):
         """
         Cancels a currently running analysis. The analysis must have one of the following
         statuses, `PENDING` or `STARTED`
@@ -148,7 +148,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
-    def generate_inputs(self, request, pk=None):
+    def generate_inputs(self, request, pk=None, version=None):
         """
         Generates the inputs for the analysis based on the portfolio.
         The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
@@ -160,7 +160,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
-    def cancel_generate_inputs(self, request, pk=None):
+    def cancel_generate_inputs(self, request, pk=None, version=None):
         """
         Cancels a currently inputs generation. The analysis status must be `GENERATING_INPUTS`
         """
@@ -169,7 +169,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
-    def copy(self, request, pk=None):
+    def copy(self, request, pk=None, version=None):
         """
         Copies an existing analysis, copying the associated input files and model and modifying
         it's name (if none is provided) and resets the status, input errors and outputs
@@ -184,7 +184,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def settings_file(self, request, pk=None):
+    def settings_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `settings_file` contents
@@ -198,7 +198,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
     @action(methods=['get'], detail=True)
-    def input_file(self, request, pk=None):
+    def input_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `input_file` contents
@@ -209,7 +209,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @action(methods=['get', 'delete'], detail=True)
-    def input_errors_file(self, request, pk=None):
+    def input_errors_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `input_errors_file` contents
@@ -223,7 +223,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'input_errors_file', request, ['application/json', 'text/csv'])
 
     @action(methods=['get', 'delete'], detail=True)
-    def input_generation_traceback_file(self, request, pk=None):
+    def input_generation_traceback_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `input_generation_traceback_file` contents
@@ -234,7 +234,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'input_generation_traceback_file', request, ['text/plain'])
 
     @action(methods=['get', 'delete'], detail=True)
-    def output_file(self, request, pk=None):
+    def output_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `output_file` contents
@@ -245,7 +245,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @action(methods=['get', 'delete'], detail=True)
-    def run_traceback_file(self, request, pk=None):
+    def run_traceback_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `run_traceback_file` contents

@@ -166,6 +166,8 @@ REST_FRAMEWORK = {
         'src.server.oasisapi.filters.Backend',
     ),
     'DATETIME_FORMAT': '%y-%m-%dT%H:%M:%S.%f%z',
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_VERSION': 'v1',
 }
 
 
