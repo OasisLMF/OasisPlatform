@@ -8,6 +8,7 @@
 -e git+git://github.com/oasislmf/oasislmf.git@feature/relative-lookup-config#egg=oasislmf
 amqp==2.2.2               # via kombu
 argparsetree==0.0.5
+atomicwrites==1.1.5       # via pytest
 attrs==17.4.0             # via hypothesis, pytest
 backports.tempfile==1.0
 backports.weakref==1.0.post1  # via backports.tempfile
@@ -56,6 +57,7 @@ mccabe==0.6.1             # via flake8
 mock==2.0.0
 model-mommy==1.6.0
 monotonic==1.4            # via fasteners
+more-itertools==4.2.0     # via pytest
 numpy==1.14.0
 pandas==0.22.0
 pathlib2==2.3.0
@@ -76,7 +78,8 @@ pyodbc==4.0.22
 pytest-cov==2.5.1         # via pytest-cover
 pytest-cover==3.0.0       # via pytest-coverage
 pytest-coverage==0.0
-pytest==3.4.0
+pytest-django==3.3.2
+pytest==3.6.3
 python-dateutil==2.6.1    # via pandas
 python-interface==1.4.0
 python-magic==0.4.15
@@ -88,8 +91,7 @@ rtree==0.8.3
 shapely==1.6.4.post1
 shutilwhich==1.1.0
 simplegeneric==0.8.1      # via ipython
-six==1.11.0               # via docker, docker-compose, docker-pycreds, dockerpty, fasteners, mock, model-mommy, pathlib2, pip-tools, prompt-toolkit, pytest, python-dateutil, python-interface, tox, traitlets, websocket-client, webtest
-sqlalchemy==1.2.2
+six==1.11.0               # via docker, docker-compose, docker-pycreds, dockerpty, fasteners, mock, model-mommy, more-itertools, pathlib2, pip-tools, prompt-toolkit, pytest, python-dateutil, python-interface, tox, traitlets, websocket-client, webtest
 texttable==0.9.1          # via docker-compose
 tox==2.9.1
 traitlets==4.3.2          # via ipython
