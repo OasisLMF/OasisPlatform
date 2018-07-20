@@ -75,37 +75,32 @@ Version specifiers can be supplied to the packages but these should be kept as l
 After adding packages to either ``*.in`` file, the following command should be ran ensuring the development dependencies are kept up to date:
 
     pip-compile && pip-sync
+    
+The demo project also needs the PiWind model. This is available [here](https://github.com/OasisLMF/OasisPiWind).
+You should also set `OASIS_API_PIWIND_DATA_DIR` to the root directory of the pi wind repo.
 
-### Authentication
+### Setup
 
-By default the server uses the standard model backend, this started users with username and password in
-the database. This can be configured by setting `OASIS_API_SERVER_AUTH_BACKEND` to a comma separated 
-list of python paths. Information about django authentication backends can be found [here](https://docs.djangoproject.com/en/2.0/topics/auth/customizing/#writing-an-authentication-backend)
+Once the dependencies have been installed you will need to create the database. For development we use mysql for 
+simplicity. To create the database run: 
+    
+    python manage.py migrate
+    
+This should also be ran whenever there are new database changes. If you change the database fields you
+will need to generate new migrations by running:
 
-To create an admin user call `python manage.py createsuperuser` and follow the prompts, this user
-can be used as a normal user on in the api but it also gains access to the admin interface at
-http://localhost:8000/admin/. From here you can edit entries and create new users.
+    python manage.py makemigrations
+    
+And adding all generated files to git.
 
-For authenticating with the api the `HTTP-AUTHORIZATION` header needs to be set. The token to use can
-be obtained by posting your username and password to `/refresh_token/`. This gives you both a refresh
-token and access token. The access token should be used for most requests however this will expire after
-a while. When it expires a new key can be retrieved by posting to `/access_token/` using the refresh
-token in the authorization header. 
-
-The authorization header takes the following form `Bearer <token>`.
-
-### Workflow
-
-The general workflow is as follows
-
-1. Create a portfolio (post to `/portfolios/`).
-2. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
-3. Create the model object for your model (post to `/models/`).
-4. Create an analysis (post to `/portfolios/<id>/create_analysis`). This will generate the input files
-    for the analysis.
-5. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
-6. Run the analysis (post to `/analyses/<pk>/run/`)
-7. Get the outputs (get `/analuses/<pk>/output_file/`) 
+Once the database has been migrated the pi wind model needs to be added to the database, either in the 
+admin interface or the api setting:
+ 
+    {
+        supplier_id: "OasisIM",
+        model_id: "PiWind",
+        version_id: "1",
+    }
 
 ### Testing
 
@@ -133,6 +128,37 @@ The Oasis CI system builds and deploys the following Docker images to DockerHub:
 * <a href="https://hub.docker.com/r/coreoasis/model_execution_worker">coreoasis/model_execution_worker</a>
 
 Note that the Dockerfiles cannot be used directly as there are version stubs that get substitued at build time by the CI system.
+
+## Authentication
+
+By default the server uses the standard model backend, this started users with username and password in
+the database. This can be configured by setting `OASIS_API_SERVER_AUTH_BACKEND` to a comma separated 
+list of python paths. Information about django authentication backends can be found [here](https://docs.djangoproject.com/en/2.0/topics/auth/customizing/#writing-an-authentication-backend)
+
+To create an admin user call `python manage.py createsuperuser` and follow the prompts, this user
+can be used as a normal user on in the api but it also gains access to the admin interface at
+http://localhost:8000/admin/. From here you can edit entries and create new users.
+
+For authenticating with the api the `HTTP-AUTHORIZATION` header needs to be set. The token to use can
+be obtained by posting your username and password to `/refresh_token/`. This gives you both a refresh
+token and access token. The access token should be used for most requests however this will expire after
+a while. When it expires a new key can be retrieved by posting to `/access_token/` using the refresh
+token in the authorization header. 
+
+The authorization header takes the following form `Bearer <token>`.
+
+## Workflow
+
+The general workflow is as follows
+
+1. Create a portfolio (post to `/portfolios/`).
+2. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
+3. Create the model object for your model (post to `/models/`).
+4. Create an analysis (post to `/portfolios/<id>/create_analysis`). This will generate the input files
+    for the analysis.
+5. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
+6. Run the analysis (post to `/analyses/<pk>/run/`)
+7. Get the outputs (get `/analuses/<pk>/output_file/`) 
 
 ## Documentation
 * <a href="https://github.com/OasisLMF/OasisApi/issues">Issues</a>
