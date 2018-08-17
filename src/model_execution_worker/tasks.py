@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 import tarfile
+import glob
 
 import sys
 from oasislmf.model_execution.bin import prepare_model_run_directory, prepare_model_run_inputs
@@ -168,8 +169,12 @@ def start_analysis(analysis_settings, input_location):
             sys.path.append(settings.get('worker', 'SUPPLIER_MODULE_DIRECTORY'))
             model_runner_module = importlib.import_module('{}.supplier_model_runner'.format(module_supplier_id))
 
+        ##! to add check that RI directories take the form of RI_{ID} amd ID is a monotonic index
+
+        num_reinsurance_iterations = len(glob.glob(os.path.join("input", 'RI_[0-9]')))
+
         model_runner_module.run(
-            analysis_settings['analysis_settings'], settings.getint('worker', 'KTOOLS_BATCH_COUNT'))
+            analysis_settings['analysis_settings'], settings.getint('worker', 'KTOOLS_BATCH_COUNT'), num_reinsurance_iterations=num_reinsurance_iterations)
 
         output_location = uuid.uuid4().hex
         output_filepath = os.path.join(
