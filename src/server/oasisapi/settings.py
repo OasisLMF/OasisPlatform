@@ -50,6 +50,7 @@ INSTALLED_APPS = [
 
     'django_filters',
     'rest_framework',
+    'drf_yasg',
 
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
