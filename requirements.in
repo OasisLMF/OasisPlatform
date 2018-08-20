@@ -21,6 +21,7 @@ tox
 pip-tools
 ipdb
 ipython<6
+sqlalchemy
 
 docker-compose
 django<2.0
@@ -36,3 +37,4 @@ coreapi
 uwsgi
 whitenoise
 django_celery_results
+drf-yasg
