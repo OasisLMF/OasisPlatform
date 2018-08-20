@@ -14,6 +14,9 @@ import os
 import sys
 
 from datetime import timedelta
+
+from rest_framework.reverse import reverse_lazy
+
 from ...conf import iniconf  # noqa
 from ...conf.celeryconf import *  # noqa
 
@@ -198,3 +201,9 @@ LOGGING = {
 if IN_TEST:
     BROKER_URL = 'memory://'
     LOGGING['root'] = {}
+
+
+SWAGGER_SETTINGS = {
+    'LOGIN_URL': reverse_lazy('rest_framework:login'),
+    'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
+}
