@@ -88,7 +88,8 @@ class StartAnalysis(TestCase):
                             'module_supplier_id': 'supplier',
                             'model_version_id': 'version'
                         },
-                        settings.getint('worker', 'KTOOLS_BATCH_COUNT')
+                        settings.getint('worker', 'KTOOLS_BATCH_COUNT'),
+                        num_reinsurance_iterations=0
                     )
 
     def test_custom_model_runner_exists___custom_runner_is_used(self):
@@ -111,7 +112,7 @@ class StartAnalysis(TestCase):
                 with open(str(Path(module_dir, 'supplier').joinpath('supplier_model_runner.py')), 'w') as module:
                     module.writelines([
                         'from pathlib2 import Path\n',
-                        'def run(settings, location):\n',
+                        'def run(settings, location, num_reinsurance_iterations):\n',
                         '    Path("{}", "custom_model").touch()\n'.format(out_dir)
                     ])
 
