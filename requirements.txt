@@ -5,6 +5,7 @@
 #    pip-compile --output-file requirements.txt requirements.in
 #
 amqp==2.2.2               # via kombu
+anytree==2.4.3
 argparsetree==0.0.5       # via oasislmf
 attrs==17.4.0             # via hypothesis, pytest
 backports.tempfile==1.0
