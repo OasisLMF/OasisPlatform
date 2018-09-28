@@ -1,16 +1,16 @@
 Oasis Platform Releases
 =======================
 
-# 0.395.0
+## 0.395.0
 
 [![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.0-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.0)
 [![PyPI version](https://img.shields.io/badge/PyPi%20--%20OasisLMF-1.1.26-brightgreen.svg)](https://github.com/OasisLMF/OasisLMF/tree/v1.1.26)
 
-## Sub-Package versions
+### Sub-Package versions
 * Ktools update to v3.0.0
 * Python OasisLMF PyPi package update to v1.1.26
 
-## Major Features and Improvements
+### Major Features and Improvements
   * Reinsurance Phase 1 Completed - added support for
       * Reinsurance contract types
           - Facultative at location or policy, proportional or excess of loss
