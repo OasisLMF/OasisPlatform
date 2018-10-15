@@ -1,4 +1,4 @@
-FROM coreoasis/ktools:%RELEASE_TAG%
+FROM coreoasis/oasis_base:latest
 
 RUN mkdir /var/log/oasis
 
@@ -9,9 +9,6 @@ COPY ./tests/ /home/api/tests/
 COPY ./data/ /home/api/data/
 COPY ./src/ /home/api/src/
 COPY ./run_api_test_analysis.sh /home/api/
-
-RUN pip install -r /home/api/src/oasisapi_client/requirements.txt
-RUN pip install -r /home/api/src/oasis_utils/requirements.txt
 
 RUN chmod -R a+w /home/api/tests
 RUN chmod -R a+w /home/api/data
