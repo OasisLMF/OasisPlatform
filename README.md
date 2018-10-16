@@ -33,19 +33,11 @@ Check that the server is running:
 
 To run a test analysis using the worker image and example model data, run the following command:
     
-    docker exec oasisapi_runner_1 sh run_api_test_analysis.sh
+    docker exec oasisplatform_runner_1 sh run_api_test_analysis.sh
 
 ### Calling the Server
 
-The API server provides a REST interface which is described <a href="https://oasislmf.github.io/docs/oasis_rest_api.html" target="_blank">here</a>. You can use any suitable command line client such as `curl` or <a href="www.httpie.org" target="_blank">`httpie`</a> to make individual API calls, but a custom Python client may be a better option - for this you can use the <a href="https://giub.com/OasisLMF/OasisAPIClient" target="_blank">`OasisAPIClient` repository</a>.
-
-Oasis provides a built-in client `model_api_tester.py` (located in `src/oasisapi_client`) which is an executable multi-threaded script that can generate model analyses given the locations of the model inputs and analysis settings JSON file (see the <a href="https://github.com/OasisLMF/OasisAPIClient" target="_blank">`OasisAPIClient` repository</a> or <a href="https://oasislmf.github.io/OasisAPIClient/" target="_blank">`OasisAPIClient` documentation site</a> for more information). First install the Oasis API client requirements
-
-    pip install -r src/oasisapi_client/requirements.py
-
-As an example, you can run analyses for a generic Oasis model provided in this repository (model data and analysis settings JSON file are located in the `tests/data` subfolder) using
-
-    python ./src/oasisapi_client/model_api_tester.py -s <API server URL:port> -a tests/data/analysis_settings.json -i tests/data/input -o tests/data/output -n 1 -v
+The API server provides a REST interface which is described <a href="https://oasislmf.github.io/docs/oasis_rest_api.html" target="_blank">here</a>. You can use any suitable command line client such as `curl` or <a href="www.httpie.org" target="_blank">`httpie`</a> to make individual API calls, but a custom Python client may be a better option - for this you can use the <a href="https://oasislmf.github.io/OasisLmf/api/api_client/client.html" target="_blank">`api_client` repository</a> withing the oasislmf Python package.
 
 ## Development
 
