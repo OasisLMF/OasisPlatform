@@ -13,7 +13,7 @@ Provides core components of the Oasis platform, specifically:
 
 A simple environment for the testing the API and worker can be created using Docker compose.
 
-<img src="https://raw.githubusercontent.com/OasisLMF/OasisApi/Open_Source_prep/Oasis%20Simple%20Runner.png" alt="Simple Oasis platform test environment"/>
+<img src="https://github.com/OasisLMF/OasisPlatform/blob/master/Oasis%20Simple%20Runner.png" alt="Simple Oasis platform test environment"/>
 
 First make sure that you have Docker running. Then build the images for the API server, model execution worker and API runner:
 
@@ -109,7 +109,7 @@ Note that the Dockerfiles cannot be used directly as there are version stubs tha
 * <a href="https://github.com/OasisLMF/OasisApi/releases">Releases</a>
 * <a href="https://oasislmf.github.io">General Oasis documentation</a>
 * <a href="https://oasislmf.github.io/docs/oasis_rest_api.html">Oasis API documentation</a>
-* <a href="https://oasislmf.github.io/OasisApi/modules.html">Oasis Platform module documentation</a>
+* <a href="https://oasislmf.github.io/OasisPlatform/modules.html">Oasis Platform module documentation</a>
 
 ## License
 The code in this project is licensed under BSD 3-clause license.
