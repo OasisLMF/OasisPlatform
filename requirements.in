@@ -1,4 +1,4 @@
--e git://github.com/oasislmf/oasislmf.git@feature/relative-lookup-config#egg=oasislmf
+oasislmf
 celery
 pymysql
 jsonpickle
