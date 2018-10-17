@@ -5,7 +5,7 @@
 #    pip-compile --output-file requirements.txt requirements.in
 #
 -e git+git://github.com/wildfish/django-rest-framework#egg=djangorestframework
--e git+git://github.com/oasislmf/oasislmf.git@feature/relative-lookup-config#egg=oasislmf
+oasislmf==1.1.27
 amqp==2.2.2               # via kombu
 argparsetree==0.0.5
 atomicwrites==1.1.5       # via pytest
