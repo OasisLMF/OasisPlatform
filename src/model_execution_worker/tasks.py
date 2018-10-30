@@ -136,20 +136,24 @@ def start_analysis(analysis_settings_file, input_location):
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
+    with io.open(analysis_settings_file, 'r', encoding='utf-8') as f:
+        run_fm = json.load(f)['analysis_settings']['il_output']
+
 
     with TemporaryDirectory() as oasis_files_dir, TemporaryDirectory() as run_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
-
-        GenerateLossesCmd(argv=[
+    
+        run_args = [
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
             '--model-run-dir', run_dir,
             '--analysis-settings-json-file-path', analysis_settings_file,
-            '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
-            '--fm',
-        ]).run()
+            '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT')]
+        if run_fm:
+            run_args.appned('--fm')
 
+        GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
 
         output_directory = os.path.join(run_dir, "output")
