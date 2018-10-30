@@ -5,7 +5,7 @@
 #    pip-compile --output-file requirements.txt requirements.in
 #
 -e git+git://github.com/wildfish/django-rest-framework#egg=djangorestframework
-oasislmf==1.1.27
+-e git+git://github.com/OasisLMF/OasisLMF.git@fix/multiprocessing-tweak-for-api-clients#egg=oasislmf
 amqp==2.2.2               # via kombu
 argparsetree==0.0.5
 atomicwrites==1.1.5       # via pytest
@@ -13,7 +13,7 @@ attrs==17.4.0             # via hypothesis, pytest
 backports.tempfile==1.0
 backports.weakref==1.0.post1  # via backports.tempfile
 beautifulsoup4==4.6.0     # via webtest
-billiard==3.5.0.3         # via celery
+billiard==3.5.0.4         # via celery
 cached-property==1.4.3    # via docker-compose
 celery==4.1.0
 certifi==2018.1.18
@@ -89,7 +89,7 @@ python-magic==0.4.15
 pytz==2017.3              # via celery, django, pandas
 pyyaml==3.12              # via docker-compose
 requests-toolbelt==0.8.0
-requests==2.18.4
+requests==2.20.0
 rtree==0.8.3
 ruamel.yaml==0.15.60      # via drf-yasg
 shapely==1.6.4.post1
