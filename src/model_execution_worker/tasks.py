@@ -138,6 +138,7 @@ def start_analysis(analysis_settings_file, input_location):
             '--model-run-dir', run_dir,
             '--analysis-settings-json-file-path', analysis_settings_file,
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
+            '--fm',
         ]).run()
 
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
@@ -163,7 +164,8 @@ def generate_input(exposures_file):
         GenerateOasisFilesCmd(argv=[
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
-            '--source-exposures-file-path', exposures_file
+            '--source-exposures-file-path', exposures_file,
+            '--fm'
         ]).run()
 
         error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, 'oasiskeys-errors-*.csv'))), None)
