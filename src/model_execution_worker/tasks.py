@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import glob
 import logging
+import io
+import json
 import os
 import shutil
 import tarfile
@@ -142,7 +144,7 @@ def start_analysis(analysis_settings_file, input_location):
             '--analysis-settings-json-file-path', analysis_settings_file,
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT')]
         if run_fm:
-            run_args.appned('--fm')
+            run_args.append('--fm')
 
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
