@@ -1,6 +1,6 @@
 <img src="https://oasislmf.org/packages/oasis_theme_package/themes/oasis_theme/assets/src/oasis-lmf-colour.png" alt="Oasis LMF logo" width="250"/>
 
-[![Build](http://ci.oasislmfdev.org/buildStatus/icon?job=pipeline_stable/oasis_platform)](http://ci.oasislmfdev.org/blue/organizations/jenkins/pipeline_stable%2Foasis_platform/activity)
+[![Build](http://ci.oasislmfdev.org/buildStatus/icon?job=oasis_platform)](http://ci.oasislmfdev.org/blue/organizations/jenkins/oasis_platform/activity)
 
 # Oasis Platform
 Provides core components of the Oasis platform, specifically:
