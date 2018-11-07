@@ -1,16 +1,33 @@
 Oasis Platform Releases
 =======================
 
-## 0.395.0
+[![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.2-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.2)
+[![PyPI version](https://img.shields.io/badge/PyPi%20--%20OasisLMF-1.2.1-brightgreen.svg)](https://github.com/OasisLMF/OasisLMF/tree/v1.2.1)
 
-[![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.0-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.0)
-[![PyPI version](https://img.shields.io/badge/PyPi%20--%20OasisLMF-1.1.26-brightgreen.svg)](https://github.com/OasisLMF/OasisLMF/tree/v1.1.26)
+# 0.396.0
 
-### Sub-Package versions
-* Ktools update to v3.0.0
-* Python OasisLMF PyPi package update to v1.1.26
+## Sub-Package versions
+* Ktools updated to `v3.0.2`
+* Python OasisLMF PyPi package updated to `v1.2.1`
 
-### Major Features and Improvements
+## Major Features and Improvements
+    * Ktools
+        - Improved error handling 
+        - Compatibility fix for OSX                                                                                                     
+
+    * OasisLMF
+        - Financial Module (FM) / Insurance loss (IL) support in the Model development kit (MDK)
+        - Fixes in preparation for API update
+        - Various optimisations & fixes
+
+
+# 0.395.0
+
+## Sub-Package versions
+* Ktools update to `v3.0.0`
+* Python OasisLMF PyPi package update to `v1.1.26`
+
+## Major Features and Improvements
   * Reinsurance Phase 1 Completed - added support for
       * Reinsurance contract types
           - Facultative at location or policy, proportional or excess of loss
