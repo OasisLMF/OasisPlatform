@@ -55,7 +55,7 @@ python-interface==1.4.0   # via oasislmf
 pytz==2017.3              # via celery, oasislmf, pandas
 pyyaml==3.12              # via flask-swagger
 requests-toolbelt==0.8.0  # via oasislmf
-requests==2.18.4
+requests==2.20.0
 scandir==1.6              # via pathlib2
 shutilwhich==1.1.0
 six==1.11.0               # via fasteners, mock, oasislmf, pathlib2, pytest, python-dateutil, python-interface, tox
