@@ -43,6 +43,7 @@ logging.info("OUTPUTS_DATA_DIRECTORY: {}".format(settings.get('worker', 'OUTPUTS
 logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
 logging.info("WORKING_DIRECTORY: {}".format(settings.get('worker', 'WORKING_DIRECTORY')))
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
+logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
 
 
 class MissingInputsException(OasisException):
@@ -94,6 +95,7 @@ def start_analysis_task(self, input_location, analysis_settings_json):
             logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
             logging.info("WORKING_DIRECTORY: {}".format(settings.get('worker', 'WORKING_DIRECTORY')))
             logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
+            logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
 
             self.update_state(state=status.STATUS_RUNNING)
             output_location = start_analysis(analysis_settings_json[0], input_location)
@@ -174,7 +176,11 @@ def start_analysis(analysis_settings, input_location):
         num_reinsurance_iterations = len(glob.glob(os.path.join("input", 'RI_[0-9]')))
 
         model_runner_module.run(
-            analysis_settings['analysis_settings'], settings.getint('worker', 'KTOOLS_BATCH_COUNT'), num_reinsurance_iterations=num_reinsurance_iterations)
+            analysis_settings['analysis_settings'], 
+            settings.getint('worker', 'KTOOLS_BATCH_COUNT'), 
+            num_reinsurance_iterations=num_reinsurance_iterations
+            settings.get('worker', 'KTOOLS_MEMORY_LIMIT')
+        )
 
         output_location = uuid.uuid4().hex
         output_filepath = os.path.join(
