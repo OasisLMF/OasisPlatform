@@ -40,6 +40,10 @@ class Settings(ConfigParser):
         kwargs.setdefault('vars', self._get_section_env_vars(section))
         return super(Settings, self).getint(section, option, **kwargs)
 
+    def getboolean(self, section, option, **kwargs):
+        kwargs.setdefault('vars', self._get_section_env_vars(section))
+        return super(Settings, self).getboolean(section, option, **kwargs)
+
     def setup_logging(self, section):
         """
         Read an Oasis standard logging config
