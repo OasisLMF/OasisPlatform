@@ -178,7 +178,7 @@ def start_analysis(analysis_settings, input_location):
         model_runner_module.run(
             analysis_settings['analysis_settings'], 
             settings.getint('worker', 'KTOOLS_BATCH_COUNT'), 
-            num_reinsurance_iterations=num_reinsurance_iterations
+            num_reinsurance_iterations=num_reinsurance_iterations,
             settings.get('worker', 'KTOOLS_MEMORY_LIMIT')
         )
 
