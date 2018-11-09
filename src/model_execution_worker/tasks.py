@@ -179,7 +179,7 @@ def start_analysis(analysis_settings, input_location):
             analysis_settings['analysis_settings'], 
             settings.getint('worker', 'KTOOLS_BATCH_COUNT'), 
             num_reinsurance_iterations=num_reinsurance_iterations,
-            settings.get('worker', 'KTOOLS_MEMORY_LIMIT')
+            ktools_mem_limit=settings.get('worker', 'KTOOLS_MEMORY_LIMIT')
         )
 
         output_location = uuid.uuid4().hex
