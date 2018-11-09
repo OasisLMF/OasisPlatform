@@ -1,0 +1,9 @@
+FROM ubuntu:16.04
+
+COPY ./apt.txt ./
+RUN apt update && \
+    apt upgrade -y && \
+    apt install -y $(grep -vE "^\s*#" apt.txt  | tr "\n" " ") && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install oasislmf 
