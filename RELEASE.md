@@ -17,7 +17,7 @@ Oasis Platform Releases
 
     * OasisLMF
         - Financial Module (FM) / Insurance loss (IL) support in the Model development kit (MDK)
-        - Fixes in preparation for API update
+        - Fixes for OED reinsurance for SS and Fac application scope
         - Various optimisations & fixes
 
 
