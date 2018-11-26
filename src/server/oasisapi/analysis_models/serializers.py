@@ -20,3 +20,10 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         if 'request' in self.context:
             data['creator'] = self.context.get('request').user
         return super(AnalysisModelSerializer, self).create(data)
+
+    def to_representation(self, instance):
+        rep = super(AnalysisSerializer, self).to_representation(instance)
+       
+        request = self.context.get('request')
+        rep['resources_file'] = instance.get_absolute_resources_file_url(request=request)
+        return rep

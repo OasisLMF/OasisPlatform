@@ -5,6 +5,7 @@ from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
 from ..filters import TimeStampedFilter
+from ..files.views import handle_related_file
 from .models import AnalysisModel
 from .serializers import AnalysisModelSerializer
 
@@ -78,3 +79,18 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
     filter_class = AnalysisModelFilter
+
+    @action(methods=['get', 'post', 'delete'], detail=True)
+    def resources(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the models `resource_file` contents
+
+        post:
+        Sets the models `resource_file` contents
+
+        delete:
+        Disassociates the moodels `resource_file` contents
+        """
+        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
+
