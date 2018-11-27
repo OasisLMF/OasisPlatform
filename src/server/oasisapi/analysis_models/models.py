@@ -14,7 +14,7 @@ class AnalysisModel(TimeStampedModel):
     version_id = models.CharField(max_length=255, help_text=_('The version ID for the model.'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL)
 
-    resources_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='model_resources_file')
+    resource_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='analysis_model_resource_file')
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')
@@ -28,5 +28,5 @@ class AnalysisModel(TimeStampedModel):
 
 
     def get_absolute_resources_file_url(self, request=None):
-        return reverse('model-resources-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-model-resource-file', kwargs={'pk': self.pk}, request=request)
 
