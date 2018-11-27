@@ -147,8 +147,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def run(self, request, pk=None, version=None):
         """
         Runs all the analysis. The analysis must have one of the following
-        statuses, `NEW`, `STOPPED_COMPLETED`, `STOPPED_CANCELLED` or
-        `STOPPED_ERROR`
+        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        `RUN_ERROR`
         """
         obj = self.get_object()
         obj.run(request.user)
@@ -157,8 +157,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
-        Cancels a currently running analysis. The analysis must have one of the following
-        statuses, `PENDING` or `STARTED`
+        Cancels a currently running analysis. The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
+        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        `RUN_ERROR`.
         """
         obj = self.get_object()
         obj.cancel()
@@ -169,8 +170,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         Generates the inputs for the analysis based on the portfolio.
         The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
-        `INPUTS_GENERATION_CANCELED`, `READY`, `STOPPED_COMPLETED`, `STOPPED_CANCELLED` or
-        `STOPPED_ERROR`.
+        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        `RUN_ERROR`.
         """
         obj = self.get_object()
         obj.generate_inputs(request.user)
@@ -179,7 +180,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None, version=None):
         """
-        Cancels a currently inputs generation. The analysis status must be `GENERATING_INPUTS`
+        Cancels a currently inputs generation. The analysis status must be `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
         obj.cancel_generate_inputs()
