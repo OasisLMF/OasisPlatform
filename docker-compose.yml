@@ -15,21 +15,82 @@ services:
 #     - ./log:/var/log/oasis:rw
      - ./upload:/var/www/oasis/upload:rw
      - ./download:/var/www/oasis/download:rw
-  worker:
+  worker1:
     image: model_execution_worker
     environment:
-     - MODEL_SUPPLIER_ID=OasisIM
-     - MODEL_VERSION_ID=1
-     - RABBIT_PORT=5672
-     - MYSQL_PORT=3306
-     - LOCK_FILE = '/tmp/tmp_ktools_lock_file'
-     - DO_CLEAR_WORKING = True
-     - KTOOLS_BATCH_COUNT=-1
-    volumes:
+     - OASIS_MODEL_SUPPLIER_ID=OasisIM
+     - OASIS_MODEL_VERSION_ID=1
+     - OASIS_RABBIT_PORT=5672
+     - OASIS_MYSQL_PORT=3306
+     - OASIS_API_LOCK_FILE='/tmp/tmp_ktools_lock_file_1'
+     - OASIS_DO_CLEAR_WORKING=True
+     - OASIS_KTOOLS_BATCH_COUNT=-1
+     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
+     - OASIS_MAX_RETRIES=10
+     - OASIS_LOG_LEVEL=DEBUG
+    volumes:  
 #     - ./log:/var/log/oasis:rw
+     - /tmp:/tmp
      - ./upload:/var/www/oasis/upload:rw
      - ./download:/var/www/oasis/download:rw
      - ./data/static:/var/oasis/model_data/OasisIM/1:rw
+  worker2:
+    image: model_execution_worker
+    environment:
+     - OASIS_MODEL_SUPPLIER_ID=OasisIM
+     - OASIS_MODEL_VERSION_ID=2
+     - OASIS_RABBIT_PORT=5672
+     - OASIS_MYSQL_PORT=3306
+     - OASIS_API_LOCK_FILE='/tmp/tmp_ktools_lock_file_1'
+     - OASIS_DO_CLEAR_WORKING=True
+     - OASIS_KTOOLS_BATCH_COUNT=-1
+     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
+     - OASIS_MAX_RETRIES=10
+     - OASIS_LOG_LEVEL=DEBUG
+    volumes:
+#     - ./log:/var/log/oasis:rw
+     - /tmp:/tmp
+     - ./upload:/var/www/oasis/upload:rw
+     - ./download:/var/www/oasis/download:rw
+     - ./data/static:/var/oasis/model_data/OasisIM/2:rw
+  worker3:
+    image: model_execution_worker
+    environment:
+     - OASIS_MODEL_SUPPLIER_ID=OasisIM
+     - OASIS_MODEL_VERSION_ID=1
+     - OASIS_RABBIT_PORT=5672
+     - OASIS_MYSQL_PORT=3306
+     - OASIS_API_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
+     - OASIS_DO_CLEAR_WORKING=True
+     - OASIS_KTOOLS_BATCH_COUNT=-1
+     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
+     - OASIS_MAX_RETRIES=10
+     - OASIS_LOG_LEVEL=DEBUG
+    volumes:
+#     - ./log:/var/log/oasis:rw
+     - /tmp:/tmp
+     - ./upload:/var/www/oasis/upload:rw
+     - ./download:/var/www/oasis/download:rw
+     - ./data/static:/var/oasis/model_data/OasisIM/1:rw
+  worker4:
+    image: model_execution_worker
+    environment:
+     - OASIS_MODEL_SUPPLIER_ID=OasisIM
+     - OASIS_MODEL_VERSION_ID=2
+     - OASIS_RABBIT_PORT=5672
+     - OASIS_MYSQL_PORT=3306
+     - OASIS_API_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
+     - OASIS_DO_CLEAR_WORKING=True
+     - OASIS_KTOOLS_BATCH_COUNT=-1
+     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
+     - OASIS_MAX_RETRIES=10
+     - OASIS_LOG_LEVEL=DEBUG
+    volumes:
+#     - ./log:/var/log/oasis:rw
+     - /tmp:/tmp
+     - ./upload:/var/www/oasis/upload:rw
+     - ./download:/var/www/oasis/download:rw
+     - ./data/static:/var/oasis/model_data/OasisIM/2:rw
   oasis_mysql:
     image: mysql:5.7
     environment:
@@ -41,3 +102,5 @@ services:
     image: rabbitmq:3-management
     ports:
       - "15672:15672"
+
+
