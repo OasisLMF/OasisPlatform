@@ -31,7 +31,7 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
 class TokenRefreshSerializer(serializers.Serializer):
     def validate(self, attrs):
         if 'HTTP_AUTHORIZATION' not in self.context['request'].META.keys():
-             raise ValidationError({"Detail": "header 'authorizationmust' not be null"})
+             raise ValidationError({"Detail": "header 'authorization' must not be null"})
 
         token = self.context['request'].META['HTTP_AUTHORIZATION'][7:]  # skip 'Bearer '
 
