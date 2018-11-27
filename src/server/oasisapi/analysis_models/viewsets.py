@@ -22,7 +22,16 @@ class AnalysisModelFilter(TimeStampedFilter):
     supplier_id__contains = filters.CharFilter(
         help_text=_('Filter results by case insensitive `supplier_id` containing the given string'),
         lookup_expr='icontains',
-        field_name='name'
+        field_name='supplier_id'
+    )
+    model_id = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `model_id` equal to the given string'),
+        lookup_expr='iexact'
+    )
+    model_id__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `model_id` containing the given string'),
+        lookup_expr='icontains',
+        field_name='model_id'
     )
     version_id = filters.CharFilter(
         help_text=_('Filter results by case insensitive `version_id` equal to the given string'),
@@ -31,7 +40,7 @@ class AnalysisModelFilter(TimeStampedFilter):
     version_id__contains = filters.CharFilter(
         help_text=_('Filter results by case insensitive `version_id` containing the given string'),
         lookup_expr='icontains',
-        field_name='name'
+        field_name='version_id'
     )
 
     class Meta:
@@ -39,6 +48,8 @@ class AnalysisModelFilter(TimeStampedFilter):
         fields = [
             'supplier_id',
             'supplier_id__contains',
+            'model_id',
+            'model_id__contains',
             'version_id',
             'version_id__contains',
         ]
