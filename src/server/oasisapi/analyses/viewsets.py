@@ -3,13 +3,16 @@ from __future__ import absolute_import
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
-from django_filters import rest_framework as filters
+from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
+from django_filters import rest_framework as filters
 
 from ..analysis_models.models import AnalysisModel
 from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ..files.views import handle_related_file
+from ..files.serializers import RelatedFileSerializer
 from .models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer
 
@@ -118,13 +121,27 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filter_class = AnalysisFilter
 
+    file_action_types = ['settings_file', 'input_file', 'input_errors_file', 
+                         'input_generation_traceback_file', 'run_traceback_file', 
+                         'output_file', 'run_traceback_file']
+
     def get_serializer_class(self):
         if self.action in ['retrieve', 'create', 'list', 'options', 'update', 'partial_update']:
             return super(AnalysisViewSet, self).get_serializer_class()
         elif self.action == 'copy':
             return AnalysisCopySerializer
+        elif self.action in self.file_action_types:
+            return RelatedFileSerializer
         else:
             return Serializer
+
+    @property
+    def parser_classes(self):
+        if getattr(self, 'action', None) in self.file_action_types:
+            return [MultiPartParser]
+        else:
+            return api_settings.DEFAULT_PARSER_CLASSES
+
 
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):

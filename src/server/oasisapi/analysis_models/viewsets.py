@@ -3,9 +3,13 @@ from __future__ import absolute_import
 from django.utils.translation import ugettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
+from rest_framework.settings import api_settings
 
 from ..filters import TimeStampedFilter
 from ..files.views import handle_related_file
+from ..files.serializers import RelatedFileSerializer
 from .models import AnalysisModel
 from .serializers import AnalysisModelSerializer
 
@@ -80,8 +84,26 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisModelSerializer
     filter_class = AnalysisModelFilter
 
+
+    def get_serializer_class(self):
+        if self.action in ['resource_file']:
+            return RelatedFileSerializer
+        else:
+            return super(AnalysisModelViewSet, self).get_serializer_class()
+
+    @property
+    def parser_classes(self):
+        if getattr(self, 'action', None) in ['resource_file']:
+            return [MultiPartParser]
+        else:
+            return api_settings.DEFAULT_PARSER_CLASSES
+
+
+
+
+
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def resources(self, request, pk=None, version=None):
+    def resource_file(self, request, pk=None, version=None):
         """
         get:
         Gets the models `resource_file` contents
