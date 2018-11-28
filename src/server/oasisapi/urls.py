@@ -51,10 +51,10 @@ urlpatterns = [
     url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
     url(r'^', include('src.server.oasisapi.auth.urls', namespace='auth')),
-    url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
     url(r'^healthcheck/$', HealthcheckView.as_view(), name='healthcheck'),
     url(r'^auth/', include('rest_framework.urls')),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
 ]
 
 if settings.DEBUG:
