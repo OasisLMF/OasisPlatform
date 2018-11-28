@@ -16,16 +16,17 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         )
 
 
-    def validate(self, attrs):
-        if not attrs.get('creator') and 'request' in self.context:
-            attrs['creator'] = self.context.get('request').user
-        return attrs   
+    #def validate(self, attrs):
+    #    if not attrs.get('creator') and 'request' in self.context:
+    #        attrs['creator'] = self.context.get('request').user
+    #    return attrs   
 
-    #def create(self, validated_data):
-    #    data = validated_data.copy()
-    #    if 'request' in self.context:
-    #        data['creator'] = self.context.get('request').user
-    #    return super(AnalysisModelSerializer, self).create(data)
+    def create(self, validated_data):
+        data = validated_data.copy()
+        if 'request' in self.context:
+            data['creator'] = self.context.get('request').user
+            data['creator_name'] = self.context.get('request').user.username
+        return super(AnalysisModelSerializer, self).create(data)
 
     def to_representation(self, instance):
         rep = super(AnalysisModelSerializer, self).to_representation(instance)
