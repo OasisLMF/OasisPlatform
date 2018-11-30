@@ -1,5 +1,6 @@
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt import settings as jwt_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenObtainPairSerializer
 from django.utils.six import text_type
@@ -29,6 +30,9 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
 
 class TokenRefreshSerializer(serializers.Serializer):
     def validate(self, attrs):
+        if 'HTTP_AUTHORIZATION' not in self.context['request'].META.keys():
+             raise ValidationError({"Detail": "header 'authorization' must not be null"})
+
         token = self.context['request'].META['HTTP_AUTHORIZATION'][7:]  # skip 'Bearer '
 
         refresh = RefreshToken(token)

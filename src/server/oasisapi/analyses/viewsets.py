@@ -3,13 +3,16 @@ from __future__ import absolute_import
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
-from django_filters import rest_framework as filters
+from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
+from django_filters import rest_framework as filters
 
 from ..analysis_models.models import AnalysisModel
 from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ..files.views import handle_related_file
+from ..files.serializers import RelatedFileSerializer
 from .models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer
 
@@ -50,6 +53,11 @@ class AnalysisFilter(TimeStampedFilter):
         label=_('Model in'),
         queryset=AnalysisModel.objects.all(),
     )
+    user = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `user` equal to the given string'),
+        lookup_expr='iexact',
+        field_name='creator_name'
+    )
 
     class Meta:
         model = Analysis
@@ -60,6 +68,7 @@ class AnalysisFilter(TimeStampedFilter):
             'status__in',
             'model',
             'model__in',
+            'user',
         ]
 
     def __init__(self, *args, **kwargs):
@@ -118,20 +127,34 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filter_class = AnalysisFilter
 
+    file_action_types = ['settings_file', 'input_file', 'input_errors_file', 
+                         'input_generation_traceback_file', 'run_traceback_file', 
+                         'output_file', 'run_traceback_file']
+
     def get_serializer_class(self):
         if self.action in ['retrieve', 'create', 'list', 'options', 'update', 'partial_update']:
             return super(AnalysisViewSet, self).get_serializer_class()
         elif self.action == 'copy':
             return AnalysisCopySerializer
+        elif self.action in self.file_action_types:
+            return RelatedFileSerializer
         else:
             return Serializer
+
+    @property
+    def parser_classes(self):
+        if getattr(self, 'action', None) in self.file_action_types:
+            return [MultiPartParser]
+        else:
+            return api_settings.DEFAULT_PARSER_CLASSES
+
 
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
         Runs all the analysis. The analysis must have one of the following
-        statuses, `NEW`, `STOPPED_COMPLETED`, `STOPPED_CANCELLED` or
-        `STOPPED_ERROR`
+        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        `RUN_ERROR`
         """
         obj = self.get_object()
         obj.run(request.user)
@@ -140,8 +163,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
-        Cancels a currently running analysis. The analysis must have one of the following
-        statuses, `PENDING` or `STARTED`
+        Cancels a currently running analysis. The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
+        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        `RUN_ERROR`.
         """
         obj = self.get_object()
         obj.cancel()
@@ -152,8 +176,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         Generates the inputs for the analysis based on the portfolio.
         The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
-        `INPUTS_GENERATION_CANCELED`, `READY`, `STOPPED_COMPLETED`, `STOPPED_CANCELLED` or
-        `STOPPED_ERROR`.
+        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        `RUN_ERROR`.
         """
         obj = self.get_object()
         obj.generate_inputs(request.user)
@@ -162,7 +186,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None, version=None):
         """
-        Cancels a currently inputs generation. The analysis status must be `GENERATING_INPUTS`
+        Cancels a currently inputs generation. The analysis status must be `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
         obj.cancel_generate_inputs()

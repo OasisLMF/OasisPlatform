@@ -20,12 +20,18 @@ from .serializers import PortfolioSerializer, CreateAnalysisSerializer
 class PortfolioFilter(TimeStampedFilter):
     name = filters.CharFilter(help_text=_('Filter results by case insensitive names equal to the given string'), lookup_expr='iexact')
     name__contains = filters.CharFilter(help_text=_('Filter results by case insensitive name containing the given string'), lookup_expr='icontains', field_name='name')
+    user = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `user` equal to the given string'),
+        lookup_expr='iexact',
+        field_name='creator_name'
+    )
 
     class Meta:
         model = Portfolio
         fields = [
             'name',
             'name__contains',
+            'user',
         ]
 
 

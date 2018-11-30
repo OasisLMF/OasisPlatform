@@ -14,6 +14,7 @@ from ..files.models import RelatedFile
 class Portfolio(TimeStampedModel):
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
+    creator_name = models.CharField(max_length=255, editable=False, default='', blank=True)
 
     accounts_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='accounts_file_portfolios')
     location_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='location_file_portfolios')
@@ -40,3 +41,12 @@ class Portfolio(TimeStampedModel):
 
     def get_absolute_reinsurance_source_file_url(self, request=None):
         return reverse('portfolio-reinsurance-source-file', kwargs={'pk': self.pk}, request=request)
+
+
+@python_2_unicode_compatible
+class PortfolioStatus(TimeStampedModel):
+
+
+    def __str__(self):
+        pass
+

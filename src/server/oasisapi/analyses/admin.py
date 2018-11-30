@@ -1,5 +1,6 @@
-from django.contrib.admin import site
-
+from django.contrib import admin
 from .models import Analysis
 
-site.register(Analysis)
+@admin.register(Analysis)
+class AnalysisAdmin(admin.ModelAdmin):
+    list_display = ['name', 'model']
