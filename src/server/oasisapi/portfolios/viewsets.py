@@ -31,7 +31,7 @@ class PortfolioFilter(TimeStampedFilter):
         fields = [
             'name',
             'name__contains',
-            'creator_name',
+            'user',
         ]
 
 

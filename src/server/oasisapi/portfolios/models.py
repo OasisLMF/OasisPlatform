@@ -41,3 +41,12 @@ class Portfolio(TimeStampedModel):
 
     def get_absolute_reinsurance_source_file_url(self, request=None):
         return reverse('portfolio-reinsurance-source-file', kwargs={'pk': self.pk}, request=request)
+
+
+@python_2_unicode_compatible
+class PortfolioStatus(TimeStampedModel):
+
+
+    def __str__(self):
+        pass
+
