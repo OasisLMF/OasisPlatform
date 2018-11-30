@@ -1,7 +1,12 @@
+import logging
+import re
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from .models import RelatedFile
+
+logger = logging.getLogger('root')
 
 
 class RelatedFileSerializer(serializers.ModelSerializer):
@@ -10,6 +15,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         fields = (
             'created',
             'file',
+            'filename',
         )
 
     def __init__(self, *args, content_types=None, **kwargs):
@@ -19,6 +25,12 @@ class RelatedFileSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs['creator'] = self.context['request'].user
         attrs['content_type'] = attrs['file'].content_type
+        attrs['filename'] = self.context['request'].FILES['file']
+
+        #logger.debug('TEST_LOG_MSG')
+        #logger.debug(str(self.context['request'].META.keys()))
+        #logger.debug(str(self.context['request'].FILES['file']))
+        #logger.debug(self.context['request'])
 
         return super(RelatedFileSerializer, self).validate(attrs)
 

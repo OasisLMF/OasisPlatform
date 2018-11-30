@@ -18,7 +18,10 @@ def _handle_get_related_file(parent, field):
         raise Http404()
 
     response = StreamingHttpResponse(_get_chunked_content(f.file), content_type=f.content_type)
-    response['Content-Disposition'] = 'attachment; filename="{}"'.format(f.file.name)
+    if f.filename:
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(f.filename)
+    else:
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(f.file.name)
     return response
 
 

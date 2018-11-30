@@ -1,5 +1,6 @@
-from django.contrib.admin import site
-
+from django.contrib import admin
 from .models import AnalysisModel
 
-site.register(AnalysisModel)
+@admin.register(AnalysisModel)
+class CatModelAdmin(admin.ModelAdmin):
+    list_display = ['model_id', 'supplier_id', 'version_id', 'creator']
