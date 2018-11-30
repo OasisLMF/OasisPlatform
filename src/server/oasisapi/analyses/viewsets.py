@@ -68,7 +68,7 @@ class AnalysisFilter(TimeStampedFilter):
             'status__in',
             'model',
             'model__in',
-            'creator_name',
+            'user',
         ]
 
     def __init__(self, *args, **kwargs):
