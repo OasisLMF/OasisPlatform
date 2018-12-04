@@ -19,7 +19,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
             data['creator'] = self.context.get('request').user
-            data['creator_name'] = self.context.get('request').user.username
+#            data['creator_name'] = self.context.get('request').user.username
         return super(PortfolioSerializer, self).create(data)
 
     def to_representation(self, instance):
