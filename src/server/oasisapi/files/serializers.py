@@ -27,11 +27,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = self.context['request'].FILES['file']
 
-        #logger.debug('TEST_LOG_MSG')
-        #logger.debug(str(self.context['request'].META.keys()))
-        #logger.debug(str(self.context['request'].FILES['file']))
-        #logger.debug(self.context['request'])
-
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):
