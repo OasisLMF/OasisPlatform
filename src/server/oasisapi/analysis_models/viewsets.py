@@ -42,11 +42,11 @@ class AnalysisModelFilter(TimeStampedFilter):
         lookup_expr='icontains',
         field_name='version_id'
     )
-#    user = filters.CharFilter(
-#        help_text=_('Filter results by case insensitive `user` equal to the given string'),
-#        lookup_expr='iexact',
-#        field_name='creator_name'
-#    )
+    user = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `user` equal to the given string'),
+        lookup_expr='iexact',
+        field_name='creator__username'
+    )
 
     class Meta:
         model = AnalysisModel
@@ -57,7 +57,7 @@ class AnalysisModelFilter(TimeStampedFilter):
             'model_id__contains',
             'version_id',
             'version_id__contains',
-#            'user',
+            'user',
         ]
 
 
