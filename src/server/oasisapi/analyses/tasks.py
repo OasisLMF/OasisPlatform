@@ -22,6 +22,7 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
 
     analysis.output_file = RelatedFile.objects.create(
         file=str(output_location),
+        filename=str(output_location),
         content_type='application/gzip',
         creator=get_user_model().objects.get(pk=initiator_pk),
     )
@@ -36,8 +37,10 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
     analysis = Analysis.objects.get(pk=analysis_pk)
     analysis.status = Analysis.status_choices.RUN_ERROR
 
+    random_filename = '{}.txt'.format(uuid.uuid4().hex)
     analysis.run_traceback_file = RelatedFile.objects.create(
-        file=File(StringIO(traceback), name='{}.txt'.format(uuid.uuid4().hex)),
+        file=File(StringIO(traceback), name=random_filename),
+        filename=random_filename,
         content_type='text/plain',
         creator=get_user_model().objects.get(pk=initiator_pk),
     )
@@ -48,7 +51,6 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
 @celery_app.task(name='generate_input_success')
 def generate_input_success(result, analysis_pk, initiator_pk):
     from .models import Analysis
-
     input_location, errors_location = result
 
     analysis = Analysis.objects.get(pk=analysis_pk)
@@ -56,18 +58,20 @@ def generate_input_success(result, analysis_pk, initiator_pk):
 
     analysis.input_file = RelatedFile.objects.create(
         file=str(input_location),
+        filename=str(input_location),
         content_type='application/gzip',
         creator=get_user_model().objects.get(pk=initiator_pk),
     )
 
     analysis.input_errors_file = RelatedFile.objects.create(
         file=str(errors_location),
+        filename=str(errors_location),
         content_type='text/csv',
         creator=get_user_model().objects.get(pk=initiator_pk),
     )
 
     analysis.save()
-
+    
 
 @celery_app.task(name='record_generate_input_failure')
 def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
@@ -76,8 +80,10 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
     analysis = Analysis.objects.get(pk=analysis_pk)
     analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
 
+    random_filename = '{}.txt'.format(uuid.uuid4().hex)
     analysis.input_generation_traceback_file = RelatedFile.objects.create(
-        file=File(StringIO(traceback), name='{}.txt'.format(uuid.uuid4().hex)),
+        file=File(StringIO(traceback), name=random_filename),
+        filename=random_filename,
         content_type='text/plain',
         creator=get_user_model().objects.get(pk=initiator_pk),
     )
