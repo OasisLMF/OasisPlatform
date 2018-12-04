@@ -21,7 +21,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if not attrs.get('creator') and 'request' in self.context:
             attrs['creator'] = self.context.get('request').user
-            attrs['creator_name'] = self.context.get('request').user.username
+#            attrs['creator_name'] = self.context.get('request').user.username
 
         return attrs
 

@@ -25,7 +25,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         data = validated_data.copy()
         if 'request' in self.context:
             data['creator'] = self.context.get('request').user
-            data['creator_name'] = self.context.get('request').user.username
+#            data['creator_name'] = self.context.get('request').user.username
         return super(AnalysisModelSerializer, self).create(data)
 
     def to_representation(self, instance):
