@@ -32,7 +32,7 @@ class Analysis(TimeStampedModel):
     )
 
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
-    creator_name = models.CharField(max_length=255, editable=False, default='', blank=True)
+    #creator_name = models.CharField(max_length=255, editable=False, default='', blank=True)
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
     model = models.ForeignKey(AnalysisModel, on_delete=models.DO_NOTHING, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)

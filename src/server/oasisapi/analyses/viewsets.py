@@ -53,11 +53,11 @@ class AnalysisFilter(TimeStampedFilter):
         label=_('Model in'),
         queryset=AnalysisModel.objects.all(),
     )
-    user = filters.CharFilter(
-        help_text=_('Filter results by case insensitive `user` equal to the given string'),
-        lookup_expr='iexact',
-        field_name='creator_name'
-    )
+#    user = filters.CharFilter(
+#        help_text=_('Filter results by case insensitive `user` equal to the given string'),
+#        lookup_expr='iexact',
+#        field_name='creator_name'
+#    )
 
     class Meta:
         model = Analysis
@@ -68,7 +68,7 @@ class AnalysisFilter(TimeStampedFilter):
             'status__in',
             'model',
             'model__in',
-            'user',
+#            'user',
         ]
 
     def __init__(self, *args, **kwargs):
