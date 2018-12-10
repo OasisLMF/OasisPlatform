@@ -1,8 +1,47 @@
-Oasis Platform Releases
-=======================
+# 0.397.0
 
-[![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.2-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.2)
-[![PyPI version](https://img.shields.io/badge/PyPi%20--%20OasisLMF-1.2.1-brightgreen.svg)](https://github.com/OasisLMF/OasisLMF/tree/v1.2.1)
+## [Ktools](https://github.com/OasisLMF/ktools/tree/v3.0.3)
+* Ktools *3.0.3* packaged in `0.397.0` docker images 
+
+### Bug Fixes and Other Changes
+* Performance optimization for Alloc rule 2 
+* Fix for aalcalc, standard deviation when an event has multiple periods 
+* Fix aalcalc weighting
+* Added `summarycalctobin` and removed `fptofmcache`
+* Improved error handling 
+
+
+### Deprecations
+* cygwin no longer supported, `./winconfigure`, to run ktools on windows use `MSYS2`.
+* For Documentation see [Windows installation](https://github.com/OasisLMF/ktools#windows-installation)
+
+## [OasisLMF](https://github.com/OasisLMF/OasisLMF/tree/1.2.2)
+* oasislmf *1.2.2* packaged in `0.397.0` docker images 
+
+### Features and Improvements
+* Added API client for OED API update 
+* New MDK commands to Invoke updated API client `oasislmf api [run, list, delete, add-model]`
+* Improved FM file generation testing
+
+### Reinsurance changes 
+* Fixes to scope filters to correctly handle account, policy and location combinations.
+* Added portfolio and location group scope filters.
+* Fixes to required fields and default values to match OED
+
+### Bug Fixes and Other Changes
+* Fixed binary file writing bug, corrupted tar output files
+
+## [OasisPlatform](https://github.com/OasisLMF/OasisPlatform/tree/0.397.0)
+ 
+### Breaking Changes
+* Docker container enviroment variable prefixs changes from `OASIS_API_<VAR_NAME>` to `OASIS_<VAR_NAME>`. 
+
+## [Oasis UI](https://github.com/OasisLMF/OasisUI/tree/0.397.0)
+### Bug Fixes and Other Changes
+* Docker files moved from `<root_dir>/build` to `<root_dir>/docker`
+* Dynamic port binding option added for RShiny-Proxy 
+* Fix for policy level outputs
+
 
 # 0.396.0
 
