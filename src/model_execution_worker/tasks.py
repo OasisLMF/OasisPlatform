@@ -140,8 +140,11 @@ def start_analysis(analysis_settings_file, input_location):
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     with io.open(analysis_settings_file, 'r', encoding='utf-8') as f:
-        run_fm = json.load(f)['analysis_settings']['il_output']
-
+        f_json = json.load(f)
+        if 'il_output' in f_json['analysis_settings'].keys():
+            run_fm = f_json['analysis_settings']['il_output']
+        else:
+            run_fm = False
 
     with TemporaryDirectory() as oasis_files_dir, TemporaryDirectory() as run_dir:
         with tarfile.open(input_archive) as f:
