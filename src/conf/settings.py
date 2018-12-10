@@ -17,19 +17,21 @@ class Settings(ConfigParser):
 
         ini_files = [os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'conf.ini')]
 
-        specified_ini = os.environ.get('OASIS_API_INI_PATH', None)
+        specified_ini = os.environ.get('OASIS_INI_PATH', None)
         if specified_ini and os.path.exists(specified_ini):
             ini_files.append(specified_ini)
 
         self.read(ini_files)
 
     def _get_section_env_vars(self, section):
-        section_env_prefix = 'OASIS_API_{}_'.format(section.upper())
-        global_env_prefix = 'OASIS_API_'
+        section_env_prefix = 'OASIS_{}_'.format(section.upper())
+        global_env_prefix = 'OASIS_'
 
         return ChainMap(
-            {k.replace(section_env_prefix, ''): v for k, v in os.environ.items() if k.startswith(section_env_prefix)},
-            {k.replace(global_env_prefix, ''): v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
+            {k.replace(section_env_prefix, ''): 
+                v for k, v in os.environ.items() if k.startswith(section_env_prefix)},
+            {k.replace(global_env_prefix, ''): 
+                v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
         )
 
     def get(self, section, option, **kwargs):

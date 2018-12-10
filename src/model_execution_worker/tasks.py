@@ -44,7 +44,7 @@ logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DAT
 logging.info("WORKING_DIRECTORY: {}".format(settings.get('worker', 'WORKING_DIRECTORY')))
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
-
+logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 
 class MissingInputsException(OasisException):
     def __init__(self, input_archive):
@@ -81,11 +81,16 @@ def start_analysis_task(self, input_location, analysis_settings_json):
         (string) The location of the outputs.
     '''
 
+    logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
+    logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
+        settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
+
     with get_lock() as gotten:
         if not gotten:
             logging.info("Failed to get resource lock - retry task")
-            retry_countdown_in_secs = 10
-            raise self.retry(countdown=retry_countdown_in_secs)
+            raise self.retry(
+                max_retries=None,
+                countdown=settings.getint('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS'))
 
         logging.info("Acquired resource lock")
 
