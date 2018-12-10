@@ -34,7 +34,8 @@
 ## [OasisPlatform](https://github.com/OasisLMF/OasisPlatform/tree/0.397.0)
  
 ### Breaking Changes
-* Docker container enviroment variable prefixs changes from `OASIS_API_<VAR_NAME>` to `OASIS_<VAR_NAME>`. 
+* Always use `OASIS_<VAR_NAME>` prefix for env variable. This replaces `OASIS_API_<VAR_NAME>` 
+* Fix for retry timeouts.
 
 ## [Oasis UI](https://github.com/OasisLMF/OasisUI/tree/0.397.0)
 ### Bug Fixes and Other Changes
