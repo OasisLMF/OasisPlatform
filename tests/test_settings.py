@@ -48,7 +48,7 @@ class SettingsGet(TestCase):
 
     @given(setting_text(), setting_text(), setting_text())
     def test_variable_is_set_in_global_env_setting_and_default___env_value_is_returned(self, section, default, env):
-        os.environ['OASIS_API_foo'] = env
+        os.environ['OASIS_foo'] = env
 
         settings = Settings()
 
@@ -61,8 +61,8 @@ class SettingsGet(TestCase):
 
     @given(setting_text(), setting_text(), setting_text(), setting_text())
     def test_variable_is_set_in_global_and_section_env_setting_and_default___setting_env_value_is_returned(self, section, default, global_env, section_env):
-        os.environ['OASIS_API_foo'] = global_env
-        os.environ['OASIS_API_SECTION_foo'] = section_env
+        os.environ['OASIS_foo'] = global_env
+        os.environ['OASIS_SECTION_foo'] = section_env
 
         settings = Settings()
 
@@ -81,7 +81,7 @@ class SettingsGet(TestCase):
                 'LOG_LEVEL = {}\n'.format(value)
             ])
             f.flush()
-            os.environ['OASIS_API_INI_PATH'] = f.name
+            os.environ['OASIS_INI_PATH'] = f.name
 
             settings = Settings()
 
