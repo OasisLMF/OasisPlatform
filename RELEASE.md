@@ -34,7 +34,7 @@
 
 ## [OasisPlatform](https://github.com/OasisLMF/OasisPlatform/tree/0.397.0)
  
-### Breaking Changes
+### Deployment Updates
 * Always use `OASIS_<VAR_NAME>` prefix for env variable. This replaces `OASIS_API_<VAR_NAME>` 
 * Fix for retry timeouts.
 
