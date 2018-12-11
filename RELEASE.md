@@ -9,6 +9,7 @@
 * Fix aalcalc weighting
 * Added `summarycalctobin` and removed `fptofmcache`
 * Improved error handling 
+* Event shuffling to distribute workload been CPU cores. 
 
 
 ### Deprecations
