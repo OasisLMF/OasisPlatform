@@ -22,7 +22,7 @@ services:
      - OASIS_MODEL_VERSION_ID=1
      - OASIS_RABBIT_PORT=5672
      - OASIS_MYSQL_PORT=3306
-     - OASIS_API_LOCK_FILE='/tmp/tmp_ktools_lock_file_1'
+     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_1'
      - OASIS_DO_CLEAR_WORKING=True
      - OASIS_KTOOLS_BATCH_COUNT=-1
      - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
@@ -41,7 +41,7 @@ services:
      - OASIS_MODEL_VERSION_ID=2
      - OASIS_RABBIT_PORT=5672
      - OASIS_MYSQL_PORT=3306
-     - OASIS_API_LOCK_FILE='/tmp/tmp_ktools_lock_file_1'
+     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_1'
      - OASIS_DO_CLEAR_WORKING=True
      - OASIS_KTOOLS_BATCH_COUNT=-1
      - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
@@ -60,7 +60,7 @@ services:
      - OASIS_MODEL_VERSION_ID=1
      - OASIS_RABBIT_PORT=5672
      - OASIS_MYSQL_PORT=3306
-     - OASIS_API_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
+     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
      - OASIS_DO_CLEAR_WORKING=True
      - OASIS_KTOOLS_BATCH_COUNT=-1
      - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
@@ -79,7 +79,7 @@ services:
      - OASIS_MODEL_VERSION_ID=2
      - OASIS_RABBIT_PORT=5672
      - OASIS_MYSQL_PORT=3306
-     - OASIS_API_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
+     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
      - OASIS_DO_CLEAR_WORKING=True
      - OASIS_KTOOLS_BATCH_COUNT=-1
      - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
