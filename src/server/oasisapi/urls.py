@@ -8,6 +8,7 @@ from rest_framework import routers, permissions
 from rest_framework.documentation import include_docs_urls
 from rest_framework.reverse import reverse_lazy
 
+from .files.viewsets import FilesViewSet
 from .analysis_models.viewsets import AnalysisModelViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .analyses.viewsets import AnalysisViewSet
@@ -20,6 +21,7 @@ api_router.include_root_view = False
 api_router.register('portfolios', PortfolioViewSet, base_name='portfolio')
 api_router.register('analyses', AnalysisViewSet, base_name='analysis')
 api_router.register('models', AnalysisModelViewSet, base_name='analysis-model')
+api_router.register('files', FilesViewSet, base_name='file')
 
 
 schema_view = get_schema_view(
