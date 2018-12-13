@@ -57,7 +57,7 @@ shutilwhich==1.1.0
 six==1.11.0               # via cryptography, fasteners, mock, pathlib2, pyopenssl, pytest, tox
 sqlalchemy==1.2.2
 tox==2.9.1
-urllib3==1.22             # via requests
+urllib3==1.23             # via requests
 vine==1.1.4               # via amqp
 virtualenv==15.1.0        # via tox
 werkzeug==0.14.1          # via flask
