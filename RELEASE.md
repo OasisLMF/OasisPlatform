@@ -1,3 +1,10 @@
+# 0.397.1
+
+## [oasis ui](https://github.com/oasislmf/oasisui/tree/0.397.1)
+### bug fixes and other changes
+* Fix for Reinsurance
+
+
 # 0.397.0
 
 ## [Ktools](https://github.com/OasisLMF/ktools/tree/v3.0.3)
@@ -38,11 +45,11 @@
 * Always use `OASIS_<VAR_NAME>` prefix for env variable. This replaces `OASIS_API_<VAR_NAME>` 
 * Fix for retry timeouts.
 
-## [Oasis UI](https://github.com/OasisLMF/OasisUI/tree/0.397.0)
-### Bug Fixes and Other Changes
-* Docker files moved from `<root_dir>/build` to `<root_dir>/docker`
-* Dynamic port binding option added for RShiny-Proxy 
-* Fix for policy level outputs
+## [oasis ui](https://github.com/oasislmf/oasisui/tree/0.397.0)
+### bug fixes and other changes
+* docker files moved from `<root_dir>/build` to `<root_dir>/docker`
+* dynamic port binding option added for rshiny-proxy 
+* fix for policy level outputs
 
 
 # 0.396.0
