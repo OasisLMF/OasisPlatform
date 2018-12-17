@@ -39,12 +39,12 @@ class Analysis(TimeStampedModel):
     run_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
 
-    settings_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='settings_file_analyses')
-    input_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='input_file_analyses')
-    input_errors_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='input_errors_file_analyses')
-    input_generation_traceback_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='input_generation_traceback_analyses')
-    output_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='output_file_analyses')
-    run_traceback_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='run_traceback_file_analyses')
+    settings_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='settings_file_analyses')
+    input_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_file_analyses')
+    input_errors_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_errors_file_analyses')
+    input_generation_traceback_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
+    output_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='output_file_analyses')
+    run_traceback_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='run_traceback_file_analyses')
 
     class Meta:
         verbose_name_plural = 'analyses'
