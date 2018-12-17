@@ -25,11 +25,43 @@ class PortfolioSerializer(serializers.ModelSerializer):
         rep = super(PortfolioSerializer, self).to_representation(instance)
 
         request = self.context.get('request')
-        rep['accounts_file'] = instance.get_absolute_accounts_file_url(request=request)
-        rep['location_file'] = instance.get_absolute_location_file_url(request=request)
-        rep['reinsurance_info_file'] = instance.get_absolute_reinsurance_info_file_url(request=request)
-        rep['reinsurance_source_file'] = instance.get_absolute_reinsurance_source_file_url(request=request)
 
+        #rep['accounts_file'] = instance.get_absolute_accounts_file_url(request=request) if instance.accounts_file else 'null'
+        
+
+        rep['accounts_file'] = None
+        rep['location_file'] = None
+        rep['reinsurance_info_file'] = None
+        rep['reinsurance_source_file'] = None
+
+        if instance.accounts_file:
+            rep['accounts_file'] = {
+                "uri": instance.get_absolute_accounts_file_url(request=request), 
+                "name": instance.accounts_file.filename,
+                "stored": str(instance.accounts_file.file)
+
+            }
+
+        if instance.location_file:
+            rep['location_file'] = {
+                "uri": instance.get_absolute_location_file_url(request=request), 
+                "name": instance.location_file.filename,
+                "stored": str(instance.location_file.file)
+            }
+
+        if instance.reinsurance_info_file:
+            rep['reinsurance_info_file'] = {
+                "uri": instance.get_absolute_reinsurance_info_file_url(request=request), 
+                "name": instance.reinsurance_info_file.filename,
+                "stored": str(instance.reinsurance_info_file.file)
+            }
+
+        if instance.reinsurance_source_file:
+            rep['reinsurance_source_file'] = {
+                "uri": instance.get_absolute_reinsurance_source_file_url(request=request), 
+                "name": instance.reinsurance_source_file.filename,
+                "stored": str(instance.reinsurance_source_file.file)
+            }
         return rep
 
 
