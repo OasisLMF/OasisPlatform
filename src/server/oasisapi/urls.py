@@ -21,7 +21,7 @@ api_router.include_root_view = False
 api_router.register('portfolios', PortfolioViewSet, base_name='portfolio')
 api_router.register('analyses', AnalysisViewSet, base_name='analysis')
 api_router.register('models', AnalysisModelViewSet, base_name='analysis-model')
-api_router.register('files', FilesViewSet, base_name='file')
+#api_router.register('files', FilesViewSet, base_name='file')
 
 
 schema_view = get_schema_view(
