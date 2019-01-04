@@ -16,11 +16,11 @@ node {
         [$class: 'StringParameterDefinition',  name: 'KEYSERVER_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "build-${BUILD_NUMBER}"],
-        [$class: 'BooleanParameterDefinition', name: 'UNITTEST', value: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'FLAKE8', value: Boolean.valueOf(false)],
-        [$class: 'BooleanParameterDefinition', name: 'PURGE', value: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'PUBLISH', value: Boolean.valueOf(false)],
-        [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', value: Boolean.valueOf(false)]
+        [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'FLAKE8', defaultValue: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(false)]
       ])
     ])
 
