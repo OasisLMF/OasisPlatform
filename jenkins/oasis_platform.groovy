@@ -3,6 +3,27 @@ node {
     sh 'sudo /var/lib/jenkins/jenkins-chown'
     deleteDir() // wipe out the workspace
 
+    // Default Multibranch config
+    try {
+        auto_set_branch = CHANGE_BRANCH
+    } catch (MissingPropertyException e) {
+        auto_set_branch = BRANCH_NAME
+    }
+    properties([
+      parameters([
+        [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: auto_set_branch],
+        [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
+        [$class: 'StringParameterDefinition',  name: 'KEYSERVER_BRANCH', defaultValue: 'master'],
+        [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
+        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "build-${BUILD_NUMBER}"],
+        [$class: 'BooleanParameterDefinition', name: 'UNITTEST', value: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'FLAKE8', value: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', name: 'PURGE', value: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'PUBLISH', value: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', value: Boolean.valueOf(false)]
+      ])
+    ])
+
     // Build vars
     String build_repo = 'git@github.com:OasisLMF/build.git'
     String build_branch = params.BUILD_BRANCH
