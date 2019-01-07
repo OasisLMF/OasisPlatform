@@ -138,12 +138,6 @@ def start_analysis(analysis_settings_file, input_location):
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
-    with io.open(analysis_settings_file, 'r', encoding='utf-8') as f:
-        f_json = json.load(f)
-        if 'il_output' in f_json['analysis_settings'].keys():
-            run_fm = f_json['analysis_settings']['il_output']
-        else:
-            run_fm = False
 
     with TemporaryDirectory() as oasis_files_dir, TemporaryDirectory() as run_dir:
         with tarfile.open(input_archive) as f:
@@ -155,8 +149,17 @@ def start_analysis(analysis_settings_file, input_location):
             '--model-run-dir', run_dir,
             '--analysis-settings-json-file-path', analysis_settings_file,
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT')]
-        if run_fm:
-            run_args.append('--fm')
+
+        ## Note: this should be moved into OasisLMF, the CLI should infer if FM is used based on il_output
+        try:
+            with io.open(analysis_settings_file, 'r', encoding='utf-8') as f:
+                f_json = json.load(f)
+                if 'il_output' in f_json['analysis_settings'].keys():
+                    if f_json['analysis_settings']['il_output']:
+                        run_args.append('--fm')
+        except FileNotFoundError as e:
+            logging.warn("Failed to read `il_output` from analysis_settings, Running without FM file generation")
+
 
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
