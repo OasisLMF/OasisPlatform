@@ -1,5 +1,6 @@
 import json
 import string
+from tempfile import NamedTemporaryFile
 
 from backports.tempfile import TemporaryDirectory
 from django.conf import settings
@@ -33,7 +34,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            reverse('analysis-detail', args=[analysis.pk + 1]),
+            reverse('analysis-detail', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -46,7 +47,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-list'),
+            reverse('analysis-list', kwargs={'version': 'v1'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -62,7 +63,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-list'),
+            reverse('analysis-list', kwargs={'version': 'v1'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -75,45 +76,55 @@ class AnalysisApi(WebTestMixin, TestCase):
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
     def test_cleaned_name_portfolio_and_model_are_present___object_is_created(self, name):
-        self.maxDiff = None
-        user = fake_user()
-        model = fake_analysis_model()
-        portfolio = fake_portfolio()
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                self.maxDiff = None
+                user = fake_user()
+                model = fake_analysis_model()
+                portfolio = fake_portfolio()
 
-        response = self.app.post(
-            reverse('analysis-list'),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
-            content_type='application/json'
-        )
-        self.assertEqual(201, response.status_code)
+                response = self.app.post(
+                    reverse('analysis-list', kwargs={'version': 'v1'}),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+                    content_type='application/json'
+                )
+                self.assertEqual(201, response.status_code)
 
-        analysis = Analysis.objects.get(pk=response.json['id'])
-        response = self.app.get(
-            analysis.get_absolute_url(),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-        )
+                analysis = Analysis.objects.get(pk=response.json['id'])
+                analysis.settings_file = fake_related_file()
+                analysis.input_file = fake_related_file()
+                analysis.input_errors_file = fake_related_file()
+                analysis.input_generation_traceback_file = fake_related_file()
+                analysis.output_file = fake_related_file()
+                analysis.run_traceback_file = fake_related_file()
+                analysis.save()
 
-        self.assertEqual(200, response.status_code)
-        self.assertEqual({
-            'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-            'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-            'id': analysis.pk,
-            'name': name,
-            'portfolio': portfolio.pk,
-            'model': model.pk,
-            'settings_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_settings_file_url(),
-            'input_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_input_file_url(),
-            'input_errors_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_input_errors_file_url(),
-            'input_generation_traceback_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_input_generation_traceback_file_url(),
-            'output_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_output_file_url(),
-            'run_traceback_file': response.request.application_url + '/' + settings.REST_FRAMEWORK['DEFAULT_VERSION'] + analysis.get_absolute_run_traceback_file_url(),
-            'status': Analysis.status_choices.NEW,
-        }, response.json)
+                response = self.app.get(
+                    analysis.get_absolute_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(200, response.status_code)
+                self.assertEqual({
+                    'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'id': analysis.pk,
+                    'name': name,
+                    'portfolio': portfolio.pk,
+                    'model': model.pk,
+                    'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
+                    'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
+                    'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
+                    'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
+                    'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
+                    'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
+                    'status': Analysis.status_choices.NEW,
+                }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):
         user = fake_user()
@@ -166,7 +177,7 @@ class AnalysisRun(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-run', args=[analysis.pk + 1]),
+            reverse('analysis-run', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -203,7 +214,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-cancel', args=[analysis.pk + 1]),
+            reverse('analysis-cancel', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -240,7 +251,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-generate-inputs', args=[analysis.pk + 1]),
+            reverse('analysis-generate-inputs', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -277,7 +288,7 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-cancel-generate-inputs', args=[analysis.pk + 1]),
+            reverse('analysis-cancel-generate-inputs', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -314,7 +325,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-copy', args=[analysis.pk + 1]),
+            reverse('analysis-copy', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))

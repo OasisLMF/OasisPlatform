@@ -21,7 +21,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list'),
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -44,7 +44,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list'),
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -69,7 +69,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list'),
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },

@@ -19,7 +19,7 @@ class RelatedFile(TimeStampedModel):
     content_type = models.CharField(max_length=255)
 
     def __str__(self):
-       return 'File_{}'.format(self.file)
+        return 'File_{}'.format(self.file)
 
     def read(self, *args, **kwargs):
         return self.file.read(*args, **kwargs)
