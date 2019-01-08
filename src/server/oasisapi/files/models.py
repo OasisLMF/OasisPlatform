@@ -15,7 +15,7 @@ def random_file_name(instance, filename):
 class RelatedFile(TimeStampedModel):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
     file = models.FileField(help_text=_('The file to store'), upload_to=random_file_name)
-    filename = models.CharField(max_length=255, editable=False, default=None, blank=True)
+    filename = models.CharField(max_length=255, editable=False, default=None, null=True, blank=True)
     content_type = models.CharField(max_length=255)
 
     def __str__(self):

@@ -13,7 +13,7 @@ class AnalysisModel(TimeStampedModel):
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
     version_id = models.CharField(max_length=255, help_text=_('The version ID for the model.'))
     resource_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='analysis_model_resource_file')
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL, default="")
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL)
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')
