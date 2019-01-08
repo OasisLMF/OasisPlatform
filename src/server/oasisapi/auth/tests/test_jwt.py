@@ -7,7 +7,7 @@ from rest_framework_simplejwt.state import token_backend
 from .fakes import fake_user
 
 
-class RefreshToken(WebTest):
+class AccessToken(WebTest):
     def test_username_is_not_correct___response_is_401(self):
         username = 'dirk'
         password = 'supersecret'
@@ -15,7 +15,7 @@ class RefreshToken(WebTest):
         fake_user(username=username, password=password)
 
         response = self.app.post(
-            reverse('auth:refresh_token'),
+            reverse('auth:access_token'),
             params=json.dumps({'username': username + 'extra', 'password': password}),
             content_type='application/json',
             expect_errors=True,
@@ -30,7 +30,7 @@ class RefreshToken(WebTest):
         fake_user(username=username, password=password)
 
         response = self.app.post(
-            reverse('auth:refresh_token'),
+            reverse('auth:access_token'),
             params=json.dumps({'username': username, 'password': password + 'extra'}),
             content_type='application/json',
             expect_errors=True,
@@ -45,7 +45,7 @@ class RefreshToken(WebTest):
         user = fake_user(username=username, password=password)
 
         response = self.app.post(
-            reverse('auth:refresh_token'),
+            reverse('auth:access_token'),
             params=json.dumps({'username': username, 'password': password}),
             content_type='application/json'
         )
@@ -60,7 +60,7 @@ class RefreshToken(WebTest):
         self.assertEqual(data['token_type'], 'Bearer')
 
 
-class AccessToken(WebTest):
+class RefreshToken(WebTest):
     def test_username_and_password_are_correct___refresh_token_can_be_used_to_get_access_token(self):
         username = 'dirk'
         password = 'supersecret'
@@ -68,13 +68,13 @@ class AccessToken(WebTest):
         user = fake_user(username=username, password=password)
 
         response = self.app.post(
-            reverse('auth:refresh_token'),
+            reverse('auth:access_token'),
             params=json.dumps({'username': username, 'password': password}),
             content_type='application/json'
         )
 
         response = self.app.post(
-            reverse('auth:access_token'),
+            reverse('auth:refresh_token'),
             content_type='application/json',
             headers={'Authorization': 'Bearer {}'.format(response.json['refresh_token'])}
         )

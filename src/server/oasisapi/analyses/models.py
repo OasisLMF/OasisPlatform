@@ -53,40 +53,40 @@ class Analysis(TimeStampedModel):
         return self.name
 
     def get_absolute_url(self, request=None):
-        return reverse('analysis-detail', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-detail', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_run_url(self, request=None):
-        return reverse('analysis-run', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-run', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_cancel_url(self, request=None):
-        return reverse('analysis-cancel', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-cancel', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_generate_inputs_url(self, request=None):
-        return reverse('analysis-generate-inputs', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-generate-inputs', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_cancel_inputs_generation_url(self, request=None):
-        return reverse('analysis-cancel-generate-inputs', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-cancel-generate-inputs', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_copy_url(self, request=None):
-        return reverse('analysis-copy', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-copy', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_settings_file_url(self, request=None):
-        return reverse('analysis-settings-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-settings-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_input_file_url(self, request=None):
-        return reverse('analysis-input-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-input-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_input_errors_file_url(self, request=None):
-        return reverse('analysis-input-errors-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-input-errors-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_input_generation_traceback_file_url(self, request=None):
-        return reverse('analysis-input-generation-traceback-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-input-generation-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_output_file_url(self, request=None):
-        return reverse('analysis-output-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-output-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_run_traceback_file_url(self, request=None):
-        return reverse('analysis-run-traceback-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-run-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def validate_run(self):
         valid_choices = [

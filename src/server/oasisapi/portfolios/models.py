@@ -24,22 +24,22 @@ class Portfolio(TimeStampedModel):
         return self.name
 
     def get_absolute_url(self, request=None):
-        return reverse('portfolio-detail', kwargs={'pk': self.pk}, request=request)
+        return reverse('portfolio-detail', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_create_analysis_url(self, request=None):
-        return reverse('portfolio-create-analysis', kwargs={'pk': self.pk}, request=request)
+        return reverse('portfolio-create-analysis', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_accounts_file_url(self, request=None):
-        return reverse('portfolio-accounts-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('portfolio-accounts-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_location_file_url(self, request=None):
-        return reverse('portfolio-location-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('portfolio-location-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_reinsurance_info_file_url(self, request=None):
-        return reverse('portfolio-reinsurance-info-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('portfolio-reinsurance-info-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_reinsurance_source_file_url(self, request=None):
-        return reverse('portfolio-reinsurance-source-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('portfolio-reinsurance-source-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
 @python_2_unicode_compatible

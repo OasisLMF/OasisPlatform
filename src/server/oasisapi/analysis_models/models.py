@@ -7,6 +7,7 @@ from rest_framework.reverse import reverse
 
 from ..files.models import RelatedFile
 
+
 @python_2_unicode_compatible
 class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
@@ -25,7 +26,6 @@ class AnalysisModel(TimeStampedModel):
     def queue_name(self):
         return str(self)
 
-
     def get_absolute_resources_file_url(self, request=None):
-        return reverse('analysis-model-resource-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-model-resource-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
