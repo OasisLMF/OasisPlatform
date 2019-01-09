@@ -30,11 +30,11 @@ node {
     String build_branch = params.BUILD_BRANCH
     String build_workspace = 'oasis_build'
 
-    String docker_api-base = "Dockerfile.oasis_api_server.base"
-    String image_api-base = "coreoasis/oasis_api_base"
+    String docker_api_base = "Dockerfile.oasis_api_server.base"
+    String image_api_base = "coreoasis/oasis_api_base"
 
-    String docker_api-sql = "Dockerfile.oasis_api_server.mysql"
-    String image_api-sql = "coreoasis/oasis_api_server"
+    String docker_api_sql = "Dockerfile.oasis_api_server.mysql"
+    String image_api_sql = "coreoasis/oasis_api_server"
 
     String  docker_worker    = "Dockerfile.model_execution_worker"
     String  image_worker     = "coreoasis/model_execution_worker"
@@ -101,8 +101,8 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api-base} ${image_api-base} ${env.TAG_RELEASE} ${env.TAG_BASE}"
-                        sh PIPELINE + " build_image ${docker_api-sql} ${image_api-sql} ${env.TAG_RELEASE} ${env.TAG_BASE}"
+                        sh PIPELINE + " build_image ${docker_api_base} ${image_api_base} ${env.TAG_RELEASE} ${env.TAG_BASE}"
+                        sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE} ${env.TAG_BASE}"
 
                     }
                 }
@@ -134,7 +134,7 @@ node {
                 publish_oasis_api_server: {
                     stage ('Publish: oasis_api_server') {
                         dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api-sql} ${env.TAG_RELEASE}"
+                            sh PIPELINE + " push_image ${image_api_sql} ${env.TAG_RELEASE}"
                         }
                     }
                 },
@@ -154,8 +154,8 @@ node {
         dir(build_workspace) {
             sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}" 
             if(params.PURGE){
-                sh PIPELINE + " purge_image ${image_api-base} ${env.TAG_RELEASE}"
-                sh PIPELINE + " purge_image ${image_api-sql} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_api_base} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_api_sql} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
             } 
         }
