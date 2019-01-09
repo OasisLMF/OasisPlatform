@@ -88,7 +88,7 @@ python-dateutil==2.6.1    # via pandas
 python-interface==1.4.0
 python-magic==0.4.15
 pytz==2017.3              # via celery, django, pandas
-pyyaml==3.12              # via docker-compose
+pyyaml==4.2b1             # via docker-compose
 requests-toolbelt==0.8.0
 requests==2.20.0
 rtree==0.8.3
