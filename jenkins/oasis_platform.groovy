@@ -180,8 +180,9 @@ node {
             }
         }
         //Store logs
-        dir(build_workspace) {
-            archiveArtifacts artifacts: 'stage/log/**/*.*', excludes: '*stage/log/**/*.gitkeep'
+        dir(oasis_workspace) {
+            archiveArtifacts artifacts: 'reports/**/*.*'
+            //archiveArtifacts artifacts: 'stage/log/**/*.*', excludes: '*stage/log/**/*.gitkeep'
         }
     }
 }
