@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-CWD=$(pwd)
-LOG_OUTPUT=$CWD/reports
-TAR_OUTPUT=$CWD/dist
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+LOG_OUTPUT=$SCRIPT_DIR/reports
+TAR_OUTPUT=$SCRIPT_DIR/dist
 
 mkdir $LOG_OUTPUT $TAR_OUTPUT
 
@@ -13,4 +13,4 @@ else
 fi
 
 docker build -f docker/Dockerfile.oasisplatform_tester -t oasisplatform-tester .
-docker run -v $LOG_OUTPUT:/var/log/oasis -v $TAR_OUTPUT:/tmp/output oasisplatform-tester:$DOCKER_TAG
+docker run -v $LOG_OUTPUT:/var/log/oasis -v $TAR_OUTPUT:/tmp/output -v $SCRIPT_DIR:/home oasisplatform-tester:$DOCKER_TAG
