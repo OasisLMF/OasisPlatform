@@ -16,6 +16,8 @@ services:
      - celery-db
      - rabbit
    environment:
+     - OASIS_ADMIN_USER=admin
+     - OASIS_ADMIN_PASS=foobar  
      - OASIS_DEBUG=1
      - OASIS_RABBIT_HOST=rabbit
      - OASIS_RABBIT_PORT=5672
