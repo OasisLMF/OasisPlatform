@@ -20,6 +20,7 @@ COPY ./conf.ini ./
 COPY ./uwsgi ./uwsgi
 RUN chmod +x ./uwsgi/run-uwsgi.sh
 COPY manage.py .
+COPY ./src/utils/set_default_user.py .
 
 COPY ./src/ ./src
 
