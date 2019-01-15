@@ -79,7 +79,7 @@ After adding packages to either ``*.in`` file, the following command should be r
     pip-compile && pip-sync
     
 The demo project also needs the PiWind model. This is available [here](https://github.com/OasisLMF/OasisPiWind).
-You should also set `OASIS_API_PIWIND_DATA_DIR` to the root directory of the pi wind repo.
+You should also set `OASIS_MODEL_DATA_DIR` to the root directory of the pi wind repo.
 
 ### Setup
 
