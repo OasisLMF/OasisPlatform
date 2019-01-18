@@ -37,7 +37,7 @@ services:
      - STARTUP_RUN_MIGRATIONS=true
    volumes:
 #     - ./log:/var/log/oasis:rw
-     - ${OASIS_API_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
+     - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   worker-monitor:
    image: coreoasis/oasis_api_server:latest
    build:
@@ -65,6 +65,7 @@ services:
      - OASIS_CELERY_DB_USER=celery
      - OASIS_CELERY_DB_NAME=celery
      - OASIS_CELERY_DB_PORT=3306
+#     - STARTUP_RUN_MIGRATIONS=true
    volumes:
 #     - ./log:/var/log/oasis:rw
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
