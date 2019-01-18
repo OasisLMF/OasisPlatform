@@ -61,7 +61,7 @@ node {
     // Set Global ENV
     env.PIPELINE_LOAD = script_dir + utils_sh       
 
-    env.OASIS_API_PIWIND_DATA_DIR = model_workspace
+    env.OASIS_MODEL_DATA_DIR = model_workspace
     env.TAG_BASE         = params.BASE_TAG     //Build TAG for base set of images
     env.TAG_RELEASE      = params.RELEASE_TAG  //Build TAG for TARGET image 
     env.TAG_RUN_PLATFORM = params.RELEASE_TAG 
