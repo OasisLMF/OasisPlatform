@@ -14,9 +14,9 @@ services:
      - oasis_mysql:__ip_address__
      - oasis_rabbit:__ip_address__
     environment:
-     - KTOOLS_BATCH_COUNT=-1
-     - MODEL_SUPPLIER_ID=__model_supplier__
-     - MODEL_VERSION_ID=__model_version__
-     - LOCK_FILE='/tmp/tmp_ktools_lock_file'
-     - RABBIT_PORT=5672
-     - MYSQL_PORT=3306
+     - OASIS_KTOOLS_BATCH_COUNT=-1
+     - OASIS_MODEL_SUPPLIER_ID=__model_supplier__
+     - OASIS_MODEL_VERSION_ID=__model_version__
+     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file'
+     - OASIS_RABBIT_PORT=5672
+     - OASIS_MYSQL_PORT=3306
