@@ -19,9 +19,9 @@ A simple environment for the testing the API and worker can be created using Doc
 
 First make sure that you have Docker running. Then build the images for the API server and model execution worker:
 
-    docker build -f Dockerfile.oasis_api_server.base -t oasis_api_server:base .
-    docker build -f Dockerfile.oasis_api_server.mysql -t oasis_api_server:mysql .
-    docker build -f Dockerfile.model_execution_worker -t model_execution_worker .
+    docker build -f Dockerfile.oasis_api_server.base  -t coreoasis/oasis_api_base .
+    docker build -f Dockerfile.oasis_api_server.mysql -t coreoasis/oasis_api_server .
+    docker build -f Dockerfile.model_execution_worker -t coreoasis/model_execution_worker .
 
 The docker images for the server are structured to all inherit from `oasis_api_server:base`.
 Then each child image will be setup for a specific database backend (for example 
