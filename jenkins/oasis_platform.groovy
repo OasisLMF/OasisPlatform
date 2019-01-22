@@ -1,19 +1,24 @@
+def getBranch() {                                                                                         
+    // Default Multibranch config
+    if (getBinding().hasVariable("CHANGE_BRANCH")){
+        return CHANGE_BRANCH
+    } else if (getBinding().hasVariable("BRANCH_NAME")){
+        return BRANCH_NAME
+    } else {
+       return params.MODEL_BRANCH
+    }        
+} 
+
 node {
     hasFailed = false
     sh 'sudo /var/lib/jenkins/jenkins-chown'
     deleteDir() // wipe out the workspace
 
-    // Default Multibranch config
-    try {
-        auto_set_branch = CHANGE_BRANCH
-    } catch (MissingPropertyException e) {
-        auto_set_branch = BRANCH_NAME
-    }
     properties([
       parameters([
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: auto_set_branch],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'master'],
+        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: getBranch()],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "build-${BUILD_NUMBER}"],
