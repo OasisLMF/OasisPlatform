@@ -185,7 +185,7 @@ def start_analysis(analysis_settings, input_location):
             analysis_settings['analysis_settings'], 
             settings.getint('worker', 'KTOOLS_BATCH_COUNT'), 
             num_reinsurance_iterations=num_reinsurance_iterations,
-            ktools_mem_limit=settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT')
+            ktools_mem_limit=settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT'),
             set_alloc_rule=settings.getint('worker', 'KTOOLS_ALLOC_RULE')
         )
 
