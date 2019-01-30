@@ -43,6 +43,7 @@ logging.info("OUTPUTS_DATA_DIRECTORY: {}".format(settings.get('worker', 'OUTPUTS
 logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
 logging.info("WORKING_DIRECTORY: {}".format(settings.get('worker', 'WORKING_DIRECTORY')))
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
+logging.info("KTOOLS_ALLOC_RULE: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE')))
 logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 
@@ -185,6 +186,7 @@ def start_analysis(analysis_settings, input_location):
             settings.getint('worker', 'KTOOLS_BATCH_COUNT'), 
             num_reinsurance_iterations=num_reinsurance_iterations,
             ktools_mem_limit=settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT')
+            set_alloc_rule=settings.getint('worker', 'KTOOLS_ALLOC_RULE')
         )
 
         output_location = uuid.uuid4().hex
