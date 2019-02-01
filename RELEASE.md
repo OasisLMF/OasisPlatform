@@ -1,3 +1,34 @@
+# 0.397.3
+
+
+## [Ktools](https://github.com/OasisLMF/ktools/tree/v3.0.4)
+* Ktools *3.0.4* packaged in `0.397.3` docker images 
+
+### Fixes
+* Performance improvement for fmcalc
+
+
+## [OasisLMF](https://github.com/OasisLMF/OasisLMF/tree/1.2.2)
+* oasislmf *1.2.5* packaged in `0.397.3` docker images 
+
+### Fixes and Changes
+* Fix for Windows 10 (Linux Sub-system), FIFO queues moved into `/tmp/<random>`
+* Fix for Reinsurance, Set RiskLevel = `SEL` as default when value is not set
+* Fix, calc rule for all positive deductibles
+* Fixes for new API Client 
+* Added Deterministic loss generation
+* Added FM acceptance tests
+* Added Automated testing 
+
+
+
+## [OasisPlatform](https://github.com/OasisLMF/OasisPlatform/tree/0.397.3)
+ 
+### Deployment Updates
+* New enviroment var to set fmcalc allocation rule,  `OASIS_KTOOLS_ALLOC_RULE` 
+
+
+
 # 0.397.1
 
 ## [oasis ui](https://github.com/oasislmf/oasisui/tree/0.397.1)
