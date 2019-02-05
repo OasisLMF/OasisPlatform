@@ -148,16 +148,13 @@ def start_analysis(analysis_settings_file, input_location):
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
             '--model-run-dir', run_dir,
-            '--analysis-settings-json-file-path', analysis_settings_file,
-            '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT')]
+            '--analysis-settings-file-path', analysis_settings_file,
+            '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
+            '--ktools-mem-limit', settings.get('worker', 'KTOOLS_MEMORY_LIMIT'),
+            '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
+            '--ktools-fifo-relative'
+        ]
 
-        ## Note: this should be moved into OasisLMF, the CLI should infer if FM is used based on il_output
-        try:
-            with io.open(analysis_settings_file, 'r', encoding='utf-8') as f:
-                f_json = json.load(f)
-                if 'il_output' in f_json['analysis_settings'].keys():
-                    if f_json['analysis_settings']['il_output']:
-                        run_args.append('--fm')
         except FileNotFoundError as e:
             logging.warn("Failed to read `il_output` from analysis_settings, Running without FM file generation")
 
@@ -178,17 +175,24 @@ def start_analysis(analysis_settings_file, input_location):
 def generate_input(exposures_file):
     media_root = settings.get('worker', 'media_root')
     exposures_file = os.path.join(media_root, exposures_file)
+    accounts_file  = os.path.join(media_root, )
+    ri_info_file   = os.path.join(media_root, )
+    ri_scope_file  = os.path.join(media_root, )
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
+    run_args = [
+        '--oasis-files-path', oasis_files_dir,
+        '--config', config_path,
+        '--source-exposure-file-path', exposures_file,
+        '--source-accounts-file-path', , 
+        '--ri-info-file-path', ,
+        '--ri-scope-file-path',
+    ]
+
     with TemporaryDirectory() as oasis_files_dir:
-        GenerateOasisFilesCmd(argv=[
-            '--oasis-files-path', oasis_files_dir,
-            '--config', config_path,
-            '--source-exposures-file-path', exposures_file,
-            '--fm'
-        ]).run()
+        GenerateOasisFilesCmd(argv=run_args).run()
 
         error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, 'oasiskeys-errors-*.csv'))), None)
         if error_path:
