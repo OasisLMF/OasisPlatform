@@ -130,6 +130,7 @@ def start_analysis(analysis_settings_file, input_location):
         (string) The location of the outputs.
     '''
     # Check that the input archive exists and is valid
+    logging.info("args: {}".format(str(locals())))
     input_archive = os.path.join(settings.get('worker', 'MEDIA_ROOT'), input_location)
 
     if not os.path.exists(input_archive):
@@ -155,10 +156,6 @@ def start_analysis(analysis_settings_file, input_location):
             '--ktools-fifo-relative'
         ]
 
-        except FileNotFoundError as e:
-            logging.warn("Failed to read `il_output` from analysis_settings, Running without FM file generation")
-
-
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
 
@@ -172,26 +169,27 @@ def start_analysis(analysis_settings_file, input_location):
 
 
 @task(name='generate_input')
-def generate_input(exposures_file):
+def generate_input(loc_file, acc_file, info_file, scope_file):
+    logging.info("args: {}".format(str(locals())))
+
     media_root = settings.get('worker', 'media_root')
-    exposures_file = os.path.join(media_root, exposures_file)
-    accounts_file  = os.path.join(media_root, )
-    ri_info_file   = os.path.join(media_root, )
-    ri_scope_file  = os.path.join(media_root, )
+    location_file = os.path.join(media_root, loc_file)
+    accounts_file = os.path.join(media_root, acc_file)
+    ri_info_file  = os.path.join(media_root, info_file)
+    ri_scope_file = os.path.join(media_root, scope_file)
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    run_args = [
-        '--oasis-files-path', oasis_files_dir,
-        '--config', config_path,
-        '--source-exposure-file-path', exposures_file,
-        '--source-accounts-file-path', , 
-        '--ri-info-file-path', ,
-        '--ri-scope-file-path',
-    ]
-
     with TemporaryDirectory() as oasis_files_dir:
+        run_args = [
+            '--oasis-files-path', oasis_files_dir,
+            '--config', config_path,
+            '--source-exposure-file-path', location_file,
+            '--source-accounts-file-path', accounts_file, 
+            '--ri-info-file-path', ri_info_file,
+            '--ri-scope-file-path', ri_scope_file
+        ]
         GenerateOasisFilesCmd(argv=run_args).run()
 
         error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, 'oasiskeys-errors-*.csv'))), None)
