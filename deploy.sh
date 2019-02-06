@@ -1,9 +1,5 @@
 #!/bin/bash
 
-set -eux
-python manage.py makemigrations
-python manage.py migrate
-
 #export OASIS_MODEL_DATA_DIR=<..path to piwind ..>
 
 docker build -f Dockerfile.oasis_api_server.base  -t coreoasis/oasis_api_base .
