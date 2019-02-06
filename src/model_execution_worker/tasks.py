@@ -151,10 +151,11 @@ def start_analysis(analysis_settings_file, input_location):
             '--model-run-dir', run_dir,
             '--analysis-settings-file-path', analysis_settings_file,
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
-            '--ktools-mem-limit', settings.get('worker', 'KTOOLS_MEMORY_LIMIT'),
             '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
             '--ktools-fifo-relative'
         ]
+        if  settings.get('worker', 'KTOOLS_MEMORY_LIMIT'):
+            run_args.append('--ktools-mem-limit')
 
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
