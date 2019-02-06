@@ -14,7 +14,7 @@ import fasteners
 from backports.tempfile import TemporaryDirectory
 from celery import Celery, signature
 from celery.task import task
-from oasislmf.cmd.model import GenerateOasisFilesCmd, GenerateLossesCmd
+from oasislmf.cli.model import GenerateOasisFilesCmd, GenerateLossesCmd
 from oasislmf.utils import status
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
