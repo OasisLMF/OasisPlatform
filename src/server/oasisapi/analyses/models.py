@@ -198,7 +198,12 @@ class Analysis(TimeStampedModel):
     @property
     def generate_input_signature(self):
         return signature(
-            'generate_input', args=(self.portfolio.location_file.file.name, ), queue=self.model.queue_name,
+            'generate_input', 
+            args=(self.portfolio.location_file.file.name, 
+                  self.portfolio.accounts_file.file.name,
+                  self.portfolio.reinsurance_info_file.file.name,
+                  self.portfolio.reinsurance_source_file.file.name,)
+            , queue=self.model.queue_name,
         )
 
     def copy(self):

@@ -130,6 +130,7 @@ def start_analysis(analysis_settings_file, input_location):
         (string) The location of the outputs.
     '''
     # Check that the input archive exists and is valid
+    logging.info("args: {}".format(str(locals())))
     input_archive = os.path.join(settings.get('worker', 'MEDIA_ROOT'), input_location)
 
     if not os.path.exists(input_archive):
@@ -140,6 +141,18 @@ def start_analysis(analysis_settings_file, input_location):
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
+        
+    ## WORK AROUND: Need a better method for run time option for RI
+    try:
+        run_ri = False
+        with io.open(analysis_settings_file, 'r', encoding='utf-8') as f:
+            f_json = json.load(f)
+            if 'ri_output' in f_json['analysis_settings'].keys():
+                run_ri = f_json['analysis_settings']['ri_output']
+    except FileNotFoundError as e:
+        logging.warn("Failed to read `ri_output` from analysis_settings, Running without Reinsurance")
+
+
     with TemporaryDirectory() as oasis_files_dir, TemporaryDirectory() as run_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
@@ -148,19 +161,16 @@ def start_analysis(analysis_settings_file, input_location):
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
             '--model-run-dir', run_dir,
-            '--analysis-settings-json-file-path', analysis_settings_file,
-            '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT')]
+            '--analysis-settings-file-path', analysis_settings_file,
+            '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
+            '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
+            '--ktools-fifo-relative'
+        ]
 
-        ## Note: this should be moved into OasisLMF, the CLI should infer if FM is used based on il_output
-        try:
-            with io.open(analysis_settings_file, 'r', encoding='utf-8') as f:
-                f_json = json.load(f)
-                if 'il_output' in f_json['analysis_settings'].keys():
-                    if f_json['analysis_settings']['il_output']:
-                        run_args.append('--fm')
-        except FileNotFoundError as e:
-            logging.warn("Failed to read `il_output` from analysis_settings, Running without FM file generation")
-
+        if run_ri:
+            run_args.append('--ri')
+        if settings.get('worker', 'KTOOLS_MEMORY_LIMIT'):
+            run_args.append('--ktools-mem-limit')
 
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
@@ -175,20 +185,28 @@ def start_analysis(analysis_settings_file, input_location):
 
 
 @task(name='generate_input')
-def generate_input(exposures_file):
+def generate_input(loc_file, acc_file, info_file, scope_file):
+    logging.info("args: {}".format(str(locals())))
+
     media_root = settings.get('worker', 'media_root')
-    exposures_file = os.path.join(media_root, exposures_file)
+    location_file = os.path.join(media_root, loc_file)
+    accounts_file = os.path.join(media_root, acc_file)
+    ri_info_file  = os.path.join(media_root, info_file)
+    ri_scope_file = os.path.join(media_root, scope_file)
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
     with TemporaryDirectory() as oasis_files_dir:
-        GenerateOasisFilesCmd(argv=[
+        run_args = [
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
-            '--source-exposures-file-path', exposures_file,
-            '--fm'
-        ]).run()
+            '--source-exposure-file-path', location_file,
+            '--source-accounts-file-path', accounts_file, 
+            '--ri-info-file-path', ri_info_file,
+            '--ri-scope-file-path', ri_scope_file
+        ]
+        GenerateOasisFilesCmd(argv=run_args).run()
 
         error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, 'oasiskeys-errors-*.csv'))), None)
         if error_path:
