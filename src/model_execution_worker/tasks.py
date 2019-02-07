@@ -141,6 +141,18 @@ def start_analysis(analysis_settings_file, input_location):
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
+        
+    ## WORK AROUND: Need a better method for run time option for RI
+    try:
+        run_ri = False
+        with io.open(analysis_settings_file, 'r', encoding='utf-8') as f:
+            f_json = json.load(f)
+            if 'ri_output' in f_json['analysis_settings'].keys():
+                run_ri = f_json['analysis_settings']['ri_output']
+    except FileNotFoundError as e:
+        logging.warn("Failed to read `ri_output` from analysis_settings, Running without Reinsurance")
+
+
     with TemporaryDirectory() as oasis_files_dir, TemporaryDirectory() as run_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
@@ -154,7 +166,10 @@ def start_analysis(analysis_settings_file, input_location):
             '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
             '--ktools-fifo-relative'
         ]
-        if  settings.get('worker', 'KTOOLS_MEMORY_LIMIT'):
+
+        if run_ri:
+            run_args.append('--ri')
+        if settings.get('worker', 'KTOOLS_MEMORY_LIMIT'):
             run_args.append('--ktools-mem-limit')
 
         GenerateLossesCmd(argv=run_args).run()
