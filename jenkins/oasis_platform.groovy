@@ -22,8 +22,6 @@ node {
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "build-${BUILD_NUMBER}"],
-        [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'FLAKE8', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(false)]
@@ -136,14 +134,14 @@ node {
 
         if (params.PUBLISH){
             parallel(
-                publish_oasis_api_server: {
+                publish_api_server: {
                     stage ('Publish: oasis_api_server') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_api_sql} ${env.TAG_RELEASE}"
                         }
                     }
                 },
-                publish_model_execution_worker: {
+                publish_model_worker: {
                     stage('Publish: exceution_worker') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
