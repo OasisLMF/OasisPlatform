@@ -66,8 +66,11 @@ class StartAnalysis(TestCase):
                         '--oasis-files-path', ANY,
                         '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
                         '--model-run-dir', ANY,
-                        '--analysis-settings-json-file-path', 'analysis_settings.json',
+                        '--analysis-settings-file-path', 'analysis_settings.json',
                         '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
+                        '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
+                        '--ktools-fifo-relative',
+                        '--ktools-mem-limit'
                     ])
                     cmd_instance.run.assert_called_once_with()
                     self.assertEqual(tarfile.open.call_args_list[1][0], (str(Path(media_root, output_location)), 'w:gz'))
