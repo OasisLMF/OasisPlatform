@@ -20,19 +20,21 @@ cli_case_override = pytest.config.getoption("--test-case")
 def get_path(section, var, config=config):
     try:
         return os.path.abspath(config.get(section, var))
+        print(config.get(section, var))
     except configparser.NoOptionError:
         return None
 
 
 def check_expected(result_path, expected_path):
     comparison_list = []
+    cwd = os.getcwd()
     os.chdir(expected_path)
     for rootdir, _, filelist in os.walk('.'):
         for f in filelist:
             comparison_list.append(os.path.join(rootdir[2:],f))
     
     print(comparison_list)
-
+    os.chdir(cwd)
     for csv in comparison_list:
         print(csv)
         assert filecmp.cmp(os.path.join(result_path, csv),
@@ -105,6 +107,7 @@ def case_fixture(session_fixture):
 
     ### Create Portfolio 
     loc_fp = get_path('piwind.{}'.format(case), 'LOC_FILE')
+    print(loc_fp)
     assert os.path.isfile(loc_fp)
     acc_fp = get_path('piwind.{}'.format(case), 'ACC_FILE')
     inf_fp = get_path('piwind.{}'.format(case), 'INF_FILE')
