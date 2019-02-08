@@ -19,22 +19,6 @@
             }
         ],
         "gul_threshold": 0,
-        "il_output": true,
-        "il_summaries": [
-            {
-                "aalcalc": true,
-                "eltcalc": true,
-                "id": 1,
-                "lec_output": true,
-                "leccalc": {
-                    "outputs": {
-                        "full_uncertainty_aep": true,
-                        "full_uncertainty_oep": true
-                    },
-                    "return_period_file": true
-                }
-            }
-        ],
         "model_settings": {
             "event_set": "P",
             "peril_wind": true

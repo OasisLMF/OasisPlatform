@@ -19,6 +19,22 @@
             }
         ],
         "gul_threshold": 0,
+        "ri_output": true,
+        "ri_summaries": [
+            {
+                "aalcalc": true,
+                "eltcalc": true,
+                "id": 1,
+                "lec_output": true,
+                "leccalc": {
+                    "outputs": {
+                        "full_uncertainty_aep": true,
+                        "full_uncertainty_oep": true
+                    },
+                    "return_period_file": true
+                }
+            }
+        ],
         "il_output": true,
         "il_summaries": [
             {
@@ -46,4 +62,3 @@
         "source_tag": "piwind"
     }
 }
-

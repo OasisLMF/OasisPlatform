@@ -2,8 +2,10 @@ import pytest
 import socket
 import json
 import os
+import tarfile
 import configparser
 import unittest
+import filecmp
 
 from oasislmf.api_client.client_manager import APIClient
 
@@ -15,32 +17,41 @@ config.read('test-conf.ini')
 cli_case_override = pytest.config.getoption("--test-case")
 
 
+def get_path(section, var, config=config):
+    try:
+        return os.path.abspath(config.get(section, var))
+    except configparser.NoOptionError:
+        return None
+
+
+def check_expected(result_path, expected_path):
+    comparison_list = []
+    os.chdir(expected_path)
+    for rootdir, _, filelist in os.walk('.'):
+        for f in filelist:
+            comparison_list.append(os.path.join(rootdir[2:],f))
+    
+    print(comparison_list)
+
+    for csv in comparison_list:
+        print(csv)
+        assert filecmp.cmp(os.path.join(result_path, csv),
+                    os.path.join(expected_path, csv))
+    
 
 
 
 # --- Test Paramatization --------------------------------------------------- #
 
 if cli_case_override:
-    test_examples = cli_case_override
+    test_cases = cli_case_override
     print('Loading test cases from command line args:')
-    print(test_examples)
 else:
-    test_examples =  config.get('piwind', 'TEST_CASES').split(' ')
+    test_cases = config.get('piwind', 'RUN_TEST_CASES').split(' ')
     print('Load default test cases from default conf.in:')
-    print(test_examples)
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 test_model = config.get('default', 'TEST_MODEL').lower()
-input_dir = os.path.join(base_dir, test_model)
-output_dir = os.path.join(base_dir, config.get('default', 'TEST_OUTPUT_DIR'))
-
-test_cases = []
-for case in test_examples:
-    test_cases.append((
-        case,
-        os.path.join(input_dir, case),
-        os.path.join(output_dir, case)
-    ))
 
 
 
@@ -74,10 +85,8 @@ def session_fixture(request):
 @pytest.fixture(scope="module")
 def case_fixture(session_fixture):
     case, session = session_fixture
-    case_dir = case[1]
     ids = {}
-
-
+    
     ###  Add or find model
     _model = {
         'supplier_id': config.get(test_model, 'SUPPLIER_ID'),
@@ -95,21 +104,24 @@ def case_fixture(session_fixture):
         ids['model'] = r_model.json()[0]['id']
 
     ### Create Portfolio 
-    loc_fp      = case_dir + '/location.csv' if os.path.isfile(case_dir + '/location.csv') else None
-    acc_fp      = case_dir + '/account.csv'  if os.path.isfile(case_dir + '/account.csv') else None
-    info_fp     = case_dir + '/ri_info.csv'  if os.path.isfile(case_dir + '/ri_info.csv') else None
-    scope_fp    = case_dir + '/ri_scope.csv'  if os.path.isfile(case_dir + '/ri_scope.csv') else None
+    loc_fp = get_path('piwind.{}'.format(case), 'LOC_FILE')
+    assert os.path.isfile(loc_fp)
+    acc_fp = get_path('piwind.{}'.format(case), 'ACC_FILE')
+    inf_fp = get_path('piwind.{}'.format(case), 'INF_FILE')
+    scp_fp = get_path('piwind.{}'.format(case), 'SCP_FILE')
+
     r_portfoilio = session.upload_inputs(
         portfolio_name='Integration_test_{}_{}'.format(test_model, case),
         location_fp=loc_fp,
         accounts_fp=acc_fp,
-        ri_info_fp=info_fp,
-        ri_scope_fp=scope_fp)
+        ri_info_fp=inf_fp,
+        ri_scope_fp=scp_fp)
     ids['portfoilio'] = r_portfoilio['id']
 
 
     ### Create analysis
-    settings_fp = case_dir + '/settings.json'  if os.path.isfile(case_dir + '/settings.json') else None
+    settings_fp = get_path('piwind.{}'.format(case), 'SETTINGS_RUN')
+    assert os.path.isfile(settings_fp)
     r_analysis = session.create_analysis(
         analysis_name='Integration_test_{}_{}'.format(test_model, case),
         portfolio_id=ids['portfoilio'],
@@ -129,7 +141,7 @@ def test_connection(case_fixture):
     assert session.api.health_check().ok
     
 
-def test_uploaded_files(case_fixture):
+def test_uploaded(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
     portfoilio = session.portfolios.get(ids['portfoilio'])
@@ -141,45 +153,43 @@ def test_uploaded_files(case_fixture):
     print(analysis.json())
     print(portfoilio.json())
 
-    #if loc_fp:
-    #    self.assertTrue(portfoilio_info['location_file'] is not None)
-    #if acc_fp:
-    #    self.assertTrue(portfoilio_info['accounts_file'] is not None)
-    #if info_fp:
-    #    self.assertTrue(portfoilio_info['reinsurance_info_file'] is not None)
-    #if scope_fp:
-    #    self.assertTrue(portfoilio_info['reinsurance_source_file'] is not None)
 
 
-
-def test_generate_input_files(case_fixture):
+def test_generate(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
     if (analysis.json()['status'] not in ['NEW']):
         pytest.skip('setup error in prevous step')
-
 
     generate_input = session.run_generate(ids['analysis'])
     analysis = session.analyses.get(ids['analysis'])
     assert analysis.ok
     assert analysis.json()['status'] == 'READY'
     assert analysis.json()['input_generation_traceback_file'] == None
-
  
 
 
-def test_expected_input_files(case_fixture):
+def test_generated_files(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
     if (analysis.json()['status'] not in ['READY']):
         pytest.skip('Error in file Generation step')
 
-    input_files_uri = '{}{}/{}'.format(
-        session.analyses.input_file.url_endpoint,
-        ids['analysis'],
-        session.analyses.input_file.url_resource)
+    output_dir = os.path.abspath(config.get('default','TEST_OUTPUT_DIR'))
+    download_to = '{0}/{1}_input.tar.gz'.format(output_dir, case, ids['analysis'])
+    extract_to = os.path.join(output_dir, case, 'input')
 
-    assert analysis.json()['input_file'] == input_files_uri
+    if os.path.isfile(download_to):
+       os.remove(download_to) 
+    r = session.analyses.input_file.download(ids['analysis'], download_to)
+    assert r.ok
+
+    tar_object  = tarfile.open(download_to) 
+    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name ]
+    tar_object.extractall(path=extract_to, members=csv_only)
+    tar_object.close()
+    if os.path.isfile(download_to):
+       os.remove(download_to) 
 
 
 
@@ -203,14 +213,30 @@ def test_analysis_output(case_fixture):
     if (analysis.json()['status'] not in ['RUN_COMPLETED']):
         pytest.skip('Error in file Generation step')
 
-    output_files_uri = '{}{}/{}'.format(
-        session.analyses.output_file.url_endpoint,
-        ids['analysis'],
-        session.analyses.output_file.url_resource)
+    output_dir = os.path.abspath(config.get('default','TEST_OUTPUT_DIR'))
+    download_to = '{0}/{1}_output.tar.gz'.format(output_dir, case, ids['analysis'])
+    extract_to = os.path.join(output_dir, case)
 
-    assert analysis.json()['output_file'] == output_files_uri
+    if os.path.isfile(download_to):
+       os.remove(download_to) 
+    r = session.analyses.output_file.download(ids['analysis'], download_to)
+    assert r.ok
+    
+    tar_object  = tarfile.open(download_to) 
+    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name ]
+    tar_object.extractall(path=extract_to, members=csv_only)
+    tar_object.close()
+    
+    expected_results = os.path.join(get_path(test_model, 'EXPECTED_OUTPUT_DIR'), case, 'output')
+    check_expected(expected_results, os.path.join(extract_to, 'output'))
+    if os.path.isfile(download_to):
+       os.remove(download_to) 
+
 
 def test_cleanup(case_fixture):
+    if not config.getboolean('default', 'CLEAN_UP'):
+        pytest.skip('Skip clean up')
+
     session, case, ids = case_fixture
     r_del_analyses   = session.analyses.delete(ids['analysis'])
     r_del_portfolios = session.portfolios.delete(ids['portfoilio'])
@@ -218,10 +244,3 @@ def test_cleanup(case_fixture):
 
     assert r_del_analyses.ok
     assert r_del_portfolios.ok
-
-#def test_api_connection(session_fixture):
-#    case, session = session_fixture
-#    r = session.api.health_check()
-#    assert r.ok
-#    assert r.text == '{"status":"OK"}'
-
