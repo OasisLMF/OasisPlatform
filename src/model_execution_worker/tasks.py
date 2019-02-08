@@ -190,9 +190,9 @@ def generate_input(loc_file, acc_file, info_file, scope_file):
 
     media_root = settings.get('worker', 'media_root')
     location_file = os.path.join(media_root, loc_file)
-    accounts_file = os.path.join(media_root, acc_file)
-    ri_info_file  = os.path.join(media_root, info_file)
-    ri_scope_file = os.path.join(media_root, scope_file)
+    accounts_file = os.path.join(media_root, acc_file) if acc_file else None
+    ri_info_file  = os.path.join(media_root, info_file) if info_file else None
+    ri_scope_file = os.path.join(media_root, scope_file) if scope_file else None
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)

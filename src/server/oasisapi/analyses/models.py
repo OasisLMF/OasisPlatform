@@ -197,12 +197,14 @@ class Analysis(TimeStampedModel):
 
     @property
     def generate_input_signature(self):
-        return signature(
-            'generate_input', 
-            args=(self.portfolio.location_file.file.name, 
-                  self.portfolio.accounts_file.file.name,
-                  self.portfolio.reinsurance_info_file.file.name,
-                  self.portfolio.reinsurance_source_file.file.name,)
+
+        loc_file   = self.portfolio.location_file.file.name
+        acc_file   = self.portfolio.accounts_file.file.name if self.portfolio.accounts_file else None
+        info_file  = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
+        scope_file = self.portfolio.reinsurance_source_file.file.name if self.portfolio.reinsurance_source_file else None
+
+        return signature( 'generate_input', 
+            args=(loc_file, acc_file, info_file, scope_file)
             , queue=self.model.queue_name,
         )
 
