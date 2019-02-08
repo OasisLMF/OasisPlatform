@@ -5,10 +5,10 @@ services:
 #   links:
 #    - server:oasis_api_server
   server:
-   image: coreoasis/oasis_api_server:latest
+   image: coreoasis/api_server:latest
    build:
      context: .
-     dockerfile: Dockerfile.oasis_api_server.mysql
+     dockerfile: Dockerfile.api_server.mysql
    ports:
      - 8000:8000
    links:
@@ -39,10 +39,10 @@ services:
 #     - ./log:/var/log/oasis:rw
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   worker-monitor:
-   image: coreoasis/oasis_api_server:latest
+   image: coreoasis/api_server:latest
    build:
      context: .
-     dockerfile: Dockerfile.oasis_api_server.mysql
+     dockerfile: Dockerfile.api_server.mysql
    command: [celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
    links:
      - server-db
@@ -70,7 +70,7 @@ services:
 #     - ./log:/var/log/oasis:rw
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   worker:
-    image: coreoasis/model_execution_worker:latest
+    image: coreoasis/model_worker:latest
     links:
      - celery-db
      - rabbit:myrabbit

@@ -1,24 +1,24 @@
-def getBranch() {                                                                                         
-    // Default Multibranch config
-    if (getBinding().hasVariable("CHANGE_BRANCH")){
-        return CHANGE_BRANCH
-    } else if (getBinding().hasVariable("BRANCH_NAME")){
-        return BRANCH_NAME
-    } else {
-       return params.MODEL_BRANCH
-    }        
-} 
-
 node {
     hasFailed = false
     sh 'sudo /var/lib/jenkins/jenkins-chown'
     deleteDir() // wipe out the workspace
 
+    // Set Default Multibranch config
+    try {
+        source_branch = CHANGE_BRANCH
+    } catch (MissingPropertyException e1) {
+        try {
+            source_branch = BRANCH_NAME
+        } catch (MissingPropertyException e2) {
+             source_branch = ""
+        }
+    }
+
     properties([
       parameters([
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: auto_set_branch],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: getBranch()],
+        [$class: 'StringParameterDefinition',  name: 'SOURCE_BRANCH', defaultValue: source_branch],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "build-${BUILD_NUMBER}"],
@@ -35,14 +35,14 @@ node {
     String build_branch = params.BUILD_BRANCH
     String build_workspace = 'oasis_build'
 
-    String docker_api_base = "Dockerfile.oasis_api_server.base"
-    String image_api_base = "coreoasis/oasis_api_base"
+    String docker_api_base = "Dockerfile.api_server.base"
+    String image_api_base  = "coreoasis/api_base"
 
-    String docker_api_sql = "Dockerfile.oasis_api_server.mysql"
-    String image_api_sql = "coreoasis/oasis_api_server"
+    String docker_api_sql  = "Dockerfile.api_server.mysql"
+    String image_api_sql   = "coreoasis/api_server"
 
-    String  docker_worker    = "Dockerfile.model_execution_worker"
-    String  image_worker     = "coreoasis/model_execution_worker"
+    String docker_worker   = "Dockerfile.model_worker"
+    String image_worker    = "coreoasis/model_worker"
 
 
 	// platform vars
