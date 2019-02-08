@@ -26,5 +26,5 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         rep = super(AnalysisModelSerializer, self).to_representation(instance)
        
         request = self.context.get('request')
-        rep['resource_file'] = instance.get_absolute_resources_file_url(request=request) if instance.resource_file else None
+        rep['resource_file'] = instance.get_absolute_resources_file_url(request=request)
         return rep

@@ -1,7 +1,13 @@
 from __future__ import absolute_import
 
+import io
+import json
+import os
+
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django_filters import rest_framework as filters
+from django.http import JsonResponse, Http404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -131,5 +137,13 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the moodels `resource_file` contents
         """
-        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
+        try:
+            return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
+        except Http404 as e: 
+            print("No resource_file set, returning default file as response")
+            with io.open(os.path.join(settings.STATIC_ROOT, 'model_resource.json')) as default_resource:
+                data = json.load(default_resource)
+            response = JsonResponse(data)
+            response['Content-Disposition'] = 'attachment; filename="{}"'.format('default_resource_file.json')
+            return response
 
