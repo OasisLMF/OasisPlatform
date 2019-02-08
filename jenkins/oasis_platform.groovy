@@ -5,20 +5,20 @@ node {
 
     // Set Default Multibranch config
     try {
-        source_branch = CHANGE_BRANCH
+        oasis_branch = CHANGE_BRANCH
     } catch (MissingPropertyException e1) {
         try {
-            source_branch = BRANCH_NAME
+            oasis_branch = BRANCH_NAME
         } catch (MissingPropertyException e2) {
-             source_branch = ""
+             oasis_branch = ""
         }
     }
 
     properties([
       parameters([
-        [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: auto_set_branch],
+        [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: oasis_branch],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'SOURCE_BRANCH', defaultValue: source_branch],
+        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "build-${BUILD_NUMBER}"],
