@@ -51,9 +51,6 @@ logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'L
 logging.info("POST_ANALYSIS_SLEEP_IN_SECS: {}".format(settings.get('worker', 'POST_ANALYSIS_SLEEP_IN_SECS')))
 
 
-if not os.path.exists(settings.get('worker', 'LOCK_FILE')):
-    raise Exception("Lock file does not exist.")
-
 class MissingInputsException(OasisException):
     def __init__(self, input_archive):
         super(MissingInputsException, self).__init__('Inputs location not found: {}'.format(input_archive))
