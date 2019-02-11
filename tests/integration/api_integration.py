@@ -12,9 +12,14 @@ from oasislmf.api_client.client_manager import APIClient
 
 # ------------ load config -------------------- #
 
-config = configparser.ConfigParser()
-config.read('test-conf.ini')
 cli_case_override = pytest.config.getoption("--test-case")
+test_conf_ini = pytest.config.getoption("--config")
+
+print(test_conf_ini)
+print(os.path.abspath(test_conf_ini))
+
+config = configparser.ConfigParser()
+config.read(os.path.abspath(test_conf_ini))
 
 
 def get_path(section, var, config=config):
