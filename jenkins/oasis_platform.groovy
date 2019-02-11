@@ -177,9 +177,6 @@ node {
                 dir(oasis_workspace) {
                     sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                 }
-                dir(keys_workspace) {
-                    sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
-                }
             }
         }
         //Store logs
