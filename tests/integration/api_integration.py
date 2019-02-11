@@ -57,7 +57,9 @@ else:
     test_cases = config.get('piwind', 'RUN_TEST_CASES').split(' ')
     print('Load default test cases from default conf.in:')
 
-base_dir = os.path.dirname(os.path.realpath(__file__))
+#base_dir = os.path.dirname(os.path.realpath(__file__))
+base_dir = os.path.dirname(os.path.abspath(test_conf_ini))
+os.chdir(base_dir)
 test_model = config.get('default', 'TEST_MODEL').lower()
 
 
