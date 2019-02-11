@@ -131,11 +131,7 @@ node {
         //}
         stage('Run: Intergration tests' + oasis_func) {
             dir(build_workspace) {
-                sh " docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml down"
-                sh " docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml up -d"
-                sh " sleep 8"
-                sh ' docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml -f compose/model.tester.yml run --rm --entrypoint="bash -c " model_tester "pytest -v -p no:django /home/worker/tests/integration/api_integration.py"'
-                sh " docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml down"
+                sh PIPELINE + " run_test --test-case 0_case"
             }
         }
         
