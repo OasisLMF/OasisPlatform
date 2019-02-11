@@ -133,8 +133,6 @@ node {
         stage('Run: API Server' + oasis_func) {
             dir(build_workspace) {
                 sh PIPELINE + " start_model"
-                sh " sleep 20"
-
             }
         }
         
@@ -197,8 +195,8 @@ node {
             }
         }
         //Store logs
-        dir(oasis_workspace) {
-            archiveArtifacts artifacts: 'stage/log/**/*.*', excludes: '*stage/log/**/*.gitkeep'
+        dir(build_workspace) {
+            archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
     }
