@@ -68,11 +68,12 @@ node {
     env.TAG_BASE         = params.BASE_TAG     //Build TAG for base set of images
     env.TAG_RELEASE      = params.RELEASE_TAG  //Build TAG for TARGET image 
     env.TAG_RUN_PLATFORM = params.RELEASE_TAG 
+    env.TAG_RUN_WORKER   = params.RELEASE_TAG 
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
 
     env.IMAGE_WORKER   = image_worker
     env.MODEL_SUPPLIER = 'OasisIM'
-    env.MODEL_VARIENT  = model_name
+    env.MODEL_VARIENT  = 'PiWind'
     env.MODEL_ID       = '1'
     sh 'env'
 
@@ -123,11 +124,11 @@ node {
                 }
             }
         )
-        stage('Run: unittest' + oasis_func) {
-            dir(oasis_workspace) {
-                sh " ./runtests.sh"
-            }
-        }
+        //stage('Run: unittest' + oasis_func) {
+        //    dir(oasis_workspace) {
+        //        sh " ./runtests.sh"
+        //    }
+        //}
         stage('Run: Intergration tests' + oasis_func) {
             dir(build_workspace) {
                 sh " docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml up -d"
