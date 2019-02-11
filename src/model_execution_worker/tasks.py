@@ -185,7 +185,7 @@ def start_analysis(analysis_settings_file, input_location):
 
 
 @task(name='generate_input')
-def generate_input(loc_file, acc_file, info_file, scope_file):
+def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None):
     logging.info("args: {}".format(str(locals())))
 
     media_root = settings.get('worker', 'media_root')
