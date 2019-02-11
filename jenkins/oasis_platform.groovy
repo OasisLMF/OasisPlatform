@@ -69,6 +69,11 @@ node {
     env.TAG_RELEASE      = params.RELEASE_TAG  //Build TAG for TARGET image 
     env.TAG_RUN_PLATFORM = params.RELEASE_TAG 
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
+
+    env.IMAGE_WORKER   = image_worker
+    env.MODEL_SUPPLIER = 'OasisIM'
+    env.MODEL_VARIENT  = model_name
+    env.MODEL_ID       = '1'
     sh 'env'
 
     try {
@@ -123,13 +128,13 @@ node {
                 sh " ./runtests.sh"
             }
         }
-        /*
         stage('Run: Intergration tests' + oasis_func) {
             dir(build_workspace) {
-                sh PIPELINE + " run_test_api"
+                sh " docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml up -d"
+                sh " sleep 8"
+                sh ' docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml -f compose/model.tester.yml run --rm --entrypoint="bash -c " model_tester "pytest -v -p no:django /home/worker/tests/integration/api_integration.py"'
             }
         }
-         **/ 
         
 
         if (params.PUBLISH){
