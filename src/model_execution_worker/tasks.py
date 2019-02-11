@@ -11,8 +11,9 @@ import os
 import shutil
 import tarfile
 import glob
-
 import sys
+import time
+
 from oasislmf.model_execution.bin import prepare_model_run_directory, prepare_model_run_inputs
 from oasislmf.model_execution import runner
 from oasislmf.utils import status
@@ -45,7 +46,13 @@ logging.info("WORKING_DIRECTORY: {}".format(settings.get('worker', 'WORKING_DIRE
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_ALLOC_RULE: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE')))
 logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
+logging.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.get('worker', 'LOCK_TIMEOUT_IN_SECS')))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
+logging.info("POST_ANALYSIS_SLEEP_IN_SECS: {}".format(settings.get('worker', 'POST_ANALYSIS_SLEEP_IN_SECS')))
+
+
+if not os.path.exists(settings.get('worker', 'LOCK_FILE')):
+    raise Exception("Lock file does not exist.")
 
 class MissingInputsException(OasisException):
     def __init__(self, input_archive):
@@ -65,7 +72,7 @@ class MissingModelDataException(OasisException):
 @contextmanager
 def get_lock():
     lock = fasteners.InterProcessLock(settings.get('worker', 'LOCK_FILE'))
-    gotten = lock.acquire(blocking=False, timeout=settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS'))
+    gotten = lock.acquire(blocking=True, timeout=settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS'))
     yield gotten
 
     if gotten:
@@ -89,8 +96,10 @@ def start_analysis_task(self, input_location, analysis_settings_json):
     with get_lock() as gotten:
         if not gotten:
             logging.info("Failed to get resource lock - retry task")
+            # max_retries=None is supposed to be unlimited but doesn't seem to work
+            # Set instead to a large number 
             raise self.retry(
-                max_retries=None,
+                max_retries=9999999,
                 countdown=settings.getint('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS'))
 
         logging.info("Acquired resource lock")
@@ -109,7 +118,8 @@ def start_analysis_task(self, input_location, analysis_settings_json):
             logging.exception("Model execution task failed.")
             raise
 
-        return output_location
+    time.sleep(settings.getint('worker', 'POST_ANALYSIS_SLEEP_IN_SECS'))
+    return output_location
 
 
 @oasis_log()
