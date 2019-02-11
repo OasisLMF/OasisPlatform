@@ -22,6 +22,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "build-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case 2_case'],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(false)]
@@ -129,12 +130,24 @@ node {
         //        sh " ./runtests.sh"
         //    }
         //}
-        stage('Run: Intergration tests' + oasis_func) {
+        stage('Run: API Server' + oasis_func) {
             dir(build_workspace) {
-                sh PIPELINE + " run_test --test-case 0_case"
+                sh PIPELINE + " start_model"
+                sh " sleep 20"
+
             }
         }
         
+        api_server_tests = params.RUN_TESTS.split()
+        for(int i=0; i < api_server_tests.size(); i++) {
+            stage("Run : ${api_server_tests[i]}"){
+                dir(build_workspace) {
+                    sh PIPELINE + " run_test --test-case ${api_server_tests[i]}"
+                }   
+            }   
+        }
+
+
 
         if (params.PUBLISH){
             parallel(
@@ -185,8 +198,8 @@ node {
         }
         //Store logs
         dir(oasis_workspace) {
-            archiveArtifacts artifacts: 'reports/**/*.*'
-            //archiveArtifacts artifacts: 'stage/log/**/*.*', excludes: '*stage/log/**/*.gitkeep'
+            archiveArtifacts artifacts: 'stage/log/**/*.*', excludes: '*stage/log/**/*.gitkeep'
+            archiveArtifacts artifacts: "stage/output/**/*.*"
         }
     }
 }
