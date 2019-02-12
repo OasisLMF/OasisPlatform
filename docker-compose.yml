@@ -22,12 +22,13 @@ services:
      - OASIS_MODEL_VERSION_ID=1
      - OASIS_RABBIT_PORT=5672
      - OASIS_MYSQL_PORT=3306
-     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_1'
+     - OASIS_LOCK_FILE=/tmp/tmp_ktools_lock_file_1
      - OASIS_DO_CLEAR_WORKING=True
      - OASIS_KTOOLS_BATCH_COUNT=-1
-     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
-     - OASIS_MAX_RETRIES=10
+     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=10
+     - OASIS_LOCK_TIMEOUT_IN_SECS=10
      - OASIS_LOG_LEVEL=DEBUG
+     - OASIS_POST_ANALYSIS_SLEEP_IN_SECS=10
     volumes:  
 #     - ./log:/var/log/oasis:rw
      - /tmp:/tmp
@@ -38,53 +39,16 @@ services:
     image: model_execution_worker
     environment:
      - OASIS_MODEL_SUPPLIER_ID=OasisIM
-     - OASIS_MODEL_VERSION_ID=2
-     - OASIS_RABBIT_PORT=5672
-     - OASIS_MYSQL_PORT=3306
-     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_1'
-     - OASIS_DO_CLEAR_WORKING=True
-     - OASIS_KTOOLS_BATCH_COUNT=-1
-     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
-     - OASIS_MAX_RETRIES=10
-     - OASIS_LOG_LEVEL=DEBUG
-    volumes:
-#     - ./log:/var/log/oasis:rw
-     - /tmp:/tmp
-     - ./upload:/var/www/oasis/upload:rw
-     - ./download:/var/www/oasis/download:rw
-     - ./data/static:/var/oasis/model_data/OasisIM/2:rw
-  worker3:
-    image: model_execution_worker
-    environment:
-     - OASIS_MODEL_SUPPLIER_ID=OasisIM
      - OASIS_MODEL_VERSION_ID=1
      - OASIS_RABBIT_PORT=5672
      - OASIS_MYSQL_PORT=3306
-     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
+     - OASIS_LOCK_FILE=/tmp/tmp_ktools_lock_file_1
      - OASIS_DO_CLEAR_WORKING=True
      - OASIS_KTOOLS_BATCH_COUNT=-1
+     - OASIS_LOCK_TIMEOUT_IN_SECS=10
      - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
-     - OASIS_MAX_RETRIES=10
      - OASIS_LOG_LEVEL=DEBUG
-    volumes:
-#     - ./log:/var/log/oasis:rw
-     - /tmp:/tmp
-     - ./upload:/var/www/oasis/upload:rw
-     - ./download:/var/www/oasis/download:rw
-     - ./data/static:/var/oasis/model_data/OasisIM/1:rw
-  worker4:
-    image: model_execution_worker
-    environment:
-     - OASIS_MODEL_SUPPLIER_ID=OasisIM
-     - OASIS_MODEL_VERSION_ID=2
-     - OASIS_RABBIT_PORT=5672
-     - OASIS_MYSQL_PORT=3306
-     - OASIS_LOCK_FILE='/tmp/tmp_ktools_lock_file_2'
-     - OASIS_DO_CLEAR_WORKING=True
-     - OASIS_KTOOLS_BATCH_COUNT=-1
-     - OASIS_LOCK_RETRY_COUNTDOWN_IN_SECS=5
-     - OASIS_MAX_RETRIES=10
-     - OASIS_LOG_LEVEL=DEBUG
+     - OASIS_POST_ANALYSIS_SLEEP_IN_SECS=10     
     volumes:
 #     - ./log:/var/log/oasis:rw
      - /tmp:/tmp
