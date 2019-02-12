@@ -14,6 +14,8 @@ import fasteners
 from backports.tempfile import TemporaryDirectory
 from celery import Celery, signature
 from celery.task import task
+from celery.signals import worker_ready
+
 from oasislmf.cli.model import GenerateOasisFilesCmd, GenerateLossesCmd
 from oasislmf.utils import status
 from oasislmf.utils.exceptions import OasisException
@@ -39,6 +41,19 @@ logging.info("KTOOLS_ALLOC_RULE: {}".format(settings.get('worker', 'KTOOLS_ALLOC
 logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
+
+
+# When a worker connects send a task to the worker-monitor to register a new model
+@worker_ready.connect
+def register_worker(sender, **k):
+    m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
+    m_name = os.environ.get('OASIS_MODEL_ID')
+    m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
+    logging.info('OASIS_MODEL_SUPPLIER_ID: {}'.format(m_supplier))
+    logging.info('OASIS_MODEL_ID: {}'.format(m_name))
+    logging.info('OASIS_MODEL_VERSION_ID: {}'.format(m_id))
+    reg_worker = CELERY.send_task('register_worker', (m_supplier, m_name, m_id))
+
 
 
 class MissingInputsException(OasisException):
