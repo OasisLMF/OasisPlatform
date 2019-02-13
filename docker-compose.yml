@@ -43,7 +43,8 @@ services:
    build:
      context: .
      dockerfile: Dockerfile.api_server.mysql
-   command: [celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
+   command: [wait-for-server, 'server:8000', celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
+   #command: [celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
    links:
      - server-db
      - celery-db
@@ -75,9 +76,9 @@ services:
      - celery-db
      - rabbit:myrabbit
     environment:
-     - OASIS_MODEL_SUPPLIER_ID=OasisIM
-     - OASIS_MODEL_ID=PiWind
-     - OASIS_MODEL_VERSION_ID=1
+     - OASIS_MODEL_SUPPLIER_ID=OasisIMaa
+     - OASIS_MODEL_ID=PiWindaa
+     - OASIS_MODEL_VERSION_ID=1aa
      - OASIS_RABBIT_HOST=rabbit
      - OASIS_RABBIT_PORT=5672
      - OASIS_RABBIT_USER=rabbit
