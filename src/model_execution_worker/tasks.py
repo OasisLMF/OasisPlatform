@@ -49,11 +49,12 @@ def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
-    logging.info('OASIS_MODEL_SUPPLIER_ID: {}'.format(m_supplier))
-    logging.info('OASIS_MODEL_ID: {}'.format(m_name))
-    logging.info('OASIS_MODEL_VERSION_ID: {}'.format(m_id))
-    reg_worker = CELERY.send_task('register_worker', (m_supplier, m_name, m_id))
-
+    logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
+    signature(
+        'run_register_worker',
+        args=(m_supplier, m_name, m_id),
+        queue='celery'
+    ).delay()
 
 
 class MissingInputsException(OasisException):
