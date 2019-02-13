@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import uuid
+import time
 
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
@@ -9,23 +10,24 @@ from six import StringIO
 
 from src.server.oasisapi.files.models import RelatedFile
 
-from src.server.oasisapi.analysis_models.models import AnalysisModel
-from django.contrib.auth.models import User
 
 from ..celery import celery_app
 
 logger = get_task_logger(__name__)
 
-@celery_app.task(name='register_worker')
-def run_add_worker(m_supplier, m_name, m_id):
+@celery_app.task(name='run_register_worker')
+def run_register_worker(m_supplier, m_name, m_id):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
-        # fetch admin user and create new model
+        from django.contrib.auth.models import User
+        from src.server.oasisapi.analysis_models.models import AnalysisModel
         user = User.objects.get(username='admin')
         new_model = AnalysisModel.objects.create(model_id=m_name, 
                                                  supplier_id=m_supplier, 
                                                  version_id=m_id, 
                                                  creator=user)
+
+    # Log unhandled execptions        
     except Exception as e:
         logger.exception(str(e))
 
