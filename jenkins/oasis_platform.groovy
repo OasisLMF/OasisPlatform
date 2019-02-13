@@ -145,19 +145,24 @@ node {
             }   
         }
 
-
-
         if (params.PUBLISH){
             parallel(
+                publish_api_base: {
+                    stage ('Publish: api_base') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_api_base} ${env.TAG_RELEASE}"
+                        }
+                    }
+                },
                 publish_api_server: {
-                    stage ('Publish: oasis_api_server') {
+                    stage ('Publish: api_server') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_api_sql} ${env.TAG_RELEASE}"
                         }
                     }
                 },
                 publish_model_worker: {
-                    stage('Publish: exceution_worker') {
+                    stage('Publish: model_worker') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
                         }
