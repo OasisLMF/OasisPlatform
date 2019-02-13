@@ -125,11 +125,11 @@ node {
                 }
             }
         )
-        //stage('Run: unittest' + oasis_func) {
-        //    dir(oasis_workspace) {
-        //        sh " ./runtests.sh"
-        //    }
-        //}
+        stage('Run: unittest') {
+            dir(oasis_workspace) {
+                sh " ./runtests.sh"
+            }
+        }
         stage('Run: API Server' + oasis_func) {
             dir(build_workspace) {
                 sh PIPELINE + " start_model"
