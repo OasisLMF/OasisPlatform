@@ -1,5 +1,23 @@
-# 0.397.3
+# 0.397.4
 
+## [OasisLMF](https://github.com/OasisLMF/OasisLMF/tree/1.2.7)
+* oasislmf *1.2.7* packaged in `0.397.4` docker images 
+
+
+### Fixes and Changes
+* Fix for Ktools Memory limits in Genbash
+* Fix in Generate-Losses command
+
+## [OasisPlatform](https://github.com/OasisLMF/OasisPlatform/tree/0.397.4)
+### Fixes and Changes
+* Fix for lockfile max retries
+
+
+## No Change from 0.397.3
+* Ktools 3.0.4
+
+
+# 0.397.3
 
 ## [Ktools](https://github.com/OasisLMF/ktools/tree/v3.0.4)
 * Ktools *3.0.4* packaged in `0.397.3` docker images 
@@ -8,7 +26,7 @@
 * Performance improvement for fmcalc
 
 
-## [OasisLMF](https://github.com/OasisLMF/OasisLMF/tree/1.2.2)
+## [OasisLMF](https://github.com/OasisLMF/OasisLMF/tree/1.2.5)
 * oasislmf *1.2.5* packaged in `0.397.3` docker images 
 
 ### Fixes and Changes
@@ -27,6 +45,18 @@
 ### Deployment Updates
 * New enviroment var to set fmcalc allocation rule,  `OASIS_KTOOLS_ALLOC_RULE` 
 
+
+# 0.397.2
+
+## [OasisLMF](https://github.com/OasisLMF/OasisLMF/tree/1.2.3)
+* oasislmf *1.2.3* packaged in `0.397.2` docker images 
+### Fixes and Changes
+* Hotfix for Reinsurance required fields
+
+
+## No Change from 0.397.1
+* Ktools 3.0.3
+* OasisPlatform 
 
 
 # 0.397.1
