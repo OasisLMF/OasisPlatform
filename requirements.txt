@@ -6,7 +6,7 @@
 #
 -e git+git://github.com/wildfish/django-rest-framework#egg=djangorestframework
 #-e git+git://github.com/OasisLMF/OasisLMF.git@develop#egg=oasislmf
-oasislmf>=1.2.7
+oasislmf>=1.2.8
 amqp==2.2.2               # via kombu
 argparsetree==0.0.5
 atomicwrites==1.1.5       # via pytest
