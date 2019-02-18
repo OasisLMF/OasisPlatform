@@ -135,9 +135,11 @@ def case_fixture(session_fixture):
     r_analysis = session.create_analysis(
         analysis_name='Integration_test_{}_{}'.format(test_model, case),
         portfolio_id=ids['portfoilio'],
-        model_id=ids['model'],
-        analysis_settings_fp=settings_fp)
+        model_id=ids['model'])
+
     ids['analysis'] = r_analysis['id']
+    r_upload_settings = session.analyses.settings_file.upload(ids['analysis'], settings_fp, 'application/json')
+    assert r_upload_settings.ok
 
     return session, case, ids
 

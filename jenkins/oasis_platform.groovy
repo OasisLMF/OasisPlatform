@@ -18,7 +18,7 @@ node {
       parameters([
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: oasis_branch],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'feature/update-tests'],
-        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'feature/update-tests'],
+        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "dev-build-${BUILD_NUMBER}"],
