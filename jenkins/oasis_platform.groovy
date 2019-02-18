@@ -73,6 +73,8 @@ node {
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
 
     env.IMAGE_WORKER   = image_worker
+    // Should read these values from test/conf.ini
+    env.TEST_MAX_RUNTIME = '190'
     env.MODEL_SUPPLIER = 'OasisLMF'
     env.MODEL_VARIENT  = 'PiWind'
     env.MODEL_ID       = '1'
