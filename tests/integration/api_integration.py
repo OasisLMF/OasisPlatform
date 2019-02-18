@@ -223,6 +223,10 @@ def test_analysis_output(case_fixture):
     if (analysis.json()['status'] not in ['RUN_COMPLETED']):
         pytest.skip('Error in file Generation step')
 
+    if not get_path(test_model, 'EXPECTED_OUTPUT_DIR'):
+        pytest.skip('Expected data missing')
+
+    expected_results = os.path.join(get_path(test_model, 'EXPECTED_OUTPUT_DIR'), case, 'output')
     output_dir = os.path.abspath(config.get('default','TEST_OUTPUT_DIR'))
     download_to = '{0}/{1}_output.tar.gz'.format(output_dir, case, ids['analysis'])
     extract_to = os.path.join(output_dir, case)
@@ -237,7 +241,6 @@ def test_analysis_output(case_fixture):
     tar_object.extractall(path=extract_to, members=csv_only)
     tar_object.close()
     
-    expected_results = os.path.join(get_path(test_model, 'EXPECTED_OUTPUT_DIR'), case, 'output')
     check_expected(expected_results, os.path.join(extract_to, 'output'))
     if os.path.isfile(download_to):
        os.remove(download_to) 
