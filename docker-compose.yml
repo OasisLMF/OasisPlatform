@@ -76,7 +76,7 @@ services:
      - celery-db
      - rabbit:myrabbit
     environment:
-     - OASIS_MODEL_SUPPLIER_ID=OasisIM
+     - OASIS_MODEL_SUPPLIER_ID=OasisLMF
      - OASIS_MODEL_ID=PiWind
      - OASIS_MODEL_VERSION_ID=1
      - OASIS_RABBIT_HOST=rabbit

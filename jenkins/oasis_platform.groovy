@@ -73,7 +73,7 @@ node {
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
 
     env.IMAGE_WORKER   = image_worker
-    env.MODEL_SUPPLIER = 'OasisIM'
+    env.MODEL_SUPPLIER = 'OasisLMF'
     env.MODEL_VARIENT  = 'PiWind'
     env.MODEL_ID       = '1'
     sh 'env'
