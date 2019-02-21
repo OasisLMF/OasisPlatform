@@ -191,7 +191,7 @@ def start_analysis(analysis_settings, input_location):
 
         ##! to add check that RI directories take the form of RI_{ID} amd ID is a monotonic index
 
-        num_reinsurance_iterations = len(glob.glob(os.path.join("input", 'RI_[0-9]')))
+        num_reinsurance_iterations = len(glob.glob('RI_[0-9]'))
 
         model_runner_module.run(
             analysis_settings['analysis_settings'], 
