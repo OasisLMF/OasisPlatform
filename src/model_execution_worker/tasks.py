@@ -170,6 +170,8 @@ def start_analysis(analysis_settings, input_location):
 
     if 'ri_output' in analysis_settings['analysis_settings'].keys():
         ri = analysis_settings['analysis_settings']['ri_output']
+    else:
+        ri = False
 
     prepare_model_run_directory(working_directory, ri=ri, model_data_src_path=model_data_path, inputs_archive=input_archive)
     prepare_model_run_inputs(analysis_settings['analysis_settings'], working_directory, ri=ri)
