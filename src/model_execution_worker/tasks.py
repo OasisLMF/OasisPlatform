@@ -168,7 +168,7 @@ def start_analysis(analysis_settings, input_location):
     directory_name = "{}_{}_{}".format(source_tag, analysis_tag, uuid.uuid4().hex)
     working_directory = os.path.join(settings.get('worker', 'WORKING_DIRECTORY'), directory_name)
 
-    if 'ri_output' in analysis_settings['analysis_settings'].keys()
+    if 'ri_output' in analysis_settings['analysis_settings'].keys():
         ri = analysis_settings['analysis_settings']['ri_output']
 
     prepare_model_run_directory(working_directory, ri=ri, model_data_src_path=model_data_path, inputs_archive=input_archive)
