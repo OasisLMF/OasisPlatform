@@ -198,7 +198,8 @@ def start_analysis(analysis_settings, input_location):
             settings.getint('worker', 'KTOOLS_BATCH_COUNT'), 
             num_reinsurance_iterations=num_reinsurance_iterations,
             ktools_mem_limit=settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT'),
-            set_alloc_rule=settings.getint('worker', 'KTOOLS_ALLOC_RULE')
+            set_alloc_rule=settings.getint('worker', 'KTOOLS_ALLOC_RULE'),
+            fifo_tmp_dir=False
         )
 
         output_location = uuid.uuid4().hex
