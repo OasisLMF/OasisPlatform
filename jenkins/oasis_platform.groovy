@@ -23,6 +23,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "dev-build-${BUILD_NUMBER}"],
         [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case 2_case'],
+        [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(true)]
@@ -127,9 +128,11 @@ node {
                 }
             }
         )
-        stage('Run: unittest') {
-            dir(oasis_workspace) {
-                sh " ./runtests.sh"
+        if (params.UNITTEST){
+            stage('Run: unittest') {
+                dir(oasis_workspace) {
+                    sh " ./runtests.sh"
+                }
             }
         }
         stage('Run: API Server' + oasis_func) {
