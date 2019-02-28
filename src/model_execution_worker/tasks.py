@@ -224,17 +224,20 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None):
         ]
         GenerateOasisFilesCmd(argv=run_args).run()
 
-        error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, 'oasiskeys-errors-*.csv'))), None)
+        error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
+        error_path_tar = None
+
         if error_path:
             saved_path = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
             shutil.copy(error_path, saved_path)
-            error_path = saved_path
+            error_tar = str(Path(saved_path).relative_to(media_root))
 
         output_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
+        output_tar = str(Path(output_name).relative_to(media_root))
         with tarfile.open(output_name, 'w:gz') as tar:
             tar.add(oasis_files_dir, arcname='/')
 
-        return str(Path(output_name).relative_to(media_root)), str(Path(error_path).relative_to(media_root))
+        return output_tar, error_tar
 
 
 @task(name='on_error')
