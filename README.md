@@ -1,8 +1,8 @@
 <img src="https://oasislmf.org/packages/oasis_theme_package/themes/oasis_theme/assets/src/oasis-lmf-colour.png" alt="Oasis LMF logo" width="250"/>
 
-[![Build](http://ci.oasislmfdev.org/buildStatus/icon?job=oasis_platform)](http://ci.oasislmfdev.org/blue/organizations/jenkins/oasis_platform/activity)
-[![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.3-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.3)
-[![PyPI version](https://img.shields.io/badge/PyPi%20--%20OasisLMF-1.2.2-brightgreen.svg)](https://github.com/OasisLMF/OasisLMF/tree/v1.2.2)
+[![Build Status](https://ci.oasislmfdev.org/buildStatus/icon?job=oasis_platform/master)](https://ci.oasislmfdev.org/view/Oasis/job/oasis_platform/job/master/)
+[![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.6-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.6)
+[![PyPI version](https://badge.fury.io/py/oasislmf.svg)](https://badge.fury.io/py/oasislmf)
 
 # Oasis Platform
 Provides core components of the Oasis platform, specifically:
