@@ -45,7 +45,7 @@ def check_expected(result_path, expected_path):
     os.chdir(cwd)
     for csv in comparison_list:
         print(csv)
-        df_expect = pd.read_csv(os.path.join(expected_path, csv)))
+        df_expect = pd.read_csv(os.path.join(expected_path, csv))
         df_found  = pd.read_csv(os.path.join(result_path, csv))
         assert_frame_equal(df_expect, df_found)
         #assert filecmp.cmp(os.path.join(result_path, csv),
