@@ -19,6 +19,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: oasis_branch],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'feature/update-tests'],
         [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'master'],
+        [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: ''],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "dev-build-${BUILD_NUMBER}"],
@@ -47,6 +48,7 @@ node {
 
 	// platform vars
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
+    String mdk_branch      = params.MDK_BRANCH
     String oasis_name      = 'OasisPlatform'
     String oasis_git_url   = "git@github.com:OasisLMF/${oasis_name}.git"
     String oasis_workspace = 'platform_workspace'
@@ -109,6 +111,14 @@ node {
         )
         stage('Shell Env'){
             sh  PIPELINE + ' print_model_vars'
+        }
+
+        if (mdk_branch){
+            stage('Git install MDK'){
+                dir(oasis_workspace) {
+                    sh "sed -i 's|.*oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
+                }
+            }
         }
         parallel(
             build_oasis_api_server: {
