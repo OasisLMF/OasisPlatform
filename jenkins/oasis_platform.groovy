@@ -215,9 +215,14 @@ node {
         }
         if(! hasFailed && params.PUBLISH){
             sshagent (credentials: [git_creds]) {
+                // Tag the OasisPlatform
                 dir(oasis_workspace) {
                     sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                 }
+                // Tag the version of PiWind it was publish with
+                dir(model_workspace) {
+                    sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
+                }    
             }
         }
         //Store logs
