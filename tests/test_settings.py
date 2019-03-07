@@ -9,7 +9,7 @@ from hypothesis import given
 from hypothesis.strategies import text, integers
 from mock import patch
 
-from src.conf.settings import Settings
+from src.conf.iniconf import Settings
 
 
 def setting_text():
@@ -86,13 +86,13 @@ class SettingsGet(TestCase):
             settings = Settings()
 
             self.assertEqual(settings.get('default', 'LOG_LEVEL'), value)
-            self.assertEqual(settings.get('default', 'INPUTS_DATA_DIRECTORY'), '/var/www/oasis/upload')
+            self.assertEqual(settings.get('default', 'MEDIA_ROOT'), '/shared-fs/')
 
 
 class SettingsSetupLogging(TestCase):
     @given(setting_text(), setting_text(), setting_text(), integers(), integers())
     def test_oasis_logging_is_setup_correctly(self, path, name, level, size, count):
-        with patch('src.conf.settings.read_log_config') as log_conf_mock:
+        with patch('src.conf.iniconf.read_log_config') as log_conf_mock:
             settings = Settings()
             settings.add_section('newsection')
             settings.update({

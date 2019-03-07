@@ -3,24 +3,31 @@ node {
     sh 'sudo /var/lib/jenkins/jenkins-chown'
     deleteDir() // wipe out the workspace
 
-    // Default Multibranch config
+    // Set Default Multibranch config
     try {
-        auto_set_branch = CHANGE_BRANCH
-    } catch (MissingPropertyException e) {
-        auto_set_branch = BRANCH_NAME
+        oasis_branch = CHANGE_BRANCH
+    } catch (MissingPropertyException e1) {
+        try {
+            oasis_branch = BRANCH_NAME
+        } catch (MissingPropertyException e2) {
+             oasis_branch = ""
+        }
     }
+
     properties([
       parameters([
-        [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: auto_set_branch],
-        [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'KEYSERVER_BRANCH', defaultValue: 'master'],
+        [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: oasis_branch],
+        [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'feature/update-tests'],
+        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'master'],
+        [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: ''],
+        [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
-        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "build-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "dev-build-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case 2_case'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'FLAKE8', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
-        [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(false)]
+        [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(true)]
       ])
     ])
 
@@ -29,28 +36,30 @@ node {
     String build_branch = params.BUILD_BRANCH
     String build_workspace = 'oasis_build'
 
-    String  docker_api       = "Dockerfile.oasis_api_server"
-    String  image_api        = "coreoasis/oasis_api_server"
-    String  docker_worker    = "Dockerfile.model_execution_worker"
-    String  image_worker     = "coreoasis/model_execution_worker"
-    String  docker_keys_builtin = "docker/Dockerfile.builtin_keys_server"
-    String  docker_keys_custom = "docker/Dockerfile.custom_keys_server"
-    String  image_keys_builtin  = "coreoasis/builtin_keys_server"
-    String  image_keys_custom  = "coreoasis/custom_keys_server"
+    String docker_api_base = "Dockerfile.api_server.base"
+    String image_api_base  = "coreoasis/api_base"
+
+    String docker_api_sql  = "Dockerfile.api_server.mysql"
+    String image_api_sql   = "coreoasis/api_server"
+
+    String docker_worker   = "Dockerfile.model_worker"
+    String image_worker    = "coreoasis/model_worker"
+
 
 	// platform vars
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
+    String mdk_branch      = params.MDK_BRANCH
     String oasis_name      = 'OasisPlatform'
     String oasis_git_url   = "git@github.com:OasisLMF/${oasis_name}.git"
     String oasis_workspace = 'platform_workspace'
     String utils_sh        = '/buildscript/utils.sh'
     String oasis_func      = "oasis_server"
 
-    // keys server base vars
-    String keys_branch     = params.KEYSERVER_BRANCH  // Git repo branch to build from
-    String keys_name       = 'oasis_keys_server'
-    String keys_workspace  = 'keys_workspace'
-    String keys_git_url    = "git@github.com:OasisLMF/${keys_name}.git"
+    // oasis model test
+    String model_branch     = params.MODEL_BRANCH  // Git repo branch to build from
+    String model_name       = params.MODEL_NAME
+    String model_workspace  = "${model_name}_workspace"
+    String model_git_url    = "git@github.com:OasisLMF/${model_name}.git"
 
     String script_dir = env.WORKSPACE + "/${build_workspace}"
     String git_creds  = "1335b248-336a-47a9-b0f6-9f7314d6f1f4"
@@ -59,15 +68,20 @@ node {
     // Set Global ENV
     env.PIPELINE_LOAD = script_dir + utils_sh       
 
+    env.OASIS_MODEL_DATA_DIR = "${env.WORKSPACE}/${model_workspace}"
     env.TAG_BASE         = params.BASE_TAG     //Build TAG for base set of images
     env.TAG_RELEASE      = params.RELEASE_TAG  //Build TAG for TARGET image 
     env.TAG_RUN_PLATFORM = params.RELEASE_TAG 
+    env.TAG_RUN_WORKER   = params.RELEASE_TAG 
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
+
+    env.IMAGE_WORKER   = image_worker
+    // Should read these values from test/conf.ini
+    env.TEST_MAX_RUNTIME = '190'
+    env.MODEL_SUPPLIER = 'OasisLMF'
+    env.MODEL_VARIENT  = 'PiWind'
+    env.MODEL_ID       = '1'
     sh 'env'
-
-     
-
-
 
     try {
         parallel(
@@ -78,10 +92,10 @@ node {
                     }
                 }
             },
-            clone_oasis_keys_server: {
-                stage('Clone: ' + keys_workspace) {
-                    dir(keys_workspace) {
-                       git url: keys_git_url, credentialsId: git_creds, branch: keys_branch 
+            clone_oasis_model: {
+                stage('Clone: ' + model_workspace) {
+                    dir(model_workspace) {
+                       git url: model_git_url, credentialsId: git_creds, branch: model_branch 
                     }
                 }
             },
@@ -98,11 +112,21 @@ node {
         stage('Shell Env'){
             sh  PIPELINE + ' print_model_vars'
         }
+
+        if (mdk_branch){
+            stage('Git install MDK'){
+                dir(oasis_workspace) {
+                    sh "sed -i 's|.*oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
+                }
+            }
+        }
         parallel(
             build_oasis_api_server: {
-                stage('Build: ' + oasis_func) {
+                stage('Build: API server') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE} ${env.TAG_BASE}"
+                        sh PIPELINE + " build_image ${docker_api_base} ${image_api_base} ${env.TAG_RELEASE} ${env.TAG_BASE}"
+                        sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE} ${env.TAG_BASE}"
+
                     }
                 }
             },
@@ -112,56 +136,50 @@ node {
                         sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE} ${env.TAG_BASE}"
                     }
                 }
-            },
-            build_model_keys_server: {
-                stage('Build: base keys server') {
-                    dir(keys_workspace) {
-                        sh PIPELINE + " build_image ${docker_keys_builtin} ${image_keys_builtin} ${env.TAG_RELEASE} ${env.TAG_BASE}"
-                        sh PIPELINE + " build_image ${docker_keys_custom} ${image_keys_custom} ${env.TAG_RELEASE} ${env.TAG_BASE}"
-
-                    }
-                }
             }
         )
-        if(params.UNITTEST)
-        stage('Test: Tox unittesting'){
-            dir(oasis_workspace) {
-                sh 'set -eux && /usr/local/bin/tox' 
-            }
-        }
-        if(params.FLAKE8){
-            stage('Test: PEP8'){
+        if (params.UNITTEST){
+            stage('Run: unittest') {
                 dir(oasis_workspace) {
-                    sh 'set -eux && flake8' 
+                    sh " ./runtests.sh"
                 }
             }
         }
-        stage('Test: integration ' + oasis_func) {
+        stage('Run: API Server' + oasis_func) {
             dir(build_workspace) {
-                sh PIPELINE + " run_test_api"
+                sh PIPELINE + " start_model"
             }
         }
+        
+        api_server_tests = params.RUN_TESTS.split()
+        for(int i=0; i < api_server_tests.size(); i++) {
+            stage("Run : ${api_server_tests[i]}"){
+                dir(build_workspace) {
+                    sh PIPELINE + " run_test --test-case ${api_server_tests[i]}"
+                }   
+            }   
+        }
+
         if (params.PUBLISH){
             parallel(
-                publish_oasis_api_server: {
-                    stage ('Publish: oasis_api_server') {
+                publish_api_base: {
+                    stage ('Publish: api_base') {
                         dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+                            sh PIPELINE + " push_image ${image_api_base} ${env.TAG_RELEASE}"
                         }
                     }
                 },
-                publish_model_execution_worker: {
-                    stage('Publish: exceution_worker') {
+                publish_api_server: {
+                    stage ('Publish: api_server') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_api_sql} ${env.TAG_RELEASE}"
+                        }
+                    }
+                },
+                publish_model_worker: {
+                    stage('Publish: model_worker') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
-                        }
-                    }
-                },
-                publish_model_keys_server: {
-                    stage('Publish: keys_server') {
-                        dir(keys_workspace) {
-                            sh PIPELINE + " push_image ${image_keys_builtin} ${env.TAG_RELEASE}"
-                            sh PIPELINE + " push_image ${image_keys_custom} ${env.TAG_RELEASE}"
                         }
                     }
                 }
@@ -172,12 +190,17 @@ node {
         error('Build Failed')
     } finally {
         dir(build_workspace) {
+            sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server-db      > ./stage/log/server-db.log '
+            sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server         > ./stage/log/server.log '
+            sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs celery-db      > ./stage/log/celery-db.log '
+            sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs rabbit         > ./stage/log/rabbit.log '
+            sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker         > ./stage/log/worker.log '
+            sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor > ./stage/log/worker-monitor.log '
             sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}" 
             if(params.PURGE){
-                sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_api_base} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_api_sql} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
-                sh PIPELINE + " purge_image ${image_keys_builtin} ${env.TAG_RELEASE}"
-                sh PIPELINE + " purge_image ${image_keys_custom} ${env.TAG_RELEASE}"
             } 
         }
 
@@ -192,17 +215,20 @@ node {
         }
         if(! hasFailed && params.PUBLISH){
             sshagent (credentials: [git_creds]) {
+                // Tag the OasisPlatform
                 dir(oasis_workspace) {
                     sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                 }
-                dir(keys_workspace) {
+                // Tag the version of PiWind it was publish with
+                dir(model_workspace) {
                     sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
-                }
+                }    
             }
         }
         //Store logs
         dir(build_workspace) {
-            archiveArtifacts artifacts: 'stage/log/**/*.*', excludes: '*stage/log/**/*.gitkeep'
+            archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
+            archiveArtifacts artifacts: "stage/output/**/*.*"
         }
     }
 }

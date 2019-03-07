@@ -1,12 +1,12 @@
 <img src="https://oasislmf.org/packages/oasis_theme_package/themes/oasis_theme/assets/src/oasis-lmf-colour.png" alt="Oasis LMF logo" width="250"/>
 
-[![Build](http://ci.oasislmfdev.org/buildStatus/icon?job=oasis_platform)](http://ci.oasislmfdev.org/blue/organizations/jenkins/oasis_platform/activity)
-[![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.3-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.3)
-[![PyPI version](https://img.shields.io/badge/PyPi%20--%20OasisLMF-1.2.2-brightgreen.svg)](https://github.com/OasisLMF/OasisLMF/tree/v1.2.2)
+[![Build Status](https://ci.oasislmfdev.org/buildStatus/icon?job=oasis_platform/master)](https://ci.oasislmfdev.org/view/Oasis/job/oasis_platform/job/master/)
+[![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.6-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.6)
+[![PyPI version](https://badge.fury.io/py/oasislmf.svg)](https://badge.fury.io/py/oasislmf)
 
 # Oasis Platform
 Provides core components of the Oasis platform, specifically:
-* Flask application that provides the Oasis REST API
+* DJango application that provides the Oasis REST API
 * Celery worker for running a model
 
 ## First Steps
@@ -17,11 +17,15 @@ A simple environment for the testing the API and worker can be created using Doc
 
 <img src="https://github.com/OasisLMF/OasisPlatform/blob/master/Oasis%20Simple%20Runner.png" alt="Simple Oasis platform test environment"/>
 
-First make sure that you have Docker running. Then build the images for the API server, model execution worker and API runner:
+First make sure that you have Docker running. Then build the images for the API server and model execution worker:
 
-    docker build -f Dockerfile.oasis_api_server -t oasis_api_server .
-    docker build -f Dockerfile.model_execution_worker -t model_execution_worker .
-    docker build -f Dockerfile.api_runner -t api_runner .
+    docker build -f Dockerfile.oasis_api_server.base  -t coreoasis/oasis_api_base .
+    docker build -f Dockerfile.oasis_api_server.mysql -t coreoasis/oasis_api_server .
+    docker build -f Dockerfile.model_execution_worker -t coreoasis/model_execution_worker .
+
+The docker images for the server are structured to all inherit from `oasis_api_server:base`.
+Then each child image will be setup for a specific database backend (for example 
+`oasis_api_server:mysql` uses mysql as the database backend). 
 
 Start the docker network:
 
@@ -29,7 +33,7 @@ Start the docker network:
 
 Check that the server is running:
 
-    curl localhost:8001/healthcheck
+    curl localhost:8000/healthcheck
 
 (For the Rabbit management application browse to http://localhost:15672, for Flower, the Celery management application, browse to http://localhost:5555.)
 
@@ -39,7 +43,10 @@ To run a test analysis using the worker image and example model data, run the fo
 
 ### Calling the Server
 
-The API server provides a REST interface which is described <a href="https://oasislmf.github.io/docs/oasis_rest_api.html" target="_blank">here</a>. You can use any suitable command line client such as `curl` or <a href="www.httpie.org" target="_blank">`httpie`</a> to make individual API calls, but a custom Python client may be a better option - for this you can use the <a href="https://oasislmf.github.io/OasisLmf/api/api_client/client.html" target="_blank">`api_client` repository</a> withing the oasislmf Python package.
+The API server provides a REST interface which is described on the home page of the api server at 
+<a href="http://localhost:8000/" target="_blank">http://localhost:8000/</a>. This documentation
+also provides an interactable interface to the api or you can use any command line client such as 
+curl. 
 
 ## Development
 
@@ -70,6 +77,32 @@ Version specifiers can be supplied to the packages but these should be kept as l
 After adding packages to either ``*.in`` file, the following command should be ran ensuring the development dependencies are kept up to date:
 
     pip-compile && pip-sync
+    
+The demo project also needs the PiWind model. This is available [here](https://github.com/OasisLMF/OasisPiWind).
+You should also set `OASIS_MODEL_DATA_DIR` to the root directory of the pi wind repo.
+
+### Setup
+
+Once the dependencies have been installed you will need to create the database. For development we use mysql for 
+simplicity. To create the database run: 
+    
+    python manage.py migrate
+    
+This should also be ran whenever there are new database changes. If you change the database fields you
+will need to generate new migrations by running:
+
+    python manage.py makemigrations
+    
+And adding all generated files to git.
+
+Once the database has been migrated the pi wind model needs to be added to the database, either in the 
+admin interface or the api setting:
+ 
+    {
+        supplier_id: "OasisIM",
+        model_id: "PiWind",
+        version_id: "1",
+    }
 
 ### Testing
 
@@ -97,6 +130,37 @@ The Oasis CI system builds and deploys the following Docker images to DockerHub:
 * <a href="https://hub.docker.com/r/coreoasis/model_execution_worker">coreoasis/model_execution_worker</a>
 
 Note that the Dockerfiles cannot be used directly as there are version stubs that get substitued at build time by the CI system.
+
+## Authentication
+
+By default the server uses the standard model backend, this started users with username and password in
+the database. This can be configured by setting `OASIS_API_SERVER_AUTH_BACKEND` to a comma separated 
+list of python paths. Information about django authentication backends can be found [here](https://docs.djangoproject.com/en/2.0/topics/auth/customizing/#writing-an-authentication-backend)
+
+To create an admin user call `python manage.py createsuperuser` and follow the prompts, this user
+can be used as a normal user on in the api but it also gains access to the admin interface at
+http://localhost:8000/admin/. From here you can edit entries and create new users.
+
+For authenticating with the api the `HTTP-AUTHORIZATION` header needs to be set. The token to use can
+be obtained by posting your username and password to `/refresh_token/`. This gives you both a refresh
+token and access token. The access token should be used for most requests however this will expire after
+a while. When it expires a new key can be retrieved by posting to `/access_token/` using the refresh
+token in the authorization header. 
+
+The authorization header takes the following form `Bearer <token>`.
+
+## Workflow
+
+The general workflow is as follows
+
+1. Create a portfolio (post to `/portfolios/`).
+2. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
+3. Create the model object for your model (post to `/models/`).
+4. Create an analysis (post to `/portfolios/<id>/create_analysis`). This will generate the input files
+    for the analysis.
+5. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
+6. Run the analysis (post to `/analyses/<pk>/run/`)
+7. Get the outputs (get `/analuses/<pk>/output_file/`) 
 
 ## Documentation
 * <a href="https://github.com/OasisLMF/OasisApi/issues">Issues</a>

@@ -1,28 +1,28 @@
+import os
 import tarfile
 from unittest import TestCase
 
-import os
 from backports.tempfile import TemporaryDirectory
 from celery.exceptions import Retry
 from hypothesis import given
-from hypothesis.strategies import text, dictionaries
-from mock import patch, Mock
+from hypothesis.strategies import text
+from mock import patch, Mock, ANY
 from oasislmf.utils import status
 from pathlib2 import Path
 
-from src.conf.settings import SettingsPatcher, settings
+from src.conf.iniconf import SettingsPatcher, settings
 from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, MissingInputsException, \
-    MissingModelDataException, start_analysis_task
+    start_analysis_task, get_oasislmf_config_path
 
 
 class StartAnalysis(TestCase):
     def create_tar(self, target):
-        with TemporaryDirectory() as input_path, tarfile.open(target, 'w') as tar:
+        with TemporaryDirectory() as media_root, tarfile.open(target, 'w') as tar:
             paths = [
-                Path(input_path, 'events.bin'),
-                Path(input_path, 'returnperiods.bin'),
-                Path(input_path, 'occurrence.bin'),
-                Path(input_path, 'periods.bin'),
+                Path(media_root, 'events.bin'),
+                Path(media_root, 'returnperiods.bin'),
+                Path(media_root, 'occurrence.bin'),
+                Path(media_root, 'periods.bin'),
             ]
 
             for path in paths:
@@ -30,170 +30,67 @@ class StartAnalysis(TestCase):
                 tar.add(str(path), path.name)
 
     def test_input_tar_file_does_not_exist___exception_is_raised(self):
-        with TemporaryDirectory() as inputs_dir:
-            with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
-                self.assertRaises(MissingInputsException, start_analysis, {}, 'non-existant-location')
+        with TemporaryDirectory() as media_root:
+            with SettingsPatcher(MEDIA_ROOT=media_root):
+                self.assertRaises(MissingInputsException, start_analysis, {}, 'non-existant-location.tar')
 
     def test_input_location_is_not_a_tar___exception_is_raised(self):
-        with TemporaryDirectory() as inputs_dir:
-            with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir):
-                Path(inputs_dir, 'not-tar-file.tar').touch()
+        with TemporaryDirectory() as media_root:
+            with SettingsPatcher(MEDIA_ROOT=media_root):
+                Path(media_root, 'not-tar-file.tar').touch()
 
-                self.assertRaises(InvalidInputsException, start_analysis, {}, 'not-tar-file')
+                self.assertRaises(InvalidInputsException, start_analysis, {}, 'not-tar-file.tar')
 
-    def test_input_model_data_does_not_exist___exception_is_raised(self):
-        with TemporaryDirectory() as inputs_dir, TemporaryDirectory() as model_data_dir:
-            with SettingsPatcher(INPUTS_DATA_DIRECTORY=inputs_dir, MODEL_DATA_DIRECTORY=model_data_dir):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
-
-                self.assertRaises(
-                    MissingModelDataException,
-                    start_analysis,
-                    {'analysis_settings': {
-                        'source_tag': 'source',
-                        'analysis_tag': 'source',
-                        'module_supplier_id': 'supplier',
-                        'model_version_id': 'version'
-                    }},
-                    'location',
-                )
-
-    def test_custom_model_runner_does_not_exist___default_runner_is_used(self):
-        with TemporaryDirectory() as inputs_dir, \
+    def test_custom_model_runner_does_not_exist___generate_losses_is_called_output_files_are_tared_up(self):
+        with TemporaryDirectory() as media_root, \
                 TemporaryDirectory() as model_data_dir, \
-                TemporaryDirectory() as work_dir, \
-                TemporaryDirectory() as out_dir:
+                TemporaryDirectory() as work_dir:
             with SettingsPatcher(
-                    INPUTS_DATA_DIRECTORY=inputs_dir,
+                    MODEL_SUPPLIER_ID='supplier',
+                    MODEL_ID='model',
+                    MODEL_VERSION_ID='version',
+                    MEDIA_ROOT=media_root,
                     MODEL_DATA_DIRECTORY=model_data_dir,
-                    WORKING_DIRECTORY=work_dir,
-                    OUTPUTS_DATA_DIRECTORY=out_dir):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
-                Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
+                    WORKING_DIRECTORY=work_dir,):
+                self.create_tar(str(Path(media_root, 'location.tar')))
+                Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
 
-                with patch('src.model_execution_worker.tasks.runner') as default_mock:
-                    start_analysis({
-                        'analysis_settings': {
-                            'source_tag': 'source',
-                            'analysis_tag': 'source',
-                            'module_supplier_id': 'supplier',
-                            'model_version_id': 'version'
-                        }},
-                        'location',
+                cmd_instance = Mock()
+                with patch('src.model_execution_worker.tasks.GenerateLossesCmd', Mock(return_value=cmd_instance)) as cmd_mock, \
+                        patch('src.model_execution_worker.tasks.tarfile') as tarfile:
+                    output_location = start_analysis(
+                        'analysis_settings.json',
+                        'location.tar',
                     )
-                    default_mock.run.assert_called_once_with(
-                        {
-                            'source_tag': 'source',
-                            'analysis_tag': 'source',
-                            'module_supplier_id': 'supplier',
-                            'model_version_id': 'version'
-                        },
-                        settings.getint('worker', 'KTOOLS_BATCH_COUNT'),
-                        num_reinsurance_iterations=0
-                    )
-
-    def test_custom_model_runner_exists___custom_runner_is_used(self):
-        with TemporaryDirectory() as inputs_dir, \
-                TemporaryDirectory() as model_data_dir, \
-                TemporaryDirectory() as work_dir, \
-                TemporaryDirectory() as out_dir, \
-                TemporaryDirectory() as module_dir:
-            with SettingsPatcher(
-                    INPUTS_DATA_DIRECTORY=inputs_dir,
-                    MODEL_DATA_DIRECTORY=model_data_dir,
-                    WORKING_DIRECTORY=work_dir,
-                    OUTPUTS_DATA_DIRECTORY=out_dir,
-                    SUPPLIER_MODULE_DIRECTORY=module_dir):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
-                Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
-
-                Path(module_dir, 'supplier').mkdir()
-                Path(module_dir, 'supplier', '__init__.py').touch()
-                with open(str(Path(module_dir, 'supplier').joinpath('supplier_model_runner.py')), 'w') as module:
-                    module.writelines([
-                        'from pathlib2 import Path\n',
-                        'def run(settings, location, num_reinsurance_iterations):\n',
-                        '    Path("{}", "custom_model").touch()\n'.format(out_dir)
+                    cmd_mock.assert_called_once_with(argv=[
+                        '--oasis-files-path', ANY,
+                        '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
+                        '--model-run-dir', ANY,
+                        '--analysis-settings-file-path', 'analysis_settings.json',
+                        '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
+                        '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
+                        '--ktools-fifo-relative',
+                        '--ktools-mem-limit'
                     ])
-
-                start_analysis({
-                    'analysis_settings': {
-                        'source_tag': 'source',
-                        'analysis_tag': 'source',
-                        'module_supplier_id': 'supplier',
-                        'model_version_id': 'version'
-                    }},
-                    'location',
-                )
-                self.assertTrue(Path(out_dir, "custom_model").exists())
-
-    def test_do_clear_working_is_true___working_directory_is_removed_after_run(self):
-        with TemporaryDirectory() as inputs_dir, \
-                TemporaryDirectory() as model_data_dir, \
-                TemporaryDirectory() as work_dir, \
-                TemporaryDirectory() as out_dir:
-            with SettingsPatcher(
-                    INPUTS_DATA_DIRECTORY=inputs_dir,
-                    MODEL_DATA_DIRECTORY=model_data_dir,
-                    WORKING_DIRECTORY=work_dir,
-                    OUTPUTS_DATA_DIRECTORY=out_dir,
-                    DO_CLEAr_WORKING='True'):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
-                Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
-
-                with patch('src.model_execution_worker.tasks.runner'):
-                    start_analysis({
-                        'analysis_settings': {
-                            'source_tag': 'source',
-                            'analysis_tag': 'source',
-                            'module_supplier_id': 'supplier',
-                            'model_version_id': 'version'
-                        }},
-                        'location',
-                    )
-
-                self.assertEqual(0, len(os.listdir(work_dir)))
-
-    def test_do_clear_working_is_false___working_directory_is_not_removed_after_run(self):
-        with TemporaryDirectory() as inputs_dir, \
-                TemporaryDirectory() as model_data_dir, \
-                TemporaryDirectory() as work_dir, \
-                TemporaryDirectory() as out_dir:
-            with SettingsPatcher(
-                    INPUTS_DATA_DIRECTORY=inputs_dir,
-                    MODEL_DATA_DIRECTORY=model_data_dir,
-                    WORKING_DIRECTORY=work_dir,
-                    OUTPUTS_DATA_DIRECTORY=out_dir,
-                    DO_CLEAr_WORKING='False'):
-                self.create_tar(str(Path(inputs_dir, 'location.tar')))
-                Path(model_data_dir, 'supplier', 'version').mkdir(parents=True)
-
-                with patch('src.model_execution_worker.tasks.runner'):
-                    start_analysis({
-                        'analysis_settings': {
-                            'source_tag': 'source',
-                            'analysis_tag': 'source',
-                            'module_supplier_id': 'supplier',
-                            'model_version_id': 'version'
-                        }},
-                        'location',
-                    )
-
-                self.assertGreater(len(os.listdir(work_dir)), 0)
+                    cmd_instance.run.assert_called_once_with()
+                    self.assertEqual(tarfile.open.call_args_list[1][0], (str(Path(media_root, output_location)), 'w:gz'))
 
 
 class StartAnalysisTask(TestCase):
-    @given(text(), dictionaries(text(), text()))
-    def test_lock_is_not_acquireable___retry_esception_is_raised(self, location, analysis_settings):
+    @given(location=text(), analysis_settings_path=text())
+    def test_lock_is_not_acquireable___retry_esception_is_raised(self, location, analysis_settings_path):
         with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)):
             with self.assertRaises(Retry):
-                start_analysis_task(location, [analysis_settings])
+                start_analysis_task(location, analysis_settings_path)
 
-    @given(text(), dictionaries(text(), text()))
-    def test_lock_is_acquireable___start_analysis_is_ran(self, location, analysis_settings):
+    @given(location=text(), analysis_settings_path=text())
+    def test_lock_is_acquireable___start_analysis_is_ran(self, location, analysis_settings_path):
         with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=True)) as start_analysis_mock:
             start_analysis_task.update_state = Mock()
-            start_analysis_task(location, [analysis_settings])
+            start_analysis_task(location, analysis_settings_path)
 
             start_analysis_task.update_state.assert_called_once_with(state=status.STATUS_RUNNING)
-            start_analysis_mock.assert_called_once_with(analysis_settings, location)
+            start_analysis_mock.assert_called_once_with(
+                os.path.join(settings.get('worker', 'media_root'), analysis_settings_path),
+                location,
+            )
