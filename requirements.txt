@@ -5,111 +5,120 @@
 #    pip-compile --output-file requirements.txt requirements.in
 #
 -e git+git://github.com/wildfish/django-rest-framework#egg=djangorestframework
-oasislmf
-amqp==2.2.2               # via kombu
-argparsetree==0.0.5
-atomicwrites==1.1.5       # via pytest
-attrs==17.4.0             # via hypothesis, pytest
+amqp==2.4.2               # via kombu
+anytree==2.6.0            # via oasislmf
+argparsetree==0.0.6       # via oasislmf
+asn1crypto==0.24.0        # via cryptography
+atomicwrites==1.3.0       # via pytest
+attrs==19.1.0             # via hypothesis, pytest
 backports.tempfile==1.0
-backports.weakref==1.0.post1  # via backports.tempfile
-beautifulsoup4==4.6.0     # via webtest
-billiard==3.5.0.4         # via celery
-cached-property==1.4.3    # via docker-compose
-celery==4.1.0
-certifi==2018.1.18
-chainmap==1.0.2
+backports.weakref==1.0.post1  # via backports.tempfile, oasislmf
+beautifulsoup4==4.7.1     # via webtest
+billiard==3.5.0.5         # via celery, oasislmf
+cached-property==1.5.1    # via docker-compose
+celery==4.2.1
+certifi==2019.3.9
+cffi==1.12.2              # via cryptography
+chainmap==1.0.2           # via oasislmf
 chardet==3.0.4            # via requests
-click==6.7                # via pip-tools
-configparser==3.5.0
+click==7.0                # via pip-tools
+configparser==3.7.3
 coreapi==2.3.3
 coreschema==0.0.4         # via coreapi, drf-yasg
-coverage==4.5
-decorator==4.3.0          # via ipython, traitlets
-django-celery-results==1.0.1
-django-filter==1.1.0
+coverage==4.5.3
+cryptography==2.6.1       # via pyopenssl
+decorator==4.3.2          # via ipython, traitlets
+django-celery-results==1.0.4
+django-filter==2.1.0
 django-model-utils==3.1.2
-django-webtest==1.9.3
-django==1.11.13
-djangorestframework-simplejwt==3.2.3
-docker-compose==1.21.2
-docker-pycreds==0.3.0     # via docker
-docker==3.4.0             # via docker-compose
+django-webtest==1.9.4
+django==1.11.20
+djangorestframework-simplejwt==4.1.0
+docker-compose==1.23.2
+docker-pycreds==0.4.0     # via docker
+docker==3.7.0             # via docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via docker-compose
-drf-yasg==1.10.0
+drf-yasg==1.14.0
+entrypoints==0.3          # via flake8
 fasteners==0.14.1
-first==2.0.1              # via pip-tools
-flake8==3.5.0
-future==0.16.0            # via drf-yasg
-hypothesis==3.44.26
-idna==2.6                 # via requests
+filelock==3.0.10          # via tox
+flake8==3.7.7
+future==0.17.1            # via oasislmf
+hypothesis==4.9.0
+idna==2.7                 # via requests
 inflection==0.3.1         # via drf-yasg
 ipdb==0.11
 ipython-genutils==0.2.0   # via traitlets
-ipython==5.7.0
+ipython==5.8.0
 itypes==1.1.0             # via coreapi
 jinja2==2.10              # via coreschema
-jsonpickle==0.9.5
+jsonpickle==1.1
 jsonschema==2.6.0         # via docker-compose
-kombu==4.1.0              # via celery
-lxml==4.1.1
-markdown==2.6.11
-markupsafe==1.0           # via jinja2
+kombu==4.4.0              # via celery
+lxml==4.3.2               # via oasislmf
+markdown==3.0.1
+markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
 model-mommy==1.6.0
-monotonic==1.4            # via fasteners
-more-itertools==4.2.0     # via pytest
-mysqlclient==1.3.14
-numpy==1.14.0
-openapi-codec==1.3.2      # via drf-yasg
-pandas==0.22.0
-pathlib2==2.3.0
-pbr==3.1.1                # via mock
-pexpect==4.5.0            # via ipython
-pickleshare==0.7.4        # via ipython
-pip-tools==2.0.2
-pluggy==0.6.0             # via pytest, tox
+monotonic==1.5            # via fasteners
+more-itertools==6.0.0     # via pytest
+numpy==1.16.2
+oasislmf>=1.3.2
+pandas==0.24.1            # via oasislmf
+pathlib2==2.3.3
+pbr==5.1.3                # via mock
+pexpect==4.6.0            # via ipython
+pickleshare==0.7.5        # via ipython
+pip-tools==3.4.0
+pluggy==0.9.0             # via pytest, tox
 prompt-toolkit==1.0.15    # via ipython
-ptyprocess==0.5.2         # via pexpect
-py==1.5.2                 # via pytest, tox
-pycodestyle==2.3.1        # via flake8
+ptyprocess==0.6.0         # via pexpect
+py==1.8.0                 # via pytest, tox
+pycodestyle==2.5.0        # via flake8
 pycparser==2.19           # via cffi
-pyflakes==1.6.0           # via flake8
-pygments==2.2.0           # via ipython
-pyjwt==1.6.4              # via djangorestframework-simplejwt
-pymysql==0.8.0
-pyodbc==4.0.22
-pytest-cov==2.5.1         # via pytest-cover
+pyflakes==2.1.1           # via flake8
+pygments==2.3.1           # via ipython
+pyjwt==1.7.1              # via djangorestframework-simplejwt
+pymysql==0.9.3
+pyodbc==4.0.26            # via oasislmf
+pyopenssl==19.0.0
+pytest-cov==2.6.1         # via pytest-cover
 pytest-cover==3.0.0       # via pytest-coverage
 pytest-coverage==0.0
-pytest-django==3.3.2
-pytest==3.6.3
-python-dateutil==2.6.1    # via pandas
-python-interface==1.4.0
+pytest-django==3.4.8
+pytest==4.3.0
+python-dateutil==2.8.0    # via pandas
+python-interface==1.5.1   # via oasislmf
 python-magic==0.4.15
-pytz==2017.3              # via celery, django, pandas
-pyyaml==4.2b1             # via docker-compose
-requests-toolbelt==0.8.0
-requests==2.20.0
-rtree==0.8.3
-ruamel.yaml==0.15.60      # via drf-yasg
-shapely==1.6.4.post1
+pytz==2018.9              # via celery, django, oasislmf, pandas
+pyyaml==3.13              # via docker-compose
+requests-toolbelt==0.9.1  # via oasislmf
+requests==2.20.1          # via coreapi, docker, docker-compose, oasislmf, requests-toolbelt
+rtree==0.8.3              # via oasislmf
+ruamel.yaml==0.15.89      # via drf-yasg
+shapely==1.6.4.post2      # via oasislmf
 shutilwhich==1.1.0
 simplegeneric==0.8.1      # via ipython
-six==1.11.0               # via docker, docker-compose, docker-pycreds, dockerpty, drf-yasg, fasteners, mock, model-mommy, more-itertools, pathlib2, pip-tools, prompt-toolkit, pytest, python-dateutil, python-interface, tox, traitlets, websocket-client, webtest
-sqlalchemy==1.2.10
+six==1.12.0               # via anytree, cryptography, docker, docker-compose, docker-pycreds, dockerpty, drf-yasg, fasteners, mock, model-mommy, oasislmf, pathlib2, pip-tools, prompt-toolkit, pyopenssl, pytest, python-dateutil, python-interface, tox, traitlets, websocket-client, webtest
+soupsieve==1.8            # via beautifulsoup4
+sqlalchemy==1.3.1
+subprocess32==3.5.3       # via oasislmf
+tabulate==0.8.3           # via oasislmf
 texttable==0.9.1          # via docker-compose
-tox==2.9.1
+toml==0.10.0              # via tox
+tox==3.7.0
+tqdm==4.31.1              # via oasislmf
 traitlets==4.3.2          # via ipython
 uritemplate==3.0.0        # via coreapi, drf-yasg
-urllib3==1.22             # via requests
-uwsgi==2.0.17
-vine==1.1.4               # via amqp
-virtualenv==15.1.0        # via tox
-waitress==1.1.0           # via webtest
+urllib3==1.24.1           # via requests
+uwsgi==2.0.18
+vine==1.2.0               # via amqp
+virtualenv==16.4.3        # via tox
+waitress==1.2.1           # via webtest
 wcwidth==0.1.7            # via prompt-toolkit
-webob==1.8.1              # via webtest
-websocket-client==0.48.0  # via docker, docker-compose
-webtest==2.0.29           # via django-webtest
-whitenoise==3.3.1
+webob==1.8.5              # via webtest
+websocket-client==0.55.0  # via docker, docker-compose
+webtest==2.0.33           # via django-webtest
+whitenoise==4.1.2
