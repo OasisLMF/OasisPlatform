@@ -98,6 +98,8 @@ node {
                                 // Checkout PR
                                 PR = oasis_branch.substring(3)
                                 sh "git fetch origin pull/$PR/head:$BRANCH_NAME"
+
+                                // TODO add option to test merge into `CHANGE_TARGET` the target of PR?
                             } else {
                                 // Checkout branch
                                 sh "git checkout -b ${oasis_branch}"
