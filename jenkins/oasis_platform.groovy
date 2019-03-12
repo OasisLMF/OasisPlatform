@@ -3,20 +3,9 @@ node {
     sh 'sudo /var/lib/jenkins/jenkins-chown'
     deleteDir() // wipe out the workspace
 
-    // Set Default Multibranch config
-    try {
-        oasis_branch = CHANGE_BRANCH
-    } catch (MissingPropertyException e1) {
-        try {
-            oasis_branch = BRANCH_NAME
-        } catch (MissingPropertyException e2) {
-             oasis_branch = ""
-        }
-    }
-
     properties([
       parameters([
-        [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: oasis_branch],
+        [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'feature/update-tests'],
         [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: ''],
@@ -103,7 +92,16 @@ node {
                 stage('Clone: ' + oasis_func) {
                     sshagent (credentials: [git_creds]) {
                         dir(oasis_workspace) {
-							sh "git clone -b ${oasis_branch} --recursive ${oasis_git_url} ."
+							sh "git clone --recursive ${oasis_git_url} ."
+                            
+                            if (oasis_branch.matches("PR-[0-9]+")){
+                                // Checkout PR
+                                PR = oasis_branch.substring(3)
+                                sh "git fetch origin pull/$PR/head:$BRANCH_NAME"
+                            } else {
+                                // Checkout branch
+                                sh "git checkout -b ${oasis_branch}"
+                            }    
                         }
                     }
                 }
