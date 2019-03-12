@@ -32,7 +32,7 @@ def _handle_post_related_file(parent, field, request, content_types):
         import logging
         logger = logging.getLogger(__name__)
         logger.info("Fallback copy method")
-        data = {k: request.data[k] for k in request.data.keys()
+        data = {k: request.data[k] for k in request.data.keys()}
 
     serializer = RelatedFileSerializer(data=data, content_types=content_types, context={'request': request})
     serializer.is_valid(raise_exception=True)
