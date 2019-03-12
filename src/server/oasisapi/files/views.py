@@ -3,7 +3,6 @@ from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
 
-
 def _get_chunked_content(f, chunk_size=1024):
     content = f.read(chunk_size)
     while content:
@@ -26,7 +25,14 @@ def _handle_get_related_file(parent, field):
 
 
 def _handle_post_related_file(parent, field, request, content_types):
-    data = request.data.copy()
+    try:
+        data = request.data.copy()
+    except:
+        ## Work around for: https://code.djangoproject.com/ticket/29510 
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("Fallback copy method")
+        data = {'file': request.data['file']}
 
     serializer = RelatedFileSerializer(data=data, content_types=content_types, context={'request': request})
     serializer.is_valid(raise_exception=True)
