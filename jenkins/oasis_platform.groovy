@@ -147,7 +147,7 @@ node {
                 }
             }
         }
-        stage('Run: API Server) {
+        stage('Run: API Server') {
             dir(build_workspace) {
                 sh PIPELINE + " start_model"
             }
