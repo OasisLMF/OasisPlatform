@@ -11,7 +11,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: ''],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
-        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "dev-${BRANCH_NAME}-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "${BRANCH_NAME}-${BUILD_NUMBER}"],
         [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case 2_case'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
