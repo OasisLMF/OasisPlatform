@@ -30,7 +30,7 @@
     - Reinsurance support on commandline   
 
 ## Docker image changes 
-* API  
+* API images
     - Renamed `coreoasis/model_execution_worker` -> `coreoasis/model_worker`
     - Renamed `coreoasis/oasis_api_server` -> `coreoasis/api_server`  
     - Deprecated `coreoasis/oasis_base`  
@@ -38,7 +38,7 @@
     - Deprecated `coreoasis/builtin_keys_server`  
     - Deprecated `coreoasis/<MODEL>_keys_server`  
 
-* UI 
+* UI images
     - Renamed `coreoasis/shiny_proxy` -> `coreoasis/oasisui_proxy`  
     - Renamed `coreoasis/flamingo_shiny` -> `coreoasis/oasisui_app` 
     - Deprecated `coreoasis/flamingo_server`  
