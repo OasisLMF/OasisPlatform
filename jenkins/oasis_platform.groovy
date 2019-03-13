@@ -11,7 +11,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: ''],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
-        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "dev-build-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "dev-${BRANCH_NAME}-${BUILD_NUMBER}"],
         [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case 2_case'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
@@ -95,10 +95,14 @@ node {
 							sh "git clone --recursive ${oasis_git_url} ."
                             
                             if (oasis_branch.matches("PR-[0-9]+")){
-                                // Checkout PR
+                                // Checkout PR and merge into target branch, test on the result 
                                 sh "git fetch origin pull/$CHANGE_ID/head:$BRANCH_NAME"
-
-                                // TODO add option to test merge into `CHANGE_TARGET` the target of PR?
+                                sh "git checkout $BRANCH_NAME"
+                                sh "git format-patch $CHANGE_TARGET --stdout > ${BRANCH_NAME}.patch"
+                                sh "git checkout $CHANGE_TARGET"
+                                sh "git apply --stat ${BRANCH_NAME}.patch"  // Print files changed 
+                                sh "git apply --check ${BRANCH_NAME}.patch" // Check for merge conflicts 
+                                sh "git apply ${BRANCH_NAME}.patch"         // Apply the patch
                             } else {
                                 // Checkout branch
                                 sh "git checkout -b ${oasis_branch}"
