@@ -96,8 +96,7 @@ node {
                             
                             if (oasis_branch.matches("PR-[0-9]+")){
                                 // Checkout PR
-                                PR = oasis_branch.substring(3)
-                                sh "git fetch origin pull/$PR/head:$BRANCH_NAME"
+                                sh "git fetch origin pull/$CHANGE_ID/head:$BRANCH_NAME"
 
                                 // TODO add option to test merge into `CHANGE_TARGET` the target of PR?
                             } else {
