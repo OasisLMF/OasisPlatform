@@ -35,7 +35,7 @@ node {
     String image_worker    = "coreoasis/model_worker"
 
 
-	// platform vars
+    // platform vars
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
     String mdk_branch      = params.MDK_BRANCH
     String oasis_name      = 'OasisPlatform'
@@ -55,13 +55,13 @@ node {
     String PIPELINE   = script_dir + "/buildscript/pipeline.sh"
 
     // Set Global ENV
-    env.PIPELINE_LOAD = script_dir + utils_sh       
+    env.PIPELINE_LOAD = script_dir + utils_sh
 
     env.OASIS_MODEL_DATA_DIR = "${env.WORKSPACE}/${model_workspace}"
     env.TAG_BASE         = params.BASE_TAG     //Build TAG for base set of images
-    env.TAG_RELEASE      = params.RELEASE_TAG  //Build TAG for TARGET image 
-    env.TAG_RUN_PLATFORM = params.RELEASE_TAG 
-    env.TAG_RUN_WORKER   = params.RELEASE_TAG 
+    env.TAG_RELEASE      = params.RELEASE_TAG  //Build TAG for TARGET image
+    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
+    env.TAG_RUN_WORKER   = params.RELEASE_TAG
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
 
     env.IMAGE_WORKER   = image_worker
@@ -77,14 +77,14 @@ node {
             clone_oasis_build: {
                 stage('Clone: ' + build_workspace) {
                     dir(build_workspace) {
-                       git url: build_repo, credentialsId: git_creds, branch: build_branch 
+                       git url: build_repo, credentialsId: git_creds, branch: build_branch
                     }
                 }
             },
             clone_oasis_model: {
                 stage('Clone: ' + model_workspace) {
                     dir(model_workspace) {
-                       git url: model_git_url, credentialsId: git_creds, branch: model_branch 
+                       git url: model_git_url, credentialsId: git_creds, branch: model_branch
                     }
                 }
             },
@@ -92,21 +92,21 @@ node {
                 stage('Clone: ' + oasis_func) {
                     sshagent (credentials: [git_creds]) {
                         dir(oasis_workspace) {
-							sh "git clone --recursive ${oasis_git_url} ."
-                            
+                            sh "git clone --recursive ${oasis_git_url} ."
+
                             if (oasis_branch.matches("PR-[0-9]+")){
-                                // Checkout PR and merge into target branch, test on the result 
+                                // Checkout PR and merge into target branch, test on the result
                                 sh "git fetch origin pull/$CHANGE_ID/head:$BRANCH_NAME"
                                 sh "git checkout $BRANCH_NAME"
                                 sh "git format-patch $CHANGE_TARGET --stdout > ${BRANCH_NAME}.patch"
                                 sh "git checkout $CHANGE_TARGET"
-                                sh "git apply --stat ${BRANCH_NAME}.patch"  // Print files changed 
-                                sh "git apply --check ${BRANCH_NAME}.patch" // Check for merge conflicts 
+                                sh "git apply --stat ${BRANCH_NAME}.patch"  // Print files changed
+                                sh "git apply --check ${BRANCH_NAME}.patch" // Check for merge conflicts
                                 sh "git apply ${BRANCH_NAME}.patch"         // Apply the patch
                             } else {
                                 // Checkout branch
                                 sh "git checkout -b ${oasis_branch}"
-                            }    
+                            }
                         }
                     }
                 }
@@ -115,7 +115,6 @@ node {
         stage('Shell Env'){
             sh  PIPELINE + ' print_model_vars'
         }
-
         if (mdk_branch){
             stage('Git install MDK'){
                 dir(oasis_workspace) {
@@ -153,14 +152,14 @@ node {
                 sh PIPELINE + " start_model"
             }
         }
-        
+
         api_server_tests = params.RUN_TESTS.split()
         for(int i=0; i < api_server_tests.size(); i++) {
             stage("Run : ${api_server_tests[i]}"){
                 dir(build_workspace) {
                     sh PIPELINE + " run_test --test-case ${api_server_tests[i]}"
-                }   
-            }   
+                }
+            }
         }
 
         if (params.PUBLISH){
@@ -199,12 +198,12 @@ node {
             sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs rabbit         > ./stage/log/rabbit.log '
             sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker         > ./stage/log/worker.log '
             sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor > ./stage/log/worker-monitor.log '
-            sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}" 
+            sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
             if(params.PURGE){
                 sh PIPELINE + " purge_image ${image_api_base} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_api_sql} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
-            } 
+            }
         }
 
         if(params.SLACK_MESSAGE && (params.PUBLISH || hasFailed)){
@@ -225,7 +224,7 @@ node {
                 // Tag the version of PiWind it was publish with
                 dir(model_workspace) {
                     sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
-                }    
+                }
             }
         }
         //Store logs
