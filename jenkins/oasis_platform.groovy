@@ -147,7 +147,7 @@ node {
                 }
             }
         }
-        stage('Run: API Server' + oasis_func) {
+        stage('Run: API Server) {
             dir(build_workspace) {
                 sh PIPELINE + " start_model"
             }
