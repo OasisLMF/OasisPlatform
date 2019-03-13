@@ -26,7 +26,7 @@
     - Port binding now dynamic, no need to edit the docker deamon  
 
 * Model Development kit
-    - Parity between model runs on the MDK (Model Dev Kit) and the worker
+    - Parity between model runs on the MDK (Model Dev Kit) and the worker execution 
     - Reinsurance support on commandline   
 
 ## Docker image changes 
@@ -47,14 +47,14 @@
 
 ## Deprecations & Breaking Changes
 * Removed CSV file transformations
-* Windows Based SQL file generation
+* Windows based SQL file generation
 * All Docker based keys_servers removed, lookups are now performed in the `model_worker`
 
 ## API Changes
 * User based authentication
-* Added Django Admin panel for user management & edits to backing database 
+* Added Django admin panel for user management & edits to backing database 
 * Added Swagger UI for testing the API
-* Improved Workflow 
+* Improved workflow 
 * Easer installation (see [OasisEvaluation](https://github.com/OasisLMF/OasisEvaluation))
 * Added the ability to cancel an analysis or Input generation from the API
 * Workers automatically register with the API `models/` end point 
