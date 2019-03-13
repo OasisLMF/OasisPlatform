@@ -29,7 +29,7 @@
         - Parity between model runs on the MDK (Model Dev Kit) and the worker
         - Reinsurance support on commandline   
 
-## Docker images changes 
+## Docker image changes 
     * API  
         - Renamed `coreoasis/model_execution_worker` -> `coreoasis/model_worker`
         - Renamed `coreoasis/oasis_api_server` -> `coreoasis/api_server`  
