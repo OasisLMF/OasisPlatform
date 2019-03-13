@@ -5,59 +5,59 @@
 
 
 ## Features and Improvements
-    * Added support for running complex models (see [ComplexModelMDK](https://github.com/OasisLMF/ComplexModelMDK/blob/master/install.sh))
-    * Updated Oasislmf package to 1.3.2 (Bug fixes)
+* Added support for running complex models (see [ComplexModelMDK](https://github.com/OasisLMF/ComplexModelMDK/blob/master/install.sh))
+* Updated Oasislmf package to 1.3.2 (Bug fixes)
 
 # 1.0.0 (7/3/2019)
 * Ktools [3.0.5](https://github.com/OasisLMF/ktools/tree/v3.0.5)
 * Oasislmf [1.3.1](https://github.com/OasisLMF/OasisLMF/tree/1.3.1)
 
 ## Features and Improvements
-    * Architecture overhaul 
-        - All system components containerized 
-        - Docker images moved to use python3.6 (Debian based) 
-        - Ktools files generation moved into Worker  
-        - Model Keys lookups moved into worker container 
-        - API moved to Django REST Framework 
+* Architecture overhaul 
+    - All system components containerized 
+    - Docker images moved to use python3.6 (Debian based) 
+    - Ktools files generation moved into Worker  
+    - Model Keys lookups moved into worker container 
+    - API moved to Django REST Framework 
 
-    * Oasis UI
-        - Updated Interface 
-        - Logic moved into API and workflow improvments 
-        - Port binding now dynamic, no need to edit the docker deamon  
+* Oasis UI
+    - Updated Interface 
+    - Logic moved into API and workflow improvments 
+    - Port binding now dynamic, no need to edit the docker deamon  
 
-    * Model Development kit
-        - Parity between model runs on the MDK (Model Dev Kit) and the worker
-        - Reinsurance support on commandline   
+* Model Development kit
+    - Parity between model runs on the MDK (Model Dev Kit) and the worker
+    - Reinsurance support on commandline   
 
 ## Docker image changes 
-    * API  
-        - Renamed `coreoasis/model_execution_worker` -> `coreoasis/model_worker`
-        - Renamed `coreoasis/oasis_api_server` -> `coreoasis/api_server`  
-        - Deprecated `coreoasis/oasis_base`  
-        - Deprecated `coreoasis/custom_keys_server`  
-        - Deprecated `coreoasis/builtin_keys_server`  
-        - Deprecated `coreoasis/<MODEL>_keys_server`  
+* API  
+    - Renamed `coreoasis/model_execution_worker` -> `coreoasis/model_worker`
+    - Renamed `coreoasis/oasis_api_server` -> `coreoasis/api_server`  
+    - Deprecated `coreoasis/oasis_base`  
+    - Deprecated `coreoasis/custom_keys_server`  
+    - Deprecated `coreoasis/builtin_keys_server`  
+    - Deprecated `coreoasis/<MODEL>_keys_server`  
 
-    * UI 
-        - Renamed `coreoasis/shiny_proxy` -> `coreoasis/oasisui_proxy`  
-        - Renamed `coreoasis/flamingo_shiny` -> `coreoasis/oasisui_app` 
-        - Deprecated `coreoasis/flamingo_server`  
+* UI 
+    - Renamed `coreoasis/shiny_proxy` -> `coreoasis/oasisui_proxy`  
+    - Renamed `coreoasis/flamingo_shiny` -> `coreoasis/oasisui_app` 
+    - Deprecated `coreoasis/flamingo_server`  
 
     
 
 ## Deprecations & Breaking Changes
-    * Removed CSV file transformations
-    * Windows Based SQL file generation
-    * All Docker based keys_servers removed, lookups are now performed in the `model_worker`
+* Removed CSV file transformations
+* Windows Based SQL file generation
+* All Docker based keys_servers removed, lookups are now performed in the `model_worker`
 
 ## API Changes
-    * User based authentication
-    * Added Django Admin panel for user management & edits to backing database 
-    * Added Swagger UI for testing the API
-    * Improved Workflow 
-    * Easer installation (see [OasisEvaluation](https://github.com/OasisLMF/OasisEvaluation))
-    * Added the ability to cancel an analysis or Input generation from the API
-    * Workers automatically register with the API `models/` end point 
+* User based authentication
+* Added Django Admin panel for user management & edits to backing database 
+* Added Swagger UI for testing the API
+* Improved Workflow 
+* Easer installation (see [OasisEvaluation](https://github.com/OasisLMF/OasisEvaluation))
+* Added the ability to cancel an analysis or Input generation from the API
+* Workers automatically register with the API `models/` end point 
 
 
 
