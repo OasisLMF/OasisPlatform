@@ -10,8 +10,7 @@ BUILD_OUTPUT_DIR='/tmp/output/'
 
 # Install requirements && build
     set -exu
-    pip install pip-tools
-    pip-compile && pip-sync
+    pip install -r requirements.txt
 
 
 # Unit testing
