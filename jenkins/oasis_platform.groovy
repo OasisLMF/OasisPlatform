@@ -11,8 +11,10 @@ node {
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: ''],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
-        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: "${BRANCH_NAME}-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
         [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case 2_case'],
+        [$class: 'TextParameterDefinition',    name: 'APPEND_CHANGELOG', defaultValue: '\n\n'],
+        [$class: 'TextParameterDefinition',    name: 'APPEND_RELEASE', defaultValue: '\n\n'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
@@ -25,15 +27,13 @@ node {
     String build_branch = params.BUILD_BRANCH
     String build_workspace = 'oasis_build'
 
+    // docker vars
     String docker_api_base = "Dockerfile.api_server.base"
     String image_api_base  = "coreoasis/api_base"
-
     String docker_api_sql  = "Dockerfile.api_server.mysql"
     String image_api_sql   = "coreoasis/api_server"
-
     String docker_worker   = "Dockerfile.model_worker"
     String image_worker    = "coreoasis/model_worker"
-
 
     // platform vars
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
@@ -72,6 +72,21 @@ node {
     env.MODEL_ID       = '1'
     sh 'env'
 
+
+    // Param Publish Guards
+    if (params.PUBLISH && ! ( oasis_branch.matches("release/(.*)") || oasis_branch.matches("hotfix/(.*)")) ){
+        println("Publish Only allowed on a release/* or hotfix/* branches")
+        sh "exit 1"
+    }
+    if (params.PUBLISH && ! params.APPEND_CHANGELOG) {
+        println("Must note changes in APPEND_CHANGELOG")
+        sh "exit 1"
+    }
+    if (params.PUBLISH && ! params.APPEND_RELEASE) {
+        println("Must note changes in APPEND_RELEASE")
+        sh "exit 1"
+    }
+
     try {
         parallel(
             clone_oasis_build: {
@@ -93,16 +108,11 @@ node {
                     sshagent (credentials: [git_creds]) {
                         dir(oasis_workspace) {
                             sh "git clone --recursive ${oasis_git_url} ."
-
                             if (oasis_branch.matches("PR-[0-9]+")){
                                 // Checkout PR and merge into target branch, test on the result
                                 sh "git fetch origin pull/$CHANGE_ID/head:$BRANCH_NAME"
-                                sh "git checkout $BRANCH_NAME"
-                                sh "git format-patch $CHANGE_TARGET --stdout > ${BRANCH_NAME}.patch"
                                 sh "git checkout $CHANGE_TARGET"
-                                sh "git apply --stat ${BRANCH_NAME}.patch"  // Print files changed
-                                sh "git apply --check ${BRANCH_NAME}.patch" // Check for merge conflicts
-                                sh "git apply ${BRANCH_NAME}.patch"         // Apply the patch
+                                sh "git merge $BRANCH_NAME"
                             } else {
                                 // Checkout branch
                                 sh "git checkout ${oasis_branch}"
@@ -161,7 +171,7 @@ node {
                 }
             }
         }
-
+        
         if (params.PUBLISH){
             parallel(
                 publish_api_base: {
@@ -187,6 +197,82 @@ node {
                 }
             )
         }
+
+        if(! hasFailed && params.PUBLISH){
+            stage ('Publish: Update Changelog + Release notes') {
+                sshagent (credentials: [git_creds]) {
+                    dir(oasis_workspace) {
+                        if (params.APPEND_CHANGELOG) {
+                            // Insert Git Diff
+                            String cmd = /cat CHANGELOG.rst | grep \` -m 1 | awk -F "\`" 'NR==1 {print $2}'/
+                            prev_version = sh(script: cmd, returnStdout: true)
+                            cmd = "sed -i '/AUTO_INSERT-CHANGE_DIFF/a .. _`%s`:  https://github.com/OasisLMF/OasisPlatform/compare/%s...%s' CHANGELOG.rst"
+                            sh String.format(cmd, env.TAG_RELEASE, prev_version.trim(), env.TAG_RELEASE)
+
+                            // Insert Changelog lines
+                            l = params.APPEND_CHANGELOG.split('\n')
+                            f = 'CHANGELOG.rst'
+                            for (int i=1; i<=l.size(); i++){    
+                                s = l[l.size() - i]
+                                if(s.trim()){
+                                    str_insert = s
+                                } else {
+                                    str_insert = "\n"
+                                }
+                                sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a\\ ${str_insert}' ${f}"
+                            }
+                            // Insert Changelog Header 
+                            sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a --------' ${f}"
+                            sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a `${env.TAG_RELEASE}`_ ' ${f}"
+
+                            // Commit and push changelog 
+                            sh 'git add CHANGELOG.rst'
+                            sh 'git commit -m "Update CHANGELOG.rst"'
+                            sh 'git push'
+                        }
+
+                        if (params.APPEND_RELEASE){
+                            // Insert RELEASE NOTES lines
+                            l = params.APPEND_RELEASE.split('\n')
+                            f = 'RELEASE.md'
+                            for (int i=1; i<=l.size(); i++){    
+                                s = l[l.size() - i]
+                                if(s.trim()){
+                                    str_insert = s
+                                } else {
+                                    str_insert = "\n"
+                                }
+                                sh "sed -i '/AUTO_INSERT-RELEASE/a\\ ${str_insert}' ${f}"
+                            }
+
+                            // Insert RELEASE HEADER
+                            def current_date = new Date()
+                            publush_date = current_date.format('(dd/MM/yyyy)')
+                            sh "sed -i '/AUTO_INSERT-RELEASE/a # ${env.TAG_RELEASE} ${publush_date}' ${f}"
+
+                            // Commit and push RELEASE notes 
+                            sh 'git add RELEASE.md'
+                            sh 'git commit -m "Update RELEASE.md"'
+                            sh 'git push'
+                        }
+                    }
+                }
+            }
+            stage ('Publish: Git Tag') {
+                sshagent (credentials: [git_creds]) {
+                    // Tag the OasisPlatform
+                    dir(oasis_workspace) {
+                        sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
+                    }
+                    // Tag PiWind 
+                    dir(model_workspace) {
+                        sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
+                    }
+                }
+            }
+        }
+
+
     } catch(hudson.AbortException | org.jenkinsci.plugins.workflow.steps.FlowInterruptedException buildException) {
         hasFailed = true
         error('Build Failed')
@@ -214,18 +300,6 @@ node {
             SLACK_MSG += "\nMode: " + (params.PUBLISH ? 'Publish' : 'Build Test')
             SLACK_CHAN = (params.PUBLISH ? "#builds-release":"#builds-dev")
             slackSend(channel: SLACK_CHAN, message: SLACK_MSG, color: slackColor)
-        }
-        if(! hasFailed && params.PUBLISH){
-            sshagent (credentials: [git_creds]) {
-                // Tag the OasisPlatform
-                dir(oasis_workspace) {
-                    sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
-                }
-                // Tag the version of PiWind it was publish with
-                dir(model_workspace) {
-                    sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
-                }
-            }
         }
         //Store logs
         dir(build_workspace) {
