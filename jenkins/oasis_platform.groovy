@@ -27,15 +27,13 @@ node {
     String build_branch = params.BUILD_BRANCH
     String build_workspace = 'oasis_build'
 
+    // docker vars
     String docker_api_base = "Dockerfile.api_server.base"
     String image_api_base  = "coreoasis/api_base"
-
     String docker_api_sql  = "Dockerfile.api_server.mysql"
     String image_api_sql   = "coreoasis/api_server"
-
     String docker_worker   = "Dockerfile.model_worker"
     String image_worker    = "coreoasis/model_worker"
-
 
     // platform vars
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
