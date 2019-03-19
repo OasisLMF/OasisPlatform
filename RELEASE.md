@@ -1,4 +1,4 @@
-
+<!--- AUTO_INSERT-RELEASE --->
 # 1.0.1 (8/3/2019)
 * Ktools [3.0.5](https://github.com/OasisLMF/ktools/tree/v3.0.5)
 * Oasislmf [1.3.2](https://github.com/OasisLMF/OasisLMF/tree/1.3.2)
@@ -188,24 +188,3 @@
 
   * Support added for Open Exposure Data v1.0 (OED) input format -- Only for Reinsurance
   * New type of keys_server type `coreoasis/builtin_keys_server` - A built-in generic lookup that combines a peril lookup which uses Rtree spatial indexes and a vulnerability lookup which uses a simple key-value approach using dictionaries.
-
-
-<!--- Template
-# Release <RELEASE_TAG>
-
-[![Ktools_version](https://img.shields.io/badge/Ktools-v3.0.0-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.0.0)
-[![PyPI version](https://img.shields.io/badge/PyPi%20--%20OasisLMF-1.1.26-brightgreen.svg)](https://github.com/OasisLMF/OasisLMF/tree/v1.1.26)
-
-## Major Features and Improvements
-
-## Breaking Changes
-
-## Bug Fixes and Other Changes
-
-## Deprecations
-
-## API Changes
-
-## Known Bugs
-
---->
