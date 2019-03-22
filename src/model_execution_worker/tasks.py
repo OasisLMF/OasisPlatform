@@ -11,7 +11,9 @@ import uuid
 from contextlib import contextmanager
 
 import fasteners
-from backports.tempfile import TemporaryDirectory
+#from backports.tempfile import TemporaryDirectory
+import tempfile
+
 from celery import Celery, signature
 from celery.task import task
 from celery.signals import worker_ready
@@ -39,9 +41,20 @@ logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DAT
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_ALLOC_RULE: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE')))
 logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
+logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR')))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
+class TemporaryDir(object):
+    """Context manager for mkdtemp() with option to persist"""
+    def __init__(self, persist=False):
+            self.persist = persist
+    def __enter__(self):
+        self.name = tempfile.mkdtemp()
+        return self.name
+    def __exit__(self, exc_type, exc_value, traceback):
+        if not self.persist:
+            shutil.rmtree(self.name)
 
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
@@ -157,7 +170,8 @@ def start_analysis(analysis_settings_file, input_location):
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    with TemporaryDirectory() as oasis_files_dir, TemporaryDirectory() as run_dir:
+    TmpDir = TemporaryDir(settings.get('worker', 'KEEP_RUN_DIR'))
+    with TmpDir as oasis_files_dir, TmpDir as run_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
     
@@ -199,7 +213,8 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None):
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    with TemporaryDirectory() as oasis_files_dir:
+    TmpDir = TemporaryDir(settings.get('worker', 'KEEP_RUN_DIR'))
+    with TmpDir as oasis_files_dir:
         run_args = [
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
