@@ -1,10 +1,12 @@
 version: '3'
 services:
 #  runner:
+#   restart: always
 #   image: api_runner
 #   links:
 #    - server:oasis_api_server
   server:
+   restart: always
    image: coreoasis/api_server:latest
    build:
      context: .
@@ -39,6 +41,7 @@ services:
 #     - ./log:/var/log/oasis:rw
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   worker-monitor:
+   restart: always
    image: coreoasis/api_server:latest
    build:
      context: .
@@ -71,6 +74,7 @@ services:
 #     - ./log:/var/log/oasis:rw
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   worker:
+    restart: always
     image: coreoasis/model_worker:latest
     links:
      - celery-db
@@ -96,6 +100,7 @@ services:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/var/oasis/model_data/:rw
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   server-db:
+    restart: always
     image: mysql
     command:
       - --default-authentication-plugin=mysql_native_password
@@ -107,6 +112,7 @@ services:
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/server:/var/lib/mysql/:rw
   celery-db:
+    restart: always
     image: mysql
     command:
       - --default-authentication-plugin=mysql_native_password
@@ -118,6 +124,7 @@ services:
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/celery:/var/lib/mysql/:rw
   rabbit:
+    restart: always
     image: rabbitmq:3-management
     environment:
       - RABBITMQ_DEFAULT_USER=rabbit
@@ -126,6 +133,7 @@ services:
       - 5672:5672
       - 15672:15672
   flower:
+    restart: always
     image: iserko/docker-celery-flower 
     ports:
       - 5555:5555
