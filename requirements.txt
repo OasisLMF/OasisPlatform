@@ -93,7 +93,7 @@ python-dateutil==2.8.0    # via pandas
 python-interface==1.5.1   # via oasislmf
 python-magic==0.4.15
 pytz==2018.9              # via celery, django, oasislmf, pandas
-pyyaml==3.13              # via docker-compose
+pyyaml>=4.2b1             # via docker-compose
 requests-toolbelt==0.9.1  # via oasislmf
 requests==2.20.1
 rtree==0.8.3              # via oasislmf
