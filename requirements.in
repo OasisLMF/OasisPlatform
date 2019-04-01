@@ -8,9 +8,6 @@ shutilwhich
 certifi
 numpy
 fasteners
-pytest
-pytest-coverage
-pytest-django
 coverage
 flake8
 backports.tempfile
@@ -23,7 +20,7 @@ pip-tools
 ipdb
 ipython<6
 sqlalchemy
-
+pytest
 docker-compose
 django<2.0
 -e git://github.com/wildfish/django-rest-framework#egg=djangorestframework
