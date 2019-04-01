@@ -9,7 +9,8 @@ amqp==2.4.2               # via kombu
 anytree==2.6.0            # via oasislmf
 argparsetree==0.0.6       # via oasislmf
 asn1crypto==0.24.0        # via cryptography
-attrs==19.1.0             # via hypothesis
+atomicwrites==1.3.0       # via pytest
+attrs==19.1.0             # via hypothesis, pytest
 backports.tempfile==1.0
 backports.weakref==1.0.post1  # via backports.tempfile, oasislmf
 bcrypt==3.1.6             # via paramiko
@@ -63,6 +64,7 @@ mccabe==0.6.1             # via flake8
 mock==2.0.0
 model-mommy==1.6.0
 monotonic==1.5            # via fasteners
+more-itertools==7.0.0     # via pytest
 numpy==1.16.2
 oasislmf==1.3.3
 pandas==0.24.2            # via oasislmf
@@ -72,10 +74,10 @@ pbr==5.1.3                # via mock
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==3.5.0
-pluggy==0.9.0             # via tox
+pluggy==0.9.0             # via pytest, tox
 prompt-toolkit==1.0.15    # via ipython
 ptyprocess==0.6.0         # via pexpect
-py==1.8.0                 # via tox
+py==1.8.0                 # via pytest, tox
 pyasn1==0.4.5             # via paramiko
 pycodestyle==2.5.0        # via flake8
 pycparser==2.19           # via cffi
@@ -86,6 +88,7 @@ pymysql==0.9.3
 pynacl==1.3.0             # via paramiko
 pyodbc==4.0.26            # via oasislmf
 pyopenssl==19.0.0
+pytest==4.4.0
 python-dateutil==2.8.0    # via pandas
 python-interface==1.5.1   # via oasislmf
 python-magic==0.4.15
@@ -98,7 +101,7 @@ ruamel.yaml==0.15.89      # via drf-yasg
 shapely==1.6.4.post2      # via oasislmf
 shutilwhich==1.1.0
 simplegeneric==0.8.1      # via ipython
-six==1.12.0               # via anytree, bcrypt, cryptography, docker, docker-compose, docker-pycreds, dockerpty, drf-yasg, fasteners, mock, model-mommy, oasislmf, pathlib2, pip-tools, prompt-toolkit, pynacl, pyopenssl, python-dateutil, python-interface, tox, traitlets, websocket-client, webtest
+six==1.12.0               # via anytree, bcrypt, cryptography, docker, docker-compose, docker-pycreds, dockerpty, drf-yasg, fasteners, mock, model-mommy, oasislmf, pathlib2, pip-tools, prompt-toolkit, pynacl, pyopenssl, pytest, python-dateutil, python-interface, tox, traitlets, websocket-client, webtest
 soupsieve==1.9            # via beautifulsoup4
 sqlalchemy==1.3.1
 subprocess32==3.5.3       # via oasislmf
