@@ -10,7 +10,7 @@ import pandas as pd
 
 from pandas.util.testing import assert_frame_equal
 
-from oasislmf.api_client.client_manager import APIClient
+from oasislmf.api.client import APIClient
 
 
 # ------------ load config -------------------- #
