@@ -8,9 +8,6 @@ shutilwhich
 certifi
 numpy
 fasteners
-pytest
-pytest-coverage
-pytest-django
 coverage
 flake8
 backports.tempfile
