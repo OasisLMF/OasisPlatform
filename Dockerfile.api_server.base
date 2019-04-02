@@ -13,7 +13,7 @@ RUN pip install -r /tmp/requirements.txt
 
 # Copy startup script + server config
 COPY ./src/startup_server.sh /usr/local/bin/startup
-COPY ./utils/wait-for-it.sh /usr/local/bin/wait-for-it
+COPY ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
 COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
 RUN chmod +x /usr/local/bin/startup /usr/local/bin/wait-for-it
 

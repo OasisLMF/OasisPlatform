@@ -1,9 +1,0 @@
-version: '3.0'
-services:
-  oasis_tester:
-    image: coreoasis/oasis_base:latest
-    volumes:
-     - ./tests/integration:/var/oasis/test
-    # - ../stage/input:/var/oasis/test/input:rw
-    # - ../stage/output:/var/oasis/test/output:rw
-    # - ${PATH_KEYS_DATA}:/var/oasis/keys_data:rw
