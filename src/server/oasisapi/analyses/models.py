@@ -31,6 +31,8 @@ class Analysis(TimeStampedModel):
         ('RUN_ERROR', 'Run error'),
     )
 
+    input_generation_traceback_file_id = None
+
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
     model = models.ForeignKey(AnalysisModel, on_delete=models.DO_NOTHING, related_name='analyses', help_text=_('The model to link the analysis to'))
@@ -198,14 +200,16 @@ class Analysis(TimeStampedModel):
     @property
     def generate_input_signature(self):
 
-        loc_file   = self.portfolio.location_file.file.name
-        acc_file   = self.portfolio.accounts_file.file.name if self.portfolio.accounts_file else None
-        info_file  = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
+        loc_file = self.portfolio.location_file.file.name
+        acc_file = self.portfolio.accounts_file.file.name if self.portfolio.accounts_file else None
+        info_file = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
         scope_file = self.portfolio.reinsurance_source_file.file.name if self.portfolio.reinsurance_source_file else None
+        settings_file = self.settings_file.file.name if self.settings_file.file.name else None
 
-        return signature( 'generate_input', 
-            args=(loc_file, acc_file, info_file, scope_file)
-            , queue=self.model.queue_name,
+        return signature(
+            'generate_input',
+            args=(loc_file, acc_file, info_file, scope_file, settings_file),
+            queue=self.model.queue_name
         )
 
     def copy(self):

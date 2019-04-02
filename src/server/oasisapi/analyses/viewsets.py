@@ -148,7 +148,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
