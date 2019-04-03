@@ -19,6 +19,7 @@ from ...auth.tests.fakes import fake_user
 from ..models import Portfolio
 from .fakes import fake_portfolio
 
+
 class PortfolioApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
         portfolio = fake_portfolio()

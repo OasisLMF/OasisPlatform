@@ -28,4 +28,3 @@ class AnalysisModel(TimeStampedModel):
 
     def get_absolute_resources_file_url(self, request=None):
         return reverse('analysis-model-resource-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
-

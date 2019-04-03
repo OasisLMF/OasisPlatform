@@ -1,9 +1,9 @@
 import json
 import string
-from tempfile import NamedTemporaryFile
 
+# from tempfile import NamedTemporaryFile
+# from django.conf import settings
 from backports.tempfile import TemporaryDirectory
-from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
