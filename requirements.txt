@@ -4,7 +4,7 @@
 #
 #    pip-compile 
 #
--e git+git://github.com/wildfish/django-rest-framework#egg=djangorestframework
+-e git+https://github.com/wildfish/django-rest-framework#egg=djangorestframework
 amqp==2.4.2               # via kombu
 anytree==2.6.0            # via oasislmf
 argparsetree==0.0.6       # via oasislmf

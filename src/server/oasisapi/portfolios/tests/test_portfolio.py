@@ -271,6 +271,16 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     analysis.save()
 
                     response = self.app.get(
+                        analysis.get_absolute_generate_inputs_url(),
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                        params=json.dumps({'model': model.pk}),
+                        content_type='application/json'
+                    )
+                    self.assertEqual(201, response.status_code)
+
+                    response = self.app.get(
                         analysis.get_absolute_url(),
                         headers={
                             'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))

@@ -204,7 +204,7 @@ class Analysis(TimeStampedModel):
         acc_file = self.portfolio.accounts_file.file.name if self.portfolio.accounts_file else None
         info_file = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
         scope_file = self.portfolio.reinsurance_source_file.file.name if self.portfolio.reinsurance_source_file else None
-        settings_file = self.settings_file.file.name if self.settings_file.file.name else None
+        settings_file = self.settings_file.file.name if self.settings_file else None
 
         return signature(
             'generate_input',
