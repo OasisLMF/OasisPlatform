@@ -127,8 +127,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filter_class = AnalysisFilter
 
-    file_action_types = ['settings_file', 'input_file', 'input_errors_file', 
-                         'input_generation_traceback_file', 'run_traceback_file', 
+    file_action_types = ['settings_file', 'input_file', 'input_errors_file',
+                         'input_generation_traceback_file', 'run_traceback_file',
                          'output_file', 'run_traceback_file']
 
     def get_serializer_class(self):
@@ -147,7 +147,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
-
 
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):

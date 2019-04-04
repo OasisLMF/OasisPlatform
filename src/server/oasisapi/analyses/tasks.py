@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 import uuid
-import time
+# import time
 
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
@@ -10,10 +10,9 @@ from six import StringIO
 
 from src.server.oasisapi.files.models import RelatedFile
 
-
 from ..celery import celery_app
-
 logger = get_task_logger(__name__)
+
 
 @celery_app.task(name='run_register_worker')
 def run_register_worker(m_supplier, m_name, m_id):
@@ -22,22 +21,23 @@ def run_register_worker(m_supplier, m_name, m_id):
         from django.contrib.auth.models import User
         from src.server.oasisapi.analysis_models.models import AnalysisModel
         user = User.objects.get(username='admin')
-        new_model = AnalysisModel.objects.create(model_id=m_name, 
-                                                 supplier_id=m_supplier, 
-                                                 version_id=m_id, 
+        new_model = AnalysisModel.objects.create(model_id=m_name,
+                                                 supplier_id=m_supplier,
+                                                 version_id=m_id,
                                                  creator=user)
 
-    # Log unhandled execptions        
+    # Log unhandled execptions
     except Exception as e:
         logger.exception(str(e))
+        logger.exception(new_model)
 
 
 @celery_app.task(name='run_analysis_success')
 def run_analysis_success(output_location, analysis_pk, initiator_pk):
     logger.info('output_location: {}, analysis_pk: {}, initiator_pk: {}'.format(
-                 output_location, analysis_pk, initiator_pk))
-        
-    try:    
+        output_location, analysis_pk, initiator_pk))
+
+    try:
         from .models import Analysis
 
         analysis = Analysis.objects.get(pk=analysis_pk)
@@ -53,12 +53,12 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
         analysis.save()
     except Exception as e:
         logger.exception(str(e))
-        
+
 
 @celery_app.task(name='record_run_analysis_failure')
 def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
-                 analysis_pk, initiator_pk, traceback))
+        analysis_pk, initiator_pk, traceback))
 
     try:
         from .models import Analysis
@@ -82,7 +82,7 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
 @celery_app.task(name='generate_input_success')
 def generate_input_success(result, analysis_pk, initiator_pk):
     logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
-                 result, analysis_pk, initiator_pk))
+        result, analysis_pk, initiator_pk))
     try:
 
         from .models import Analysis
@@ -108,12 +108,12 @@ def generate_input_success(result, analysis_pk, initiator_pk):
         analysis.save()
     except Exception as e:
         logger.exception(str(e))
-    
+
 
 @celery_app.task(name='record_generate_input_failure')
 def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
-                 analysis_pk, initiator_pk, traceback))
+        analysis_pk, initiator_pk, traceback))
     try:
         from .models import Analysis
 

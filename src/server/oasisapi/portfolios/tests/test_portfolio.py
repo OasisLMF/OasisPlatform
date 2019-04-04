@@ -6,7 +6,7 @@ from backports.tempfile import TemporaryDirectory
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
@@ -18,6 +18,7 @@ from ...analyses.models import Analysis
 from ...auth.tests.fakes import fake_user
 from ..models import Portfolio
 from .fakes import fake_portfolio
+
 
 class PortfolioApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
@@ -73,6 +74,7 @@ class PortfolioApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    @settings(deadline=None)
     def test_cleaned_name_is_present___object_is_created(self, name):
         self.maxDiff = None
         with TemporaryDirectory() as d:
@@ -241,6 +243,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    @settings(deadline=None)
     def test_cleaned_name_and_model_are_present___object_is_created_inputs_are_generated(self, name):
         with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True) as generate_mock:
             with TemporaryDirectory() as d:
@@ -349,6 +352,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    @settings(deadline=None)
     def test_accounts_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -432,6 +436,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    @settings(deadline=None)
     def test_location_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -515,6 +520,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    @settings(deadline=None)
     def test_reinsurance_source_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -598,6 +604,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    @settings(deadline=None)
     def test_reinsurance_info_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):

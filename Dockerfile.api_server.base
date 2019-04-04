@@ -7,13 +7,13 @@ ENV OASIS_DEBUG=false
 
 RUN mkdir -p /var/log/oasis
 
-RUN apt-get update && apt-get install -y --no-install-recommends unixodbc-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 COPY ./requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
 # Copy startup script + server config
 COPY ./src/startup_server.sh /usr/local/bin/startup
-COPY ./utils/wait-for-it.sh /usr/local/bin/wait-for-it
+COPY ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
 COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
 RUN chmod +x /usr/local/bin/startup /usr/local/bin/wait-for-it
 

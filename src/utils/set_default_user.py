@@ -1,6 +1,5 @@
-#!/usr/bin/env python                                                                                                          
+#!/usr/bin/env python
 import os
-import sys 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "src.server.oasisapi.settings")
 import django
@@ -22,4 +21,3 @@ try:
 
 except KeyError:
     print('User Enviroment vars not set')
-

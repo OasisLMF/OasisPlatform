@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import glob
 import logging
-import io
-import json
 import os
 import shutil
 import tarfile
@@ -11,7 +9,6 @@ import uuid
 from contextlib import contextmanager
 
 import fasteners
-#from backports.tempfile import TemporaryDirectory
 import tempfile
 
 from celery import Celery, signature
@@ -45,18 +42,22 @@ logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR')))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
+
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
+
     def __init__(self, persist=False):
-            self.persist = persist
+        self.persist = persist
+
     def __enter__(self):
         self.name = tempfile.mkdtemp()
         return self.name
+
     def __exit__(self, exc_type, exc_value, traceback):
         if not self.persist:
             shutil.rmtree(self.name)
 
-# When a worker connects send a task to the worker-monitor to register a new model
+
 @worker_ready.connect
 def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
@@ -174,7 +175,7 @@ def start_analysis(analysis_settings_file, input_location):
     with TmpDir as oasis_files_dir, TmpDir as run_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
-    
+
         run_args = [
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
@@ -207,7 +208,7 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None):
     media_root = settings.get('worker', 'media_root')
     location_file = os.path.join(media_root, loc_file)
     accounts_file = os.path.join(media_root, acc_file) if acc_file else None
-    ri_info_file  = os.path.join(media_root, info_file) if info_file else None
+    ri_info_file = os.path.join(media_root, info_file) if info_file else None
     ri_scope_file = os.path.join(media_root, scope_file) if scope_file else None
 
     model_id = settings.get('worker', 'model_id')
@@ -219,7 +220,7 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None):
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
             '--source-exposure-file-path', location_file,
-            '--source-accounts-file-path', accounts_file, 
+            '--source-accounts-file-path', accounts_file,
             '--ri-info-file-path', ri_info_file,
             '--ri-scope-file-path', ri_scope_file
         ]

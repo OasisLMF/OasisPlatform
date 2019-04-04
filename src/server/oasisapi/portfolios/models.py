@@ -45,7 +45,5 @@ class Portfolio(TimeStampedModel):
 @python_2_unicode_compatible
 class PortfolioStatus(TimeStampedModel):
 
-
     def __str__(self):
         pass
-

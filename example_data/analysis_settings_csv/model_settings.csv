@@ -1,5 +1,0 @@
-demand_surge,FALSE,bool
-leakage_factor,0.5,float
-peril_wind,TRUE,bool
-peril_surge,FALSE,bool
-session_id,1234,int
