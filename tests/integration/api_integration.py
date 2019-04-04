@@ -3,11 +3,12 @@ import socket
 import os
 import tarfile
 import configparser
+
 import pandas as pd
 
 from pandas.util.testing import assert_frame_equal
 
-from oasislmf.api_client.client_manager import APIClient
+from oasislmf.api.client import APIClient
 
 
 # ------------ load config -------------------- #
@@ -36,7 +37,7 @@ def check_expected(result_path, expected_path):
     for rootdir, _, filelist in os.walk('.'):
         for f in filelist:
             comparison_list.append(os.path.join(rootdir[2:], f))
-    
+
     print(comparison_list)
     os.chdir(cwd)
     for csv in comparison_list:
@@ -44,7 +45,8 @@ def check_expected(result_path, expected_path):
         df_expect = pd.read_csv(os.path.join(expected_path, csv))
         df_found = pd.read_csv(os.path.join(result_path, csv))
         assert_frame_equal(df_expect, df_found)
-    
+
+        
 
 # --- Test Paramatization --------------------------------------------------- #
 
@@ -80,7 +82,6 @@ def session_fixture(request):
     session = APIClient(server_url, server_vers, server_user, server_pass)
 
     print(session.api.tkn_access)
-    
     return request.param, session
 
 
@@ -95,8 +96,8 @@ def case_fixture(session_fixture):
     #  Add or find model
     _model = {
         'supplier_id': config.get(test_model, 'SUPPLIER_ID'),
-        'model_id':    config.get(test_model, 'MODEL_ID'),
-        'version_id':  config.get(test_model, 'VERSION_ID'),
+        'model_id': config.get(test_model, 'MODEL_ID'),
+        'version_id': config.get(test_model, 'VERSION_ID'),
     }
 
     r_model = session.models.search(_model)
@@ -144,7 +145,7 @@ def case_fixture(session_fixture):
 def test_connection(case_fixture):
     session, case, ids = case_fixture
     assert session.api.health_check().ok
-    
+
 
 def test_uploaded(case_fixture):
     session, case, ids = case_fixture
@@ -154,10 +155,8 @@ def test_uploaded(case_fixture):
     assert portfolio.ok
     assert analysis.ok
     assert analysis.json()['status'] == 'NEW'
-
     print(analysis.json())
     print(portfolio.json())
-
 
 def test_generate(case_fixture):
     session, case, ids = case_fixture
@@ -165,12 +164,12 @@ def test_generate(case_fixture):
     if analysis.json()['status'] not in ['NEW']:
         pytest.skip('setup error in prevous step')
 
-    generate_input = session.run_generate(ids['analysis'])
+    session.run_generate(ids['analysis'])
     analysis = session.analyses.get(ids['analysis'])
     assert analysis.ok
     assert analysis.json()['status'] == 'READY'
     assert analysis.json()['input_generation_traceback_file'] is None
- 
+
 
 def test_generated_files(case_fixture):
     session, case, ids = case_fixture
@@ -178,7 +177,7 @@ def test_generated_files(case_fixture):
     if analysis.json()['status'] not in ['READY']:
         pytest.skip('Error in file Generation step')
 
-    output_dir = os.path.abspath(config.get('default','TEST_OUTPUT_DIR'))
+    output_dir = os.path.abspath(config.get('default', 'TEST_OUTPUT_DIR'))
     download_to = '{0}/{1}_input.tar.gz'.format(output_dir, case, ids['analysis'])
     extract_to = os.path.join(output_dir, case, 'input')
 
@@ -192,8 +191,7 @@ def test_generated_files(case_fixture):
     tar_object.extractall(path=extract_to, members=csv_only)
     tar_object.close()
     if os.path.isfile(download_to):
-       os.remove(download_to) 
-
+        os.remove(download_to)
 
 def test_analysis_run(case_fixture):
     session, case, ids = case_fixture
@@ -218,7 +216,7 @@ def test_analysis_output(case_fixture):
         pytest.skip('Expected data missing')
 
     expected_results = os.path.join(get_path(test_model, 'EXPECTED_OUTPUT_DIR'), case, 'output')
-    output_dir = os.path.abspath(config.get('default','TEST_OUTPUT_DIR'))
+    output_dir = os.path.abspath(config.get('default', 'TEST_OUTPUT_DIR'))
     download_to = '{0}/{1}_output.tar.gz'.format(output_dir, case, ids['analysis'])
     extract_to = os.path.join(output_dir, case)
 
@@ -229,9 +227,10 @@ def test_analysis_output(case_fixture):
     
     tar_object = tarfile.open(download_to)
     csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name ]
+
     tar_object.extractall(path=extract_to, members=csv_only)
     tar_object.close()
-    
+
     check_expected(expected_results, os.path.join(extract_to, 'output'))
     if os.path.isfile(download_to):
         os.remove(download_to)

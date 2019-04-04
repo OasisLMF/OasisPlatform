@@ -45,6 +45,7 @@ logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
+
     def __init__(self, persist=False):
             self.persist = persist
 
@@ -55,6 +56,7 @@ class TemporaryDir(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if not self.persist:
             shutil.rmtree(self.name)
+
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -175,7 +177,7 @@ def start_analysis(analysis_settings_file, input_location):
     with tmp_dir as oasis_files_dir, tmp_dir as run_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
-    
+
         run_args = [
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
@@ -221,7 +223,7 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, set
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
             '--source-exposure-file-path', location_file,
-            '--source-accounts-file-path', accounts_file, 
+            '--source-accounts-file-path', accounts_file,
             '--ri-info-file-path', ri_info_file,
             '--ri-scope-file-path', ri_scope_file,
             '--complex-lookup-config-file-path', lookup_settings_file

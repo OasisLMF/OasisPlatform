@@ -127,8 +127,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filter_class = AnalysisFilter
 
-    file_action_types = ['settings_file', 'input_file', 'input_errors_file', 
-                         'input_generation_traceback_file', 'run_traceback_file', 
+    file_action_types = ['settings_file', 'input_file', 'input_errors_file',
+                         'input_generation_traceback_file', 'run_traceback_file',
                          'output_file', 'run_traceback_file']
 
     def get_serializer_class(self):

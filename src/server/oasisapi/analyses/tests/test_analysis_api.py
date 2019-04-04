@@ -1,13 +1,13 @@
 import json
 import string
-from tempfile import NamedTemporaryFile
 
+# from tempfile import NamedTemporaryFile
+# from django.conf import settings
 from backports.tempfile import TemporaryDirectory
-from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
@@ -59,6 +59,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=' \t\n\r', max_size=10))
+    @settings(deadline=None)
     def test_cleaned_name_is_empty___response_is_400(self, name):
         user = fake_user()
 
@@ -75,6 +76,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    @settings(deadline=None)
     def test_cleaned_name_portfolio_and_model_are_present___object_is_created(self, name):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -348,6 +350,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertNotEqual(analysis.pk, response.json['id'])
 
     @given(name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    @settings(deadline=None)
     def test_no_new_name_is_provided___copy_is_appended_to_name(self, name):
         user = fake_user()
         analysis = fake_analysis(name=name)
@@ -362,6 +365,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, '{} - Copy'.format(name))
 
     @given(orig_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters), new_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    @settings(deadline=None)
     def test_new_name_is_provided___new_name_is_set_on_new_object(self, orig_name, new_name):
         user = fake_user()
         analysis = fake_analysis(name=orig_name)
@@ -405,6 +409,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).creator, user)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    @settings(deadline=None)
     def test_run_task_id_is_reset(self, task_id):
         user = fake_user()
         analysis = fake_analysis(run_task_id=task_id)
@@ -419,6 +424,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).run_task_id, '')
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    @settings(deadline=None)
     def test_generate_inputs_task_id_is_reset(self, task_id):
         user = fake_user()
         analysis = fake_analysis(generate_inputs_task_id=task_id)

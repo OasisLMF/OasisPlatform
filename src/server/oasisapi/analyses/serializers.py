@@ -32,7 +32,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
         rep['input_generation_traceback_file'] = instance.get_absolute_input_generation_traceback_file_url(request=request) if instance.input_generation_traceback_file else None
         rep['output_file'] = instance.get_absolute_output_file_url(request=request) if instance.output_file else None
         rep['run_traceback_file'] = instance.get_absolute_run_traceback_file_url(request=request) if instance.run_traceback_file else None
-
         return rep
 
 
