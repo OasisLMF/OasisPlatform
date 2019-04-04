@@ -270,6 +270,16 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     analysis.run_traceback_file = fake_related_file()
                     analysis.save()
 
+                    response = self.app.post(
+                        analysis.get_absolute_generate_inputs_url(),
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                        params=json.dumps({'model': model.pk}),
+                        content_type='application/json'
+                    )
+                    self.assertEqual(200, response.status_code)
+
                     response = self.app.get(
                         analysis.get_absolute_generate_inputs_url(),
                         headers={
