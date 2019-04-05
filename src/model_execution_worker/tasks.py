@@ -186,7 +186,7 @@ def start_analysis(analysis_settings_file, input_location):
             '--ktools-fifo-relative'
         ]
 
-        if settings.get('worker', 'KTOOLS_MEMORY_LIMIT'):
+        if settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT'):
             run_args.append('--ktools-mem-limit')
 
         GenerateLossesCmd(argv=run_args).run()
