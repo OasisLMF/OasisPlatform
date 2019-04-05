@@ -226,8 +226,9 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, set
             '--source-accounts-file-path', accounts_file,
             '--ri-info-file-path', ri_info_file,
             '--ri-scope-file-path', ri_scope_file,
-            '--complex-lookup-config-file-path', lookup_settings_file
         ]
+        if lookup_settings_file:
+            run_args += ['--complex-lookup-config-file-path', lookup_settings_file]
         GenerateOasisFilesCmd(argv=run_args).run()
 
         error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
