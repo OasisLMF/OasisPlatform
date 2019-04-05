@@ -1,4 +1,10 @@
 <!--- AUTO_INSERT-RELEASE --->
+# 1.0.2 (05/04/2019)
+ * Ktools [3.0.6](https://github.com/OasisLMF/ktools/tree/v3.0.6)
+ * Oasislmf [1.3.6](https://github.com/OasisLMF/OasisLMF/tree/1.3.6)
+ 
+ ## Features and Improvements
+ * Oasis input generation performance update 
 # 1.0.1 (8/3/2019)
 * Ktools [3.0.5](https://github.com/OasisLMF/ktools/tree/v3.0.5)
 * Oasislmf [1.3.2](https://github.com/OasisLMF/OasisLMF/tree/1.3.2)
