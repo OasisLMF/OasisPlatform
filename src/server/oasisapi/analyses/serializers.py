@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-# from django.contrib.sites.shortcuts import get_current_site
-
 from .models import Analysis
 
 
@@ -15,7 +13,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'id',
             'portfolio',
             'model',
-            'status',
+            'status'
         )
 
     def validate(self, attrs):

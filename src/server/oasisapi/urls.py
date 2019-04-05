@@ -5,10 +5,7 @@ from django.contrib import admin
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import routers, permissions
-# from rest_framework.documentation import include_docs_urls
-# from rest_framework.reverse import reverse_lazy
 
-# from .files.viewsets import FilesViewSet
 from .analysis_models.viewsets import AnalysisModelViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .analyses.viewsets import AnalysisViewSet

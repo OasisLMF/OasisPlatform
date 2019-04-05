@@ -3,9 +3,6 @@ import socket
 import os
 import tarfile
 import configparser
-# import json
-# import unittest
-# import filecmp
 
 import pandas as pd
 
@@ -29,7 +26,6 @@ config.read(os.path.abspath(test_conf_ini))
 def get_path(section, var, config=config):
     try:
         return os.path.abspath(config.get(section, var))
-        print(config.get(section, var))
     except configparser.NoOptionError:
         return None
 
@@ -50,8 +46,10 @@ def check_expected(result_path, expected_path):
         df_found = pd.read_csv(os.path.join(result_path, csv))
         assert_frame_equal(df_expect, df_found)
 
+        
 
 # --- Test Paramatization --------------------------------------------------- #
+
 
 if cli_case_override:
     test_cases = cli_case_override
@@ -63,6 +61,7 @@ else:
 base_dir = os.path.dirname(os.path.abspath(test_conf_ini))
 os.chdir(base_dir)
 test_model = config.get('default', 'TEST_MODEL').lower()
+
 
 # --- API connection Fixture ------------------------------------------------ #
 
@@ -83,8 +82,8 @@ def session_fixture(request):
     session = APIClient(server_url, server_vers, server_user, server_pass)
 
     print(session.api.tkn_access)
+    return request.param, session
 
-    return (request.param, session)
 
 # --- Test Case Fixture ----------------------------------------------------- #
 
@@ -93,8 +92,8 @@ def session_fixture(request):
 def case_fixture(session_fixture):
     case, session = session_fixture
     ids = {}
-
-    # Add or find model
+    
+    #  Add or find model
     _model = {
         'supplier_id': config.get(test_model, 'SUPPLIER_ID'),
         'model_id': config.get(test_model, 'MODEL_ID'),
@@ -102,7 +101,7 @@ def case_fixture(session_fixture):
     }
 
     r_model = session.models.search(_model)
-    if (len(r_model.json()) < 1):
+    if len(r_model.json()) < 1:
         # Model not found - Add new model
         r_model = session.models.create(**_model)
         ids['model'] = r_model.json()['id']
@@ -118,20 +117,20 @@ def case_fixture(session_fixture):
     inf_fp = get_path('piwind.{}'.format(case), 'INF_FILE')
     scp_fp = get_path('piwind.{}'.format(case), 'SCP_FILE')
 
-    r_portfoilio = session.upload_inputs(
+    r_portfolio = session.upload_inputs(
         portfolio_name='Integration_test_{}_{}'.format(test_model, case),
         location_fp=loc_fp,
         accounts_fp=acc_fp,
         ri_info_fp=inf_fp,
         ri_scope_fp=scp_fp)
-    ids['portfoilio'] = r_portfoilio['id']
+    ids['portfolio'] = r_portfolio['id']
 
     # Create analysis
     settings_fp = get_path('piwind.{}'.format(case), 'SETTINGS_RUN')
     assert os.path.isfile(settings_fp)
     r_analysis = session.create_analysis(
         analysis_name='Integration_test_{}_{}'.format(test_model, case),
-        portfolio_id=ids['portfoilio'],
+        portfolio_id=ids['portfolio'],
         model_id=ids['model'])
 
     ids['analysis'] = r_analysis['id']
@@ -151,19 +150,18 @@ def test_connection(case_fixture):
 def test_uploaded(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
-    portfoilio = session.portfolios.get(ids['portfoilio'])
+    portfolio = session.portfolios.get(ids['portfolio'])
 
-    assert portfoilio.ok
+    assert portfolio.ok
     assert analysis.ok
     assert analysis.json()['status'] == 'NEW'
     print(analysis.json())
-    print(portfoilio.json())
-
+    print(portfolio.json())
 
 def test_generate(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
-    if (analysis.json()['status'] not in ['NEW']):
+    if analysis.json()['status'] not in ['NEW']:
         pytest.skip('setup error in prevous step')
 
     session.run_generate(ids['analysis'])
@@ -176,7 +174,7 @@ def test_generate(case_fixture):
 def test_generated_files(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
-    if (analysis.json()['status'] not in ['READY']):
+    if analysis.json()['status'] not in ['READY']:
         pytest.skip('Error in file Generation step')
 
     output_dir = os.path.abspath(config.get('default', 'TEST_OUTPUT_DIR'))
@@ -195,11 +193,10 @@ def test_generated_files(case_fixture):
     if os.path.isfile(download_to):
         os.remove(download_to)
 
-
 def test_analysis_run(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
-    if (analysis.json()['status'] not in ['READY']):
+    if analysis.json()['status'] not in ['READY']:
         pytest.skip('Error in file Generation step')
 
     session.run_analysis(ids['analysis'])
@@ -212,7 +209,7 @@ def test_analysis_run(case_fixture):
 def test_analysis_output(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
-    if (analysis.json()['status'] not in ['RUN_COMPLETED']):
+    if analysis.json()['status'] not in ['RUN_COMPLETED']:
         pytest.skip('Error in file Generation step')
 
     if not get_path(test_model, 'EXPECTED_OUTPUT_DIR'):
@@ -227,9 +224,10 @@ def test_analysis_output(case_fixture):
         os.remove(download_to)
     r = session.analyses.output_file.download(ids['analysis'], download_to)
     assert r.ok
-
+    
     tar_object = tarfile.open(download_to)
-    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name]
+    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name ]
+
     tar_object.extractall(path=extract_to, members=csv_only)
     tar_object.close()
 
@@ -244,7 +242,7 @@ def test_cleanup(case_fixture):
 
     session, case, ids = case_fixture
     r_del_analyses = session.analyses.delete(ids['analysis'])
-    r_del_portfolios = session.portfolios.delete(ids['portfoilio'])
+    r_del_portfolios = session.portfolios.delete(ids['portfolio'])
     session.api.close()
 
     assert r_del_analyses.ok

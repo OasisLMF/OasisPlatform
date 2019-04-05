@@ -280,6 +280,17 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                         },
                     )
 
+                    response = self.app.post(
+                        analysis.get_absolute_generate_inputs_url(),
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                        params=json.dumps({'model': model.pk}),
+                        content_type='application/json'
+                    )
+                    self.assertEqual(200, response.status_code)
+
+
                     self.assertEqual(200, response.status_code)
                     self.assertEqual(response.json['id'], analysis.pk)
                     self.assertEqual(response.json['created'], analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'))

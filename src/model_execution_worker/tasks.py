@@ -47,7 +47,7 @@ class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
 
     def __init__(self, persist=False):
-        self.persist = persist
+            self.persist = persist
 
     def __enter__(self):
         self.name = tempfile.mkdtemp()
@@ -58,6 +58,8 @@ class TemporaryDir(object):
             shutil.rmtree(self.name)
 
 
+
+# When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
@@ -111,13 +113,13 @@ def get_oasislmf_config_path(model_id):
 
 @task(name='run_analysis', bind=True)
 def start_analysis_task(self, input_location, analysis_settings_file):
-    '''
+    """
     Task wrapper for running an analysis.
     Args:
         analysis_profile_json (string): The analysis settings.
     Returns:
         (string) The location of the outputs.
-    '''
+    """
 
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
     logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
@@ -152,13 +154,13 @@ def start_analysis_task(self, input_location, analysis_settings_file):
 
 @oasis_log()
 def start_analysis(analysis_settings_file, input_location):
-    '''
+    """
     Run an analysis.
     Args:
         analysis_profile_json (string): The analysis settings.
     Returns:
         (string) The location of the outputs.
-    '''
+    """
     # Check that the input archive exists and is valid
     logging.info("args: {}".format(str(locals())))
     input_archive = os.path.join(settings.get('worker', 'MEDIA_ROOT'), input_location)
@@ -171,8 +173,8 @@ def start_analysis(analysis_settings_file, input_location):
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    TmpDir = TemporaryDir(settings.get('worker', 'KEEP_RUN_DIR'))
-    with TmpDir as oasis_files_dir, TmpDir as run_dir:
+    tmp_dir = TemporaryDir(settings.get('worker', 'KEEP_RUN_DIR'))
+    with tmp_dir as oasis_files_dir, tmp_dir as run_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
 
@@ -186,7 +188,7 @@ def start_analysis(analysis_settings_file, input_location):
             '--ktools-fifo-relative'
         ]
 
-        if settings.get('worker', 'KTOOLS_MEMORY_LIMIT'):
+        if settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT'):
             run_args.append('--ktools-mem-limit')
 
         GenerateLossesCmd(argv=run_args).run()
@@ -202,7 +204,7 @@ def start_analysis(analysis_settings_file, input_location):
 
 
 @task(name='generate_input')
-def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None):
+def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, settings_file=None):
     logging.info("args: {}".format(str(locals())))
 
     media_root = settings.get('worker', 'media_root')
@@ -210,20 +212,23 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None):
     accounts_file = os.path.join(media_root, acc_file) if acc_file else None
     ri_info_file = os.path.join(media_root, info_file) if info_file else None
     ri_scope_file = os.path.join(media_root, scope_file) if scope_file else None
+    lookup_settings_file = os.path.join(media_root, settings_file) if settings_file else None
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    TmpDir = TemporaryDir(settings.get('worker', 'KEEP_RUN_DIR'))
-    with TmpDir as oasis_files_dir:
+    tmp_dir = TemporaryDir(settings.get('worker', 'KEEP_RUN_DIR'))
+    with tmp_dir as oasis_files_dir:
         run_args = [
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
             '--source-exposure-file-path', location_file,
             '--source-accounts-file-path', accounts_file,
             '--ri-info-file-path', ri_info_file,
-            '--ri-scope-file-path', ri_scope_file
+            '--ri-scope-file-path', ri_scope_file,
         ]
+        if lookup_settings_file:
+            run_args += ['--complex-lookup-config-file-path', lookup_settings_file]
         GenerateOasisFilesCmd(argv=run_args).run()
 
         error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
