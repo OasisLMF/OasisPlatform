@@ -2,6 +2,13 @@ OasisPlatform Changelog
 ==================
 
 .. AUTO_INSERT-CHANGE_LIST
+`1.0.2`_ 
+--------
+ * Fix file large file upload error
+ * Add Env option to keep worker run directory 
+ * Update python requirements 
+ * Fix for unittests 
+ * Update Oasislmf to 1.3.6 
 
 `1.0.1`_ 
 --------
@@ -75,6 +82,7 @@ OasisPlatform Changelog
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
 .. AUTO_INSERT-CHANGE_DIFF
+.. _`1.0.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.0.1...1.0.2
 .. _`1.0.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.0.0...1.0.1
 .. _`1.0.0`:  https://github.com/OasisLMF/OasisPlatform/compare/0.397.3...1.0.0
 .. _`0.397.3`:  https://github.com/OasisLMF/OasisPlatform/compare/0.397.2...0.397.3
