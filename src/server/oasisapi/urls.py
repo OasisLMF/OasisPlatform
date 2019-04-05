@@ -5,10 +5,10 @@ from django.contrib import admin
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import routers, permissions
-from rest_framework.documentation import include_docs_urls
-from rest_framework.reverse import reverse_lazy
+# from rest_framework.documentation import include_docs_urls
+# from rest_framework.reverse import reverse_lazy
 
-from .files.viewsets import FilesViewSet
+# from .files.viewsets import FilesViewSet
 from .analysis_models.viewsets import AnalysisModelViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .analyses.viewsets import AnalysisViewSet
@@ -21,7 +21,7 @@ api_router.include_root_view = False
 api_router.register('portfolios', PortfolioViewSet, base_name='portfolio')
 api_router.register('analyses', AnalysisViewSet, base_name='analysis')
 api_router.register('models', AnalysisModelViewSet, base_name='analysis-model')
-#api_router.register('files', FilesViewSet, base_name='file')
+# api_router.register('files', FilesViewSet, base_name='file')
 
 
 schema_view = get_schema_view(
@@ -33,7 +33,7 @@ The general workflow is as follows
 
 1. Authenticate your client, either supply your username and password to the `/refresh_token/`
    endpoint or make a `post` request to `/access_token/` with the `HTTP_AUTHORIZATION` header
-   set as `Bearer <refresh_token>`. 
+   set as `Bearer <refresh_token>`.
 2. Create a portfolio (post to `/portfolios/`).
 3. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
 4. Create the model object for your model (post to `/models/`).

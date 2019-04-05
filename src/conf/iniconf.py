@@ -28,9 +28,9 @@ class Settings(ConfigParser):
         global_env_prefix = 'OASIS_'
 
         return ChainMap(
-            {k.replace(section_env_prefix, ''): 
+            {k.replace(section_env_prefix, ''):
                 v for k, v in os.environ.items() if k.startswith(section_env_prefix)},
-            {k.replace(global_env_prefix, ''): 
+            {k.replace(global_env_prefix, ''):
                 v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
         )
 

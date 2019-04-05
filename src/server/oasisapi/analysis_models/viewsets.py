@@ -107,7 +107,6 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisModelSerializer
     filter_class = AnalysisModelFilter
 
-
     def get_serializer_class(self):
         if self.action in ['resource_file']:
             return RelatedFileSerializer
@@ -120,10 +119,6 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
-
-
-
-
 
     @action(methods=['get', 'post', 'delete'], detail=True)
     def resource_file(self, request, pk=None, version=None):
@@ -139,11 +134,10 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         """
         try:
             return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
-        except Http404 as e: 
+        except Http404 as e:
             print("No resource_file set, returning default file as response")
             with io.open(os.path.join(settings.STATIC_ROOT, 'model_resource.json')) as default_resource:
                 data = json.load(default_resource)
             response = JsonResponse(data)
             response['Content-Disposition'] = 'attachment; filename="{}"'.format('default_resource_file.json')
             return response
-

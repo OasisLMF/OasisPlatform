@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from django.contrib.sites.shortcuts import get_current_site
+# from django.contrib.sites.shortcuts import get_current_site
 
 from .models import Analysis
 
@@ -34,43 +34,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
         rep['input_generation_traceback_file'] = instance.get_absolute_input_generation_traceback_file_url(request=request) if instance.input_generation_traceback_file else None
         rep['output_file'] = instance.get_absolute_output_file_url(request=request) if instance.output_file else None
         rep['run_traceback_file'] = instance.get_absolute_run_traceback_file_url(request=request) if instance.run_traceback_file else None
-
-       # if instance.input_file:
-       #     rep['input_file'] = {
-       #         "uri": instance.get_absolute_input_file_url(request=request), 
-       #         "name": instance.input_file.filename,
-       #         "stored": str(instance.input_file.file)
-       #     }
-       # if instance.settings_file:
-       #     rep['settings_file'] = {
-       #         "uri": instance.get_absolute_settings_file_url(request=request), 
-       #         "name": instance.settings_file.filename,
-       #         "stored": str(instance.settings_file.file)
-       #     }
-       # if instance.input_errors_file:
-       #     rep['input_errors_file'] = {
-       #         "uri": instance.get_absolute_input_errors_file_url(request=request), 
-       #         "name": instance.input_errors_file.filename,
-       #         "stored": str(instance.input_errors_file.file)
-       #     }
-       # if instance.input_generation_traceback_file:
-       #     rep['input_generation_traceback_file'] = {
-       #         "uri": instance.get_absolute_input_generation_traceback_file_url(request=request), 
-       #         "name": instance.input_generation_traceback_file.filename,
-       #         "stored": str(instance.input_generation_traceback_file.file)
-       #     }
-       # if instance.output_file:
-       #     rep['output_file'] = {
-       #         "uri": instance.get_absolute_output_file_url(request=request), 
-       #         "name": instance.output_file.filename,
-       #         "stored": str(instance.output_file.file)
-       #     }
-       # if instance.run_traceback_file:
-       #     rep['run_traceback_file'] = {
-       #         "uri": instance.get_absolute_run_traceback_file_url(request=request), 
-       #         "name": instance.run_traceback_file.filename,
-       #         "stored": str(instance.run_traceback_file.file)
-       #     }
         return rep
 
 

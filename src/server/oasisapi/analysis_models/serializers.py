@@ -15,7 +15,6 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'modified',
         )
 
-
     def create(self, validated_data):
         data = validated_data.copy()
         if 'request' in self.context:
@@ -24,7 +23,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super(AnalysisModelSerializer, self).to_representation(instance)
-       
+
         request = self.context.get('request')
         rep['resource_file'] = instance.get_absolute_resources_file_url(request=request)
         return rep

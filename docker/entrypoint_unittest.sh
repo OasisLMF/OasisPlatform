@@ -10,9 +10,6 @@ BUILD_OUTPUT_DIR='/tmp/output/'
 
 # Install requirements && build
     set -exu
-    pip install pip-tools
-    pip-compile && pip-sync
-
 
 # Unit testing
     find /home/ -name __pycache__ | xargs -r rm -rfv
@@ -30,7 +27,6 @@ BUILD_OUTPUT_DIR='/tmp/output/'
  
 # Code Standards report
     flake8 | tee $LOG_FLAKE
-
 
 # Coverate report 
     coverage combine
