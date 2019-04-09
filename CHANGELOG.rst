@@ -4,11 +4,11 @@ OasisPlatform Changelog
 .. AUTO_INSERT-CHANGE_LIST
 `1.0.2`_ 
 --------
- * Fix file large file upload error
- * Add Env option to keep worker run directory 
- * Update python requirements 
- * Fix for unittests 
- * Update Oasislmf to 1.3.6 
+* Fix file large file upload error
+* Add Env option to keep worker run directory 
+* Update python requirements 
+* Fix for unittests 
+* Update Oasislmf to 1.3.6 
 
 `1.0.1`_ 
 --------
