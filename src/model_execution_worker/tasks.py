@@ -38,7 +38,7 @@ logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DAT
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_ALLOC_RULE: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE')))
 logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
-logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR')))
+logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE')))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
@@ -173,7 +173,7 @@ def start_analysis(analysis_settings_file, input_location):
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    tmp_dir = TemporaryDir(settings.get('worker', 'KEEP_RUN_DIR'))
+    tmp_dir = TemporaryDir(settings.getboolean('worker', 'DEBUG_MODE'))
     with tmp_dir as oasis_files_dir, tmp_dir as run_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
@@ -187,9 +187,10 @@ def start_analysis(analysis_settings_file, input_location):
             '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
             '--ktools-fifo-relative'
         ]
-
         if settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT'):
             run_args.append('--ktools-mem-limit')
+        if settings.getboolean('worker', 'DEBUG_MODE'):
+            run_args.append('--verbose')
 
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
@@ -217,7 +218,7 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, set
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    tmp_dir = TemporaryDir(settings.get('worker', 'KEEP_RUN_DIR'))
+    tmp_dir = TemporaryDir(settings.getboolean('worker', 'DEBUG_MODE'))
     with tmp_dir as oasis_files_dir:
         run_args = [
             '--oasis-files-path', oasis_files_dir,
@@ -229,6 +230,8 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, set
         ]
         if lookup_settings_file:
             run_args += ['--complex-lookup-config-file-path', lookup_settings_file]
+        if settings.getboolean('worker', 'DEBUG_MODE'):
+            run_args.append('--verbose')
         GenerateOasisFilesCmd(argv=run_args).run()
 
         error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
