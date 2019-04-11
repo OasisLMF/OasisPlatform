@@ -191,10 +191,17 @@ def start_analysis(analysis_settings_file, input_location):
             run_args.append('--ktools-mem-limit')
         if settings.getboolean('worker', 'DEBUG_MODE'):
             run_args.append('--verbose')
+            logging.info('run_directory: {}'.format(oasis_files_dir))
+            logging.info('args_list: {}'.format(str(run_args)))
+
+            ## Filter out any args with None as its value / And remove `--model-run-dir`
+            mdk_args = [x for t in list(zip(*[iter(run_args)]*2)) if (None not in t) and ('--model-run-dir' not in t) for x in t] 
+            logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
+                " ".join([str(arg) for arg in mdk_args])
+            ))
 
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
-
         output_directory = os.path.join(run_dir, "output")
         with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
             tar.add(output_directory, arcname="output")
@@ -230,10 +237,17 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, set
         ]
         if lookup_settings_file:
             run_args += ['--complex-lookup-config-file-path', lookup_settings_file]
-        if settings.getboolean('worker', 'DEBUG_MODE'):
-            run_args.append('--verbose')
-        GenerateOasisFilesCmd(argv=run_args).run()
 
+        if settings.getboolean('worker', 'DEBUG_MODE'):
+            ## Filter out any args with None as its value
+            mdk_args = [x for t in list(zip(*[iter(run_args)]*2)) if None not in t for x in t]
+            logging.info('run_directory: {}'.format(oasis_files_dir))
+            logging.info('args_list: {}'.format(str(run_args)))
+            logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
+                " ".join([str(arg) for arg in mdk_args])
+            ))
+
+        GenerateOasisFilesCmd(argv=run_args).run()
         error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
         error_path_tar = None
 
