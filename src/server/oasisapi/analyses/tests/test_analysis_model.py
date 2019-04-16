@@ -111,7 +111,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 sig = analysis.run_analysis_signature
 
                 self.assertEqual(sig.task, 'run_analysis')
-                self.assertEqual(sig.args, (analysis.input_file.file.name, analysis.settings_file.file.name))
+                self.assertEqual(sig.args, (analysis.input_file.file.name, analysis.settings_file.file.name, []))
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)
 
 
@@ -223,5 +223,5 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig = analysis.generate_input_signature
 
                 self.assertEqual(sig.task, 'generate_input')
-                self.assertEqual(sig.args, (analysis.portfolio.location_file.file.name, None, None, None, None))
+                self.assertEqual(sig.args, (analysis.portfolio.location_file.file.name, None, None, None, None, []))
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)

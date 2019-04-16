@@ -87,4 +87,3 @@ class AnalysisModelApi(WebTest, TestCase):
         self.assertEqual(model.supplier_id, supplier_id)
         self.assertEqual(model.version_id, version_id)
         self.assertEqual(model.model_id, model_id)
-        self.assertEqual(model.version_id, version_id)

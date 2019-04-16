@@ -13,6 +13,7 @@ from rest_framework.reverse import reverse
 
 from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
+from ..complex_model_files.models import ComplexModelDataFile
 from ..portfolios.models import Portfolio
 from .tasks import generate_input_success, run_analysis_success
 
@@ -40,6 +41,7 @@ class Analysis(TimeStampedModel):
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NEW, editable=False)
     run_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
+    complex_model_data_files = models.ManyToManyField(ComplexModelDataFile, blank=True, related_name='complex_model_files_analyses')
 
     settings_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='settings_file_analyses')
     input_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_file_analyses')
@@ -133,9 +135,11 @@ class Analysis(TimeStampedModel):
 
     @property
     def run_analysis_signature(self):
+        complex_data_files = self.create_complex_model_data_file_dicts()
+
         return signature(
             'run_analysis',
-            args=(self.input_file.file.name, self.settings_file.file.name),
+            args=(self.input_file.file.name, self.settings_file.file.name, complex_data_files),
             queue=self.model.queue_name,
         )
 
@@ -205,18 +209,30 @@ class Analysis(TimeStampedModel):
         info_file = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
         scope_file = self.portfolio.reinsurance_source_file.file.name if self.portfolio.reinsurance_source_file else None
         settings_file = self.settings_file.file.name if self.settings_file else None
+        complex_data_files = self.create_complex_model_data_file_dicts()
 
         return signature(
             'generate_input',
-            args=(loc_file, acc_file, info_file, scope_file, settings_file),
+            args=(loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
             queue=self.model.queue_name
         )
+
+    def create_complex_model_data_file_dicts(self):
+        """Creates a list of tuples containing metadata for the complex model data files.
+
+        Returns:
+            list of dict: Dicts containing (stored filename, original filename) as the keys.
+
+        """
+        complex_data_files = [{"stored_filename": cmdf.data_file.file.name,
+                               "original_filename": cmdf.file_name}
+                              for cmdf in self.complex_model_data_files.all()]
+        return complex_data_files
 
     def copy(self):
         new_instance = self
         new_instance.pk = None
         new_instance.name = '{} - Copy'.format(new_instance.name)
-        new_instance.creator = None
         new_instance.run_task_id = ''
         new_instance.generate_inputs_task_id = ''
         new_instance.status = self.status_choices.NEW

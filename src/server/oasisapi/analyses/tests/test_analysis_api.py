@@ -17,6 +17,7 @@ from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
 from ...portfolios.tests.fakes import fake_portfolio
 from ...auth.tests.fakes import fake_user
+from ...complex_model_files.tests.fakes import fake_complex_model_file
 from ..models import Analysis
 from .fakes import fake_analysis
 
@@ -113,6 +114,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
                 self.assertEqual(200, response.status_code)
                 self.assertEqual({
+                    'complex_model_data_files': [],
                     'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
                     'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
                     'id': analysis.pk,
@@ -125,6 +127,57 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
                     'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
                     'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
+                    'status': Analysis.status_choices.NEW,
+                }, response.json)
+
+    @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    @settings(deadline=None)
+    def test_complex_model_file_present___object_is_created(self, name):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                self.maxDiff = None
+                user = fake_user()
+                model = fake_analysis_model()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    reverse('analysis-list', kwargs={'version': 'v1'}),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+                    content_type='application/json'
+                )
+                self.assertEqual(201, response.status_code)
+
+                analysis = Analysis.objects.get(pk=response.json['id'])
+                cmf_1 = fake_complex_model_file()
+                cmf_2 = fake_complex_model_file()
+                analysis.complex_model_data_files = [cmf_1, cmf_2]
+                analysis.save()
+
+                response = self.app.get(
+                    analysis.get_absolute_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(200, response.status_code)
+                self.assertEqual({
+                    'complex_model_data_files': [cmf_1.pk, cmf_2.pk],
+                    'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'id': analysis.pk,
+                    'name': name,
+                    'portfolio': portfolio.pk,
+                    'model': model.pk,
+                    'settings_file': None,
+                    'input_file': None,
+                    'input_errors_file': None,
+                    'input_generation_traceback_file': None,
+                    'output_file': None,
+                    'run_traceback_file': None,
                     'status': Analysis.status_choices.NEW,
                 }, response.json)
 
@@ -496,6 +549,42 @@ class AnalysisCopy(WebTestMixin, TestCase):
         )
 
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).model, new_model)
+
+    def test_complex_model_file_is_not_supplied___model_is_copied(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+        
+        actual_cmf_pks = [obj.pk for obj in Analysis.objects.get(pk=response.json['id']).complex_model_data_files.all()]
+        expected_cmf_pks = [obj.pk for obj in analysis.complex_model_data_files.all()]
+
+        self.assertEqual(expected_cmf_pks, actual_cmf_pks)
+
+    def test_complex_model_file_is_supplied___model_is_replaced(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        new_cmf_1 = fake_complex_model_file()
+        new_cmf_2 = fake_complex_model_file()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'complex_model_data_files': [new_cmf_1.pk, new_cmf_2.pk]}),
+            content_type='application/json',
+        )
+
+        actual_cmf_pks = [obj.pk for obj in Analysis.objects.get(pk=response.json['id']).complex_model_data_files.all()]
+        expected_cmf_pks = [new_cmf_1.pk, new_cmf_2.pk]
+        
+        self.assertEqual(expected_cmf_pks, actual_cmf_pks)
 
     def test_settings_file_is_not_supplied___settings_file_is_copied(self):
         with TemporaryDirectory() as d:

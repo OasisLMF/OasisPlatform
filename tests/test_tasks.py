@@ -7,7 +7,7 @@ from celery.exceptions import Retry
 from hypothesis import given
 from hypothesis.strategies import text
 from mock import patch, Mock, ANY
-from oasislmf.utils import status
+from oasislmf.utils.defaults import OASIS_TASK_STATUS
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
@@ -89,8 +89,9 @@ class StartAnalysisTask(TestCase):
             start_analysis_task.update_state = Mock()
             start_analysis_task(location, analysis_settings_path)
 
-            start_analysis_task.update_state.assert_called_once_with(state=status.STATUS_RUNNING)
+            start_analysis_task.update_state.assert_called_once_with(state=OASIS_TASK_STATUS["running"]["id"])
             start_analysis_mock.assert_called_once_with(
                 os.path.join(settings.get('worker', 'media_root'), analysis_settings_path),
                 location,
+                complex_data_files=None
             )
