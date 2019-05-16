@@ -17,6 +17,9 @@ from ..complex_model_files.models import ComplexModelDataFile
 from ..portfolios.models import Portfolio
 from .tasks import generate_input_success, run_analysis_success
 
+STORED_FILENAME = "stored_filename"
+ORIGINAL_FILENAME = "original_filename"
+
 
 @python_2_unicode_compatible
 class Analysis(TimeStampedModel):
@@ -224,8 +227,8 @@ class Analysis(TimeStampedModel):
             list of dict: Dicts containing (stored filename, original filename) as the keys.
 
         """
-        complex_data_files = [{"stored_filename": cmdf.data_file.file.name,
-                               "original_filename": cmdf.file_name}
+        complex_data_files = [{STORED_FILENAME: cmdf.data_file.file.name,
+                               ORIGINAL_FILENAME: cmdf.file_name}
                               for cmdf in self.complex_model_data_files.all()]
         return complex_data_files
 

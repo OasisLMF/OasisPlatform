@@ -30,6 +30,11 @@ Celery task wrapper for Oasis ktools calculation.
 
 ARCHIVE_FILE_SUFFIX = '.tar'
 
+STORED_FILENAME = "stored_filename"
+ORIGINAL_FILENAME = "original_filename"
+
+RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
+
 CELERY = Celery()
 CELERY.config_from_object(celery_conf)
 
@@ -113,10 +118,12 @@ def get_oasislmf_config_path(model_id):
 def get_unique_filename(ext):
     """Create a unique filename using a random UUID4.
 
-    :param ext: File extension to use.
-    :type ext: str
-    :return: A random unique filename.
-    :rtype: str
+    Args:
+        ext (str): File extension to use.
+
+    Returns:
+        str: A random unique filename.
+
     """
     filename = "{}{}".format(uuid.uuid4().hex, ext)
     return filename
@@ -130,7 +137,7 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
         self: Celery task instance.
         analysis_settings_file (str): Path to the analysis settings.
         input_location (str): Path to the input tar file.
-        complex_data_files (list of complex_model_data_file): List of namedtuples containing
+        complex_data_files (list of complex_model_data_file): List of dicts containing
             on-disk and original filenames for required complex model data files.
 
     Returns:
@@ -156,7 +163,7 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
             logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
             logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
 
-            self.update_state(state=OASIS_TASK_STATUS["running"]["id"])
+            self.update_state(state=RUNNING_TASK_STATUS)
             output_location = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
                 input_location,
@@ -176,7 +183,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     Args:
         analysis_settings_file (str): Path to the analysis settings.
         input_location (str): Path to the input tar file.
-        complex_data_files (list of complex_model_data_file): List of namedtuples containing
+        complex_data_files (list of complex_model_data_file): List of dicts containing
             on-disk and original filenames for required complex model data files.
 
     Returns:
@@ -185,7 +192,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     """
     # Check that the input archive exists and is valid
     logging.info("args: {}".format(str(locals())))
-    media_root = media_root = settings.get('worker', 'media_root')
+    media_root = settings.get('worker', 'MEDIA_ROOT')
     input_archive = os.path.join(media_root, input_location)
 
     if not os.path.exists(input_archive):
@@ -261,7 +268,7 @@ def generate_input(loc_file,
         info_file (str): Name of the portfolio reinsurance info file.
         scope_file (str): Name of the portfolio reinsurance scope file.
         settings_file (str): Name of the analysis settings file.
-        complex_data_files (list of complex_model_data_file): List of namedtuples containing
+        complex_data_files (list of complex_model_data_file): List of dicts containing
             on-disk and original filenames for required complex model data files.
 
     Returns:
@@ -270,7 +277,7 @@ def generate_input(loc_file,
     """
     logging.info("args: {}".format(str(locals())))
 
-    media_root = settings.get('worker', 'media_root')
+    media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
     accounts_file = os.path.join(media_root, acc_file) if acc_file else None
     ri_info_file = os.path.join(media_root, info_file) if info_file else None
@@ -350,7 +357,7 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
 
 
 def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run_directory):
-    """Places the specified complex model files to the run_directory.
+    """Places the specified complex model files in the run_directory.
 
     The unique upload filenames are converted back to the original upload names, so that the
     names match any input configuration file.
@@ -358,7 +365,7 @@ def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run
     On Linux, the files are symlinked, whereas on Windows the files are simply copied.
 
     Args:
-        complex_model_files (list of complex_model_data_file): List of namedtuples giving the files
+        complex_model_files (list of complex_model_data_file): List of dicts giving the files
             to make available.
         upload_directory (str): Source directory containing the uploaded files with unique filenames.
         run_directory (str): Model inputs directory to place the files in.
@@ -368,8 +375,8 @@ def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run
 
     """
     for cmf in complex_model_files:
-        from_path = os.path.join(upload_directory, cmf["stored_filename"])
-        to_path = os.path.join(run_directory, cmf["original_filename"])
+        from_path = os.path.join(upload_directory, cmf[STORED_FILENAME])
+        to_path = os.path.join(run_directory, cmf[ORIGINAL_FILENAME])
 
         if os.name == 'nt':
             shutil.copy(from_path, to_path)

@@ -36,7 +36,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
     def validate_file(self, value):
         mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)
-        if self.content_types and value.content_type not in self.content_types and mapped_content_type not in self.content_types:
+        if self.content_types and mapped_content_type not in self.content_types:
             raise ValidationError('File should be one of [{}]'.format(', '.join(self.content_types)))
 
         return value
