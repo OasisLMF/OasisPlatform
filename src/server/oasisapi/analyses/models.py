@@ -16,9 +16,7 @@ from ..analysis_models.models import AnalysisModel
 from ..complex_model_files.models import ComplexModelDataFile
 from ..portfolios.models import Portfolio
 from .tasks import generate_input_success, run_analysis_success
-
-STORED_FILENAME = "stored_filename"
-ORIGINAL_FILENAME = "original_filename"
+from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 
 @python_2_unicode_compatible

@@ -23,15 +23,13 @@ from pathlib2 import Path
 
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
+from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 '''
 Celery task wrapper for Oasis ktools calculation.
 '''
 
 ARCHIVE_FILE_SUFFIX = '.tar'
-
-STORED_FILENAME = "stored_filename"
-ORIGINAL_FILENAME = "original_filename"
 
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 
