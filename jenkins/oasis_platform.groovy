@@ -8,7 +8,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: ''],
+        [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: 'develop'],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
