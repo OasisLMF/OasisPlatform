@@ -2,7 +2,7 @@ import string
 from backports.tempfile import TemporaryDirectory
 
 from django.test import override_settings
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text
 from pathlib2 import Path
@@ -11,6 +11,9 @@ from ...auth.tests.fakes import fake_user
 from ..tasks import run_analysis_success, record_run_analysis_failure, generate_input_success, record_generate_input_failure
 from .fakes import fake_analysis
 
+## Override default deadline for all tests to 8s
+settings.register_profile("ci", deadline=800.0)
+settings.load_profile("ci")
 
 class RunAnalysisSuccess(TestCase):
     @given(output_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters))

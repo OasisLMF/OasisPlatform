@@ -16,6 +16,9 @@ from ...auth.tests.fakes import fake_user
 from ..models import ComplexModelDataFile
 from .fakes import fake_complex_model_file
 
+## Override default deadline for all tests to 8s
+settings.register_profile("ci", deadline=800.0)
+settings.load_profile("ci")
 
 class ComplexModelFilesApi(WebTestMixin, TestCase):
     @given(
@@ -68,7 +71,6 @@ class ComplexModelFilesApi(WebTestMixin, TestCase):
         file_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
         file_description=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
-    @settings(deadline=None)
     def test_data_is_valid___object_is_created(self, file_name, file_description):
         user = fake_user()
 
@@ -146,7 +148,6 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
                 self.assertEqual(200, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json', 'application/octet-stream', 'image/tiff']))
-    @settings(deadline=None)
     def test_data_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):

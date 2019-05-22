@@ -21,6 +21,10 @@ from ...complex_model_files.tests.fakes import fake_complex_model_file
 from ..models import Analysis
 from .fakes import fake_analysis
 
+## Override default deadline for all tests to 8s
+settings.register_profile("ci", deadline=800.0)
+settings.load_profile("ci")
+
 
 class AnalysisApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
@@ -60,7 +64,6 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=' \t\n\r', max_size=10))
-    @settings(deadline=None)
     def test_cleaned_name_is_empty___response_is_400(self, name):
         user = fake_user()
 
@@ -77,7 +80,6 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
-    @settings(deadline=None)
     def test_cleaned_name_portfolio_and_model_are_present___object_is_created(self, name):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -131,7 +133,6 @@ class AnalysisApi(WebTestMixin, TestCase):
                 }, response.json)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
-    @settings(deadline=None)
     def test_complex_model_file_present___object_is_created(self, name):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -403,7 +404,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertNotEqual(analysis.pk, response.json['id'])
 
     @given(name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    @settings(deadline=None)
     def test_no_new_name_is_provided___copy_is_appended_to_name(self, name):
         user = fake_user()
         analysis = fake_analysis(name=name)
@@ -418,7 +418,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, '{} - Copy'.format(name))
 
     @given(orig_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters), new_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    @settings(deadline=None)
     def test_new_name_is_provided___new_name_is_set_on_new_object(self, orig_name, new_name):
         user = fake_user()
         analysis = fake_analysis(name=orig_name)
@@ -435,7 +434,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, new_name)
 
     @given(status=sampled_from(list(Analysis.status_choices._db_values)))
-    @settings(deadline=None)
     def test_state_is_reset(self, status):
         user = fake_user()
         analysis = fake_analysis(status=status)
@@ -463,7 +461,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).creator, user)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    @settings(deadline=None)
     def test_run_task_id_is_reset(self, task_id):
         user = fake_user()
         analysis = fake_analysis(run_task_id=task_id)
@@ -478,7 +475,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).run_task_id, '')
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    @settings(deadline=None)
     def test_generate_inputs_task_id_is_reset(self, task_id):
         user = fake_user()
         analysis = fake_analysis(generate_inputs_task_id=task_id)
@@ -703,7 +699,6 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     @given(file_content=binary(min_size=1))
-    @settings(deadline=None)
     def test_settings_file_is_uploaded___file_can_be_retrieved(self, file_content):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -754,7 +749,6 @@ class AnalysisInputFile(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
-    @settings(deadline=None)
     def test_input_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -809,7 +803,6 @@ class AnalysisInputErrorsFile(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
-    @settings(deadline=None)
     def test_input_errors_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -864,7 +857,6 @@ class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     @given(file_content=binary(min_size=1))
-    @settings(deadline=None)
     def test_input_generation_traceback_file_is_present___file_can_be_retrieved(self, file_content):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -938,7 +930,6 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
                 self.assertEqual(405, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
-    @settings(deadline=None)
     def test_output_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -1012,7 +1003,6 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
                 self.assertEqual(405, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
-    @settings(deadline=None)
     def test_run_traceback_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
