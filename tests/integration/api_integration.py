@@ -51,7 +51,7 @@ def check_expected(result_path, expected_path):
 def check_non_empty(result_path):
     comparison_list = []
     cwd = os.getcwd()
-    os.chdir(expected_path)
+    os.chdir(result_path)
     for rootdir, _, filelist in os.walk('.'):
         for f in filelist:
             comparison_list.append(os.path.join(rootdir[2:], f))
