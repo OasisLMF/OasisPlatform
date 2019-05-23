@@ -3,6 +3,7 @@ import socket
 import os
 import tarfile
 import configparser
+import shutil
 
 import pandas as pd
 
@@ -59,7 +60,10 @@ def check_non_empty(result_path):
     print(comparison_list)
     os.chdir(cwd)
     for csv in comparison_list:
-        assert(os.path.getsize(csv) > 0)
+        file_path = os.path.join(result_path, csv)
+        file_size = os.path.getsize(file_path)
+        print(f'{file_size} Bytes: -> {csv}')
+        assert(file_size > 0)
 
 
 # --- Test Paramatization --------------------------------------------------- #
