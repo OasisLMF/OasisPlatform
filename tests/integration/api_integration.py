@@ -14,8 +14,8 @@ from oasislmf.api.client import APIClient
 # ------------ load config -------------------- #
 
 cli_case_override = pytest.config.getoption("--test-case")
+check_output_vaules = pytest.config.getoption("--test-output")
 test_conf_ini = pytest.config.getoption("--config")
-check_output_vaules = pytest.config.getoption("--check-output")
 
 print(test_conf_ini)
 print(os.path.abspath(test_conf_ini))
