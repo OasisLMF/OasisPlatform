@@ -14,6 +14,7 @@ from oasislmf.api.client import APIClient
 # ------------ load config -------------------- #
 
 cli_case_override = pytest.config.getoption("--test-case")
+check_output_vaules = pytest.config.getoption("--test-output")
 test_conf_ini = pytest.config.getoption("--config")
 
 print(test_conf_ini)
@@ -47,6 +48,19 @@ def check_expected(result_path, expected_path):
         assert_frame_equal(df_expect, df_found)
 
         
+def check_non_empty(result_path):
+    comparison_list = []
+    cwd = os.getcwd()
+    os.chdir(expected_path)
+    for rootdir, _, filelist in os.walk('.'):
+        for f in filelist:
+            comparison_list.append(os.path.join(rootdir[2:], f))
+
+    print(comparison_list)
+    os.chdir(cwd)
+    for csv in comparison_list:
+        assert(os.path.getsize(csv) > 0)
+
 
 # --- Test Paramatization --------------------------------------------------- #
 
@@ -230,8 +244,12 @@ def test_analysis_output(case_fixture):
 
     tar_object.extractall(path=extract_to, members=csv_only)
     tar_object.close()
+    
+    if check_output_vaules:
+        check_expected(os.path.join(extract_to, 'output'), expected_results)
+    else:
+        check_non_empty(os.path.join(extract_to, 'output'))
 
-    check_expected(expected_results, os.path.join(extract_to, 'output'))
     if os.path.isfile(download_to):
         os.remove(download_to)
 
