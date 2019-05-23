@@ -16,7 +16,7 @@ from celery.task import task
 from celery.signals import worker_ready
 
 from oasislmf.cli.model import GenerateOasisFilesCmd, GenerateLossesCmd
-from oasislmf.utils.defaults import OASIS_TASK_STATUS
+from oasislmf.utils.status import OASIS_TASK_STATUS
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from pathlib2 import Path
