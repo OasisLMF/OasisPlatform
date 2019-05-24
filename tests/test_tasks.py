@@ -8,7 +8,7 @@ from hypothesis import given, settings
 from hypothesis import settings as hypothesis_settings
 from hypothesis.strategies import text
 from mock import patch, Mock, ANY
-from oasislmf.utils.defaults import OASIS_TASK_STATUS
+from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
