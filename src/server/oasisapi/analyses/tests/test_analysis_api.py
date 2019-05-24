@@ -17,8 +17,13 @@ from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
 from ...portfolios.tests.fakes import fake_portfolio
 from ...auth.tests.fakes import fake_user
+from ...complex_model_files.tests.fakes import fake_complex_model_file
 from ..models import Analysis
 from .fakes import fake_analysis
+
+## Override default deadline for all tests to 8s
+settings.register_profile("ci", deadline=800.0)
+settings.load_profile("ci")
 
 
 class AnalysisApi(WebTestMixin, TestCase):
@@ -59,7 +64,6 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=' \t\n\r', max_size=10))
-    @settings(deadline=None)
     def test_cleaned_name_is_empty___response_is_400(self, name):
         user = fake_user()
 
@@ -76,7 +80,6 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
-    @settings(deadline=None)
     def test_cleaned_name_portfolio_and_model_are_present___object_is_created(self, name):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -113,6 +116,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
                 self.assertEqual(200, response.status_code)
                 self.assertEqual({
+                    'complex_model_data_files': [],
                     'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
                     'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
                     'id': analysis.pk,
@@ -125,6 +129,56 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
                     'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
                     'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
+                    'status': Analysis.status_choices.NEW,
+                }, response.json)
+
+    @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    def test_complex_model_file_present___object_is_created(self, name):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                self.maxDiff = None
+                user = fake_user()
+                model = fake_analysis_model()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    reverse('analysis-list', kwargs={'version': 'v1'}),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+                    content_type='application/json'
+                )
+                self.assertEqual(201, response.status_code)
+
+                analysis = Analysis.objects.get(pk=response.json['id'])
+                cmf_1 = fake_complex_model_file()
+                cmf_2 = fake_complex_model_file()
+                analysis.complex_model_data_files = [cmf_1, cmf_2]
+                analysis.save()
+
+                response = self.app.get(
+                    analysis.get_absolute_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(200, response.status_code)
+                self.assertEqual({
+                    'complex_model_data_files': [cmf_1.pk, cmf_2.pk],
+                    'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'id': analysis.pk,
+                    'name': name,
+                    'portfolio': portfolio.pk,
+                    'model': model.pk,
+                    'settings_file': None,
+                    'input_file': None,
+                    'input_errors_file': None,
+                    'input_generation_traceback_file': None,
+                    'output_file': None,
+                    'run_traceback_file': None,
                     'status': Analysis.status_choices.NEW,
                 }, response.json)
 
@@ -350,7 +404,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertNotEqual(analysis.pk, response.json['id'])
 
     @given(name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    @settings(deadline=None)
     def test_no_new_name_is_provided___copy_is_appended_to_name(self, name):
         user = fake_user()
         analysis = fake_analysis(name=name)
@@ -365,7 +418,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, '{} - Copy'.format(name))
 
     @given(orig_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters), new_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    @settings(deadline=None)
     def test_new_name_is_provided___new_name_is_set_on_new_object(self, orig_name, new_name):
         user = fake_user()
         analysis = fake_analysis(name=orig_name)
@@ -382,7 +434,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, new_name)
 
     @given(status=sampled_from(list(Analysis.status_choices._db_values)))
-    @settings(deadline=None)
     def test_state_is_reset(self, status):
         user = fake_user()
         analysis = fake_analysis(status=status)
@@ -410,7 +461,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).creator, user)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    @settings(deadline=None)
     def test_run_task_id_is_reset(self, task_id):
         user = fake_user()
         analysis = fake_analysis(run_task_id=task_id)
@@ -425,7 +475,6 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).run_task_id, '')
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    @settings(deadline=None)
     def test_generate_inputs_task_id_is_reset(self, task_id):
         user = fake_user()
         analysis = fake_analysis(generate_inputs_task_id=task_id)
@@ -496,6 +545,42 @@ class AnalysisCopy(WebTestMixin, TestCase):
         )
 
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).model, new_model)
+
+    def test_complex_model_file_is_not_supplied___model_is_copied(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+        
+        actual_cmf_pks = [obj.pk for obj in Analysis.objects.get(pk=response.json['id']).complex_model_data_files.all()]
+        expected_cmf_pks = [obj.pk for obj in analysis.complex_model_data_files.all()]
+
+        self.assertEqual(expected_cmf_pks, actual_cmf_pks)
+
+    def test_complex_model_file_is_supplied___model_is_replaced(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        new_cmf_1 = fake_complex_model_file()
+        new_cmf_2 = fake_complex_model_file()
+
+        response = self.app.post(
+            analysis.get_absolute_copy_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'complex_model_data_files': [new_cmf_1.pk, new_cmf_2.pk]}),
+            content_type='application/json',
+        )
+
+        actual_cmf_pks = [obj.pk for obj in Analysis.objects.get(pk=response.json['id']).complex_model_data_files.all()]
+        expected_cmf_pks = [new_cmf_1.pk, new_cmf_2.pk]
+        
+        self.assertEqual(expected_cmf_pks, actual_cmf_pks)
 
     def test_settings_file_is_not_supplied___settings_file_is_copied(self):
         with TemporaryDirectory() as d:
@@ -614,7 +699,6 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     @given(file_content=binary(min_size=1))
-    @settings(deadline=None)
     def test_settings_file_is_uploaded___file_can_be_retrieved(self, file_content):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -665,7 +749,6 @@ class AnalysisInputFile(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
-    @settings(deadline=None)
     def test_input_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -720,7 +803,6 @@ class AnalysisInputErrorsFile(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
-    @settings(deadline=None)
     def test_input_errors_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -775,7 +857,6 @@ class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     @given(file_content=binary(min_size=1))
-    @settings(deadline=None)
     def test_input_generation_traceback_file_is_present___file_can_be_retrieved(self, file_content):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -849,7 +930,6 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
                 self.assertEqual(405, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
-    @settings(deadline=None)
     def test_output_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -923,7 +1003,6 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
                 self.assertEqual(405, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
-    @settings(deadline=None)
     def test_run_traceback_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):

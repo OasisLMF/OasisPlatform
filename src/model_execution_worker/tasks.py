@@ -6,7 +6,7 @@ import os
 import shutil
 import tarfile
 import uuid
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 
 import fasteners
 import tempfile
@@ -16,19 +16,22 @@ from celery.task import task
 from celery.signals import worker_ready
 
 from oasislmf.cli.model import GenerateOasisFilesCmd, GenerateLossesCmd
-from oasislmf.utils import status
+from oasislmf.utils.status import OASIS_TASK_STATUS
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from pathlib2 import Path
 
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
+from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 '''
 Celery task wrapper for Oasis ktools calculation.
 '''
 
 ARCHIVE_FILE_SUFFIX = '.tar'
+
+RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 
 CELERY = Celery()
 CELERY.config_from_object(celery_conf)
@@ -47,7 +50,7 @@ class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
 
     def __init__(self, persist=False):
-            self.persist = persist
+        self.persist = persist
 
     def __enter__(self):
         self.name = tempfile.mkdtemp()
@@ -56,7 +59,6 @@ class TemporaryDir(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if not self.persist:
             shutil.rmtree(self.name)
-
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -111,12 +113,31 @@ def get_oasislmf_config_path(model_id):
     return str(Path(model_root, 'oasislmf.json'))
 
 
-@task(name='run_analysis', bind=True)
-def start_analysis_task(self, input_location, analysis_settings_file):
-    """
-    Task wrapper for running an analysis.
+def get_unique_filename(ext):
+    """Create a unique filename using a random UUID4.
+
     Args:
-        analysis_profile_json (string): The analysis settings.
+        ext (str): File extension to use.
+
+    Returns:
+        str: A random unique filename.
+
+    """
+    filename = "{}{}".format(uuid.uuid4().hex, ext)
+    return filename
+
+
+@task(name='run_analysis', bind=True)
+def start_analysis_task(self, input_location, analysis_settings_file, complex_data_files=None):
+    """Task wrapper for running an analysis.
+
+    Args:
+        self: Celery task instance.
+        analysis_settings_file (str): Path to the analysis settings.
+        input_location (str): Path to the input tar file.
+        complex_data_files (list of complex_model_data_file): List of dicts containing
+            on-disk and original filenames for required complex model data files.
+
     Returns:
         (string) The location of the outputs.
     """
@@ -140,10 +161,11 @@ def start_analysis_task(self, input_location, analysis_settings_file):
             logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
             logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
 
-            self.update_state(state=status.STATUS_RUNNING)
+            self.update_state(state=RUNNING_TASK_STATUS)
             output_location = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
-                input_location
+                input_location,
+                complex_data_files=complex_data_files
             )
         except Exception:
             logging.exception("Model execution task failed.")
@@ -153,17 +175,23 @@ def start_analysis_task(self, input_location, analysis_settings_file):
 
 
 @oasis_log()
-def start_analysis(analysis_settings_file, input_location):
-    """
-    Run an analysis.
+def start_analysis(analysis_settings_file, input_location, complex_data_files=None):
+    """Run an analysis.
+
     Args:
-        analysis_profile_json (string): The analysis settings.
+        analysis_settings_file (str): Path to the analysis settings.
+        input_location (str): Path to the input tar file.
+        complex_data_files (list of complex_model_data_file): List of dicts containing
+            on-disk and original filenames for required complex model data files.
+
     Returns:
         (string) The location of the outputs.
+
     """
     # Check that the input archive exists and is valid
     logging.info("args: {}".format(str(locals())))
-    input_archive = os.path.join(settings.get('worker', 'MEDIA_ROOT'), input_location)
+    media_root = settings.get('worker', 'MEDIA_ROOT')
+    input_archive = os.path.join(media_root, input_location)
 
     if not os.path.exists(input_archive):
         raise MissingInputsException(input_archive)
@@ -173,8 +201,14 @@ def start_analysis(analysis_settings_file, input_location):
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    tmp_dir = TemporaryDir(settings.getboolean('worker', 'DEBUG_MODE'))
-    with tmp_dir as oasis_files_dir, tmp_dir as run_dir:
+    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE'))
+
+    if complex_data_files:
+        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE'))
+    else:
+        tmp_input_dir = suppress()
+
+    with tmp_dir as oasis_files_dir, tmp_dir as run_dir, tmp_input_dir as input_data_dir:
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
 
@@ -187,6 +221,9 @@ def start_analysis(analysis_settings_file, input_location):
             '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
             '--ktools-fifo-relative'
         ]
+        if complex_data_files:
+            prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
+            run_args += ['--user-data-path', input_data_dir]
         if settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT'):
             run_args.append('--ktools-mem-limit')
         if settings.getboolean('worker', 'DEBUG_MODE'):
@@ -194,7 +231,7 @@ def start_analysis(analysis_settings_file, input_location):
             logging.info('run_directory: {}'.format(oasis_files_dir))
             logging.info('args_list: {}'.format(str(run_args)))
 
-            ## Filter out any args with None as its value / And remove `--model-run-dir`
+            # Filter out any args with None as its value / And remove `--model-run-dir`
             mdk_args = [x for t in list(zip(*[iter(run_args)]*2)) if (None not in t) and ('--model-run-dir' not in t) for x in t] 
             logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
                 " ".join([str(arg) for arg in mdk_args])
@@ -212,10 +249,33 @@ def start_analysis(analysis_settings_file, input_location):
 
 
 @task(name='generate_input')
-def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, settings_file=None):
+def generate_input(loc_file,
+                   acc_file=None,
+                   info_file=None,
+                   scope_file=None,
+                   settings_file=None,
+                   complex_data_files=None):
+    """Generates the input files for the loss calculation stage.
+
+    This function is a thin wrapper around "oasislmf model generate-oasis-files".
+    A temporary directory is created to contain the output oasis files.
+
+    Args:
+        loc_file (str): Name of the portfolio locations file.
+        acc_file (str): Name of the portfolio accounts file.
+        info_file (str): Name of the portfolio reinsurance info file.
+        scope_file (str): Name of the portfolio reinsurance scope file.
+        settings_file (str): Name of the analysis settings file.
+        complex_data_files (list of complex_model_data_file): List of dicts containing
+            on-disk and original filenames for required complex model data files.
+
+    Returns:
+        (tuple(str, str)) Paths to the outputs tar file and errors tar file.
+
+    """
     logging.info("args: {}".format(str(locals())))
 
-    media_root = settings.get('worker', 'media_root')
+    media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
     accounts_file = os.path.join(media_root, acc_file) if acc_file else None
     ri_info_file = os.path.join(media_root, info_file) if info_file else None
@@ -225,8 +285,13 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, set
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    tmp_dir = TemporaryDir(settings.getboolean('worker', 'DEBUG_MODE'))
-    with tmp_dir as oasis_files_dir:
+    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE'))
+    if complex_data_files:
+        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE'))
+    else:
+        tmp_input_dir = suppress()
+
+    with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
         run_args = [
             '--oasis-files-path', oasis_files_dir,
             '--config', config_path,
@@ -237,9 +302,12 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, set
         ]
         if lookup_settings_file:
             run_args += ['--complex-lookup-config-file-path', lookup_settings_file]
+        if complex_data_files:
+            prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
+            run_args += ['--user-data-path', input_data_dir]
 
         if settings.getboolean('worker', 'DEBUG_MODE'):
-            ## Filter out any args with None as its value
+            # Filter out any args with None as its value
             mdk_args = [x for t in list(zip(*[iter(run_args)]*2)) if None not in t for x in t]
             logging.info('run_directory: {}'.format(oasis_files_dir))
             logging.info('args_list: {}'.format(str(run_args)))
@@ -248,27 +316,26 @@ def generate_input(loc_file, acc_file=None, info_file=None, scope_file=None, set
             ))
 
         GenerateOasisFilesCmd(argv=run_args).run()
-        error_path = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
-        error_path_tar = None
+        error_file_path = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
 
-        if error_path:
-            saved_path = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
-            shutil.copy(error_path, saved_path)
-            error_tar = str(Path(saved_path).relative_to(media_root))
+        relative_error_path = ""
+        if error_file_path:
+            saved_error_path = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
+            shutil.copy(error_file_path, saved_error_path)
+            relative_error_path = str(Path(saved_error_path).relative_to(media_root))
 
-        output_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
-        output_tar = str(Path(output_name).relative_to(media_root))
+        output_tar_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
+        output_tar_path = str(Path(output_tar_name).relative_to(media_root))
 
-        logging.info("output_tar: {}".format(output_tar))
-        logging.info("saved_path: {}".format(saved_path))
+        logging.info("output_tar_path: {}".format(output_tar_path))
+        logging.info("saved_error_path: {}".format(saved_error_path))
 
-        logging.info("error_tar: {}".format(error_tar))
-        logging.info("error_tar: {}".format(error_tar))
+        logging.info("relative_error_path: {}".format(relative_error_path))
 
-        with tarfile.open(output_name, 'w:gz') as tar:
+        with tarfile.open(output_tar_name, 'w:gz') as tar:
             tar.add(oasis_files_dir, arcname='/')
 
-        return output_tar, error_tar
+        return output_tar_path, relative_error_path
 
 
 @task(name='on_error')
@@ -285,3 +352,31 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
         args=(analysis_pk, initiator_pk, traceback),
         queue='celery'
     ).delay()
+
+
+def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run_directory):
+    """Places the specified complex model files in the run_directory.
+
+    The unique upload filenames are converted back to the original upload names, so that the
+    names match any input configuration file.
+
+    On Linux, the files are symlinked, whereas on Windows the files are simply copied.
+
+    Args:
+        complex_model_files (list of complex_model_data_file): List of dicts giving the files
+            to make available.
+        upload_directory (str): Source directory containing the uploaded files with unique filenames.
+        run_directory (str): Model inputs directory to place the files in.
+
+    Returns:
+        None.
+
+    """
+    for cmf in complex_model_files:
+        from_path = os.path.join(upload_directory, cmf[STORED_FILENAME])
+        to_path = os.path.join(run_directory, cmf[ORIGINAL_FILENAME])
+
+        if os.name == 'nt':
+            shutil.copy(from_path, to_path)
+        else:
+            os.symlink(from_path, to_path)

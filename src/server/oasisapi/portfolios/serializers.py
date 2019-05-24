@@ -26,7 +26,6 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
         request = self.context.get('request')
 
-        # rep['accounts_file'] = instance.get_absolute_accounts_file_url(request=request) if instance.accounts_file else 'null'
         rep['accounts_file'] = None
         rep['location_file'] = None
         rep['reinsurance_info_file'] = None

@@ -13,7 +13,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'id',
             'portfolio',
             'model',
-            'status'
+            'status',
+            'complex_model_data_files'
         )
 
     def validate(self, attrs):

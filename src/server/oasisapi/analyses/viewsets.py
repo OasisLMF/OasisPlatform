@@ -200,6 +200,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         new_obj = obj.copy()
 
+        new_obj.save()
+        new_obj.creator = None
+
         serializer = self.get_serializer(instance=new_obj, data=request.data, context=self.get_serializer_context(), partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

@@ -11,6 +11,9 @@ from rest_framework_simplejwt.tokens import AccessToken
 from ...auth.tests.fakes import fake_user
 from ..models import AnalysisModel
 
+## Override default deadline for all tests to 8s
+settings.register_profile("ci", deadline=800.0)
+settings.load_profile("ci")
 
 class AnalysisModelApi(WebTest, TestCase):
     @given(
@@ -64,7 +67,6 @@ class AnalysisModelApi(WebTest, TestCase):
         model_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
         version_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
-    @settings(deadline=None)
     def test_data_is_valid___object_is_created(self, supplier_id, model_id, version_id):
         user = fake_user()
 
@@ -87,4 +89,3 @@ class AnalysisModelApi(WebTest, TestCase):
         self.assertEqual(model.supplier_id, supplier_id)
         self.assertEqual(model.version_id, version_id)
         self.assertEqual(model.model_id, model_id)
-        self.assertEqual(model.version_id, version_id)

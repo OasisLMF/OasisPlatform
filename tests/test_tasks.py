@@ -4,16 +4,20 @@ from unittest import TestCase
 
 from backports.tempfile import TemporaryDirectory
 from celery.exceptions import Retry
-from hypothesis import given
+from hypothesis import given, settings
+from hypothesis import settings as hypothesis_settings
 from hypothesis.strategies import text
 from mock import patch, Mock, ANY
-from oasislmf.utils import status
+from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
 from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, MissingInputsException, \
     start_analysis_task, get_oasislmf_config_path
 
+## Override default deadline for all tests to 8s
+hypothesis_settings.register_profile("ci", deadline=800.0)
+hypothesis_settings.load_profile("ci")
 
 class StartAnalysis(TestCase):
     def create_tar(self, target):
@@ -89,8 +93,9 @@ class StartAnalysisTask(TestCase):
             start_analysis_task.update_state = Mock()
             start_analysis_task(location, analysis_settings_path)
 
-            start_analysis_task.update_state.assert_called_once_with(state=status.STATUS_RUNNING)
+            start_analysis_task.update_state.assert_called_once_with(state=OASIS_TASK_STATUS["running"]["id"])
             start_analysis_mock.assert_called_once_with(
                 os.path.join(settings.get('worker', 'media_root'), analysis_settings_path),
                 location,
+                complex_data_files=None
             )

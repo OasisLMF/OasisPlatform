@@ -96,6 +96,9 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# Docker
+db-data/
+
 /src/server/db.sqlite3
 /src/server/media
 .DS_Store

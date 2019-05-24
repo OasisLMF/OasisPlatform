@@ -8,6 +8,12 @@ from .models import RelatedFile
 logger = logging.getLogger('root')
 
 
+CONTENT_TYPE_MAPPING = {
+    # Windows commonly reports CSVs as Excel files: https://www.christianwood.net/csv-file-upload-validation/
+    'application/vnd.ms-excel': 'text/csv'
+}
+
+
 class RelatedFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = RelatedFile
@@ -29,7 +35,8 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):
-        if self.content_types and value.content_type not in self.content_types:
+        mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)
+        if self.content_types and mapped_content_type not in self.content_types:
             raise ValidationError('File should be one of [{}]'.format(', '.join(self.content_types)))
 
         return value

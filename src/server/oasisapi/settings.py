@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.portfolios',
     'src.server.oasisapi.analyses',
     'src.server.oasisapi.analysis_models',
+    'src.server.oasisapi.complex_model_files',
     'src.server.oasisapi.healthcheck',
 ]
 

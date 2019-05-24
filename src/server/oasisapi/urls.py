@@ -10,6 +10,7 @@ from .analysis_models.viewsets import AnalysisModelViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .analyses.viewsets import AnalysisViewSet
 from .healthcheck.views import HealthcheckView
+from .complex_model_files.viewsets import ComplexModelDataFileViewset
 
 admin.autodiscover()
 
@@ -18,6 +19,7 @@ api_router.include_root_view = False
 api_router.register('portfolios', PortfolioViewSet, base_name='portfolio')
 api_router.register('analyses', AnalysisViewSet, base_name='analysis')
 api_router.register('models', AnalysisModelViewSet, base_name='analysis-model')
+api_router.register('complex_data_files', ComplexModelDataFileViewset, base_name='complex-model-data-file')
 # api_router.register('files', FilesViewSet, base_name='file')
 
 
@@ -38,7 +40,7 @@ The general workflow is as follows
    for the analysis.
 6. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
 7. Run the analysis (post to `/analyses/<pk>/run/`)
-8. Get the outputs (get `/analuses/<pk>/output_file/`)""",
+8. Get the outputs (get `/analyses/<pk>/output_file/`)""",
         default_version='v1',
     ),
     public=True,

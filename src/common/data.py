@@ -1,3 +1,7 @@
+STORED_FILENAME = "stored_filename"
+ORIGINAL_FILENAME = "original_filename"
+
+
 class ExposureSummary(dict):
     def __init__(self, location, size, created_date):
         super(ExposureSummary, self).__init__({

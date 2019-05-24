@@ -4,7 +4,7 @@ from backports.tempfile import TemporaryDirectory
 from celery import signature
 from django.test import override_settings
 from django_webtest import WebTestMixin
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, sampled_from
 from mock import patch, PropertyMock, Mock
@@ -17,6 +17,9 @@ from ..models import Analysis
 from ..tasks import run_analysis_success, generate_input_success
 from .fakes import fake_analysis, FakeAsyncResultFactory
 
+## Override default deadline for all tests to 8s
+settings.register_profile("ci", deadline=800.0)
+settings.load_profile("ci")
 
 class AnalysisCancel(WebTestMixin, TestCase):
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
@@ -111,7 +114,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 sig = analysis.run_analysis_signature
 
                 self.assertEqual(sig.task, 'run_analysis')
-                self.assertEqual(sig.args, (analysis.input_file.file.name, analysis.settings_file.file.name))
+                self.assertEqual(sig.args, (analysis.input_file.file.name, analysis.settings_file.file.name, []))
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)
 
 
@@ -223,5 +226,5 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig = analysis.generate_input_signature
 
                 self.assertEqual(sig.task, 'generate_input')
-                self.assertEqual(sig.args, (analysis.portfolio.location_file.file.name, None, None, None, None))
+                self.assertEqual(sig.args, (analysis.portfolio.location_file.file.name, None, None, None, None, []))
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)
