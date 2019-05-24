@@ -83,7 +83,7 @@ services:
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   server-db:
     restart: always
-    image: mysql
+    image: mysql:8.0
     command:
       - --default-authentication-plugin=mysql_native_password
     environment:
