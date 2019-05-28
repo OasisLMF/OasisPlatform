@@ -1,4 +1,5 @@
 <!--- AUTO_INSERT-RELEASE --->
+# 1.1.0 (28/05/2019)
 # 1.1.0-rc1 (24/05/2019)
 # 1.0.2 (05/04/2019)
  * Ktools [3.0.6](https://github.com/OasisLMF/ktools/tree/v3.0.6)
