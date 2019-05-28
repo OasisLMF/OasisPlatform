@@ -2,8 +2,7 @@ OasisPlatform Changelog
 ==================
 
 .. AUTO_INSERT-CHANGE_LIST
-`1.1.0-rc1`_ 
---------
+
 `1.0.2`_ 
 --------
 * Fix file large file upload error
@@ -84,7 +83,6 @@ OasisPlatform Changelog
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
 .. AUTO_INSERT-CHANGE_DIFF
-.. _`1.1.0-rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.0.2...1.1.0-rc1
 .. _`1.0.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.0.1...1.0.2
 .. _`1.0.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.0.0...1.0.1
 .. _`1.0.0`:  https://github.com/OasisLMF/OasisPlatform/compare/0.397.3...1.0.0
