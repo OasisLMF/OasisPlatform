@@ -69,16 +69,16 @@ def check_non_empty(result_path):
 # --- Test Paramatization --------------------------------------------------- #
 
 
+test_model = config.get('default', 'TEST_MODEL').lower()
 if cli_case_override:
     test_cases = cli_case_override
     print('Loading test cases from command line args:')
 else:
-    test_cases = config.get('piwind', 'RUN_TEST_CASES').split(' ')
+    test_cases = config.get(test_model, 'RUN_TEST_CASES').split(' ')
     print('Load default test cases from default conf.in:')
 
 base_dir = os.path.dirname(os.path.abspath(test_conf_ini))
 os.chdir(base_dir)
-test_model = config.get('default', 'TEST_MODEL').lower()
 
 
 # --- API connection Fixture ------------------------------------------------ #
@@ -128,12 +128,12 @@ def case_fixture(session_fixture):
         ids['model'] = r_model.json()[0]['id']
 
     # Create Portfolio
-    loc_fp = get_path('piwind.{}'.format(case), 'LOC_FILE')
+    loc_fp = get_path(f'{test_model}.{case}', 'LOC_FILE')
     print(loc_fp)
     assert os.path.isfile(loc_fp)
-    acc_fp = get_path('piwind.{}'.format(case), 'ACC_FILE')
-    inf_fp = get_path('piwind.{}'.format(case), 'INF_FILE')
-    scp_fp = get_path('piwind.{}'.format(case), 'SCP_FILE')
+    acc_fp = get_path(f'{test_model}.{case}', 'ACC_FILE')
+    inf_fp = get_path(f'{test_model}.{case}', 'INF_FILE')
+    scp_fp = get_path(f'{test_model}.{case}', 'SCP_FILE')
 
     r_portfolio = session.upload_inputs(
         portfolio_name='Integration_test_{}_{}'.format(test_model, case),
@@ -144,7 +144,7 @@ def case_fixture(session_fixture):
     ids['portfolio'] = r_portfolio['id']
 
     # Create analysis
-    settings_fp = get_path('piwind.{}'.format(case), 'SETTINGS_RUN')
+    settings_fp = get_path(f'{test_model}.{case}', 'SETTINGS_RUN')
     assert os.path.isfile(settings_fp)
     r_analysis = session.create_analysis(
         analysis_name='Integration_test_{}_{}'.format(test_model, case),
