@@ -179,14 +179,21 @@ def test_uploaded(case_fixture):
 def test_generate(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
-    if analysis.json()['status'] not in ['NEW']:
+    if analysis.json()['status'] not in ['NEW', 'INPUTS_GENERATION_ERROR']:
         pytest.skip('setup error in prevous step')
 
-    session.run_generate(ids['analysis'])
-    analysis = session.analyses.get(ids['analysis'])
+    for r in range(1,4):
+        print(f'Attempt: {r}')
+        session.run_generate(ids['analysis'])
+        analysis = session.analyses.get(ids['analysis'])
+        if analysis.json()['status'] == 'READY':
+            break
+        #else:    
+        #    error_trace = session.analyses.input_generation_traceback_file.get(ids['analysis'])
+        #    print(error_trace.text)
+
     assert analysis.ok
     assert analysis.json()['status'] == 'READY'
-    assert analysis.json()['input_generation_traceback_file'] is None
 
 
 def test_generated_files(case_fixture):
@@ -211,17 +218,22 @@ def test_generated_files(case_fixture):
     if os.path.isfile(download_to):
         os.remove(download_to)
 
+
 def test_analysis_run(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
-    if analysis.json()['status'] not in ['READY']:
+    if analysis.json()['status'] not in ['READY', 'RUN_ERROR']:
         pytest.skip('Error in file Generation step')
 
-    session.run_analysis(ids['analysis'])
-    analysis = session.analyses.get(ids['analysis'])
+    for r in range(1,4):
+        print(f'Attempt: {r}')
+        session.run_analysis(ids['analysis'])
+        analysis = session.analyses.get(ids['analysis'])
+        if analysis.json()['status'] == 'RUN_COMPLETED':
+            break
+
     assert analysis.ok
     assert analysis.json()['status'] == 'RUN_COMPLETED'
-    assert analysis.json()['run_traceback_file'] is None
 
 
 def test_analysis_output(case_fixture):
