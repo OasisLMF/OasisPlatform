@@ -2,6 +2,8 @@ OasisPlatform Changelog
 ==================
 
 .. AUTO_INSERT-CHANGE_LIST
+`1.1.2`_ 
+--------
 `1.1.1`_ 
 --------
  * Update Oasislmf to 1.3.9
@@ -93,6 +95,7 @@ OasisPlatform Changelog
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
 .. AUTO_INSERT-CHANGE_DIFF
+.. _`1.1.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.1.1...1.1.2
 .. _`1.1.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.1.0...1.1.1
 .. _`1.1.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.0.2...1.1.0
 .. _`1.0.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.0.1...1.0.2
