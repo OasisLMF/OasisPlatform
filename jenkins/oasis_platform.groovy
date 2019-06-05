@@ -58,15 +58,16 @@ node {
     env.PIPELINE_LOAD = script_dir + utils_sh
 
     env.OASIS_MODEL_DATA_DIR = "${env.WORKSPACE}/${model_workspace}"
-    env.TAG_BASE         = params.BASE_TAG     //Build TAG for base set of images
-    env.TAG_RELEASE      = params.RELEASE_TAG  //Build TAG for TARGET image
-    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
-    env.TAG_RUN_WORKER   = params.RELEASE_TAG
+    env.TAG_BASE             = params.BASE_TAG     //Build TAG for base set of images
+    env.TAG_RELEASE          = params.RELEASE_TAG  //Build TAG for TARGET image
+    env.TAG_RUN_PLATFORM     = params.RELEASE_TAG
+    env.TAG_RUN_WORKER       = params.RELEASE_TAG
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
 
     env.IMAGE_WORKER   = image_worker
     // Should read these values from test/conf.ini
     env.TEST_MAX_RUNTIME = '190'
+    env.TEST_DATA_DIR = "${env.WORKSPACE}/${model_workspace}/tests"
     env.MODEL_SUPPLIER = 'OasisLMF'
     env.MODEL_VARIENT  = 'PiWind'
     env.MODEL_ID       = '1'
