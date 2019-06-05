@@ -295,8 +295,9 @@ node {
 
         if(params.SLACK_MESSAGE && (params.PUBLISH || hasFailed)){
             def slackColor = hasFailed ? '#FF0000' : '#27AE60'
+            JOB = env.JOB_NAME.replaceAll('%2F','/')
             SLACK_GIT_URL = "https://github.com/OasisLMF/${oasis_name}/tree/${oasis_branch}"
-            SLACK_MSG = "*${env.JOB_NAME}* - (<${env.BUILD_URL}|${env.RELEASE_TAG}>): " + (hasFailed ? 'FAILED' : 'PASSED')
+            SLACK_MSG = "*${JOB}* - (<${env.BUILD_URL}|${env.RELEASE_TAG}>): " + (hasFailed ? 'FAILED' : 'PASSED')
             SLACK_MSG += "\nBranch: <${SLACK_GIT_URL}|${oasis_branch}>"
             SLACK_MSG += "\nMode: " + (params.PUBLISH ? 'Publish' : 'Build Test')
             SLACK_CHAN = (params.PUBLISH ? "#builds-release":"#builds-dev")
