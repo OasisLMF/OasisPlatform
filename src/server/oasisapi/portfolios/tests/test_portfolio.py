@@ -96,7 +96,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                 portfolio = Portfolio.objects.get(pk=response.json['id'])
                 portfolio.accounts_file = fake_related_file()
                 portfolio.location_file = fake_related_file()
-                portfolio.reinsurance_source_file = fake_related_file()
+                portfolio.reinsurance_scope_file = fake_related_file()
                 portfolio.reinsurance_info_file = fake_related_file()
                 portfolio.save()
 
@@ -128,10 +128,10 @@ class PortfolioApi(WebTestMixin, TestCase):
                         "name": portfolio.reinsurance_info_file.filename,
                         "stored": str(portfolio.reinsurance_info_file.file)
                     },
-                    'reinsurance_source_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_source_file_url(),
-                        "name": portfolio.reinsurance_source_file.filename,
-                        "stored": str(portfolio.reinsurance_source_file.file)
+                    'reinsurance_scope_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
+                        "name": portfolio.reinsurance_scope_file.filename,
+                        "stored": str(portfolio.reinsurance_scope_file.file)
                     },
                 }, response.json)
 
@@ -478,16 +478,16 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
         portfolio = fake_portfolio()
 
-        response = self.app.get(portfolio.get_absolute_reinsurance_source_file_url(), expect_errors=True)
+        response = self.app.get(portfolio.get_absolute_reinsurance_scope_file_url(), expect_errors=True)
 
         self.assertEqual(401, response.status_code)
 
-    def test_reinsurance_source_file_is_not_present___get_response_is_404(self):
+    def test_reinsurance_scope_file_is_not_present___get_response_is_404(self):
         user = fake_user()
         portfolio = fake_portfolio()
 
         response = self.app.get(
-            portfolio.get_absolute_reinsurance_source_file_url(),
+            portfolio.get_absolute_reinsurance_scope_file_url(),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -496,12 +496,12 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    def test_reinsurance_source_file_is_not_present___delete_response_is_404(self):
+    def test_reinsurance_scope_file_is_not_present___delete_response_is_404(self):
         user = fake_user()
         portfolio = fake_portfolio()
 
         response = self.app.delete(
-            portfolio.get_absolute_reinsurance_source_file_url(),
+            portfolio.get_absolute_reinsurance_scope_file_url(),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -510,14 +510,14 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    def test_reinsurance_source_file_is_not_a_valid_format___response_is_400(self):
+    def test_reinsurance_scope_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_reinsurance_source_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -530,14 +530,14 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
-    def test_reinsurance_source_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
+    def test_reinsurance_scope_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_source_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -547,7 +547,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    portfolio.get_absolute_reinsurance_source_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
