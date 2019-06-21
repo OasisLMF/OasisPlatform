@@ -74,14 +74,14 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
-        elif self.action in ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_source_file']:
+        elif self.action in ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']:
             return RelatedFileSerializer
         else:
             return super(PortfolioViewSet, self).get_serializer_class()
 
     @property
     def parser_classes(self):
-        if getattr(self, 'action', None) in ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_source_file']:
+        if getattr(self, 'action', None) in ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
@@ -145,15 +145,15 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, ['application/json', 'text/csv'])
 
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def reinsurance_source_file(self, request, pk=None, version=None):
+    def reinsurance_scope_file(self, request, pk=None, version=None):
         """
         get:
-        Gets the portfolios `reinsurance_source_file` contents
+        Gets the portfolios `reinsurance_scope_file` contents
 
         post:
-        Sets the portfolios `reinsurance_source_file` contents
+        Sets the portfolios `reinsurance_scope_file` contents
 
         delete:
-        Disassociates the portfolios `reinsurance_source_file` contents
+        Disassociates the portfolios `reinsurance_scope_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_source_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, ['application/json', 'text/csv'])

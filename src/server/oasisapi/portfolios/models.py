@@ -18,7 +18,7 @@ class Portfolio(TimeStampedModel):
     accounts_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='accounts_file_portfolios')
     location_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='location_file_portfolios')
     reinsurance_info_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='reinsurance_info_file_portfolios')
-    reinsurance_source_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='reinsurance_source_file_portfolios')
+    reinsurance_scope_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='reinsurance_scope_file_portfolios')
 
     def __str__(self):
         return self.name
@@ -38,8 +38,8 @@ class Portfolio(TimeStampedModel):
     def get_absolute_reinsurance_info_file_url(self, request=None):
         return reverse('portfolio-reinsurance-info-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-    def get_absolute_reinsurance_source_file_url(self, request=None):
-        return reverse('portfolio-reinsurance-source-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_reinsurance_scope_file_url(self, request=None):
+        return reverse('portfolio-reinsurance-scope-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
 @python_2_unicode_compatible

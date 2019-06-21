@@ -7,7 +7,7 @@ node {
       parameters([
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'master'],
+        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'develop'],
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: 'develop'],
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
@@ -53,6 +53,12 @@ node {
     String script_dir = env.WORKSPACE + "/${build_workspace}"
     String git_creds  = "1335b248-336a-47a9-b0f6-9f7314d6f1f4"
     String PIPELINE   = script_dir + "/buildscript/pipeline.sh"
+
+    // Update MDK branch based on model branch
+    if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
+        params.MDK_BRANCH='master'
+        params.MODEL_BRANCH='master'
+    } 
 
     // Set Global ENV
     env.PIPELINE_LOAD = script_dir + utils_sh

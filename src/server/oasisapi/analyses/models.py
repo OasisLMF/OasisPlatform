@@ -208,7 +208,7 @@ class Analysis(TimeStampedModel):
         loc_file = self.portfolio.location_file.file.name
         acc_file = self.portfolio.accounts_file.file.name if self.portfolio.accounts_file else None
         info_file = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
-        scope_file = self.portfolio.reinsurance_source_file.file.name if self.portfolio.reinsurance_source_file else None
+        scope_file = self.portfolio.reinsurance_scope_file.file.name if self.portfolio.reinsurance_scope_file else None
         settings_file = self.settings_file.file.name if self.settings_file else None
         complex_data_files = self.create_complex_model_data_file_dicts()
 

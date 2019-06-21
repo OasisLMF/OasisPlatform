@@ -29,7 +29,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         rep['accounts_file'] = None
         rep['location_file'] = None
         rep['reinsurance_info_file'] = None
-        rep['reinsurance_source_file'] = None
+        rep['reinsurance_scope_file'] = None
 
         if instance.accounts_file:
             rep['accounts_file'] = {
@@ -53,11 +53,11 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 "stored": str(instance.reinsurance_info_file.file)
             }
 
-        if instance.reinsurance_source_file:
-            rep['reinsurance_source_file'] = {
-                "uri": instance.get_absolute_reinsurance_source_file_url(request=request),
-                "name": instance.reinsurance_source_file.filename,
-                "stored": str(instance.reinsurance_source_file.file)
+        if instance.reinsurance_scope_file:
+            rep['reinsurance_scope_file'] = {
+                "uri": instance.get_absolute_reinsurance_scope_file_url(request=request),
+                "name": instance.reinsurance_scope_file.filename,
+                "stored": str(instance.reinsurance_scope_file.file)
             }
         return rep
 
