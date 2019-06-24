@@ -127,9 +127,15 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filter_class = AnalysisFilter
 
-    file_action_types = ['settings_file', 'input_file', 'input_errors_file',
-                         'input_generation_traceback_file', 'run_traceback_file',
-                         'output_file', 'run_traceback_file']
+    file_action_types = ['settings_file', 
+                         'input_file', 
+                         'lookup_errors_file',
+                         'lookup_success_file',
+                         'exposure_validation_file',
+                         'input_generation_traceback_file', 
+                         'run_traceback_file',
+                         'output_file', 
+                         'run_traceback_file']
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'create', 'list', 'options', 'update', 'partial_update']:
@@ -235,18 +241,46 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @action(methods=['get', 'delete'], detail=True)
-    def input_errors_file(self, request, pk=None, version=None):
+    def lookup_errors_file(self, request, pk=None, version=None):
         """
         get:
-        Gets the portfolios `input_errors_file` contents
+        Gets the portfolios `lookup_errors_file` contents
 
         post:
-        Sets the portfolios `input_errors_file` contents
+        Sets the portfolios `lookup_errors_file` contents
 
         delete:
-        Disassociates the portfolios `input_errors_file` contents
+        Disassociates the portfolios `lookup_errors_file` contents
         """
-        return handle_related_file(self.get_object(), 'input_errors_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv'])
+
+    @action(methods=['get', 'delete'], detail=True)
+    def lookup_success_file(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the portfolios `lookup_success_file` contents
+
+        post:
+        Sets the portfolios `lookup_success_file` contents
+
+        delete:
+        Disassociates the portfolios `lookup_success_file` contents
+        """
+        return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
+
+    @action(methods=['get', 'delete'], detail=True)
+    def exposure_validation_file(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the portfolios `exposure_validation_file` contents
+
+        post:
+        Sets the portfolios `exposure_validation_file` contents
+
+        delete:
+        Disassociates the portfolios `exposure_validation_file` contents
+        """
+        return handle_related_file(self.get_object(), 'exposure_validation_file', request, ['application/json'])
 
     @action(methods=['get', 'delete'], detail=True)
     def input_generation_traceback_file(self, request, pk=None, version=None):
