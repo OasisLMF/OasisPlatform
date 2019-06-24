@@ -105,7 +105,7 @@ def get_oasislmf_config_path(model_id):
     if conf_var:
         return conf_var
 
-    model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/model_data/')
+    model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/')
     model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
     if model_specific_conf.exists():
         return str(model_specific_conf)
