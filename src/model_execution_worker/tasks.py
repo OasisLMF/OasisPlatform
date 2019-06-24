@@ -41,7 +41,7 @@ logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DAT
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_ALLOC_RULE: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE')))
 logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
-logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE')))
+logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
@@ -201,10 +201,10 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE'))
+    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE', fallback=False))
 
     if complex_data_files:
-        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE'))
+        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE', fallback=False))
     else:
         tmp_input_dir = suppress()
 
@@ -285,9 +285,9 @@ def generate_input(loc_file,
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE'))
+    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE', fallback=False))
     if complex_data_files:
-        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE'))
+        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE', fallback=False))
     else:
         tmp_input_dir = suppress()
 
@@ -306,7 +306,7 @@ def generate_input(loc_file,
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
             run_args += ['--user-data-path', input_data_dir]
 
-        if settings.getboolean('worker', 'DEBUG_MODE'):
+        if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
             # Filter out any args with None as its value
             mdk_args = [x for t in list(zip(*[iter(run_args)]*2)) if None not in t for x in t]
             logging.info('run_directory: {}'.format(oasis_files_dir))
