@@ -131,7 +131,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
                          'input_file', 
                          'lookup_errors_file',
                          'lookup_success_file',
-                         'exposure_validation_file',
+                         'lookup_validation_file',
                          'input_generation_traceback_file', 
                          'run_traceback_file',
                          'output_file', 
@@ -269,18 +269,18 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
 
     @action(methods=['get', 'delete'], detail=True)
-    def exposure_validation_file(self, request, pk=None, version=None):
+    def lookup_validation_file(self, request, pk=None, version=None):
         """
         get:
-        Gets the portfolios `exposure_validation_file` contents
+        Gets the portfolios `lookup_validation_file` contents
 
         post:
-        Sets the portfolios `exposure_validation_file` contents
+        Sets the portfolios `lookup_validation_file` contents
 
         delete:
-        Disassociates the portfolios `exposure_validation_file` contents
+        Disassociates the portfolios `lookup_validation_file` contents
         """
-        return handle_related_file(self.get_object(), 'exposure_validation_file', request, ['application/json'])
+        return handle_related_file(self.get_object(), 'lookup_validation_file', request, ['application/json'])
 
     @action(methods=['get', 'delete'], detail=True)
     def input_generation_traceback_file(self, request, pk=None, version=None):

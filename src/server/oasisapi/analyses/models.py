@@ -52,7 +52,7 @@ class Analysis(TimeStampedModel):
 
     lookup_errors_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
     lookup_success_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
-    exposure_validation_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='exposure_validation_file_analyses')
+    lookup_validation_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -84,16 +84,14 @@ class Analysis(TimeStampedModel):
     def get_absolute_input_file_url(self, request=None):
         return reverse('analysis-input-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-    #def get_absolute_input_errors_file_url(self, request=None):
-    #    return reverse('analysis-input-errors-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
     def get_absolute_lookup_errors_file_url(self, request=None):
         return reverse('analysis-lookup-errors-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_lookup_success_file_url(self, request=None):
         return reverse('analysis-lookup-success-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-    def get_absolute_exposure_validation_file_url(self, request=None):
-        return reverse('analysis-exposure-validation-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_lookup_validation_file_url(self, request=None):
+        return reverse('analysis-lookup-validation-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
 
@@ -193,7 +191,7 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.INPUTS_GENERATION_STARTED
         self.lookup_errors_file = None
         self.lookup_success_file = None
-        self.exposure_validation_file = None
+        self.lookup_validation_file = None
         self.input_generation_traceback_file_id = None
 
         generate_input_signature = self.generate_input_signature
@@ -254,6 +252,6 @@ class Analysis(TimeStampedModel):
         new_instance.status = self.status_choices.NEW
         new_instance.lookup_errors_file = None
         new_instance.lookup_success_file = None
-        new_instance.exposure_validation_file = None
+        new_instance.lookup_validation_file = None
         new_instance.output_file = None
         return new_instance
