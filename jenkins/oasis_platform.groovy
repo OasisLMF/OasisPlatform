@@ -143,8 +143,8 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api_base} ${image_api_base} ${env.TAG_RELEASE} ${env.TAG_BASE}"
-                        sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE} ${env.TAG_BASE}"
+                        sh PIPELINE + " build_image ${docker_api_base} ${image_api_base} ${env.TAG_RELEASE}"
+                        sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE} ${env.TAG_RELEASE}"
 
                     }
                 }
