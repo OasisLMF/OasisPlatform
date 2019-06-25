@@ -56,27 +56,40 @@ class RunAnalysisFailure(TestCase):
 class GenerateInputsSuccess(TestCase):
     @given(
         input_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
-        input_error_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        lookup_error_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        lookup_success_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        lookup_validation_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
     )
-    def test_input_file_input_errors_file_and_status_are_updated(self, input_location, input_error_location):
+    def test_input_file_lookup_files_and_status_are_updated(self, input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 Path(d, input_location).touch()
-                Path(d, input_error_location).touch()
+                Path(d, lookup_error_fp).touch()
+                Path(d, lookup_success_fp).touch()
+                Path(d, lookup_validation_fp).touch()
 
                 initiator = fake_user()
                 analysis = fake_analysis()
 
-                generate_input_success((input_location, input_error_location), analysis.pk, initiator.pk)
-
+                generate_input_success((input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp), analysis.pk, initiator.pk)
                 analysis.refresh_from_db()
 
                 self.assertEqual(analysis.input_file.file.name, input_location)
                 self.assertEqual(analysis.input_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.input_file.creator, initiator)
-                self.assertEqual(analysis.input_errors_file.file.name, input_error_location)
-                self.assertEqual(analysis.input_errors_file.content_type, 'text/csv')
-                self.assertEqual(analysis.input_errors_file.creator, initiator)
+
+                self.assertEqual(analysis.lookup_errors_file.file.name, lookup_error_fp)
+                self.assertEqual(analysis.lookup_errors_file.content_type, 'text/csv')
+                self.assertEqual(analysis.lookup_errors_file.creator, initiator)
+
+                self.assertEqual(analysis.lookup_success_file.file.name, lookup_success_fp)
+                self.assertEqual(analysis.lookup_success_file.content_type, 'text/csv')
+                self.assertEqual(analysis.lookup_success_file.creator, initiator)
+
+                self.assertEqual(analysis.lookup_validation_file.file.name, lookup_validation_fp)
+                self.assertEqual(analysis.lookup_validation_file.content_type, 'application/json')
+                self.assertEqual(analysis.lookup_validation_file.creator, initiator)
+
                 self.assertEqual(analysis.status, analysis.status_choices.READY)
 
 

@@ -101,7 +101,9 @@ class AnalysisApi(WebTestMixin, TestCase):
                 analysis = Analysis.objects.get(pk=response.json['id'])
                 analysis.settings_file = fake_related_file()
                 analysis.input_file = fake_related_file()
-                analysis.input_errors_file = fake_related_file()
+                analysis.lookup_errors_file = fake_related_file()
+                analysis.lookup_success_file = fake_related_file()
+                analysis.lookup_validation_file = fake_related_file()
                 analysis.input_generation_traceback_file = fake_related_file()
                 analysis.output_file = fake_related_file()
                 analysis.run_traceback_file = fake_related_file()
@@ -125,7 +127,9 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'model': model.pk,
                     'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
                     'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
-                    'input_errors_file': response.request.application_url + analysis.get_absolute_input_errors_file_url(),
+                    'lookup_errors_file': response.request.application_url + analysis.get_absolute_lookup_errors_file_url(),
+                    'lookup_success_file': response.request.application_url + analysis.get_absolute_lookup_success_file_url(),
+                    'lookup_validation_file': response.request.application_url + analysis.get_absolute_lookup_validation_file_url(),
                     'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
                     'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
                     'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
@@ -175,7 +179,9 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'model': model.pk,
                     'settings_file': None,
                     'input_file': None,
-                    'input_errors_file': None,
+                    'lookup_errors_file': None,
+                    'lookup_success_file': None,
+                    'lookup_validation_file': None,
                     'input_generation_traceback_file': None,
                     'output_file': None,
                     'run_traceback_file': None,
@@ -612,11 +618,11 @@ class AnalysisCopy(WebTestMixin, TestCase):
 
                 self.assertEqual(Analysis.objects.get(pk=response.json['id']).input_file, analysis.input_file)
 
-    def test_input_errors_file_is_cleared(self):
+    def test_lookup_errors_file_is_cleared(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
-                analysis = fake_analysis(input_errors_file=fake_related_file())
+                analysis = fake_analysis(lookup_errors_file=fake_related_file())
 
                 response = self.app.post(
                     analysis.get_absolute_copy_url(),
@@ -625,7 +631,37 @@ class AnalysisCopy(WebTestMixin, TestCase):
                     },
                 )
 
-                self.assertIsNone(Analysis.objects.get(pk=response.json['id']).input_errors_file)
+                self.assertIsNone(Analysis.objects.get(pk=response.json['id']).lookup_errors_file)
+
+    def test_lookup_success_file_is_cleared(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis(lookup_success_file=fake_related_file())
+
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertIsNone(Analysis.objects.get(pk=response.json['id']).lookup_success_file)
+
+    def test_lookup_validation_file_is_cleared(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis(lookup_validation_file=fake_related_file())
+
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertIsNone(Analysis.objects.get(pk=response.json['id']).lookup_validation_file)
 
     def test_output_file_is_cleared(self):
         with TemporaryDirectory() as d:
@@ -766,20 +802,20 @@ class AnalysisInputFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, content_type)
 
 
-class AnalysisInputErrorsFile(WebTestMixin, TestCase):
+class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_input_errors_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_lookup_errors_file_url(), expect_errors=True)
 
         self.assertEqual(401, response.status_code)
 
-    def test_input_errors_file_is_not_present___get_response_is_404(self):
+    def test_lookup_errors_file_is_not_present___get_response_is_404(self):
         user = fake_user()
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_input_errors_file_url(),
+            analysis.get_absolute_lookup_errors_file_url(),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -788,12 +824,12 @@ class AnalysisInputErrorsFile(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    def test_input_errors_file_is_not_present___delete_response_is_404(self):
+    def test_lookup_errors_file_is_not_present___delete_response_is_404(self):
         user = fake_user()
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_input_errors_file_url(),
+            analysis.get_absolute_lookup_errors_file_url(),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -802,15 +838,123 @@ class AnalysisInputErrorsFile(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
-    def test_input_errors_file_is_present___file_can_be_retrieved(self, file_content, content_type):
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv']))
+    def test_lookup_errors_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
-                analysis = fake_analysis(input_errors_file=fake_related_file(file=file_content, content_type=content_type))
+                analysis = fake_analysis(lookup_errors_file=fake_related_file(file=file_content, content_type=content_type))
 
                 response = self.app.get(
-                    analysis.get_absolute_input_errors_file_url(),
+                    analysis.get_absolute_lookup_errors_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
+
+
+class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.get(analysis.get_absolute_lookup_success_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_lookup_success_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_lookup_success_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_lookup_success_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.delete(
+            analysis.get_absolute_lookup_success_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv']))
+    def test_lookup_success_file_is_present___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis(lookup_success_file=fake_related_file(file=file_content, content_type=content_type))
+
+                response = self.app.get(
+                    analysis.get_absolute_lookup_success_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
+
+
+class AnalysisLookupValidationFile(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_401(self):
+        analysis = fake_analysis()
+
+        response = self.app.get(analysis.get_absolute_lookup_validation_file_url(), expect_errors=True)
+
+        self.assertEqual(401, response.status_code)
+
+    def test_lookup_validation_file_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_lookup_validation_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_lookup_validation_file_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.delete(
+            analysis.get_absolute_lookup_validation_file_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['application/json']))
+    def test_lookup_validation_file_is_present___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis(lookup_validation_file=fake_related_file(file=file_content, content_type=content_type))
+
+                response = self.app.get(
+                    analysis.get_absolute_lookup_validation_file_url(),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },

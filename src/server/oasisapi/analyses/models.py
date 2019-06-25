@@ -46,10 +46,13 @@ class Analysis(TimeStampedModel):
 
     settings_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='settings_file_analyses')
     input_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_file_analyses')
-    input_errors_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_errors_file_analyses')
     input_generation_traceback_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
     output_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='output_file_analyses')
     run_traceback_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='run_traceback_file_analyses')
+
+    lookup_errors_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
+    lookup_success_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
+    lookup_validation_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -81,8 +84,16 @@ class Analysis(TimeStampedModel):
     def get_absolute_input_file_url(self, request=None):
         return reverse('analysis-input-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-    def get_absolute_input_errors_file_url(self, request=None):
-        return reverse('analysis-input-errors-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_lookup_errors_file_url(self, request=None):
+        return reverse('analysis-lookup-errors-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def get_absolute_lookup_success_file_url(self, request=None):
+        return reverse('analysis-lookup-success-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def get_absolute_lookup_validation_file_url(self, request=None):
+        return reverse('analysis-lookup-validation-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+
 
     def get_absolute_input_generation_traceback_file_url(self, request=None):
         return reverse('analysis-input-generation-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
@@ -178,7 +189,9 @@ class Analysis(TimeStampedModel):
             raise ValidationError(errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_STARTED
-        self.input_errors_file = None
+        self.lookup_errors_file = None
+        self.lookup_success_file = None
+        self.lookup_validation_file = None
         self.input_generation_traceback_file_id = None
 
         generate_input_signature = self.generate_input_signature
@@ -237,6 +250,8 @@ class Analysis(TimeStampedModel):
         new_instance.run_task_id = ''
         new_instance.generate_inputs_task_id = ''
         new_instance.status = self.status_choices.NEW
-        new_instance.input_errors_file = None
+        new_instance.lookup_errors_file = None
+        new_instance.lookup_success_file = None
+        new_instance.lookup_validation_file = None
         new_instance.output_file = None
         return new_instance

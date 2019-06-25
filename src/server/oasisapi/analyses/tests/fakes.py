@@ -39,8 +39,14 @@ def fake_analysis(**kwargs):
     if isinstance(kwargs.get('input_file'), (six.string_types, six.binary_type)):
         kwargs['input_file'] = fake_related_file(file=kwargs['input_file'])
 
-    if isinstance(kwargs.get('input_errors_file'), (six.string_types, six.binary_type)):
-        kwargs['input_errors_file'] = fake_related_file(file=kwargs['input_errors_file'])
+    if isinstance(kwargs.get('lookup_errors_file'), (six.string_types, six.binary_type)):
+        kwargs['lookup_errors_file'] = fake_related_file(file=kwargs['lookup_errors_file'])
+
+    if isinstance(kwargs.get('lookup_success_file'), (six.string_types, six.binary_type)):
+        kwargs['lookup_success_file'] = fake_related_file(file=kwargs['lookup_success_file'])
+
+    if isinstance(kwargs.get('lookup_validation_file'), (six.string_types, six.binary_type)):
+        kwargs['lookup_validation_file'] = fake_related_file(file=kwargs['lookup_validation_file'])
 
     if isinstance(kwargs.get('output_file'), (six.string_types, six.binary_type)):
         kwargs['output_file'] = fake_related_file(file=kwargs['output_file'])

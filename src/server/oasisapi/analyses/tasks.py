@@ -84,9 +84,13 @@ def generate_input_success(result, analysis_pk, initiator_pk):
     logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
         result, analysis_pk, initiator_pk))
     try:
-
         from .models import Analysis
-        input_location, errors_location = result
+        (
+            input_location, 
+            lookup_error_fp, 
+            lookup_success_fp, 
+            lookup_validation_fp 
+        ) = result
 
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.READY
@@ -98,10 +102,27 @@ def generate_input_success(result, analysis_pk, initiator_pk):
             creator=get_user_model().objects.get(pk=initiator_pk),
         )
 
-        analysis.input_errors_file = RelatedFile.objects.create(
-            file=str(errors_location),
-            filename=str(errors_location),
+        analysis.lookup_errors_file = RelatedFile.objects.create(
+            file=str(lookup_error_fp),
+            #filename=str('keys-errors.csv'),
+            filename=str(lookup_error_fp),
             content_type='text/csv',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+
+        analysis.lookup_success_file = RelatedFile.objects.create(
+            file=str(lookup_success_fp),
+            #filename=str('gul_summary_map.csv'),
+            filename=str(lookup_success_fp),
+            content_type='text/csv',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+
+        analysis.lookup_validation_file = RelatedFile.objects.create(
+            file=str(lookup_validation_fp),
+            #filename=str('exposure_summary_report.json'),
+            filename=str(lookup_validation_fp),
+            content_type='application/json',
             creator=get_user_model().objects.get(pk=initiator_pk),
         )
 
