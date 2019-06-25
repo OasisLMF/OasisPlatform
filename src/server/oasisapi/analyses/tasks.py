@@ -118,7 +118,7 @@ def generate_input_success(result, analysis_pk, initiator_pk):
             creator=get_user_model().objects.get(pk=initiator_pk),
         )
 
-        analysis.exposure_validation_file = RelatedFile.objects.create(
+        analysis.lookup_validation_file = RelatedFile.objects.create(
             file=str(lookup_validation_fp),
             #filename=str('exposure_summary_report.json'),
             filename=str(lookup_validation_fp),
