@@ -155,6 +155,7 @@ MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
 }
 
 REST_FRAMEWORK = {
