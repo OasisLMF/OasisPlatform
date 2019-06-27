@@ -316,7 +316,7 @@ def generate_input(loc_file,
             ))
         logging.info('WRITE_EXPOSURE_SUMMARY: {}'.format(settings.get('worker', 'WRITE_EXPOSURE_SUMMARY')))
         if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY'):
-            run_args.append('--exposure-summary-report')
+            run_args.append('--summarise_exposure')
 
         GenerateOasisFilesCmd(argv=run_args).run()
 
