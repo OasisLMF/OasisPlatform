@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from .models import ComplexModelDataFile
+from .models import DataFile
 
 
-class ComplexModelDataFileSerializer(serializers.ModelSerializer):
+class DataFileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ComplexModelDataFile
+        model = DataFile
         fields = (
             'id',
             'file_name',
@@ -18,10 +18,10 @@ class ComplexModelDataFileSerializer(serializers.ModelSerializer):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
             data['creator'] = self.context.get('request').user
-        return super(ComplexModelDataFileSerializer, self).create(data)
+        return super(DataFileSerializer, self).create(data)
 
     def to_representation(self, instance):
-        rep = super(ComplexModelDataFileSerializer, self).to_representation(instance)
+        rep = super(DataFileSerializer, self).to_representation(instance)
 
         request = self.context.get('request')
 

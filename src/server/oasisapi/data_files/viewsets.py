@@ -8,11 +8,11 @@ from rest_framework.settings import api_settings
 from ..files.serializers import RelatedFileSerializer
 from ..files.views import handle_related_file
 from ..filters import TimeStampedFilter
-from .models import ComplexModelDataFile
-from .serializers import ComplexModelDataFileSerializer
+from .models import DataFile
+from .serializers import DataFileSerializer
 
 
-class ComplexModelDataFileFilter(TimeStampedFilter):
+class DataFileFilter(TimeStampedFilter):
     file_name = filters.CharFilter(
         help_text=_('Filter results by case insensitive `file_name` equal to the given string'),
         lookup_expr='iexact',
@@ -40,7 +40,7 @@ class ComplexModelDataFileFilter(TimeStampedFilter):
     )
 
     class Meta:
-        model = ComplexModelDataFile
+        model = DataFile
         fields = [
             'file_name',
             'file_name__contains',
@@ -50,16 +50,16 @@ class ComplexModelDataFileFilter(TimeStampedFilter):
         ]
 
 
-class ComplexModelDataFileViewset(viewsets.ModelViewSet):
-    queryset = ComplexModelDataFile.objects.all()
-    serializer_class = ComplexModelDataFileSerializer
-    filter_class = ComplexModelDataFileFilter
+class DataFileViewset(viewsets.ModelViewSet):
+    queryset = DataFile.objects.all()
+    serializer_class = DataFileSerializer
+    filter_class = DataFileFilter
 
     def get_serializer_class(self):
         if self.action in ['data_file']:
             return RelatedFileSerializer
         else:
-            return super(ComplexModelDataFileViewset, self).get_serializer_class()
+            return super(DataFileViewset, self).get_serializer_class()
 
     @property
     def parser_classes(self):
@@ -72,12 +72,12 @@ class ComplexModelDataFileViewset(viewsets.ModelViewSet):
     def data_file(self, request, pk=None, version=None):
         """
         get:
-        Gets the complex model data file's `data_file` contents
+        Gets the data file's file contents
 
         post:
-        Sets the complex model data file's `data_file` contents
+        Sets the data file's `file` contents
 
         delete:
-        Deletes the complex model data file.
+        Deletes the data file.
         """
         return handle_related_file(self.get_object(), 'data_file', request, None)
