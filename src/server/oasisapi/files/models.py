@@ -16,9 +16,8 @@ class RelatedFile(TimeStampedModel):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
     file = models.FileField(help_text=_('The file to store'), upload_to=random_file_name)
     filename = models.CharField(max_length=255, editable=False, default="", blank=True)
-    filehash_md5 = models.CharField(max_length=255, editable=False, default="", blank=True)
+    #filehash_md5 = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
-    # instance.my_file.read(instance.my_file.DEFAULT_CHUNK_SIZE)
 
     def __str__(self):
         return 'File_{}'.format(self.file)
