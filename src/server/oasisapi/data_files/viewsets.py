@@ -13,15 +13,15 @@ from .serializers import DataFileSerializer
 
 
 class DataFileFilter(TimeStampedFilter):
-    file_name = filters.CharFilter(
-        help_text=_('Filter results by case insensitive `file_name` equal to the given string'),
+    filename = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `filename` equal to the given string'),
         lookup_expr='iexact',
-        field_name='file_name'
+        field_name='filename'
     )
-    file_name__contains = filters.CharFilter(
-        help_text=_('Filter results by case insensitive `file_name` containing the given string'),
+    filename__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `filename` containing the given string'),
         lookup_expr='icontains',
-        field_name='file_name'
+        field_name='filename'
     )
     file_description = filters.CharFilter(
         help_text=_('Filter results by case insensitive `file_description` equal to the given string'),
@@ -42,8 +42,8 @@ class DataFileFilter(TimeStampedFilter):
     class Meta:
         model = DataFile
         fields = [
-            'file_name',
-            'file_name__contains',
+            'filename',
+            'filename__contains',
             'file_description',
             'file_description__contains',
             'user',
@@ -56,20 +56,20 @@ class DataFileViewset(viewsets.ModelViewSet):
     filter_class = DataFileFilter
 
     def get_serializer_class(self):
-        if self.action in ['data_file']:
+        if self.action in ['content']:
             return RelatedFileSerializer
         else:
             return super(DataFileViewset, self).get_serializer_class()
 
     @property
     def parser_classes(self):
-        if getattr(self, 'action', None) in ['data_file']:
+        if getattr(self, 'action', None) in ['content']:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def data_file(self, request, pk=None, version=None):
+    def content(self, request, pk=None, version=None):
         """
         get:
         Gets the data file's file contents
@@ -80,4 +80,6 @@ class DataFileViewset(viewsets.ModelViewSet):
         delete:
         Deletes the data file.
         """
-        return handle_related_file(self.get_object(), 'data_file', request, None)
+
+        file_response = handle_related_file(self.get_object(), 'file', request, None)
+        return file_response

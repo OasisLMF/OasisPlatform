@@ -4,4 +4,4 @@ from .models import DataFile
 
 @admin.register(DataFile)
 class DataFileAdmin(admin.ModelAdmin):
-    list_display = ['file_name', 'file', 'file_description', 'creator']
+    list_display = ['filename', 'file_description', 'creator']

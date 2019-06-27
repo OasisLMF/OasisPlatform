@@ -17,7 +17,7 @@ from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
 from ...portfolios.tests.fakes import fake_portfolio
 from ...auth.tests.fakes import fake_user
-from ...complex_model_files.tests.fakes import fake_complex_model_file
+from ...data_files.tests.fakes import fake_data_file
 from ..models import Analysis
 from .fakes import fake_analysis
 
@@ -156,8 +156,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                 self.assertEqual(201, response.status_code)
 
                 analysis = Analysis.objects.get(pk=response.json['id'])
-                cmf_1 = fake_complex_model_file()
-                cmf_2 = fake_complex_model_file()
+                cmf_1 = fake_data_file()
+                cmf_2 = fake_data_file()
                 analysis.complex_model_data_files = [cmf_1, cmf_2]
                 analysis.save()
 
@@ -571,8 +571,8 @@ class AnalysisCopy(WebTestMixin, TestCase):
     def test_complex_model_file_is_supplied___model_is_replaced(self):
         user = fake_user()
         analysis = fake_analysis()
-        new_cmf_1 = fake_complex_model_file()
-        new_cmf_2 = fake_complex_model_file()
+        new_cmf_1 = fake_data_file()
+        new_cmf_2 = fake_data_file()
 
         response = self.app.post(
             analysis.get_absolute_copy_url(),

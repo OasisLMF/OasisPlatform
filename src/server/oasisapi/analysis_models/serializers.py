@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import AnalysisModel
-
+from ..data_files.serializers import DataFileSerializer
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
     class Meta:

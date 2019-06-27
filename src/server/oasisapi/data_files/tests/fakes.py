@@ -1,16 +1,16 @@
 from model_mommy import mommy
 
-from ..models import ComplexModelDataFile
+from ..models import DataFile
 
 
-def fake_complex_model_file(**kwargs):
-    """Create a fake ComplexModelDataFile for test purposes.
+def fake_data_file(**kwargs):
+    """Create a fake DataFile for test purposes.
 
     Args:
-        **kwargs: Keyword Arguments passed to ComplexModelDataFile
+        **kwargs: Keyword Arguments passed to DataFile
 
     Returns:
-        ComplexModelDataFile: A faked ComplexModelDataFile
+        ComplexModelDataFile: A faked DataFile
 
     """
-    return mommy.make(ComplexModelDataFile, **kwargs)
+    return mommy.make(DataFile, **kwargs)
