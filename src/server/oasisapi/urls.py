@@ -11,6 +11,7 @@ from .portfolios.viewsets import PortfolioViewSet
 from .analyses.viewsets import AnalysisViewSet
 from .healthcheck.views import HealthcheckView
 from .data_files.viewsets import DataFileViewset
+from .oed_info.views import PerilcodesView
 
 admin.autodiscover()
 
@@ -53,6 +54,7 @@ urlpatterns = [
     url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
     url(r'^', include('src.server.oasisapi.auth.urls', namespace='auth')),
     url(r'^healthcheck/$', HealthcheckView.as_view(), name='healthcheck'),
+    url(r'^oed_peril_codes/$', PerilcodesView.as_view(), name='perilcodes'),
     url(r'^auth/', include('rest_framework.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
