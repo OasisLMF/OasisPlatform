@@ -10,7 +10,9 @@ from ..analysis_models.models import  AnalysisModel
 
 class DataFile(TimeStampedModel):
     filename = models.CharField(max_length=255,
-                                 help_text=_('The name of the input file that will be used at runtime.'))
+                                 help_text=_('Uploaded filename.'))
+    content_type = models.CharField(max_length=255,
+                                 help_text=_('File mime type'), default='')
     file_description = models.CharField(max_length=255,
                                         help_text=_('Type of data contained within the file.'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -30,6 +32,14 @@ class DataFile(TimeStampedModel):
             self.filename = self.file.filename
             self.save()
             return self.filename
+        else:    
+            return None     
+
+    def update_content_type(self):
+        if self.file:
+            self.content_type = self.file.content_type
+            self.save()
+            return self.content_type
         else:    
             return None     
 

@@ -148,7 +148,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             return response
 
 
-    @detail_route(methods=['get'])
+    @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
         obj = self.get_object()
         df = DataFile.objects.filter(linked_models=obj.id)

@@ -39,4 +39,5 @@ class DataFileSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         rep['file'] = instance.get_absolute_data_file_url(request=request) if instance.file else None
         rep['filename'] = instance.update_filename()
+        rep['content_type'] = instance.update_content_type()
         return rep
