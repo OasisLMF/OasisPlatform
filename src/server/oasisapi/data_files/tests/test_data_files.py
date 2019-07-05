@@ -13,89 +13,41 @@ from hypothesis.strategies import text, binary, sampled_from
 from rest_framework_simplejwt.tokens import AccessToken
 
 from ...auth.tests.fakes import fake_user
-from ..models import ComplexModelDataFile
-from .fakes import fake_complex_model_file
+from ..models import DataFile
+from .fakes import fake_data_file
 
 ## Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
 
 class ComplexModelFilesApi(WebTestMixin, TestCase):
-    @given(
-        file_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
-        file_description=text(alphabet=string.whitespace, min_size=0, max_size=10),
-    )
-    def test_file_type_is_missing___response_is_400(self, file_name, file_description):
-        user = fake_user()
-
-        response = self.app.post(
-            reverse('complex-model-data-file-list', kwargs={'version': 'v1'}),
-            expect_errors=True,
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-            params=json.dumps({
-                'file_name': file_name,
-                'file_description': file_description,
-            }),
-            content_type='application/json',
-        )
-
-        self.assertEqual(400, response.status_code)
-        self.assertFalse(ComplexModelDataFile.objects.exists())
 
     @given(
-        file_name=text(alphabet=string.whitespace, min_size=0, max_size=10),
         file_description=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
-    def test_file_name_is_missing___response_is_400(self, file_name, file_description):
+    def test_data_is_valid___object_is_created(self, file_description):
         user = fake_user()
 
         response = self.app.post(
-            reverse('complex-model-data-file-list', kwargs={'version': 'v1'}),
-            expect_errors=True,
+            reverse('data-file-list', kwargs={'version': 'v1'}),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
             params=json.dumps({
-                'file_name': file_name,
                 'file_description': file_description,
             }),
             content_type='application/json',
         )
 
-        self.assertEqual(400, response.status_code)
-        self.assertFalse(ComplexModelDataFile.objects.exists())
-
-    @given(
-        file_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
-        file_description=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
-    )
-    def test_data_is_valid___object_is_created(self, file_name, file_description):
-        user = fake_user()
-
-        response = self.app.post(
-            reverse('complex-model-data-file-list', kwargs={'version': 'v1'}),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-            params=json.dumps({
-                'file_name': file_name,
-                'file_description': file_description,
-            }),
-            content_type='application/json',
-        )
-
-        model = ComplexModelDataFile.objects.first()
-
+        model = DataFile.objects.first()
+    
         self.assertEqual(201, response.status_code)
-        self.assertEqual(model.file_name, file_name)
         self.assertEqual(model.file_description, file_description)
 
 
 class ComplexModelFileDataFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):
-        cmf = fake_complex_model_file()
+        cmf = fake_data_file()
 
         response = self.app.get(cmf.get_absolute_data_file_url(), expect_errors=True)
 
@@ -103,7 +55,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
 
     def test_data_file_is_not_present___get_response_is_404(self):
         user = fake_user()
-        cmf = fake_complex_model_file()
+        cmf = fake_data_file()
 
         response = self.app.get(
             cmf.get_absolute_data_file_url(),
@@ -117,7 +69,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
 
     def test_data_file_is_not_present___delete_response_is_404(self):
         user = fake_user()
-        cmf = fake_complex_model_file()
+        cmf = fake_data_file()
 
         response = self.app.delete(
             cmf.get_absolute_data_file_url(),
@@ -133,7 +85,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
-                cmf = fake_complex_model_file()
+                cmf = fake_data_file()
 
                 response = self.app.post(
                     cmf.get_absolute_data_file_url(),
@@ -152,7 +104,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
-                cmf = fake_complex_model_file()
+                cmf = fake_data_file()
 
                 self.app.post(
                     cmf.get_absolute_data_file_url(),

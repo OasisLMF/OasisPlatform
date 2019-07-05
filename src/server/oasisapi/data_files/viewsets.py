@@ -8,20 +8,30 @@ from rest_framework.settings import api_settings
 from ..files.serializers import RelatedFileSerializer
 from ..files.views import handle_related_file
 from ..filters import TimeStampedFilter
-from .models import ComplexModelDataFile
-from .serializers import ComplexModelDataFileSerializer
+from .models import DataFile
+from .serializers import DataFileSerializer
 
 
-class ComplexModelDataFileFilter(TimeStampedFilter):
-    file_name = filters.CharFilter(
-        help_text=_('Filter results by case insensitive `file_name` equal to the given string'),
+class DataFileFilter(TimeStampedFilter):
+    filename = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `filename` equal to the given string'),
         lookup_expr='iexact',
-        field_name='file_name'
+        field_name='filename'
     )
-    file_name__contains = filters.CharFilter(
-        help_text=_('Filter results by case insensitive `file_name` containing the given string'),
+    filename__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `filename` containing the given string'),
         lookup_expr='icontains',
-        field_name='file_name'
+        field_name='filename'
+    )
+    content_type =  filters.CharFilter(
+        help_text=_('Filter results by case insensitive `content_type` equal to the given string'),
+        lookup_expr='iexact',
+        field_name='content_type'
+    )
+    content_type__contains =  filters.CharFilter(
+        help_text=_('Filter results by case insensitive `content_type` containing the given string'),
+        lookup_expr='icontains',
+        field_name='content_type'
     )
     file_description = filters.CharFilter(
         help_text=_('Filter results by case insensitive `file_description` equal to the given string'),
@@ -40,44 +50,46 @@ class ComplexModelDataFileFilter(TimeStampedFilter):
     )
 
     class Meta:
-        model = ComplexModelDataFile
+        model = DataFile
         fields = [
-            'file_name',
-            'file_name__contains',
+            'filename',
+            'filename__contains',
             'file_description',
             'file_description__contains',
             'user',
         ]
 
 
-class ComplexModelDataFileViewset(viewsets.ModelViewSet):
-    queryset = ComplexModelDataFile.objects.all()
-    serializer_class = ComplexModelDataFileSerializer
-    filter_class = ComplexModelDataFileFilter
+class DataFileViewset(viewsets.ModelViewSet):
+    queryset = DataFile.objects.all()
+    serializer_class = DataFileSerializer
+    filter_class = DataFileFilter
 
     def get_serializer_class(self):
-        if self.action in ['data_file']:
+        if self.action in ['content']:
             return RelatedFileSerializer
         else:
-            return super(ComplexModelDataFileViewset, self).get_serializer_class()
+            return super(DataFileViewset, self).get_serializer_class()
 
     @property
     def parser_classes(self):
-        if getattr(self, 'action', None) in ['data_file']:
+        if getattr(self, 'action', None) in ['content']:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def data_file(self, request, pk=None, version=None):
+    def content(self, request, pk=None, version=None):
         """
         get:
-        Gets the complex model data file's `data_file` contents
+        Gets the data file's file contents
 
         post:
-        Sets the complex model data file's `data_file` contents
+        Sets the data file's `file` contents
 
         delete:
-        Deletes the complex model data file.
+        Deletes the data file.
         """
-        return handle_related_file(self.get_object(), 'data_file', request, None)
+
+        file_response = handle_related_file(self.get_object(), 'file', request, None)
+        return file_response

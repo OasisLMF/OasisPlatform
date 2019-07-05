@@ -9,8 +9,9 @@ from django.utils.translation import ugettext_lazy as _
 from django_filters import rest_framework as filters
 from django.http import JsonResponse, Http404
 from rest_framework import viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, detail_route
 from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
 from ..filters import TimeStampedFilter
@@ -19,6 +20,8 @@ from ..files.serializers import RelatedFileSerializer
 from .models import AnalysisModel
 from .serializers import AnalysisModelSerializer
 
+from ..data_files.serializers import DataFileSerializer
+from ..data_files.models import DataFile
 
 class AnalysisModelFilter(TimeStampedFilter):
     supplier_id = filters.CharFilter(
@@ -110,6 +113,8 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ['resource_file']:
             return RelatedFileSerializer
+        elif self.action in ['data_files']:
+            return DataFileSerializer
         else:
             return super(AnalysisModelViewSet, self).get_serializer_class()
 
@@ -141,3 +146,16 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             response = JsonResponse(data)
             response['Content-Disposition'] = 'attachment; filename="{}"'.format('default_resource_file.json')
             return response
+
+
+    @action(methods=['get'], detail=True)
+    def data_files(self, request, pk=None, version=None):
+        obj = self.get_object()
+        df = DataFile.objects.filter(linked_models=obj.id)
+
+        context = {
+            'request': request
+        }
+
+        df_serializer = DataFileSerializer(df, many=True, context=context)
+        return Response(df_serializer.data)

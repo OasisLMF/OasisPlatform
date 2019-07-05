@@ -10,7 +10,7 @@ from .analysis_models.viewsets import AnalysisModelViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .analyses.viewsets import AnalysisViewSet
 from .healthcheck.views import HealthcheckView
-from .complex_model_files.viewsets import ComplexModelDataFileViewset
+from .data_files.viewsets import DataFileViewset
 
 admin.autodiscover()
 
@@ -19,7 +19,7 @@ api_router.include_root_view = False
 api_router.register('portfolios', PortfolioViewSet, base_name='portfolio')
 api_router.register('analyses', AnalysisViewSet, base_name='analysis')
 api_router.register('models', AnalysisModelViewSet, base_name='analysis-model')
-api_router.register('complex_data_files', ComplexModelDataFileViewset, base_name='complex-model-data-file')
+api_router.register('data_files', DataFileViewset, base_name='data-file')
 # api_router.register('files', FilesViewSet, base_name='file')
 
 

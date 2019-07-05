@@ -13,7 +13,7 @@ from rest_framework.reverse import reverse
 
 from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
-from ..complex_model_files.models import ComplexModelDataFile
+from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
 from .tasks import generate_input_success, run_analysis_success
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
@@ -42,7 +42,7 @@ class Analysis(TimeStampedModel):
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NEW, editable=False)
     run_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
-    complex_model_data_files = models.ManyToManyField(ComplexModelDataFile, blank=True, related_name='complex_model_files_analyses')
+    complex_model_data_files = models.ManyToManyField(DataFile, blank=True, related_name='complex_model_files_analyses')
 
     settings_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='settings_file_analyses')
     input_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_file_analyses')
