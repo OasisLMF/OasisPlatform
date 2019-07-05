@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.analysis_models',
     'src.server.oasisapi.data_files',
     'src.server.oasisapi.healthcheck',
+    'src.server.oasisapi.oed_info',
 ]
 
 MIDDLEWARE = [
