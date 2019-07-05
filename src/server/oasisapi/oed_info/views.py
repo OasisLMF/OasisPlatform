@@ -13,9 +13,8 @@ class PerilcodesView(views.APIView):
     permission_classes = []
 
     def get(self, request):
-        peril_codes = {PERILS[p]['id']: {'name': p, 'desc': PERILS[p]['desc']} for p in PERILS.keys()}
+        peril_codes = {PERILS[p]['id']: {'desc': PERILS[p]['desc']} for p in PERILS.keys()}
         peril_groups = {PERIL_GROUPS[g]['id']: {
-                                                'name': g, 
                                                 'desc': PERIL_GROUPS[g]['desc'], 
                                                 'peril_ids': PERIL_GROUPS[g]['peril_ids']
                                                 }  for g in PERIL_GROUPS.keys()}
