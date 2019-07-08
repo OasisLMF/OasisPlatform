@@ -28,9 +28,7 @@ node {
     String build_workspace = 'oasis_build'
 
     // docker vars
-    String docker_api_base = "Dockerfile.api_server.base"
-    String image_api_base  = "coreoasis/api_base"
-    String docker_api_sql  = "Dockerfile.api_server.mysql"
+    String docker_api_sql  = "Dockerfile.api_server"
     String image_api_sql   = "coreoasis/api_server"
     String docker_worker   = "Dockerfile.model_worker"
     String image_worker    = "coreoasis/model_worker"
@@ -143,7 +141,6 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api_base} ${image_api_base} ${env.TAG_RELEASE}"
                         sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE} ${env.TAG_RELEASE}"
 
                     }
@@ -181,13 +178,6 @@ node {
         
         if (params.PUBLISH){
             parallel(
-                publish_api_base: {
-                    stage ('Publish: api_base') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api_base} ${env.TAG_RELEASE}"
-                        }
-                    }
-                },
                 publish_api_server: {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
@@ -293,7 +283,6 @@ node {
             sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor > ./stage/log/worker-monitor.log '
             sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
             if(params.PURGE){
-                sh PIPELINE + " purge_image ${image_api_base} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_api_sql} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
             }

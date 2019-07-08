@@ -7,9 +7,10 @@ ENV OASIS_DEBUG=false
 
 RUN mkdir -p /var/log/oasis
 
-RUN apt-get update && apt-get install -y --no-install-recommends vim libspatialindex-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends vim libmariadbclient-dev-compat libspatialindex-dev && rm -rf /var/lib/apt/lists/*
 COPY ./requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
+RUN pip install mysqlclient
 
 # Copy startup script + server config
 COPY ./src/startup_server.sh /usr/local/bin/startup
@@ -31,6 +32,7 @@ COPY ./src/conf /var/www/oasis/src/conf
 
 COPY ./model_resource.json /var/www/oasis/src/server/static/model_resource.json
 RUN OASIS_API_SECRET_KEY=supersecret python manage.py collectstatic --noinput
+ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
 
 EXPOSE 8000
 
