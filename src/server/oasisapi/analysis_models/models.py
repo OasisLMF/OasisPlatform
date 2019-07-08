@@ -6,6 +6,7 @@ from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
 
 from ..files.models import RelatedFile
+from ..data_files.models import DataFile
 
 
 @python_2_unicode_compatible
@@ -15,6 +16,7 @@ class AnalysisModel(TimeStampedModel):
     version_id = models.CharField(max_length=255, help_text=_('The version ID for the model.'))
     resource_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='analysis_model_resource_file')
     creator = models.ForeignKey(settings.AUTH_USER_MODEL)
+    data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')

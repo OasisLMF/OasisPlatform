@@ -1,27 +1,15 @@
 from rest_framework import serializers
 
 from .models import DataFile
-from ..analysis_models.models import  AnalysisModel
-
-class ModelsSerializer(serializers.ModelSerializer):
-    data_files = serializers.PrimaryKeyRelatedField(queryset=DataFile.objects.all(), many=True)
-
-    class Meta:
-        model = AnalysisModel
-        fields = ('id')
-
 
 class DataFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataFile
-        linked_models = ModelsSerializer(many=True, read_only=False)
         fields = (
             'id',
-            #'filename',
             'file_description',
             'created',
             'modified',
-            'linked_models',
         )
 
     def create(self, validated_data):
