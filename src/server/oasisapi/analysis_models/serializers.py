@@ -13,6 +13,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'version_id',
             'created',
             'modified',
+            'data_files',
         )
 
     def create(self, validated_data):

@@ -16,6 +16,9 @@ from ..files.serializers import RelatedFileSerializer
 from .models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer
 
+from ..data_files.serializers import DataFileSerializer
+from ..data_files.models import DataFile
+
 
 class AnalysisFilter(TimeStampedFilter):
     name = filters.CharFilter(
@@ -142,6 +145,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             return super(AnalysisViewSet, self).get_serializer_class()
         elif self.action == 'copy':
             return AnalysisCopySerializer
+        elif self.action == 'data_files':
+            return DataFileSerializer
         elif self.action in self.file_action_types:
             return RelatedFileSerializer
         else:
@@ -314,3 +319,11 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         Disassociates the portfolios `run_traceback_file` contents
         """
         return handle_related_file(self.get_object(), 'run_traceback_file', request, ['text/plain'])
+
+    @action(methods=['get'], detail=True)
+    def data_files(self, request, pk=None, version=None):
+        df = self.get_object().complex_model_data_files.all()
+        context = {'request': request}
+
+        df_serializer = DataFileSerializer(df, many=True, context=context)
+        return Response(df_serializer.data)

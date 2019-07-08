@@ -147,15 +147,10 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = 'attachment; filename="{}"'.format('default_resource_file.json')
             return response
 
-
     @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
-        obj = self.get_object()
-        df = DataFile.objects.filter(linked_models=obj.id)
-
-        context = {
-            'request': request
-        }
+        df = self.get_object().data_files.all()
+        context = {'request': request}
 
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)

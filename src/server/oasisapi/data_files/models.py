@@ -5,7 +5,6 @@ from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
 
 from ..files.models import RelatedFile
-from ..analysis_models.models import  AnalysisModel
 
 
 class DataFile(TimeStampedModel):
@@ -20,9 +19,6 @@ class DataFile(TimeStampedModel):
                                 related_name='data_file')
     file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None,
                                   related_name="content_data_file")
-
-    #linked_models = models.ForeignKey(AnalysisModel, blank=True, null=True, default=None, related_name="models_data_file")
-    linked_models = models.ManyToManyField(AnalysisModel, related_name="model_list", blank=True)
 
     def __str__(self):
         return 'DataFile_{}'.format(self.file)
