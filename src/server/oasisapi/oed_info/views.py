@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from oasislmf import __version__ as oasislmf_package_ver
 from oasislmf.utils.peril import PERIL_GROUPS, PERILS
 from oasislmf.utils.summary_levels import (
-    'SUMMARY_LEVEL_LOC',
-    'SUMMARY_LEVEL_ACC',
-    'OED_LOCATION_COLS',
-    'OED_ACCOUNT_COLS',
-    'OED_REINSINFO_COLS',
-    'OED_REINSSCOPE_COLS',
+    SUMMARY_LEVEL_LOC,
+    SUMMARY_LEVEL_ACC,
+    OED_LOCATION_COLS,
+    OED_ACCOUNT_COLS,
+    OED_REINSINFO_COLS,
+    OED_REINSSCOPE_COLS,
 )
 
 class PerilcodesView(views.APIView):
@@ -46,7 +46,7 @@ class SummaryLevelsView(views.APIView):
             'accounts_file': acc_summary_lvl,
         })
 
-class OedColsView(views.APIView):
+class OedAllColsView(views.APIView):
     """
     Return a list of all OED columns 
     """

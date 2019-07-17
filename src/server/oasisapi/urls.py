@@ -11,7 +11,7 @@ from .portfolios.viewsets import PortfolioViewSet
 from .analyses.viewsets import AnalysisViewSet
 from .healthcheck.views import HealthcheckView
 from .data_files.viewsets import DataFileViewset
-from .oed_info.views import PerilcodesView, SummaryLevelsView
+from .oed_info.views import PerilcodesView, SummaryLevelsView, OedAllColsView
 
 admin.autodiscover()
 
@@ -56,7 +56,7 @@ urlpatterns = [
     url(r'^healthcheck/$', HealthcheckView.as_view(), name='healthcheck'),
     url(r'^oed_peril_codes/$', PerilcodesView.as_view(), name='perilcodes'),
     url(r'^oed_summary_levels/$', SummaryLevelsView.as_view(), name='summarycols'),
-    url(r'^oed_columns_list/$', OedColsView.as_view(), name='allcols'),
+    url(r'^oed_columns_list/$', OedAllColsView.as_view(), name='allcols'),
     url(r'^auth/', include('rest_framework.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
