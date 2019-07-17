@@ -15,10 +15,17 @@ class PerilcodesView(views.APIView):
     def get(self, request):
         peril_codes = {PERILS[p]['id']: {'desc': PERILS[p]['desc']} for p in PERILS.keys()}
         peril_groups = {PERIL_GROUPS[g]['id']: {
-                                                'desc': PERIL_GROUPS[g]['desc'], 
+                                                'desc': PERIL_GROUPS[g]['desc'],
                                                 'peril_ids': PERIL_GROUPS[g]['peril_ids']
                                                 }  for g in PERIL_GROUPS.keys()}
 
         return Response({'oasislmf_version': oasislmf_package_ver,
                         'peril_codes': peril_codes,
                         'peril_groups': peril_groups})
+
+class SummaryLevelsView(views.APIView)
+    """
+    Return a list of all support OED columns for summary_level selection
+    """
+    def get(self, request):
+        return Response({})
