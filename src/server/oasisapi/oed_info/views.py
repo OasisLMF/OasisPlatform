@@ -38,13 +38,16 @@ class SummaryLevelsView(views.APIView):
     Return a list of recommended OED columns for summary_level selection
     """
     def get(self, request):
-        loc_summary_lvl = {k: v for k, v in OED_LOCATION_COLS.items() if k.lower() in SUMMARY_LEVEL_LOC}
-        acc_summary_lvl = {k: v for k, v in OED_ACCOUNT_COLS.items() if k.lower() in SUMMARY_LEVEL_ACC}
+        GUL = SUMMARY_LEVEL_LOC
+        GUL.sort()
+        IL = list(set(SUMMARY_LEVEL_LOC) | set(SUMMARY_LEVEL_ACC))
+        IL.sort()
         return Response({
             'oasislmf_version': oasislmf_package_ver,
-            'location_file': loc_summary_lvl,
-            'accounts_file': acc_summary_lvl,
+            'GUL_perspective': GUL,
+            'IL_perspective': IL,
         })
+
 
 class OedAllColsView(views.APIView):
     """
