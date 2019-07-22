@@ -135,6 +135,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
                          'lookup_errors_file',
                          'lookup_success_file',
                          'lookup_validation_file',
+                         'summary_levels_file',
                          'input_generation_traceback_file', 
                          'run_traceback_file',
                          'output_file', 
@@ -245,7 +246,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @action(methods=['get', 'delete'], detail=True)
+    @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
         get:
@@ -259,7 +260,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv'])
 
-    @action(methods=['get', 'delete'], detail=True)
+    @action(methods=['get'], detail=True)
     def lookup_success_file(self, request, pk=None, version=None):
         """
         get:
@@ -273,7 +274,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
 
-    @action(methods=['get', 'delete'], detail=True)
+    @action(methods=['get'], detail=True)
     def lookup_validation_file(self, request, pk=None, version=None):
         """
         get:
@@ -286,6 +287,20 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         Disassociates the portfolios `lookup_validation_file` contents
         """
         return handle_related_file(self.get_object(), 'lookup_validation_file', request, ['application/json'])
+
+    @action(methods=['get'], detail=True)
+    def summary_levels_file(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the portfolios `summary_levels_file` contents
+
+        post:
+        Sets the portfolios `summary_levels_file` contents
+
+        delete:
+        Disassociates the portfolios `summary_levels_file` contents
+        """
+        return handle_related_file(self.get_object(), 'summary_levels_file', request, ['application/json'])
 
     @action(methods=['get', 'delete'], detail=True)
     def input_generation_traceback_file(self, request, pk=None, version=None):
