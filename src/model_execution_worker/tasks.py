@@ -314,8 +314,8 @@ def generate_input(loc_file,
             logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
                 " ".join([str(arg) for arg in mdk_args])
             ))
-        logging.info('WRITE_EXPOSURE_SUMMARY: {}'.format(settings.get('worker', 'WRITE_EXPOSURE_SUMMARY')))
-        if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY'):
+        logging.info('WRITE_EXPOSURE_SUMMARY: {}'.format(settings.get('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True)))
+        if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
             run_args.append('--summarise-exposure')
 
         GenerateOasisFilesCmd(argv=run_args).run()
