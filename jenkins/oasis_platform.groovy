@@ -141,7 +141,7 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE} ${env.TAG_RELEASE}"
+                        sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE}"
 
                     }
                 }
@@ -149,7 +149,7 @@ node {
             build_model_execution_worker: {
                 stage('Build: model exec worker') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE} ${env.TAG_BASE}"
+                        sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
                     }
                 }
             }

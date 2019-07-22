@@ -89,7 +89,8 @@ def generate_input_success(result, analysis_pk, initiator_pk):
             input_location, 
             lookup_error_fp, 
             lookup_success_fp, 
-            lookup_validation_fp 
+            lookup_validation_fp,
+            summary_levels_fp,
         ) = result
 
         analysis = Analysis.objects.get(pk=analysis_pk)
@@ -101,27 +102,32 @@ def generate_input_success(result, analysis_pk, initiator_pk):
             content_type='application/gzip',
             creator=get_user_model().objects.get(pk=initiator_pk),
         )
-
         analysis.lookup_errors_file = RelatedFile.objects.create(
             file=str(lookup_error_fp),
-            #filename=str('keys-errors.csv'),
-            filename=str(lookup_error_fp),
+            filename=str('keys-errors.csv'),
+            #filename=str(lookup_error_fp),
             content_type='text/csv',
             creator=get_user_model().objects.get(pk=initiator_pk),
         )
-
         analysis.lookup_success_file = RelatedFile.objects.create(
             file=str(lookup_success_fp),
-            #filename=str('gul_summary_map.csv'),
-            filename=str(lookup_success_fp),
+            filename=str('gul_summary_map.csv'),
+            #filename=str(lookup_success_fp),
             content_type='text/csv',
             creator=get_user_model().objects.get(pk=initiator_pk),
         )
-
         analysis.lookup_validation_file = RelatedFile.objects.create(
             file=str(lookup_validation_fp),
-            #filename=str('exposure_summary_report.json'),
-            filename=str(lookup_validation_fp),
+            filename=str('exposure_summary_report.json'),
+            #filename=str(lookup_validation_fp),
+            content_type='application/json',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+
+        analysis.summary_levels_file = RelatedFile.objects.create(
+            file=str(summary_levels_fp),
+            filename=str('exposure_summary_levels.json'),
+            #filename=str(summary_levels_fp),
             content_type='application/json',
             creator=get_user_model().objects.get(pk=initiator_pk),
         )

@@ -314,8 +314,8 @@ def generate_input(loc_file,
             logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
                 " ".join([str(arg) for arg in mdk_args])
             ))
-        logging.info('WRITE_EXPOSURE_SUMMARY: {}'.format(settings.get('worker', 'WRITE_EXPOSURE_SUMMARY')))
-        if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY'):
+        logging.info('WRITE_EXPOSURE_SUMMARY: {}'.format(settings.get('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True)))
+        if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
             run_args.append('--summarise-exposure')
 
         GenerateOasisFilesCmd(argv=run_args).run()
@@ -324,6 +324,7 @@ def generate_input(loc_file,
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
         lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
+        summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
         if lookup_error_fp:
             hashed_filename = os.path.join(media_root,'{}.csv'.format(uuid.uuid4().hex))
@@ -340,6 +341,11 @@ def generate_input(loc_file,
             shutil.copy(lookup_validation_fp, hashed_filename)
             lookup_validation_fp = str(Path(hashed_filename).relative_to(media_root))
 
+        if summary_levels_fp:
+            hashed_filename = os.path.join(media_root,'{}.json'.format(uuid.uuid4().hex))
+            shutil.copy(summary_levels_fp, hashed_filename)
+            summary_levels_fp = str(Path(hashed_filename).relative_to(media_root))
+
         output_tar_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
         output_tar_path = str(Path(output_tar_name).relative_to(media_root))
 
@@ -347,11 +353,12 @@ def generate_input(loc_file,
         logging.info("lookup_error_fp: {}".format(lookup_error_fp))
         logging.info("lookup_success_fp: {}".format(lookup_success_fp))
         logging.info("lookup_validation_fp: {}".format(lookup_validation_fp))
+        logging.info("summary_levels_fp: {}".format(summary_levels_fp))
 
         with tarfile.open(output_tar_name, 'w:gz') as tar:
             tar.add(oasis_files_dir, arcname='/')
 
-        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp
+        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp
 
 
 @task(name='on_error')

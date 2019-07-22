@@ -59,19 +59,21 @@ class GenerateInputsSuccess(TestCase):
         lookup_error_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         lookup_success_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         lookup_validation_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        summary_levels_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
     )
-    def test_input_file_lookup_files_and_status_are_updated(self, input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp):
+    def test_input_file_lookup_files_and_status_are_updated(self, input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 Path(d, input_location).touch()
                 Path(d, lookup_error_fp).touch()
                 Path(d, lookup_success_fp).touch()
                 Path(d, lookup_validation_fp).touch()
+                Path(d, summary_levels_fp).touch()
 
                 initiator = fake_user()
                 analysis = fake_analysis()
 
-                generate_input_success((input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp), analysis.pk, initiator.pk)
+                generate_input_success((input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp), analysis.pk, initiator.pk)
                 analysis.refresh_from_db()
 
                 self.assertEqual(analysis.input_file.file.name, input_location)
@@ -89,6 +91,10 @@ class GenerateInputsSuccess(TestCase):
                 self.assertEqual(analysis.lookup_validation_file.file.name, lookup_validation_fp)
                 self.assertEqual(analysis.lookup_validation_file.content_type, 'application/json')
                 self.assertEqual(analysis.lookup_validation_file.creator, initiator)
+
+                self.assertEqual(analysis.summary_levels_file.file.name, summary_levels_fp)
+                self.assertEqual(analysis.summary_levels_file.content_type, 'application/json')
+                self.assertEqual(analysis.summary_levels_file.creator, initiator)
 
                 self.assertEqual(analysis.status, analysis.status_choices.READY)
 

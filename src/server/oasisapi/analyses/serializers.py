@@ -32,6 +32,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
         rep['lookup_errors_file'] = instance.get_absolute_lookup_errors_file_url(request=request) if instance.lookup_errors_file else None
         rep['lookup_success_file'] = instance.get_absolute_lookup_success_file_url(request=request) if instance.lookup_success_file else None
         rep['lookup_validation_file'] = instance.get_absolute_lookup_validation_file_url(request=request) if instance.lookup_validation_file else None
+        rep['summary_levels_file'] = instance.get_absolute_summary_levels_file_url(request=request) if instance.summary_levels_file else None
         rep['input_generation_traceback_file'] = instance.get_absolute_input_generation_traceback_file_url(request=request) if instance.input_generation_traceback_file else None
         rep['output_file'] = instance.get_absolute_output_file_url(request=request) if instance.output_file else None
         rep['run_traceback_file'] = instance.get_absolute_run_traceback_file_url(request=request) if instance.run_traceback_file else None

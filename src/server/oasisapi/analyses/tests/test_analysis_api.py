@@ -104,6 +104,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 analysis.lookup_errors_file = fake_related_file()
                 analysis.lookup_success_file = fake_related_file()
                 analysis.lookup_validation_file = fake_related_file()
+                analysis.summary_levels_file = fake_related_file()
                 analysis.input_generation_traceback_file = fake_related_file()
                 analysis.output_file = fake_related_file()
                 analysis.run_traceback_file = fake_related_file()
@@ -134,6 +135,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
                     'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
                     'status': Analysis.status_choices.NEW,
+                    'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(),
                 }, response.json)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
@@ -186,6 +188,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'output_file': None,
                     'run_traceback_file': None,
                     'status': Analysis.status_choices.NEW,
+                    'summary_levels_file': None,
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):
@@ -824,6 +827,7 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
+    '''
     def test_lookup_errors_file_is_not_present___delete_response_is_404(self):
         user = fake_user()
         analysis = fake_analysis()
@@ -837,6 +841,7 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
         )
 
         self.assertEqual(404, response.status_code)
+    '''
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv']))
     def test_lookup_errors_file_is_present___file_can_be_retrieved(self, file_content, content_type):
@@ -878,6 +883,7 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
+    '''
     def test_lookup_success_file_is_not_present___delete_response_is_404(self):
         user = fake_user()
         analysis = fake_analysis()
@@ -891,6 +897,7 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
         )
 
         self.assertEqual(404, response.status_code)
+    '''
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv']))
     def test_lookup_success_file_is_present___file_can_be_retrieved(self, file_content, content_type):
@@ -932,6 +939,7 @@ class AnalysisLookupValidationFile(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
+    '''
     def test_lookup_validation_file_is_not_present___delete_response_is_404(self):
         user = fake_user()
         analysis = fake_analysis()
@@ -945,6 +953,7 @@ class AnalysisLookupValidationFile(WebTestMixin, TestCase):
         )
 
         self.assertEqual(404, response.status_code)
+    '''
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['application/json']))
     def test_lookup_validation_file_is_present___file_can_be_retrieved(self, file_content, content_type):

@@ -53,6 +53,7 @@ class Analysis(TimeStampedModel):
     lookup_errors_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
     lookup_success_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
     lookup_validation_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
+    summary_levels_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='summary_levels_file_analyses')
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -93,7 +94,8 @@ class Analysis(TimeStampedModel):
     def get_absolute_lookup_validation_file_url(self, request=None):
         return reverse('analysis-lookup-validation-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-
+    def get_absolute_summary_levels_file_url(self, request=None):
+        return reverse('analysis-summary-levels-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_input_generation_traceback_file_url(self, request=None):
         return reverse('analysis-input-generation-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
@@ -192,6 +194,7 @@ class Analysis(TimeStampedModel):
         self.lookup_errors_file = None
         self.lookup_success_file = None
         self.lookup_validation_file = None
+        self.summary_levels_file = None
         self.input_generation_traceback_file_id = None
 
         generate_input_signature = self.generate_input_signature
@@ -253,5 +256,6 @@ class Analysis(TimeStampedModel):
         new_instance.lookup_errors_file = None
         new_instance.lookup_success_file = None
         new_instance.lookup_validation_file = None
+        new_instance.summary_levels_file = None
         new_instance.output_file = None
         return new_instance
