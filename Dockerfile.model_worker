@@ -23,7 +23,7 @@ COPY ./src/model_execution_worker/ ./src/model_execution_worker/
 COPY ./src/utils/ ./src/utils/
 COPY ./tests /home/worker/tests
 
-RUN mkdir -p /var/oasis/working && \
+RUN mkdir -p /var/oasis && \
     mkdir -p /var/log/oasis && \
     touch /var/log/oasis/worker.log && \
     chmod 777 /var/log/oasis/worker.log
@@ -31,7 +31,6 @@ RUN mkdir -p /var/oasis/working && \
 RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
     chown -R worker /home/worker && \
     chown -R worker /var/oasis && \
-	chown -R worker /var/log && \
-    chown -R worker /var/oasis/working
+	chown -R worker /var/log
 
 ENTRYPOINT ./startup.sh
