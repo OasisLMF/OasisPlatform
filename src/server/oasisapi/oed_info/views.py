@@ -33,31 +33,15 @@ class PerilcodesView(views.APIView):
             'peril_groups': peril_groups
         })
 
-class SummaryLevelsView(views.APIView):
-    """
-    Return a list of recommended OED columns for summary_level selection
-    """
-    def get(self, request):
-        GUL = SUMMARY_LEVEL_LOC
-        GUL.sort()
-        IL = list(set(SUMMARY_LEVEL_LOC) | set(SUMMARY_LEVEL_ACC))
-        IL.sort()
-        return Response({
-            'oasislmf_version': oasislmf_package_ver,
-            'GUL_perspective': GUL,
-            'IL_perspective': IL,
-        })
-
-
-class OedAllColsView(views.APIView):
-    """
-    Return a list of all OED columns 
-    """
-    def get(self, request):
-        return Response({
-            'oasislmf_version': oasislmf_package_ver,
-            'location_file': OED_LOCATION_COLS,
-            'accounts_file': OED_ACCOUNT_COLS,
-            'reinsurance_info_file': OED_REINSINFO_COLS,
-            'reinsurance_scope_file': OED_REINSSCOPE_COLS,
-        })
+#class OedAllColsView(views.APIView):
+#    """
+#    Return a list of all OED columns 
+#    """
+#    def get(self, request):
+#        return Response({
+#            'oasislmf_version': oasislmf_package_ver,
+#            'location_file': OED_LOCATION_COLS,
+#            'accounts_file': OED_ACCOUNT_COLS,
+#            'reinsurance_info_file': OED_REINSINFO_COLS,
+#            'reinsurance_scope_file': OED_REINSSCOPE_COLS,
+#        })
