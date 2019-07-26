@@ -196,6 +196,7 @@ node {
         }
 
         if(! hasFailed && params.PUBLISH){
+            /*
             stage ('Publish: Update Changelog + Release notes') {
                 sshagent (credentials: [git_creds]) {
                     dir(oasis_workspace) {
@@ -255,6 +256,7 @@ node {
                     }
                 }
             }
+            **/
             stage ('Publish: Git Tag') {
                 sshagent (credentials: [git_creds]) {
                     // Tag the OasisPlatform
