@@ -54,8 +54,8 @@ node {
 
     // Update MDK branch based on model branch
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
-        params.MDK_BRANCH='master'
-        params.MODEL_BRANCH='master'
+        MDK_BRANCH='master'
+        MODEL_BRANCH='master'
     } 
 
     // Set Global ENV
