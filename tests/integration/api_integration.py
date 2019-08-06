@@ -14,12 +14,13 @@ from oasislmf.api.client import APIClient
 
 # ------------ load config -------------------- #
 
-cli_case_override = pytest.config.getoption("--test-case")
-check_output_vaules = pytest.config.getoption("--test-output")
-test_conf_ini = pytest.config.getoption("--config")
+test_conf_ini =  os.environ.get('PY_CONFIG', '/var/oasis/test/conf.ini')
+check_output_vaules = True if os.environ.get('PY_CHECK_OUTPUT') else False
+cli_case_override = os.environ.get('PY_TEST_CASE').split(' ') if os.environ.get('PY_TEST_CASE') else None
 
 print(test_conf_ini)
 print(os.path.abspath(test_conf_ini))
+
 
 config = configparser.ConfigParser()
 config.read(os.path.abspath(test_conf_ini))

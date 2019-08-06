@@ -16,22 +16,22 @@ class DataFileFilter(TimeStampedFilter):
     filename = filters.CharFilter(
         help_text=_('Filter results by case insensitive `filename` equal to the given string'),
         lookup_expr='iexact',
-        field_name='filename'
+        field_name='file__filename'
     )
     filename__contains = filters.CharFilter(
         help_text=_('Filter results by case insensitive `filename` containing the given string'),
         lookup_expr='icontains',
-        field_name='filename'
+        field_name='file__filename'
     )
     content_type =  filters.CharFilter(
         help_text=_('Filter results by case insensitive `content_type` equal to the given string'),
         lookup_expr='iexact',
-        field_name='content_type'
+        field_name='file__content_type'
     )
     content_type__contains =  filters.CharFilter(
         help_text=_('Filter results by case insensitive `content_type` containing the given string'),
         lookup_expr='icontains',
-        field_name='content_type'
+        field_name='file__content_type'
     )
     file_description = filters.CharFilter(
         help_text=_('Filter results by case insensitive `file_description` equal to the given string'),
