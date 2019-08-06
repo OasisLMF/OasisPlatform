@@ -8,10 +8,6 @@ from ..files.models import RelatedFile
 
 
 class DataFile(TimeStampedModel):
-    filename = models.CharField(max_length=255,
-                                 help_text=_('Uploaded filename.'))
-    content_type = models.CharField(max_length=255,
-                                 help_text=_('File mime type'), default='')
     file_description = models.CharField(max_length=255,
                                         help_text=_('Type of data contained within the file.'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -23,19 +19,21 @@ class DataFile(TimeStampedModel):
     def __str__(self):
         return 'DataFile_{}'.format(self.file)
 
-    def update_filename(self):
+    def get_filename(self):
         if self.file:
-            self.filename = self.file.filename
-            self.save()
-            return self.filename
+            return self.file.filename
         else:    
             return None     
 
-    def update_content_type(self):
+    def get_filestore(self):
         if self.file:
-            self.content_type = self.file.content_type
-            self.save()
-            return self.content_type
+            return self.file.file.name
+        else:    
+            return None     
+
+    def get_content_type(self):
+        if self.file:
+            return self.file.content_type
         else:    
             return None     
 

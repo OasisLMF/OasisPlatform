@@ -23,9 +23,9 @@ class DataFileSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super(DataFileSerializer, self).to_representation(instance)
-    
         request = self.context.get('request')
         rep['file'] = instance.get_absolute_data_file_url(request=request) if instance.file else None
-        rep['filename'] = instance.update_filename()
-        rep['content_type'] = instance.update_content_type()
+        rep['filename'] = instance.get_filename()
+        rep['stored'] = instance.get_filestore()
+        rep['content_type'] = instance.get_content_type()
         return rep
