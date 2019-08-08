@@ -226,7 +226,7 @@ def test_analysis_run(case_fixture):
     if analysis.json()['status'] not in ['READY', 'RUN_ERROR']:
         pytest.skip('Error in file Generation step')
 
-    for r in range(1,4):
+    for r in range(1,2):
         print(f'Attempt: {r}')
         session.run_analysis(ids['analysis'])
         analysis = session.analyses.get(ids['analysis'])
