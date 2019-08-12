@@ -1,7 +1,7 @@
 <img src="https://oasislmf.org/packages/oasis_theme_package/themes/oasis_theme/assets/src/oasis-lmf-colour.png" alt="Oasis LMF logo" width="250"/>
 
 [![Build Status](https://ci.oasislmfdev.org/buildStatus/icon?job=oasis_platform/master)](https://ci.oasislmfdev.org/view/Oasis/job/oasis_platform/job/master/)
-[![Ktools_version](https://img.shields.io/badge/Ktools-v3.1.0-lightgrey.svg)](https://github.com/OasisLMF/ktools/tree/v3.1.0)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/Oasislmf/ktools?label=ktools)
 [![PyPI version](https://badge.fury.io/py/oasislmf.svg)](https://badge.fury.io/py/oasislmf)
 
 # Oasis Platform
