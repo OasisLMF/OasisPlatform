@@ -305,6 +305,8 @@ def generate_input(loc_file,
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
             run_args += ['--user-data-path', input_data_dir]
+        if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
+            run_args.append('--summarise-exposure')
 
         if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
             # Filter out any args with None as its value
@@ -314,9 +316,6 @@ def generate_input(loc_file,
             logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
                 " ".join([str(arg) for arg in mdk_args])
             ))
-        logging.info('WRITE_EXPOSURE_SUMMARY: {}'.format(settings.get('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True)))
-        if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
-            run_args.append('--summarise-exposure')
 
         GenerateOasisFilesCmd(argv=run_args).run()
 
