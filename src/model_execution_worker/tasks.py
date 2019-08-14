@@ -39,7 +39,8 @@ CELERY.config_from_object(celery_conf)
 logging.info("Started worker")
 logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
-logging.info("KTOOLS_ALLOC_RULE: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE')))
+logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL')))
+logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL')))
 logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
 logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
@@ -218,7 +219,8 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             '--model-run-dir', run_dir,
             '--analysis-settings-file-path', analysis_settings_file,
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
-            '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
+            '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
+            '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
             '--ktools-fifo-relative'
         ]
         if complex_data_files:
@@ -232,7 +234,8 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             logging.info('args_list: {}'.format(str(run_args)))
 
             # Filter out any args with None as its value / And remove `--model-run-dir`
-            mdk_args = [x for t in list(zip(*[iter(run_args)]*2)) if (None not in t) and ('--model-run-dir' not in t) for x in t] 
+            args_list = run_args + [''] if (len(run_args) % 2) else run_args    
+            mdk_args = [x for t in list(zip(*[iter(args_list)]*2)) if (None not in t) and ('--model-run-dir' not in t) for x in t] 
             logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
                 " ".join([str(arg) for arg in mdk_args])
             ))
@@ -310,7 +313,8 @@ def generate_input(loc_file,
 
         if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
             # Filter out any args with None as its value
-            mdk_args = [x for t in list(zip(*[iter(run_args)]*2)) if None not in t for x in t]
+            args_list = run_args + [''] if (len(run_args) % 2) else run_args    
+            mdk_args = [x for t in list(zip(*[iter(args_list)]*2)) if None not in t for x in t]
             logging.info('run_directory: {}'.format(oasis_files_dir))
             logging.info('args_list: {}'.format(str(run_args)))
             logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
