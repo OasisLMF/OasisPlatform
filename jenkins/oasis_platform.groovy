@@ -133,7 +133,9 @@ node {
         if (mdk_branch){
             stage('Git install MDK'){
                 dir(oasis_workspace) {
+                    // update worker and server install lists
                     sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
+                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.in"
                 }
             }
         }

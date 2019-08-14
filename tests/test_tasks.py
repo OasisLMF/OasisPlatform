@@ -72,7 +72,8 @@ class StartAnalysis(TestCase):
                         '--model-run-dir', ANY,
                         '--analysis-settings-file-path', 'analysis_settings.json',
                         '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
-                        '--ktools-alloc-rule', settings.get('worker', 'KTOOLS_ALLOC_RULE'),
+                        '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
+                        '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
                         '--ktools-fifo-relative',
                         '--verbose'
                     ])
