@@ -111,8 +111,8 @@ class PortfolioApi(WebTestMixin, TestCase):
                 self.assertEqual({
                     'id': portfolio.pk,
                     'name': name,
-                    'created': portfolio.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-                    'modified': portfolio.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'created': portfolio.created.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                    'modified': portfolio.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'accounts_file': {
                         "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
                         "name": portfolio.accounts_file.filename,
@@ -285,8 +285,8 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
 
                     self.assertEqual(200, response.status_code)
                     self.assertEqual(response.json['id'], analysis.pk)
-                    self.assertEqual(response.json['created'], analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'))
-                    self.assertEqual(response.json['modified'], analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'))
+                    self.assertEqual(response.json['created'], analysis.created.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
+                    self.assertEqual(response.json['modified'], analysis.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
                     self.assertEqual(response.json['name'], name)
                     self.assertEqual(response.json['portfolio'], portfolio.pk)
                     self.assertEqual(response.json['model'], model.pk)
