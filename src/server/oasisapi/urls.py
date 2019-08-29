@@ -24,8 +24,7 @@ api_router.register('data_files', DataFileViewset, base_name='data-file')
 # api_router.register('files', FilesViewSet, base_name='file')
 
 
-schema_view = get_schema_view(
-    openapi.Info(
+api_info = openapi.Info(
         title="Oasis Platform",
         description="""# Workflow
 
@@ -43,7 +42,10 @@ The general workflow is as follows
 7. Run the analysis (post to `/analyses/<pk>/run/`)
 8. Get the outputs (get `/analyses/<pk>/output_file/`)""",
         default_version='v1',
-    ),
+)
+
+schema_view = get_schema_view(
+    api_info,
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
