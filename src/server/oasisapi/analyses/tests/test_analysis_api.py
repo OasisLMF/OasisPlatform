@@ -120,8 +120,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                 self.assertEqual(200, response.status_code)
                 self.assertEqual({
                     'complex_model_data_files': [],
-                    'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-                    'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'created': analysis.created.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                    'modified': analysis.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'id': analysis.pk,
                     'name': name,
                     'portfolio': portfolio.pk,
@@ -173,8 +173,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                 self.assertEqual(200, response.status_code)
                 self.assertEqual({
                     'complex_model_data_files': [cmf_1.pk, cmf_2.pk],
-                    'created': analysis.created.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
-                    'modified': analysis.modified.strftime('%y-%m-%dT%H:%M:%S.%f%z'),
+                    'created': analysis.created.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                    'modified': analysis.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'id': analysis.pk,
                     'name': name,
                     'portfolio': portfolio.pk,
