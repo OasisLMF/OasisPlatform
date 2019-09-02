@@ -208,6 +208,7 @@ if IN_TEST:
 
 
 SWAGGER_SETTINGS = {
+    'DEFAULT_INFO' : 'src.server.oasisapi.urls.api_info',
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
 }

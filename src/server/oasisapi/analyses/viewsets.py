@@ -3,10 +3,11 @@ from __future__ import absolute_import
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
+from drf_yasg.utils import swagger_auto_schema
 from django_filters import rest_framework as filters
 
 from ..analysis_models.models import AnalysisModel
@@ -141,6 +142,11 @@ class AnalysisViewSet(viewsets.ModelViewSet):
                          'output_file', 
                          'run_traceback_file']
 
+    task_action_types = ['run',
+                         'cancel',
+                         'generate_inputs',
+                         'cancel_generate_inputs']
+
     def get_serializer_class(self):
         if self.action in ['retrieve', 'create', 'list', 'options', 'update', 'partial_update']:
             return super(AnalysisViewSet, self).get_serializer_class()
@@ -157,9 +163,12 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def parser_classes(self):
         if getattr(self, 'action', None) in self.file_action_types:
             return [MultiPartParser]
+        elif getattr(self, 'action', None) in self.task_action_types:
+            return [FormParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
@@ -171,6 +180,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj.run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
@@ -182,6 +192,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj.cancel()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def generate_inputs(self, request, pk=None, version=None):
         """
@@ -194,6 +205,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj.generate_inputs(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None, version=None):
         """
@@ -335,6 +347,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'run_traceback_file', request, ['text/plain'])
 
+    @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
         df = self.get_object().complex_model_data_files.all()
