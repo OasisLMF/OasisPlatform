@@ -14,7 +14,6 @@ CONTENT_TYPE_MAPPING = {
     'application/vnd.ms-excel': 'text/csv'
 }
 def md5_filehash(in_memory_file, chunk_size=4096):    
-    import ipdb; ipdb.set_trace()
     hasher_md5 = hashlib.md5()
     for chunk in iter(lambda: in_memory_file.read(chunk_size), b""):
         hasher_md5.update(chunk)

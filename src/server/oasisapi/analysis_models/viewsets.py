@@ -19,6 +19,7 @@ from ..filters import TimeStampedFilter
 from ..files.views import handle_related_file
 from ..files.serializers import RelatedFileSerializer
 from .models import AnalysisModel
+from ..schemas import FILE_RESPONSE
 from .serializers import AnalysisModelSerializer
 
 from ..data_files.serializers import DataFileSerializer
@@ -126,6 +127,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def resource_file(self, request, pk=None, version=None):
         """

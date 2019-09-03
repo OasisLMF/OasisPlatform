@@ -16,6 +16,7 @@ from ..files.views import handle_related_file
 from ..files.serializers import RelatedFileSerializer
 from .models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer
+from ..schemas import FILE_RESPONSE
 
 from ..data_files.serializers import DataFileSerializer
 from ..data_files.models import DataFile
@@ -233,6 +234,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def settings_file(self, request, pk=None, version=None):
         """
@@ -247,6 +249,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def input_file(self, request, pk=None, version=None):
         """
@@ -258,6 +261,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
@@ -272,6 +276,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_success_file(self, request, pk=None, version=None):
         """
@@ -286,6 +291,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_validation_file(self, request, pk=None, version=None):
         """
@@ -300,6 +306,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_validation_file', request, ['application/json'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def summary_levels_file(self, request, pk=None, version=None):
         """
@@ -314,6 +321,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'summary_levels_file', request, ['application/json'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def input_generation_traceback_file(self, request, pk=None, version=None):
         """
@@ -325,6 +333,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_generation_traceback_file', request, ['text/plain'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def output_file(self, request, pk=None, version=None):
         """
@@ -336,6 +345,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def run_traceback_file(self, request, pk=None, version=None):
         """

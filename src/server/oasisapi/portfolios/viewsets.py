@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from django.utils.translation import ugettext_lazy as _
 from django_filters import rest_framework as filters
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -14,6 +15,7 @@ from ..analyses.serializers import AnalysisSerializer
 from ..files.views import handle_related_file
 from ..files.serializers import RelatedFileSerializer
 from .models import Portfolio
+from ..schemas import FILE_RESPONSE
 from .serializers import PortfolioSerializer, CreateAnalysisSerializer
 
 
@@ -102,7 +104,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             AnalysisSerializer(instance=analysis, context=self.get_serializer_context()).data,
             status=HTTP_201_CREATED,
         )
-
+    
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -117,6 +120,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'accounts_file', request, ['application/json', 'text/csv'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
@@ -131,6 +135,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'location_file', request, ['application/json', 'text/csv'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -145,6 +150,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, ['application/json', 'text/csv'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
