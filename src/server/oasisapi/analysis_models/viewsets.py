@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django_filters import rest_framework as filters
 from django.http import JsonResponse, Http404
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action, detail_route
 from rest_framework.parsers import MultiPartParser
@@ -146,7 +147,8 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             response = JsonResponse(data)
             response['Content-Disposition'] = 'attachment; filename="{}"'.format('default_resource_file.json')
             return response
-
+    
+    @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
         df = self.get_object().data_files.all()
