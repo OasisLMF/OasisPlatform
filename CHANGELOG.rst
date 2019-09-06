@@ -1,7 +1,16 @@
 OasisPlatform Changelog
 ==================
 
+
 .. AUTO_INSERT-CHANGE_LIST
+`1.3.0`_
+--------
+* oasislmf updated to [1.4.1](https://github.com/OasisLMF/OasisLMF/releases/tag/1.4.1)
+* ktooks updated to [3.1.1](https://github.com/OasisLMF/ktools/releases/tag/v3.1.1)
+* Update ENV for worker `KTOOLS_ALLOC_RULE` -> `KTOOLS_ALLOC_RULE_IL`
+* New ENV for worker `KTOOLS_ALLOC_RULE_GUL`
+* Fixes for OpenAPI / Swagger schema
+
 `1.2.1`_
 --------
 * Fix for Complex_model DataFiles
@@ -116,6 +125,7 @@ OasisPlatform Changelog
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
 .. AUTO_INSERT-CHANGE_DIFF
+.. _`1.3.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.2.1...1.3.0
 .. _`1.2.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.2.0...1.2.1
 .. _`1.2.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.1.2...1.2.0
 .. _`1.1.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.1.1...1.1.2
