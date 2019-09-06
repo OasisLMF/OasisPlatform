@@ -13,8 +13,8 @@ node {
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
         [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case 2_case control_set'],
-        [$class: 'TextParameterDefinition',    name: 'APPEND_CHANGELOG', defaultValue: '\n\n'],
-        [$class: 'TextParameterDefinition',    name: 'APPEND_RELEASE', defaultValue: '\n\n'],
+        //[$class: 'TextParameterDefinition',    name: 'APPEND_CHANGELOG', defaultValue: '\n\n'],
+        //[$class: 'TextParameterDefinition',    name: 'APPEND_RELEASE', defaultValue: '\n\n'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
@@ -83,14 +83,14 @@ node {
         println("Publish Only allowed on a release/* or hotfix/* branches")
         sh "exit 1"
     }
-    if (params.PUBLISH && ! params.APPEND_CHANGELOG) {
-        println("Must note changes in APPEND_CHANGELOG")
-        sh "exit 1"
-    }
-    if (params.PUBLISH && ! params.APPEND_RELEASE) {
-        println("Must note changes in APPEND_RELEASE")
-        sh "exit 1"
-    }
+    //if (params.PUBLISH && ! params.APPEND_CHANGELOG) {
+    //    println("Must note changes in APPEND_CHANGELOG")
+    //    sh "exit 1"
+    //}
+    //if (params.PUBLISH && ! params.APPEND_RELEASE) {
+    //    println("Must note changes in APPEND_RELEASE")
+    //    sh "exit 1"
+    //}
 
     try {
         parallel(
@@ -130,7 +130,7 @@ node {
         stage('Shell Env'){
             sh  PIPELINE + ' print_model_vars'
         }
-        if (mdk_branch){
+        if (mdk_branch && ! params.PUBLISH){
             stage('Git install MDK'){
                 dir(oasis_workspace) {
                     // update worker and server install lists
