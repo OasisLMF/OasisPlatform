@@ -74,7 +74,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
     @swagger_serializer_method(serializer_or_field=ReinsScopeFileSerializer)
     def get_reinsurance_scope_file(self, instance):
-        if not instance.reinsurance_info_file:
+        if not instance.reinsurance_scope_file:
             return None
         else:
             request = self.context.get('request')
