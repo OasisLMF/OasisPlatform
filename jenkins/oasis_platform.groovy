@@ -12,7 +12,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
-        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case 2_case control_set'],
+        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case control_set'],
         //[$class: 'TextParameterDefinition',    name: 'APPEND_CHANGELOG', defaultValue: '\n\n'],
         //[$class: 'TextParameterDefinition',    name: 'APPEND_RELEASE', defaultValue: '\n\n'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
