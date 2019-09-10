@@ -1,5 +1,4 @@
 from django.conf.urls import url
-from drf_yasg.utils import swagger_auto_schema
 from .views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [

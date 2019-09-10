@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from backports.tempfile import TemporaryDirectory
 from celery.exceptions import Retry
-from hypothesis import given, settings
+from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis.strategies import text
 from mock import patch, Mock, ANY
@@ -15,9 +15,10 @@ from src.conf.iniconf import SettingsPatcher, settings
 from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, MissingInputsException, \
     start_analysis_task, get_oasislmf_config_path
 
-## Override default deadline for all tests to 8s
+# Override default deadline for all tests to 8s
 hypothesis_settings.register_profile("ci", deadline=800.0)
 hypothesis_settings.load_profile("ci")
+
 
 class StartAnalysis(TestCase):
     def create_tar(self, target):

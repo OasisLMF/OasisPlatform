@@ -21,7 +21,7 @@ from ...data_files.tests.fakes import fake_data_file
 from ..models import Analysis
 from .fakes import fake_analysis
 
-## Override default deadline for all tests to 8s
+# Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
 
@@ -565,7 +565,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
         )
-        
+
         actual_cmf_pks = [obj.pk for obj in Analysis.objects.get(pk=response.json['id']).complex_model_data_files.all()]
         expected_cmf_pks = [obj.pk for obj in analysis.complex_model_data_files.all()]
 
@@ -588,7 +588,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
 
         actual_cmf_pks = [obj.pk for obj in Analysis.objects.get(pk=response.json['id']).complex_model_data_files.all()]
         expected_cmf_pks = [new_cmf_1.pk, new_cmf_2.pk]
-        
+
         self.assertEqual(expected_cmf_pks, actual_cmf_pks)
 
     def test_settings_file_is_not_supplied___settings_file_is_copied(self):

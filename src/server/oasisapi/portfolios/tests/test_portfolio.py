@@ -19,9 +19,10 @@ from ...auth.tests.fakes import fake_user
 from ..models import Portfolio
 from .fakes import fake_portfolio
 
-## Override default deadline for all tests to 8s
+# Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
+
 
 class PortfolioApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_401(self):

@@ -25,9 +25,10 @@ api_router.register('data_files', DataFileViewset, base_name='data-file')
 
 
 api_info = openapi.Info(
-        title="Oasis Platform",
-        description="""# Workflow
-
+    title="Oasis Platform",
+    default_version='v1',
+    description="""
+# Workflow
 The general workflow is as follows
 
 1. Authenticate your client, either supply your username and password to the `/refresh_token/`
@@ -41,7 +42,6 @@ The general workflow is as follows
 6. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
 7. Run the analysis (post to `/analyses/<pk>/run/`)
 8. Get the outputs (get `/analyses/<pk>/output_file/`)""",
-        default_version='v1',
 )
 
 schema_view = get_schema_view(

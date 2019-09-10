@@ -234,8 +234,8 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             logging.info('args_list: {}'.format(str(run_args)))
 
             # Filter out any args with None as its value / And remove `--model-run-dir`
-            args_list = run_args + [''] if (len(run_args) % 2) else run_args    
-            mdk_args = [x for t in list(zip(*[iter(args_list)]*2)) if (None not in t) and ('--model-run-dir' not in t) for x in t] 
+            args_list = run_args + [''] if (len(run_args) % 2) else run_args
+            mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
             logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
                 " ".join([str(arg) for arg in mdk_args])
             ))
@@ -313,8 +313,8 @@ def generate_input(loc_file,
 
         if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
             # Filter out any args with None as its value
-            args_list = run_args + [''] if (len(run_args) % 2) else run_args    
-            mdk_args = [x for t in list(zip(*[iter(args_list)]*2)) if None not in t for x in t]
+            args_list = run_args + [''] if (len(run_args) % 2) else run_args
+            mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
             logging.info('run_directory: {}'.format(oasis_files_dir))
             logging.info('args_list: {}'.format(str(run_args)))
             logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
@@ -323,29 +323,29 @@ def generate_input(loc_file,
 
         GenerateOasisFilesCmd(argv=run_args).run()
 
-        # Process Generated Files 
+        # Process Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
         lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
         if lookup_error_fp:
-            hashed_filename = os.path.join(media_root,'{}.csv'.format(uuid.uuid4().hex))
+            hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
             shutil.copy(lookup_error_fp, hashed_filename)
             lookup_error_fp = str(Path(hashed_filename).relative_to(media_root))
 
         if lookup_success_fp:
-            hashed_filename = os.path.join(media_root,'{}.csv'.format(uuid.uuid4().hex))
+            hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
             shutil.copy(lookup_success_fp, hashed_filename)
             lookup_success_fp = str(Path(hashed_filename).relative_to(media_root))
-    
+
         if lookup_validation_fp:
-            hashed_filename = os.path.join(media_root,'{}.json'.format(uuid.uuid4().hex))
+            hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
             shutil.copy(lookup_validation_fp, hashed_filename)
             lookup_validation_fp = str(Path(hashed_filename).relative_to(media_root))
 
         if summary_levels_fp:
-            hashed_filename = os.path.join(media_root,'{}.json'.format(uuid.uuid4().hex))
+            hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
             shutil.copy(summary_levels_fp, hashed_filename)
             summary_levels_fp = str(Path(hashed_filename).relative_to(media_root))
 

@@ -18,7 +18,6 @@ class Perilcodes(WebTest):
         self.assertFalse(oed_codes_json['peril_codes'] is {})
         self.assertFalse(oed_codes_json['peril_groups'] is {})
 
-
     def test_user_is_authenticated___response_is_ok(self):
         response = self.app.get(reverse('perilcodes'), user=fake_user())
         oed_codes_json = response.json

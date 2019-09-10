@@ -12,8 +12,7 @@ from ..schemas import (
 )
 
 
-
-## TODO: add header auth params to swagger
+# TODO: add header auth params to swagger
 class TokenRefreshView(BaseTokenRefreshView):
     """
     Fetches a new authentication token from your refresh token.
@@ -38,6 +37,7 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     Fetches a new refresh token from your username and password.
     """
     serializer_class = TokenObtainPairSerializer
+
     @swagger_auto_schema(responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer})
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)

@@ -104,7 +104,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             AnalysisSerializer(instance=analysis, context=self.get_serializer_context()).data,
             status=HTTP_201_CREATED,
         )
-    
+
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):

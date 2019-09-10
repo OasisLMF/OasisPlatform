@@ -1,4 +1,4 @@
-_all__ = [
+__all__ = [
     'FILE_RESPONSE',
     'HEALTHCHECK',
     'TOKEN_REFRESH_HEADER',
@@ -8,7 +8,6 @@ _all__ = [
     'ReinsScopeFileSerializer',
 ]
 
-#from drf_yasg.openapi import Schema, Parameter, IN_HEADER
 from drf_yasg import openapi
 from drf_yasg.openapi import Schema
 
@@ -16,7 +15,7 @@ from rest_framework import serializers
 
 
 FILE_RESPONSE = openapi.Response(
-    'File Download', 
+    'File Download',
     schema=Schema(type=openapi.TYPE_FILE),
     headers={
         "Content-Disposition": {
@@ -33,17 +32,17 @@ FILE_RESPONSE = openapi.Response(
 
 HEALTHCHECK = Schema(
     title='HealthCheck',
-    type='object',  
+    type='object',
     properties={
-        "status": Schema(title='status', read_only=True, type='string', enum= ['OK'])
+        "status": Schema(title='status', read_only=True, type='string', enum=['OK'])
     }
 )
 
 TOKEN_REFRESH_HEADER = openapi.Parameter(
-    'authorization', 
-    'header', 
-    description="Refresh Token", 
-    type='string', 
+    'authorization',
+    'header',
+    description="Refresh Token",
+    type='string',
     default='Bearer <refresh_token>'
 )
 
@@ -56,6 +55,7 @@ class TokenObtainPairResponseSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError()
+
     def update(self, instance, validated_data):
         raise NotImplementedError()
 
@@ -67,6 +67,7 @@ class TokenRefreshResponseSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError()
+
     def update(self, instance, validated_data):
         raise NotImplementedError()
 
@@ -78,8 +79,10 @@ class LocFileSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError()
+
     def update(self, instance, validated_data):
         raise NotImplementedError()
+
 
 class AccFileSerializer(serializers.Serializer):
     url = serializers.URLField()
@@ -88,8 +91,10 @@ class AccFileSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError()
+
     def update(self, instance, validated_data):
         raise NotImplementedError()
+
 
 class ReinsInfoFileSerializer(serializers.Serializer):
     url = serializers.URLField()
@@ -98,8 +103,10 @@ class ReinsInfoFileSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError()
+
     def update(self, instance, validated_data):
         raise NotImplementedError()
+
 
 class ReinsScopeFileSerializer(serializers.Serializer):
     url = serializers.URLField()
@@ -108,5 +115,6 @@ class ReinsScopeFileSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError()
+
     def update(self, instance, validated_data):
         raise NotImplementedError()

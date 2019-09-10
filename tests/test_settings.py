@@ -11,9 +11,10 @@ from mock import patch
 
 from src.conf.iniconf import Settings
 
-## Override default deadline for all tests to 8s
+# Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
+
 
 def setting_text():
     return text(min_size=1, alphabet=string.ascii_letters)

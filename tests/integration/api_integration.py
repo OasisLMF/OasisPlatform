@@ -3,7 +3,6 @@ import socket
 import os
 import tarfile
 import configparser
-import shutil
 
 import pandas as pd
 
@@ -14,7 +13,7 @@ from oasislmf.api.client import APIClient
 
 # ------------ load config -------------------- #
 
-test_conf_ini =  os.environ.get('PY_CONFIG', '/var/oasis/test/conf.ini')
+test_conf_ini = os.environ.get('PY_CONFIG', '/var/oasis/test/conf.ini')
 check_output_vaules = True if os.environ.get('PY_CHECK_OUTPUT') else False
 cli_case_override = os.environ.get('PY_TEST_CASE').split(' ') if os.environ.get('PY_TEST_CASE') else None
 
@@ -49,7 +48,7 @@ def check_expected(result_path, expected_path):
         df_found = pd.read_csv(os.path.join(result_path, csv))
         assert_frame_equal(df_expect, df_found)
 
-        
+
 def check_non_empty(result_path):
     comparison_list = []
     cwd = os.getcwd()
@@ -111,7 +110,7 @@ def session_fixture(request):
 def case_fixture(session_fixture):
     case, session = session_fixture
     ids = {}
-    
+
     #  Add or find model
     _model = {
         'supplier_id': config.get(test_model, 'SUPPLIER_ID'),
@@ -177,21 +176,19 @@ def test_uploaded(case_fixture):
     print(analysis.json())
     print(portfolio.json())
 
+
 def test_generate(case_fixture):
     session, case, ids = case_fixture
     analysis = session.analyses.get(ids['analysis'])
     if analysis.json()['status'] not in ['NEW', 'INPUTS_GENERATION_ERROR']:
         pytest.skip('setup error in prevous step')
 
-    for r in range(1,4):
+    for r in range(1, 4):
         print(f'Attempt: {r}')
         session.run_generate(ids['analysis'])
         analysis = session.analyses.get(ids['analysis'])
         if analysis.json()['status'] == 'READY':
             break
-        #else:    
-        #    error_trace = session.analyses.input_generation_traceback_file.get(ids['analysis'])
-        #    print(error_trace.text)
 
     assert analysis.ok
     assert analysis.json()['status'] == 'READY'
@@ -226,7 +223,7 @@ def test_analysis_run(case_fixture):
     if analysis.json()['status'] not in ['READY', 'RUN_ERROR']:
         pytest.skip('Error in file Generation step')
 
-    for r in range(1,2):
+    for r in range(1, 2):
         print(f'Attempt: {r}')
         session.run_analysis(ids['analysis'])
         analysis = session.analyses.get(ids['analysis'])
@@ -255,13 +252,13 @@ def test_analysis_output(case_fixture):
         os.remove(download_to)
     r = session.analyses.output_file.download(ids['analysis'], download_to)
     assert r.ok
-    
+
     tar_object = tarfile.open(download_to)
-    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name ]
+    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name]
 
     tar_object.extractall(path=extract_to, members=csv_only)
     tar_object.close()
-    
+
     if check_output_vaules:
         check_expected(os.path.join(extract_to, 'output'), expected_results)
     else:
