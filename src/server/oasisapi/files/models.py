@@ -13,7 +13,7 @@ def random_file_name(instance, filename):
 
 
 class RelatedFile(TimeStampedModel):
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
     file = models.FileField(help_text=_('The file to store'), upload_to=random_file_name)
     filename = models.CharField(max_length=255, editable=False, default="", blank=True)
     # filehash_md5 = models.CharField(max_length=255, editable=False, default="", blank=True)

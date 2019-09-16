@@ -44,16 +44,16 @@ class Analysis(TimeStampedModel):
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     complex_model_data_files = models.ManyToManyField(DataFile, blank=True, related_name='complex_model_files_analyses')
 
-    settings_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='settings_file_analyses')
-    input_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_file_analyses')
-    input_generation_traceback_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
-    output_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='output_file_analyses')
-    run_traceback_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='run_traceback_file_analyses')
+    settings_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='settings_file_analyses')
+    input_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='input_file_analyses')
+    input_generation_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
+    output_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='output_file_analyses')
+    run_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='run_traceback_file_analyses')
 
-    lookup_errors_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
-    lookup_success_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
-    lookup_validation_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
-    summary_levels_file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None, related_name='summary_levels_file_analyses')
+    lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
+    lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
+    lookup_validation_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
+    summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='summary_levels_file_analyses')
 
     class Meta:
         verbose_name_plural = 'analyses'
