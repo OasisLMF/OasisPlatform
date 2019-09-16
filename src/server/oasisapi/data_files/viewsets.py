@@ -25,12 +25,12 @@ class DataFileFilter(TimeStampedFilter):
         lookup_expr='icontains',
         field_name='file__filename'
     )
-    content_type =  filters.CharFilter(
+    content_type = filters.CharFilter(
         help_text=_('Filter results by case insensitive `content_type` equal to the given string'),
         lookup_expr='iexact',
         field_name='file__content_type'
     )
-    content_type__contains =  filters.CharFilter(
+    content_type__contains = filters.CharFilter(
         help_text=_('Filter results by case insensitive `content_type` containing the given string'),
         lookup_expr='icontains',
         field_name='file__content_type'

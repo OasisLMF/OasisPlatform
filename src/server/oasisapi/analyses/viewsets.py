@@ -19,7 +19,6 @@ from .serializers import AnalysisSerializer, AnalysisCopySerializer
 from ..schemas import FILE_RESPONSE
 
 from ..data_files.serializers import DataFileSerializer
-from ..data_files.models import DataFile
 
 
 class AnalysisFilter(TimeStampedFilter):
@@ -132,15 +131,15 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filter_class = AnalysisFilter
 
-    file_action_types = ['settings_file', 
-                         'input_file', 
+    file_action_types = ['settings_file',
+                         'input_file',
                          'lookup_errors_file',
                          'lookup_success_file',
                          'lookup_validation_file',
                          'summary_levels_file',
-                         'input_generation_traceback_file', 
+                         'input_generation_traceback_file',
                          'run_traceback_file',
-                         'output_file', 
+                         'output_file',
                          'run_traceback_file']
 
     task_action_types = ['run',

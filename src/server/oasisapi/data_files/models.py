@@ -8,13 +8,22 @@ from ..files.models import RelatedFile
 
 
 class DataFile(TimeStampedModel):
-    file_description = models.CharField(max_length=255,
-                                        help_text=_('Type of data contained within the file.'))
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                on_delete=models.CASCADE,
-                                related_name='data_file')
-    file = models.ForeignKey(RelatedFile, blank=True, null=True, default=None,
-                                  related_name="content_data_file")
+    file_description = models.CharField(
+        max_length=255,
+        help_text=_('Type of data contained within the file.')
+    )
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='data_file'
+    )
+    file = models.ForeignKey(
+        RelatedFile,
+        blank=True,
+        null=True,
+        default=None,
+        related_name="content_data_file"
+    )
 
     def __str__(self):
         return 'DataFile_{}'.format(self.file)
@@ -22,20 +31,20 @@ class DataFile(TimeStampedModel):
     def get_filename(self):
         if self.file:
             return self.file.filename
-        else:    
-            return None     
+        else:
+            return None
 
     def get_filestore(self):
         if self.file:
             return self.file.file.name
-        else:    
-            return None     
+        else:
+            return None
 
     def get_content_type(self):
         if self.file:
             return self.file.content_type
-        else:    
-            return None     
+        else:
+            return None
 
     def get_absolute_data_file_url(self, request=None):
         return reverse('data-file-content', kwargs={'version': 'v1', 'pk': self.pk}, request=request)

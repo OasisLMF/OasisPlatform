@@ -1,6 +1,7 @@
 # content of conftest.py
 # import pytest
 
+
 def pytest_addoption(parser):
     parser.addoption(
         '--test-case', required=False, dest='data_case',
@@ -18,6 +19,7 @@ def pytest_addoption(parser):
         help='File path to test configuration ini'
     )
 
+
 def pytest_configure(config):
     import os
     if config.getoption('--test-case'):
@@ -25,4 +27,4 @@ def pytest_configure(config):
     if config.getoption('--test-output'):
         os.environ["PY_CHECK_OUTPUT"] = 'True'
     if config.getoption('--config'):
-        os.environ["PY_CONFIG"] = config.getoption('--config') 
+        os.environ["PY_CONFIG"] = config.getoption('--config')

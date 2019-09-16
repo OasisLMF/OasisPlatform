@@ -126,7 +126,7 @@ else:
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = []
-AUTHENTICATION_BACKENDS = settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
+AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
 
 
 # Internationalization
@@ -208,7 +208,7 @@ if IN_TEST:
 
 
 SWAGGER_SETTINGS = {
-    'DEFAULT_INFO' : 'src.server.oasisapi.urls.api_info',
+    'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
 }

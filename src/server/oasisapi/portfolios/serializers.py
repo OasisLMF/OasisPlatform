@@ -11,6 +11,7 @@ from ..schemas import (
     ReinsScopeFileSerializer,
 )
 
+
 class PortfolioSerializer(serializers.ModelSerializer):
     accounts_file = serializers.SerializerMethodField()
     location_file = serializers.SerializerMethodField()

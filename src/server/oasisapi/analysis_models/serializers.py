@@ -2,10 +2,10 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from .models import AnalysisModel
-from ..data_files.serializers import DataFileSerializer
+
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
-    resource_file = serializers.SerializerMethodField()    
+    resource_file = serializers.SerializerMethodField()
 
     class Meta:
         model = AnalysisModel

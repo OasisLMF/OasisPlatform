@@ -16,9 +16,10 @@ from ...auth.tests.fakes import fake_user
 from ..models import DataFile
 from .fakes import fake_data_file
 
-## Override default deadline for all tests to 8s
+# Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
+
 
 class ComplexModelFilesApi(WebTestMixin, TestCase):
 
@@ -40,7 +41,7 @@ class ComplexModelFilesApi(WebTestMixin, TestCase):
         )
 
         model = DataFile.objects.first()
-    
+
         self.assertEqual(201, response.status_code)
         self.assertEqual(model.file_description, file_description)
 

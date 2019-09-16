@@ -17,9 +17,10 @@ from ..models import Analysis
 from ..tasks import run_analysis_success, generate_input_success
 from .fakes import fake_analysis, FakeAsyncResultFactory
 
-## Override default deadline for all tests to 8s
+# Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
+
 
 class AnalysisCancel(WebTestMixin, TestCase):
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))

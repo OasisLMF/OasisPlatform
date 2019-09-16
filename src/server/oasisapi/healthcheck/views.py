@@ -3,6 +3,7 @@ from rest_framework import views
 from rest_framework.response import Response
 from ..schemas import HEALTHCHECK
 
+
 class HealthcheckView(views.APIView):
     """
     Gets the current status of the api
@@ -11,7 +12,7 @@ class HealthcheckView(views.APIView):
     http_method_names = ['get']
     authentication_classes = []
     permission_classes = []
-    
+
     @swagger_auto_schema(responses={200: HEALTHCHECK})
     def get(self, request):
         return Response({'status': 'OK'})

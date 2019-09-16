@@ -241,9 +241,12 @@ class Analysis(TimeStampedModel):
             list of dict: Dicts containing (stored filename, original filename) as the keys.
 
         """
-        complex_data_files = [{STORED_FILENAME: cmdf.file.file.name, 
-                               ORIGINAL_FILENAME: cmdf.file.filename} 
-                               for cmdf in self.complex_model_data_files.all()]
+        complex_data_files = [
+            {
+                STORED_FILENAME: cmdf.file.file.name,
+                ORIGINAL_FILENAME: cmdf.file.filename
+            } for cmdf in self.complex_model_data_files.all()
+        ]
         return complex_data_files
 
     def copy(self):
