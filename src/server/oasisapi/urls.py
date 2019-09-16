@@ -14,6 +14,7 @@ from .data_files.viewsets import DataFileViewset
 from .oed_info.views import PerilcodesView
 
 admin.autodiscover()
+#app_name = 'oasisapi'
 
 api_router = routers.DefaultRouter()
 api_router.include_root_view = False
@@ -58,7 +59,7 @@ urlpatterns = [
     url(r'^healthcheck/$', HealthcheckView.as_view(), name='healthcheck'),
     url(r'^oed_peril_codes/$', PerilcodesView.as_view(), name='perilcodes'),
     url(r'^auth/', include('rest_framework.urls')),
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
     url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
 ]
 
