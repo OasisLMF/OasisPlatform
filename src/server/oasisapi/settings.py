@@ -13,8 +13,6 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import os
 import sys
 
-from datetime import timedelta
-
 from rest_framework.reverse import reverse_lazy
 
 from ...conf import iniconf  # noqa
@@ -54,6 +52,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'drf_yasg',
+    'rest_framework_simplejwt.token_blacklist',
 
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
@@ -155,8 +154,10 @@ MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(
 
 # https://github.com/davesque/django-rest-framework-simplejwt
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME':  iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
+    'REFRESH_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_REFRESH_LIFETIME', fallback='days=2'),
+    'ROTATE_REFRESH_TOKENS': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
+    'BLACKLIST_AFTER_ROTATION': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
     'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
 }
 
