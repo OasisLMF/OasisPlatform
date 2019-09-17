@@ -4,7 +4,6 @@ pymysql
 jsonpickle
 requests
 pyopenssl
-certifi
 fasteners
 coverage
 flake8
@@ -19,7 +18,6 @@ ipdb
 ipython<6
 sqlalchemy
 pytest
-docker-compose
 django
 djangorestframework
 markdown
@@ -27,7 +25,6 @@ django-filter
 model_mommy
 django-webtest
 djangorestframework_simplejwt
-python-magic
 django-model-utils
 coreapi
 uwsgi
