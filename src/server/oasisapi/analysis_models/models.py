@@ -14,8 +14,8 @@ class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
     version_id = models.CharField(max_length=255, help_text=_('The version ID for the model.'))
-    resource_file = models.ForeignKey(RelatedFile, null=True, default=None, related_name='analysis_model_resource_file')
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL)
+    resource_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, null=True, default=None, related_name='analysis_model_resource_file')
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
 
     class Meta:

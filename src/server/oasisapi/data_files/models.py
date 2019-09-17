@@ -19,6 +19,7 @@ class DataFile(TimeStampedModel):
     )
     file = models.ForeignKey(
         RelatedFile,
+        on_delete=models.CASCADE,
         blank=True,
         null=True,
         default=None,

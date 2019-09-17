@@ -4,9 +4,7 @@ pymysql
 jsonpickle
 requests
 pyopenssl
-shutilwhich
 certifi
-numpy
 fasteners
 coverage
 flake8
@@ -22,8 +20,8 @@ ipython<6
 sqlalchemy
 pytest
 docker-compose
-django<2.0
--e git://github.com/wildfish/django-rest-framework#egg=djangorestframework
+django
+djangorestframework
 markdown
 django-filter
 model_mommy
