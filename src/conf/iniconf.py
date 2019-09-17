@@ -2,6 +2,8 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 
+from datetime import timedelta
+
 from chainmap import ChainMap
 
 from configparser import ConfigParser
@@ -41,6 +43,26 @@ class Settings(ConfigParser):
     def getint(self, section, option, **kwargs):
         kwargs.setdefault('vars', self._get_section_env_vars(section))
         return super(Settings, self).getint(section, option, **kwargs)
+
+    def get_timedelta(self, section, option, **kwargs):
+        ''' Use for reading timedelta argument strings and returns a timedelta
+            object
+
+            Example
+            =======
+            in: settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='days=5')
+            out: datetime.timedelta(days=5)
+        '''
+        kwargs.setdefault('vars', self._get_section_env_vars(section))
+        kwargs_string = super(Settings, self).get(section, option, **kwargs)
+        try:
+            kwargs = {k.split('=')[0].strip():int(k.split('=')[1]) 
+                      for k in kwargs_string.split(',')}
+        except (TypeError, IndexError):
+            kwargs = {k.split('=')[0].strip():int(k.split('=')[1]) 
+                      for k in kwargs['fallback'].split(',')}
+        return timedelta(**kwargs)
+
 
     def getboolean(self, section, option, **kwargs):
         kwargs.setdefault('vars', self._get_section_env_vars(section))
