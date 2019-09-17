@@ -160,7 +160,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 analysis = Analysis.objects.get(pk=response.json['id'])
                 cmf_1 = fake_data_file()
                 cmf_2 = fake_data_file()
-                analysis.complex_model_data_files = [cmf_1, cmf_2]
+                analysis.complex_model_data_files.set([cmf_1, cmf_2])
                 analysis.save()
 
                 response = self.app.get(

@@ -21,7 +21,7 @@ class AccessToken(WebTest):
             expect_errors=True,
         )
 
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_password_is_not_correct___response_is_401(self):
         username = 'dirk'
@@ -36,7 +36,7 @@ class AccessToken(WebTest):
             expect_errors=True,
         )
 
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_username_and_password_are_correct___returned_token_represents_the_user(self):
         username = 'dirk'
