@@ -56,7 +56,7 @@ class AccessToken(WebTest):
 
         self.assertEqual(user.id, actual_refresh_ident['user_id'])
         self.assertEqual(user.id, actual_access_ident['user_id'])
-        self.assertEqual(data['expires_in'], 86400)
+        self.assertEqual(data['expires_in'], 3600)
         self.assertEqual(data['token_type'], 'Bearer')
 
 
