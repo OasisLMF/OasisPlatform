@@ -214,10 +214,10 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             f.extractall(oasis_files_dir)
 
         run_args = [
-            '--oasis-files-path', oasis_files_dir,
+            '--oasis-files-dir', oasis_files_dir,
             '--config', config_path,
             '--model-run-dir', run_dir,
-            '--analysis-settings-file-path', analysis_settings_file,
+            '--analysis-settings-json', analysis_settings_file,
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
             '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
             '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
@@ -225,7 +225,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         ]
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
-            run_args += ['--user-data-path', input_data_dir]
+            run_args += ['--user-data-dir', input_data_dir]
         if settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT'):
             run_args.append('--ktools-mem-limit')
         if settings.getboolean('worker', 'DEBUG_MODE'):
@@ -296,18 +296,18 @@ def generate_input(loc_file,
 
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
         run_args = [
-            '--oasis-files-path', oasis_files_dir,
+            '--oasis-files-dir', oasis_files_dir,
             '--config', config_path,
-            '--source-exposure-file-path', location_file,
-            '--source-accounts-file-path', accounts_file,
-            '--ri-info-file-path', ri_info_file,
-            '--ri-scope-file-path', ri_scope_file,
+            '--oed-location-csv', location_file,
+            '--oed-accounts-csv', accounts_file,
+            '--oed-info-csv', ri_info_file,
+            '--oed-scope-csv', ri_scope_file,
         ]
         if lookup_settings_file:
-            run_args += ['--complex-lookup-config-file-path', lookup_settings_file]
+            run_args += ['--lookup-complex-config-json', lookup_settings_file]
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
-            run_args += ['--user-data-path', input_data_dir]
+            run_args += ['--user-data-dir', input_data_dir]
         if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
             run_args.append('--summarise-exposure')
 
