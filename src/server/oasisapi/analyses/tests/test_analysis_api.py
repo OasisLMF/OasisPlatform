@@ -136,6 +136,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
                     'status': Analysis.status_choices.NEW,
                     'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(),
+                    'task_started': None,
+                    'task_finished': None,
                 }, response.json)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
@@ -189,6 +191,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'run_traceback_file': None,
                     'status': Analysis.status_choices.NEW,
                     'summary_levels_file': None,
+                    'task_started': None,
+                    'task_finished': None,
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):

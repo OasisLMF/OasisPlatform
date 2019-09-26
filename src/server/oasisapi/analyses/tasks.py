@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
 import uuid
-# import time
 
+from django.utils import timezone
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
 from django.core.files import File
@@ -42,6 +42,7 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
 
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.RUN_COMPLETED
+        analysis.task_finished = timezone.now()
 
         analysis.output_file = RelatedFile.objects.create(
             file=str(output_location),
@@ -69,6 +70,7 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
 
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.RUN_ERROR
+        analysis.task_finished = timezone.now()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
         analysis.run_traceback_file = RelatedFile.objects.create(
@@ -99,6 +101,7 @@ def generate_input_success(result, analysis_pk, initiator_pk):
 
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.READY
+        analysis.task_finished = timezone.now()
 
         analysis.input_file = RelatedFile.objects.create(
             file=str(input_location),
@@ -150,6 +153,7 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
 
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
+        analysis.task_finished = timezone.now()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
         analysis.input_generation_traceback_file = RelatedFile.objects.create(

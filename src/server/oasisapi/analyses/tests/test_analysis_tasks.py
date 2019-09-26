@@ -1,4 +1,5 @@
 import string
+import datetime
 from backports.tempfile import TemporaryDirectory
 
 from django.test import override_settings
@@ -29,7 +30,7 @@ class RunAnalysisSuccess(TestCase):
                 run_analysis_success(output_location, analysis.pk, initiator.pk)
 
                 analysis.refresh_from_db()
-
+                
                 self.assertEqual(analysis.output_file.file.name, output_location)
                 self.assertEqual(analysis.output_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.output_file.creator, initiator)
@@ -52,6 +53,7 @@ class RunAnalysisFailure(TestCase):
                 self.assertEqual(analysis.run_traceback_file.content_type, 'text/plain')
                 self.assertEqual(analysis.run_traceback_file.creator, initiator)
                 self.assertEqual(analysis.status, analysis.status_choices.RUN_ERROR)
+                self.assertTrue(isinstance(analysis.task_finished, datetime.datetime))
 
 
 class GenerateInputsSuccess(TestCase):
@@ -98,6 +100,7 @@ class GenerateInputsSuccess(TestCase):
                 self.assertEqual(analysis.summary_levels_file.creator, initiator)
 
                 self.assertEqual(analysis.status, analysis.status_choices.READY)
+                self.assertTrue(isinstance(analysis.task_finished, datetime.datetime))
 
 
 class GenerateInputsFailure(TestCase):
@@ -116,3 +119,4 @@ class GenerateInputsFailure(TestCase):
                 self.assertEqual(analysis.input_generation_traceback_file.content_type, 'text/plain')
                 self.assertEqual(analysis.input_generation_traceback_file.creator, initiator)
                 self.assertEqual(analysis.status, analysis.status_choices.INPUTS_GENERATION_ERROR)
+                self.assertTrue(isinstance(analysis.task_finished, datetime.datetime))

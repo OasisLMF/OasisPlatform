@@ -4,6 +4,7 @@ from celery import signature
 from celery.result import AsyncResult
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel
@@ -40,6 +41,8 @@ class Analysis(TimeStampedModel):
     model = models.ForeignKey(AnalysisModel, on_delete=models.DO_NOTHING, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NEW, editable=False)
+    task_started = models.DateTimeField(editable=False, null=True, default=None)
+    task_finished = models.DateTimeField(editable=False, null=True, default=None)
     run_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     complex_model_data_files = models.ManyToManyField(DataFile, blank=True, related_name='complex_model_files_analyses')
@@ -54,6 +57,8 @@ class Analysis(TimeStampedModel):
     lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
     lookup_validation_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
     summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='summary_levels_file_analyses')
+
+
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -144,7 +149,8 @@ class Analysis(TimeStampedModel):
             signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
         self.run_task_id = run_analysis_signature.delay().id
-
+        self.task_started = timezone.now()
+        self.task_finished = None
         self.save()
 
     @property
@@ -167,6 +173,7 @@ class Analysis(TimeStampedModel):
         )
 
         self.status = self.status_choices.RUN_CANCELLED
+        self.task_finished = timezone.now()
         self.save()
 
     def generate_inputs(self, initiator):
@@ -203,7 +210,8 @@ class Analysis(TimeStampedModel):
             signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
         self.generate_inputs_task_id = generate_input_signature.delay().id
-
+        self.task_started = timezone.now()
+        self.task_finished = None
         self.save()
 
     def cancel_generate_inputs(self):
@@ -215,7 +223,7 @@ class Analysis(TimeStampedModel):
             signal='SIGKILL',
             terminate=True,
         )
-
+        self.task_finished = timezone.now()
         self.save()
 
     @property
