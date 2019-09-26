@@ -25,6 +25,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'portfolio',
             'model',
             'status',
+            'task_started',
+            'task_finished',
             'complex_model_data_files',
             'input_file',
             'settings_file',
