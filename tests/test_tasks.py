@@ -68,10 +68,10 @@ class StartAnalysis(TestCase):
                         'location.tar',
                     )
                     cmd_mock.assert_called_once_with(argv=[
-                        '--oasis-files-path', ANY,
+                        '--oasis-files-dir', ANY,
                         '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
                         '--model-run-dir', ANY,
-                        '--analysis-settings-file-path', 'analysis_settings.json',
+                        '--analysis-settings-json', 'analysis_settings.json',
                         '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
                         '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
                         '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
