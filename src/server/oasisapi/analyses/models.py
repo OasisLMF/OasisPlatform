@@ -2,9 +2,9 @@ from __future__ import absolute_import, print_function
 
 from celery import signature
 from celery.result import AsyncResult
-from datetime import datetime
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel
@@ -149,7 +149,7 @@ class Analysis(TimeStampedModel):
             signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
         self.run_task_id = run_analysis_signature.delay().id
-        self.task_started = datetime.now()
+        self.task_started = timezone.now()
         self.task_finished = None
         self.save()
 
@@ -173,7 +173,7 @@ class Analysis(TimeStampedModel):
         )
 
         self.status = self.status_choices.RUN_CANCELLED
-        self.task_finished = datetime.now()
+        self.task_finished = timezone.now()
         self.save()
 
     def generate_inputs(self, initiator):
@@ -210,7 +210,7 @@ class Analysis(TimeStampedModel):
             signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
         self.generate_inputs_task_id = generate_input_signature.delay().id
-        self.task_started = datetime.now()
+        self.task_started = timezone.now()
         self.task_finished = None
         self.save()
 
@@ -223,7 +223,7 @@ class Analysis(TimeStampedModel):
             signal='SIGKILL',
             terminate=True,
         )
-        self.task_finished = datetime.now()
+        self.task_finished = timezone.now()
         self.save()
 
     @property
