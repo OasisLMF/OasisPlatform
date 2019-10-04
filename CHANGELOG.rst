@@ -1,8 +1,17 @@
 OasisPlatform Changelog
 ==================
 
+`1.3.2`_
+--------
+* Update Django and django-rest-framework to latest versions
+* Added option to rotate refresh token 
+* Fix to remove old error logs once analysis completes successfully 
+* Update worker for MDK 1.4.2  
 
-.. AUTO_INSERT-CHANGE_LIST
+`1.3.1`_
+--------
+* Hotfix - fix for scope file null check
+
 `1.3.0`_
 --------
 * oasislmf updated to [1.4.1](https://github.com/OasisLMF/OasisLMF/releases/tag/1.4.1)
@@ -125,6 +134,8 @@ OasisPlatform Changelog
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
 .. AUTO_INSERT-CHANGE_DIFF
+.. _`1.3.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.1...1.3.2
+.. _`1.3.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.0...1.3.1
 .. _`1.3.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.2.1...1.3.0
 .. _`1.2.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.2.0...1.2.1
 .. _`1.2.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.1.2...1.2.0
