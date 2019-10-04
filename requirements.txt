@@ -62,7 +62,7 @@ model-mommy==1.6.0
 monotonic==1.5            # via fasteners
 more-itertools==7.2.0     # via pytest, zipp
 numpy==1.17.2             # via pandas
-oasislmf==1.4.1
+oasislmf==1.4.2
 packaging==19.1           # via pytest, tox
 pandas==0.25.1            # via oasislmf
 pathlib2==2.3.4
