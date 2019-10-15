@@ -53,7 +53,9 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
 
         # Delete previous error trace
         if analysis.run_traceback_file:
-            analysis.run_traceback_file.delete()
+            traceback = analysis.run_traceback_file
+            analysis.run_traceback_file = None
+            traceback.delete()
 
         analysis.save()
     except Exception as e:
@@ -137,7 +139,9 @@ def generate_input_success(result, analysis_pk, initiator_pk):
 
         # Delete previous error trace
         if analysis.input_generation_traceback_file:
-            analysis.input_generation_traceback_file.delete()
+            traceback = analysis.input_generation_traceback_file
+            analysis.input_generation_traceback_file = None
+            traceback.delete()
 
         analysis.save()
     except Exception as e:
