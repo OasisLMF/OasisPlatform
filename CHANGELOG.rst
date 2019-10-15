@@ -1,6 +1,11 @@
 OasisPlatform Changelog
 ==================
 
+`1.3.3`_
+--------
+* Fix for Cascade delete of traceback files 
+* Fix slow multiprocess lookup with newer billiard lib
+
 `1.3.2`_
 --------
 * Update Django and django-rest-framework to latest versions
@@ -134,6 +139,7 @@ OasisPlatform Changelog
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
 .. AUTO_INSERT-CHANGE_DIFF
+.. _`1.3.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.2...1.3.3
 .. _`1.3.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.1...1.3.2
 .. _`1.3.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.0...1.3.1
 .. _`1.3.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.2.1...1.3.0
