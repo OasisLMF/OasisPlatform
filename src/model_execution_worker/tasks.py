@@ -58,7 +58,7 @@ class TemporaryDir(object):
         return self.name
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if not self.persist:
+        if not self.persist and os.path.isdir(self.name):
             shutil.rmtree(self.name)
 
 
@@ -209,7 +209,9 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     else:
         tmp_input_dir = suppress()
 
-    with tmp_dir as oasis_files_dir, tmp_dir as run_dir, tmp_input_dir as input_data_dir:
+    with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
+
+        oasis_files_dir = os.path.join(run_dir, 'input')
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
 
