@@ -306,6 +306,7 @@ node {
         dir(build_workspace) {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
+            archiveArtifacts artifacts: 'reports/**/*.*'
         }
     }
 }

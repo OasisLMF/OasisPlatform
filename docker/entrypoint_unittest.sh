@@ -30,4 +30,4 @@ BUILD_OUTPUT_DIR='/tmp/output/'
 
 # Coverate report 
     coverage combine
-    coverage report  -i src/*/*.py src/*.py > $LOG_COV
+    coverage report  -i src/*/*.py src/*.py src/*/*.py src/server/oasisapi/*/*.py > $LOG_COV
