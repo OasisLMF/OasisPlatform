@@ -27,12 +27,11 @@ settings.load_profile("ci")
 
 
 class AnalysisApi(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -234,12 +233,11 @@ class AnalysisApi(WebTestMixin, TestCase):
 
 
 class AnalysisRun(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_run_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -271,12 +269,11 @@ class AnalysisRun(WebTestMixin, TestCase):
 
 
 class AnalysisCancel(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_cancel_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -308,12 +305,11 @@ class AnalysisCancel(WebTestMixin, TestCase):
 
 
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_generate_inputs_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -345,12 +341,11 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
 
 
 class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_cancel_inputs_generation_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -382,12 +377,11 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
 
 
 class AnalysisCopy(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_copy_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -687,12 +681,11 @@ class AnalysisCopy(WebTestMixin, TestCase):
 
 
 class AnalysisSettingsFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_settings_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_settings_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -770,12 +763,11 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
 
 
 class AnalysisInputFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_input_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_input_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -810,12 +802,11 @@ class AnalysisInputFile(WebTestMixin, TestCase):
 
 
 class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_lookup_errors_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_lookup_errors_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -866,12 +857,11 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
 
 
 class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_lookup_success_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_lookup_success_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -922,12 +912,11 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
 
 
 class AnalysisLookupValidationFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_lookup_validation_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_lookup_validation_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -978,12 +967,11 @@ class AnalysisLookupValidationFile(WebTestMixin, TestCase):
 
 
 class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_input_generation_traceback_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_input_generation_traceback_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -1032,12 +1020,11 @@ class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
 
 
 class AnalysisOutputFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_output_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_output_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -1105,12 +1092,11 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
 
 
 class AnalysisRunTracebackFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_run_traceback_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_run_traceback_file_is_not_present___get_response_is_404(self):
         user = fake_user()
