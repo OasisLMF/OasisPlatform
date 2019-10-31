@@ -18,6 +18,7 @@ ipdb
 ipython<6
 sqlalchemy
 pytest
+pytest-cov
 django
 djangorestframework
 markdown
