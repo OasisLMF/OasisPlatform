@@ -307,5 +307,9 @@ node {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
+        //Store reports 
+        dir(oasis_workspace){
+            archiveArtifacts artifacts: 'reports/**/*.*'
+        }
     }
 }

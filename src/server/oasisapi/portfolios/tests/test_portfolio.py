@@ -25,12 +25,11 @@ settings.load_profile("ci")
 
 
 class PortfolioApi(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -138,12 +137,11 @@ class PortfolioApi(WebTestMixin, TestCase):
 
 
 class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_create_analysis_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -303,12 +301,11 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
 
 
 class PortfolioAccountsFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_accounts_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_accounts_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -386,12 +383,11 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
 
 
 class PortfolioLocationFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_location_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_location_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -469,12 +465,11 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
 
 
 class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_reinsurance_scope_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_reinsurance_scope_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -552,12 +547,11 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
 
 
 class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_reinsurance_info_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_reinsurance_info_file_is_not_present___get_response_is_404(self):
         user = fake_user()

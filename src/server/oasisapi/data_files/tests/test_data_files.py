@@ -47,12 +47,11 @@ class ComplexModelFilesApi(WebTestMixin, TestCase):
 
 
 class ComplexModelFileDataFile(WebTestMixin, TestCase):
-    def test_user_is_not_authenticated___response_is_401(self):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
         cmf = fake_data_file()
 
         response = self.app.get(cmf.get_absolute_data_file_url(), expect_errors=True)
-
-        self.assertEqual(401, response.status_code)
+        self.assertIn(response.status_code, [401,403])
 
     def test_data_file_is_not_present___get_response_is_404(self):
         user = fake_user()
