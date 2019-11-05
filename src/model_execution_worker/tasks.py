@@ -232,12 +232,12 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             logging.info('run_directory: {}'.format(oasis_files_dir))
             logging.info('args_list: {}'.format(str(run_args)))
 
-            # Filter out any args with None as its value / And remove `--model-run-dir`
-            args_list = run_args + [''] if (len(run_args) % 2) else run_args
-            mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
-            logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
-                " ".join([str(arg) for arg in mdk_args])
-            ))
+        # Log MDK run command 
+        args_list = run_args + [''] if (len(run_args) % 2) else run_args
+        mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
+        logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
+            " ".join([str(arg) for arg in mdk_args])
+        ))
 
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
@@ -310,15 +310,14 @@ def generate_input(loc_file,
         if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
             run_args.append('--summarise-exposure')
 
-        if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
-            # Filter out any args with None as its value
-            args_list = run_args + [''] if (len(run_args) % 2) else run_args
-            mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
-            logging.info('run_directory: {}'.format(oasis_files_dir))
-            logging.info('args_list: {}'.format(str(run_args)))
-            logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
-                " ".join([str(arg) for arg in mdk_args])
-            ))
+        # Log MDK generate command 
+        args_list = run_args + [''] if (len(run_args) % 2) else run_args
+        mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
+        logging.info('run_directory: {}'.format(oasis_files_dir))
+        logging.info('args_list: {}'.format(str(run_args)))
+        logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
+            " ".join([str(arg) for arg in mdk_args])
+        ))
 
         GenerateOasisFilesCmd(argv=run_args).run()
 
