@@ -20,8 +20,6 @@ cli_test_retry  = int(os.environ.get('PY_TEST_RETRY')) if os.environ.get('PY_TES
 
 config = configparser.ConfigParser()
 config.read(os.path.abspath(cli_test_conf))
-import ipdb; ipdb.set_trace()
-
 
 def get_path(section, var, config=config):
     try:
