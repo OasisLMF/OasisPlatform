@@ -31,6 +31,7 @@ RUN mkdir -p /var/oasis && \
 RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
     chown -R worker /home/worker && \
     chown -R worker /var/oasis && \
-	chown -R worker /var/log
+	chown -R worker /var/log && \
+    echo 'complete -C completer_oasislmf oasislmf' >> $HOME/.bashrc
 
 ENTRYPOINT ./startup.sh
