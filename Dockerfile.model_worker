@@ -21,6 +21,7 @@ COPY ./src/common ./src/common/
 COPY ./src/conf ./src/conf/
 COPY ./src/model_execution_worker/ ./src/model_execution_worker/
 COPY ./src/utils/ ./src/utils/
+COPY ./src/utils/worker_bashrc /root/.bashrc
 COPY ./tests/integration /home/worker/tests/integration
 
 RUN mkdir -p /var/oasis && \
@@ -31,7 +32,6 @@ RUN mkdir -p /var/oasis && \
 RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
     chown -R worker /home/worker && \
     chown -R worker /var/oasis && \
-	chown -R worker /var/log && \
-    echo 'complete -C completer_oasislmf oasislmf' >> $HOME/.bashrc
+	chown -R worker /var/log
 
 ENTRYPOINT ./startup.sh
