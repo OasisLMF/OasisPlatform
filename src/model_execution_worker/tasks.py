@@ -41,6 +41,7 @@ logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DAT
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL')))
 logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL')))
+logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')))
 logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
 logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
@@ -222,6 +223,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
             '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
             '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
+            '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI'),
             '--ktools-fifo-relative'
         ]
         if complex_data_files:
