@@ -75,6 +75,7 @@ class StartAnalysis(TestCase):
                         '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
                         '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
                         '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
+                        '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI'),
                         '--ktools-fifo-relative'
                     ])
                     cmd_instance.run.assert_called_once_with()
