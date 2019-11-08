@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 ==================
 
+`1.3.4`_
+--------
+* Fix for coverage reports
+* Fix for groovy script  
+* Fixes for temporary directory manager
+* Update integration test script
+* Update worker for RI alloc rule
+
 `1.3.3`_
 --------
 * Fix for Cascade delete of traceback files 
@@ -139,6 +147,7 @@ OasisPlatform Changelog
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
 .. AUTO_INSERT-CHANGE_DIFF
+.. _`1.3.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.3...1.3.4
 .. _`1.3.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.2...1.3.3
 .. _`1.3.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.1...1.3.2
 .. _`1.3.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.0...1.3.1
