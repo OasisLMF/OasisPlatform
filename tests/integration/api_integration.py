@@ -11,19 +11,15 @@ from pandas.util.testing import assert_frame_equal
 from oasislmf.api.client import APIClient
 
 
-# ------------ load config -------------------- #
-
-test_conf_ini = os.environ.get('PY_CONFIG', '/var/oasis/test/conf.ini')
-check_output_vaules = True if os.environ.get('PY_CHECK_OUTPUT') else False
-cli_case_override = os.environ.get('PY_TEST_CASE').split(' ') if os.environ.get('PY_TEST_CASE') else None
-
-print(test_conf_ini)
-print(os.path.abspath(test_conf_ini))
-
+# ------------ load command line optios -------------------- #
+cli_test_conf = os.environ.get('PY_CONFIG', '/var/oasis/test/conf.ini')
+cli_test_output = True if os.environ.get('PY_TEST_OUTPUT') else False
+cli_test_case = os.environ.get('PY_TEST_CASE').split(' ') if os.environ.get('PY_TEST_CASE') else None
+cli_test_model = os.environ.get('PY_TEST_MODEL') if os.environ.get('PY_TEST_MODEL') else None
+cli_test_retry  = int(os.environ.get('PY_TEST_RETRY')) if os.environ.get('PY_TEST_MODEL') else 1
 
 config = configparser.ConfigParser()
-config.read(os.path.abspath(test_conf_ini))
-
+config.read(os.path.abspath(cli_test_conf))
 
 def get_path(section, var, config=config):
     try:
@@ -69,15 +65,19 @@ def check_non_empty(result_path):
 # --- Test Paramatization --------------------------------------------------- #
 
 
-test_model = config.get('default', 'TEST_MODEL').lower()
-if cli_case_override:
-    test_cases = cli_case_override
+if cli_test_model:
+    test_model = cli_test_model
+else:
+    test_model = config.get('default', 'TEST_MODEL').lower()
+
+if cli_test_case:
+    test_cases = cli_test_case
     print('Loading test cases from command line args:')
 else:
     test_cases = config.get(test_model, 'RUN_TEST_CASES').split(' ')
     print('Load default test cases from default conf.in:')
 
-base_dir = os.path.dirname(os.path.abspath(test_conf_ini))
+base_dir = os.path.dirname(os.path.abspath(cli_test_conf))
 os.chdir(base_dir)
 
 
@@ -183,8 +183,8 @@ def test_generate(case_fixture):
     if analysis.json()['status'] not in ['NEW', 'INPUTS_GENERATION_ERROR']:
         pytest.skip('setup error in prevous step')
 
-    for r in range(1, 4):
-        print(f'Attempt: {r}')
+    for r in range(cli_test_retry):
+        print(f'Attempt: {r+1}')
         session.run_generate(ids['analysis'])
         analysis = session.analyses.get(ids['analysis'])
         if analysis.json()['status'] == 'READY':
@@ -223,8 +223,8 @@ def test_analysis_run(case_fixture):
     if analysis.json()['status'] not in ['READY', 'RUN_ERROR']:
         pytest.skip('Error in file Generation step')
 
-    for r in range(1, 2):
-        print(f'Attempt: {r}')
+    for r in range(cli_test_retry):
+        print(f'Attempt: {r+1}')
         session.run_analysis(ids['analysis'])
         analysis = session.analyses.get(ids['analysis'])
         if analysis.json()['status'] == 'RUN_COMPLETED':
@@ -259,7 +259,7 @@ def test_analysis_output(case_fixture):
     tar_object.extractall(path=extract_to, members=csv_only)
     tar_object.close()
 
-    if check_output_vaules:
+    if cli_test_output:
         check_expected(os.path.join(extract_to, 'output'), expected_results)
     else:
         check_non_empty(os.path.join(extract_to, 'output'))

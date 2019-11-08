@@ -41,8 +41,9 @@ logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DAT
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL')))
 logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL')))
-logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
+logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')))
 logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
+logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
@@ -160,7 +161,6 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
             logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
             logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
             logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
-            logging.info("KTOOLS_MEMORY_LIMIT: {}".format(settings.get('worker', 'KTOOLS_MEMORY_LIMIT')))
 
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location = start_analysis(
@@ -202,10 +202,10 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE', fallback=False))
+    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
 
     if complex_data_files:
-        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE', fallback=False))
+        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
     else:
         tmp_input_dir = suppress()
 
@@ -223,24 +223,23 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
             '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
             '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
+            '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI'),
             '--ktools-fifo-relative'
         ]
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
-        if settings.getboolean('worker', 'KTOOLS_MEMORY_LIMIT'):
-            run_args.append('--ktools-mem-limit')
         if settings.getboolean('worker', 'DEBUG_MODE'):
             run_args.append('--verbose')
             logging.info('run_directory: {}'.format(oasis_files_dir))
             logging.info('args_list: {}'.format(str(run_args)))
 
-            # Filter out any args with None as its value / And remove `--model-run-dir`
-            args_list = run_args + [''] if (len(run_args) % 2) else run_args
-            mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
-            logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
-                " ".join([str(arg) for arg in mdk_args])
-            ))
+        # Log MDK run command 
+        args_list = run_args + [''] if (len(run_args) % 2) else run_args
+        mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
+        logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
+            " ".join([str(arg) for arg in mdk_args])
+        ))
 
         GenerateLossesCmd(argv=run_args).run()
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
@@ -290,9 +289,9 @@ def generate_input(loc_file,
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
 
-    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE', fallback=False))
+    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
     if complex_data_files:
-        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'DEBUG_MODE', fallback=False))
+        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
     else:
         tmp_input_dir = suppress()
 
@@ -313,15 +312,14 @@ def generate_input(loc_file,
         if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
             run_args.append('--summarise-exposure')
 
-        if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
-            # Filter out any args with None as its value
-            args_list = run_args + [''] if (len(run_args) % 2) else run_args
-            mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
-            logging.info('run_directory: {}'.format(oasis_files_dir))
-            logging.info('args_list: {}'.format(str(run_args)))
-            logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
-                " ".join([str(arg) for arg in mdk_args])
-            ))
+        # Log MDK generate command 
+        args_list = run_args + [''] if (len(run_args) % 2) else run_args
+        mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
+        logging.info('run_directory: {}'.format(oasis_files_dir))
+        logging.info('args_list: {}'.format(str(run_args)))
+        logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
+            " ".join([str(arg) for arg in mdk_args])
+        ))
 
         GenerateOasisFilesCmd(argv=run_args).run()
 

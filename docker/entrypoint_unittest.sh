@@ -31,3 +31,7 @@ BUILD_OUTPUT_DIR='/tmp/output/'
 # Coverate report 
     coverage combine
     coverage report  -i src/*/*.py src/*.py src/*/*.py src/server/oasisapi/*/*.py > $LOG_COV
+
+# clean up test run 
+    find /home/ -name __pycache__ | xargs -r rm -rfv
+    find /home/ -name "*.pyc" | xargs -r rm -rfv
