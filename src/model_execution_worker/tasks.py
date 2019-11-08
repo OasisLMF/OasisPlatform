@@ -211,7 +211,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
 
     with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
 
-        oasis_files_dir = os.path.join(run_dir, 'input')
+        oasis_files_dir = os.path.join(run_dir, 'oasis-input')
         with tarfile.open(input_archive) as f:
             f.extractall(oasis_files_dir)
 
