@@ -56,7 +56,7 @@ node {
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
         MDK_BRANCH='master'
         MODEL_BRANCH='master'
-    } 
+    }
 
     // Set Global ENV
     env.PIPELINE_LOAD = script_dir + utils_sh
@@ -177,7 +177,7 @@ node {
                 }
             }
         }
-        
+
         if (params.PUBLISH){
             parallel(
                 publish_api_server: {
@@ -212,7 +212,7 @@ node {
                             // Insert Changelog lines
                             l = params.APPEND_CHANGELOG.split('\n')
                             f = 'CHANGELOG.rst'
-                            for (int i=1; i<=l.size(); i++){    
+                            for (int i=1; i<=l.size(); i++){
                                 s = l[l.size() - i]
                                 if(s.trim()){
                                     str_insert = s
@@ -221,11 +221,11 @@ node {
                                 }
                                 sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a\\ ${str_insert}' ${f}"
                             }
-                            // Insert Changelog Header 
+                            // Insert Changelog Header
                             sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a --------' ${f}"
                             sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a `${env.TAG_RELEASE}`_ ' ${f}"
 
-                            // Commit and push changelog 
+                            // Commit and push changelog
                             sh 'git add CHANGELOG.rst'
                             sh 'git commit -m "Update CHANGELOG.rst"'
                             sh 'git push'
@@ -235,7 +235,7 @@ node {
                             // Insert RELEASE NOTES lines
                             l = params.APPEND_RELEASE.split('\n')
                             f = 'RELEASE.md'
-                            for (int i=1; i<=l.size(); i++){    
+                            for (int i=1; i<=l.size(); i++){
                                 s = l[l.size() - i]
                                 if(s.trim()){
                                     str_insert = s
@@ -250,7 +250,7 @@ node {
                             publush_date = current_date.format('(dd/MM/yyyy)')
                             sh "sed -i '/AUTO_INSERT-RELEASE/a # ${env.TAG_RELEASE} ${publush_date}' ${f}"
 
-                            // Commit and push RELEASE notes 
+                            // Commit and push RELEASE notes
                             sh 'git add RELEASE.md'
                             sh 'git commit -m "Update RELEASE.md"'
                             sh 'git push'
@@ -265,7 +265,7 @@ node {
                     dir(oasis_workspace) {
                         sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                     }
-                    // Tag PiWind 
+                    // Tag PiWind
                     dir(model_workspace) {
                         sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                     }
@@ -307,9 +307,11 @@ node {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
-        //Store reports 
-        dir(oasis_workspace){
-            archiveArtifacts artifacts: 'reports/**/*.*'
+        //Store reports
+        if (params.UNITTEST){
+            dir(oasis_workspace){
+                archiveArtifacts artifacts: 'reports/**/*.*'
+            }
         }
     }
 }
