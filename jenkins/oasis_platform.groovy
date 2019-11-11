@@ -315,7 +315,7 @@ node {
         }
         // Run merge back if publish
         if (params.PUBLISH){ 
-            dir(source_workspace) {
+            dir(oasis_workspace) {
                 sshagent (credentials: [git_creds]) {
                     sh "git checkout master && git pull"
                     sh "git merge ${oasis_workspace} && git push"
