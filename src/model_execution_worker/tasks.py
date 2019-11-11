@@ -38,6 +38,7 @@ CELERY.config_from_object(celery_conf)
 
 logging.info("Started worker")
 logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
+logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD')))
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL')))
 logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL')))
@@ -229,6 +230,10 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
+
+        if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD'):
+            run_args.append('--ktools-disable-guard')
+
         if settings.getboolean('worker', 'DEBUG_MODE'):
             run_args.append('--verbose')
             logging.info('run_directory: {}'.format(oasis_files_dir))
