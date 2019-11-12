@@ -197,83 +197,43 @@ node {
             )
         }
 
-        if(! hasFailed && params.PUBLISH){
-            /*
-            stage ('Publish: Update Changelog + Release notes') {
+        if(params.PUBLISH){
+            stage ('Create Release: GitHub') {
                 sshagent (credentials: [git_creds]) {
+                    dir(model_workspace) {
+                        // Tag PiWind
+                        sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
+                    }
                     dir(oasis_workspace) {
-                        if (params.APPEND_CHANGELOG) {
-                            // Insert Git Diff
-                            String cmd = /cat CHANGELOG.rst | grep \` -m 1 | awk -F "\`" 'NR==1 {print $2}'/
-                            prev_version = sh(script: cmd, returnStdout: true)
-                            cmd = "sed -i '/AUTO_INSERT-CHANGE_DIFF/a .. _`%s`:  https://github.com/OasisLMF/OasisPlatform/compare/%s...%s' CHANGELOG.rst"
-                            sh String.format(cmd, env.TAG_RELEASE, prev_version.trim(), env.TAG_RELEASE)
-
-                            // Insert Changelog lines
-                            l = params.APPEND_CHANGELOG.split('\n')
-                            f = 'CHANGELOG.rst'
-                            for (int i=1; i<=l.size(); i++){
-                                s = l[l.size() - i]
-                                if(s.trim()){
-                                    str_insert = s
-                                } else {
-                                    str_insert = "\n"
-                                }
-                                sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a\\ ${str_insert}' ${f}"
-                            }
-                            // Insert Changelog Header
-                            sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a --------' ${f}"
-                            sh "sed -i '/AUTO_INSERT-CHANGE_LIST/a `${env.TAG_RELEASE}`_ ' ${f}"
-
-                            // Commit and push changelog
-                            sh 'git add CHANGELOG.rst'
-                            sh 'git commit -m "Update CHANGELOG.rst"'
-                            sh 'git push'
-                        }
-
-                        if (params.APPEND_RELEASE){
-                            // Insert RELEASE NOTES lines
-                            l = params.APPEND_RELEASE.split('\n')
-                            f = 'RELEASE.md'
-                            for (int i=1; i<=l.size(); i++){
-                                s = l[l.size() - i]
-                                if(s.trim()){
-                                    str_insert = s
-                                } else {
-                                    str_insert = "\n"
-                                }
-                                sh "sed -i '/AUTO_INSERT-RELEASE/a\\ ${str_insert}' ${f}"
-                            }
-
-                            // Insert RELEASE HEADER
-                            def current_date = new Date()
-                            publush_date = current_date.format('(dd/MM/yyyy)')
-                            sh "sed -i '/AUTO_INSERT-RELEASE/a # ${env.TAG_RELEASE} ${publush_date}' ${f}"
-
-                            // Commit and push RELEASE notes
-                            sh 'git add RELEASE.md'
-                            sh 'git commit -m "Update RELEASE.md"'
-                            sh 'git push'
-                        }
+                        // Tag the OasisPlatform
+                        sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                     }
                 }
-            }
-            **/
-            stage ('Publish: Git Tag') {
-                sshagent (credentials: [git_creds]) {
-                    // Tag the OasisPlatform
-                    dir(oasis_workspace) {
-                        sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
-                    }
-                    // Tag PiWind
-                    dir(model_workspace) {
-                        sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
+                
+                // Create Release
+                withCredentials([string(credentialsId: 'github-api-token', variable: 'gh_token')]) {
+                    String repo = "OasisLMF/OasisPlatform"
+
+                    def json_request = readJSON text: '{}'
+                    json_request['tag_name'] = RELEASE_TAG
+                    json_request['target_commitish'] = 'master'
+                    json_request['name'] = RELEASE_TAG
+                    json_request['body'] = ""
+                    json_request['draft'] = false
+                    json_request['prerelease'] = false
+                    writeJSON file: 'gh_request.json', json: json_request
+                    sh 'curl -XPOST -H "Authorization:token ' + gh_token + "\" --data @gh_request.json https://api.github.com/repos/$repo/releases > gh_response.json"
+
+                    // Fetch release ID and post json schema
+                    def response = readJSON file: "gh_response.json"
+                    release_id = response['id']                                                                                                                                                                                                                                               
+                    dir('reports') {
+                        filename='openapi-schema.json'
+                        sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
                     }
                 }
             }
         }
-
-
     } catch(hudson.AbortException | org.jenkinsci.plugins.workflow.steps.FlowInterruptedException buildException) {
         hasFailed = true
         error('Build Failed')
