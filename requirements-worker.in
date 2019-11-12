@@ -1,4 +1,4 @@
-oasislmf>=1.4.3
+oasislmf>=1.4.4
 billiard==3.6.0.0
 celery
 configparser
