@@ -83,14 +83,6 @@ node {
         println("Publish Only allowed on a release/* or hotfix/* branches")
         sh "exit 1"
     }
-    //if (params.PUBLISH && ! params.APPEND_CHANGELOG) {
-    //    println("Must note changes in APPEND_CHANGELOG")
-    //    sh "exit 1"
-    //}
-    //if (params.PUBLISH && ! params.APPEND_RELEASE) {
-    //    println("Must note changes in APPEND_RELEASE")
-    //    sh "exit 1"
-    //}
 
     try {
         parallel(
@@ -278,7 +270,7 @@ node {
             dir(oasis_workspace) {
                 sshagent (credentials: [git_creds]) {
                     sh "git checkout master && git pull"
-                    sh "git merge ${oasis_workspace} && git push"
+                    sh "git merge ${oasis_branch} && git push"
                     sh "git checkout develop && git pull"
                     sh "git merge master && git push"
                 }   
