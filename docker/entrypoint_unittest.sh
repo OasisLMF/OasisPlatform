@@ -34,6 +34,7 @@ BUILD_OUTPUT_DIR='/tmp/output/'
 
 # Create Schema 
     source $(find .tox/ -name "*activate" | head -n 1)
+    python ./manage.py migrate
     python ./manage.py generate_swagger $LOG_DIR'openapi-schema.json'
 
 # clean up test run 
