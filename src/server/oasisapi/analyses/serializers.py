@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from .models import Analysis
-
+from ..schemas.custom_swagger import load_json_schema
 
 class AnalysisSerializer(serializers.ModelSerializer):
     input_file = serializers.SerializerMethodField()
@@ -97,3 +97,10 @@ class AnalysisCopySerializer(AnalysisSerializer):
         self.fields['portfolio'].required = False
         self.fields['model'].required = False
         self.fields['name'].required = False
+
+
+class AnalysisSettingsJSON(serializers.Serializer):
+    # https://drf-yasg.readthedocs.io/en/stable/drf_yasg.html#module-drf_yasg.openapi
+    # https://medium.com/@aleemsaadullah/adding-validation-support-for-jsonfield-in-django-2e26779dccc
+    class Meta:
+        swagger_schema_fields = load_json_schema('analysis_settings.json')

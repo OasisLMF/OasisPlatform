@@ -1,4 +1,5 @@
-from django.http import StreamingHttpResponse, Http404
+from django.core.files.uploadedfile import InMemoryUploadedFile, UploadedFile
+from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
@@ -61,5 +62,50 @@ def handle_related_file(parent, field, request, content_types):
         return _handle_get_related_file(parent, field)
     elif method == 'post':
         return _handle_post_related_file(parent, field, request, content_types)
+    elif method == 'delete':
+        return _handle_delete_related_file(parent, field)
+
+
+def _handle_json_to_file(parent, field, request, serializer):
+    json_serializer = serializer()
+    data = json_serializer.validate(request.data)
+
+    # create file object
+    with open(json_serializer.filenmame, 'r+') as f:
+        in_memory_file = UploadedFile(
+            file=f, 
+            name=json_serializer.filenmame,
+            content_type='application/json',
+            size=len(data.encode('utf-8')),
+            charset=None
+        )
+        in_memory_file.write(data)
+
+    # wrap and re-open file
+    file_obj = QueryDict('', mutable=True)
+    file_obj.update({'file': in_memory_file})
+    file_obj['file'].open()
+
+    serializer = RelatedFileSerializer(data=file_obj, content_types='application/json', context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    instance = serializer.create(serializer.validated_data)
+    setattr(parent, field, instance)
+    parent.save()
+    return Response(RelatedFileSerializer(instance=instance, content_types='application/json').data)
+    
+
+
+def _handle_file_to_json(parent, field):
+    # TO DO
+    pass
+
+def handle_json_data(parent, field, request, serializer):
+    method = request.method.lower()
+
+    if method == 'get':
+        return _handle_file_to_json(parent, field)
+    elif method == 'post':
+        return _handle_json_to_file(parent, field, request, serializer)
+
     elif method == 'delete':
         return _handle_delete_related_file(parent, field)

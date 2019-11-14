@@ -16,7 +16,7 @@ from ..files.views import handle_related_file
 from ..files.serializers import RelatedFileSerializer
 from .models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer
-from ..schemas import FILE_RESPONSE
+from ..schemas.custom_swagger import FILE_RESPONSE
 
 from ..data_files.serializers import DataFileSerializer
 

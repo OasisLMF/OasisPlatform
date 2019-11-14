@@ -40,9 +40,8 @@ class RelatedFileSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs['creator'] = self.context['request'].user
         attrs['content_type'] = attrs['file'].content_type
-        attrs['filename'] = self.context['request'].FILES['file']
+        attrs['filename'] = attrs['file'].name
         # attrs['filehash_md5'] = md5_filehash(self.context['request'].FILES['file'])
-
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):

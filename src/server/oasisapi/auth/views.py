@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshV
     TokenObtainPairView as BaseTokenObtainPairView
 from .serializers import TokenRefreshSerializer, TokenObtainPairSerializer
 
-from ..schemas import (
+from ..schemas.custom_swagger import (
     TokenObtainPairResponseSerializer,
     TokenRefreshResponseSerializer,
     TOKEN_REFRESH_HEADER,

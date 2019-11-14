@@ -6,7 +6,12 @@ __all__ = [
     'AccFileSerializer',
     'ReinsInfoFileSerializer',
     'ReinsScopeFileSerializer',
+    'load_json_schema'
 ]
+
+import io
+import json
+import os
 
 from drf_yasg import openapi
 from drf_yasg.openapi import Schema
@@ -118,3 +123,20 @@ class ReinsScopeFileSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise NotImplementedError()
+
+
+def load_json_schema(json_schema_file):
+    """
+        Load json schema stored in the .schema dir
+    """
+    schema_dir = os.path.dirname(os.path.abspath(__file__))
+    schema_fp = os.path.join(schema_dir, json_schema_file)
+    with io.open(schema_fp, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+# Create an analysis_settings sersialzer
+
+### https://github.com/axnsan12/drf-yasg/issues/396
+### https://github.com/wework/json-schema-to-openapi-schema
+### https://richardtier.com/2014/03/24/json-schema-validation-with-django-rest-framework/

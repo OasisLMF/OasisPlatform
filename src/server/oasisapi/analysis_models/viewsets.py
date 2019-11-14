@@ -15,12 +15,13 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
+#from ..parsers import JSONSchemaParser
 from ..filters import TimeStampedFilter
-from ..files.views import handle_related_file
+from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
 from .models import AnalysisModel
-from ..schemas import FILE_RESPONSE
-from .serializers import AnalysisModelSerializer
+from ..schemas.custom_swagger import FILE_RESPONSE
+from .serializers import AnalysisModelSerializer, ModelResourceSerializer
 
 from ..data_files.serializers import DataFileSerializer
 
@@ -124,10 +125,31 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     def parser_classes(self):
         if getattr(self, 'action', None) in ['resource_file']:
             return [MultiPartParser]
+        #if getattr(self, 'action', None) in ['resource_settings']:
+        #    return JSONSchemaParser(schema='model_resource.json')
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+
+
+
+    @swagger_auto_schema(methods=['post'], request_body=ModelResourceSerializer, responses={201: AnalysisModelSerializer})
+    @swagger_auto_schema(methods=['get'], responses={200: ModelResourceSerializer})
+    @action(methods=['get', 'post', 'delete'], detail=True)
+    def resource_settings(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the models `resource_file` contents as JSON response
+
+        post:
+        Sets the models `resource_file` as JSON data
+
+        delete:
+        Disassociates the moodels `resource_file` 
+        """
+        return handle_json_data(self.get_object(), 'resource_file', request, ModelResourceSerializer)
+
+    @swagger_auto_schema(methods=['get', 'post'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def resource_file(self, request, pk=None, version=None):
         """

@@ -43,7 +43,7 @@
                     "default": false
 
                   }
-            },                                                                                                                                                                           
+            },
             {
                "leakage_factor": {
                    "name": "Leakage Factor",
