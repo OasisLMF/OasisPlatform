@@ -69,12 +69,13 @@ def _json_write_to_file(parent, field, request, serializer):
             size=len(data.encode('utf-8')),
             charset=None
         )
-        in_memory_file.write(data)
 
     # wrap and re-open file
     file_obj = QueryDict('', mutable=True)
     file_obj.update({'file': in_memory_file})
     file_obj['file'].open()
+    file_obj['file'].seek(0)
+    file_obj['file'].write(data)
     serializer = RelatedFileSerializer(
         data=file_obj, 
         content_types='application/json', 
