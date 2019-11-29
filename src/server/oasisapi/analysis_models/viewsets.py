@@ -15,15 +15,15 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
-#from ..parsers import JSONSchemaParser
+from .models import AnalysisModel
+from .serializers import AnalysisModelSerializer
+
+from ..data_files.serializers import DataFileSerializer
 from ..filters import TimeStampedFilter
 from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
-from .models import AnalysisModel
 from ..schemas.custom_swagger import FILE_RESPONSE
-from .serializers import AnalysisModelSerializer, ModelResourceSerializer
-
-from ..data_files.serializers import DataFileSerializer
+from ..schemas.serializers import ModelResourceSerializer
 
 
 class AnalysisModelFilter(TimeStampedFilter):
@@ -125,29 +125,8 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     def parser_classes(self):
         if getattr(self, 'action', None) in ['resource_file']:
             return [MultiPartParser]
-        #if getattr(self, 'action', None) in ['resource_settings']:
-        #    return JSONSchemaParser(schema='model_resource.json')
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
-
-
-
-
-    @swagger_auto_schema(methods=['post'], request_body=ModelResourceSerializer, responses={201: AnalysisModelSerializer})
-    @swagger_auto_schema(methods=['get'], responses={200: ModelResourceSerializer})
-    @action(methods=['get', 'post', 'delete'], detail=True)
-    def resource_settings(self, request, pk=None, version=None):
-        """
-        get:
-        Gets the models `resource_file` contents as JSON response
-
-        post:
-        Sets the models `resource_file` as JSON data
-
-        delete:
-        Disassociates the moodels `resource_file` 
-        """
-        return handle_json_data(self.get_object(), 'resource_file', request, ModelResourceSerializer)
 
     @swagger_auto_schema(methods=['get', 'post'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -180,3 +159,20 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)
+
+
+class ModelSettingsView(viewsets.ModelViewSet):
+    queryset = AnalysisModel.objects.all()
+    serializer_class = AnalysisModelSerializer
+    filter_class = AnalysisModelFilter
+
+    @swagger_auto_schema(method='get', responses={200: ModelResourceSerializer})
+    @swagger_auto_schema(method='post', request_body=ModelResourceSerializer, responses={201: RelatedFileSerializer})
+    @action(methods=['get', 'post', 'delete'], detail=True)
+    def model_settings(self, request, pk=None, version=None):
+        try:
+            return handle_json_data(self.get_object(), 'resource_file', request, ModelResourceSerializer)
+        except Http404:
+            with io.open(os.path.join(settings.STATIC_ROOT, 'model_resource.json')) as default_resource:
+                data = json.load(default_resource)
+            return Response(data)

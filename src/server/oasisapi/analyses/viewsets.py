@@ -10,15 +10,16 @@ from rest_framework.serializers import Serializer
 from drf_yasg.utils import swagger_auto_schema
 from django_filters import rest_framework as filters
 
-from ..analysis_models.models import AnalysisModel
-from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
-from ..files.views import handle_related_file
-from ..files.serializers import RelatedFileSerializer
 from .models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer
-from ..schemas.custom_swagger import FILE_RESPONSE
 
+from ..analysis_models.models import AnalysisModel
 from ..data_files.serializers import DataFileSerializer
+from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
+from ..files.views import handle_related_file, handle_json_data
+from ..files.serializers import RelatedFileSerializer
+from ..schemas.custom_swagger import FILE_RESPONSE
+from ..schemas.serializers import AnalysisSettingsSerializer 
 
 
 class AnalysisFilter(TimeStampedFilter):
@@ -364,3 +365,29 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)
+
+
+class AnalysisSettingsView(viewsets.ModelViewSet):
+    """
+    list:
+    Return the settings of an Analysis object.
+    """
+    queryset = Analysis.objects.all()
+    serializer_class = AnalysisSerializer
+    filter_class = AnalysisFilter
+
+    @swagger_auto_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
+    @swagger_auto_schema(methods=['post'], request_body=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
+    @action(methods=['get', 'post', 'delete'], detail=True)
+    def analysis_settings(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the analyses `settings` contents
+
+        post:
+        Sets the analyses `settings` contents
+
+        delete:
+        Disassociates the portfolios `settings_file` contents
+        """
+        return handle_json_data(self.get_object(), 'settings_file', request, AnalysisSettingsSerializer)

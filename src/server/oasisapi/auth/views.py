@@ -5,14 +5,10 @@ from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshV
     TokenObtainPairView as BaseTokenObtainPairView
 from .serializers import TokenRefreshSerializer, TokenObtainPairSerializer
 
-from ..schemas.custom_swagger import (
-    TokenObtainPairResponseSerializer,
-    TokenRefreshResponseSerializer,
-    TOKEN_REFRESH_HEADER,
-)
+from ..schemas.serializers import TokenObtainPairResponseSerializer, TokenRefreshResponseSerializer
+from ..schemas.custom_swagger import TOKEN_REFRESH_HEADER
 
 
-# TODO: add header auth params to swagger
 class TokenRefreshView(BaseTokenRefreshView):
     """
     Fetches a new authentication token from your refresh token.

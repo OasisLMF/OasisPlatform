@@ -1,3 +1,5 @@
+import json
+
 from django.core.files.uploadedfile import InMemoryUploadedFile, UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
@@ -40,7 +42,6 @@ def _handle_post_related_file(parent, field, request, content_types):
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
     setattr(parent, field, instance)
-
     parent.save()
 
     return Response(RelatedFileSerializer(instance=instance, content_types=content_types).data)
@@ -55,23 +56,12 @@ def _handle_delete_related_file(parent, field):
     return Response()
 
 
-def handle_related_file(parent, field, request, content_types):
-    method = request.method.lower()
-
-    if method == 'get':
-        return _handle_get_related_file(parent, field)
-    elif method == 'post':
-        return _handle_post_related_file(parent, field, request, content_types)
-    elif method == 'delete':
-        return _handle_delete_related_file(parent, field)
-
-
-def _handle_json_to_file(parent, field, request, serializer):
+def _json_write_to_file(parent, field, request, serializer):
     json_serializer = serializer()
     data = json_serializer.validate(request.data)
 
     # create file object
-    with open(json_serializer.filenmame, 'r+') as f:
+    with open(json_serializer.filenmame, 'w+') as f:
         in_memory_file = UploadedFile(
             file=f, 
             name=json_serializer.filenmame,
@@ -85,8 +75,12 @@ def _handle_json_to_file(parent, field, request, serializer):
     file_obj = QueryDict('', mutable=True)
     file_obj.update({'file': in_memory_file})
     file_obj['file'].open()
+    serializer = RelatedFileSerializer(
+        data=file_obj, 
+        content_types='application/json', 
+        context={'request': request}
+    )
 
-    serializer = RelatedFileSerializer(data=file_obj, content_types='application/json', context={'request': request})
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
     setattr(parent, field, instance)
@@ -94,18 +88,30 @@ def _handle_json_to_file(parent, field, request, serializer):
     return Response(RelatedFileSerializer(instance=instance, content_types='application/json').data)
     
 
+def _json_read_from_file(parent, field):
+    f = getattr(parent, field)
+    if not f:
+        raise Http404()
+    else:
+        return Response(json.load(f))
 
-def _handle_file_to_json(parent, field):
-    # TO DO
-    pass
+def handle_related_file(parent, field, request, content_types):
+    method = request.method.lower()
+
+    if method == 'get':
+        return _handle_get_related_file(parent, field)
+    elif method == 'post':
+        return _handle_post_related_file(parent, field, request, content_types)
+    elif method == 'delete':
+        return _handle_delete_related_file(parent, field)
+
 
 def handle_json_data(parent, field, request, serializer):
     method = request.method.lower()
 
     if method == 'get':
-        return _handle_file_to_json(parent, field)
+        return _json_read_from_file(parent, field)
     elif method == 'post':
-        return _handle_json_to_file(parent, field, request, serializer)
-
+        return _json_write_to_file(parent, field, request, serializer)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field)

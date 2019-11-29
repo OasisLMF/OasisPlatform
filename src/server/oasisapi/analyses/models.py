@@ -87,6 +87,9 @@ class Analysis(TimeStampedModel):
     def get_absolute_settings_file_url(self, request=None):
         return reverse('analysis-settings-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+    def get_absolute_settings_url(self, request=None):
+        return reverse('analysis-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
     def get_absolute_input_file_url(self, request=None):
         return reverse('analysis-input-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 

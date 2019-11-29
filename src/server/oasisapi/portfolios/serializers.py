@@ -4,7 +4,8 @@ from rest_framework.exceptions import ValidationError
 
 from ..analyses.serializers import AnalysisSerializer
 from .models import Portfolio
-from ..schemas.custom_swagger import (
+
+from ..schemas.serializers import (
     LocFileSerializer,
     AccFileSerializer,
     ReinsInfoFileSerializer,

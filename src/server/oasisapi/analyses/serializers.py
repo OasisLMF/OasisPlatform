@@ -2,11 +2,12 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from .models import Analysis
-from ..schemas.custom_swagger import load_json_schema
+
 
 class AnalysisSerializer(serializers.ModelSerializer):
     input_file = serializers.SerializerMethodField()
     settings_file = serializers.SerializerMethodField()
+    settings = serializers.SerializerMethodField()
     lookup_errors_file = serializers.SerializerMethodField()
     lookup_success_file = serializers.SerializerMethodField()
     lookup_validation_file = serializers.SerializerMethodField()
@@ -30,6 +31,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'complex_model_data_files',
             'input_file',
             'settings_file',
+            'settings',
             'lookup_errors_file',
             'lookup_success_file',
             'lookup_validation_file',
@@ -48,6 +50,11 @@ class AnalysisSerializer(serializers.ModelSerializer):
     def get_settings_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_file_url(request=request) if instance.settings_file else None
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_settings(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_settings_url(request=request) if instance.settings_file else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_lookup_errors_file(self, instance):
@@ -97,10 +104,3 @@ class AnalysisCopySerializer(AnalysisSerializer):
         self.fields['portfolio'].required = False
         self.fields['model'].required = False
         self.fields['name'].required = False
-
-
-class AnalysisSettingsJSON(serializers.Serializer):
-    # https://drf-yasg.readthedocs.io/en/stable/drf_yasg.html#module-drf_yasg.openapi
-    # https://medium.com/@aleemsaadullah/adding-validation-support-for-jsonfield-in-django-2e26779dccc
-    class Meta:
-        swagger_schema_fields = load_json_schema('analysis_settings.json')
