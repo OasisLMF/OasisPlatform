@@ -101,6 +101,10 @@ def update_links(link_prefix, d):
     for k,v in d.items():
         if isinstance(v, dict):
             update_links(link_prefix, v)
+        elif isinstance(v, list):
+            for el in v:
+                if isinstance(el, dict):
+                    update_links(link_prefix, el)
         else:
             if k in '$ref':
                 link = v.split('#')[-1]
