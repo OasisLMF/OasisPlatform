@@ -53,6 +53,7 @@ itypes==1.1.0             # via coreapi
 jinja2-time==0.2.0        # via cookiecutter
 jinja2==2.10.1            # via cookiecutter, coreschema, jinja2-time
 jsonpickle==1.2
+jsonschema==2.6.0
 kombu==4.6.4              # via celery
 markdown==3.1.1
 markupsafe==1.1.1         # via jinja2

@@ -2,6 +2,7 @@ oasislmf
 celery
 pymysql
 jsonpickle
+jsonschema
 requests
 pyopenssl
 fasteners
