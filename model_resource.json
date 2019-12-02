@@ -1,69 +1,13 @@
 {
     "model_settings":[
-        {"event_set":{
-	      "name": "Event Set",
-	      "desc": "Either Probablistic or Historic",
-              "type":"dictionary",
-               "default": "P",
-
-                      "values":{
-                        "P": "Proabilistic",
-                        "H": "Historic"
-                    }
-            }
-         },
-             {
-                "event_occurrence_id":{
-		    "name": "Occurrence Set",
-		    "desc": "Tooltip for Occurrence selection",
-                    "type":"dictionary",
-                    "default": "1",
-                    "values":{
-                       "1":"Long Term",
-                       "2":"Near Term WSST",
-                       "3":"Historic"
-                    }
-                }
-
-            },
-            {
-                "peril_wind":{
-	            "name": "Wind Peril",
-		    "desc": "Run model with Wind Peril",
-                    "type":"boolean",
-                    "default": true
-
-                 }
-            },
-            {
-                 "peril_surge":{
-                    "name": "Surge Peril",
-		    "desc": "Run model with Surge Peril",
-                    "type":"boolean",
-                    "default": false
-
-                  }
-            },
-            {
-               "leakage_factor": {
-                   "name": "Leakage Factor",
-		   "desc": "Tooltip for Leakage option",
-                   "type": "float",
-                   "default": 0.5,
-                   "min": 0.0,
-                   "max":1.0
-                }
-            }
+        {}
     ],
     "lookup_settings":[
         {
-        "PerilCodes":{
-            "type":"dictionary",
-            "values":{
-                "WW1": "Windstorm with storm surge",
-                "WW2": "Windstorm w/o storm surge"
+            "PerilCodes":{
+                "type":"dictionary",
+                "values":{"AA1": "All perils"}
             }
-         }
         }
     ]
 }
