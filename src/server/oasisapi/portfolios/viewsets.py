@@ -15,7 +15,7 @@ from ..analyses.serializers import AnalysisSerializer
 from ..files.views import handle_related_file
 from ..files.serializers import RelatedFileSerializer
 from .models import Portfolio
-from ..schemas import FILE_RESPONSE
+from ..schemas.custom_swagger import FILE_RESPONSE
 from .serializers import PortfolioSerializer, CreateAnalysisSerializer
 
 

@@ -6,9 +6,9 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import routers, permissions
 
-from .analysis_models.viewsets import AnalysisModelViewSet
+from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView
+from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView
 from .portfolios.viewsets import PortfolioViewSet
-from .analyses.viewsets import AnalysisViewSet
 from .healthcheck.views import HealthcheckView
 from .data_files.viewsets import DataFileViewset
 from .oed_info.views import PerilcodesView
@@ -51,8 +51,29 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+""" Developer note:
+
+These are custom routes to use the endpoint 'settings'
+adding the method 'def settings( .. )' fails under 
+viewsets.ModelViewSet due to it overriding 
+the internal Django settings object 
+"""
+
+model_settings = ModelSettingsView.as_view({
+    'get': 'model_settings',
+    'post': 'model_settings',
+    'delete': 'model_settings'
+})
+analyses_settings = AnalysisSettingsView.as_view({
+    'get': 'analysis_settings',
+    'post': 'analysis_settings',
+    'delete': 'analysis_settings'
+})
+
 
 urlpatterns = [
+    url(r'^(?P<version>[^/]+)/models/(?P<pk>\d+)/settings/', model_settings, name='model-settings'),
+    url(r'^(?P<version>[^/]+)/analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
     url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
     url(r'^', include('src.server.oasisapi.auth.urls', namespace='auth')),

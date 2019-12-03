@@ -1,11 +1,12 @@
 from drf_yasg.utils import swagger_serializer_method
+from django.core.files import File
 from rest_framework import serializers
 
 from .models import AnalysisModel
 
-
 class AnalysisModelSerializer(serializers.ModelSerializer):
     resource_file = serializers.SerializerMethodField()
+    settings = serializers.SerializerMethodField()
 
     class Meta:
         model = AnalysisModel
@@ -18,6 +19,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'modified',
             'data_files',
             'resource_file',
+            'settings',
         )
 
     def create(self, validated_data):
@@ -30,3 +32,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     def get_resource_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_resources_file_url(request=request)
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_settings(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_settings_url(request=request)
