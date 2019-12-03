@@ -13,7 +13,7 @@ import json
 
 from rest_framework import serializers
 
-from jsonschema import validate
+import jsonschema
 from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
 from jsonschema.exceptions import SchemaError as JSONSchemaError
 
@@ -122,7 +122,36 @@ def load_json_schema(json_schema_file, link_prefix=None):
         update_links(link_prefix, schema)
     return schema
 
-class ModelResourceSerializer(serializers.Serializer):
+
+class JsonSettingsSerializer(serializers.Serializer):
+
+    def to_internal_value(self, data):
+        return data
+
+    def validate_json(self, data):
+        try:
+            validator = jsonschema.Draft4Validator(self.schema)
+            validation_errors = [e for e in validator.iter_errors(data)]
+
+            # Iteratre over all errors and raise as single exception
+            if validation_errors:
+                exception_msgs = {}
+                for err in validation_errors:
+                    if err.path:
+                        field = '-'.join([str(e) for e in err.path])
+                    elif err.schema_path:
+                        field = '-'.join([str(e) for e in err.schema_path])
+                    else:
+                        field = 'error'
+                    exception_msgs[field] = err.message
+                raise serializers.ValidationError(exception_msgs)
+
+        except (JSONSchemaValidationError, JSONSchemaError) as e:
+            raise serializers.ValidationError(e.message)
+        return self.to_internal_value(json.dumps(data))
+
+
+class ModelResourceSerializer(JsonSettingsSerializer):
     class Meta:
         swagger_schema_fields = load_json_schema(
             json_schema_file='model_resource.json',
@@ -133,19 +162,12 @@ class ModelResourceSerializer(serializers.Serializer):
         super(ModelResourceSerializer, self).__init__(*args, **kwargs)
         self.filenmame = 'model_settings.json'
         self.schema = load_json_schema('model_resource.json')
-
-    def to_internal_value(self, data):
-        return data
-
+    
     def validate(self, data):
-        try:
-            validate(data, self.schema)
-        except JSONSchemaValidationError as e:
-            raise serializers.ValidationError(e.message)
-        return self.to_internal_value(json.dumps(data))
+        return super(ModelResourceSerializer, self).validate_json(data)
 
 
-class AnalysisSettingsSerializer(serializers.Serializer):
+class AnalysisSettingsSerializer(JsonSettingsSerializer):
     class Meta:
         swagger_schema_fields = load_json_schema(
             json_schema_file='analysis_settings.json',
@@ -157,16 +179,7 @@ class AnalysisSettingsSerializer(serializers.Serializer):
         self.filenmame = 'analysis_settings.json'
         self.schema = load_json_schema('analysis_settings.json')
 
-    def to_internal_value(self, data):
-        return data
-
     def validate(self, data):
-        try:
-            # check and strip away top-level
-            if 'analysis_settings' in data:
-                data = data['analysis_settings']
-
-            validate(data, self.schema)
-        except (JSONSchemaValidationError, JSONSchemaError) as e:
-            raise serializers.ValidationError(e.message)
-        return self.to_internal_value(json.dumps(data))
+        if 'analysis_settings' in data:
+            data = data['analysis_settings']
+        return super(AnalysisSettingsSerializer, self).validate_json(data)
