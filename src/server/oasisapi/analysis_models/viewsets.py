@@ -23,7 +23,7 @@ from ..filters import TimeStampedFilter
 from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
 from ..schemas.custom_swagger import FILE_RESPONSE
-from ..schemas.serializers import ModelResourceSerializer
+from ..schemas.serializers import ModelSettingsSerializer
 
 
 class AnalysisModelFilter(TimeStampedFilter):
@@ -166,12 +166,12 @@ class ModelSettingsView(viewsets.ModelViewSet):
     serializer_class = AnalysisModelSerializer
     filter_class = AnalysisModelFilter
 
-    @swagger_auto_schema(method='get', responses={200: ModelResourceSerializer})
-    @swagger_auto_schema(method='post', request_body=ModelResourceSerializer, responses={201: RelatedFileSerializer})
+    @swagger_auto_schema(method='get', responses={200: ModelSettingsSerializer})
+    @swagger_auto_schema(method='post', request_body=ModelSettingsSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def model_settings(self, request, pk=None, version=None):
         try:
-            return handle_json_data(self.get_object(), 'resource_file', request, ModelResourceSerializer)
+            return handle_json_data(self.get_object(), 'resource_file', request, ModelSettingsSerializer)
         except Http404:
             with io.open(os.path.join(settings.STATIC_ROOT, 'model_resource.json')) as default_resource:
                 data = json.load(default_resource)

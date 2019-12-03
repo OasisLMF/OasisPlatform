@@ -4,7 +4,7 @@ __all__ = [
     'ReinsInfoFileSerializer',
     'ReinsScopeFileSerializer',
     'AnalysisSettingsSerializer',
-    'ModelResourceSerializer',
+    'ModelSettingsSerializer',
 ]
 
 import io
@@ -151,20 +151,20 @@ class JsonSettingsSerializer(serializers.Serializer):
         return self.to_internal_value(json.dumps(data))
 
 
-class ModelResourceSerializer(JsonSettingsSerializer):
+class ModelSettingsSerializer(JsonSettingsSerializer):
     class Meta:
         swagger_schema_fields = load_json_schema(
-            json_schema_file='model_resource.json',
-            link_prefix='#/definitions/ModelResource'
+            json_schema_file='model_settings.json',
+            link_prefix='#/definitions/ModelSettings'
         )        
 
     def __init__(self, *args, **kwargs):
-        super(ModelResourceSerializer, self).__init__(*args, **kwargs)
+        super(ModelSettingsSerializer, self).__init__(*args, **kwargs)
         self.filenmame = 'model_settings.json'
-        self.schema = load_json_schema('model_resource.json')
+        self.schema = load_json_schema('model_settings.json')
     
     def validate(self, data):
-        return super(ModelResourceSerializer, self).validate_json(data)
+        return super(ModelSettingsSerializer, self).validate_json(data)
 
 
 class AnalysisSettingsSerializer(JsonSettingsSerializer):
