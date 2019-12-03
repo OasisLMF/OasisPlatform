@@ -170,4 +170,9 @@ class ModelSettingsView(viewsets.ModelViewSet):
     @swagger_auto_schema(method='post', request_body=ModelResourceSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def model_settings(self, request, pk=None, version=None):
-        return handle_json_data(self.get_object(), 'resource_file', request, ModelResourceSerializer)
+        try:
+            return handle_json_data(self.get_object(), 'resource_file', request, ModelResourceSerializer)
+        except Http404:
+            with io.open(os.path.join(settings.STATIC_ROOT, 'model_resource.json')) as default_resource:
+                data = json.load(default_resource)
+            return Response(data)
