@@ -1,24 +1,27 @@
 from __future__ import absolute_import
 
 import glob
+import json
 import logging
 import os
 import shutil
 import tarfile
 import uuid
-from contextlib import contextmanager, suppress
 
 import fasteners
 import tempfile
+
+from contextlib import contextmanager, suppress
 
 from celery import Celery, signature
 from celery.task import task
 from celery.signals import worker_ready
 
 from oasislmf.cli.model import GenerateOasisFilesCmd, GenerateLossesCmd
-from oasislmf.utils.status import OASIS_TASK_STATUS
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
+from oasislmf.utils.status import OASIS_TASK_STATUS
+from oasislmf import __version__ as mdk_version
 from pathlib2 import Path
 
 from ..conf import celeryconf as celery_conf
@@ -38,6 +41,7 @@ CELERY.config_from_object(celery_conf)
 
 logging.info("Started worker")
 logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
+logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE')))
 logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD')))
 logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
 logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL')))
@@ -63,6 +67,32 @@ class TemporaryDir(object):
         if not self.persist and os.path.isdir(self.name):
             shutil.rmtree(self.name)
 
+def get_model_settings():
+    """ Read the settings file from the path OASIS_MODEL_SETTINGS
+        returning the contents as a python dict (none if not found)
+    """
+    settings_data = None
+    settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)
+    try:
+        if os.path.isfile(settings_fp):
+            with open(settings_fp) as f:
+                settings_data = json.load(f)
+    except Exception as e:
+        logging.error("Failed to load Model settings: {}".format(e.message))
+
+    return settings_data
+
+
+
+def get_worker_version():
+    """ Search and return the versions of Oasis components 
+    """
+    return {"worker_verison": {
+        "oasislmf": mdk_version,
+        "ktools": "",
+        "platform": ""
+    }}
+
 
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
@@ -70,10 +100,12 @@ def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
+    m_settings = get_model_settings()
+    m_version = get_worker_version()
     logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     signature(
         'run_register_worker',
-        args=(m_supplier, m_name, m_id),
+        args=(m_supplier, m_name, m_id, m_settings, m_version),
         queue='celery'
     ).delay()
 

@@ -2,34 +2,57 @@ from __future__ import absolute_import
 
 import uuid
 
-from django.utils import timezone
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.http import HttpRequest
+from django.utils import timezone
 from six import StringIO
 
 from src.server.oasisapi.files.models import RelatedFile
+from src.server.oasisapi.files.views import handle_json_data
+from src.server.oasisapi.schemas.serializers import ModelSettingsSerializer
 
 from ..celery import celery_app
 logger = get_task_logger(__name__)
 
 
 @celery_app.task(name='run_register_worker')
-def run_register_worker(m_supplier, m_name, m_id):
+def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
         from django.contrib.auth.models import User
         from src.server.oasisapi.analysis_models.models import AnalysisModel
-        user = User.objects.get(username='admin')
-        new_model = AnalysisModel.objects.create(model_id=m_name,
-                                                 supplier_id=m_supplier,
-                                                 version_id=m_id,
-                                                 creator=user)
+
+        try:
+            model = AnalysisModel.objects.get(
+                model_id=m_name,
+                supplier_id=m_supplier,
+                version_id=m_id
+            )
+        except ObjectDoesNotExist:
+            user = User.objects.get(username='admin')
+            model = AnalysisModel.objects.create(
+                model_id=m_name,
+                supplier_id=m_supplier,
+                version_id=m_id,
+                creator=user
+            )
+
+        if m_settings:
+            logger.info('Updating model settings')
+            request = HttpRequest()
+            request.data = {**m_settings, **m_version}
+            request.method = 'post'
+            request.user = model.creator 
+            handle_json_data(model, 'resource_file', request, ModelSettingsSerializer)
+
 
     # Log unhandled execptions
     except Exception as e:
         logger.exception(str(e))
-        logger.exception(new_model)
+        logger.exception(model)
 
 
 @celery_app.task(name='run_analysis_success')
