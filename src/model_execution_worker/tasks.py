@@ -7,6 +7,7 @@ import os
 import shutil
 import tarfile
 import uuid
+import subprocess
 
 import fasteners
 import tempfile
@@ -87,9 +88,12 @@ def get_model_settings():
 def get_worker_version():
     """ Search and return the versions of Oasis components 
     """
+    ktool_ver_str = subprocess.getoutput('fmcalc -v')
+    
+
     return {"worker_verison": {
         "oasislmf": mdk_version,
-        "ktools": "",
+        "ktools": ktool_ver_str,
         "platform": ""
     }}
 
