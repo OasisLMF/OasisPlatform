@@ -90,12 +90,16 @@ def get_worker_version():
     """ Search and return the versions of Oasis components 
     """
     ktool_ver_str = subprocess.getoutput('fmcalc -v')
-    
+    plat_ver_file = '/home/worker/VERSION'
+
+    if os.path.isfile(plat_ver_file):
+        with open(plat_ver_file, 'r') as f:
+            plat_ver_str = f.read().strip()    
 
     return {"worker_verison": {
         "oasislmf": mdk_version,
         "ktools": ktool_ver_str,
-        "platform": ""
+        "platform": plat_ver_str
     }}
 
 
