@@ -50,6 +50,7 @@ logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_AL
 logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')))
 logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
 logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
+logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
@@ -350,8 +351,8 @@ def generate_input(loc_file,
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
-        if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
-            run_args.append('--summarise-exposure')
+        if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
+            run_args.append('--disable-summarise-exposure')
 
         # Log MDK generate command 
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
