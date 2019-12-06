@@ -16,7 +16,9 @@
                         "type": "integer",
                         "multipleOf": 1,
                         "title": "Summary ID",
-                        "description": "Identifier for the summary set."
+                        "description": "Identifier for the summary set.",
+                        "minimum": 1,
+                        "maximum": 9
                     },
                     "oed_fields": {
                         "type": "array",
@@ -213,8 +215,13 @@
             "title": "Reinsurance net loss summary outputs",
             "description": "Specified which outputs should be generated for which summary sets, for reinsurance net losses.",
             "$ref": "#/definitions/output_summaries"
+        },
+        "full_correlation": {
+            "type": "boolean",
+            "title": "Produce fully correlated output",
+            "description": "If true generate losses for fully correlated output, i.e. no independence between groups, in addition to losses for default output.",
+            "default": false
         }
-
     },
     "required": [
         "source_tag",
@@ -226,5 +233,5 @@
         "model_settings",
         "gul_output",
         "gul_summaries"
-	]
+    ]
 }
