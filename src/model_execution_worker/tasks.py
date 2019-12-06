@@ -96,7 +96,7 @@ def get_worker_version():
         with open(plat_ver_file, 'r') as f:
             plat_ver_str = f.read().strip()    
 
-    return {"worker_verison": {
+    return {"worker_verisons": {
         "oasislmf": mdk_version,
         "ktools": ktool_ver_str,
         "platform": plat_ver_str
