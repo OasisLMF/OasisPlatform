@@ -133,7 +133,7 @@ node {
         }
         stage('Set version file'){
             dir(oasis_workspace){
-                sh "echo ${env.TAG_RELEASE} - $(git rev-parse --short HEAD), $(date) > VERSION"
+                sh "echo ${env.TAG_RELEASE} - " + '$(git rev-parse --short HEAD), $(date) > VERSION'
             }
         }
         parallel(
