@@ -131,6 +131,11 @@ node {
                 }
             }
         }
+        stage('Set version file'){
+            dir(oasis_workspace){
+                sh "echo ${env.TAG_RELEASE} - $(git rev-parse --short HEAD), $(date) > VERSION"
+            }
+        }
         parallel(
             build_oasis_api_server: {
                 stage('Build: API server') {

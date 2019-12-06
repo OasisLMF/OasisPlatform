@@ -23,6 +23,7 @@ COPY ./src/model_execution_worker/ ./src/model_execution_worker/
 COPY ./src/utils/ ./src/utils/
 COPY ./src/utils/worker_bashrc /root/.bashrc
 COPY ./tests/integration /home/worker/tests/integration
+COPY ./VERSION ./
 
 RUN mkdir -p /var/oasis && \
     mkdir -p /var/log/oasis && \
