@@ -1,24 +1,28 @@
 from __future__ import absolute_import
 
 import glob
+import json
 import logging
 import os
 import shutil
 import tarfile
 import uuid
-from contextlib import contextmanager, suppress
+import subprocess
 
 import fasteners
 import tempfile
+
+from contextlib import contextmanager, suppress
 
 from celery import Celery, signature
 from celery.task import task
 from celery.signals import worker_ready
 
 from oasislmf.cli.model import GenerateOasisFilesCmd, GenerateLossesCmd
-from oasislmf.utils.status import OASIS_TASK_STATUS
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
+from oasislmf.utils.status import OASIS_TASK_STATUS
+from oasislmf import __version__ as mdk_version
 from pathlib2 import Path
 
 from ..conf import celeryconf as celery_conf
@@ -38,13 +42,15 @@ CELERY.config_from_object(celery_conf)
 
 logging.info("Started worker")
 logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
+logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE')))
 logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD')))
-logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
+logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES')))
 logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL')))
 logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL')))
 logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')))
 logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
 logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
+logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
 logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
@@ -63,6 +69,41 @@ class TemporaryDir(object):
         if not self.persist and os.path.isdir(self.name):
             shutil.rmtree(self.name)
 
+def get_model_settings():
+    """ Read the settings file from the path OASIS_MODEL_SETTINGS
+        returning the contents as a python dict (none if not found)
+    """
+    settings_data = None
+    settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)
+    try:
+        if os.path.isfile(settings_fp):
+            with open(settings_fp) as f:
+                settings_data = json.load(f)
+    except Exception as e:
+        logging.error("Failed to load Model settings: {}".format(e.message))
+
+    return settings_data
+
+
+
+def get_worker_versions():
+    """ Search and return the versions of Oasis components 
+    """
+    ktool_ver_str = subprocess.getoutput('fmcalc -v')
+    plat_ver_file = '/home/worker/VERSION'
+
+    if os.path.isfile(plat_ver_file):
+        with open(plat_ver_file, 'r') as f:
+            plat_ver_str = f.read().strip()    
+    else:
+        plat_ver_str = ""
+
+    return {"worker_verisons": {
+        "oasislmf": mdk_version,
+        "ktools": ktool_ver_str,
+        "platform": plat_ver_str
+    }}
+
 
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
@@ -70,10 +111,12 @@ def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
+    m_settings = get_model_settings()
+    m_version = get_worker_versions()
     logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     signature(
         'run_register_worker',
-        args=(m_supplier, m_name, m_id),
+        args=(m_supplier, m_name, m_id, m_settings, m_version),
         queue='celery'
     ).delay()
 
@@ -161,7 +204,7 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
         try:
             logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
             logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
-            logging.info("KTOOLS_BATCH_COUNT: {}".format(settings.get('worker', 'KTOOLS_BATCH_COUNT')))
+            logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES')))
 
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location = start_analysis(
@@ -192,6 +235,8 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     """
     # Check that the input archive exists and is valid
     logging.info("args: {}".format(str(locals())))
+    logging.info(str(get_worker_versions()))
+
     media_root = settings.get('worker', 'MEDIA_ROOT')
     input_archive = os.path.join(media_root, input_location)
 
@@ -221,7 +266,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             '--config', config_path,
             '--model-run-dir', run_dir,
             '--analysis-settings-json', analysis_settings_file,
-            '--ktools-num-processes', settings.get('worker', 'KTOOLS_BATCH_COUNT'),
+            '--ktools-num-processes', settings.get('worker', 'KTOOLS_NUM_PROCESSES'),
             '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
             '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
             '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI'),
@@ -283,6 +328,7 @@ def generate_input(loc_file,
 
     """
     logging.info("args: {}".format(str(locals())))
+    logging.info(str(get_worker_versions()))
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
@@ -314,8 +360,8 @@ def generate_input(loc_file,
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
-        if settings.getboolean('worker', 'WRITE_EXPOSURE_SUMMARY', fallback=True):
-            run_args.append('--summarise-exposure')
+        if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
+            run_args.append('--disable-summarise-exposure')
 
         # Log MDK generate command 
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
