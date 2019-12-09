@@ -86,7 +86,7 @@ def get_model_settings():
 
 
 
-def get_worker_version():
+def get_worker_versions():
     """ Search and return the versions of Oasis components 
     """
     ktool_ver_str = subprocess.getoutput('fmcalc -v')
@@ -95,6 +95,8 @@ def get_worker_version():
     if os.path.isfile(plat_ver_file):
         with open(plat_ver_file, 'r') as f:
             plat_ver_str = f.read().strip()    
+    else:
+        plat_ver_str = ""
 
     return {"worker_verisons": {
         "oasislmf": mdk_version,
@@ -110,7 +112,7 @@ def register_worker(sender, **k):
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
     m_settings = get_model_settings()
-    m_version = get_worker_version()
+    m_version = get_worker_versions()
     logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     signature(
         'run_register_worker',
@@ -233,6 +235,8 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     """
     # Check that the input archive exists and is valid
     logging.info("args: {}".format(str(locals())))
+    logging.info(str(get_worker_versions()))
+
     media_root = settings.get('worker', 'MEDIA_ROOT')
     input_archive = os.path.join(media_root, input_location)
 
@@ -324,6 +328,7 @@ def generate_input(loc_file,
 
     """
     logging.info("args: {}".format(str(locals())))
+    logging.info(str(get_worker_versions()))
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
