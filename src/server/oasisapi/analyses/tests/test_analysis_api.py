@@ -126,6 +126,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'portfolio': portfolio.pk,
                     'model': model.pk,
                     'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
+                    'settings': response.request.application_url + analysis.get_absolute_settings_url(),
                     'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
                     'lookup_errors_file': response.request.application_url + analysis.get_absolute_lookup_errors_file_url(),
                     'lookup_success_file': response.request.application_url + analysis.get_absolute_lookup_success_file_url(),
@@ -181,6 +182,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'portfolio': portfolio.pk,
                     'model': model.pk,
                     'settings_file': None,
+                    'settings': None,
                     'input_file': None,
                     'lookup_errors_file': None,
                     'lookup_success_file': None,
@@ -678,6 +680,142 @@ class AnalysisCopy(WebTestMixin, TestCase):
                 )
 
                 self.assertIsNone(Analysis.objects.get(pk=response.json['id']).output_file)
+
+
+class AnalysisSettingsJson(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        analysis = fake_analysis()
+
+        response = self.app.get(analysis.get_absolute_settings_url(), expect_errors=True)
+        self.assertIn(response.status_code, [401,403])
+
+    def test_settings_json_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_settings_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_settings_json_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.delete(
+            analysis.get_absolute_settings_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_settings_json_is_not_valid___response_is_400(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+                json_data = {
+                    "analysis_settings": {
+                        "analysis_tag": "test_analysis",
+                        "module_supplier_id": "OasisIM",
+                        "model_version_id": "1",
+                        "number_of_samples": 0,
+                        "gul_threshold": 0,
+                        "model_settings": {
+                          "use_random_number_file": True,
+                          "event_occurrence_file_id": 1
+                        },
+                        "gul_output": True,
+                        "gul_summaries": [
+                          {
+                            "id": 1,
+                            "summarycalc": True,
+                            "eltcalc": True,
+                            "aalcalc": "Not-A-Boolean",
+                            "pltcalc": True,
+                            "lec_output":False
+                          }
+                        ],
+                        "il_output": False
+                      }
+                }
+
+                response = self.app.post(
+                    analysis.get_absolute_settings_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=json.dumps(json_data),
+                    content_type='application/json',
+                    expect_errors=True,
+                )
+
+                validation_error =  {
+                    'number_of_samples': '0 is less than the minimum of 1',
+                    'gul_summaries-0-aalcalc': "'Not-A-Boolean' is not of type 'boolean'",
+                    'required': "'source_tag' is a required property"
+                }
+                self.assertEqual(400, response.status_code)
+                self.assertEqual(json.loads(response.body), validation_error)
+
+
+    def test_settings_json_is_uploaded___can_be_retrieved(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+                json_data = {
+                    "analysis_settings": {
+                        "source_tag": "test_source",
+                        "analysis_tag": "test_analysis",
+                        "module_supplier_id": "OasisIM",
+                        "model_version_id": "1",
+                        "number_of_samples": 10,
+                        "gul_threshold": 0,
+                        "model_settings": {
+                          "use_random_number_file": True,
+                          "event_occurrence_file_id": 1
+                        },
+                        "gul_output": True,
+                        "gul_summaries": [
+                          {
+                            "id": 1,
+                            "summarycalc": True,
+                            "eltcalc": True,
+                            "aalcalc": True,
+                            "pltcalc": True,
+                            "lec_output":False
+                          }
+                        ],
+                        "il_output": False
+                      }
+                }
+
+                self.app.post(
+                    analysis.get_absolute_settings_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=json.dumps(json_data),
+                    content_type='application/json'
+                )
+
+                response = self.app.get(
+                    analysis.get_absolute_settings_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+                self.assertEqual(json.loads(response.body), json_data['analysis_settings'])
+                self.assertEqual(response.content_type, 'application/json')
 
 
 class AnalysisSettingsFile(WebTestMixin, TestCase):

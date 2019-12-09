@@ -15,14 +15,15 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
-from ..filters import TimeStampedFilter
-from ..files.views import handle_related_file
-from ..files.serializers import RelatedFileSerializer
 from .models import AnalysisModel
-from ..schemas import FILE_RESPONSE
 from .serializers import AnalysisModelSerializer
 
 from ..data_files.serializers import DataFileSerializer
+from ..filters import TimeStampedFilter
+from ..files.views import handle_related_file, handle_json_data
+from ..files.serializers import RelatedFileSerializer
+from ..schemas.custom_swagger import FILE_RESPONSE
+from ..schemas.serializers import ModelSettingsSerializer
 
 
 class AnalysisModelFilter(TimeStampedFilter):
@@ -127,7 +128,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=['get', 'post'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def resource_file(self, request, pk=None, version=None):
         """
@@ -158,3 +159,20 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)
+
+
+class ModelSettingsView(viewsets.ModelViewSet):
+    queryset = AnalysisModel.objects.all()
+    serializer_class = AnalysisModelSerializer
+    filter_class = AnalysisModelFilter
+
+    @swagger_auto_schema(method='get', responses={200: ModelSettingsSerializer})
+    @swagger_auto_schema(method='post', request_body=ModelSettingsSerializer, responses={201: RelatedFileSerializer})
+    @action(methods=['get', 'post', 'delete'], detail=True)
+    def model_settings(self, request, pk=None, version=None):
+        try:
+            return handle_json_data(self.get_object(), 'resource_file', request, ModelSettingsSerializer)
+        except Http404:
+            with io.open(os.path.join(settings.STATIC_ROOT, 'model_resource.json')) as default_resource:
+                data = json.load(default_resource)
+            return Response(data)

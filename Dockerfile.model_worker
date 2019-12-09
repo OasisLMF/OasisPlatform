@@ -8,8 +8,8 @@ RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
 # Install requirements
-COPY ./requirements-worker.in /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+COPY ./requirements-worker.in ./requirements.txt
+RUN pip install -r ./requirements.txt
 
 # Copy startup script + server config
 COPY ./src/startup_worker.sh ./startup.sh
@@ -23,6 +23,7 @@ COPY ./src/model_execution_worker/ ./src/model_execution_worker/
 COPY ./src/utils/ ./src/utils/
 COPY ./src/utils/worker_bashrc /root/.bashrc
 COPY ./tests/integration /home/worker/tests/integration
+COPY ./VERSION ./
 
 RUN mkdir -p /var/oasis && \
     mkdir -p /var/log/oasis && \

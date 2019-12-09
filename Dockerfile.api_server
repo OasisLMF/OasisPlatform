@@ -8,8 +8,8 @@ ENV OASIS_DEBUG=false
 RUN mkdir -p /var/log/oasis
 
 RUN apt-get update && apt-get install -y --no-install-recommends vim libmariadbclient-dev-compat libspatialindex-dev && rm -rf /var/lib/apt/lists/*
-COPY ./requirements.txt /tmp/
-RUN pip install -r /tmp/requirements.txt
+COPY ./requirements.txt ./
+RUN pip install -r ./requirements.txt
 RUN pip install mysqlclient
 
 # Copy startup script + server config
@@ -30,6 +30,7 @@ COPY ./src/ ./src
 COPY ./src/server /var/www/oasis/src/server
 COPY ./src/common /var/www/oasis/src/common
 COPY ./src/conf /var/www/oasis/src/conf
+COPY ./VERSION /var/www/oasis/VERSION
 
 COPY ./model_resource.json /var/www/oasis/src/server/static/model_resource.json
 RUN OASIS_API_SECRET_KEY=supersecret python manage.py collectstatic --noinput

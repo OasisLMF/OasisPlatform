@@ -10,7 +10,7 @@ from ..files.serializers import RelatedFileSerializer
 from ..files.views import handle_related_file
 from ..filters import TimeStampedFilter
 from .models import DataFile
-from ..schemas import FILE_RESPONSE
+from ..schemas.custom_swagger import FILE_RESPONSE
 from .serializers import DataFileSerializer
 
 

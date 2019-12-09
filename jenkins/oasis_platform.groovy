@@ -83,14 +83,6 @@ node {
         println("Publish Only allowed on a release/* or hotfix/* branches")
         sh "exit 1"
     }
-    //if (params.PUBLISH && ! params.APPEND_CHANGELOG) {
-    //    println("Must note changes in APPEND_CHANGELOG")
-    //    sh "exit 1"
-    //}
-    //if (params.PUBLISH && ! params.APPEND_RELEASE) {
-    //    println("Must note changes in APPEND_RELEASE")
-    //    sh "exit 1"
-    //}
 
     try {
         parallel(
@@ -137,6 +129,11 @@ node {
                     sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
                     sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.in"
                 }
+            }
+        }
+        stage('Set version file'){
+            dir(oasis_workspace){
+                sh "echo ${env.TAG_RELEASE} - " + '$(git rev-parse --short HEAD), $(date) > VERSION'
             }
         }
         parallel(
@@ -212,24 +209,26 @@ node {
                 
                 // Create Release
                 withCredentials([string(credentialsId: 'github-api-token', variable: 'gh_token')]) {
-                    String repo = "OasisLMF/OasisPlatform"
+                    dir(oasis_workspace) {
+                        String repo = "OasisLMF/OasisPlatform"
 
-                    def json_request = readJSON text: '{}'
-                    json_request['tag_name'] = RELEASE_TAG
-                    json_request['target_commitish'] = 'master'
-                    json_request['name'] = RELEASE_TAG
-                    json_request['body'] = ""
-                    json_request['draft'] = false
-                    json_request['prerelease'] = false
-                    writeJSON file: 'gh_request.json', json: json_request
-                    sh 'curl -XPOST -H "Authorization:token ' + gh_token + "\" --data @gh_request.json https://api.github.com/repos/$repo/releases > gh_response.json"
+                        def json_request = readJSON text: '{}'
+                        json_request['tag_name'] = RELEASE_TAG
+                        json_request['target_commitish'] = 'master'
+                        json_request['name'] = RELEASE_TAG
+                        json_request['body'] = ""
+                        json_request['draft'] = false
+                        json_request['prerelease'] = false
+                        writeJSON file: 'gh_request.json', json: json_request
+                        sh 'curl -XPOST -H "Authorization:token ' + gh_token + "\" --data @gh_request.json https://api.github.com/repos/$repo/releases > gh_response.json"
 
-                    // Fetch release ID and post json schema
-                    def response = readJSON file: "gh_response.json"
-                    release_id = response['id']                                                                                                                                                                                                                                               
-                    dir('reports') {
-                        filename='openapi-schema.json'
-                        sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
+                        // Fetch release ID and post json schema
+                        def response = readJSON file: "gh_response.json"
+                        release_id = response['id']                                                                                                                                                                                                                                               
+                        dir('reports') {
+                            filename='openapi-schema.json'
+                            sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
+                        }
                     }
                 }
             }
@@ -277,8 +276,9 @@ node {
         if (params.PUBLISH){ 
             dir(oasis_workspace) {
                 sshagent (credentials: [git_creds]) {
+                    sh "git stash"
                     sh "git checkout master && git pull"
-                    sh "git merge ${oasis_workspace} && git push"
+                    sh "git merge ${oasis_branch} && git push"
                     sh "git checkout develop && git pull"
                     sh "git merge master && git push"
                 }   

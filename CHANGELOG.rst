@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 ==================
 
+`1.4.0`_
+--------
+* Added `/v1/models/{id}/settings` to replace `/v1/models/{id}/resource_file/`
+* Added `/v1/analyses/{id}/settings` to replace `/v1/analyses/{id}/settings_file/`
+* New worker environment variable `MODEL_SETTINGS_FILE` if set workers auto-update model settings on connection
+* Removed environment variable `WRITE_EXPOSURE_SUMMARY` in favour of `DISABLE_EXPOSURE_SUMMARY`
+* Workers log internal versions to the API and docker logs
+* Schemas updated for `analysis_settings` and `model_settings`
+
 `1.3.5`_
 --------
 * Automate GitHub release 
@@ -151,6 +160,7 @@ OasisPlatform Changelog
 --------
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
+.. _`1.4.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.5...1.4.0
 .. _`1.3.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.4...1.3.5
 .. _`1.3.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.3...1.3.4
 .. _`1.3.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.2...1.3.3
