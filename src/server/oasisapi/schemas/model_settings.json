@@ -1,13 +1,14 @@
 {
     "type": "object",
-    "title": "Model resource settings",
+    "title": "Model settings",
     "description": "Specifies the model resource schema",
     "definitions": {
-        "model_option_selection": {
+        "model_option_select": {
             "type": "object",
             "uniqueItems": false,
-            "title": "Dictionary option",
-            "description": "Selection options from dictionary",
+            "title": "Selection",
+            "description": "Drop down Selection from 'options'",
+            "additionalProperties": false,
             "properties":{
                 "name": {
                     "type": "string",
@@ -35,33 +36,43 @@
                     "type": "array",
                     "title": "Selection options",
                     "description": "Key value pairs to present in UI",
-                    "additionalProperties": false,
+                    "additionalItems": false,
                     "items": {
-                        "type": "object",
-                        "properties": {
-                            "option_id": {
-                                "type": "string",
-                                "title": "",
-                                "description": "",
-                                "minLength": 3,
-                                "maxLength": 3
-                            },
-                            "option_desc": {
-                                "type": "string",
-                                "title": "",
-                                "description": ""
-                            }
-                        }
+                        "oneOf": [
+                            { "$ref": "#/definitions/option_item" }
+                        ]
                     }
                 }
             },
-            "required": ["name", "desc", "type", "default", "values"]
+            "required": ["name", "desc", "type", "default", "options"]
+        },
+        "option_item": {
+            "type": "object",
+            "title": "Selection Item",
+            "description": "",
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "title": "",
+                    "description": "",
+                    "minLength": 1
+                },
+                "desc": {
+                    "type": "string",
+                    "title": "",
+                    "description": "",
+                    "minLength": 1
+                }
+            },
+            "required": ["id", "desc"]
         },
         "model_option_float": {
             "type": "object",
             "uniqueItems": false,
             "title": "Float option",
             "description": "Select float value",
+            "additionalProperties": false,
             "properties":{
                 "name": {
                     "type": "string",
@@ -103,6 +114,7 @@
             "uniqueItems": false,
             "title": "Boolean option",
             "description": "Select boolean value",
+            "additionalProperties": false,
             "properties":{
                 "name": {
                     "type": "string",
@@ -128,91 +140,55 @@
                 }
             },
             "required": ["name", "desc", "type", "default"]
-        },
-        "lookup_supported_perils": {
+        }
+    },
+     "properties": {
+         "model_settings":{
             "type": "object",
             "uniqueItems": false,
-            "title": "Supported Perils",
-            "description": "List of all OED peril codes support by this model",
-            "properties":{
-                "type": {
-                    "type": "string",
-                    "enum": ["dictionary"],
-                    "title": "UI dictionary type",
-                    "description": "Create UI dropdown widget"
+            "title": "Model setting options",
+            "description": "Runtime settings available to a model",
+            "additionalProperties": false,
+            "properties": {
+                "event_set":{
+                    "title": "Event set selector",
+                    "description": "The 'key' from values is used as a file suffix' events_<k>.bin",
+                    "$ref": "#/definitions/model_option_select"
                 },
-                "perils":{
+                "event_occurrence_id":{
+                    "title": "Occurrence set selector",
+                    "description": "The 'key' from values is used as a file suffix' occurrence_<k>.bin",
+                    "$ref": "#/definitions/model_option_select"
+                },
+                "model_parameters": {
+                    "type":  "array",
+                    "uniqueItems": true,
+                    "additionalItems": false,
+                    "items": {
+                      "oneOf": [
+                        { "$ref": "#/definitions/model_option_float" },
+                        { "$ref": "#/definitions/model_option_boolean" }
+                      ]
+                    }
+                }
+            },
+            "required": ["model_parameters"]
+        },
+        "lookup_settings":{
+            "type": "object",
+            "title": "Model Lookup options",
+            "description": "Model lookup section",
+            "properties": {
+                "supported_perils": {
                     "type": "array",
                     "title": "Supported OED perils",
                     "description": "Valid Peril codes for this model",
                     "additionalProperties": false,
                     "minProperties": 1,
                     "items": {
-                        "type": "object",
-                        "properties": {
-                            "peril_id": {
-                                "type": "string",
-                                "title": "OED peril",
-                                "description": "Three letter OED peril identifier",
-                                "minLength": 3,
-                                "maxLength": 3
-                            },
-                            "peril_desc": {
-                                "type": "string",
-                                "title": "",
-                                "description": ""
-                            }
-                        }
-                    }
-                }
-            },
-            "required": ["type", "perils"]
-        }
-    },
-     "properties": {
-         "model_settings":{
-            "type": "array",
-            "uniqueItems": false,
-            "title": "Model setting options",
-            "description": "Runtime settings available to a model",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "event_set":{
-                        "title": "Event set selector",
-                        "description": "The 'key' from values is used as a file suffix' events_<k>.bin",
-                        "$ref": "#/definitions/model_option_selection"
-                    },
-                    "event_occurrence_id":{
-                        "title": "Occurrence set selector",
-                        "description": "The 'key' from values is used as a file suffix' occurrence_<k>.bin",
-                        "$ref": "#/definitions/model_option_selection"
-                    },
-                    "model_parameters": {
-                        "type":  "array",
-                        "additionalItems": false,
-                        "items": {
-                          "oneOf": [
-                            { "$ref": "#/definitions/model_option_float" },
-                            { "$ref": "#/definitions/model_option_boolean" }
-                          ]
-                        }
-                    }
-                }
-            }
-        },
-        "lookup_settings":{
-            "type": "array",
-            "uniqueItems": false,
-            "title": "Model Lookup options",
-            "description": "Model lookup section",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "PerilCodes":{
-                        "title": "Lookup Peril codes",
-                        "description": "Display a list of Valid OED peril codes",
-                        "$ref": "#/definitions/lookup_supported_perils"
+                        "oneOf": [
+                            {"$ref": "#/definitions/option_item"}
+                        ]
                     }
                 }
             }

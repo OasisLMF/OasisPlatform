@@ -1,5 +1,4 @@
 {
-    "$schema": "http://oasislmf.org/analysis_settings/draft/schema#",
     "type": "object",
     "title": "Analysis settings.",
     "description": "Specifies the model settings and outputs for an analysis.",
@@ -129,13 +128,13 @@
 
     "properties": {
         "source_tag": {
-            "type": ["integer","string"],
+            "type": "string",
             "minLength": 1,
             "title": "Source Tag",
             "description": "Labels the origin of the analysis."
         },
         "analysis_tag": {
-            "type": ["integer","string"],
+            "type": "string",
             "minLength": 1,
             "title": "Analysis Tag",
             "description": "Labels the analysis with an identifier."
@@ -211,7 +210,6 @@
             "default": false
         },
         "ri_summaries": {
-            "type": "array",
             "title": "Reinsurance net loss summary outputs",
             "description": "Specified which outputs should be generated for which summary sets, for reinsurance net losses.",
             "$ref": "#/definitions/output_summaries"
