@@ -1,10 +1,9 @@
 {
-    "$schema": "http://oasislmf.org/model_resource/draft/schema#",
     "type": "object",
     "title": "Model resource settings",
     "description": "Specifies the model resource schema",
     "definitions": {
-        "model_option_dictionary": {
+        "model_option_selection": {
             "type": "object",
             "uniqueItems": false,
             "title": "Dictionary option",
@@ -23,8 +22,8 @@
                 },
                 "type": {
                     "type": "string",
-                    "enum": ["dictionary"],
-                    "title": "UI dictionary type",
+                    "enum": ["selection"],
+                    "title": "UI select",
                     "description": "Create UI dropdown widget"
                 },
                 "default":{
@@ -32,15 +31,28 @@
                     "title": "Initial value",
                     "description": "Default key to select from dictionary 'values'"
                 },
-                "values":{
-                    "type": "object",
+                "options":{
+                    "type": "array",
                     "title": "Selection options",
                     "description": "Key value pairs to present in UI",
-                    "patternProperties": {
-                        "^[a-zA-Z0-9]*$": {"type": "string"}
-                    },
                     "additionalProperties": false,
-                    "minProperties": 1
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "option_id": {
+                                "type": "string",
+                                "title": "",
+                                "description": "",
+                                "minLength": 3,
+                                "maxLength": 3
+                            },
+                            "option_desc": {
+                                "type": "string",
+                                "title": "",
+                                "description": ""
+                            }
+                        }
+                    }
                 }
             },
             "required": ["name", "desc", "type", "default", "values"]
@@ -129,18 +141,32 @@
                     "title": "UI dictionary type",
                     "description": "Create UI dropdown widget"
                 },
-                "values":{
-                    "type": "object",
-                    "title": "Selection options",
-                    "description": "Key value pairs to present in UI",
-                    "patternProperties": {
-                        "^[a-zA-Z0-9]{3}$": {"type": "string"}
-                    },
+                "perils":{
+                    "type": "array",
+                    "title": "Supported OED perils",
+                    "description": "Valid Peril codes for this model",
                     "additionalProperties": false,
-                    "minProperties": 1
+                    "minProperties": 1,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "peril_id": {
+                                "type": "string",
+                                "title": "OED peril",
+                                "description": "Three letter OED peril identifier",
+                                "minLength": 3,
+                                "maxLength": 3
+                            },
+                            "peril_desc": {
+                                "type": "string",
+                                "title": "",
+                                "description": ""
+                            }
+                        }
+                    }
                 }
             },
-            "required": ["type", "values"]
+            "required": ["type", "perils"]
         }
     },
      "properties": {
@@ -155,20 +181,22 @@
                     "event_set":{
                         "title": "Event set selector",
                         "description": "The 'key' from values is used as a file suffix' events_<k>.bin",
-                        "$ref": "#/definitions/model_option_dictionary"
+                        "$ref": "#/definitions/model_option_selection"
                     },
                     "event_occurrence_id":{
                         "title": "Occurrence set selector",
                         "description": "The 'key' from values is used as a file suffix' occurrence_<k>.bin",
-                        "$ref": "#/definitions/model_option_dictionary"
-                    }
-                },
-                "patternProperties": {
-                    "^[a-zA-Z0-9]*$": {
-                        "anyOf": [
-                            {"$ref": "#/definitions/model_option_float"},
-                            {"$ref": "#/definitions/model_option_boolean"}
-                        ]
+                        "$ref": "#/definitions/model_option_selection"
+                    },
+                    "model_parameters": {
+                        "type":  "array",
+                        "additionalItems": false,
+                        "items": {
+                          "oneOf": [
+                            { "$ref": "#/definitions/model_option_float" },
+                            { "$ref": "#/definitions/model_option_boolean" }
+                          ]
+                        }
                     }
                 }
             }
