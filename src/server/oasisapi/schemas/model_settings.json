@@ -45,7 +45,6 @@
                            "type": "array",
                            "title": "Selection options",
                            "description": "Key value pairs to present in UI",
-                           "additionalItems": false,
                            "items": {
                                "type": "object",
                                "title": "Selection Item",
@@ -91,12 +90,6 @@
                            "title": "UI tooltip",
                            "description": "UI description for selection"
                        },
-                       "type": {
-                           "type": "string",
-                           "enum": ["selection"],
-                           "title": "UI select",
-                           "description": "Create UI dropdown widget"
-                       },
                        "default":{
                            "type": "string",
                            "title": "Initial value",
@@ -106,7 +99,6 @@
                            "type": "array",
                            "title": "Selection options",
                            "description": "Key value pairs to present in UI",
-                           "additionalItems": false,
                            "items": {
                                "type": "object",
                                "title": "Selection Item",
@@ -132,87 +124,74 @@
                    },
                    "required": ["name", "desc", "type", "default", "options"]
                },
-               "model_parameters": {
+               "boolean_parameters": {
                    "type":  "array",
                    "uniqueItems": true,
-                   "additionalItems": false,
                    "items": {
-                       "oneOf": [
-                           {
-                               "type": "object",
-                               "uniqueItems": false,
-                               "title": "Float option",
-                               "description": "Select float value",
-                               "additionalProperties": false,
-                               "properties":{
-                                   "name": {
-                                       "type": "string",
-                                       "title": "UI Option",
-                                       "description": "UI name for selection",
-                                       "minLength": 1
-                                   },
-                                   "desc": {
-                                       "type": "string",
-                                       "title": "UI tooltip",
-                                       "description": "UI description for selection"
-                                   },
-                                   "type": {
-                                       "type": "string",
-                                       "enum": ["float"],
-                                       "title": "UI float type",
-                                       "description": "Create UI slider widget"
-                                   },
-                                   "default":{
-                                       "type": "number",
-                                       "title": "Initial value",
-                                       "description": "Default 'value' set for float variable"
-                                   },
-                                   "max":{
-                                       "type": "number",
-                                       "title": "Maximum value",
-                                       "description": "Maximum Value for float variable"
-                                   },
-                                   "min":{
-                                       "type": "number",
-                                       "title": "Minimum value",
-                                       "description": "Minimum Value for float variable"
-                                   }
-                               },
-                               "required": ["name", "desc", "type", "default", "max", "min"]
+                       "type": "object",
+                       "uniqueItems": false,
+                       "title": "Boolean option",
+                       "description": "Select boolean value",
+                       "additionalProperties": false,
+                       "properties":{
+                           "name": {
+                               "type": "string",
+                               "title": "UI Option",
+                               "description": "UI name for selection",
+                               "minLength": 1
                            },
-                           {
-                               "type": "object",
-                               "uniqueItems": false,
-                               "title": "Boolean option",
-                               "description": "Select boolean value",
-                               "additionalProperties": false,
-                               "properties":{
-                                   "name": {
-                                       "type": "string",
-                                       "title": "UI Option",
-                                       "description": "UI name for selection",
-                                       "minLength": 1
-                                   },
-                                   "desc": {
-                                       "type": "string",
-                                       "title": "UI tooltip",
-                                       "description": "UI description for selection"
-                                   },
-                                   "type": {
-                                       "type": "string",
-                                       "enum": ["boolean"],
-                                       "title": "UI boolean type",
-                                       "description": "Create UI checkbox widget"
-                                   },
-                                   "default":{
-                                       "type": "boolean",
-                                       "title": "Initial value",
-                                       "description": "Default 'value' set for variable"
-                                   }
-                               },
-                               "required": ["name", "desc", "type", "default"]
+                           "desc": {
+                               "type": "string",
+                               "title": "UI tooltip",
+                               "description": "UI description for selection"
+                           },
+                           "default":{
+                               "type": "boolean",
+                               "title": "Initial value",
+                               "description": "Default 'value' set for variable"
                            }
-                       ]
+                       },
+                       "required": ["name", "desc", "type", "default"]
+                   }
+               },
+               "float_parameters": {
+                   "type":  "array",
+                   "uniqueItems": true,
+                   "items": {
+                       "type": "object",
+                       "uniqueItems": false,
+                       "title": "Float option",
+                       "description": "Select float value",
+                       "additionalProperties": false,
+                       "properties":{
+                           "name": {
+                               "type": "string",
+                               "title": "UI Option",
+                               "description": "UI name for selection",
+                               "minLength": 1
+                           },
+                           "desc": {
+                               "type": "string",
+                               "title": "UI tooltip",
+                               "description": "UI description for selection"
+                           },
+                           "default":{
+                               "type": "number",
+                               "title": "Initial value",
+                               "description": "Default 'value' set for float variable"
+                           },
+                           "max":{
+                               "type": "number",
+                               "title": "Maximum value",
+                               "description": "Maximum Value for float variable"
+                           },
+                           "min":{
+                               "type": "number",
+                               "title": "Minimum value",
+                               "description": "Minimum Value for float variable"
+                           }
+                       },
+                       "required": ["name", "desc", "type", "default", "max", "min"]
                    }
                }
            },
