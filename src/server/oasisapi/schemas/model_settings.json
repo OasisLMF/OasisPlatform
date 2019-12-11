@@ -68,7 +68,7 @@
                            }
                        }
                    },
-                   "required": ["name", "desc", "type", "default", "options"]
+                   "required": ["name", "desc", "default", "options"]
                },
                "event_occurrence_id":{
                    "title": "Occurrence set selector",
@@ -122,7 +122,7 @@
                            }
                        }
                    },
-                   "required": ["name", "desc", "type", "default", "options"]
+                   "required": ["name", "desc", "default", "options"]
                },
                "boolean_parameters": {
                    "type":  "array",
@@ -151,7 +151,7 @@
                                "description": "Default 'value' set for variable"
                            }
                        },
-                       "required": ["name", "desc", "type", "default"]
+                       "required": ["name", "desc", "default"]
                    }
                },
                "float_parameters": {
@@ -191,11 +191,10 @@
                                "description": "Minimum Value for float variable"
                            }
                        },
-                       "required": ["name", "desc", "type", "default", "max", "min"]
+                       "required": ["name", "desc", "default", "max", "min"]
                    }
                }
-           },
-           "required": ["model_parameters"]
+           }
        },
        "lookup_settings":{
            "type": "object",
@@ -218,7 +217,8 @@
                                "type": "string",
                                "title": "",
                                "description": "",
-                               "minLength": 1
+                               "minLength": 3,
+                               "maxLength": 3
                            },
                            "desc": {
                                "type": "string",
