@@ -12,7 +12,7 @@
            "properties": {
                "event_set":{
                    "title": "Event set selector",
-                   "description": "The 'key' from values is used as a file suffix' events_<k>.bin",
+                   "description": "The 'id' field from options is used as a file suffix' events_<id>.bin",
                    "type": "object",
                    "uniqueItems": false,
                    "additionalProperties": false,
@@ -28,37 +28,31 @@
                            "title": "UI tooltip",
                            "description": "UI description for selection"
                        },
-                       "type": {
-                           "type": "string",
-                           "enum": ["selection"],
-                           "title": "UI select",
-                           "description": "Create UI dropdown widget"
-                       },
                        "default":{
                            "type": "string",
-                           "title": "Initial value",
-                           "description": "Default key to select from dictionary 'values'"
+                           "title": "Default Event set",
+                           "description": "Initial setting for event set"
                        },
                        "options":{
                            "type": "array",
                            "title": "Selection options",
-                           "description": "Key value pairs to present in UI",
+                           "description": "Array of possible event sets",
                            "items": {
                                "type": "object",
-                               "title": "Selection Item",
-                               "description": "",
+                               "title": "Selection option",
+                               "description": "Event sets option",
                                "additionalProperties": false,
                                "properties": {
                                    "id": {
                                        "type": "string",
-                                       "title": "",
-                                       "description": "",
+                                       "title": "event set suffix",
+                                       "description": "String value used to select an event set",
                                        "minLength": 1
                                    },
                                    "desc": {
                                        "type": "string",
-                                       "title": "",
-                                       "description": "",
+                                       "title": "Event set description",
+                                       "description": "Short string description for an event set file",
                                        "minLength": 1
                                    }
                                },
@@ -70,7 +64,7 @@
                },
                "event_occurrence_id":{
                    "title": "Occurrence set selector",
-                   "description": "The 'key' from values is used as a file suffix' occurrence_<k>.bin",
+                   "description": "The 'id' from options is used as a file suffix' occurrence_<id>.bin",
                    "type": "object",
                    "uniqueItems": false,
                    "additionalProperties": false,
@@ -88,29 +82,29 @@
                        },
                        "default":{
                            "type": "string",
-                           "title": "Initial value",
-                           "description": "Default key to select from dictionary 'values'"
+                           "title": "Default occurrence file",
+                           "description": "Initial setting for occurrence"
                        },
                        "options":{
                            "type": "array",
                            "title": "Selection options",
-                           "description": "Key value pairs to present in UI",
+                           "description": "Array of possible occurrence sets",
                            "items": {
                                "type": "object",
-                               "title": "Selection Item",
-                               "description": "",
+                               "title": "Selection option",
+                               "description": "Occurrence set options",
                                "additionalProperties": false,
                                "properties": {
                                    "id": {
                                        "type": "string",
-                                       "title": "",
-                                       "description": "",
+                                       "title": "occurrence set suffix",
+                                       "description": "String value used to select an occurrence set",
                                        "minLength": 1
                                    },
                                    "desc": {
                                        "type": "string",
-                                       "title": "",
-                                       "description": "",
+                                       "title": "Occurrence set description",
+                                       "description": "Short string description for an occurrence set file",
                                        "minLength": 1
                                    }
                                },
@@ -211,15 +205,15 @@
                        "properties": {
                            "id": {
                                "type": "string",
-                               "title": "",
-                               "description": "",
+                               "title": "OED peril",
+                               "description": "OED three letter peril code",
                                "minLength": 3,
                                "maxLength": 3
                            },
                            "desc": {
                                "type": "string",
-                               "title": "",
-                               "description": "",
+                               "title": "OED peril description",
+                               "description": "Short string describing the peril",
                                "minLength": 1
                            }
                        },
