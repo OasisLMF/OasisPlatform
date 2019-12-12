@@ -15,8 +15,6 @@
                    "description": "The 'key' from values is used as a file suffix' events_<k>.bin",
                    "type": "object",
                    "uniqueItems": false,
-                   "title": "Selection",
-                   "description": "Drop down Selection from 'options'",
                    "additionalProperties": false,
                    "properties":{
                        "name": {
@@ -75,8 +73,6 @@
                    "description": "The 'key' from values is used as a file suffix' occurrence_<k>.bin",
                    "type": "object",
                    "uniqueItems": false,
-                   "title": "Selection",
-                   "description": "Drop down Selection from 'options'",
                    "additionalProperties": false,
                    "properties":{
                        "name": {
