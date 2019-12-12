@@ -107,33 +107,33 @@ class ModelSettingsJson(WebTestMixin, TestCase):
 
     """ Add these check back in once models auto-update their settings fields
     """
-#    def test_settings_json_is_not_present___get_response_is_404(self):
-#        user = fake_user()
-#        models = fake_analysis_model()
-#
-#        response = self.app.get(
-#            models.get_absolute_settings_url(),
-#            headers={
-#                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-#            },
-#            expect_errors=True,
-#        )
-#
-#        self.assertEqual(404, response.status_code)
-#
-#    def test_settings_json_is_not_present___delete_response_is_404(self):
-#        user = fake_user()
-#        models = fake_analysis_model()
-#
-#        response = self.app.delete(
-#            models.get_absolute_settings_url(),
-#            headers={
-#                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-#            },
-#            expect_errors=True,
-#        )
-#
-#        self.assertEqual(404, response.status_code)
+    def test_settings_json_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        models = fake_analysis_model()
+
+        response = self.app.get(
+            models.get_absolute_settings_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_settings_json_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        models = fake_analysis_model()
+
+        response = self.app.delete(
+            models.get_absolute_settings_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
 
     def test_settings_json_is_not_valid___response_is_400(self):
         with TemporaryDirectory() as d:
@@ -141,32 +141,41 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 models = fake_analysis_model()
                 json_data = {
-                    "model_settings":[
-                        {
-                            "event_set":{
-                                "name": "Event Set",
-                                "desc": "Either Probablistic or Historic",
-                                "type": "boolean",
-                                "default": "P",
-                                "values":{
-                                    "P": "Proabilistic",
-                                    "H": "Historic"
-                                }
-                             }
+                    "model_settings":{
+                        "event_set":{
+                            "name": "Event Set",
+                            "default": "P",
+                            "options":[
+                                {"id":"P", "desc": "Proabilistic"},
+                                {"id":"H", "desc": "Historic"}
+                            ]
                          },
-                    ],
-                    "Invalid_section": 'Null',
-                    "lookup_settings":[
-                        {
-                            "PerilCodes":{
-                                "type":"dictionary",
-                                "values":{
-                                    "WSSS": "Single Peril: Storm Surge",
-                                    "WTC": 1,
-                                }
-                            }
-                        }
-                    ]
+                        "Invalid_option": "",
+                        "event_occurrence_id":{
+                            "name": "Occurrence Set",
+                            "desc": "PiWind Occurrence selection",
+                            "default": 1,
+                            "options":[
+                                {"id":"1", "desc": "Long Term"}
+                            ]
+                        },
+                        "boolean_parameters": [
+                            {"name": "peril_wind", "desc":"Boolean option", "default": 1.1},
+                            {"name": "peril_surge", "desc":"Boolean option", "default": True}
+                        ],
+                        "float_parameter": [
+                            {"name": "float_1", "desc":"Some float value", "default": False, "max":1.0, "min":0.0},
+                            {"name": "float_2", "desc":"Some float value", "default": 0.3, "max":1.0, "min":0.0}
+                        ]
+                     },
+                    "lookup_settings":{
+                        "supported_perils":[
+                           {"i": "WSS", "desc": "Single Peril: Storm Surge"},
+                           {"id": "WTC", "des": "Single Peril: Tropical Cyclone"},
+                           {"id": "WW11", "desc": "Group Peril: Windstorm with storm surge"},
+                           {"id": "WW2", "desc": "Group Peril: Windstorm w/o storm surge"}
+                        ]
+                    }
                 }
 
                 response = self.app.post(
@@ -180,10 +189,15 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 )
 
                 validation_error =  {
-                    'model_settings-0-event_set-type': "'boolean' is not one of ['dictionary']", 
-                    'lookup_settings-0-PerilCodes-values-WTC': "1 is not of type 'string'", 
-                    'lookup_settings-0-PerilCodes-values': "'WSSS' does not match any of the regexes: '^[a-zA-Z0-9]{3}$'"
+                    'model_settings': "Additional properties are not allowed ('Invalid_option', 'float_parameter' were unexpected)",
+                    'model_settings-event_set': "'desc' is a required property",
+                    'model_settings-event_occurrence_id-default': "1 is not of type 'string'",
+                    'model_settings-boolean_parameters-0-default': "1.1 is not of type 'boolean'",
+                    'lookup_settings-supported_perils-0': "'id' is a required property",
+                    'lookup_settings-supported_perils-1': "'desc' is a required property",
+                    'lookup_settings-supported_perils-2-id': "'WW11' is too long"
                 }
+                self.assertEqual.__self__.maxDiff = None
                 self.assertEqual(400, response.status_code)
                 self.assertEqual(json.loads(response.body), validation_error)
 
@@ -194,45 +208,41 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 models = fake_analysis_model()
                 json_data = {
-                    "model_settings":[
-                        {
-                            "event_set":{
-                                "name": "Event Set",
-                                "desc": "Either Probablistic or Historic",
-                                "type":"dictionary",
-                                "default": "P",
-                                "values":{
-                                    "P": "Proabilistic",
-                                    "H": "Historic"
-                                }
-                             }
+                    "model_settings":{
+                        "event_set":{
+                            "name": "Event Set",
+                            "desc": "Either Probablistic or Historic",
+                            "default": "P",
+                            "options":[
+                                {"id":"P", "desc": "Proabilistic"},
+                                {"id":"H", "desc": "Historic"}
+                            ]
                          },
-                         {
-                            "event_occurrence_id":{
-                                "name": "Occurrence Set",
-                                "desc": "PiWind Occurrence selection",
-                                "type":"dictionary",
-                                "default": "1",
-                                "values":{
-                                   "1":"Long Term"
-                                }
-                            }
-
-                         }
-                    ],
-                    "lookup_settings":[
-                        {
-                            "PerilCodes":{
-                                "type":"dictionary",
-                                "values":{
-                                    "WSS": "Single Peril: Storm Surge",
-                                    "WTC": "Single Peril: Tropical Cyclone",
-                                    "WW1": "Group Peril: Windstorm with storm surge",
-                                    "WW2": "Group Peril: Windstorm w/o storm surge"
-                                }
-                            }
-                        }
-                    ]
+                        "event_occurrence_id":{
+                            "name": "Occurrence Set",
+                            "desc": "PiWind Occurrence selection",
+                            "default": "1",
+                            "options":[
+                                {"id":"1", "desc": "Long Term"}
+                            ]
+                        },
+                        "boolean_parameters": [
+                            {"name": "peril_wind", "desc":"Boolean option", "default": False},
+                            {"name": "peril_surge", "desc":"Boolean option", "default": True}
+                        ],
+                        "float_parameters": [
+                            {"name": "float_1", "desc":"Some float value", "default": 0.5, "max":1.0, "min":0.0},
+                            {"name": "float_2", "desc":"Some float value", "default": 0.3, "max":1.0, "min":0.0}
+                        ]
+                     },
+                    "lookup_settings":{
+                        "supported_perils":[
+                           {"id": "WSS", "desc": "Single Peril: Storm Surge"},
+                           {"id": "WTC", "desc": "Single Peril: Tropical Cyclone"},
+                           {"id": "WW1", "desc": "Group Peril: Windstorm with storm surge"},
+                           {"id": "WW2", "desc": "Group Peril: Windstorm w/o storm surge"}
+                        ]
+                    }
                 }
 
                 self.app.post(
