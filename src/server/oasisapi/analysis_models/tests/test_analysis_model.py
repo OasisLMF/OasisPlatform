@@ -197,6 +197,7 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                     'lookup_settings-supported_perils-1': "'desc' is a required property",
                     'lookup_settings-supported_perils-2-id': "'WW11' is too long"
                 }
+                self.assertEqual.__self__.maxDiff = None
                 self.assertEqual(400, response.status_code)
                 self.assertEqual(json.loads(response.body), validation_error)
 
