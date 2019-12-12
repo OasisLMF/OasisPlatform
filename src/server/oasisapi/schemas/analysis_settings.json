@@ -68,8 +68,6 @@
             "description": "Specified which outputs should be generated for which summary sets, for ground-up losses.",
             "type": "array",
             "uniqueItems": false,
-            "title": "Insured loss summary outputs",
-            "description": "Specified which outputs should be generated for which summary sets, for insured losses.",
             "items": {
                 "type": "object",
                 "properties": {
@@ -197,8 +195,6 @@
             "description": "Specified which outputs should be generated for which summary sets, for insured losses.",
             "type": "array",
             "uniqueItems": false,
-            "title": "Insured loss summary outputs",
-            "description": "Specified which outputs should be generated for which summary sets, for insured losses.",
             "items": {
                 "type": "object",
                 "properties": {
@@ -326,8 +322,6 @@
             "description": "Specified which outputs should be generated for which summary sets, for reinsurance net losses.",
             "type": "array",
             "uniqueItems": false,
-            "title": "Insured loss summary outputs",
-            "description": "Specified which outputs should be generated for which summary sets, for insured losses.",
             "items": {
                 "type": "object",
                 "properties": {
