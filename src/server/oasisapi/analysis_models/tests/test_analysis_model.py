@@ -197,9 +197,9 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                     'lookup_settings-supported_perils-1': "'desc' is a required property",
                     'lookup_settings-supported_perils-2-id': "'WW11' is too long"
                 }
-                self.assertEqual.__self__.maxDiff = None
                 self.assertEqual(400, response.status_code)
-                self.assertEqual(json.loads(response.body), validation_error)
+                self.assertDictEqual.__self__.maxDiff = None
+                self.assertDictEqual(json.loads(response.body), validation_error)
 
 
     def test_settings_json_is_uploaded___can_be_retrieved(self):
@@ -260,5 +260,6 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                 )
-                self.assertEqual(json.loads(response.body), json_data)
+                self.assertDictEqual.__self__.maxDiff = None
+                self.assertDictEqual(json.loads(response.body), json_data)
                 self.assertEqual(response.content_type, 'application/json')
