@@ -17,6 +17,9 @@ class AnalysisModel(TimeStampedModel):
     resource_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, null=True, default=None, related_name='analysis_model_resource_file')
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
+    ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
+    ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
+    ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')
@@ -30,5 +33,7 @@ class AnalysisModel(TimeStampedModel):
 
     def get_absolute_resources_file_url(self, request=None):
         return reverse('analysis-model-resource-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_versions_url(self, request=None):
+        return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
     def get_absolute_settings_url(self, request=None):
         return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)

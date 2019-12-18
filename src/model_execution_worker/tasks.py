@@ -80,7 +80,7 @@ def get_model_settings():
             with open(settings_fp) as f:
                 settings_data = json.load(f)
     except Exception as e:
-        logging.error("Failed to load Model settings: {}".format(e.message))
+        logging.error("Failed to load Model settings: {}".format(e))
 
     return settings_data
 
@@ -98,11 +98,11 @@ def get_worker_versions():
     else:
         plat_ver_str = ""
 
-    return {"worker_verisons": {
+    return {
         "oasislmf": mdk_version,
         "ktools": ktool_ver_str,
         "platform": plat_ver_str
-    }}
+    }
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -114,6 +114,8 @@ def register_worker(sender, **k):
     m_settings = get_model_settings()
     m_version = get_worker_versions()
     logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
+    logging.info('versions: {}'.format(m_version))
+    logging.info('settings: {}'.format(m_settings))
     signature(
         'run_register_worker',
         args=(m_supplier, m_name, m_id, m_settings, m_version),

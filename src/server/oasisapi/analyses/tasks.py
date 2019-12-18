@@ -39,14 +39,31 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
                 version_id=m_id,
                 creator=user
             )
-
+        
+        # Update model settings file
         if m_settings:
-            logger.info('Updating model settings')
-            request = HttpRequest()
-            request.data = {**m_settings, **m_version}
-            request.method = 'post'
-            request.user = model.creator 
-            handle_json_data(model, 'resource_file', request, ModelSettingsSerializer)
+            try:
+                request = HttpRequest()
+                request.data = {**m_settings}
+                request.method = 'post'
+                request.user = model.creator 
+                handle_json_data(model, 'resource_file', request, ModelSettingsSerializer)
+                logger.info('Updated model settings')
+            except Exception as e:
+                logger.info('Failed to update model settings:')
+                logger.exception(str(e))
+
+        # Update model version info
+        if m_version:
+            try:
+                model.ver_ktools =  m_version['ktools']
+                model.ver_oasislmf = m_version['oasislmf']
+                model.ver_platform = m_version['platform']
+                model.save()
+                logger.info('Updated model versions')
+            except Exception as e:
+                logger.info('Failed to set model veriosns:')
+                logger.exception(str(e))
 
 
     # Log unhandled execptions
