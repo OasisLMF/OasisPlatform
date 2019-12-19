@@ -39,25 +39,6 @@ CELERY = Celery()
 CELERY.config_from_object(celery_conf)
 logging.info("Started worker")
 
-## Required ENV
-logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
-logging.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS')))
-logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
-logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
-
-## Optional ENV
-logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
-logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)))
-logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback=None)))
-logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)))
-logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)))
-logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)))
-logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)))
-logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD', fallback=True)))
-logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
-logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
-logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
-
 
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
@@ -89,7 +70,6 @@ def get_model_settings():
     return settings_data
 
 
-
 def get_worker_versions():
     """ Search and return the versions of Oasis components
     """
@@ -107,6 +87,28 @@ def get_worker_versions():
         "ktools": ktool_ver_str,
         "platform": plat_ver_str
     }
+
+
+def log_worker_env():
+    logging.info(str(get_worker_versions()))
+    ## Required ENV
+    logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
+    logging.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS')))
+    logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
+    logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
+
+    ## Optional ENV
+    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
+    logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)))
+    logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback=None)))
+    logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)))
+    logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)))
+    logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)))
+    logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)))
+    logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD', fallback=True)))
+    logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
+    logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
+    logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -193,10 +195,9 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
     Returns:
         (string) The location of the outputs.
     """
+    log_worker_env()
+    logging.info("args: {}".format(str(locals())))
 
-    logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
-    logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
-        settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 
     with get_lock() as gotten:
         if not gotten:
@@ -235,10 +236,6 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         (string) The location of the outputs.
 
     """
-    # Check that the input archive exists and is valid
-    logging.info("args: {}".format(str(locals())))
-    logging.info(str(get_worker_versions()))
-
     media_root = settings.get('worker', 'MEDIA_ROOT')
     input_archive = os.path.join(media_root, input_location)
 
@@ -344,7 +341,7 @@ def generate_input(loc_file,
 
     """
     logging.info("args: {}".format(str(locals())))
-    logging.info(str(get_worker_versions()))
+    log_worker_env()
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
