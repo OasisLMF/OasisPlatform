@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
 from .models import AnalysisModel
-from .serializers import AnalysisModelSerializer
+from .serializers import AnalysisModelSerializer, ModelVersionsSerializer
 
 from ..data_files.serializers import DataFileSerializer
 from ..filters import TimeStampedFilter
@@ -118,6 +118,9 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             return RelatedFileSerializer
         elif self.action in ['data_files']:
             return DataFileSerializer
+        elif self.action in ['versions']:
+            return ModelVersionsSerializer
+
         else:
             return super(AnalysisModelViewSet, self).get_serializer_class()
 
@@ -127,6 +130,11 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
+
+    @action(methods=['get'], detail=True)
+    def versions(self, request, pk=None, version=None):
+        obj = self.get_object()
+        return Response(ModelVersionsSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(methods=['get', 'post'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'post', 'delete'], detail=True)

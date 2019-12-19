@@ -34,25 +34,29 @@ Celery task wrapper for Oasis ktools calculation.
 '''
 
 ARCHIVE_FILE_SUFFIX = '.tar'
-
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
-
 CELERY = Celery()
 CELERY.config_from_object(celery_conf)
-
 logging.info("Started worker")
-logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
+
+## Required ENV
+logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
+logging.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS')))
+logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
+logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
+
+## Optional ENV
+logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
 logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)))
-logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD')))
-logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES')))
-logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL')))
-logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL')))
-logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')))
+logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback=None)))
+logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)))
+logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)))
+logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)))
+logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)))
+logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD', fallback=True)))
 logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
 logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
 logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
-logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
-logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
 
 class TemporaryDir(object):
@@ -80,29 +84,29 @@ def get_model_settings():
             with open(settings_fp) as f:
                 settings_data = json.load(f)
     except Exception as e:
-        logging.error("Failed to load Model settings: {}".format(e.message))
+        logging.error("Failed to load Model settings: {}".format(e))
 
     return settings_data
 
 
 
 def get_worker_versions():
-    """ Search and return the versions of Oasis components 
+    """ Search and return the versions of Oasis components
     """
     ktool_ver_str = subprocess.getoutput('fmcalc -v')
     plat_ver_file = '/home/worker/VERSION'
 
     if os.path.isfile(plat_ver_file):
         with open(plat_ver_file, 'r') as f:
-            plat_ver_str = f.read().strip()    
+            plat_ver_str = f.read().strip()
     else:
         plat_ver_str = ""
 
-    return {"worker_verisons": {
+    return {
         "oasislmf": mdk_version,
         "ktools": ktool_ver_str,
         "platform": plat_ver_str
-    }}
+    }
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -114,6 +118,8 @@ def register_worker(sender, **k):
     m_settings = get_model_settings()
     m_version = get_worker_versions()
     logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
+    logging.info('versions: {}'.format(m_version))
+    logging.info('settings: {}'.format(m_settings))
     signature(
         'run_register_worker',
         args=(m_supplier, m_name, m_id, m_settings, m_version),
@@ -202,10 +208,6 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
         logging.info("Acquired resource lock")
 
         try:
-            logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
-            logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY')))
-            logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES')))
-
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
@@ -266,25 +268,39 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             '--config', config_path,
             '--model-run-dir', run_dir,
             '--analysis-settings-json', analysis_settings_file,
-            '--ktools-num-processes', settings.get('worker', 'KTOOLS_NUM_PROCESSES'),
-            '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
-            '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
-            '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI'),
             '--ktools-fifo-relative'
         ]
+
+        # Optional Args:
+        num_processes = settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)
+        if num_processes:
+            run_args += ['--ktools-num-processes', num_processes]
+
+        alloc_rule_gul = settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)
+        if alloc_rule_gul:
+            run_args += ['--ktools-alloc-rule-gul', alloc_rule_gul]
+
+        alloc_rule_il = settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)
+        if alloc_rule_il:
+            run_args += ['--ktools-alloc-rule-il', alloc_rule_il]
+
+        alloc_rule_ri = settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)
+        if alloc_rule_ri:
+            run_args += ['--ktools-alloc-rule-ri', alloc_rule_ri]
+
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
 
-        if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD'):
+        if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
             run_args.append('--ktools-disable-guard')
 
-        if settings.getboolean('worker', 'DEBUG_MODE'):
+        if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
             run_args.append('--verbose')
             logging.info('run_directory: {}'.format(oasis_files_dir))
             logging.info('args_list: {}'.format(str(run_args)))
 
-        # Log MDK run command 
+        # Log MDK run command
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
         mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
         logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
@@ -363,7 +379,7 @@ def generate_input(loc_file,
         if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
             run_args.append('--disable-summarise-exposure')
 
-        # Log MDK generate command 
+        # Log MDK generate command
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
         mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
         logging.info('run_directory: {}'.format(oasis_files_dir))

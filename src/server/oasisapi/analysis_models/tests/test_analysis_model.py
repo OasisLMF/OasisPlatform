@@ -150,7 +150,6 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                                 {"id":"H", "desc": "Historic"}
                             ]
                          },
-                        "Invalid_option": "",
                         "event_occurrence_id":{
                             "name": "Occurrence Set",
                             "desc": "PiWind Occurrence selection",
@@ -189,7 +188,7 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 )
 
                 validation_error =  {
-                    'model_settings': "Additional properties are not allowed ('Invalid_option', 'float_parameter' were unexpected)",
+                    'model_settings': "Additional properties are not allowed ('float_parameter' was unexpected)",
                     'model_settings-event_set': "'desc' is a required property",
                     'model_settings-event_occurrence_id-default': "1 is not of type 'string'",
                     'model_settings-boolean_parameters-0-default': "1.1 is not of type 'boolean'",
