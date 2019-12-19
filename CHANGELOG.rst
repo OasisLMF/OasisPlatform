@@ -1,6 +1,11 @@
 OasisPlatform Changelog
 ==================
 
+`1.4.1`_
+--------
+* Fixes #280 - JSON file schemas compatibility with swagger 
+* Added `models/{id}/versions` endpoint 
+
 `1.4.0`_
 --------
 * Added `/v1/models/{id}/settings` to replace `/v1/models/{id}/resource_file/`
@@ -160,6 +165,7 @@ OasisPlatform Changelog
 --------
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
+.. _`1.4.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.0...1.4.1
 .. _`1.4.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.5...1.4.0
 .. _`1.3.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.4...1.3.5
 .. _`1.3.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.3...1.3.4
