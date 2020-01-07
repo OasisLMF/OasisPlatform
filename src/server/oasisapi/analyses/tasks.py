@@ -71,7 +71,18 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
         logger.exception(str(e))
         logger.exception(model)
 
-
+@celery_app.task(name='set_task_status')
+def set_task_status(analysis_pk, task_status):
+    try:
+        from .models import Analysis
+        analysis = Analysis.objects.get(pk=analysis_pk)
+        analysis.status = task_status
+        analysis.save()
+        logger.info('Task Status Update: analysis_pk: {}, status: {}'.format(analysis_pk, task_status))
+    except Exception as e:
+        logger.error('Task Status Update: Failed')
+        logger.exception(str(e))
+    
 @celery_app.task(name='run_analysis_success')
 def run_analysis_success(output_location, analysis_pk, initiator_pk):
     logger.info('output_location: {}, analysis_pk: {}, initiator_pk: {}'.format(
@@ -79,7 +90,6 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
 
     try:
         from .models import Analysis
-
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.RUN_COMPLETED
         analysis.task_finished = timezone.now()
