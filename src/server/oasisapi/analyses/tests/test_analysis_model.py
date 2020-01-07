@@ -36,7 +36,10 @@ class AnalysisCancel(WebTestMixin, TestCase):
             self.assertEqual({'signal': 'SIGKILL', 'terminate': True}, res_factory.revoke_kwargs)
 
     @given(
-        status=sampled_from([c for c in Analysis.status_choices._db_values if c not in Analysis.status_choices.RUN_STARTED]),
+        status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
+            Analysis.status_choices.RUN_STARTED,
+            Analysis.status_choices.RUN_QUEUED,
+        ]]),
         task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
     )
     def test_state_is_not_running___validation_error_is_raised_revoke_is_not_called(self, status, task_id):
@@ -48,7 +51,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
             with self.assertRaises(ValidationError) as ex:
                 analysis.cancel()
 
-            self.assertEqual({'status': ['Analysis is not running']}, ex.exception.detail)
+            self.assertEqual({'status': ['Analysis is not running or queued']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 
@@ -115,7 +118,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 sig = analysis.run_analysis_signature
 
                 self.assertEqual(sig.task, 'run_analysis')
-                self.assertEqual(sig.args, (analysis.input_file.file.name, analysis.settings_file.file.name, []))
+                self.assertEqual(sig.args, (analysis.id, analysis.input_file.file.name, analysis.settings_file.file.name, []))
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)
 
 
@@ -133,7 +136,10 @@ class AnalysisCancelInputGeneration(WebTestMixin, TestCase):
             self.assertEqual({'signal': 'SIGKILL', 'terminate': True}, res_factory.revoke_kwargs)
 
     @given(
-        status=sampled_from([c for c in Analysis.status_choices._db_values if c != Analysis.status_choices.INPUTS_GENERATION_STARTED]),
+        status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
+            Analysis.status_choices.INPUTS_GENERATION_STARTED,
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED
+        ]]),
         task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
     )
     def test_state_is_not_generating_inputs___validation_error_is_raised_revoke_is_not_called(self, status, task_id):
@@ -145,14 +151,19 @@ class AnalysisCancelInputGeneration(WebTestMixin, TestCase):
             with self.assertRaises(ValidationError) as ex:
                 analysis.cancel_generate_inputs()
 
-            self.assertEqual({'status': ['Analysis input generation is not running']}, ex.exception.detail)
+            self.assertEqual({'status': ['Analysis input generation is not running or queued']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 
 
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
     @given(
-        status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [Analysis.status_choices.INPUTS_GENERATION_STARTED, Analysis.status_choices.RUN_STARTED]]),
+        status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED, 
+            Analysis.status_choices.INPUTS_GENERATION_STARTED, 
+            Analysis.status_choices.RUN_QUEUED,
+            Analysis.status_choices.RUN_STARTED
+        ]]),
         task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
     )
     def test_state_is_not_running___run_is_started(self, status, task_id):
@@ -227,5 +238,5 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig = analysis.generate_input_signature
 
                 self.assertEqual(sig.task, 'generate_input')
-                self.assertEqual(sig.args, (analysis.portfolio.location_file.file.name, None, None, None, None, []))
+                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)
