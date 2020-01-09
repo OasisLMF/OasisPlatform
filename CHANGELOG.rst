@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 ==================
 
+.. start_latest_release
+
 `1.4.0`_
 --------
 * Added `/v1/models/{id}/settings` to replace `/v1/models/{id}/resource_file/`
@@ -9,6 +11,8 @@ OasisPlatform Changelog
 * Removed environment variable `WRITE_EXPOSURE_SUMMARY` in favour of `DISABLE_EXPOSURE_SUMMARY`
 * Workers log internal versions to the API and docker logs
 * Schemas updated for `analysis_settings` and `model_settings`
+
+.. end_latest_release
 
 `1.3.5`_
 --------
