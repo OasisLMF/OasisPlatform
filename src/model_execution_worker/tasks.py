@@ -224,6 +224,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
             notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location = start_analysis(
+                analysis_pk,
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
                 input_location,
                 complex_data_files=complex_data_files

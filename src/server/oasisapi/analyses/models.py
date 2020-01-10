@@ -142,6 +142,10 @@ class Analysis(TimeStampedModel):
 
             raise ValidationError(detail=errors)
 
+    def run_callback(self, body):
+        self.status = self.status_choices.RUN_STARTED
+        self.save()
+
     def run(self, initiator):
         self.validate_run()
 
@@ -153,7 +157,8 @@ class Analysis(TimeStampedModel):
         run_analysis_signature.link_error(
             signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
-        self.run_task_id = run_analysis_signature.delay().id
+        dispatched_task = run_analysis_signature.delay()
+        self.run_task_id = dispatched_task.id
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
