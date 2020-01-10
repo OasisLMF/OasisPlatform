@@ -1,6 +1,7 @@
 import os
 import tarfile
 from unittest import TestCase
+from contextlib import contextmanager
 
 from backports.tempfile import TemporaryDirectory
 from celery.exceptions import Retry
@@ -61,16 +62,22 @@ class StartAnalysis(TestCase):
                 Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
 
                 cmd_instance = Mock()
-                with patch('src.model_execution_worker.tasks.GenerateLossesCmd', Mock(return_value=cmd_instance)) as cmd_mock, \
-                        patch('src.model_execution_worker.tasks.tarfile') as tarfile:
+
+                @contextmanager
+                def fake_temp_dir(*args, **kwargs):
+                    yield 'temp_dir'
+
+                with patch('src.model_execution_worker.tasks.subprocess.check_call', Mock(return_value=cmd_instance)) as cmd_mock, \
+                        patch('src.model_execution_worker.tasks.tarfile') as tarfile, \
+                        patch('src.model_execution_worker.tasks.TemporaryDir', fake_temp_dir):
                     output_location = start_analysis(
                         'analysis_settings.json',
                         'location.tar',
                     )
-                    cmd_mock.assert_called_once_with(argv=[
-                        '--oasis-files-dir', ANY,
+                    cmd_mock.assert_called_once_with(['oasislmf', 'model', 'generate-losses',
+                        '--oasis-files-dir', 'temp_dir/input',
                         '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
-                        '--model-run-dir', ANY,
+                        '--model-run-dir', 'temp_dir',
                         '--analysis-settings-json', 'analysis_settings.json',
                         '--ktools-fifo-relative',
                         '--ktools-num-processes', settings.get('worker', 'KTOOLS_NUM_PROCESSES'),
@@ -78,7 +85,6 @@ class StartAnalysis(TestCase):
                         '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
                         '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')
                     ])
-                    cmd_instance.run.assert_called_once_with()
                     self.assertEqual(tarfile.open.call_args_list[1][0], (str(Path(media_root, output_location)), 'w:gz'))
 
 
