@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import tarfile
 import uuid
 import subprocess
@@ -17,8 +18,7 @@ from contextlib import contextmanager, suppress
 from celery import Celery, signature
 from celery.task import task
 from celery.signals import worker_ready
-
-from oasislmf.cli.model import GenerateOasisFilesCmd, GenerateLossesCmd
+from oasislmf.utils import status
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -321,7 +321,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             " ".join([str(arg) for arg in mdk_args])
         ))
 
-        GenerateLossesCmd(argv=run_args).run()
+        subprocess.check_call(['oasislmf', 'model', 'generate-losses'] + run_args)
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
         output_directory = os.path.join(run_dir, "output")
         with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
@@ -405,7 +405,7 @@ def generate_input(analysis_pk,
             " ".join([str(arg) for arg in mdk_args])
         ))
 
-        GenerateOasisFilesCmd(argv=run_args).run()
+        subprocess.check_call(['oasislmf', 'model', 'generate-oasis-files'] + run_args)
 
         # Process Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
