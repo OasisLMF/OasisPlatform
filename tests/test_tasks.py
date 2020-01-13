@@ -101,7 +101,6 @@ class StartAnalysisTask(TestCase):
             api_notify.assert_called_once_with(pk, 'RUN_STARTED')
             start_analysis_task.update_state.assert_called_once_with(state=OASIS_TASK_STATUS["running"]["id"])
             start_analysis_mock.assert_called_once_with(
-                pk,
                 os.path.join(settings.get('worker', 'media_root'), analysis_settings_path),
                 location,
                 complex_data_files=None
