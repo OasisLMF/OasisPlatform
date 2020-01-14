@@ -14,7 +14,7 @@ from ...portfolios.tests.fakes import fake_portfolio
 from ...files.tests.fakes import fake_related_file
 from ...auth.tests.fakes import fake_user
 from ..models import Analysis
-from ..tasks import run_analysis_success, generate_input_success
+from ..tasks import record_run_analysis_result, generate_input_success
 from .fakes import fake_analysis, FakeAsyncResultFactory
 
 # Override default deadline for all tests to 8s
@@ -76,7 +76,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 with patch('src.server.oasisapi.analyses.models.Analysis.run_analysis_signature', PropertyMock(return_value=sig_res)):
                     analysis.run(initiator)
 
-                    sig_res.link.assert_called_once_with(run_analysis_success.s(analysis.pk, initiator.pk))
+                    sig_res.link.assert_called_once_with(record_run_analysis_result.s(analysis.pk, initiator.pk))
                     sig_res.link_error.assert_called_once_with(
                         signature('on_error', args=('record_run_analysis_failure', analysis.pk, initiator.pk), queue=analysis.model.queue_name)
                     )

@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tarfile
 from unittest import TestCase
 from contextlib import contextmanager
@@ -62,15 +63,18 @@ class StartAnalysis(TestCase):
                 Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
 
                 cmd_instance = Mock()
+                cmd_instance.stdout = b'output'
+                cmd_instance.stderr = b'errors'
 
                 @contextmanager
                 def fake_temp_dir(*args, **kwargs):
                     yield 'temp_dir'
 
-                with patch('src.model_execution_worker.tasks.subprocess.check_call', Mock(return_value=cmd_instance)) as cmd_mock, \
+                with patch('src.model_execution_worker.tasks.subprocess.run', Mock(return_value=cmd_instance)) as cmd_mock, \
+                        patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
                         patch('src.model_execution_worker.tasks.tarfile') as tarfile, \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_temp_dir):
-                    output_location = start_analysis(
+                    output_location, log_location, error_location, returncode = start_analysis(
                         'analysis_settings.json',
                         'location.tar',
                     )
@@ -84,7 +88,7 @@ class StartAnalysis(TestCase):
                         '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
                         '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
                         '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')
-                    ])
+                    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
                     self.assertEqual(tarfile.open.call_args_list[1][0], (str(Path(media_root, output_location)), 'w:gz'))
 
 

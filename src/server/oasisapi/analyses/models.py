@@ -16,7 +16,7 @@ from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
-from .tasks import generate_input_success, run_analysis_success
+from .tasks import generate_input_success, record_run_analysis_result
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 
@@ -52,6 +52,7 @@ class Analysis(TimeStampedModel):
     input_generation_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
     output_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='output_file_analyses')
     run_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='run_traceback_file_analyses')
+    run_log_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='run_log_file_analyses')
 
     lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
     lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
@@ -147,7 +148,7 @@ class Analysis(TimeStampedModel):
         self.input_generation_traceback_file_id = None
 
         run_analysis_signature = self.run_analysis_signature
-        run_analysis_signature.link(run_analysis_success.s(self.pk, initiator.pk))
+        run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
         run_analysis_signature.link_error(
             signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
