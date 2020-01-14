@@ -357,6 +357,18 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'run_traceback_file', request, ['text/plain'])
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete'], detail=True)
+    def run_log_file(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the portfolios `run_log_file` contents
+
+        delete:
+        Disassociates the portfolios `run_log_file` contents
+        """
+        return handle_related_file(self.get_object(), 'run_log_file', request, ['text/plain'])
+
     @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
