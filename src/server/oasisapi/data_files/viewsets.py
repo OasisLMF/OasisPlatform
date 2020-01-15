@@ -68,27 +68,24 @@ class DataFileViewset(viewsets.ModelViewSet):
     filter_class = DataFileFilter
 
     def get_serializer_class(self):
-        if self.action in ['content']:
+        if self.action in ['content', 'set_content']:
             return RelatedFileSerializer
         else:
             return super(DataFileViewset, self).get_serializer_class()
 
     @property
     def parser_classes(self):
-        if getattr(self, 'action', None) in ['content']:
+        if getattr(self, 'action', None) in ['set_content']:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'post', 'delete'], detail=True)
+    @action(methods=['get', 'delete'], detail=True)
     def content(self, request, pk=None, version=None):
         """
         get:
         Gets the data file's file contents
-
-        post:
-        Sets the data file's `file` contents
 
         delete:
         Deletes the data file.
@@ -96,3 +93,12 @@ class DataFileViewset(viewsets.ModelViewSet):
 
         file_response = handle_related_file(self.get_object(), 'file', request, None)
         return file_response
+
+    @content.mapping.post
+    def set_content(self, request, pk=None, version=None):
+        """
+        post:
+        Sets the data file's `file` contents
+        """
+
+        return handle_related_file(self.get_object(), 'file', request, None)

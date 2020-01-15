@@ -76,14 +76,17 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
-        elif self.action in ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']:
+        elif self.action in [
+            'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
+            'set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file',
+        ]:
             return RelatedFileSerializer
         else:
             return super(PortfolioViewSet, self).get_serializer_class()
 
     @property
     def parser_classes(self):
-        if getattr(self, 'action', None) in ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']:
+        if getattr(self, 'action', None) in ['set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file']:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
@@ -106,61 +109,81 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         )
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'post', 'delete'], detail=True)
+    @action(methods=['get', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `accounts_file` contents
-
-        post:
-        Sets the portfolios `accounts_file` contents
 
         delete:
         Disassociates the portfolios `accounts_file` with the portfolio
         """
         return handle_related_file(self.get_object(), 'accounts_file', request, ['application/json', 'text/csv'])
 
+    @accounts_file.mapping.post
+    def set_accounts_file(self, request, pk=None, version=None):
+        """
+        post:
+        Sets the portfolios `accounts_file` contents
+        """
+        return handle_related_file(self.get_object(), 'accounts_file', request, ['application/json', 'text/csv'])
+
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'post', 'delete'], detail=True)
+    @action(methods=['get', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `location_file` contents
-
-        post:
-        Sets the portfolios `location_file` contents
 
         delete:
         Disassociates the portfolios `location_file` contents
         """
         return handle_related_file(self.get_object(), 'location_file', request, ['application/json', 'text/csv'])
 
+    @location_file.mapping.post
+    def set_location_file(self, request, pk=None, version=None):
+        """
+        post:
+        Sets the portfolios `location_file` contents
+        """
+        return handle_related_file(self.get_object(), 'location_file', request, ['application/json', 'text/csv'])
+
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'post', 'delete'], detail=True)
+    @action(methods=['get', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `reinsurance_info_file` contents
-
-        post:
-        Sets the portfolios `reinsurance_info_file` contents
 
         delete:
         Disassociates the portfolios `reinsurance_info_file` contents
         """
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, ['application/json', 'text/csv'])
 
+    @reinsurance_info_file.mapping.post
+    def set_reinsurance_info_file(self, request, pk=None, version=None):
+        """
+        post:
+        Sets the portfolios `reinsurance_info_file` contents
+        """
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, ['application/json', 'text/csv'])
+
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'post', 'delete'], detail=True)
+    @action(methods=['get', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `reinsurance_scope_file` contents
 
-        post:
-        Sets the portfolios `reinsurance_scope_file` contents
-
         delete:
         Disassociates the portfolios `reinsurance_scope_file` contents
+        """
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, ['application/json', 'text/csv'])
+
+    @reinsurance_scope_file.mapping.post
+    def set_reinsurance_scope_file(self, request, pk=None, version=None):
+        """
+        post:
+        Sets the portfolios `reinsurance_scope_file` contents
         """
         return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, ['application/json', 'text/csv'])
