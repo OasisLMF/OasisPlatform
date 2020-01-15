@@ -190,13 +190,26 @@ def generate_input_success(result, analysis_pk, initiator_pk):
         result, analysis_pk, initiator_pk))
     try:
         from .models import Analysis
-        (
-            input_location,
-            lookup_error_fp,
-            lookup_success_fp,
-            lookup_validation_fp,
-            summary_levels_fp,
-        ) = result
+
+        try:
+            (
+                input_location,
+                lookup_error_fp,
+                lookup_success_fp,
+                lookup_validation_fp,
+                summary_levels_fp,
+                traceback_fp,
+            ) = result
+        except ValueError:
+            # catches issues where currently queued tasks dont pass the traceback file
+            traceback_fp = None
+            (
+                input_location,
+                lookup_error_fp,
+                lookup_success_fp,
+                lookup_validation_fp,
+                summary_levels_fp,
+            ) = result
 
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.READY
@@ -234,11 +247,19 @@ def generate_input_success(result, analysis_pk, initiator_pk):
             creator=get_user_model().objects.get(pk=initiator_pk),
         )
 
-        # Delete previous error trace
+        # Delete previous error trace and create the new one if set
         if analysis.input_generation_traceback_file:
             traceback = analysis.input_generation_traceback_file
             analysis.input_generation_traceback_file = None
             traceback.delete()
+
+        if traceback_fp:
+            analysis.input_generation_traceback_file = RelatedFile.objects.create(
+                file=str(traceback_fp),
+                filename=str(traceback_fp),
+                content_type='text/plain',
+                creator=get_user_model().objects.get(pk=initiator_pk),
+            )
 
         analysis.save()
     except Exception as e:

@@ -401,13 +401,19 @@ def generate_input(loc_file,
             " ".join([str(arg) for arg in mdk_args])
         ))
 
-        subprocess.check_call(['oasislmf', 'model', 'generate-oasis-files'] + run_args)
+        res = subprocess.run(['oasislmf', 'model', 'generate-oasis-files'] + run_args, stderr=subprocess.PIPE)
 
         # Process Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
         lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
+
+        traceback_fp = None
+        if res.stderr:
+            traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
+            with open(traceback_fp, 'w') as f:
+                f.write(res.stderr.decode())
 
         if lookup_error_fp:
             hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
@@ -441,7 +447,7 @@ def generate_input(loc_file,
         with tarfile.open(output_tar_name, 'w:gz') as tar:
             tar.add(oasis_files_dir, arcname='/')
 
-        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp
+        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_fp
 
 
 @task(name='on_error')

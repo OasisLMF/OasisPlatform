@@ -101,7 +101,7 @@ class StartAnalysisTask(TestCase):
 
     @given(location=text(), analysis_settings_path=text())
     def test_lock_is_acquireable___start_analysis_is_ran(self, location, analysis_settings_path):
-        with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=True)) as start_analysis_mock:
+        with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock:
             start_analysis_task.update_state = Mock()
             start_analysis_task(location, analysis_settings_path)
 

@@ -39,10 +39,12 @@ class RunAnalysisSuccess(TestCase):
                 analysis = fake_analysis()
 
                 record_run_analysis_result(
-                    output_location,
-                    log_location,
-                    error_location,
-                    return_code,
+                    (
+                        output_location,
+                        log_location,
+                        error_location,
+                        return_code,
+                    ),
                     analysis.pk,
                     initiator.pk,
                 )
