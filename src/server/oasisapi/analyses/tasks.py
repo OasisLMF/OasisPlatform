@@ -105,7 +105,8 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
 
 
 @celery_app.task(name='record_run_analysis_result')
-def record_run_analysis_result(output_location, log_location, traceback_location, return_code, analysis_pk, initiator_pk):
+def record_run_analysis_result(res, analysis_pk, initiator_pk):
+    output_location, log_location, traceback_location, return_code = res
     logger.info('output_location: {}, log_location: {}, traceback_location: {}, status: {}, analysis_pk: {}, initiator_pk: {}'.format(
         output_location, log_location, traceback_location, return_code, analysis_pk, initiator_pk))
 

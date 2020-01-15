@@ -210,7 +210,7 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
 
         try:
             self.update_state(state=RUNNING_TASK_STATUS)
-            output_location = start_analysis(
+            output_location, log_location, error_location, return_code = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
                 input_location,
                 complex_data_files=complex_data_files
@@ -219,7 +219,7 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
             logging.exception("Model execution task failed.")
             raise
 
-        return output_location
+        return output_location, log_location, error_location, return_code
 
 
 @oasis_log()
