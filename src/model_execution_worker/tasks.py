@@ -367,10 +367,14 @@ def generate_input(loc_file,
             '--oasis-files-dir', oasis_files_dir,
             '--config', config_path,
             '--oed-location-csv', location_file,
-            '--oed-accounts-csv', accounts_file,
-            '--oed-info-csv', ri_info_file,
-            '--oed-scope-csv', ri_scope_file,
         ]
+
+        if accounts_file:
+            run_args += ['--oed-accounts-csv', accounts_file]
+        if ri_info_file:
+            run_args += ['--oed-info-csv', ri_info_file]
+        if ri_scope_file:
+            run_args += ['--oed-scope-csv', ri_scope_file]
         if lookup_settings_file:
             run_args += ['--lookup-complex-config-json', lookup_settings_file]
         if complex_data_files:
