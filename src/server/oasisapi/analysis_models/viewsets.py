@@ -114,7 +114,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     filter_class = AnalysisModelFilter
 
     def get_serializer_class(self):
-        if self.action in ['resource_file']:
+        if self.action in ['resource_file', 'set_resource_file']:
             return RelatedFileSerializer
         elif self.action in ['data_files']:
             return DataFileSerializer
@@ -136,15 +136,12 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         return Response(ModelVersionsSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(methods=['get', 'post'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'post', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete'], detail=True)
     def resource_file(self, request, pk=None, version=None):
         """
         get:
         Gets the models `resource_file` contents
-
-        post:
-        Sets the models `resource_file` contents
 
         delete:
         Disassociates the moodels `resource_file` contents
@@ -158,6 +155,14 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             response = JsonResponse(data)
             response['Content-Disposition'] = 'attachment; filename="{}"'.format('default_resource_file.json')
             return response
+
+    @resource_file.mapping.post
+    def set_resource_file(self, request, pk=None, version=None):
+        """
+        post:
+        Sets the models `resource_file` contents
+        """
+        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
 
     @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
