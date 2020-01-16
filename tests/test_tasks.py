@@ -6,7 +6,7 @@ from backports.tempfile import TemporaryDirectory
 from celery.exceptions import Retry
 from hypothesis import given
 from hypothesis import settings as hypothesis_settings
-from hypothesis.strategies import text
+from hypothesis.strategies import text, integers
 from mock import patch, Mock, ANY
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
@@ -62,7 +62,8 @@ class StartAnalysis(TestCase):
 
                 cmd_instance = Mock()
                 with patch('src.model_execution_worker.tasks.GenerateLossesCmd', Mock(return_value=cmd_instance)) as cmd_mock, \
-                        patch('src.model_execution_worker.tasks.tarfile') as tarfile:
+                     patch('src.model_execution_worker.tasks.tarfile') as tarfile:
+
                     output_location = start_analysis(
                         'analysis_settings.json',
                         'location.tar',
@@ -83,18 +84,21 @@ class StartAnalysis(TestCase):
 
 
 class StartAnalysisTask(TestCase):
-    @given(location=text(), analysis_settings_path=text())
-    def test_lock_is_not_acquireable___retry_esception_is_raised(self, location, analysis_settings_path):
-        with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)):
+    @given(pk=integers(), location=text(), analysis_settings_path=text())
+    def test_lock_is_not_acquireable___retry_esception_is_raised(self, pk, location, analysis_settings_path):
+        with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)), \
+             patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
             with self.assertRaises(Retry):
-                start_analysis_task(location, analysis_settings_path)
+                start_analysis_task(pk, location, analysis_settings_path)
 
-    @given(location=text(), analysis_settings_path=text())
-    def test_lock_is_acquireable___start_analysis_is_ran(self, location, analysis_settings_path):
-        with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=True)) as start_analysis_mock:
+    @given(pk=integers(), location=text(), analysis_settings_path=text())
+    def test_lock_is_acquireable___start_analysis_is_ran(self, pk, location, analysis_settings_path):
+        with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=True)) as start_analysis_mock, \
+             patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
             start_analysis_task.update_state = Mock()
-            start_analysis_task(location, analysis_settings_path)
+            start_analysis_task(pk, location, analysis_settings_path)
 
+            api_notify.assert_called_once_with(pk, 'RUN_STARTED')
             start_analysis_task.update_state.assert_called_once_with(state=OASIS_TASK_STATUS["running"]["id"])
             start_analysis_mock.assert_called_once_with(
                 os.path.join(settings.get('worker', 'media_root'), analysis_settings_path),

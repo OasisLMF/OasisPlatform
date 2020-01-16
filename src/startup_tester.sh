@@ -5,9 +5,12 @@ SERVER_HEALTH=0
 echo "curl -s -X GET 'http://$host/healthcheck/'"
 
 until [ $SERVER_HEALTH -gt 0 ] ; do
-  >&2 echo "Server is unavailable - sleeping"
   SERVER_HEALTH=$(curl -s -X GET "http://$host/healthcheck/" -H "accept: application/json" | grep -c "OK")
-  sleep 5
+
+  if [ "$SERVER_HEALTH" -lt 1 ]; then 
+      >&2 echo "Waiting for Server"
+      sleep 2
+  fi 
 done
 
 echo "Server is available - exit"

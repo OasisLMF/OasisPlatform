@@ -27,7 +27,9 @@ class Analysis(TimeStampedModel):
         ('INPUTS_GENERATION_ERROR', 'Inputs generation error'),
         ('INPUTS_GENERATION_CANCELLED', 'Inputs generation cancelled'),
         ('INPUTS_GENERATION_STARTED', 'Inputs generation started'),
+        ('INPUTS_GENERATION_QUEUED', 'Inputs generation added to queue'),
         ('READY', 'Ready'),
+        ('RUN_QUEUED', 'Run added to queue'),
         ('RUN_STARTED', 'Run started'),
         ('RUN_COMPLETED', 'Run completed'),
         ('RUN_CANCELLED', 'Run cancelled'),
@@ -140,10 +142,14 @@ class Analysis(TimeStampedModel):
 
             raise ValidationError(detail=errors)
 
+    def run_callback(self, body):
+        self.status = self.status_choices.RUN_STARTED
+        self.save()
+
     def run(self, initiator):
         self.validate_run()
 
-        self.status = self.status_choices.RUN_STARTED
+        self.status = self.status_choices.RUN_QUEUED
         self.input_generation_traceback_file_id = None
 
         run_analysis_signature = self.run_analysis_signature
@@ -151,7 +157,8 @@ class Analysis(TimeStampedModel):
         run_analysis_signature.link_error(
             signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
-        self.run_task_id = run_analysis_signature.delay().id
+        dispatched_task = run_analysis_signature.delay()
+        self.run_task_id = dispatched_task.id
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
@@ -162,13 +169,17 @@ class Analysis(TimeStampedModel):
 
         return signature(
             'run_analysis',
-            args=(self.input_file.file.name, self.settings_file.file.name, complex_data_files),
+            args=(self.pk, self.input_file.file.name, self.settings_file.file.name, complex_data_files),
             queue=self.model.queue_name,
         )
 
     def cancel(self):
-        if self.status != self.status_choices.RUN_STARTED:
-            raise ValidationError({'status': ['Analysis is not running']})
+        valid_choices = [
+            self.status_choices.RUN_QUEUED,
+            self.status_choices.RUN_STARTED
+        ]
+        if self.status not in valid_choices:
+            raise ValidationError({'status': ['Analysis is not running or queued']})
 
         AsyncResult(self.run_task_id).revoke(
             signal='SIGKILL',
@@ -200,7 +211,7 @@ class Analysis(TimeStampedModel):
         if errors:
             raise ValidationError(errors)
 
-        self.status = self.status_choices.INPUTS_GENERATION_STARTED
+        self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
         self.lookup_success_file = None
         self.lookup_validation_file = None
@@ -218,8 +229,12 @@ class Analysis(TimeStampedModel):
         self.save()
 
     def cancel_generate_inputs(self):
-        if self.status != self.status_choices.INPUTS_GENERATION_STARTED:
-            raise ValidationError({'status': ['Analysis input generation is not running']})
+        valid_choices = [
+            self.status_choices.INPUTS_GENERATION_QUEUED,
+            self.status_choices.INPUTS_GENERATION_STARTED
+        ]
+        if self.status not in valid_choices:
+            raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         AsyncResult(self.generate_inputs_task_id).revoke(
@@ -231,7 +246,6 @@ class Analysis(TimeStampedModel):
 
     @property
     def generate_input_signature(self):
-
         loc_file = self.portfolio.location_file.file.name
         acc_file = self.portfolio.accounts_file.file.name if self.portfolio.accounts_file else None
         info_file = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
@@ -241,7 +255,7 @@ class Analysis(TimeStampedModel):
 
         return signature(
             'generate_input',
-            args=(loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
+            args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
             queue=self.model.queue_name
         )
 
