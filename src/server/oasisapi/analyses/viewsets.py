@@ -133,6 +133,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     filter_class = AnalysisFilter
 
     file_action_types = ['settings_file',
+                         'set_settings_file',
                          'input_file',
                          'lookup_errors_file',
                          'lookup_success_file',
@@ -162,10 +163,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     @property
     def parser_classes(self):
-        if getattr(self, 'action', None) in self.file_action_types:
+        if getattr(self, 'action', None) in ['set_settings_file']:
             return [MultiPartParser]
-        elif getattr(self, 'action', None) in self.task_action_types:
-            return [FormParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
@@ -235,17 +234,22 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'post', 'delete'], detail=True)
+    @action(methods=['get', 'delete'], detail=True)
     def settings_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `settings_file` contents
 
-        post:
-        Sets the portfolios `settings_file` contents
-
         delete:
         Disassociates the portfolios `settings_file` contents
+        """
+        return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
+
+    @settings_file.mapping.post
+    def set_settings_file(self, request, pk=None, version=None):
+        """
+        post:
+        Sets the portfolios `settings_file` contents
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 

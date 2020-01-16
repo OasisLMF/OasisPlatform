@@ -180,8 +180,21 @@ def get_unique_filename(ext):
     return filename
 
 
+# Send notification back to the API Once task is read from Queue
+def notify_api_status(analysis_pk, task_status):
+    logging.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status',
+        args=(analysis_pk, task_status),
+        queue='celery'
+    ).delay()
+
+
 @task(name='run_analysis', bind=True)
-def start_analysis_task(self, input_location, analysis_settings_file, complex_data_files=None):
+def start_analysis_task(self, analysis_pk, input_location, analysis_settings_file, complex_data_files=None):
     """Task wrapper for running an analysis.
 
     Args:
@@ -209,6 +222,7 @@ def start_analysis_task(self, input_location, analysis_settings_file, complex_da
         logging.info("Acquired resource lock")
 
         try:
+            notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, log_location, error_location, return_code = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
@@ -332,7 +346,8 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
 
 
 @task(name='generate_input')
-def generate_input(loc_file,
+def generate_input(analysis_pk,
+                   loc_file,
                    acc_file=None,
                    info_file=None,
                    scope_file=None,
@@ -344,6 +359,7 @@ def generate_input(loc_file,
     A temporary directory is created to contain the output oasis files.
 
     Args:
+        analysis_pk (int): ID of the analysis. 
         loc_file (str): Name of the portfolio locations file.
         acc_file (str): Name of the portfolio accounts file.
         info_file (str): Name of the portfolio reinsurance info file.
@@ -358,6 +374,7 @@ def generate_input(loc_file,
     """
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
+    notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
@@ -380,10 +397,14 @@ def generate_input(loc_file,
             '--oasis-files-dir', oasis_files_dir,
             '--config', config_path,
             '--oed-location-csv', location_file,
-            '--oed-accounts-csv', accounts_file,
-            '--oed-info-csv', ri_info_file,
-            '--oed-scope-csv', ri_scope_file,
         ]
+
+        if accounts_file:
+            run_args += ['--oed-accounts-csv', accounts_file]
+        if ri_info_file:
+            run_args += ['--oed-info-csv', ri_info_file]
+        if ri_scope_file:
+            run_args += ['--oed-scope-csv', ri_scope_file]
         if lookup_settings_file:
             run_args += ['--lookup-complex-config-json', lookup_settings_file]
         if complex_data_files:
