@@ -4,12 +4,14 @@ from backports.tempfile import TemporaryDirectory
 
 from django.test import override_settings
 from hypothesis import given, settings
+from hypothesis._strategies import sampled_from
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text
 from pathlib2 import Path
 
+from ..models import Analysis
 from ...auth.tests.fakes import fake_user
-from ..tasks import run_analysis_success, record_run_analysis_failure, generate_input_success, record_generate_input_failure
+from ..tasks import record_run_analysis_result, record_run_analysis_failure, generate_input_success, record_generate_input_failure
 from .fakes import fake_analysis
 
 # Override default deadline for all tests to 8s
@@ -18,23 +20,50 @@ settings.load_profile("ci")
 
 
 class RunAnalysisSuccess(TestCase):
-    @given(output_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    def test_output_file_and_status_are_updated(self, output_location):
+    @given(
+        output_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        log_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        error_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        return_code=sampled_from([0, 1])
+    )
+    def test_output_file_and_status_are_updated(self, output_location, log_location, error_location, return_code):
+        expected_status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
+
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 Path(d, output_location).touch()
+                Path(d, log_location).touch()
+                Path(d, error_location).touch()
 
                 initiator = fake_user()
                 analysis = fake_analysis()
 
-                run_analysis_success(output_location, analysis.pk, initiator.pk)
+                record_run_analysis_result(
+                    (
+                        output_location,
+                        log_location,
+                        error_location,
+                        return_code,
+                    ),
+                    analysis.pk,
+                    initiator.pk,
+                )
 
                 analysis.refresh_from_db()
                 
                 self.assertEqual(analysis.output_file.file.name, output_location)
                 self.assertEqual(analysis.output_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.output_file.creator, initiator)
-                self.assertEqual(analysis.status, analysis.status_choices.RUN_COMPLETED)
+
+                self.assertEqual(analysis.run_log_file.file.name, log_location)
+                self.assertEqual(analysis.run_log_file.content_type, 'application/gzip')
+                self.assertEqual(analysis.run_log_file.creator, initiator)
+
+                self.assertEqual(analysis.run_traceback_file.file.name, error_location)
+                self.assertEqual(analysis.run_traceback_file.content_type, 'text/plain')
+                self.assertEqual(analysis.run_traceback_file.creator, initiator)
+
+                self.assertEqual(analysis.status, expected_status)
 
 
 class RunAnalysisFailure(TestCase):

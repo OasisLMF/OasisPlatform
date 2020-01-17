@@ -107,6 +107,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 analysis.input_generation_traceback_file = fake_related_file()
                 analysis.output_file = fake_related_file()
                 analysis.run_traceback_file = fake_related_file()
+                analysis.run_log_file = fake_related_file()
                 analysis.save()
 
                 response = self.app.get(
@@ -133,6 +134,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'lookup_validation_file': response.request.application_url + analysis.get_absolute_lookup_validation_file_url(),
                     'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
                     'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
+                    'run_log_file': response.request.application_url + analysis.get_absolute_run_log_file_url(),
                     'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
                     'status': Analysis.status_choices.NEW,
                     'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(),
@@ -189,6 +191,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'lookup_validation_file': None,
                     'input_generation_traceback_file': None,
                     'output_file': None,
+                    'run_log_file': None,
                     'run_traceback_file': None,
                     'status': Analysis.status_choices.NEW,
                     'summary_levels_file': None,

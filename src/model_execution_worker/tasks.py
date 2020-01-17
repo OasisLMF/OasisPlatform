@@ -33,6 +33,7 @@ from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 Celery task wrapper for Oasis ktools calculation.
 '''
 
+LOG_FILE_SUFFIX = '.txt'
 ARCHIVE_FILE_SUFFIX = '.tar'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 CELERY = Celery()
@@ -223,7 +224,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
         try:
             notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
-            output_location = start_analysis(
+            output_location, log_location, error_location, return_code = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
                 input_location,
                 complex_data_files=complex_data_files
@@ -232,7 +233,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
             logging.exception("Model execution task failed.")
             raise
 
-        return output_location
+        return output_location, log_location, error_location, return_code
 
 
 @oasis_log()
@@ -321,7 +322,24 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             " ".join([str(arg) for arg in mdk_args])
         ))
 
-        subprocess.check_call(['oasislmf', 'model', 'generate-losses'] + run_args)
+        result = subprocess.run(
+            ['oasislmf', 'model', 'generate-losses'] + run_args,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+
+        # Trace back file (stdout + stderr)
+        traceback_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
+        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
+            f.write(result.stdout.decode())
+            f.write(result.stderr.decode())
+
+        # Ktools log Tar file 
+        log_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
+        log_directory = os.path.join(run_dir, "log")
+        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), log_location), "w:gz") as tar:
+            tar.add(log_directory, arcname="log")
+
+        # Results Tar 
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
         output_directory = os.path.join(run_dir, "output")
         with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
@@ -329,7 +347,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
 
     logging.info("Output location = {}".format(output_location))
 
-    return output_location
+    return output_location, traceback_location, log_location, result.returncode
 
 
 @task(name='generate_input')
@@ -409,13 +427,20 @@ def generate_input(analysis_pk,
             " ".join([str(arg) for arg in mdk_args])
         ))
 
-        subprocess.check_call(['oasislmf', 'model', 'generate-oasis-files'] + run_args)
+        res = subprocess.run(['oasislmf', 'model', 'generate-oasis-files'] + run_args, stderr=subprocess.PIPE)
 
         # Process Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
         lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
+
+        traceback_fp = None
+        if res.stderr:
+            traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
+            with open(traceback_fp, 'w') as f:
+                f.write(res.stdout.decode())
+                f.write(res.stderr.decode())
 
         if lookup_error_fp:
             hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
@@ -449,7 +474,7 @@ def generate_input(analysis_pk,
         with tarfile.open(output_tar_name, 'w:gz') as tar:
             tar.add(oasis_files_dir, arcname='/')
 
-        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp
+        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_fp
 
 
 @task(name='on_error')

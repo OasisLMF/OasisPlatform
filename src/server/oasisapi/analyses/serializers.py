@@ -15,6 +15,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     input_generation_traceback_file = serializers.SerializerMethodField()
     output_file = serializers.SerializerMethodField()
     run_traceback_file = serializers.SerializerMethodField()
+    run_log_file = serializers.SerializerMethodField()
 
     class Meta:
         model = Analysis
@@ -38,7 +39,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'summary_levels_file',
             'input_generation_traceback_file',
             'output_file',
-            'run_traceback_file'
+            'run_traceback_file',
+            'run_log_file',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
@@ -90,6 +92,11 @@ class AnalysisSerializer(serializers.ModelSerializer):
     def get_run_traceback_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_run_traceback_file_url(request=request) if instance.run_traceback_file else None
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_run_log_file(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_run_log_file_url(request=request) if instance.run_log_file else None
 
     def validate(self, attrs):
         if not attrs.get('creator') and 'request' in self.context:
