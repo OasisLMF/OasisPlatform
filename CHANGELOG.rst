@@ -3,6 +3,24 @@ OasisPlatform Changelog
 
 .. start_latest_release
 
+`1.4.2`_
+--------
+* #222 - Update to  model settings schema
+* #275 - Fixed delete operations with multipart as content type in swagger
+* #274 - Fixed reverting behaviour for complex models (custom gulcalc)
+* #281 - Added Task Queued state
+* #268 - Store run trace on success
+* #287 - Store ktools log directory in an Analyses
+* #283 - Fixed Worker not releasing memory from Python process
+*
+.. end_latest_release
+
+`1.4.1`_
+--------
+* Fixes #280 - JSON file schemas compatibility with swagger
+* Added models/{id}/versions endpoint
+* Improved worker environment variables logging and defaults
+
 `1.4.0`_
 --------
 * Added `/v1/models/{id}/settings` to replace `/v1/models/{id}/resource_file/`
@@ -11,8 +29,6 @@ OasisPlatform Changelog
 * Removed environment variable `WRITE_EXPOSURE_SUMMARY` in favour of `DISABLE_EXPOSURE_SUMMARY`
 * Workers log internal versions to the API and docker logs
 * Schemas updated for `analysis_settings` and `model_settings`
-
-.. end_latest_release
 
 `1.3.5`_
 --------
@@ -164,6 +180,8 @@ OasisPlatform Changelog
 --------
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
+.. _`1.4.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.1...1.4.2
+.. _`1.4.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.0...1.4.1
 .. _`1.4.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.5...1.4.0
 .. _`1.3.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.4...1.3.5
 .. _`1.3.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.3...1.3.4
