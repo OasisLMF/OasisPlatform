@@ -327,14 +327,19 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
-        log_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
-        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), log_location), 'w') as f:
+        # Trace back file (stdout + stderr)
+        traceback_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
+        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
             f.write(result.stdout.decode())
-
-        error_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
-        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), error_location), 'w') as f:
             f.write(result.stderr.decode())
 
+        # Ktools log Tar file 
+        log_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
+        log_directory = os.path.join(run_dir, "log")
+        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), log_location), "w:gz") as tar:
+            tar.add(log_directory, arcname="log")
+
+        # Results Tar 
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
         output_directory = os.path.join(run_dir, "output")
         with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
@@ -342,7 +347,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
 
     logging.info("Output location = {}".format(output_location))
 
-    return output_location, log_location, error_location, result.returncode
+    return output_location, traceback_location, log_location, result.returncode
 
 
 @task(name='generate_input')
@@ -434,6 +439,7 @@ def generate_input(analysis_pk,
         if res.stderr:
             traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
             with open(traceback_fp, 'w') as f:
+                f.write(res.stdout.decode())
                 f.write(res.stderr.decode())
 
         if lookup_error_fp:

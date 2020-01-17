@@ -118,7 +118,7 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
 def record_run_analysis_result(res, analysis_pk, initiator_pk):
     output_location, log_location, traceback_location, return_code = res
     logger.info('output_location: {}, log_location: {}, traceback_location: {}, status: {}, analysis_pk: {}, initiator_pk: {}'.format(
-        output_location, log_location, traceback_location, return_code, analysis_pk, initiator_pk))
+        output_location, traceback_location, log_location, return_code, analysis_pk, initiator_pk))
 
     try:
         from .models import Analysis
@@ -128,6 +128,7 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
         analysis.status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
         analysis.task_finished = timezone.now()
 
+        if output_location:
         analysis.output_file = RelatedFile.objects.create(
             file=str(output_location),
             filename=str(output_location),
@@ -135,17 +136,18 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
             creator=initiator,
         )
 
-        # record the log file
+        # Store Ktools logs
         if log_location:
             analysis.run_log_file = RelatedFile.objects.create(
                 file=str(log_location),
                 filename=str(log_location),
-                content_type='text/plain',
+                content_type='application/gzip',
                 creator=initiator,
             )
         elif analysis.run_log_file:
             analysis.run_log_file.delete()
             analysis.run_log_file = None
+
 
         # record the error file
         if traceback_location:
