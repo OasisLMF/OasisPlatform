@@ -89,7 +89,7 @@ class StartAnalysis(TestCase):
                         '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
                         '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')
                     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                    self.assertEqual(tarfile.open.call_args_list[1][0], (str(Path(media_root, output_location)), 'w:gz'))
+                    self.assertEqual(tarfile.open.call_args_list[2][0], (str(Path(media_root, output_location)), 'w:gz'))
 
 
 class StartAnalysisTask(TestCase):
@@ -101,7 +101,7 @@ class StartAnalysisTask(TestCase):
                 start_analysis_task(pk, location, analysis_settings_path)
 
     @given(pk=integers(), location=text(), analysis_settings_path=text())
-    def test_lock_is_acquireable___start_analysis_is_ran(self, location, analysis_settings_path):
+    def test_lock_is_acquireable___start_analysis_is_ran(self, pk, location, analysis_settings_path):
         with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
         patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
             start_analysis_task.update_state = Mock()

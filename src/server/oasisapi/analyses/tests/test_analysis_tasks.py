@@ -56,7 +56,7 @@ class RunAnalysisSuccess(TestCase):
                 self.assertEqual(analysis.output_file.creator, initiator)
 
                 self.assertEqual(analysis.run_log_file.file.name, log_location)
-                self.assertEqual(analysis.run_log_file.content_type, 'text/plain')
+                self.assertEqual(analysis.run_log_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.run_log_file.creator, initiator)
 
                 self.assertEqual(analysis.run_traceback_file.file.name, error_location)
