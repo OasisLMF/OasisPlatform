@@ -23,17 +23,17 @@ class RunAnalysisSuccess(TestCase):
     @given(
         output_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         log_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
-        error_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        traceback_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         return_code=sampled_from([0, 1])
     )
-    def test_output_file_and_status_are_updated(self, output_location, log_location, error_location, return_code):
+    def test_output_file_and_status_are_updated(self, output_location, log_location, traceback_location, return_code):
         expected_status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 Path(d, output_location).touch()
                 Path(d, log_location).touch()
-                Path(d, error_location).touch()
+                Path(d, traceback_location).touch()
 
                 initiator = fake_user()
                 analysis = fake_analysis()
@@ -41,8 +41,8 @@ class RunAnalysisSuccess(TestCase):
                 record_run_analysis_result(
                     (
                         output_location,
+                        traceback_location,
                         log_location,
-                        error_location,
                         return_code,
                     ),
                     analysis.pk,
@@ -50,7 +50,7 @@ class RunAnalysisSuccess(TestCase):
                 )
 
                 analysis.refresh_from_db()
-                
+               
                 self.assertEqual(analysis.output_file.file.name, output_location)
                 self.assertEqual(analysis.output_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.output_file.creator, initiator)
@@ -59,7 +59,7 @@ class RunAnalysisSuccess(TestCase):
                 self.assertEqual(analysis.run_log_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.run_log_file.creator, initiator)
 
-                self.assertEqual(analysis.run_traceback_file.file.name, error_location)
+                self.assertEqual(analysis.run_traceback_file.file.name, traceback_location)
                 self.assertEqual(analysis.run_traceback_file.content_type, 'text/plain')
                 self.assertEqual(analysis.run_traceback_file.creator, initiator)
 

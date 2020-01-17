@@ -77,7 +77,7 @@ def set_task_status(analysis_pk, task_status):
         from .models import Analysis
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = task_status
-        analysis.save()
+        analysis.save(update_fields=["status"])
         logger.info('Task Status Update: analysis_pk: {}, status: {}'.format(analysis_pk, task_status))
     except Exception as e:
         logger.error('Task Status Update: Failed')
@@ -116,7 +116,7 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
 
 @celery_app.task(name='record_run_analysis_result')
 def record_run_analysis_result(res, analysis_pk, initiator_pk):
-    output_location, log_location, traceback_location, return_code = res
+    output_location, traceback_location, log_location, return_code = res
     logger.info('output_location: {}, log_location: {}, traceback_location: {}, status: {}, analysis_pk: {}, initiator_pk: {}'.format(
         output_location, traceback_location, log_location, return_code, analysis_pk, initiator_pk))
 
@@ -128,13 +128,16 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
         analysis.status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
         analysis.task_finished = timezone.now()
 
-        if output_location:
-            analysis.output_file = RelatedFile.objects.create(
-                file=str(output_location),
-                filename=str(output_location),
-                content_type='application/gzip',
-                creator=initiator,
-            )
+        # Store results
+        analysis.output_file = RelatedFile.objects.create(
+            file=str(output_location),
+            filename=str(output_location),
+            content_type='application/gzip',
+            creator=initiator,
+        )
+        #elif analysis.output_file:
+        #    analysis.output_file.delete()
+        #    analysis.output_file = None
 
         # Store Ktools logs
         if log_location:
@@ -157,9 +160,6 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
                 content_type='text/plain',
                 creator=initiator,
             )
-        elif analysis.log_file:
-            analysis.run_traceback_file.delete()
-            analysis.run_traceback_file = None
 
         analysis.save()
     except Exception as e:
@@ -212,7 +212,7 @@ def generate_input_success(result, analysis_pk, initiator_pk):
                 summary_levels_fp,
                 traceback_fp,
             ) = result
-        except ValueError:
+        except ValueError as e:
             # catches issues where currently queued tasks dont pass the traceback file
             traceback_fp = None
             (
@@ -259,12 +259,7 @@ def generate_input_success(result, analysis_pk, initiator_pk):
             creator=get_user_model().objects.get(pk=initiator_pk),
         )
 
-        # Delete previous error trace and create the new one if set
-        if analysis.input_generation_traceback_file:
-            traceback = analysis.input_generation_traceback_file
-            analysis.input_generation_traceback_file = None
-            traceback.delete()
-
+        logger.info('traceback_fp: {}'.format(traceback_fp))
         if traceback_fp:
             analysis.input_generation_traceback_file = RelatedFile.objects.create(
                 file=str(traceback_fp),
@@ -272,8 +267,8 @@ def generate_input_success(result, analysis_pk, initiator_pk):
                 content_type='text/plain',
                 creator=get_user_model().objects.get(pk=initiator_pk),
             )
-
         analysis.save()
+
     except Exception as e:
         logger.exception(str(e))
 

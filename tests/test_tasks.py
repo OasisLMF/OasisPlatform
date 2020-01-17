@@ -89,7 +89,7 @@ class StartAnalysis(TestCase):
                         '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
                         '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')
                     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                    self.assertEqual(tarfile.open.call_args_list[2][0], (str(Path(media_root, output_location)), 'w:gz'))
+                    self.assertEqual(tarfile.open.call_args_list[1][0], (str(Path(media_root, output_location)), 'w:gz'))
 
 
 class StartAnalysisTask(TestCase):
