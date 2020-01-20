@@ -12,7 +12,7 @@ from six import StringIO
 
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
-from src.server.oasisapi.schemas.serializers import ModelSettingsSerializer
+from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 
 from ..celery import celery_app
 logger = get_task_logger(__name__)
@@ -47,7 +47,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
                 request.data = {**m_settings}
                 request.method = 'post'
                 request.user = model.creator 
-                handle_json_data(model, 'resource_file', request, ModelSettingsSerializer)
+                handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
                 logger.info('Updated model settings')
             except Exception as e:
                 logger.info('Failed to update model settings:')

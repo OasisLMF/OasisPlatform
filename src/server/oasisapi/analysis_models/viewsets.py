@@ -23,7 +23,7 @@ from ..filters import TimeStampedFilter
 from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
 from ..schemas.custom_swagger import FILE_RESPONSE
-from ..schemas.serializers import ModelSettingsSerializer
+from ..schemas.serializers import ModelParametersSerializer
 
 
 class AnalysisModelFilter(TimeStampedFilter):
@@ -179,8 +179,8 @@ class ModelSettingsView(viewsets.ModelViewSet):
     serializer_class = AnalysisModelSerializer
     filter_class = AnalysisModelFilter
 
-    @swagger_auto_schema(method='get', responses={200: ModelSettingsSerializer})
-    @swagger_auto_schema(method='post', request_body=ModelSettingsSerializer, responses={201: RelatedFileSerializer})
+    @swagger_auto_schema(method='get', responses={200: ModelParametersSerializer})
+    @swagger_auto_schema(method='post', request_body=ModelParametersSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def model_settings(self, request, pk=None, version=None):
-        return handle_json_data(self.get_object(), 'resource_file', request, ModelSettingsSerializer)
+        return handle_json_data(self.get_object(), 'resource_file', request, ModelParametersSerializer)
