@@ -129,12 +129,16 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
         analysis.task_finished = timezone.now()
 
         # Store results
-        analysis.output_file = RelatedFile.objects.create(
-            file=str(output_location),
-            filename=str(output_location),
-            content_type='application/gzip',
-            creator=initiator,
-        )
+        if return_code is 0:
+            analysis.output_file = RelatedFile.objects.create(
+                file=str(output_location),
+                filename=str(output_location),
+                content_type='application/gzip',
+                creator=initiator,
+            )
+        elif analysis.output_file:
+            analysis.output_file.delete()
+            analysis.output_file = None
 
         # Store Ktools logs
         if log_location:

@@ -440,8 +440,8 @@ def generate_input(analysis_pk,
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
-        traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
-        with open(traceback_fp, 'w') as f:
+        traceback_fp = uuid.uuid4().hex + LOG_FILE_SUFFIX
+        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_fp), 'w') as f:
             if res.stdout:
                 f.write(res.stdout.decode())
             if res.stderr:    

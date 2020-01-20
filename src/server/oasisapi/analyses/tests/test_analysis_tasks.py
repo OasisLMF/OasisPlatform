@@ -50,10 +50,13 @@ class RunAnalysisSuccess(TestCase):
                 )
 
                 analysis.refresh_from_db()
-               
-                self.assertEqual(analysis.output_file.file.name, output_location)
-                self.assertEqual(analysis.output_file.content_type, 'application/gzip')
-                self.assertEqual(analysis.output_file.creator, initiator)
+
+                if return_code == 0:
+                    self.assertEqual(analysis.output_file.file.name, output_location)
+                    self.assertEqual(analysis.output_file.content_type, 'application/gzip')
+                    self.assertEqual(analysis.output_file.creator, initiator)
+                else:
+                      self.assertEqual(analysis.output_file, None)
 
                 self.assertEqual(analysis.run_log_file.file.name, log_location)
                 self.assertEqual(analysis.run_log_file.content_type, 'application/gzip')
