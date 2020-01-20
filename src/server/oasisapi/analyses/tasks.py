@@ -135,9 +135,6 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
             content_type='application/gzip',
             creator=initiator,
         )
-        #elif analysis.output_file:
-        #    analysis.output_file.delete()
-        #    analysis.output_file = None
 
         # Store Ktools logs
         if log_location:

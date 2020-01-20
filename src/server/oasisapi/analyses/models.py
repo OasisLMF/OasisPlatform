@@ -154,7 +154,6 @@ class Analysis(TimeStampedModel):
         self.validate_run()
 
         self.status = self.status_choices.RUN_QUEUED
-        self.input_generation_traceback_file_id = None
 
         run_analysis_signature = self.run_analysis_signature
         run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
