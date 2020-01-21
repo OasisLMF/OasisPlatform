@@ -158,6 +158,11 @@ node {
                     sh " ./runtests.sh"
                 }
             }
+            stage('Run: Test API schema') {
+                dir(oasis_workspace) {
+                    sh " ./build-maven.sh ${env.TAG_RELEASE}"
+                }
+            }
         }
         stage('Run: API Server') {
             dir(build_workspace) {
