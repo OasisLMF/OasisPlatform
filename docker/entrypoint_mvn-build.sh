@@ -12,11 +12,12 @@ MVN_LOG='reports/mvm-build.log'
     #    sed -i 's|SCHEMA_FILE|openapi-schema.json|g' pom.xml
     #fi
 
-    sed -i "s|RELEASE_TAG|1.1|g" pom.xml
+    sed -i "s|RELEASE_TAG|$1|g" pom.xml
     sed -i 's|SCHEMA_FILE|reports/openapi-schema.json|g' pom.xml
 
 # run build
-    mvn install | tee $MVN_LOG
+    mvn package | tee $MVN_LOG
+    mvn test | tee $MVN_LOG
 
 # Check output 
 set +exu
