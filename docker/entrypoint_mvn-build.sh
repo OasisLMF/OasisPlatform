@@ -4,15 +4,24 @@ MVN_LOG='reports/mvm-build.log'
 
 # set version tag 
     cp /tmp/pom.xml ./
-    sed -i "s|RELEASE_TAG|$1|g" pom.xml
+    #if [[ -z "${1// }" ]]; then 
+    #    sed -i "s|RELEASE_TAG|$1|g" pom.xml
+    #    sed -i 's|SCHEMA_FILE|openapi-schema-${project.version}.json|g' pom.xml
+    #else 
+    #    sed -i "s|RELEASE_TAG|1.1|g" pom.xml
+    #    sed -i 's|SCHEMA_FILE|openapi-schema.json|g' pom.xml
+    #fi
+
+    sed -i "s|RELEASE_TAG|1.1|g" pom.xml
+    sed -i 's|SCHEMA_FILE|openapi-schema.json|g' pom.xml
 
 # run build
     mvn install | tee $MVN_LOG
 
 # Check output 
 set +exu
-MVN_FAILED=$(cat $MVN_LOG | grep -ci 'BUILD FAILURE')
-if [ $MVN_FAILED -ne 0 ]; then 
+MVN_PASS=$(cat $MVN_LOG | grep -ci 'BUILD SUCCESS')
+if [ $MVN_PASS -ne 1 ]; then 
     echo "Marven build test - FAILED"
     exit 1
 else

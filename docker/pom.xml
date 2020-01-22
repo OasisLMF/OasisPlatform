@@ -77,7 +77,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${basedir}/openapi-schema-${project.version}.json</inputSpec>
+                            <inputSpec>${basedir}/SCHEMA_FILE</inputSpec>
                             <language>java</language>
                             <generateApiDocumentation>true</generateApiDocumentation>
                             <generateModelDocumentation>true</generateModelDocumentation>
