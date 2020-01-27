@@ -8,7 +8,28 @@ from chainmap import ChainMap
 
 from configparser import ConfigParser
 
-from oasislmf.utils.log import read_log_config
+
+def read_log_config(config_parser):
+    """
+    Read an Oasis standard logging config
+    """
+    log_file = config_parser['LOG_FILE']
+    log_level = config_parser['LOG_LEVEL']
+    log_max_size_in_bytes = int(config_parser['LOG_MAX_SIZE_IN_BYTES'])
+    log_backup_count = int(config_parser['LOG_BACKUP_COUNT'])
+
+    log_dir = os.path.dirname(log_file)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    handler = RotatingFileHandler(
+        log_file, maxBytes=log_max_size_in_bytes,
+        backupCount=log_backup_count)
+    logging.getLogger().setLevel(log_level)
+    logging.getLogger().addHandler(handler)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
 
 
 class Settings(ConfigParser):

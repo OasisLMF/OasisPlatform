@@ -129,7 +129,7 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
         analysis.task_finished = timezone.now()
 
         # Store results
-        if return_code is 0:
+        if return_code == 0:
             analysis.output_file = RelatedFile.objects.create(
                 file=str(output_location),
                 filename=str(output_location),

@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
 
@@ -9,7 +8,6 @@ from ..files.models import RelatedFile
 from ..data_files.models import DataFile
 
 
-@python_2_unicode_compatible
 class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))

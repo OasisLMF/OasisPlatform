@@ -12,9 +12,6 @@ class Perilcodes(WebTest):
         self.assertEqual(200, response.status_code)
         self.assertTrue('peril_codes' in oed_codes_json)
         self.assertTrue('peril_groups' in oed_codes_json)
-        self.assertTrue('oasislmf_version' in oed_codes_json)
-        self.assertTrue('oasislmf_version' in oed_codes_json)
-        self.assertTrue(isinstance(oed_codes_json['oasislmf_version'], str))
         self.assertFalse(oed_codes_json['peril_codes'] is {})
         self.assertFalse(oed_codes_json['peril_groups'] is {})
 
@@ -25,8 +22,5 @@ class Perilcodes(WebTest):
         self.assertEqual(200, response.status_code)
         self.assertTrue('peril_codes' in oed_codes_json)
         self.assertTrue('peril_groups' in oed_codes_json)
-        self.assertTrue('oasislmf_version' in oed_codes_json)
-        self.assertTrue('oasislmf_version' in oed_codes_json)
-        self.assertTrue(isinstance(oed_codes_json['oasislmf_version'], str))
         self.assertFalse(oed_codes_json['peril_codes'] is {})
         self.assertFalse(oed_codes_json['peril_groups'] is {})

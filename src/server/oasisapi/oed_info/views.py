@@ -1,8 +1,6 @@
 from rest_framework import views
 from rest_framework.response import Response
-
-from oasislmf import __version__ as oasislmf_package_ver
-from oasislmf.utils.peril import PERIL_GROUPS, PERILS
+from .peril import PERIL_GROUPS, PERILS
 
 
 class PerilcodesView(views.APIView):
@@ -23,7 +21,6 @@ class PerilcodesView(views.APIView):
         }
 
         return Response({
-            'oasislmf_version': oasislmf_package_ver,
             'peril_codes': peril_codes,
             'peril_groups': peril_groups
         })

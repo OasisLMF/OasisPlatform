@@ -5,7 +5,6 @@ from celery.result import AsyncResult
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
@@ -20,7 +19,6 @@ from .tasks import generate_input_success, record_run_analysis_result
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 
-@python_2_unicode_compatible
 class Analysis(TimeStampedModel):
     status_choices = Choices(
         ('NEW', 'New'),

@@ -1,10 +1,8 @@
 oasislmf>=1.4.7rc1
-billiard==3.6.0.0
 celery
 configparser
 fasteners
-ipdb
 pathlib2
 pymysql
-pytest
 sqlalchemy
+pytest
