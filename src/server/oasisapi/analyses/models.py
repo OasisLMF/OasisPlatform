@@ -180,7 +180,7 @@ class Analysis(TimeStampedModel):
 
         task_id = self.run_analysis_signature.delay(self.pk, initiator.pk).id
 
-        self.run_task_id = id
+        self.run_task_id = task_id
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
