@@ -1,4 +1,5 @@
 import string
+from unittest import skip
 
 from backports.tempfile import TemporaryDirectory
 from celery import signature
@@ -10,6 +11,7 @@ from hypothesis.strategies import text, sampled_from
 from mock import patch, PropertyMock, Mock
 from rest_framework.exceptions import ValidationError
 
+from src.conf import iniconf
 from ...portfolios.tests.fakes import fake_portfolio
 from ...files.tests.fakes import fake_related_file
 from ...auth.tests.fakes import fake_user
@@ -22,6 +24,7 @@ settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
 
 
+@skip('Cancelling model loss generation not currently implemented')
 class AnalysisCancel(WebTestMixin, TestCase):
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
     def test_state_is_running___revoke_is_called(self, task_id):
@@ -79,11 +82,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 with patch('src.server.oasisapi.analyses.models.Analysis.run_analysis_signature', PropertyMock(return_value=sig_res)):
                     analysis.run(initiator)
 
-                    sig_res.link.assert_called_once_with(record_run_analysis_result.s(analysis.pk, initiator.pk))
-                    sig_res.link_error.assert_called_once_with(
-                        signature('on_error', args=('record_run_analysis_failure', analysis.pk, initiator.pk), queue=analysis.model.queue_name)
-                    )
-                    sig_res.delay.assert_called_once_with()
+                    sig_res.delay.assert_called_once_with(analysis.pk, initiator.pk)
 
     @given(
         status=sampled_from([
@@ -117,11 +116,14 @@ class AnalysisRun(WebTestMixin, TestCase):
 
                 sig = analysis.run_analysis_signature
 
-                self.assertEqual(sig.task, 'run_analysis')
-                self.assertEqual(sig.args, (analysis.id, analysis.input_file.file.name, analysis.settings_file.file.name, []))
-                self.assertEqual(sig.options['queue'], analysis.model.queue_name)
+                self.assertEqual(sig.task, 'start_loss_generation_task')
+                self.assertEqual(
+                    sig.options['queue'],
+                    iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                )
 
 
+@skip('Cancelling model input generation not currently implemented')
 class AnalysisCancelInputGeneration(WebTestMixin, TestCase):
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
     def test_state_is_generating_inputs___revoke_is_called(self, task_id):
@@ -179,11 +181,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 with patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=sig_res)):
                     analysis.generate_inputs(initiator)
 
-                    sig_res.link.assert_called_once_with(generate_input_success.s(analysis.pk, initiator.pk))
-                    sig_res.link_error.assert_called_once_with(
-                        signature('on_error', args=('record_generate_input_failure', analysis.pk, initiator.pk), queue=analysis.model.queue_name)
-                    )
-                    sig_res.delay.assert_called_once_with()
+                    sig_res.delay.assert_called_once_with(analysis.pk, initiator.pk)
 
     @given(
         status=sampled_from([
@@ -237,6 +235,8 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
 
                 sig = analysis.generate_input_signature
 
-                self.assertEqual(sig.task, 'generate_input')
-                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))
-                self.assertEqual(sig.options['queue'], analysis.model.queue_name)
+                self.assertEqual(sig.task, 'start_input_generation_task')
+                self.assertEqual(
+                    sig.options['queue'],
+                    iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                )

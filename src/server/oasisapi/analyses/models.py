@@ -165,18 +165,22 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
+    @property
+    def run_analysis_signature(self):
+        return signature(
+            'start_loss_generation_task',
+            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+        )
+
     def run(self, initiator):
         self.validate_run()
 
         self.status = self.status_choices.RUN_QUEUED
         self.input_generation_traceback_file_id = None
 
-        dispatched_task = signature('start_loss_generation_task').apply_async(
-            args=(self.pk, initiator.pk),
-            queue=iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', 'default')
-        )
+        task_id = self.run_analysis_signature.delay(self.pk, initiator.pk).id
 
-        self.run_task_id = dispatched_task.id
+        self.run_task_id = id
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
@@ -201,6 +205,13 @@ class Analysis(TimeStampedModel):
         # self.status = self.status_choices.RUN_CANCELLED
         # self.task_finished = timezone.now()
         # self.save()
+
+    @property
+    def generate_input_signature(self):
+        return signature(
+            'start_input_generation_task',
+            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+        )
 
     def generate_inputs(self, initiator):
         valid_choices = [
@@ -230,10 +241,7 @@ class Analysis(TimeStampedModel):
         self.summary_levels_file = None
         self.input_generation_traceback_file_id = None
 
-        task_id = signature('start_input_generation_task').apply_async(
-            args=(self.pk, initiator.pk),
-            queue=iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', 'default')
-        )
+        task_id = self.generate_input_signature.delay(self.pk, initiator.pk).id
 
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
