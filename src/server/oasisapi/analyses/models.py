@@ -20,6 +20,21 @@ from .tasks import generate_input_success, record_run_analysis_result
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 
+# class AnalysisTaskStatus(models.Model):
+#     status_choices = Choices(
+#         ('QUEUED', 'Run added to queue'),
+#         ('STARTED', 'Run started'),
+#         ('COMPLETED', 'Run completed'),
+#         ('CANCELLED', 'Run cancelled'),
+#         ('ERROR', 'Run error'),
+#     )
+#
+#     queue_time = models.DateTimeField()
+#     start_time = models.DateTimeField()
+#     end_time = models.DateTimeField()
+from ....conf import iniconf
+
+
 @python_2_unicode_compatible
 class Analysis(TimeStampedModel):
     status_choices = Choices(
@@ -156,43 +171,36 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_QUEUED
         self.input_generation_traceback_file_id = None
 
-        run_analysis_signature = self.run_analysis_signature
-        run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
-        run_analysis_signature.link_error(
-            signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+        dispatched_task = signature('start_loss_generation_task').apply_async(
+            args=(self.pk, initiator.pk),
+            queue=iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', 'default')
         )
-        dispatched_task = run_analysis_signature.delay()
+
         self.run_task_id = dispatched_task.id
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
 
-    @property
-    def run_analysis_signature(self):
-        complex_data_files = self.create_complex_model_data_file_dicts()
-
-        return signature(
-            'run_analysis',
-            args=(self.pk, self.input_file.file.name, self.settings_file.file.name, complex_data_files),
-            queue=self.model.queue_name,
-        )
-
     def cancel(self):
-        valid_choices = [
-            self.status_choices.RUN_QUEUED,
-            self.status_choices.RUN_STARTED
-        ]
-        if self.status not in valid_choices:
-            raise ValidationError({'status': ['Analysis is not running or queued']})
-
-        AsyncResult(self.run_task_id).revoke(
-            signal='SIGKILL',
-            terminate=True,
-        )
-
-        self.status = self.status_choices.RUN_CANCELLED
-        self.task_finished = timezone.now()
-        self.save()
+        #
+        # TODO: Implement once we have child task ids stored
+        #
+        pass
+        # valid_choices = [
+        #     self.status_choices.RUN_QUEUED,
+        #     self.status_choices.RUN_STARTED
+        # ]
+        # if self.status not in valid_choices:
+        #     raise ValidationError({'status': ['Analysis is not running or queued']})
+        #
+        # AsyncResult(self.run_task_id).revoke(
+        #     signal='SIGKILL',
+        #     terminate=True,
+        # )
+        #
+        # self.status = self.status_choices.RUN_CANCELLED
+        # self.task_finished = timezone.now()
+        # self.save()
 
     def generate_inputs(self, initiator):
         valid_choices = [
@@ -222,46 +230,35 @@ class Analysis(TimeStampedModel):
         self.summary_levels_file = None
         self.input_generation_traceback_file_id = None
 
-        generate_input_signature = self.generate_input_signature
-        generate_input_signature.link(generate_input_success.s(self.pk, initiator.pk))
-        generate_input_signature.link_error(
-            signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+        task_id = signature('start_input_generation_task').apply_async(
+            args=(self.pk, initiator.pk),
+            queue=iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', 'default')
         )
-        self.generate_inputs_task_id = generate_input_signature.delay().id
+
+        self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
 
     def cancel_generate_inputs(self):
-        valid_choices = [
-            self.status_choices.INPUTS_GENERATION_QUEUED,
-            self.status_choices.INPUTS_GENERATION_STARTED
-        ]
-        if self.status not in valid_choices:
-            raise ValidationError({'status': ['Analysis input generation is not running or queued']})
-
-        self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
-        AsyncResult(self.generate_inputs_task_id).revoke(
-            signal='SIGKILL',
-            terminate=True,
-        )
-        self.task_finished = timezone.now()
-        self.save()
-
-    @property
-    def generate_input_signature(self):
-        loc_file = self.portfolio.location_file.file.name
-        acc_file = self.portfolio.accounts_file.file.name if self.portfolio.accounts_file else None
-        info_file = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
-        scope_file = self.portfolio.reinsurance_scope_file.file.name if self.portfolio.reinsurance_scope_file else None
-        settings_file = self.settings_file.file.name if self.settings_file else None
-        complex_data_files = self.create_complex_model_data_file_dicts()
-
-        return signature(
-            'generate_input',
-            args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
-            queue=self.model.queue_name
-        )
+        #
+        # TODO: Implement once we have child task ids stored
+        #
+        pass
+        # valid_choices = [
+        #     self.status_choices.INPUTS_GENERATION_QUEUED,
+        #     self.status_choices.INPUTS_GENERATION_STARTED
+        # ]
+        # if self.status not in valid_choices:
+        #     raise ValidationError({'status': ['Analysis input generation is not running or queued']})
+        #
+        # self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
+        # AsyncResult(self.generate_inputs_task_id).revoke(
+        #     signal='SIGKILL',
+        #     terminate=True,
+        # )
+        # self.task_finished = timezone.now()
+        # self.save()
 
     def create_complex_model_data_file_dicts(self):
         """Creates a list of tuples containing metadata for the complex model data files.

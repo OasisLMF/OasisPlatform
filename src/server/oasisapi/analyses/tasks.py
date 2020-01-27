@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import uuid
 
+from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
@@ -13,6 +14,7 @@ from six import StringIO
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelSettingsSerializer
+from .task_controller import get_analysis_task_controller
 
 from ..celery import celery_app
 logger = get_task_logger(__name__)
@@ -300,3 +302,21 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
         analysis.save()
     except Exception as e:
         logger.exception(str(e))
+
+
+@celery_app.task
+def start_input_generation_task(analysis_pk, initiator_pk):
+    from .models import Analysis
+    analysis = Analysis.objects.get(pk=analysis_pk)
+    initiator = get_user_model().objects.get(pk=initiator_pk)
+
+    get_analysis_task_controller().generate_inputs(analysis, initiator)
+
+
+@celery_app.task
+def start_loss_generation_task(analysis_pk, initiator_pk):
+    from .models import Analysis
+    analysis = Analysis.objects.get(pk=analysis_pk)
+    initiator = get_user_model().objects.get(pk=initiator_pk)
+
+    get_analysis_task_controller().generate_losses(analysis, initiator)

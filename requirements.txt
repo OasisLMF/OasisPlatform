@@ -16,7 +16,7 @@ backports.weakref==1.0.post1  # via backports.tempfile
 beautifulsoup4==4.8.0     # via webtest
 billiard==3.6.1.0         # via celery
 binaryornot==0.4.4        # via cookiecutter
-celery==4.3.0
+celery==4.4.0
 certifi==2019.9.11        # via oasislmf, requests
 cffi==1.12.3              # via cryptography
 chainmap==1.0.3           # via oasislmf
