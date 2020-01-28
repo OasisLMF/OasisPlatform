@@ -95,8 +95,9 @@ class GenerateInputsSuccess(TestCase):
         lookup_success_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         lookup_validation_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         summary_levels_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        traceback_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
     )
-    def test_input_file_lookup_files_and_status_are_updated(self, input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp):
+    def test_input_file_lookup_files_and_status_are_updated(self, input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_fp):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 Path(d, input_location).touch()
@@ -104,11 +105,20 @@ class GenerateInputsSuccess(TestCase):
                 Path(d, lookup_success_fp).touch()
                 Path(d, lookup_validation_fp).touch()
                 Path(d, summary_levels_fp).touch()
+                Path(d, traceback_fp).touch()
 
                 initiator = fake_user()
                 analysis = fake_analysis()
+                return_code = 0
 
-                record_generate_input_result((input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp), analysis.pk, initiator.pk)
+                record_generate_input_result((
+                    input_location, 
+                    lookup_error_fp, 
+                    lookup_success_fp, 
+                    lookup_validation_fp, 
+                    summary_levels_fp, 
+                    traceback_fp, 
+                    return_code), analysis.pk, initiator.pk)
                 analysis.refresh_from_db()
 
                 self.assertEqual(analysis.input_file.file.name, input_location)
