@@ -443,8 +443,10 @@ def generate_input(analysis_pk,
         if result.stderr:
             traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
             with open(traceback_fp, 'w') as f:
-                f.write(result.stdout.decode())
-                f.write(result.stderr.decode())
+                if result.stdout:
+                    f.write(result.stdout.decode())
+                if result.stderr:    
+                    f.write(result.stderr.decode())
 
         if lookup_error_fp:
             hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))

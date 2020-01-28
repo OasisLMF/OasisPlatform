@@ -154,42 +154,78 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
         ) = result
 
         analysis = Analysis.objects.get(pk=analysis_pk)
-        analysis.status = Analysis.status_choices.READY if return_code == 0 else Analysis.status_choices.INPUTS_GENERATION_ERROR
         analysis.task_finished = timezone.now()
 
-        analysis.input_file = RelatedFile.objects.create(
-            file=str(input_location),
-            filename=str(input_location),
-            content_type='application/gzip',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
-        analysis.lookup_errors_file = RelatedFile.objects.create(
-            file=str(lookup_error_fp),
-            filename=str('keys-errors.csv'),
-            content_type='text/csv',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
-        analysis.lookup_success_file = RelatedFile.objects.create(
-            file=str(lookup_success_fp),
-            filename=str('gul_summary_map.csv'),
-            content_type='text/csv',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
-        analysis.lookup_validation_file = RelatedFile.objects.create(
-            file=str(lookup_validation_fp),
-            filename=str('exposure_summary_report.json'),
-            content_type='application/json',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
+        # SUCCESS 
+        if return_code == 0:
+            analysis.status = Analysis.status_choices.READY
+            analysis.input_file = RelatedFile.objects.create(
+                file=str(input_location),
+                filename=str(input_location),
+                content_type='application/gzip',
+                creator=get_user_model().objects.get(pk=initiator_pk),
+            )
+            analysis.lookup_errors_file = RelatedFile.objects.create(
+                file=str(lookup_error_fp),
+                filename=str('keys-errors.csv'),
+                content_type='text/csv',
+                creator=get_user_model().objects.get(pk=initiator_pk),
+            )
+            analysis.lookup_success_file = RelatedFile.objects.create(
+                file=str(lookup_success_fp),
+                filename=str('gul_summary_map.csv'),
+                content_type='text/csv',
+                creator=get_user_model().objects.get(pk=initiator_pk),
+            )
+            analysis.lookup_validation_file = RelatedFile.objects.create(
+                file=str(lookup_validation_fp),
+                filename=str('exposure_summary_report.json'),
+                content_type='application/json',
+                creator=get_user_model().objects.get(pk=initiator_pk),
+            )
 
-        analysis.summary_levels_file = RelatedFile.objects.create(
-            file=str(summary_levels_fp),
-            filename=str('exposure_summary_levels.json'),
-            content_type='application/json',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
+            analysis.summary_levels_file = RelatedFile.objects.create(
+                file=str(summary_levels_fp),
+                filename=str('exposure_summary_levels.json'),
+                content_type='application/json',
+                creator=get_user_model().objects.get(pk=initiator_pk),
+            )
 
-        logger.info('traceback_fp: {}'.format(traceback_fp))
+        # FAILED
+        else:
+            analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
+            # Delete previous output 
+            if analysis.input_file:
+                ref = analysis.input_file
+                analysis.input_file = None
+                ref.delete()
+
+            if analysis.lookup_errors_file:
+                ref = analysis.lookup_errors_file
+                analysis.lookup_errors_file = None
+                ref.delete()
+
+            if analysis.lookup_success_file:
+                ref = analysis.lookup_success_file
+                analysis.lookup_success_file = None
+                ref.delete()
+
+            if analysis.lookup_validation_file:
+                ref = analysis.lookup_validation_file
+                analysis.lookup_validation_file = None
+                ref.delete()
+
+            if analysis.summary_levels_file:
+                ref = analysis.summary_levels_file
+                analysis.summary_levels_file = None
+                ref.delete()
+
+            if analysis.input_generation_traceback_file:
+                ref = analysis.input_generation_traceback_file
+                analysis.input_generation_traceback_file = None
+                ref.delete()
+
+        # always store traceback 
         if traceback_fp:
             analysis.input_generation_traceback_file = RelatedFile.objects.create(
                 file=str(traceback_fp),
