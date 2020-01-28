@@ -11,7 +11,7 @@ from pathlib2 import Path
 
 from ..models import Analysis
 from ...auth.tests.fakes import fake_user
-from ..tasks import record_run_analysis_result, record_run_analysis_failure, generate_input_success, record_generate_input_failure
+from ..tasks import record_run_analysis_result, record_run_analysis_failure, record_generate_input_result, record_generate_input_failure
 from .fakes import fake_analysis
 
 # Override default deadline for all tests to 8s
@@ -108,7 +108,7 @@ class GenerateInputsSuccess(TestCase):
                 initiator = fake_user()
                 analysis = fake_analysis()
 
-                generate_input_success((input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp), analysis.pk, initiator.pk)
+                record_generate_input_result((input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp), analysis.pk, initiator.pk)
                 analysis.refresh_from_db()
 
                 self.assertEqual(analysis.input_file.file.name, input_location)

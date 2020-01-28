@@ -15,7 +15,7 @@ from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
-from .tasks import generate_input_success, record_run_analysis_result
+from .tasks import record_generate_input_result, record_run_analysis_result
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 
@@ -220,7 +220,7 @@ class Analysis(TimeStampedModel):
         self.input_generation_traceback_file_id = None
 
         generate_input_signature = self.generate_input_signature
-        generate_input_signature.link(generate_input_success.s(self.pk, initiator.pk))
+        generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
         generate_input_signature.link_error(
             signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
