@@ -439,14 +439,12 @@ def generate_input(analysis_pk,
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
-        traceback_fp = None
-        if result.stderr:
-            traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
-            with open(traceback_fp, 'w') as f:
-                if result.stdout:
-                    f.write(result.stdout.decode())
-                if result.stderr:    
-                    f.write(result.stderr.decode())
+        traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
+        with open(traceback_fp, 'w') as f:
+            if result.stdout:
+                f.write(result.stdout.decode())
+            if result.stderr:    
+                f.write(result.stderr.decode())
 
         if lookup_error_fp:
             hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
