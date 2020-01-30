@@ -1,19 +1,24 @@
 from __future__ import absolute_import
 
+import os
 import uuid
 
 from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
+from celery.worker.control import revoke
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.http import HttpRequest
 from django.utils import timezone
+from django_celery_results.utils import now
 from six import StringIO
 
+from src.conf.iniconf import settings
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelSettingsSerializer
+from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
 
 from ..celery import celery_app
@@ -73,17 +78,6 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
         logger.exception(str(e))
         logger.exception(model)
 
-@celery_app.task(name='set_task_status')
-def set_task_status(analysis_pk, task_status):
-    try:
-        from .models import Analysis
-        analysis = Analysis.objects.get(pk=analysis_pk)
-        analysis.status = task_status
-        analysis.save()
-        logger.info('Task Status Update: analysis_pk: {}, status: {}'.format(analysis_pk, task_status))
-    except Exception as e:
-        logger.error('Task Status Update: Failed')
-        logger.exception(str(e))
     
 @celery_app.task(name='run_analysis_success')
 def run_analysis_success(output_location, analysis_pk, initiator_pk):
@@ -150,7 +144,6 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
             analysis.run_log_file.delete()
             analysis.run_log_file = None
 
-
         # record the error file
         if traceback_location:
             analysis.run_traceback_file = RelatedFile.objects.create(
@@ -169,7 +162,7 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
 
 
 @celery_app.task(name='record_run_analysis_failure')
-def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
+def record_run_analysis_failure(request, exc, traceback, analysis_pk, initiator_pk):
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
         analysis_pk, initiator_pk, traceback))
 
@@ -205,25 +198,13 @@ def generate_input_success(result, analysis_pk, initiator_pk):
     try:
         from .models import Analysis
 
-        try:
-            (
-                input_location,
-                lookup_error_fp,
-                lookup_success_fp,
-                lookup_validation_fp,
-                summary_levels_fp,
-                traceback_fp,
-            ) = result
-        except ValueError:
-            # catches issues where currently queued tasks dont pass the traceback file
-            traceback_fp = None
-            (
-                input_location,
-                lookup_error_fp,
-                lookup_success_fp,
-                lookup_validation_fp,
-                summary_levels_fp,
-            ) = result
+        input_location = result['output_location']
+        lookup_error_fp = result['lookup_error_location']
+        lookup_success_fp = result['lookup_success_location']
+        lookup_validation_fp = result['lookup_validation_location']
+        summary_levels_fp = result['summary_levels_location']
+        log_location = result['log_location']
+        error_location = result['error_location']
 
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.READY
@@ -267,12 +248,22 @@ def generate_input_success(result, analysis_pk, initiator_pk):
             analysis.input_generation_traceback_file = None
             traceback.delete()
 
-        if traceback_fp:
+        traceback_content = ''
+        if log_location:
+            with open(log_location, 'r') as f:
+                traceback_content += f.read()
+
+        if error_location:
+            with open(error_location, 'w') as f:
+                traceback_content += f.read()
+
+        if traceback_content:
+            traceback_filename = '{}.txt'.format(uuid.uuid4().hex)
             analysis.input_generation_traceback_file = RelatedFile.objects.create(
-                file=str(traceback_fp),
-                filename=str(traceback_fp),
+                file=File(StringIO(traceback_content), traceback_filename),
+                filename=traceback_filename,
                 content_type='text/plain',
-                creator=get_user_model().objects.get(pk=initiator_pk),
+                creator_id=initiator_pk,
             )
 
         analysis.save()
@@ -281,7 +272,7 @@ def generate_input_success(result, analysis_pk, initiator_pk):
 
 
 @celery_app.task(name='record_generate_input_failure')
-def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
+def record_generate_input_failure(request, exc, traceback, analysis_pk, initiator_pk):
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
         analysis_pk, initiator_pk, traceback))
     try:
@@ -304,7 +295,7 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
         logger.exception(str(e))
 
 
-@celery_app.task
+@celery_app.task(name='start_input_generation_task')
 def start_input_generation_task(analysis_pk, initiator_pk):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
@@ -312,11 +303,11 @@ def start_input_generation_task(analysis_pk, initiator_pk):
 
     get_analysis_task_controller().generate_inputs(analysis, initiator)
 
-    analysis.status = Analysis.status_choices.RUN_STARTED
+    analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED
     analysis.save()
 
 
-@celery_app.task
+@celery_app.task(name='start_loss_generation_task')
 def start_loss_generation_task(analysis_pk, initiator_pk):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
@@ -324,5 +315,93 @@ def start_loss_generation_task(analysis_pk, initiator_pk):
 
     get_analysis_task_controller().generate_losses(analysis, initiator)
 
-    analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED
+    analysis.status = Analysis.status_choices.RUN_STARTED
     analysis.save()
+
+
+@celery_app.task(bind=True, name='record_sub_task_start')
+def record_sub_task_start(self, analysis_id, task_id):
+    _now = now()
+
+    status, created = AnalysisTaskStatus.objects.get_or_create(
+        task_id=task_id,
+        analysis_id=analysis_id,
+        defaults={
+            'start_time': _now,
+            'status': AnalysisTaskStatus.status_choices.STARTED
+        }
+    )
+
+    if not created:
+        status.start_time = _now
+
+        # We dont want to change the state of the task if it has already finished
+        if status.status == AnalysisTaskStatus.status_choices.QUEUED:
+            status.status = AnalysisTaskStatus.status_choices.STARTED
+
+        status.save()
+
+
+@celery_app.task(bind=True, name='record_sub_task_success')
+def record_sub_task_success(self, res, analysis_id, initiator_id):
+    log_location = res['log_location']
+    error_location = res['error_location']
+
+    task_id = self.request.parent_id
+    AnalysisTaskStatus.objects.filter(
+        task_id=task_id,
+        analysis_id=analysis_id,
+    ).update(
+        status=AnalysisTaskStatus.status_choices.COMPLETED,
+        end_time=now(),
+        output_log=RelatedFile.objects.create(
+            file=str(log_location),
+            filename='{}-output.log'.format(task_id),
+            content_type='text/plain',
+            creator_id=initiator_id,
+        ),
+        error_log=RelatedFile.objects.create(
+            file=str(error_location),
+            filename='{}-error.log'.format(task_id),
+            content_type='text/plain',
+            creator_id=initiator_id,
+        )
+    )
+
+
+@celery_app.task(bind=True, name='record_sub_task_failure')
+def record_sub_task_failure(self, request, exc, traceback, analysis_id, initiator_id):
+    task_id = self.request.parent_id
+    AnalysisTaskStatus.objects.filter(
+        task_id=task_id,
+        analysis_id=analysis_id,
+    ).update(
+        status=AnalysisTaskStatus.status_choices.ERROR,
+        end_time=now(),
+        error_log=RelatedFile.objects.create(
+            file=File(StringIO(traceback), name='{}.log'.format(uuid.uuid4())),
+            filename='{}-error.log'.format(task_id),
+            content_type='text/plain',
+            creator_id=initiator_id,
+        )
+    )
+
+
+@celery_app.task(bind=True, name='chord_error_callback')
+def chord_error_callback(self, analysis_id):
+    unfinished_statuses = [AnalysisTaskStatus.status_choices.QUEUED, AnalysisTaskStatus.status_choices.STARTED]
+    ids_to_revoke = AnalysisTaskStatus.objects.filter(
+        analysis_id=analysis_id,
+        status__in=unfinished_statuses,
+    ).values_list('task_id', flat=True)
+
+    for task_id in ids_to_revoke:
+        revoke(task_id, terminate=True)
+
+    AnalysisTaskStatus.objects.filter(
+        task_id__in=ids_to_revoke,
+        status__in=unfinished_statuses,
+    ).update(
+        status=AnalysisTaskStatus.status_choices.CANCELLED,
+        end_time=now(),
+    )

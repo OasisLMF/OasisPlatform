@@ -181,14 +181,14 @@ def get_unique_filename(ext):
 
 
 # Send notification back to the API Once task is read from Queue
-def notify_api_status(analysis_pk, task_status):
-    logging.info("Notify API: analysis_id={}, status={}".format(
+def notify_api_task_started(analysis_pk, task_id):
+    logging.info("Notify API tasks has started: analysis_id={}, task_id={}".format(
         analysis_pk,
-        task_status
+        task_id
     ))
     signature(
-        'set_task_status',
-        args=(analysis_pk, task_status),
+        'record_sub_task_start',
+        args=(analysis_pk, task_id),
         queue='celery'
     ).delay()
 
@@ -222,7 +222,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
         logging.info("Acquired resource lock")
 
         try:
-            notify_api_status(analysis_pk, 'RUN_STARTED')
+            notify_api_task_started(analysis_pk, self.request.id)
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, log_location, error_location, return_code = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
@@ -233,7 +233,12 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
             logging.exception("Model execution task failed.")
             raise
 
-        return output_location, log_location, error_location, return_code
+        return {
+            'output_location': output_location,
+            'log_location': log_location,
+            'error_location': error_location,
+            'return_code': return_code,
+        }
 
 
 @oasis_log()
@@ -350,8 +355,9 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     return output_location, traceback_location, log_location, result.returncode
 
 
-@task(name='generate_input')
-def generate_input(analysis_pk,
+@task(name='generate_input', bind=True)
+def generate_input(self,
+                   analysis_pk,
                    loc_file,
                    acc_file=None,
                    info_file=None,
@@ -379,7 +385,7 @@ def generate_input(analysis_pk,
     """
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
-    notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
+    notify_api_task_started(analysis_pk, self.request.id)
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
@@ -439,8 +445,13 @@ def generate_input(analysis_pk,
         if res.stderr:
             traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
             with open(traceback_fp, 'w') as f:
-                f.write(res.stdout.decode())
                 f.write(res.stderr.decode())
+
+        stdout_fp = None
+        if res.stdout:
+            stdout_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
+            with open(traceback_fp, 'w') as f:
+                f.write(res.stdout.decode())
 
         if lookup_error_fp:
             hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
@@ -474,7 +485,16 @@ def generate_input(analysis_pk,
         with tarfile.open(output_tar_name, 'w:gz') as tar:
             tar.add(oasis_files_dir, arcname='/')
 
-        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_fp
+        return {
+            'output_location': output_tar_path,
+            'log_location': stdout_fp,
+            'error_location': traceback_fp,
+            'return_code': res.returncode,
+            'lookup_error_location': lookup_error_fp,
+            'lookup_success_location': lookup_success_fp,
+            'lookup_validation_location': lookup_validation_fp,
+            'summary_levels_location': summary_levels_fp
+        }
 
 
 @task(name='on_error')

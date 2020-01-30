@@ -10,6 +10,7 @@ BROKER_URL = "amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".
     RABBIT_HOST=settings.get('celery', 'rabbit_host', fallback='127.0.0.1'),
     RABBIT_PORT=settings.get('celery', 'rabbit_port', fallback='5672'),
 )
+CELERY_BROKER_URL = BROKER_URL
 
 #: Celery config - result backend URI
 CELERY_RESULTS_DB_BACKEND = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')

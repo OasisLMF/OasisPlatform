@@ -1,7 +1,10 @@
 from __future__ import absolute_import, print_function
 
+from typing import List
+
+from arrow import now
+from src.server.oasisapi.celery import celery_app
 from celery import signature
-from celery.result import AsyncResult
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -16,23 +19,64 @@ from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
-from .tasks import generate_input_success, record_run_analysis_result
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
-
-
-# class AnalysisTaskStatus(models.Model):
-#     status_choices = Choices(
-#         ('QUEUED', 'Run added to queue'),
-#         ('STARTED', 'Run started'),
-#         ('COMPLETED', 'Run completed'),
-#         ('CANCELLED', 'Run cancelled'),
-#         ('ERROR', 'Run error'),
-#     )
-#
-#     queue_time = models.DateTimeField()
-#     start_time = models.DateTimeField()
-#     end_time = models.DateTimeField()
 from ....conf import iniconf
+
+
+class AnalysisTaskStatusQuerySet(models.QuerySet):
+    def create_statuses(self, analysis, task_ids: List[str]):
+        """
+        Creates all statuses initialising `queued_time`
+
+        :param task_ids: list of the task ids to create
+
+        :return:
+        """
+        # get or create the objects, ideally we would bulk create all
+        # the statuses, however there is the possibility that a task will
+        # have started causing the status to exist already which would
+        # cause the bulks create to fail
+        to_update = []
+        for task_id in task_ids:
+            AnalysisTaskStatus.objects.get_or_create(
+                task_id=task_id,
+                analysis=analysis,
+                defaults={
+                    'status': AnalysisTaskStatus.status_choices.QUEUED,
+                }
+            )
+
+
+class AnalysisTaskStatus(models.Model):
+    status_choices = Choices(
+        ('QUEUED', 'Run added to queue'),
+        ('STARTED', 'Run started'),
+        ('COMPLETED', 'Run completed'),
+        ('CANCELLED', 'Run cancelled'),
+        ('ERROR', 'Run error'),
+    )
+
+    task_id = models.CharField(max_length=36, unique=True)
+    analysis = models.ForeignKey('Analysis', related_name='sub_task_statuses', on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=max(len(c) for c in status_choices._db_values),
+        choices=status_choices,
+        default=status_choices.QUEUED,
+    )
+    queue_time = models.DateTimeField(null=True, auto_now_add=True)
+    start_time = models.DateTimeField(null=True, default=None)
+    end_time = models.DateTimeField(null=True, default=None)
+
+    output_log = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='analysis_run_status_output_logs')
+    error_log = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='analysis_run_status_error_logs')
+
+    objects = AnalysisTaskStatusQuerySet.as_manager()
+
+    def get_output_log_url(self, request=None):
+        return reverse('analysis-task-status-output-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def get_error_log_url(self, request=None):
+        return reverse('analysis-task-status-error-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
 @python_2_unicode_compatible
@@ -75,8 +119,6 @@ class Analysis(TimeStampedModel):
     lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
     lookup_validation_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
     summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='summary_levels_file_analyses')
-
-
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -167,7 +209,7 @@ class Analysis(TimeStampedModel):
 
     @property
     def run_analysis_signature(self):
-        return signature(
+        return celery_app.signature(
             'start_loss_generation_task',
             options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
         )
@@ -178,7 +220,9 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_QUEUED
         self.input_generation_traceback_file_id = None
 
-        task_id = self.run_analysis_signature.delay(self.pk, initiator.pk).id
+        task = self.run_analysis_signature
+        task.on_error(celery_app.signature('record_run_analysis_failure', (self.pk, initiator.pk, )))
+        task_id = task.delay(self.pk, initiator.pk).id
 
         self.run_task_id = task_id
         self.task_started = timezone.now()
@@ -208,9 +252,11 @@ class Analysis(TimeStampedModel):
 
     @property
     def generate_input_signature(self):
-        return signature(
+        return celery_app.signature(
             'start_input_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+            options={
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery'),
+            }
         )
 
     def generate_inputs(self, initiator):
@@ -241,7 +287,9 @@ class Analysis(TimeStampedModel):
         self.summary_levels_file = None
         self.input_generation_traceback_file_id = None
 
-        task_id = self.generate_input_signature.delay(self.pk, initiator.pk).id
+        task = self.generate_input_signature
+        task.on_error(celery_app.signature('record_generate_input_failure', (self.pk, initiator.pk), ))
+        task_id = task.delay(self.pk, initiator.pk).id
 
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()

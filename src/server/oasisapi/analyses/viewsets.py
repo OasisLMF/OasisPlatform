@@ -3,15 +3,15 @@ from __future__ import absolute_import
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
 from drf_yasg.utils import swagger_auto_schema
 from django_filters import rest_framework as filters
 
-from .models import Analysis
-from .serializers import AnalysisSerializer, AnalysisCopySerializer
+from .models import Analysis, AnalysisTaskStatus
+from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer
 
 from ..analysis_models.models import AnalysisModel
 from ..data_files.serializers import DataFileSerializer
@@ -407,3 +407,32 @@ class AnalysisSettingsView(viewsets.ModelViewSet):
         Disassociates the portfolios `settings_file` contents
         """
         return handle_json_data(self.get_object(), 'settings_file', request, AnalysisSettingsSerializer)
+
+
+class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
+    queryset = AnalysisTaskStatus.objects.all()
+    serializer_class = AnalysisTaskStatusSerializer
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete'], detail=True)
+    def output_log(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the task status' `output_log` contents
+
+        delete:
+        Disassociates the task status' `output_log` contents
+        """
+        return handle_related_file(self.get_object(), 'output_log', request, ['text/plain'])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete'], detail=True)
+    def error_log(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the task status' `error_log` contents
+
+        delete:
+        Disassociates the task status' `error_log` contents
+        """
+        return handle_related_file(self.get_object(), 'error_log', request, ['text/plain'])

@@ -1,7 +1,34 @@
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
-from .models import Analysis
+from .models import Analysis, AnalysisTaskStatus
+
+
+class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
+    output_log = serializers.SerializerMethodField()
+    error_log = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnalysisTaskStatus
+        fields = (
+            'task_id',
+            'status',
+            'queue_time',
+            'start_time',
+            'end_time',
+            'output_log',
+            'error_log',
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_output_log(self, instance):
+        request = self.context.get('request')
+        return instance.get_output_log_url(request=request) if instance.output_log else None
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_error_log(self, instance):
+        request = self.context.get('request')
+        return instance.get_error_log_url(request=request) if instance.error_log else None
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
@@ -16,6 +43,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     output_file = serializers.SerializerMethodField()
     run_traceback_file = serializers.SerializerMethodField()
     run_log_file = serializers.SerializerMethodField()
+    sub_task_statuses = AnalysisTaskStatusSerializer(many=True, read_only=True)
 
     class Meta:
         model = Analysis
@@ -41,6 +69,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'output_file',
             'run_traceback_file',
             'run_log_file',
+            'sub_task_statuses',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)

@@ -5,7 +5,9 @@ from importlib import import_module
 from celery import signature, chord
 from celery.canvas import Signature
 from django.contrib.auth.models import User
+from django.utils.timezone import now
 
+from src.common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from src.conf.iniconf import settings
 
 
@@ -17,42 +19,83 @@ class TaskParams:
 
 class BaseController:
     GENERATE_INPUTS_TASK_NAME = 'generate_input'
-    GENERATE_LOSSES_TASK_NAME = 'generate_losses'
+    GENERATE_LOSSES_TASK_NAME = 'run_analysis'
 
     @classmethod
-    def task_or_chord(
+    def _start(
         cls,
+        analysis: 'Analysis',
+        initiator: 'User',
         queue: str,
         task_name: str,
         params: Union[List[TaskParams], TaskParams],
         success_callback: Signature,
         error_callback: Signature,
     ):
+        """
+        Generates and queues the task/chord and returns all the
+        tasks generated.
+
+        :param analysis: The analysis to start the task for
+        :param queue: The name of the queue to add the tasks to
+        :param task_name: The name of the task to create
+        :param params: The parameters to send to the task
+        :param success_callback: The task to queue once all tasks have completed
+        :param error_callback: The task to queue if any of the tasks have failed
+        """
+        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+        from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
+
+        _now = now()
+
+        # delete all statuses so that new ones can me created
+        analysis.sub_task_statuses.all().delete()
+
         if not isinstance(params, Iterable):
-            return signature(
+            sig = signature(
                 task_name,
                 args=params.args,
                 kwargs=params.kwargs,
                 queue=queue,
-            ).link(
-                success_callback
-            ).link_error(
-                error_callback
             )
+
+            # add task to set the status of the sub task status record on success
+            sig.link(record_sub_task_success.s(analysis.pk, initiator.pk))
+
+            # add task to record the results on success
+            sig.link(success_callback)
+
+            # add task to set the status of the sub task status record on failure
+            sig.link_error(record_sub_task_failure.s(analysis.pk, initiator.pk))
+
+            # add task to record the results on failure
+            sig.link_error(error_callback)
+
+            # create all the sub task status objects
+            AnalysisTaskStatus.objects.create_statuses(analysis, [sig.delay().id])
         else:
             # if there is a list of param objects start a chord
-            chord(
+            signatures = [
                 signature(
                     task_name,
                     args=p.args,
                     kwargs=p.kwargs,
                     queue=queue,
                 ) for p in params
-            ).link(
-                success_callback
-            ).link_error(
-                error_callback
-            ).delay()
+            ]
+
+            for sig in signatures:
+                # add task to set the status of the sub task status record on success
+                sig.link(record_sub_task_success.s(analysis.pk, initiator.pk))
+                # add task to set the status of the sub task status record on failure
+                sig.link_error(record_sub_task_failure.s(analysis.pk, initiator.pk))
+
+            success_callback.link_error(error_callback)
+            success_callback.link_error(signature('chord_error_callback'))
+            c = chord(signatures, body=success_callback)
+
+            # create all the sub task status objects
+            AnalysisTaskStatus.objects.create_statuses(analysis, [child.id for child in c.delay().parent.children])
 
     #
     # Generate inputs
@@ -114,7 +157,9 @@ class BaseController:
         :param analysis: The analysis to generate input data for
         :param initiator: The user who initiated the task
         """
-        cls.task_or_chord(
+        cls._start(
+            analysis,
+            initiator,
             cls.get_generate_inputs_queue(analysis, initiator),
             cls.get_generate_inputs_task_name(analysis, initiator),
             cls.get_generate_inputs_tasks_params(analysis, initiator),
@@ -134,7 +179,7 @@ class BaseController:
         :return: The signature for the input recording task.
         """
         return signature(
-            'record_generate_inputs_results',
+            'generate_input_success',
             args=(analysis.pk, initiator.pk),
         )
 
@@ -197,7 +242,17 @@ class BaseController:
 
         :return: The name of the queue
         """
-        return TaskParams(analysis.pk, initiator.pk)
+        complex_data_files = [
+            {STORED_FILENAME: f.get_filestore(), ORIGINAL_FILENAME: f.get_filename()}
+            for f in analysis.complex_model_data_files.all()
+        ]
+
+        return TaskParams(
+            analysis.pk,
+            analysis.input_file.file.name,
+            analysis.settings_file.file.name,
+            complex_data_files=complex_data_files or None
+        )
 
     @classmethod
     def generate_losses(cls, analysis: 'Analysis', initiator: User):
@@ -207,7 +262,9 @@ class BaseController:
         :param analysis: The analysis to generate input data for
         :param initiator: The user who initiated the task
         """
-        cls.task_or_chord(
+        cls._start(
+            analysis,
+            initiator,
             cls.get_generate_losses_queue(analysis, initiator),
             cls.get_generate_losses_task_name(analysis, initiator),
             cls.get_generate_losses_tasks_params(analysis, initiator),
@@ -227,7 +284,7 @@ class BaseController:
         :return: The signature for the losses recording task.
         """
         return signature(
-            'record_generate_losses_results',
+            'record_run_analysis_result',
             args=(analysis.pk, initiator.pk),
         )
 
@@ -243,13 +300,13 @@ class BaseController:
         :return: The signature for the error recording task.
         """
         return signature(
-            'record_generate_losses_failure',
+            'record_run_analysis_failure',
             args=(analysis.pk, initiator.pk),
         )
 
 
 def get_analysis_task_controller() -> Type[BaseController]:
-    controller_path = settings().get(
+    controller_path = settings.get(
         'worker',
         'ANALYSIS_TASK_CONTROLLER',
         fallback='src.server.oasisapi.analyses.task_controller.BaseController'

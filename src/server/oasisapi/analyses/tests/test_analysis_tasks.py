@@ -74,7 +74,7 @@ class RunAnalysisFailure(TestCase):
                 initiator = fake_user()
                 analysis = fake_analysis()
 
-                record_run_analysis_failure(analysis.pk, initiator.pk, traceback)
+                record_run_analysis_failure(None, None, traceback, analysis.pk, initiator.pk)
 
                 analysis.refresh_from_db()
 
@@ -105,7 +105,16 @@ class GenerateInputsSuccess(TestCase):
                 initiator = fake_user()
                 analysis = fake_analysis()
 
-                generate_input_success((input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp), analysis.pk, initiator.pk)
+                generate_input_success({
+                    'output_location': input_location,
+                    'log_location': None,
+                    'error_location': None,
+                    'return_code': 0,
+                    'lookup_error_location': lookup_error_fp,
+                    'lookup_success_location': lookup_success_fp,
+                    'lookup_validation_location': lookup_validation_fp,
+                    'summary_levels_location': summary_levels_fp
+                }, analysis.pk, initiator.pk)
                 analysis.refresh_from_db()
 
                 self.assertEqual(analysis.input_file.file.name, input_location)
@@ -140,7 +149,7 @@ class GenerateInputsFailure(TestCase):
                 initiator = fake_user()
                 analysis = fake_analysis()
 
-                record_generate_input_failure(analysis.pk, initiator.pk, traceback)
+                record_generate_input_failure(None, None, traceback, analysis.pk, initiator.pk)
 
                 analysis.refresh_from_db()
 

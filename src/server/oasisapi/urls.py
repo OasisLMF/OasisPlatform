@@ -7,7 +7,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import routers, permissions
 
 from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView
-from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView
+from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTaskStatusViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .healthcheck.views import HealthcheckView
 from .data_files.viewsets import DataFileViewset
@@ -20,6 +20,7 @@ api_router = routers.DefaultRouter()
 api_router.include_root_view = False
 api_router.register('portfolios', PortfolioViewSet, base_name='portfolio')
 api_router.register('analyses', AnalysisViewSet, base_name='analysis')
+api_router.register('analys-task-statuses', AnalysisTaskStatusViewSet, base_name='analysis-task-status')
 api_router.register('models', AnalysisModelViewSet, base_name='analysis-model')
 api_router.register('data_files', DataFileViewset, base_name='data-file')
 # api_router.register('files', FilesViewSet, base_name='file')

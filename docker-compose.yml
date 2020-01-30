@@ -37,7 +37,7 @@ services:
   worker-monitor:
    restart: always
    image: coreoasis/api_server:latest
-   command: [wait-for-server, 'server:8000', celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
+   command: [celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
    links:
      - server-db
      - celery-db
@@ -97,6 +97,8 @@ services:
       - MYSQL_USER=oasis
       - MYSQL_PASSWORD=oasis
       - MYSQL_DATABASE=oasis
+    ports:
+      - 3306:3306
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/server:/var/lib/mysql/:rw
   celery-db:
@@ -109,6 +111,8 @@ services:
       - MYSQL_USER=celery
       - MYSQL_PASSWORD=password
       - MYSQL_DATABASE=celery
+    ports:
+      - 33306:3306
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/celery:/var/lib/mysql/:rw
   rabbit:
