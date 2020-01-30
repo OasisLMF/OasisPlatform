@@ -46,7 +46,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
                 request = HttpRequest()
                 request.data = {**m_settings}
                 request.method = 'post'
-                request.user = model.creator
+                request.user = model.creator 
                 handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
                 logger.info('Updated model settings')
             except Exception as e:
