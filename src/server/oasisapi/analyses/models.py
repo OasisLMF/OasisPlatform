@@ -3,6 +3,8 @@ from __future__ import absolute_import, print_function
 from typing import List
 
 from arrow import now
+from celery.result import AsyncResult
+
 from src.server.oasisapi.celery import celery_app
 from celery import signature
 from django.conf import settings
@@ -230,25 +232,30 @@ class Analysis(TimeStampedModel):
         self.save()
 
     def cancel(self):
-        #
-        # TODO: Implement once we have child task ids stored
-        #
-        pass
-        # valid_choices = [
-        #     self.status_choices.RUN_QUEUED,
-        #     self.status_choices.RUN_STARTED
-        # ]
-        # if self.status not in valid_choices:
-        #     raise ValidationError({'status': ['Analysis is not running or queued']})
-        #
-        # AsyncResult(self.run_task_id).revoke(
-        #     signal='SIGKILL',
-        #     terminate=True,
-        # )
-        #
-        # self.status = self.status_choices.RUN_CANCELLED
-        # self.task_finished = timezone.now()
-        # self.save()
+        _now = timezone.now()
+
+        # cleanup the the sub tasks
+        qs = self.sub_task_statuses.filter(
+            status__in=[AnalysisTaskStatus.status_choices.QUEUED, AnalysisTaskStatus.status_choices.STARTED]
+        )
+
+        for task_id in qs.values_list('task_id', flat=True):
+            AsyncResult(task_id).revoke(signal='SIGKILL', terminate=True)
+
+        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
+
+        # set the status on the analysis
+        status_map = {
+            Analysis.status_choices.INPUTS_GENERATION_STARTED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
+            Analysis.status_choices.RUN_QUEUED: Analysis.status_choices.RUN_CANCELLED,
+            Analysis.status_choices.RUN_STARTED: Analysis.status_choices.RUN_CANCELLED,
+        }
+
+        if self.status in status_map:
+            self.status = status_map[self.status]
+            self.task_finished = _now
+            self.save()
 
     @property
     def generate_input_signature(self):
@@ -295,26 +302,6 @@ class Analysis(TimeStampedModel):
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
-
-    def cancel_generate_inputs(self):
-        #
-        # TODO: Implement once we have child task ids stored
-        #
-        pass
-        # valid_choices = [
-        #     self.status_choices.INPUTS_GENERATION_QUEUED,
-        #     self.status_choices.INPUTS_GENERATION_STARTED
-        # ]
-        # if self.status not in valid_choices:
-        #     raise ValidationError({'status': ['Analysis input generation is not running or queued']})
-        #
-        # self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
-        # AsyncResult(self.generate_inputs_task_id).revoke(
-        #     signal='SIGKILL',
-        #     terminate=True,
-        # )
-        # self.task_finished = timezone.now()
-        # self.save()
 
     def create_complex_model_data_file_dicts(self):
         """Creates a list of tuples containing metadata for the complex model data files.

@@ -212,7 +212,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         Cancels a currently inputs generation. The analysis status must be `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
-        obj.cancel_generate_inputs()
+        obj.cancel()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)

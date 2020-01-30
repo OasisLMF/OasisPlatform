@@ -34,3 +34,4 @@ uwsgi
 whitenoise
 django_celery_results
 drf-yasg
+freezegun

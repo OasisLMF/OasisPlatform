@@ -41,6 +41,7 @@ entrypoints==0.3          # via flake8
 fasteners==0.15
 filelock==3.0.12          # via tox
 flake8==3.7.8
+freezegun==0.3.14
 future==0.17.1            # via cookiecutter, oasislmf
 hypothesis==4.36.0
 idna==2.7                 # via requests

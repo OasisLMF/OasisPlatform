@@ -369,7 +369,7 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     def test_user_is_authenticated_object_exists___generate_inputs_generation_is_called(self):
-        with patch('src.server.oasisapi.analyses.models.Analysis.cancel_generate_inputs', autospec=True) as cancel_generate_inputs:
+        with patch('src.server.oasisapi.analyses.models.Analysis.cancel', autospec=True) as cancel_generate_inputs:
             user = fake_user()
             analysis = fake_analysis()
 

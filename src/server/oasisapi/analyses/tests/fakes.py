@@ -3,7 +3,7 @@ from celery.states import STARTED
 from model_mommy import mommy
 
 from ...files.tests.fakes import fake_related_file
-from ..models import Analysis
+from ..models import Analysis, AnalysisTaskStatus
 
 
 class FakeAsyncResultFactory(object):
@@ -55,3 +55,7 @@ def fake_analysis(**kwargs):
         kwargs['settings_file'] = fake_related_file(file=kwargs['settings_file'])
 
     return mommy.make(Analysis, **kwargs)
+
+
+def fake_analysis_task_status(**kwargs):
+    return mommy.make(AnalysisTaskStatus, **kwargs)
