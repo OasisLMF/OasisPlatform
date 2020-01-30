@@ -4,7 +4,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt import settings as jwt_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer as BaseTokenRefreshSerializer
-from django.utils.six import text_type
 from rest_framework_simplejwt.tokens import RefreshToken
 
 

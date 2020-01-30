@@ -1,21 +1,40 @@
-FROM python:3.6
+# ---- STAGE 1 -----
+FROM python:3-slim AS build-packages
+
+RUN apt-get update && apt-get install -y libgeos-dev libspatialindex-dev git curl g++ build-essential libtool zlib1g-dev autoconf automake
+COPY ./requirements-worker.txt ./requirements.txt
+RUN pip install --user --no-warn-script-location -r ./requirements.txt
+
+
+#RUN curl -L http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz | tar xz
+#WORKDIR spatialindex-src-1.8.5
+#RUN ./configure --prefix=/root/.local/ 
+#RUN make 
+#RUN make install 
+
+# ---- STAGE 2 ---- ALPINE (WIP glibc problems)
+#FROM python:3-alpine
+#RUN apk update \
+#    && apk add bash curl procps
+
+
+# ---- STAGE 2 ---- DEBIAN
+FROM python:3-slim
+RUN apt-get update && apt-get install -y --no-install-recommends libspatialindex-dev curl procps && \ 
+    rm -rf /var/lib/apt/lists/*
+
+
+
+COPY --from=build-packages /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
 
 ENV OASIS_MEDIA_ROOT=/shared-fs
-
-RUN apt-get update && apt-get install -y --no-install-recommends git vim libspatialindex-dev && rm -rf /var/lib/apt/lists/*
-
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
-# Install requirements
-COPY ./requirements-worker.in ./requirements.txt
-RUN pip install -r ./requirements.txt
-
-# Copy startup script + server config
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/startup_tester.sh ./runtest
 COPY ./conf.ini ./
-
 COPY ./src/__init__.py ./src/
 COPY ./src/common ./src/common/
 COPY ./src/conf ./src/conf/
