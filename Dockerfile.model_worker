@@ -6,11 +6,11 @@ COPY ./requirements-worker.txt ./requirements.txt
 RUN pip install --user --no-warn-script-location -r ./requirements.txt
 
 
-RUN curl -L http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz | tar xz
-WORKDIR spatialindex-src-1.8.5
-RUN ./configure --prefix=/root/.local/ 
-RUN make 
-RUN make install 
+#RUN curl -L http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz | tar xz
+#WORKDIR spatialindex-src-1.8.5
+#RUN ./configure --prefix=/root/.local/ 
+#RUN make 
+#RUN make install 
 
 # ---- STAGE 2 ---- ALPINE (WIP glibc problems)
 #FROM python:3-alpine
