@@ -1,15 +1,14 @@
 # ---- STAGE 1 -----
-FROM python:3-alpine AS build-packages
+FROM python:3-slim AS build-packages
 
-RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers
+RUN apt-get update && apt-get install -y --no-install-recommends curl gcc libmariadbclient-dev-compat
 COPY ./requirements-server.txt ./requirements.txt
 RUN pip install --user --no-warn-script-location -r ./requirements.txt && pip install --no-warn-script-location --user mysqlclient
 
 
-# ---- STAGE 2 ---- 
-FROM python:3-alpine 
-RUN apk update \
-    && apk add --no-cache mariadb-dev bash curl
+ # ---- STAGE 2 ---- DEBIAN 
+FROM python:3-slim
+RUN apt-get update && apt-get install -y --no-install-recommends curl libmariadbclient-dev-compat && rm -rf /var/lib/apt/lists/*
 
 
 COPY --from=build-packages /root/.local /root/.local
