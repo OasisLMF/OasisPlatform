@@ -165,7 +165,7 @@ node {
             build_model_execution_worker_slim: {
                 stage('Build: model exec worker') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_worker_silm} ${image_worker} ${env.TAG_RELEASE}-slim"
+                        sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
                     }
                 }
             }
