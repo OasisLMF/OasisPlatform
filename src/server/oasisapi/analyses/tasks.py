@@ -1,11 +1,8 @@
 from __future__ import absolute_import
 
-import os
 import uuid
 
-from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
-from celery.worker.control import revoke
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
@@ -14,7 +11,6 @@ from django.utils import timezone
 from django_celery_results.utils import now
 from six import StringIO
 
-from src.conf.iniconf import settings
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelSettingsSerializer
@@ -395,8 +391,7 @@ def chord_error_callback(self, analysis_id):
         status__in=unfinished_statuses,
     ).values_list('task_id', flat=True)
 
-    for task_id in ids_to_revoke:
-        revoke(task_id, terminate=True)
+    celery_app.control.revoke(set(ids_to_revoke), terminate=True)
 
     AnalysisTaskStatus.objects.filter(
         task_id__in=ids_to_revoke,

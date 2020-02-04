@@ -22,6 +22,10 @@ class BaseController:
     GENERATE_LOSSES_TASK_NAME = 'run_analysis'
 
     @classmethod
+    def get_chord_error_callback(cls):
+        return signature('chord_error_callback')
+
+    @classmethod
     def _start(
         cls,
         analysis: 'Analysis',
@@ -44,7 +48,6 @@ class BaseController:
         :param error_callback: The task to queue if any of the tasks have failed
         """
         from src.server.oasisapi.analyses.models import AnalysisTaskStatus
-        from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
 
         _now = now()
 
@@ -52,21 +55,10 @@ class BaseController:
         analysis.sub_task_statuses.all().delete()
 
         if not isinstance(params, Iterable):
-            sig = signature(
-                task_name,
-                args=params.args,
-                kwargs=params.kwargs,
-                queue=queue,
-            )
-
-            # add task to set the status of the sub task status record on success
-            sig.link(record_sub_task_success.s(analysis.pk, initiator.pk))
+            sig = cls.get_subtask_signature(analysis, initiator, task_name, params, queue)
 
             # add task to record the results on success
             sig.link(success_callback)
-
-            # add task to set the status of the sub task status record on failure
-            sig.link_error(record_sub_task_failure.s(analysis.pk, initiator.pk))
 
             # add task to record the results on failure
             sig.link_error(error_callback)
@@ -76,26 +68,33 @@ class BaseController:
         else:
             # if there is a list of param objects start a chord
             signatures = [
-                signature(
-                    task_name,
-                    args=p.args,
-                    kwargs=p.kwargs,
-                    queue=queue,
-                ) for p in params
+                cls.get_subtask_signature(analysis, initiator, task_name, p, queue)
+                for p in params
             ]
 
-            for sig in signatures:
-                # add task to set the status of the sub task status record on success
-                sig.link(record_sub_task_success.s(analysis.pk, initiator.pk))
-                # add task to set the status of the sub task status record on failure
-                sig.link_error(record_sub_task_failure.s(analysis.pk, initiator.pk))
-
             success_callback.link_error(error_callback)
-            success_callback.link_error(signature('chord_error_callback'))
+            success_callback.link_error(cls.get_chord_error_callback())
             c = chord(signatures, body=success_callback)
 
             # create all the sub task status objects
             AnalysisTaskStatus.objects.create_statuses(analysis, [child.id for child in c.delay().parent.children])
+
+    @classmethod
+    def get_subtask_signature(cls, analysis: 'Analysis', initiator:User, task_name: str, params: TaskParams, queue: str) -> signature:
+        from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
+        sig = signature(
+            task_name,
+            args=params.args,
+            kwargs=params.kwargs,
+            queue=queue,
+        )
+
+        # add task to set the status of the sub task status record on success
+        sig.link(record_sub_task_success.s(analysis.pk, initiator.pk))
+        # add task to set the status of the sub task status record on failure
+        sig.link_error(record_sub_task_failure.s(analysis.pk, initiator.pk))
+
+        return sig
 
     #
     # Generate inputs

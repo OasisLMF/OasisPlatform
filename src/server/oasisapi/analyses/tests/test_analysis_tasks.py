@@ -1,18 +1,27 @@
+import os
 import string
 import datetime
+from unittest.mock import Mock, patch, PropertyMock
+from uuid import uuid4
+
 from backports.tempfile import TemporaryDirectory
 
 from django.test import override_settings
+from django.utils.timezone import now
+from freezegun import freeze_time
 from hypothesis import given, settings
 from hypothesis._strategies import sampled_from
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text
 from pathlib2 import Path
 
-from ..models import Analysis
+from ..models import Analysis, AnalysisTaskStatus
+from ..task_controller import BaseController, TaskParams
 from ...auth.tests.fakes import fake_user
-from ..tasks import record_run_analysis_result, record_run_analysis_failure, generate_input_success, record_generate_input_failure
-from .fakes import fake_analysis
+from ..tasks import record_run_analysis_result, record_run_analysis_failure, generate_input_success, \
+    record_generate_input_failure, start_input_generation_task, start_loss_generation_task, record_sub_task_start, \
+    record_sub_task_success, record_sub_task_failure, chord_error_callback
+from .fakes import fake_analysis, fake_analysis_task_status
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
@@ -158,3 +167,215 @@ class GenerateInputsFailure(TestCase):
                 self.assertEqual(analysis.input_generation_traceback_file.creator, initiator)
                 self.assertEqual(analysis.status, analysis.status_choices.INPUTS_GENERATION_ERROR)
                 self.assertTrue(isinstance(analysis.task_finished, datetime.datetime))
+
+
+class StartInputGenerationTask(TestCase):
+    def test_generate_inputs_is_called_on_task_controller(self):
+        analysis = fake_analysis()
+        initiator = fake_user()
+
+
+        task_controller = Mock()
+        with patch('src.server.oasisapi.analyses.tasks.get_analysis_task_controller', return_value=task_controller):
+            start_input_generation_task(analysis.pk, initiator.pk)
+
+        analysis.refresh_from_db()
+
+        self.assertEqual(analysis.status, Analysis.status_choices.INPUTS_GENERATION_STARTED)
+        task_controller.generate_inputs.assert_called_once_with(analysis, initiator)
+
+
+class StartLossGenerationTask(TestCase):
+    def test_generate_losses_is_called_on_task_controller(self):
+        analysis = fake_analysis()
+        initiator = fake_user()
+
+        task_controller = Mock()
+        with patch('src.server.oasisapi.analyses.tasks.get_analysis_task_controller', return_value=task_controller):
+            start_loss_generation_task(analysis.pk, initiator.pk)
+
+        analysis.refresh_from_db()
+
+        self.assertEqual(analysis.status, Analysis.status_choices.RUN_STARTED)
+        task_controller.generate_losses.assert_called_once_with(analysis, initiator)
+
+
+class RecordSubTaskStart(TestCase):
+    def test_subtask_status_does_not_yet_exist___status_is_created_in_started_state(self):
+        _now = now()
+        analysis = fake_analysis()
+        task_id = uuid4().hex
+
+        with freeze_time(_now):
+            record_sub_task_start(analysis.pk, task_id)
+
+        status = AnalysisTaskStatus.objects.get(analysis=analysis, task_id=task_id)
+
+        self.assertEqual(status.status, AnalysisTaskStatus.status_choices.STARTED)
+        self.assertEqual(status.start_time, _now)
+        self.assertEqual(status.queue_time, _now)
+
+    def test_subtask_status_does_already_exists___status_is_updated_to_started_state(self):
+        _now = now()
+        with freeze_time(_now - datetime.timedelta(hours=1)):
+            status = fake_analysis_task_status()
+
+        with freeze_time(_now):
+            record_sub_task_start(status.analysis.pk, status.task_id)
+
+        status.refresh_from_db()
+
+        self.assertEqual(status.status, AnalysisTaskStatus.status_choices.STARTED)
+        self.assertEqual(status.start_time, _now)
+        self.assertEqual(status.queue_time, _now - datetime.timedelta(hours=1))
+
+
+class RecordSubTaskSuccess(TestCase):
+    @given(
+        output_content=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        error_content=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+    )
+    def test_subtask_status_already_exist___status_is_updated_in_completed_state_with_log_files_set(
+            self,
+            output_content,
+            error_content):
+        task_id = uuid4().hex
+        task_request_mock = Mock()
+        task_request_mock.parent_id = task_id
+
+        _now = now()
+        with freeze_time(_now - datetime.timedelta(hours=1)):
+            status = fake_analysis_task_status(task_id=task_id)
+
+        with TemporaryDirectory() as d, patch('celery.app.task.Context', return_value=task_request_mock):
+            with override_settings(MEDIA_ROOT=d):
+                log_path = os.path.join(d, uuid4().hex)
+                with open(log_path, 'w') as f:
+                    f.write(output_content)
+
+                error_path = os.path.join(d, uuid4().hex)
+                with open(error_path, 'w') as f:
+                    f.write(error_content)
+
+                with freeze_time(_now):
+                    record_sub_task_success(
+                        {
+                            'log_location': log_path,
+                            'error_location': error_path,
+                        },
+                        status.analysis.pk,
+                        fake_user().id,
+                    )
+
+                status.refresh_from_db()
+
+                self.assertEqual(status.status, AnalysisTaskStatus.status_choices.COMPLETED)
+                self.assertEqual(status.queue_time, _now - datetime.timedelta(hours=1))
+                self.assertEqual(status.end_time, _now)
+                self.assertEqual(status.output_log.read().decode(), output_content)
+                self.assertEqual(status.error_log.read().decode(), error_content)
+
+
+class RecordSubTaskFailure(TestCase):
+    @given(
+        error_content=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+    )
+    def test_subtask_status_already_exist___status_is_updated_in_completed_state_with_log_files_set(
+            self,
+            error_content):
+        task_id = uuid4().hex
+        task_request_mock = Mock()
+        task_request_mock.parent_id = task_id
+
+        _now = now()
+        with freeze_time(_now - datetime.timedelta(hours=1)):
+            status = fake_analysis_task_status(task_id=task_id)
+
+        with TemporaryDirectory() as d, patch('celery.app.task.Context', return_value=task_request_mock):
+            with override_settings(MEDIA_ROOT=d):
+                with freeze_time(_now):
+                    record_sub_task_failure(
+                        Mock(),
+                        Mock(),
+                        error_content,
+                        status.analysis.pk,
+                        fake_user().id,
+                    )
+
+                status.refresh_from_db()
+
+                self.assertEqual(status.status, AnalysisTaskStatus.status_choices.ERROR)
+                self.assertEqual(status.queue_time, _now - datetime.timedelta(hours=1))
+                self.assertEqual(status.end_time, _now)
+                self.assertEqual(status.error_log.read().decode(), error_content)
+
+
+class ChordErrorCallback(TestCase):
+    def test_analysis_fails___all_queued_and_started_tasks_are_revoked(self):
+        _now = now()
+        queued_time = _now - datetime.timedelta(hours=1)
+        analysis = fake_analysis()
+
+        with freeze_time(queued_time):
+            queued = fake_analysis_task_status(
+                analysis=analysis,
+                status=AnalysisTaskStatus.status_choices.QUEUED
+            )
+            running = fake_analysis_task_status(
+                analysis=analysis,
+                status=AnalysisTaskStatus.status_choices.STARTED,
+                start_time=_now - datetime.timedelta(minutes=40),
+            )
+            completed = fake_analysis_task_status(
+                analysis=analysis,
+                status=AnalysisTaskStatus.status_choices.COMPLETED,
+                start_time=_now - datetime.timedelta(minutes=30),
+                end_time=_now - datetime.timedelta(minutes=3),
+            )
+            errored = fake_analysis_task_status(
+                analysis=analysis,
+                status=AnalysisTaskStatus.status_choices.ERROR,
+                start_time=_now - datetime.timedelta(minutes=20),
+                end_time=_now - datetime.timedelta(minutes=2),
+            )
+            cancelled = fake_analysis_task_status(
+                analysis=analysis,
+                status=AnalysisTaskStatus.status_choices.CANCELLED,
+                start_time=_now - datetime.timedelta(minutes=10),
+                end_time=_now - datetime.timedelta(minutes=1),
+            )
+
+        with freeze_time(_now), patch('src.server.oasisapi.analyses.tasks.celery_app.control.revoke') as revoke_mock:
+            chord_error_callback(analysis.id)
+
+            revoke_mock.assert_called_once_with({queued.task_id, running.task_id}, terminate=True)
+
+            queued.refresh_from_db()
+            running.refresh_from_db()
+            completed.refresh_from_db()
+            errored.refresh_from_db()
+            cancelled.refresh_from_db()
+
+            self.assertEqual(queued.queue_time, _now - datetime.timedelta(hours=1))
+            self.assertEqual(queued.end_time, _now)
+            self.assertEqual(queued.status, AnalysisTaskStatus.status_choices.CANCELLED)
+
+            self.assertEqual(running.queue_time, _now - datetime.timedelta(hours=1))
+            self.assertEqual(running.start_time, _now - datetime.timedelta(minutes=40))
+            self.assertEqual(running.end_time, _now)
+            self.assertEqual(running.status, AnalysisTaskStatus.status_choices.CANCELLED)
+
+            self.assertEqual(completed.queue_time, _now - datetime.timedelta(hours=1))
+            self.assertEqual(completed.start_time, _now - datetime.timedelta(minutes=30))
+            self.assertEqual(completed.end_time, _now - datetime.timedelta(minutes=3))
+            self.assertEqual(completed.status, AnalysisTaskStatus.status_choices.COMPLETED)
+
+            self.assertEqual(errored.queue_time, _now - datetime.timedelta(hours=1))
+            self.assertEqual(errored.start_time, _now - datetime.timedelta(minutes=20))
+            self.assertEqual(errored.end_time, _now - datetime.timedelta(minutes=2))
+            self.assertEqual(errored.status, AnalysisTaskStatus.status_choices.ERROR)
+
+            self.assertEqual(cancelled.queue_time, _now - datetime.timedelta(hours=1))
+            self.assertEqual(cancelled.start_time, _now - datetime.timedelta(minutes=10))
+            self.assertEqual(cancelled.end_time, _now - datetime.timedelta(minutes=1))
+            self.assertEqual(cancelled.status, AnalysisTaskStatus.status_choices.CANCELLED)

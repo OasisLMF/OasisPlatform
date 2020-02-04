@@ -2,11 +2,9 @@ from __future__ import absolute_import, print_function
 
 from typing import List
 
-from arrow import now
 from celery.result import AsyncResult
 
 from src.server.oasisapi.celery import celery_app
-from celery import signature
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
