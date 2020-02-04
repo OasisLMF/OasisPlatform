@@ -26,11 +26,15 @@ node {
     String build_branch = params.BUILD_BRANCH
     String build_workspace = 'oasis_build'
 
-    // docker vars
-    String docker_api_sql  = "Dockerfile.api_server"
-    String image_api_sql   = "coreoasis/api_server"
-    String docker_worker   = "Dockerfile.model_worker"
-    String image_worker    = "coreoasis/model_worker"
+    // docker vars (main)
+    String docker_api    = "Dockerfile.api_server"
+    String image_api     = "coreoasis/api_server"
+    String docker_worker = "Dockerfile.model_worker"
+    String image_worker  = "coreoasis/model_worker"
+
+    // docker vars (slim)
+    String docker_api_slim    = "docker/Dockerfile.api_server_alpine"
+    String docker_worker_slim = "docker/Dockerfile.model_worker_slim"
 
     // platform vars
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
@@ -125,8 +129,7 @@ node {
             stage('Git install MDK'){
                 dir(oasis_workspace) {
                     // update worker and server install lists
-                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
-                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.in"
+                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.txt"
                 }
             }
         }
@@ -139,7 +142,8 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE}"
+                        sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
+                        sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
 
                     }
                 }
@@ -148,6 +152,7 @@ node {
                 stage('Build: model exec worker') {
                     dir(oasis_workspace) {
                         sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
+                        sh PIPELINE + " build_image ${docker_worker_silm} ${image_worker} ${env.TAG_RELEASE}-slim"
                     }
                 }
             }
@@ -184,7 +189,8 @@ node {
                 publish_api_server: {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api_sql} ${env.TAG_RELEASE}"
+                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}-slim"
                         }
                     }
                 },
@@ -192,6 +198,7 @@ node {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-slim"
                         }
                     }
                 }
@@ -250,8 +257,10 @@ node {
             sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor > ./stage/log/worker-monitor.log '
             sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
             if(params.PURGE){
-                sh PIPELINE + " purge_image ${image_api_sql} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}-slim"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-slim"
             }
         }
 
