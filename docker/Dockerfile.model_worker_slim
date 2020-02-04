@@ -6,6 +6,7 @@ COPY ./requirements-worker.txt ./requirements.txt
 RUN pip install --user --no-warn-script-location -r ./requirements.txt
 
 
+# ---- STAGE 2 ---- DEBIAN
 FROM python:3-slim
 RUN apt-get update && apt-get install -y --no-install-recommends libspatialindex-dev curl procps && \ 
     rm -rf /var/lib/apt/lists/*
