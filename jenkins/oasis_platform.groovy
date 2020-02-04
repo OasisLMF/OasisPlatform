@@ -242,7 +242,7 @@ node {
                         sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                     }
                 }
-                
+
                 // Create Release
                 withCredentials([string(credentialsId: 'github-api-token', variable: 'gh_token')]) {
                     dir(oasis_workspace) {
@@ -260,7 +260,7 @@ node {
 
                         // Fetch release ID and post json schema
                         def response = readJSON file: "gh_response.json"
-                        release_id = response['id']                                                                                                                                                                                                                                               
+                        release_id = response['id']
                         dir('reports') {
                             filename='openapi-schema.json'
                             sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
@@ -311,7 +311,7 @@ node {
             }
         }
         // Run merge back if publish
-        if (params.PUBLISH && params.AUTOMERGE){ 
+        if (params.PUBLISH && params.AUTOMERGE){
             dir(oasis_workspace) {
                 sshagent (credentials: [git_creds]) {
                     sh "git stash"
@@ -319,8 +319,8 @@ node {
                     sh "git merge ${oasis_branch} && git push"
                     sh "git checkout develop && git pull"
                     sh "git merge master && git push"
-                }   
-            }   
-        }   
+                }
+            }
+        }
     }
 }
