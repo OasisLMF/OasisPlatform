@@ -20,7 +20,6 @@ pathlib2==2.3.5
 pluggy==0.13.1            # via pytest
 py==1.8.1                 # via pytest
 pymysql==0.9.3
-pandas==0.25.3            # WORKAROUND -- fix needed for pandas==1.0
 pyparsing==2.4.6          # via packaging
 pytest==5.3.4
 pytz==2019.3              # via celery
