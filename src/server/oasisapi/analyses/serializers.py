@@ -13,6 +13,7 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
         fields = (
             'task_id',
             'status',
+            'queue_name',
             'queue_time',
             'start_time',
             'end_time',
