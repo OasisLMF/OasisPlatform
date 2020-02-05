@@ -1,5 +1,6 @@
-oasislmf>=1.4.5
-billiard==3.6.0.0
+-e git://github.com/OasisLMF/OasisLMF.git@0bc1cb26aafc723848690b1487716ba96f9e90c3#egg=oasislmf
+
+billiard
 celery
 configparser
 fasteners

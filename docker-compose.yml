@@ -25,6 +25,7 @@ services:
      - OASIS_SERVER_DB_USER=oasis
      - OASIS_SERVER_DB_NAME=oasis
      - OASIS_SERVER_DB_PORT=3306
+     - OASIS_SERVER_CHANNEL_LAYER_HOST=channel-layer
      - OASIS_CELERY_DB_ENGINE=db+mysql+pymysql
      - OASIS_CELERY_DB_HOST=celery-db
      - OASIS_CELERY_DB_PASS=password
@@ -53,6 +54,7 @@ services:
      - OASIS_SERVER_DB_USER=oasis
      - OASIS_SERVER_DB_NAME=oasis
      - OASIS_SERVER_DB_PORT=3306
+     - OASIS_SERVER_CHANNEL_LAYER_HOST=channel-layer
      - OASIS_CELERY_DB_ENGINE=db+mysql+pymysql
      - OASIS_CELERY_DB_HOST=celery-db
      - OASIS_CELERY_DB_PASS=password
@@ -138,3 +140,8 @@ services:
     links:
      - celery-db
      - rabbit
+  channel-layer:
+    restart: always
+    image: redis:5.0.7
+    ports:
+      - 6379:6379

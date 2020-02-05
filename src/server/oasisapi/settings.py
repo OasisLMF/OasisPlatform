@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'rest_framework_simplejwt.token_blacklist',
+    'channels',
 
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
@@ -212,4 +213,20 @@ SWAGGER_SETTINGS = {
     'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
+}
+
+ASGI_APPLICATION = "src.server.oasisapi.routing.application"
+
+CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
+CHANNEL_LAYER_PASS = iniconf.settings.get('server', 'channel_layer_pass', fallback='')
+CHANNEL_LAYER_USER = iniconf.settings.get('server', 'channel_layer_user', fallback='')
+CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_user', fallback='6379')
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0'],
+            'symmetric_encryption_keys': [SECRET_KEY],
+        },
+    },
 }

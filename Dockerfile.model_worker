@@ -8,7 +8,7 @@ RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
 # Install requirements
-COPY ./requirements-worker.in ./requirements.txt
+COPY ./requirements-worker.txt ./requirements.txt
 RUN pip install -r ./requirements.txt
 
 # Copy startup script + server config

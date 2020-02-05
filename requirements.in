@@ -1,4 +1,5 @@
-oasislmf
+-e git://github.com/OasisLMF/OasisLMF.git@0bc1cb26aafc723848690b1487716ba96f9e90c3#egg=oasislmf
+
 celery
 pymysql
 jsonpickle
@@ -35,3 +36,6 @@ whitenoise
 django_celery_results
 drf-yasg
 freezegun
+channels
+channels_redis
+pyrabbit

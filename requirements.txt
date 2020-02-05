@@ -4,30 +4,40 @@
 #
 #    pip-compile
 #
-amqp==2.5.1               # via kombu
-anytree==2.6.0            # via oasislmf
-argparsetree==0.0.6       # via oasislmf
+-e git+git://github.com/OasisLMF/OasisLMF.git@0bc1cb26aafc723848690b1487716ba96f9e90c3#egg=oasislmf
+aioredis==1.3.1           # via channels-redis
+amqp==2.5.2               # via kombu
+anytree==2.6.0
+argparsetree==0.0.6
 arrow==0.15.2             # via jinja2-time
+asgiref==3.2.3            # via channels, channels-redis, daphne
 asn1crypto==0.24.0        # via cryptography
+async-timeout==3.0.1      # via aioredis
 atomicwrites==1.3.0       # via pytest
-attrs==19.1.0             # via hypothesis, packaging, pytest
+attrs==19.1.0             # via automat, hypothesis, packaging, pytest, service-identity, twisted
+autobahn==20.1.3          # via daphne
+automat==0.8.0            # via twisted
 backports.tempfile==1.0
 backports.weakref==1.0.post1  # via backports.tempfile
 beautifulsoup4==4.8.0     # via webtest
 billiard==3.6.1.0         # via celery
 binaryornot==0.4.4        # via cookiecutter
 celery==4.4.0
-certifi==2019.9.11        # via oasislmf, requests
+certifi==2019.9.11        # via requests
 cffi==1.12.3              # via cryptography
-chainmap==1.0.3           # via oasislmf
+chainmap==1.0.3
+channels-redis==2.4.1
+channels==2.4.0
 chardet==3.0.4            # via binaryornot, requests
 click==7.0                # via cookiecutter, pip-tools
 configparser==4.0.2
-cookiecutter==1.6.0       # via oasislmf
+constantly==15.1.0        # via twisted
+cookiecutter==1.6.0
 coreapi==2.3.3
 coreschema==0.0.4         # via coreapi, drf-yasg
 coverage==4.5.4
-cryptography==2.7         # via pyopenssl
+cryptography==2.7         # via autobahn, pyopenssl, service-identity
+daphne==2.4.1             # via channels
 decorator==4.4.0          # via ipython, traitlets
 django-celery-results==1.1.2
 django-filter==2.2.0
@@ -42,10 +52,14 @@ fasteners==0.15
 filelock==3.0.12          # via tox
 flake8==3.7.8
 freezegun==0.3.14
-future==0.17.1            # via cookiecutter, oasislmf
+future==0.17.1            # via cookiecutter
+hiredis==1.0.1            # via aioredis
+httplib2==0.17.0          # via pyrabbit
+hyperlink==19.0.0         # via twisted
 hypothesis==4.36.0
-idna==2.7                 # via requests
+idna==2.7                 # via hyperlink, requests, twisted
 importlib-metadata==0.22  # via kombu, pluggy, pytest, tox
+incremental==17.5.0       # via twisted
 inflection==0.3.1         # via drf-yasg
 ipdb==0.12.2
 ipython-genutils==0.2.0   # via traitlets
@@ -55,7 +69,7 @@ jinja2-time==0.2.0        # via cookiecutter
 jinja2==2.10.1            # via cookiecutter, coreschema, jinja2-time
 jsonpickle==1.2
 jsonschema==2.6.0
-kombu==4.6.4              # via celery
+kombu==4.6.7              # via celery
 markdown==3.1.1
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
@@ -63,10 +77,10 @@ mock==3.0.5
 model-mommy==1.6.0
 monotonic==1.5            # via fasteners
 more-itertools==7.2.0     # via pytest, zipp
+msgpack==0.6.2            # via channels-redis
 numpy==1.17.2             # via pandas
-oasislmf==1.4.5
 packaging==19.1           # via pytest, tox
-pandas==0.25.1            # via oasislmf
+pandas==0.25.1
 pathlib2==2.3.4
 pexpect==4.7.0            # via ipython
 pickleshare==0.7.5        # via ipython
@@ -76,36 +90,43 @@ poyo==0.5.0               # via cookiecutter
 prompt-toolkit==1.0.16    # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest, tox
+pyasn1-modules==0.2.8     # via service-identity
+pyasn1==0.4.8             # via pyasn1-modules, service-identity
 pycodestyle==2.5.0        # via flake8
 pycparser==2.19           # via cffi
 pyflakes==2.1.1           # via flake8
 pygments==2.4.2           # via ipython
+pyhamcrest==2.0.0         # via twisted
 pyjwt==1.7.1              # via djangorestframework-simplejwt
 pymysql==0.9.3
 pyopenssl==19.0.0
 pyparsing==2.4.2          # via packaging
+pyrabbit==1.1.0
+pytest-cov==2.8.1
+pytest-django==3.8.0
 pytest==5.1.2
-pytest-cov
-pytest-django
-python-dateutil==2.8.0    # via arrow, pandas
-pytz==2019.2              # via celery, django, oasislmf, pandas
-requests-toolbelt==0.9.1  # via oasislmf
+python-dateutil==2.8.0    # via arrow, freezegun, pandas
+pytz==2019.2              # via celery, django, pandas
+requests-toolbelt==0.9.1
 requests==2.20.1
-rtree==0.8.3              # via oasislmf
+rtree==0.8.3
 ruamel.yaml.clib==0.1.2   # via ruamel.yaml
 ruamel.yaml==0.16.5       # via drf-yasg
-shapely==1.6.4.post2      # via oasislmf
-shutilwhich==1.1.0        # via oasislmf
+service-identity==18.1.0  # via twisted
+shapely==1.6.4.post2
+shutilwhich==1.1.0
 simplegeneric==0.8.1      # via ipython
-six==1.12.0               # via anytree, cryptography, drf-yasg, fasteners, mock, model-mommy, packaging, pathlib2, pip-tools, prompt-toolkit, pyopenssl, python-dateutil, tox, traitlets, webtest
+six==1.12.0               # via anytree, automat, cryptography, drf-yasg, fasteners, freezegun, mock, model-mommy, packaging, pathlib2, pip-tools, prompt-toolkit, pyopenssl, python-dateutil, tox, traitlets, txaio, webtest
 soupsieve==1.9.3          # via beautifulsoup4
 sqlalchemy==1.3.8
 sqlparse==0.3.0           # via django
-tabulate==0.8.3           # via oasislmf
+tabulate==0.8.3
 toml==0.10.0              # via tox
 tox==3.14.0
-tqdm==4.35.0              # via oasislmf
+tqdm==4.35.0
 traitlets==4.3.2          # via ipython
+twisted[tls]==19.10.0     # via daphne
+txaio==20.1.1             # via autobahn
 uritemplate==3.0.0        # via coreapi, drf-yasg
 urllib3==1.24.3           # via requests
 uwsgi==2.0.18
@@ -118,6 +139,7 @@ webtest==2.0.33           # via django-webtest
 whichcraft==0.6.1         # via cookiecutter
 whitenoise==4.1.3
 zipp==0.6.0               # via importlib-metadata
+zope.interface==4.7.1     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.2.0        # via ipdb, ipython, markdown, rtree
+# setuptools==45.1.0        # via ipdb, ipython, markdown, rtree, zope.interface
