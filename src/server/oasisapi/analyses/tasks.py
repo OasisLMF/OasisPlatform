@@ -316,7 +316,7 @@ def start_loss_generation_task(analysis_pk, initiator_pk):
 
 
 @celery_app.task(bind=True, name='record_sub_task_start')
-def record_sub_task_start(self, analysis_id, task_id):
+def record_sub_task_start(self, analysis_id, task_id, queue_name):
     _now = now()
 
     status, created = AnalysisTaskStatus.objects.get_or_create(
@@ -324,7 +324,8 @@ def record_sub_task_start(self, analysis_id, task_id):
         analysis_id=analysis_id,
         defaults={
             'start_time': _now,
-            'status': AnalysisTaskStatus.status_choices.STARTED
+            'status': AnalysisTaskStatus.status_choices.STARTED,
+            'queue_name': queue_name,
         }
     )
 

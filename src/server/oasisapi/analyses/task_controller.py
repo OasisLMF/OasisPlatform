@@ -64,7 +64,7 @@ class BaseController:
             sig.link_error(error_callback)
 
             # create all the sub task status objects
-            AnalysisTaskStatus.objects.create_statuses(analysis, [sig.delay().id])
+            AnalysisTaskStatus.objects.create_statuses(analysis, [sig.delay().id], queue)
         else:
             # if there is a list of param objects start a chord
             signatures = [
@@ -77,7 +77,7 @@ class BaseController:
             c = chord(signatures, body=success_callback)
 
             # create all the sub task status objects
-            AnalysisTaskStatus.objects.create_statuses(analysis, [child.id for child in c.delay().parent.children])
+            AnalysisTaskStatus.objects.create_statuses(analysis, [child.id for child in c.delay().parent.children], queue)
 
     @classmethod
     def get_subtask_signature(cls, analysis: 'Analysis', initiator:User, task_name: str, params: TaskParams, queue: str) -> signature:

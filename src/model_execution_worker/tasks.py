@@ -181,14 +181,15 @@ def get_unique_filename(ext):
 
 
 # Send notification back to the API Once task is read from Queue
-def notify_api_task_started(analysis_pk, task_id):
-    logging.info("Notify API tasks has started: analysis_id={}, task_id={}".format(
+def notify_api_task_started(analysis_pk, task_id, queue_name):
+    logging.info("Notify API tasks has started: analysis_id={}, task_id={}, queue_name={}".format(
         analysis_pk,
-        task_id
+        task_id,
+        queue_name,
     ))
     signature(
         'record_sub_task_start',
-        args=(analysis_pk, task_id),
+        args=(analysis_pk, task_id, queue_name),
         queue='celery'
     ).delay()
 
@@ -207,6 +208,8 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
     Returns:
         (string) The location of the outputs.
     """
+    print(self)
+    print(self.request)
 
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
     logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
@@ -222,7 +225,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
         logging.info("Acquired resource lock")
 
         try:
-            notify_api_task_started(analysis_pk, self.request.id)
+            notify_api_task_started(analysis_pk, self.request.id, 'x')
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, log_location, error_location, return_code = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),

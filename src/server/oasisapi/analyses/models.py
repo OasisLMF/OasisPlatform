@@ -15,6 +15,7 @@ from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
+from .consumers import send_task_status_message
 from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
@@ -24,11 +25,13 @@ from ....conf import iniconf
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
-    def create_statuses(self, analysis, task_ids: List[str]):
+    def create_statuses(self, analysis, task_ids: List[str], queue):
         """
         Creates all statuses initialising `queued_time`
 
+        :param analysis: The analysis object to generate task statuses for
         :param task_ids: list of the task ids to create
+        :param queue: The name of the queue the tasks were sent to
 
         :return:
         """
@@ -36,15 +39,38 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
         # the statuses, however there is the possibility that a task will
         # have started causing the status to exist already which would
         # cause the bulks create to fail
-        to_update = []
-        for task_id in task_ids:
+        statuses = [
             AnalysisTaskStatus.objects.get_or_create(
                 task_id=task_id,
                 analysis=analysis,
                 defaults={
                     'status': AnalysisTaskStatus.status_choices.QUEUED,
+                    'queue_name': queue
                 }
-            )
+            )[0] for task_id in task_ids
+        ]
+
+        send_task_status_message(analysis, statuses, queue)
+
+    def update(self, **kwargs):
+        res = super().update(**kwargs)
+
+        #
+        # TODO: implement queue info fetcher
+        #
+        # all_queues = get_queues_info()
+        all_queues = []
+
+        statuses = list(self)
+        mapping = {}
+        for status in statuses:
+            mapping.setdefault(status.analysis, []).append(status)
+
+        for analysis, statuses in mapping.items():
+            queue_names = set(status.queue_name for status in statuses)
+            send_task_status_message(analysis, statuses, [q for q in all_queues if q['name'] in queue_names])
+
+        return res
 
 
 class AnalysisTaskStatus(models.Model):
@@ -56,19 +82,36 @@ class AnalysisTaskStatus(models.Model):
         ('ERROR', 'Run error'),
     )
 
-    task_id = models.CharField(max_length=36, unique=True)
-    analysis = models.ForeignKey('Analysis', related_name='sub_task_statuses', on_delete=models.CASCADE)
+    queue_name = models.CharField(max_length=255, blank=False, editable=False)
+    task_id = models.CharField(max_length=36, unique=True, editable=False)
+    analysis = models.ForeignKey('Analysis', related_name='sub_task_statuses', on_delete=models.CASCADE, editable=False)
     status = models.CharField(
         max_length=max(len(c) for c in status_choices._db_values),
         choices=status_choices,
         default=status_choices.QUEUED,
+        editable=False,
     )
-    queue_time = models.DateTimeField(null=True, auto_now_add=True)
-    start_time = models.DateTimeField(null=True, default=None)
-    end_time = models.DateTimeField(null=True, default=None)
+    queue_time = models.DateTimeField(null=True, auto_now_add=True, editable=False)
+    start_time = models.DateTimeField(null=True, default=None, editable=False)
+    end_time = models.DateTimeField(null=True, default=None, editable=False)
 
-    output_log = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='analysis_run_status_output_logs')
-    error_log = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='analysis_run_status_error_logs')
+    output_log = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.SET_NULL,
+        blank=True, null=True,
+        default=None,
+        related_name='analysis_run_status_output_logs',
+        editable=False,
+    )
+    error_log = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
+        related_name='analysis_run_status_error_logs',
+        editable=False,
+    )
 
     objects = AnalysisTaskStatusQuerySet.as_manager()
 

@@ -1,15 +1,7 @@
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-
-from .serializers import AnalysisSerializer, AnalysisTaskStatusSerializer
+from .consumers import send_task_status_message
 
 
 def task_updated(instance, *args, **kwargs):
-    layer = get_channel_layer()
-    async_to_sync(layer.group_send)('analysis_task_status', {
-        'type': 'analysis_task_status.updated',
-        'content': {
-            'analysis': AnalysisSerializer(instance=instance.analysis).to_representation(instance.analysis),
-            'tasks': AnalysisTaskStatusSerializer(many=True, instance=[instance]).to_representation([instance])
-        }
-    })
+    # we post all new queues together in a group
+    if instance.status != instance.status_choices.QUEUED:
+        send_task_status_message(instance.analysis, [instance], [])

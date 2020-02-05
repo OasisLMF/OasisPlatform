@@ -6,7 +6,7 @@ from websocket import WebSocketApp
 
 def echo(app, message):
     print('Message received:')
-    print(json.dumps(message, indent=4))
+    print(json.dumps(json.loads(message), indent=4))
 
 
 class Command(BaseCommand):
