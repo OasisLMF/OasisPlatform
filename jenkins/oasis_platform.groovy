@@ -142,6 +142,7 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
+                        sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
                         sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
 
                     }
@@ -150,22 +151,8 @@ node {
             build_model_execution_worker: {
                 stage('Build: model exec worker') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
-                    }
-                }
-            },
-            build_oasis_api_server_slim: {
-                stage('Build: API server') {
-                    dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
-
-                    }
-                }
-            },
-            build_model_execution_worker_slim: {
-                stage('Build: model exec worker') {
-                    dir(oasis_workspace) {
                         sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
+                        sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
                     }
                 }
             }
@@ -202,6 +189,7 @@ node {
                 publish_api_server: {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-slim"
                             sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
                         }
                     }
@@ -209,21 +197,8 @@ node {
                 publish_model_worker: {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
-                        }
-                    }
-                },
-                publish_api_server_slim: {
-                    stage ('Publish: api_server') {
-                        dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}-slim"
-                        }
-                    }
-                },
-                publish_model_worker_slim: {
-                    stage('Publish: model_worker') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-slim"
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
                         }
                     }
                 }
