@@ -3,17 +3,14 @@ OasisPlatform Changelog
 
 .. start_latest_release
 
-`1.4.2`_
+`1.5.0`_
 --------
 
-#### Final
 * #304 - Slim image builds (Currently optional)
 * #303 - model settings schema Update
 * #302 - Add Maven Swagger API build test
-##### Release Candidate 2
 * #297 - Remove previous output results on run error
 * #297 - Fix Log and traceback storage
-##### Release Candidate 1
 * #222 - Update to  model settings schema
 * #275 - Fixed delete operations with multipart as content type in swagger
 * #274 - Fixed reverting behaviour for complex models (custom gulcalc)
@@ -21,7 +18,7 @@ OasisPlatform Changelog
 * #268 - Store run trace on success
 * #287 - Store ktools log directory in an Analyses
 * #283 - Fixed Worker not releasing memory from Python process
-*
+
 .. end_latest_release
 
 `1.4.1`_
@@ -189,7 +186,7 @@ OasisPlatform Changelog
 --------
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
-.. _`1.4.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.1...1.4.2
+.. _`1.5.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.1...1.5.0
 .. _`1.4.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.0...1.4.1
 .. _`1.4.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.5...1.4.0
 .. _`1.3.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.4...1.3.5
