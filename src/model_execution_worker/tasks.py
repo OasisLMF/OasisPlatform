@@ -208,9 +208,6 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
     Returns:
         (string) The location of the outputs.
     """
-    print(self)
-    print(self.request)
-
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
     logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
         settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
@@ -225,7 +222,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
         logging.info("Acquired resource lock")
 
         try:
-            notify_api_task_started(analysis_pk, self.request.id, 'x')
+            notify_api_task_started(analysis_pk, self.request.id, self.request.delivery_info['routing_key'])
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, log_location, error_location, return_code = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
@@ -388,7 +385,7 @@ def generate_input(self,
     """
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
-    notify_api_task_started(analysis_pk, self.request.id)
+    notify_api_task_started(analysis_pk, self.request.id, self.request.delivery_info['routing_key'])
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)

@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
 
-from typing import List
+from typing import List, Set
 
 from celery.result import AsyncResult
 
@@ -20,6 +20,7 @@ from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
+from ..queues.utils import filter_queues_info, get_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
@@ -50,16 +51,12 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
             )[0] for task_id in task_ids
         ]
 
-        send_task_status_message(analysis, statuses, queue)
+        send_task_status_message(analysis, statuses, filter_queues_info(queue))
 
     def update(self, **kwargs):
         res = super().update(**kwargs)
 
-        #
-        # TODO: implement queue info fetcher
-        #
-        # all_queues = get_queues_info()
-        all_queues = []
+        all_queues = get_queues_info()
 
         statuses = list(self)
         mapping = {}
@@ -68,7 +65,7 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
 
         for analysis, statuses in mapping.items():
             queue_names = set(status.queue_name for status in statuses)
-            send_task_status_message(analysis, statuses, [q for q in all_queues if q['name'] in queue_names])
+            send_task_status_message(analysis, statuses, filter_queues_info(queue_names, info=all_queues))
 
         return res
 

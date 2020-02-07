@@ -49,3 +49,8 @@ CELERY_ENABLE_UTC = True
 
 #: Celery config - concurrency
 CELERYD_CONCURRENCY = 1
+
+# setup queues so that tasks aren't removed from the queue until
+# complete and reschedule if the task worker goes offline
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
