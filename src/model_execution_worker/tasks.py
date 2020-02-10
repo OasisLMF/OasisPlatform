@@ -326,8 +326,10 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             ['oasislmf', 'model', 'generate-losses'] + run_args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
+        logging.info('stdout: {}'.format(result.stdout.decode()))
+        logging.info('stderr: {}'.format(result.stderr.decode()))
 
-        # Trace back file (stdout + stderr)
+        # Traceback file (stdout + stderr)
         traceback_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
         with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
             if result.stdout:
@@ -431,7 +433,11 @@ def generate_input(analysis_pk,
             " ".join([str(arg) for arg in mdk_args])
         ))
 
-        result = subprocess.run(['oasislmf', 'model', 'generate-oasis-files'] + run_args, stderr=subprocess.PIPE)
+        result = subprocess.run(['oasislmf', 'model', 'generate-oasis-files'] + run_args,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logging.info('stdout: {}'.format(result.stdout.decode()))
+        logging.info('stderr: {}'.format(result.stderr.decode()))
 
         # Process Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
@@ -439,8 +445,9 @@ def generate_input(analysis_pk,
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
-        traceback_fp = os.path.join(settings.get('worker', 'MEDIA_ROOT'), uuid.uuid4().hex + '.txt')
-        with open(traceback_fp, 'w') as f:
+        # Traceback file (stdout + stderr)
+        traceback_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
+        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
             if result.stdout:
                 f.write(result.stdout.decode())
             if result.stderr:    
@@ -478,7 +485,7 @@ def generate_input(analysis_pk,
         with tarfile.open(output_tar_name, 'w:gz') as tar:
             tar.add(oasis_files_dir, arcname='/')
 
-        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_fp, result.returncode
+        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_location, result.returncode
 
 
 @task(name='on_error')
