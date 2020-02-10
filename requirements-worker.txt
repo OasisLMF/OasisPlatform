@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements-worker.in
 #
-oasislmf<=1.5.0
+oasislmf<=1.5.1
 amqp==2.5.2               # via kombu
 attrs==19.3.0             # via pytest
 billiard==3.6.0.0         # via celery
