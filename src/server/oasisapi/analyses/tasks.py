@@ -22,7 +22,11 @@ logger = get_task_logger(__name__)
 class LogTaskError(Task):
     # from gist https://gist.github.com/darklow/c70a8d1147f05be877c3
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        self.handle_task_failure(exc, task_id, args, kwargs, einfo)
+        try:
+            self.handle_task_failure(exc, task_id, args, kwargs, einfo)
+        except Exception as e:
+            logger.info('Unhandled Exception in: {}'.format(self.name))
+            logger.exception(str(e))
         super(LogTaskError, self).on_failure(exc, task_id, args, kwargs, einfo)
 
     def handle_task_failure(self, exc, task_id, args, kwargs, traceback):
@@ -31,43 +35,38 @@ class LogTaskError(Task):
         logger.info('kwargs: {}'.format(kwargs))
         logger.info('traceback: {}'.format(traceback))
 
-        try:
-            if self.name in ['record_run_analysis_result', 'record_generate_input_result']:
-                _, analysis_pk, initiator_pk = args
+        if self.name in ['record_run_analysis_result', 'record_generate_input_result']:
+            _, analysis_pk, initiator_pk = args
 
-                from .models import Analysis
-                initiator = get_user_model().objects.get(pk=initiator_pk)
-                analysis = Analysis.objects.get(pk=analysis_pk)
-                random_filename = '{}.txt'.format(uuid.uuid4().hex)
-                traceback_msg = "worker-monitor error:\n {}".format(traceback)
+            from .models import Analysis
+            initiator = get_user_model().objects.get(pk=initiator_pk)
+            analysis = Analysis.objects.get(pk=analysis_pk)
+            random_filename = '{}.txt'.format(uuid.uuid4().hex)
+            traceback_msg = "worker-monitor error:\n {}".format(traceback)
 
-                analysis.task_finished = timezone.now()
-                if self.name == 'record_generate_input_result':
-                    analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
-                    analysis.input_generation_traceback_file = RelatedFile.objects.create(
-                        file=File(StringIO(traceback_msg), name=random_filename),
-                        filename=random_filename,
-                        content_type='text/plain',
-                        creator=get_user_model().objects.get(pk=initiator_pk),
-                    )
+            analysis.task_finished = timezone.now()
+            if self.name == 'record_generate_input_result':
+                analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
+                analysis.input_generation_traceback_file = RelatedFile.objects.create(
+                    file=File(StringIO(traceback_msg), name=random_filename),
+                    filename=random_filename,
+                    content_type='text/plain',
+                    creator=get_user_model().objects.get(pk=initiator_pk),
+                )
 
-                if self.name == 'record_run_analysis_result':
-                    analysis.status = Analysis.status_choices.RUN_ERROR
-                    analysis.run_traceback_file = RelatedFile.objects.create(
-                        file=File(StringIO(traceback_msg), name=random_filename),
-                        filename=random_filename,
-                        content_type='text/plain',
-                        creator=get_user_model().objects.get(pk=initiator_pk),
-                    )
-                    if analysis.run_log_file:
-                        analysis.run_log_file.delete()
-                        analysis.run_log_file = None
+            if self.name == 'record_run_analysis_result':
+                analysis.status = Analysis.status_choices.RUN_ERROR
+                analysis.run_traceback_file = RelatedFile.objects.create(
+                    file=File(StringIO(traceback_msg), name=random_filename),
+                    filename=random_filename,
+                    content_type='text/plain',
+                    creator=get_user_model().objects.get(pk=initiator_pk),
+                )
+                if analysis.run_log_file:
+                    analysis.run_log_file.delete()
+                    analysis.run_log_file = None
 
-                analysis.save()
-        except Exception as e:
-            # Log Warning of unhandled error
-            logger.info('Error Unhandled Exception in: {}'.format(self.name))
-            logger.exception(str(e))
+            analysis.save()
 
 
 @celery_app.task(name='run_register_worker')
