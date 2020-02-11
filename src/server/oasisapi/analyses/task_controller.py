@@ -1,5 +1,5 @@
 from collections import Iterable
-from typing import List, Tuple, Dict, Union, Type
+from typing import List, Union, Type, TYPE_CHECKING
 from importlib import import_module
 
 from celery import signature, chord
@@ -9,6 +9,9 @@ from django.utils.timezone import now
 
 from src.common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from src.conf.iniconf import settings
+
+if TYPE_CHECKING:
+    from src.server.oasisapi.analyses import Analysis
 
 
 class TaskParams:
@@ -48,11 +51,15 @@ class BaseController:
         :param error_callback: The task to queue if any of the tasks have failed
         """
         from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+        from src.server.oasisapi.analysis_models.models import QueueModelAssociation
 
         _now = now()
 
         # delete all statuses so that new ones can me created
         analysis.sub_task_statuses.all().delete()
+
+        # create the queue association so that the model can be posted to the websocket
+        QueueModelAssociation.objects.get_or_create(model=analysis.model, queue_name=queue)
 
         if not isinstance(params, Iterable):
             sig = cls.get_subtask_signature(analysis, initiator, task_name, params, queue)

@@ -1,3 +1,5 @@
+from celery.schedules import crontab
+
 from src.conf.iniconf import settings
 
 #: Celery config - ignore result?
@@ -54,3 +56,23 @@ CELERYD_CONCURRENCY = 1
 # complete and reschedule if the task worker goes offline
 CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
+
+
+# setup the beat schedule
+def crontab_from_string(s):
+    minute, hour, day_of_week, day_of_month, month_of_year = s.split(' ')
+    return crontab(
+        minute=minute,
+        hour=hour,
+        day_of_week=day_of_week,
+        day_of_month=day_of_month,
+        month_of_year=month_of_year,
+    )
+
+
+CELERYBEAT_SCHEDULE = {
+    'send_queue_status_digest': {
+        'task': 'send_queue_status_digest',
+        'schedule': crontab_from_string(settings.get('celery', 'queue_status_digest_schedule', fallback='* * * * *')),
+    }
+}

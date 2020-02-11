@@ -63,6 +63,34 @@ services:
      - OASIS_CELERY_DB_PORT=3306
    volumes:
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
+  celery-beat:
+   restart: always
+   image: coreoasis/api_server:latest
+   command: [celery, beat, -A, src.server.oasisapi, --loglevel=INFO]
+   links:
+     - server-db
+     - celery-db
+     - rabbit
+   environment:
+     - OASIS_DEBUG=1
+     - OASIS_RABBIT_HOST=rabbit
+     - OASIS_RABBIT_PORT=5672
+     - OASIS_RABBIT_USER=rabbit
+     - OASIS_RABBIT_PASS=rabbit
+     - OASIS_SERVER_DB_HOST=server-db
+     - OASIS_SERVER_DB_PASS=oasis
+     - OASIS_SERVER_DB_USER=oasis
+     - OASIS_SERVER_DB_NAME=oasis
+     - OASIS_SERVER_DB_PORT=3306
+     - OASIS_SERVER_CHANNEL_LAYER_HOST=channel-layer
+     - OASIS_CELERY_DB_ENGINE=db+mysql+pymysql
+     - OASIS_CELERY_DB_HOST=celery-db
+     - OASIS_CELERY_DB_PASS=password
+     - OASIS_CELERY_DB_USER=celery
+     - OASIS_CELERY_DB_NAME=celery
+     - OASIS_CELERY_DB_PORT=3306
+   volumes:
+     - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   worker:
     restart: always
     image: coreoasis/model_worker:latest

@@ -1,7 +1,12 @@
 import json
 
 from django.core.management import BaseCommand
-from websocket import WebSocketApp
+
+try:
+    from websocket import WebSocketApp
+except ImportError:
+    print('install websocket_client')
+    exit(1)
 
 
 def echo(app, message):

@@ -8,19 +8,22 @@ from src.conf.iniconf import settings
 from src.server.oasisapi.celery import celery_app
 
 
+QueueInfo = Dict[str, int]
+
+
 def _add_to_dict(d, k, v):
     d[k] = v
     return d
 
 
-def get_queues_info() -> List[Dict[str, int]]:
+def get_queues_info() -> List[QueueInfo]:
     """
     Gets a list of dictionaries containing information about the queues in the system.
 
     The list entries contain:
         name: The name of the queue
         queued_count: The number of tasks currently in the queue
-        assigned_count: The number of tasks currently assigned to a worker
+        running_count: The number of tasks currently running on a worker
         worker_count: The number of workers currently assigned to the queue
 
     :return: The list of info dictionaries
@@ -51,7 +54,6 @@ def get_queues_info() -> List[Dict[str, int]]:
     for worker in celery_app.control.inspect().active_queues().values():
         for queue in worker:
             try:
-                print(queue)
                 next(r for r in res if r['name'] == queue['routing_key'])['worker_count'] += 1
             except StopIteration:
                 # in case there are workers around still for inactive queues add it here

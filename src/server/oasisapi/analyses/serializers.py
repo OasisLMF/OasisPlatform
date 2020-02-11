@@ -73,12 +73,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'sub_task_statuses',
         )
 
-    def __init__(self, *args, include_task_statuses=True, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if not include_task_statuses:
-            del self.fields['sub_task_statuses']
-
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_input_file(self, instance):
         request = self.context.get('request')

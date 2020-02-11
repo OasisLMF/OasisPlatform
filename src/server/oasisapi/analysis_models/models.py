@@ -37,3 +37,14 @@ class AnalysisModel(TimeStampedModel):
         return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
     def get_absolute_settings_url(self, request=None):
         return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+
+class QueueModelAssociation(models.Model):
+    model = models.ForeignKey(AnalysisModel, null=False, on_delete=models.CASCADE, related_name='queue_associations')
+    queue_name = models.CharField(max_length=255, blank=False, editable=False)
+
+    class Meta:
+        unique_together = (('model', 'queue_name'), )
+
+    def __str__(self):
+        return f'{self.model}: {self.queue_name}'

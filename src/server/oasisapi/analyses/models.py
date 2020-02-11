@@ -15,7 +15,7 @@ from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
-from .consumers import send_task_status_message
+from .consumers import send_task_status_message, TaskStatusMessageItem, TaskStatusMessageAnalysisItem
 from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
@@ -51,21 +51,39 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
             )[0] for task_id in task_ids
         ]
 
-        send_task_status_message(analysis, statuses, filter_queues_info(queue))
+        send_task_status_message([TaskStatusMessageItem(
+            queue=filter_queues_info(queue)[0],
+            analyses=[
+                TaskStatusMessageAnalysisItem(
+                    analysis=analysis,
+                    updated_tasks=statuses,
+                )
+            ]
+        )])
 
     def update(self, **kwargs):
         res = super().update(**kwargs)
 
-        all_queues = get_queues_info()
+        queues = filter_queues_info(self.values_list('queue_name', flat=True).distinct())
 
-        statuses = list(self)
-        mapping = {}
-        for status in statuses:
-            mapping.setdefault(status.analysis, []).append(status)
+        # build and send the
+        status_message = [TaskStatusMessageItem(
+            queue=q,
+            analyses=[],
+        ) for q in queues]
 
-        for analysis, statuses in mapping.items():
-            queue_names = set(status.queue_name for status in statuses)
-            send_task_status_message(analysis, statuses, filter_queues_info(queue_names, info=all_queues))
+        for message_item in status_message:
+            analyses = {}
+
+            for status in filter(lambda s: s.queue_name == message_item.queue['name'], self):
+                analyses.setdefault(status.analysis, []).append(status)
+
+            message_item.analyses.extend([TaskStatusMessageAnalysisItem(
+                analysis=analysis,
+                updated_tasks=statuses,
+            ) for analysis, statuses in analyses.items()])
+
+        send_task_status_message(status_message)
 
         return res
 
