@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import uuid
 
 from celery.utils.log import get_task_logger
+from celery import Task
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
@@ -16,6 +17,57 @@ from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 
 from ..celery import celery_app
 logger = get_task_logger(__name__)
+
+
+class LogTaskError(Task):
+    # from gist https://gist.github.com/darklow/c70a8d1147f05be877c3
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        self.handle_task_failure(exc, task_id, args, kwargs, einfo)
+        super(LogTaskError, self).on_failure(exc, task_id, args, kwargs, einfo)
+
+    def handle_task_failure(self, exc, task_id, args, kwargs, traceback):
+        logger.info('name: {}'.format(self.name))
+        logger.info('args: {}'.format(args))
+        logger.info('kwargs: {}'.format(kwargs))
+        logger.info('traceback: {}'.format(traceback))
+
+        try:
+            if self.name in ['record_run_analysis_result', 'record_generate_input_result']:
+                _, analysis_pk, initiator_pk = args
+
+                from .models import Analysis
+                initiator = get_user_model().objects.get(pk=initiator_pk)
+                analysis = Analysis.objects.get(pk=analysis_pk)
+                random_filename = '{}.txt'.format(uuid.uuid4().hex)
+                traceback_msg = "worker-monitor error:\n {}".format(traceback)
+
+                analysis.task_finished = timezone.now()
+                if self.name == 'record_generate_input_result':
+                    analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
+                    analysis.input_generation_traceback_file = RelatedFile.objects.create(
+                        file=File(StringIO(traceback_msg), name=random_filename),
+                        filename=random_filename,
+                        content_type='text/plain',
+                        creator=get_user_model().objects.get(pk=initiator_pk),
+                    )
+
+                if self.name == 'record_run_analysis_result':
+                    analysis.status = Analysis.status_choices.RUN_ERROR
+                    analysis.run_traceback_file = RelatedFile.objects.create(
+                        file=File(StringIO(traceback_msg), name=random_filename),
+                        filename=random_filename,
+                        content_type='text/plain',
+                        creator=get_user_model().objects.get(pk=initiator_pk),
+                    )
+                    if analysis.run_log_file:
+                        analysis.run_log_file.delete()
+                        analysis.run_log_file = None
+
+                analysis.save()
+        except Exception as e:
+            # Log Warning of unhandled error
+            logger.info('Error Unhandled Exception in: {}'.format(self.name))
+            logger.exception(str(e))
 
 
 @celery_app.task(name='run_register_worker')
@@ -46,7 +98,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
                 request = HttpRequest()
                 request.data = {**m_settings}
                 request.method = 'post'
-                request.user = model.creator 
+                request.user = model.creator
                 handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
                 logger.info('Updated model settings')
             except Exception as e:
@@ -84,159 +136,151 @@ def set_task_status(analysis_pk, task_status):
         logger.exception(str(e))
 
 
-@celery_app.task(name='record_run_analysis_result')
+@celery_app.task(name='record_run_analysis_result', base=LogTaskError)
 def record_run_analysis_result(res, analysis_pk, initiator_pk):
     output_location, traceback_location, log_location, return_code = res
     logger.info('output_location: {}, log_location: {}, traceback_location: {}, status: {}, analysis_pk: {}, initiator_pk: {}'.format(
         output_location, traceback_location, log_location, return_code, analysis_pk, initiator_pk))
 
-    try:
-        from .models import Analysis
+    from .models import Analysis
+    initiator = get_user_model().objects.get(pk=initiator_pk)
+    analysis = Analysis.objects.get(pk=analysis_pk)
+    analysis.status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
+    analysis.task_finished = timezone.now()
 
-        initiator = get_user_model().objects.get(pk=initiator_pk)
-        analysis = Analysis.objects.get(pk=analysis_pk)
-        analysis.status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
-        analysis.task_finished = timezone.now()
+    # Store results
+    if return_code == 0:
+        analysis.output_file = RelatedFile.objects.create(
+            file=str(output_location),
+            filename=str(output_location),
+            content_type='application/gzip',
+            creator=initiator,
+        )
+    elif analysis.output_file:
+        analysis.output_file.delete()
+        analysis.output_file = None
 
-        # Store results
-        if return_code == 0:
-            analysis.output_file = RelatedFile.objects.create(
-                file=str(output_location),
-                filename=str(output_location),
-                content_type='application/gzip',
-                creator=initiator,
-            )
-        elif analysis.output_file:
-            analysis.output_file.delete()
-            analysis.output_file = None
+    # Store Ktools logs
+    if log_location:
+        analysis.run_log_file = RelatedFile.objects.create(
+            file=str(log_location),
+            filename=str(log_location),
+            content_type='application/gzip',
+            creator=initiator,
+        )
+    elif analysis.run_log_file:
+        analysis.run_log_file.delete()
+        analysis.run_log_file = None
 
-        # Store Ktools logs
-        if log_location:
-            analysis.run_log_file = RelatedFile.objects.create(
-                file=str(log_location),
-                filename=str(log_location),
-                content_type='application/gzip',
-                creator=initiator,
-            )
-        elif analysis.run_log_file:
-            analysis.run_log_file.delete()
-            analysis.run_log_file = None
-
-
-        # record the error file
-        if traceback_location:
-            analysis.run_traceback_file = RelatedFile.objects.create(
-                file=str(traceback_location),
-                filename=str(traceback_location),
-                content_type='text/plain',
-                creator=initiator,
-            )
-
-        analysis.save()
-    except Exception as e:
-        logger.exception(str(e))
+    # record the error file
+    if traceback_location:
+        analysis.run_traceback_file = RelatedFile.objects.create(
+            file=str(traceback_location),
+            filename=str(traceback_location),
+            content_type='text/plain',
+            creator=initiator,
+        )
+    analysis.save()
 
 
-@celery_app.task(name='record_generate_input_result')
+@celery_app.task(name='record_generate_input_result', base=LogTaskError)
 def record_generate_input_result(result, analysis_pk, initiator_pk):
     logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
         result, analysis_pk, initiator_pk))
-    try:
-        from .models import Analysis
-        (
-            input_location,
-            lookup_error_fp,
-            lookup_success_fp,
-            lookup_validation_fp,
-            summary_levels_fp,
-            traceback_fp,
-            return_code,
-        ) = result
 
-        analysis = Analysis.objects.get(pk=analysis_pk)
-        analysis.task_finished = timezone.now()
+    from .models import Analysis
+    (
+        input_location,
+        lookup_error_fp,
+        lookup_success_fp,
+        lookup_validation_fp,
+        summary_levels_fp,
+        traceback_fp,
+        return_code,
+    ) = result
 
-        # SUCCESS 
-        if return_code == 0:
-            analysis.status = Analysis.status_choices.READY
-            analysis.input_file = RelatedFile.objects.create(
-                file=str(input_location),
-                filename=str(input_location),
-                content_type='application/gzip',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
-            analysis.lookup_errors_file = RelatedFile.objects.create(
-                file=str(lookup_error_fp),
-                filename=str('keys-errors.csv'),
-                content_type='text/csv',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
-            analysis.lookup_success_file = RelatedFile.objects.create(
-                file=str(lookup_success_fp),
-                filename=str('gul_summary_map.csv'),
-                content_type='text/csv',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
-            analysis.lookup_validation_file = RelatedFile.objects.create(
-                file=str(lookup_validation_fp),
-                filename=str('exposure_summary_report.json'),
-                content_type='application/json',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
+    analysis = Analysis.objects.get(pk=analysis_pk)
+    analysis.task_finished = timezone.now()
 
-            analysis.summary_levels_file = RelatedFile.objects.create(
-                file=str(summary_levels_fp),
-                filename=str('exposure_summary_levels.json'),
-                content_type='application/json',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
+    # SUCCESS
+    if return_code == 0:
+        analysis.status = Analysis.status_choices.READY
+        analysis.input_file = RelatedFile.objects.create(
+            file=str(input_location),
+            filename=str(input_location),
+            content_type='application/gzip',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+        analysis.lookup_errors_file = RelatedFile.objects.create(
+            file=str(lookup_error_fp),
+            filename=str('keys-errors.csv'),
+            content_type='text/csv',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+        analysis.lookup_success_file = RelatedFile.objects.create(
+            file=str(lookup_success_fp),
+            filename=str('gul_summary_map.csv'),
+            content_type='text/csv',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+        analysis.lookup_validation_file = RelatedFile.objects.create(
+            file=str(lookup_validation_fp),
+            filename=str('exposure_summary_report.json'),
+            content_type='application/json',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
 
-        # FAILED
-        else:
-            analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
-            # Delete previous output 
-            if analysis.input_file:
-                ref = analysis.input_file
-                analysis.input_file = None
-                ref.delete()
+        analysis.summary_levels_file = RelatedFile.objects.create(
+            file=str(summary_levels_fp),
+            filename=str('exposure_summary_levels.json'),
+            content_type='application/json',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
 
-            if analysis.lookup_errors_file:
-                ref = analysis.lookup_errors_file
-                analysis.lookup_errors_file = None
-                ref.delete()
 
-            if analysis.lookup_success_file:
-                ref = analysis.lookup_success_file
-                analysis.lookup_success_file = None
-                ref.delete()
+    # FAILED
+    else:
+        analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
+        # Delete previous output
+        if analysis.input_file:
+            ref = analysis.input_file
+            analysis.input_file = None
+            ref.delete()
 
-            if analysis.lookup_validation_file:
-                ref = analysis.lookup_validation_file
-                analysis.lookup_validation_file = None
-                ref.delete()
+        if analysis.lookup_errors_file:
+            ref = analysis.lookup_errors_file
+            analysis.lookup_errors_file = None
+            ref.delete()
 
-            if analysis.summary_levels_file:
-                ref = analysis.summary_levels_file
-                analysis.summary_levels_file = None
-                ref.delete()
+        if analysis.lookup_success_file:
+            ref = analysis.lookup_success_file
+            analysis.lookup_success_file = None
+            ref.delete()
 
-            if analysis.input_generation_traceback_file:
-                ref = analysis.input_generation_traceback_file
-                analysis.input_generation_traceback_file = None
-                ref.delete()
+        if analysis.lookup_validation_file:
+            ref = analysis.lookup_validation_file
+            analysis.lookup_validation_file = None
+            ref.delete()
 
-        # always store traceback 
-        if traceback_fp:
-            analysis.input_generation_traceback_file = RelatedFile.objects.create(
-                file=str(traceback_fp),
-                filename=str(traceback_fp),
-                content_type='text/plain',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
-        analysis.save()
+        if analysis.summary_levels_file:
+            ref = analysis.summary_levels_file
+            analysis.summary_levels_file = None
+            ref.delete()
 
-    except Exception as e:
-        logger.exception(str(e))
+        if analysis.input_generation_traceback_file:
+            ref = analysis.input_generation_traceback_file
+            analysis.input_generation_traceback_file = None
+            ref.delete()
+
+    # always store traceback
+    if traceback_fp:
+        analysis.input_generation_traceback_file = RelatedFile.objects.create(
+            file=str(traceback_fp),
+            filename=str(traceback_fp),
+            content_type='text/plain',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
+    analysis.save()
 
 
 @celery_app.task(name='record_run_analysis_failure')
