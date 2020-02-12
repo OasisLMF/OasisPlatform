@@ -734,7 +734,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                         "gul_threshold": 0,
                         "model_settings": {
                           "use_random_number_file": True,
-                          "event_occurrence_file_id": 1
+                          "event_occurrence_file_id": "1"
                         },
                         "gul_output": True,
                         "gul_summaries": [
@@ -785,7 +785,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                         "gul_threshold": 0,
                         "model_settings": {
                           "use_random_number_file": True,
-                          "event_occurrence_file_id": 1
+                          "event_occurrence_file_id": "1"
                         },
                         "gul_output": True,
                         "gul_summaries": [
