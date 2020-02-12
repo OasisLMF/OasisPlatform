@@ -207,7 +207,7 @@ class RecordSubTaskStart(TestCase):
         task_id = uuid4().hex
 
         with freeze_time(_now):
-            record_sub_task_start(analysis.pk, task_id)
+            record_sub_task_start(analysis.pk, task_id, 'some_queue')
 
         status = AnalysisTaskStatus.objects.get(analysis=analysis, task_id=task_id)
 
@@ -221,7 +221,7 @@ class RecordSubTaskStart(TestCase):
             status = fake_analysis_task_status()
 
         with freeze_time(_now):
-            record_sub_task_start(status.analysis.pk, status.task_id)
+            record_sub_task_start(status.analysis.pk, status.task_id, 'some_queue')
 
         status.refresh_from_db()
 

@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
 
-from typing import List, Set
+from typing import List
 
 from celery.result import AsyncResult
 
@@ -15,12 +15,12 @@ from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
-from .consumers import send_task_status_message, TaskStatusMessageItem, TaskStatusMessageAnalysisItem
+from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, TaskStatusMessageAnalysisItem
 from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
-from ..queues.utils import filter_queues_info, get_queues_info
+from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
@@ -52,14 +52,14 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
         ]
 
         send_task_status_message([TaskStatusMessageItem(
-            queue=filter_queues_info(queue)[0],
+            queue=q,
             analyses=[
                 TaskStatusMessageAnalysisItem(
                     analysis=analysis,
                     updated_tasks=statuses,
                 )
             ]
-        )])
+        ) for q in filter_queues_info(queue)])
 
     def update(self, **kwargs):
         res = super().update(**kwargs)

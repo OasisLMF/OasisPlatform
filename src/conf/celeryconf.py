@@ -73,6 +73,6 @@ def crontab_from_string(s):
 CELERYBEAT_SCHEDULE = {
     'send_queue_status_digest': {
         'task': 'send_queue_status_digest',
-        'schedule': crontab_from_string(settings.get('celery', 'queue_status_digest_schedule', fallback='* * * * *')),
+        'schedule': crontab_from_string(settings.get('celery', 'queue_status_digest_schedule', fallback='*/5 * * * *')),
     }
 }

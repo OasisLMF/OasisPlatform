@@ -27,7 +27,7 @@ def build_task_status_message(items: List[TaskStatusMessageItem]):
 
     content = {
         'time': DateTimeField().to_representation(now()),
-        'type': 'analysis_task_status.updated',
+        'type': 'queue_status.updated',
         'content': [
             {
                 'queue': QueueSerializer(instance=item.queue).data,
@@ -48,13 +48,13 @@ def build_task_status_message(items: List[TaskStatusMessageItem]):
 def send_task_status_message(items: List[TaskStatusMessageItem]):
     layer = get_channel_layer()
     async_to_sync(layer.group_send)(
-        'analysis_task_status',
+        'queue_status',
         build_task_status_message(items)
     )
 
 
-class TaskStatusConsumer(AsyncJsonWebsocketConsumer):
-    groups = ['analysis_task_status']
+class QueueStatusConsumer(AsyncJsonWebsocketConsumer):
+    groups = ['queue_status']
 
-    async def analysis_task_status_updated(self, event):
+    async def queue_status_updated(self, event):
         await self.send_json(event)

@@ -105,9 +105,10 @@ class StartAnalysisTask(TestCase):
         with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
         patch('src.model_execution_worker.tasks.notify_api_task_started') as api_notify:
             start_analysis_task.update_state = Mock()
-            start_analysis_task(pk, location, analysis_settings_path)
+            start_analysis_task.push_request(id='foo', delivery_info={'routing_key': 'some_queue'})
+            start_analysis_task.run(pk, location, analysis_settings_path)
 
-            api_notify.assert_called_once_with(pk, ANY)
+            api_notify.assert_called_once_with(pk, 'foo', 'some_queue')
             start_analysis_task.update_state.assert_called_once_with(state=OASIS_TASK_STATUS["running"]["id"])
             start_analysis_mock.assert_called_once_with(
                 os.path.join(settings.get('worker', 'media_root'), analysis_settings_path),

@@ -16,7 +16,7 @@ def echo(app, message):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument('--url', default='ws://localhost:8000/ws/tasks/')
+        parser.add_argument('--url', default='ws://localhost:8000/ws/v1/queue-status/')
 
     def handle(self, *args, **options):
         app = WebSocketApp(

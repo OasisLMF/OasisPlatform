@@ -1,7 +1,7 @@
 from celery.task import task
 from .utils import get_queues_info
 from ..analyses.models import Analysis
-from ..analyses.consumers import send_task_status_message, TaskStatusMessageItem, TaskStatusMessageAnalysisItem
+from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, TaskStatusMessageAnalysisItem
 
 
 @task(name='send_queue_status_digest')

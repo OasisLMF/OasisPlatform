@@ -205,11 +205,6 @@ LOGGING = {
 }
 
 
-if IN_TEST:
-    BROKER_URL = 'memory://'
-    LOGGING['root'] = {}
-
-
 SWAGGER_SETTINGS = {
     'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
@@ -231,3 +226,12 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+if IN_TEST:
+    BROKER_URL = 'memory://'
+    LOGGING['root'] = {}
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
