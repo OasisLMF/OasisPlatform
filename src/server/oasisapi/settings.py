@@ -148,9 +148,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-STORAGE_TYPE = iniconf.settings.get('server', 'storage_type', fallback=None)
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html 
+STORAGE_TYPE = iniconf.settings.get('server', 'storage_type', fallback="")
 if STORAGE_TYPE.lower() == 'aws-s3':
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
