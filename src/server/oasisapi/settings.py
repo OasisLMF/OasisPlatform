@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'rest_framework_simplejwt.token_blacklist',
+    'storages',
 
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
@@ -130,27 +131,57 @@ AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallba
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
-
+#
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
+MEDIA_URL = '/media/'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
+
+STORAGE_TYPE = iniconf.settings.get('server', 'storage_type', fallback=None)
+
+# https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html 
+if STORAGE_TYPE.lower() == 'aws-s3':
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+    # Authenticate with S3
+    AWS_ACCESS_KEY_ID = iniconf.settings.get('server', 'AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = iniconf.settings.get('server', 'AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = iniconf.settings.get('server', 'AWS_BUCKET_NAME')
+    
+    # S3 Configuration options .
+    AWS_DEFAULT_ACL = iniconf.settings.get('server', 'AWS_DEFAULT_ACL', fallback=None)
+    AWS_S3_CUSTOM_DOMAIN = iniconf.settings.get('server', 'AWS_S3_CUSTOM_DOMAIN', fallback=None)
+    AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='api-server')
+    AWS_S3_REGION_NAME = iniconf.settings.get('server', 'AWS_S3_REGION_NAME', fallback=None)
+    
+    # Presigned generated URLs for private buckets 
+    AWS_QUERYSTRING_AUTH = iniconf.settings.get('server', 'AWS_URL_AUTH', fallback=True)
+    AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_URL_EXPIRE', fallback=180)
+
+    # General optimization for faster delivery
+    AWS_IS_GZIPPED = True
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    } 
+
+#elif STORAGE_TYPE == '<something-else>':
+
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
+
+
 
 # https://github.com/davesque/django-rest-framework-simplejwt
 SIMPLE_JWT = {
