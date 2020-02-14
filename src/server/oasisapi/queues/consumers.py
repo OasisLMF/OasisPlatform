@@ -56,5 +56,9 @@ def send_task_status_message(items: List[TaskStatusMessageItem]):
 class QueueStatusConsumer(AsyncJsonWebsocketConsumer):
     groups = ['queue_status']
 
+    async def connect(self):
+        if self.scope['user'].is_authenticated:
+            await super().connect()
+
     async def queue_status_updated(self, event):
         await self.send_json(event)
