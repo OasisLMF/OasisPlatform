@@ -4,11 +4,8 @@ import glob
 import json
 import logging
 import os
+import subprocess
 import shutil
-import subprocess
-import tarfile
-import uuid
-import subprocess
 
 import fasteners
 import tempfile
@@ -28,6 +25,7 @@ from pathlib2 import Path
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
+from .storage_manager import BaseStorageConnector
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -39,6 +37,9 @@ RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 CELERY = Celery()
 CELERY.config_from_object(celery_conf)
 logging.info("Started worker")
+
+filestorage = BaseStorageConnector(settings)
+
 
 ## Required ENV
 logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
@@ -153,8 +154,11 @@ def get_lock():
         lock.release()
 
 
-def get_oasislmf_config_path(model_id):
+def get_oasislmf_config_path(model_id=None):
     conf_var = settings.get('worker', 'oasislmf_config', fallback=None)
+    if not model_id:
+        model_id = settings.get('worker', 'model_id')
+
     if conf_var:
         return conf_var
 
@@ -164,20 +168,6 @@ def get_oasislmf_config_path(model_id):
         return str(model_specific_conf)
 
     return str(Path(model_root, 'oasislmf.json'))
-
-
-def get_unique_filename(ext):
-    """Create a unique filename using a random UUID4.
-
-    Args:
-        ext (str): File extension to use.
-
-    Returns:
-        str: A random unique filename.
-
-    """
-    filename = "{}{}".format(uuid.uuid4().hex, ext)
-    return filename
 
 
 # Send notification back to the API Once task is read from Queue
@@ -225,7 +215,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
             notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, traceback_location, log_location, return_code = start_analysis(
-                os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
+                analysis_settings_file,
                 input_location,
                 complex_data_files=complex_data_files
             )
@@ -254,16 +244,15 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
 
-    media_root = settings.get('worker', 'MEDIA_ROOT')
-    input_archive = os.path.join(media_root, input_location)
+    # Fetch generated inputs 
+    input_archive = filestorage.get(input_location)
 
     if not os.path.exists(input_archive):
         raise MissingInputsException(input_archive)
     if not tarfile.is_tarfile(input_archive):
         raise InvalidInputsException(input_archive)
 
-    model_id = settings.get('worker', 'model_id')
-    config_path = get_oasislmf_config_path(model_id)
+    config_path = get_oasislmf_config_path()
 
     tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
 
@@ -303,9 +292,11 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         if alloc_rule_ri:
             run_args += ['--ktools-alloc-rule-ri', alloc_rule_ri]
 
-        if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
-            run_args += ['--user-data-dir', input_data_dir]
+# REFACTOR prepare_complex_model_file_inputs
+
+#        if complex_data_files:
+#            prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
+#            run_args += ['--user-data-dir', input_data_dir]
 
         if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
             run_args.append('--ktools-disable-guard')
@@ -388,14 +379,15 @@ def generate_input(analysis_pk,
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
-    location_file = os.path.join(media_root, loc_file)
-    accounts_file = os.path.join(media_root, acc_file) if acc_file else None
-    ri_info_file = os.path.join(media_root, info_file) if info_file else None
-    ri_scope_file = os.path.join(media_root, scope_file) if scope_file else None
-    lookup_settings_file = os.path.join(media_root, settings_file) if settings_file else None
 
-    model_id = settings.get('worker', 'model_id')
-    config_path = get_oasislmf_config_path(model_id)
+    # Fetch input files 
+    location_file        = filestore.get(loc_file)
+    accounts_file        = filestore.get(acc_file)
+    ri_info_file         = filestore.get(info_file)
+    ri_scope_file        = filestore.get(scope_file)
+    lookup_settings_file = filestore.get(settings_file)
+
+    config_path = get_oasislmf_config_path()
 
     tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
     if complex_data_files:
@@ -439,53 +431,27 @@ def generate_input(analysis_pk,
         logging.info('stdout: {}'.format(result.stdout.decode()))
         logging.info('stderr: {}'.format(result.stderr.decode()))
 
-        # Process Generated Files
+        # Find Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
         lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
-        # Traceback file (stdout + stderr)
-        traceback_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
-        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
-            if result.stdout:
-                f.write(result.stdout.decode())
-            if result.stderr:    
-                f.write(result.stderr.decode())
+        # Store result files 
+        traceback         = filestore.put(filestore.create_traceback(result))
+        lookup_error      = filestore.put(lookup_error_fp)       
+        lookup_success    = filestore.put(lookup_success_fp)
+        lookup_validation = filestore.put(lookup_validation_fp)
+        summary_levels    = filestore.put(summary_levels_fp)
+        output_tar_path   = filestore.put(oasis_files_dir)
 
-        if lookup_error_fp:
-            hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
-            shutil.copy(lookup_error_fp, hashed_filename)
-            lookup_error_fp = str(Path(hashed_filename).relative_to(media_root))
+        #logging.info("output_tar_fp: {}".format(output_tar_path))
+        #logging.info("lookup_error_fp: {}".format(lookup_error_fp))
+        #logging.info("lookup_success_fp: {}".format(lookup_success_fp))
+        #logging.info("lookup_validation_fp: {}".format(lookup_validation_fp))
+        #logging.info("summary_levels_fp: {}".format(summary_levels_fp))
 
-        if lookup_success_fp:
-            hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
-            shutil.copy(lookup_success_fp, hashed_filename)
-            lookup_success_fp = str(Path(hashed_filename).relative_to(media_root))
-
-        if lookup_validation_fp:
-            hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
-            shutil.copy(lookup_validation_fp, hashed_filename)
-            lookup_validation_fp = str(Path(hashed_filename).relative_to(media_root))
-
-        if summary_levels_fp:
-            hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
-            shutil.copy(summary_levels_fp, hashed_filename)
-            summary_levels_fp = str(Path(hashed_filename).relative_to(media_root))
-
-        output_tar_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
-        output_tar_path = str(Path(output_tar_name).relative_to(media_root))
-
-        logging.info("output_tar_fp: {}".format(output_tar_path))
-        logging.info("lookup_error_fp: {}".format(lookup_error_fp))
-        logging.info("lookup_success_fp: {}".format(lookup_success_fp))
-        logging.info("lookup_validation_fp: {}".format(lookup_validation_fp))
-        logging.info("summary_levels_fp: {}".format(summary_levels_fp))
-
-        with tarfile.open(output_tar_name, 'w:gz') as tar:
-            tar.add(oasis_files_dir, arcname='/')
-
-        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_location, result.returncode
+        return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, result.returncode
 
 
 @task(name='on_error')

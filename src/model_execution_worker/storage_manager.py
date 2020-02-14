@@ -98,13 +98,31 @@ class BaseStorageConnector(object):
         )
 
         if os.path.isfile(reference):
+            stored_fp = os.path.join(
+                self.media_root,
+                self._get_unique_filename(ext)
+            )
             return shutil.copy(reference, stored_fp)
+
         elif os.path.isdir(reference):
+            stored_fp = os.path.join(
+                self.media_root,
+                self._get_unique_filename('tar.gz')
+            )
             self.compress(stored_fp, reference, arcname)
             return stored_fp
+
         else:
             return None
 
+    def create_traceback(self, subprocess_run):
+        traceback_location = self._get_unique_filename(LOG_FILE_SUFFIX)
+        with open(traceback_location, 'w') as f:
+            if subprocess_run.stdout:
+                f.write(subprocess_run.stdout.decode())
+            if subprocess_run.stderr:
+                f.write(subprocess_run.stderr.decode())
+        return os.path.abspath(traceback_location)
 
 class AwsObjectStore(BaseStorageConnector):
     def __init__(self, conf_location):
@@ -112,4 +130,3 @@ class AwsObjectStore(BaseStorageConnector):
 
     def connect(self, *args, **kwargs):
         raise NotImplementedError
-
