@@ -8,6 +8,7 @@ services:
      dockerfile: Dockerfile.api_server
    ports:
      - 8000:8000
+     - 51970:51970
    links:
      - server-db
      - celery-db

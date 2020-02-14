@@ -19,8 +19,8 @@ COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
 RUN chmod +x /usr/local/bin/startup /usr/local/bin/wait-for-it
 
 COPY ./conf.ini ./
-COPY ./uwsgi ./uwsgi
-RUN chmod +x ./uwsgi/run-uwsgi.sh
+COPY ./asgi ./asgi
+RUN chmod +x ./asgi/run-asgi.sh
 COPY manage.py .
 COPY ./src/utils/set_default_user.py .
 COPY ./src/utils/server_bashrc /root/.bashrc
@@ -37,6 +37,7 @@ RUN OASIS_API_SECRET_KEY=supersecret python manage.py collectstatic --noinput
 ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
 
 EXPOSE 8000
+EXPOSE 51970
 
 ENTRYPOINT ["startup"]
-CMD ["./uwsgi/run-uwsgi.sh"]
+CMD ["./asgi/run-asgi.sh"]

@@ -1,8 +1,8 @@
-from channels.auth import AuthMiddlewareStack, UserLazyObject
+from channels.auth import UserLazyObject
 from channels.middleware import BaseMiddleware
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.contrib.auth.models import AnonymousUser
-from django.urls import path, include
+from django.urls import path
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from src.server.oasisapi.queues.routing import websocket_urlpatterns
