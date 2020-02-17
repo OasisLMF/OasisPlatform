@@ -25,7 +25,7 @@ from pathlib2 import Path
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
-from .storage_manager import BaseStorageConnector
+from .storage_manager import StorageManager
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -38,7 +38,7 @@ CELERY = Celery()
 CELERY.config_from_object(celery_conf)
 logging.info("Started worker")
 
-filestorage = BaseStorageConnector(settings)
+filestorage = StorageManager(settings)
 
 
 ## Required ENV
@@ -244,15 +244,15 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
 
+    config_path = get_oasislmf_config_path()
+
     # Fetch generated inputs 
     input_archive = filestorage.get(input_location)
-
     if not os.path.exists(input_archive):
         raise MissingInputsException(input_archive)
     if not tarfile.is_tarfile(input_archive):
         raise InvalidInputsException(input_archive)
 
-    config_path = get_oasislmf_config_path()
 
     tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
 
@@ -263,9 +263,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
 
     with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
 
-        oasis_files_dir = os.path.join(run_dir, 'input')
-        with tarfile.open(input_archive) as f:
-            f.extractall(oasis_files_dir)
+        oasis_files_dir = filestore.extract(input_archive, run_dir)
 
         run_args = [
             '--oasis-files-dir', oasis_files_dir,
@@ -321,28 +319,16 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         logging.info('stderr: {}'.format(result.stderr.decode()))
 
         # Traceback file (stdout + stderr)
-        traceback_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
-        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
-            if result.stdout:
-                f.write(result.stdout.decode())
-            if result.stderr:    
-                f.write(result.stderr.decode())
+        traceback_file = filestorage.create_traceback(result)
+        traceback_location = filestorage.put(traceback_file)
 
         # Ktools log Tar file 
-        log_location = None
         log_directory = os.path.join(run_dir, "log")
-        if os.path.exists(log_directory):
-            log_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
-            logging.info("Log location = {}".format(log_location))
-            with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), log_location), "w:gz") as tar:
-                tar.add(log_directory, arcname="log")
+        log_location = filestore.put(log_directory, suffix=ARCHIVE_FILE_SUFFIX)
 
-        # Results Tar 
+        # Results dir 
         output_directory = os.path.join(run_dir, "output")
-        output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
-        logging.info("Output location = {}".format(output_location))
-        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
-            tar.add(output_directory, arcname="output")
+        output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
 
     return output_location, traceback_location, log_location, result.returncode
 
