@@ -429,7 +429,7 @@ def generate_input(analysis_pk,
         lookup_success    = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels    = filestore.put(summary_levels_fp)
-        output_tar_path   = filestore.put(oasis_files_dir, suffix='tar.gz', arcname='./')
+        output_tar_path   = filestore.put(oasis_files_dir)
 
         #logging.info("output_tar_fp: {}".format(output_tar_path))
         #logging.info("lookup_error_fp: {}".format(lookup_error_fp))

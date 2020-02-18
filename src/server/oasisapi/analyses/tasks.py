@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import uuid
+import os
 
 from celery.utils.log import get_task_logger
 from celery import Task
@@ -19,6 +20,49 @@ from ..celery import celery_app
 logger = get_task_logger(__name__)
 
 
+def is_valid_url(url):
+    from urllib.parse import urlparse
+    result = urlparse(url)
+    return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
+
+def store_file(reference, content_type, creator):
+    import tempfile
+    import wget
+    from urllib.request import urlopen
+    import sys
+    sys.stdout.fileno = lambda: 0
+
+    if is_valid_url(reference):
+
+        # METHOD 1 - Download content and turn into a file object 
+        # download and create File Object 
+        #f = urlopen(reference)
+        #file_contents = f.read()
+
+        # METHOD 2 - Download to a tmp location and pass the file refrence for storage 
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            file_location = wget.download(reference, tmp_dir)
+            return RelatedFile.objects.create(
+                file=file_location,
+                filename=os.path.basename(file_location),
+                content_type=content_type,
+                creator=creator,
+            )
+
+    elif os.path.isfile(reference):
+        # create RelatedFile object from filepath
+        return RelatedFile.objects.create(
+            file=reference,
+            filename=os.path.basename(reference),
+            content_type=content_type,
+            creator=creator,
+        )
+    
+    else: 
+        # File Storage error
+        raise IOError('Error storing file reference: {}'.format(reference)) 
+
+
 class LogTaskError(Task):
     # from gist https://gist.github.com/darklow/c70a8d1147f05be877c3
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -27,6 +71,7 @@ class LogTaskError(Task):
         except Exception as e:
             logger.info('Unhandled Exception in: {}'.format(self.name))
             logger.exception(str(e))
+
         super(LogTaskError, self).on_failure(exc, task_id, args, kwargs, einfo)
 
     def handle_task_failure(self, exc, task_id, args, kwargs, traceback):
@@ -43,30 +88,40 @@ class LogTaskError(Task):
             analysis = Analysis.objects.get(pk=analysis_pk)
             random_filename = '{}.txt'.format(uuid.uuid4().hex)
             traceback_msg = "worker-monitor error:\n {}".format(traceback)
-
             analysis.task_finished = timezone.now()
+
+            # Store status first, incase issue is in file storage
             if self.name == 'record_generate_input_result':
                 analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
-                analysis.input_generation_traceback_file = RelatedFile.objects.create(
-                    file=File(StringIO(traceback_msg), name=random_filename),
-                    filename=random_filename,
-                    content_type='text/plain',
-                    creator=get_user_model().objects.get(pk=initiator_pk),
-                )
-
             if self.name == 'record_run_analysis_result':
                 analysis.status = Analysis.status_choices.RUN_ERROR
-                analysis.run_traceback_file = RelatedFile.objects.create(
-                    file=File(StringIO(traceback_msg), name=random_filename),
-                    filename=random_filename,
-                    content_type='text/plain',
-                    creator=get_user_model().objects.get(pk=initiator_pk),
-                )
-                if analysis.run_log_file:
-                    analysis.run_log_file.delete()
-                    analysis.run_log_file = None
 
-            analysis.save()
+            # Store Error to traceback file
+            try: 
+                if self.name == 'record_generate_input_result':
+                    analysis.input_generation_traceback_file = RelatedFile.objects.create(
+                        file=File(StringIO(traceback_msg), name=random_filename),
+                        filename=random_filename,
+                        content_type='text/plain',
+                        creator=initiator,
+                    )
+
+                if self.name == 'record_run_analysis_result':
+                    analysis.run_traceback_file = RelatedFile.objects.create(
+                        file=File(StringIO(traceback_msg), name=random_filename),
+                        filename=random_filename,
+                        content_type='text/plain',
+                        creator=initiator,
+                    )
+                    if analysis.run_log_file:
+                        analysis.run_log_file.delete()
+                        analysis.run_log_file = None
+                analysis.save()            
+
+            except Exception as e:                        
+                # ensure error status is stored (if storage fails)
+                analysis.save()
+                raise e
 
 
 @celery_app.task(name='run_register_worker')
@@ -149,36 +204,41 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
 
     # Store results
     if return_code == 0:
-        analysis.output_file = RelatedFile.objects.create(
-            file=str(output_location),
-            filename=str(output_location),
-            content_type='application/gzip',
-            creator=initiator,
-        )
+        #analysis.output_file = RelatedFile.objects.create(
+        #    file=str(output_location),
+        #    filename=str(output_location),
+        #    content_type='application/gzip',
+        #    creator=initiator,
+        #)
+        analysis.output_file = store_file(output_location, 'application/gzip', initiator)
+
+
     elif analysis.output_file:
         analysis.output_file.delete()
         analysis.output_file = None
 
     # Store Ktools logs
     if log_location:
-        analysis.run_log_file = RelatedFile.objects.create(
-            file=str(log_location),
-            filename=str(log_location),
-            content_type='application/gzip',
-            creator=initiator,
-        )
+        #analysis.run_log_file = RelatedFile.objects.create(
+        #    file=str(log_location),
+        #    filename=str(log_location),
+        #    content_type='application/gzip',
+        #    creator=initiator,
+        #)
+        analysis.run_log_file = store_file(log_location, 'application/gzip', initiator)
     elif analysis.run_log_file:
         analysis.run_log_file.delete()
         analysis.run_log_file = None
 
     # record the error file
     if traceback_location:
-        analysis.run_traceback_file = RelatedFile.objects.create(
-            file=str(traceback_location),
-            filename=str(traceback_location),
-            content_type='text/plain',
-            creator=initiator,
-        )
+        #analysis.run_traceback_file = RelatedFile.objects.create(
+        #    file=str(traceback_location),
+        #    filename=str(traceback_location),
+        #    content_type='text/plain',
+        #    creator=initiator,
+        #)
+        analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator)
     analysis.save()
 
 
@@ -200,44 +260,54 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
 
     analysis = Analysis.objects.get(pk=analysis_pk)
     analysis.task_finished = timezone.now()
+    initiator = get_user_model().objects.get(pk=initiator_pk) 
 
     # SUCCESS
     if return_code == 0:
         analysis.status = Analysis.status_choices.READY
-        analysis.input_file = RelatedFile.objects.create(
-            file=str(input_location),
-            filename=str(input_location),
-            content_type='application/gzip',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
-        analysis.lookup_errors_file = RelatedFile.objects.create(
-            file=str(lookup_error_fp),
-            filename=str('keys-errors.csv'),
-            content_type='text/csv',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
-        analysis.lookup_success_file = RelatedFile.objects.create(
-            file=str(lookup_success_fp),
-            filename=str('gul_summary_map.csv'),
-            content_type='text/csv',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
-        analysis.lookup_validation_file = RelatedFile.objects.create(
-            file=str(lookup_validation_fp),
-            filename=str('exposure_summary_report.json'),
-            content_type='application/json',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
+        analysis.input_file = store_file(input_location, 'application/gzip', initiator)
+        analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/cs', initiator)
+        analysis.lookup_success_file = store_file(lookup_success_fp, 'text/cs', initiator)
+        analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator)
+        analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator)
 
-        analysis.summary_levels_file = RelatedFile.objects.create(
-            file=str(summary_levels_fp),
-            filename=str('exposure_summary_levels.json'),
-            content_type='application/json',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
+        #analysis.input_file = RelatedFile.objects.create(
+        #    file=str(input_location),
+        #    filename=str(input_location),
+        #    content_type='application/gzip',
+        #    creator=get_user_model().objects.get(pk=initiator_pk),
+        #)
+        
+        #analysis.lookup_errors_file = RelatedFile.objects.create(
+        #    file=str(lookup_error_fp),
+        #    filename=str('keys-errors.csv'),
+        #    content_type='text/csv',
+        #    creator=get_user_model().objects.get(pk=initiator_pk),
+        #)
+
+        #analysis.lookup_success_file = RelatedFile.objects.create(
+        #    file=str(lookup_success_fp),
+        #    filename=str('gul_summary_map.csv'),
+        #    content_type='text/csv',
+        #    creator=get_user_model().objects.get(pk=initiator_pk),
+        #)
+
+        #analysis.lookup_validation_file = RelatedFile.objects.create(
+        #    file=str(lookup_validation_fp),
+        #    filename=str('exposure_summary_report.json'),
+        #    content_type='application/json',
+        #    creator=get_user_model().objects.get(pk=initiator_pk),
+        #)
+
+        #analysis.summary_levels_file = RelatedFile.objects.create(
+        #    file=str(summary_levels_fp),
+        #    filename=str('exposure_summary_levels.json'),
+        #    content_type='application/json',
+        #    creator=get_user_model().objects.get(pk=initiator_pk),
+        #)
 
 
-    # FAILED
+    # FAIL351ED
     else:
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
         # Delete previous output
@@ -273,12 +343,13 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
 
     # always store traceback
     if traceback_fp:
-        analysis.input_generation_traceback_file = RelatedFile.objects.create(
-            file=str(traceback_fp),
-            filename=str(traceback_fp),
-            content_type='text/plain',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
+        analysis.input_generation_traceback_file = store_file(traceback_fp, 'text/plain', initiator)
+        #analysis.input_generation_traceback_file = RelatedFile.objects.create(
+        #    file=str(traceback_fp),
+        #    filename=str(traceback_fp),
+        #    content_type='text/plain',
+        #    creator=get_user_model().objects.get(pk=initiator_pk),
+        #)
     analysis.save()
 
 
