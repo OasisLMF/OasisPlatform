@@ -150,8 +150,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html 
-STORAGE_TYPE = iniconf.settings.get('server', 'storage_type', fallback="")
-if STORAGE_TYPE.lower() == 'aws-s3':
+STORAGE_TYPE = iniconf.settings.get('server', 'storage_type', fallback="").lower()
+if STORAGE_TYPE == 'aws-s3':
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
     # Authenticate with S3

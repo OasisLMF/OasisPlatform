@@ -25,7 +25,7 @@ from pathlib2 import Path
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
-from .storage_manager import StorageManager
+from .storage_manager import StorageSelector
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -38,7 +38,7 @@ CELERY = Celery()
 CELERY.config_from_object(celery_conf)
 logging.info("Started worker")
 
-filestorage = StorageManager(settings)
+filestore = StorageSelector(settings)
 
 
 ## Required ENV
@@ -247,7 +247,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     config_path = get_oasislmf_config_path()
 
     # Fetch generated inputs 
-    input_archive = filestorage.get(input_location)
+    input_archive = filestore.get(input_location)
     if not os.path.exists(input_archive):
         raise MissingInputsException(input_archive)
     if not tarfile.is_tarfile(input_archive):
@@ -319,8 +319,8 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         logging.info('stderr: {}'.format(result.stderr.decode()))
 
         # Traceback file (stdout + stderr)
-        traceback_file = filestorage.create_traceback(result)
-        traceback_location = filestorage.put(traceback_file)
+        traceback_file = filestore.create_traceback(result)
+        traceback_location = filestore.put(traceback_file)
 
         # Ktools log Tar file 
         log_directory = os.path.join(run_dir, "log")
@@ -429,7 +429,7 @@ def generate_input(analysis_pk,
         lookup_success    = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels    = filestore.put(summary_levels_fp)
-        output_tar_path   = filestore.put(oasis_files_dir)
+        output_tar_path   = filestore.put(oasis_files_dir, suffix='tar.gz', arcname='./')
 
         #logging.info("output_tar_fp: {}".format(output_tar_path))
         #logging.info("lookup_error_fp: {}".format(lookup_error_fp))

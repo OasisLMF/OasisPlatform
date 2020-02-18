@@ -13,19 +13,18 @@ LOG_FILE_SUFFIX = '.txt'
 ARCHIVE_FILE_SUFFIX = '.tar'
 
 
-class StorageManager(object):
+def StorageSelector(settings_conf):
     """ Instantiate a storage connector based on workers config
     """
-    def __init__(self, settings_conf):
-        selected_storage = settings_conf.set('worker', 'STORAGE_TYPE', None)
+    selected_storage = settings_conf.get('worker', 'STORAGE_TYPE', fallback=None)
 
-        if selected_storage.lower() in ['aws-s3', 'aws', 's3']:
-            return AwsObjectStore(settings_conf)
-        #elif storage_type == '<azure enum>':
-        #    return AzureObjectStore( ... )
-            
-        else:
-            return BaseStorageConnector(settings_conf)
+    if selected_storage.lower() in ['aws-s3', 'aws', 's3']:
+        return AwsObjectStore(settings_conf)
+    #elif storage_type == '<azure enum>':
+    #    return AzureObjectStore( ... )
+        
+    else:
+        return BaseStorageConnector(settings_conf)
 
 class MissingInputsException(OasisException):
     def __init__(self, input_filepath):
@@ -77,7 +76,7 @@ class BaseStorageConnector(object):
         with tarfile.open(archive_fp, 'w:gz') as tar:
             tar.add(directory, arcname=arcname)
 
-    def get(self, reference, download_dir=None):
+    def get(self, reference, download_dir=""):
         """
             Top level 'get from storage' function
 
@@ -90,9 +89,14 @@ class BaseStorageConnector(object):
                     return sf-share + filename
         """
         if self._is_valid_url(reference):
+            ## Workaround for celery 
+            # https://github.com/celery/celery/issues/928 
+            import sys
+            sys.stdout.fileno = lambda: 0
+
             return wget.download(
                 url=reference, 
-                out=os.path.abspath(download_dir)
+           #     out=os.path.abspath(download_dir)
             )
         elif isinstance(reference, str):
             filepath = os.path.join(
