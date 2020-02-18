@@ -22,7 +22,7 @@ def StorageSelector(settings_conf):
         return AwsObjectStore(settings_conf)
     #elif storage_type == '<azure enum>':
     #    return AzureObjectStore( ... )
-        
+
     else:
         return BaseStorageConnector(settings_conf)
 
@@ -59,7 +59,7 @@ class BaseStorageConnector(object):
             self.media_root,
             self._get_unique_filename(ext))
         return shutil.copy(file_path, stored_fp)
-        
+
     def _store_dir(self, directory_path, suffix=None, arcname=None):
             ext = 'tar.gz' if not suffix else suffix
             stored_fp = os.path.join(
@@ -72,7 +72,8 @@ class BaseStorageConnector(object):
         with tarfile.open(archive_fp) as f:
             f.extractall(directory)
 
-    def compress(self, archive_fp, directory, arcname='/'):
+    def compress(self, archive_fp, directory, arcname=None):
+        arcname = arcname if arcname else '/'
         with tarfile.open(archive_fp, 'w:gz') as tar:
             tar.add(directory, arcname=arcname)
 
@@ -89,13 +90,13 @@ class BaseStorageConnector(object):
                     return sf-share + filename
         """
         if self._is_valid_url(reference):
-            ## Workaround for celery 
-            # https://github.com/celery/celery/issues/928 
+            ## Workaround for celery
+            # https://github.com/celery/celery/issues/928
             import sys
             sys.stdout.fileno = lambda: 0
 
             return wget.download(
-                url=reference, 
+                url=reference,
            #     out=os.path.abspath(download_dir)
             )
         elif isinstance(reference, str):
@@ -208,7 +209,7 @@ class AwsObjectStore(BaseStorageConnector):
         return self._bucket
 
 
-    """ TODO - Might be too dangrous to set policy based on conf file 
+    """ TODO - Might be too dangrous to set policy based on conf file
     def _get_bucket_policy(self):
         pass
     def _set_lifecycle(self, ):
@@ -240,13 +241,16 @@ class AwsObjectStore(BaseStorageConnector):
         """
         params = parameters.copy() if parameters else {}
         params['Bucket'] = self.bucket.name
-        params['Key'] = object_name
+        if self.location:
+            params['Key'] = os.path.join(self.location, object_name)
+        else:    
+            params['Key'] = object_name
 
         if expire is None:
             expire = self.querystring_expire
 
         return self.bucket.meta.client.generate_presigned_url(
-            'get_object', 
+            'get_object',
             Params=params,
             ExpiresIn=expire)
 
@@ -263,6 +267,6 @@ class AwsObjectStore(BaseStorageConnector):
             params['ACL'] = self.default_acl
 
         self.bucket.upload_file(
-            filepath, 
-            object_key, 
+            filepath,
+            object_key,
             ExtraArgs=params)
