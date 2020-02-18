@@ -1,5 +1,7 @@
 oasislmf>=1.4.7rc1
 celery
+wget
+boto3
 configparser
 fasteners
 pathlib2
