@@ -44,7 +44,10 @@ def _handle_post_related_file(parent, field, request, content_types):
     setattr(parent, field, instance)
     parent.save()
 
-    return Response(RelatedFileSerializer(instance=instance, content_types=content_types).data)
+    # Override 'file' return to hide storage details with stored filename
+    response = Response(RelatedFileSerializer(instance=instance, content_types=content_types).data)
+    response.data['file'] = instance.file.name
+    return response
 
 
 def _handle_delete_related_file(parent, field):
@@ -86,8 +89,11 @@ def _json_write_to_file(parent, field, request, serializer):
     instance = serializer.create(serializer.validated_data)
     setattr(parent, field, instance)
     parent.save()
-    return Response(RelatedFileSerializer(instance=instance, content_types='application/json').data)
-    
+
+    # Override 'file' return to hide storage details with stored filename
+    response = Response(RelatedFileSerializer(instance=instance, content_types='application/json').data) 
+    response.data['file'] = instance.file.name
+    return response
 
 def _json_read_from_file(parent, field):
     f = getattr(parent, field)
