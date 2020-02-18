@@ -69,7 +69,6 @@ def _json_write_to_file(parent, field, request, serializer):
             size=len(data.encode('utf-8')),
             charset=None
         )
-    import ipdb; ipdb.set_trace()
 
     # wrap and re-open file
     file_obj = QueryDict('', mutable=True)
