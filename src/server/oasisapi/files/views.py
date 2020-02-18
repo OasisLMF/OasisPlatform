@@ -61,7 +61,7 @@ def _json_write_to_file(parent, field, request, serializer):
     data = json_serializer.validate(request.data)
 
     # create file object
-    with open(json_serializer.filenmame, 'w+') as f:
+    with open(json_serializer.filenmame, 'wb+') as f:
         in_memory_file = UploadedFile(
             file=f, 
             name=json_serializer.filenmame,
@@ -69,13 +69,14 @@ def _json_write_to_file(parent, field, request, serializer):
             size=len(data.encode('utf-8')),
             charset=None
         )
+    import ipdb; ipdb.set_trace()
 
     # wrap and re-open file
     file_obj = QueryDict('', mutable=True)
     file_obj.update({'file': in_memory_file})
     file_obj['file'].open()
     file_obj['file'].seek(0)
-    file_obj['file'].write(data)
+    file_obj['file'].write(data.encode('utf-8'))
     serializer = RelatedFileSerializer(
         data=file_obj, 
         content_types='application/json', 
