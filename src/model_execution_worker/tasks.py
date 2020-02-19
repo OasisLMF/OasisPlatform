@@ -32,8 +32,8 @@ from .storage_manager import StorageSelector
 Celery task wrapper for Oasis ktools calculation.
 '''
 
-LOG_FILE_SUFFIX = '.txt'
-ARCHIVE_FILE_SUFFIX = '.tar.gz'
+LOG_FILE_SUFFIX = 'txt'
+ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 CELERY = Celery()
 CELERY.config_from_object(celery_conf)
@@ -291,11 +291,9 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         if alloc_rule_ri:
             run_args += ['--ktools-alloc-rule-ri', alloc_rule_ri]
 
-        # REFACTOR prepare_complex_model_file_inputs
-        
-        #if complex_data_files:
-        #    prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
-        #    run_args += ['--user-data-dir', input_data_dir]
+        if complex_data_files:
+            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
+            run_args += ['--user-data-dir', input_data_dir]
 
         if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
             run_args.append('--ktools-disable-guard')
@@ -320,7 +318,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         logging.info('stderr: {}'.format(result.stderr.decode()))
 
         # Traceback file (stdout + stderr)
-        traceback_file = filestore.create_traceback(result)
+        traceback_file = filestore.create_traceback(result, run_dir)
         traceback_location = filestore.put(traceback_file)
 
         # Ktools log Tar file
@@ -392,15 +390,20 @@ def generate_input(analysis_pk,
 
         if accounts_file:
             run_args += ['--oed-accounts-csv', accounts_file]
+
         if ri_info_file:
             run_args += ['--oed-info-csv', ri_info_file]
+
         if ri_scope_file:
             run_args += ['--oed-scope-csv', ri_scope_file]
+
         if lookup_settings_file:
             run_args += ['--lookup-complex-config-json', lookup_settings_file]
+
         if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
+            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
+
         if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
             run_args.append('--disable-summarise-exposure')
 
@@ -426,18 +429,13 @@ def generate_input(analysis_pk,
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
         # Store result files
-        traceback         = filestore.put(filestore.create_traceback(result))
+        traceback_file    = filestore.create_traceback(result, oasis_files_dir)
+        traceback         = filestore.put(traceback_file)
         lookup_error      = filestore.put(lookup_error_fp)
         lookup_success    = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels    = filestore.put(summary_levels_fp)
         output_tar_path   = filestore.put(oasis_files_dir)
-
-        #logging.info("output_tar_fp: {}".format(output_tar_path))
-        #logging.info("lookup_error_fp: {}".format(lookup_error_fp))
-        #logging.info("lookup_success_fp: {}".format(lookup_success_fp))
-        #logging.info("lookup_validation_fp: {}".format(lookup_validation_fp))
-        #logging.info("summary_levels_fp: {}".format(summary_levels_fp))
 
         return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, result.returncode
 
@@ -458,7 +456,7 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
     ).delay()
 
 
-def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run_directory):
+def prepare_complex_model_file_inputs(complex_model_files, run_directory):
     """Places the specified complex model files in the run_directory.
 
     The unique upload filenames are converted back to the original upload names, so that the
@@ -469,7 +467,6 @@ def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run
     Args:
         complex_model_files (list of complex_model_data_file): List of dicts giving the files
             to make available.
-        upload_directory (str): Source directory containing the uploaded files with unique filenames.
         run_directory (str): Model inputs directory to place the files in.
 
     Returns:
@@ -477,10 +474,21 @@ def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run
 
     """
     for cmf in complex_model_files:
-        from_path = os.path.join(upload_directory, cmf[STORED_FILENAME])
-        to_path = os.path.join(run_directory, cmf[ORIGINAL_FILENAME])
+        stored_fn = cmf[STORED_FILENAME]
+        orig_fn = cmf[ORIGINAL_FILENAME]
 
-        if os.name == 'nt':
-            shutil.copy(from_path, to_path)
+        if filestore._is_valid_url(stored_fn):
+            # If reference is a URL, then download the file & rename to 'original_filename'
+            fpath = filestore.get(stored_fn, run_directory)
+            shutil.move(fpath, os.path.join(run_directory, orig_fn))
+        elif os.path.isfile(stored_fn):
+            # If refrence is local filepath check that it exisits and copy/symlink
+            from_path = filestore.get(stored_fn)
+            to_path = os.path.join(run_directory, orig_fn)
+            if os.name == 'nt':
+                shutil.copy(from_path, to_path)
+            else:
+                os.symlink(from_path, to_path)
         else:
-            os.symlink(from_path, to_path)
+            logging.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))
+            #raise OSError("Complex model file not found: {}".format(stored_fn))

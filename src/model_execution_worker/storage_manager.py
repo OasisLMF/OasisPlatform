@@ -1,22 +1,25 @@
-import re
 import os
-import wget
+import io
 import tarfile
+import tempfile
 import uuid
 import shutil
 import boto3
 
+from urllib.parse import urlparse
+from urllib.request import urlopen
+
 from os import path
 from oasislmf.utils.exceptions import OasisException
 
-LOG_FILE_SUFFIX = '.txt'
-ARCHIVE_FILE_SUFFIX = '.tar'
+LOG_FILE_SUFFIX = 'txt'
+ARCHIVE_FILE_SUFFIX = 'tar.gz'
 
 
 def StorageSelector(settings_conf):
     """ Instantiate a storage connector based on workers config
     """
-    selected_storage = settings_conf.get('worker', 'STORAGE_TYPE', fallback=None)
+    selected_storage = settings_conf.get('worker', 'STORAGE_TYPE', fallback="")
 
     if selected_storage.lower() in ['aws-s3', 'aws', 's3']:
         return AwsObjectStore(settings_conf)
@@ -43,18 +46,14 @@ class BaseStorageConnector(object):
        return "{}.{}".format(uuid.uuid4().hex, suffix)
 
     def _is_valid_url(self, url):
-       # Replace this later?
-        regex = re.compile(
-            r'^(?:http|ftp)s?://' # http:// or https://
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain
-            r'localhost|' #localhost...
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ip
-            r'(?::\d+)?' # optional port
-            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-        return re.match(regex, url) is not None
+        if url:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
+        else:
+            return False
 
-    def _store_file(self, filepath, suffix=None):
-        ext = os.path.splitext(filepath)[-1] if not suffix else suffix
+    def _store_file(self, file_path, suffix=None):
+        ext = file_path.split('.')[-1] if not suffix else suffix
         stored_fp = os.path.join(
             self.media_root,
             self._get_unique_filename(ext))
@@ -77,7 +76,7 @@ class BaseStorageConnector(object):
         with tarfile.open(archive_fp, 'w:gz') as tar:
             tar.add(directory, arcname=arcname)
 
-    def get(self, reference, download_dir=""):
+    def get(self, reference, output_dir=""):
         """
             Top level 'get from storage' function
 
@@ -90,24 +89,27 @@ class BaseStorageConnector(object):
                     return sf-share + filename
         """
         if self._is_valid_url(reference):
-            ## Workaround for celery
-            # https://github.com/celery/celery/issues/928
-            import sys
-            sys.stdout.fileno = lambda: 0
+            response = urlopen(reference)
+            fdata = response.read()
 
-            return wget.download(
-                url=reference,
-           #     out=os.path.abspath(download_dir)
-            )
+            header_fname = response.headers.get('Content-Disposition', '').split('filename=')[-1]
+            fname = header_fname if header_fname else os.path.basename(urlparse(reference).path)
+            fpath = os.path.join(output_dir, fname)
+
+            with io.open(fpath, 'w+b') as f:
+                f.write(fdata)
+            return os.path.abspath(fpath)
+
         elif isinstance(reference, str):
-            filepath = os.path.join(
+            fpath = os.path.join(
                 self.media_root,
                 os.path.basename(reference)
             )
-            if os.path.isfile(filepath):
-                return filepath
+            if os.path.isfile(fpath):
+                #logging.info('Fetch FILE: {}'.format(reference))
+                return os.path.abspath(fpath)
             else:
-                raise MissingInputsException(filepath)
+                raise MissingInputsException(fpath)
 
         else:
             return None
@@ -115,6 +117,8 @@ class BaseStorageConnector(object):
     def put(self, reference, suffix=None, arcname=None):
         """ Top level send to storage function
         """
+        if not reference:
+            return None
         if os.path.isfile(reference):
             return self._store_file(reference, suffix=suffix)
         elif os.path.isdir(reference):
@@ -122,14 +126,16 @@ class BaseStorageConnector(object):
         else:
             return None
 
-    def create_traceback(self, subprocess_run):
-        traceback_location = self._get_unique_filename(LOG_FILE_SUFFIX)
-        with open(traceback_location, 'w') as f:
+
+    def create_traceback(self, subprocess_run, output_dir=""):
+        traceback_file = self._get_unique_filename(LOG_FILE_SUFFIX)
+        fpath = os.path.join(output_dir, traceback_file)
+        with open(fpath, 'w') as f:
             if subprocess_run.stdout:
                 f.write(subprocess_run.stdout.decode())
             if subprocess_run.stderr:
                 f.write(subprocess_run.stderr.decode())
-        return os.path.abspath(traceback_location)
+        return os.path.abspath(fpath)
 
 
 class AwsObjectStore(BaseStorageConnector):
@@ -218,13 +224,13 @@ class AwsObjectStore(BaseStorageConnector):
         # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-example-bucket-policies.html
     """
 
-    def _store_file(self, filepath, suffix=None):
+    def _store_file(self, file_path, suffix=None):
         """ Overloaded function for AWS filestorage
         """
-        ext = os.path.splitext(filepath)[-1] if not suffix else suffix
+        ext = file_path.split('.')[-1] if not suffix else suffix
         object_name = self._get_unique_filename(ext)
 
-        self.upload(object_name, filepath)
+        self.upload(object_name, file_path)
         return self.url(object_name)
 
     def _store_dir(self, directory_path, suffix=None, arcname=None):
@@ -232,8 +238,11 @@ class AwsObjectStore(BaseStorageConnector):
         """
         ext = 'tar.gz' if not suffix else suffix
         object_name = self._get_unique_filename(ext)
-        self.compress(object_name, directory_path, arcname)
-        self.upload(object_name, object_name)
+        with tempfile.TemporaryDirectory() as tmpdir: 
+            archive_path = os.path.join(tmpdir, object_name)
+            self.compress(archive_path, directory_path, arcname)
+            self.upload(object_name, archive_path)
+
         return self.url(object_name)
 
     def url(self, object_name, parameters=None, expire=None):
@@ -243,7 +252,7 @@ class AwsObjectStore(BaseStorageConnector):
         params['Bucket'] = self.bucket.name
         if self.location:
             params['Key'] = os.path.join(self.location, object_name)
-        else:    
+        else:
             params['Key'] = object_name
 
         if expire is None:
@@ -266,7 +275,5 @@ class AwsObjectStore(BaseStorageConnector):
         if self.default_acl:
             params['ACL'] = self.default_acl
 
-        self.bucket.upload_file(
-            filepath,
-            object_key,
-            ExtraArgs=params)
+        #logging.info('Store S3: {} -> {}'.format(filepath, object_key))
+        self.bucket.upload_file(filepath, object_key, ExtraArgs=params)
