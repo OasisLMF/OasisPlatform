@@ -282,11 +282,15 @@ class Analysis(TimeStampedModel):
            """
            Return link to file storage based on 'STORAGE_TYPE' value in settings.py
 
+            storage_obj should point to a `RelatedFile` Obj 
+
            STORAGE_TYPE; 
                 'Default': local filesystem -> return filename
                 'AWS-S3': Remote Object Store -> Return URL with expire time
            """
            # GUARD check for file, return None it missing
+           if not hasattr(storage_obj, 'file'):
+               return None
            if not storage_obj.file:
                return None
 
