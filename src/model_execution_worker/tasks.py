@@ -9,6 +9,7 @@ import shutil
 
 import fasteners
 import tempfile
+import tarfile
 
 from contextlib import contextmanager, suppress
 
@@ -32,7 +33,7 @@ Celery task wrapper for Oasis ktools calculation.
 '''
 
 LOG_FILE_SUFFIX = '.txt'
-ARCHIVE_FILE_SUFFIX = '.tar'
+ARCHIVE_FILE_SUFFIX = '.tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 CELERY = Celery()
 CELERY.config_from_object(celery_conf)
@@ -184,12 +185,12 @@ def notify_api_status(analysis_pk, task_status):
 
 
 @task(name='run_analysis', bind=True)
-def start_analysis_task(self, analysis_pk, input_location, analysis_settings_file, complex_data_files=None):
+def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None):
     """Task wrapper for running an analysis.
 
     Args:
         self: Celery task instance.
-        analysis_settings_file (str): Path to the analysis settings.
+        analysis_settings (str): Path or URL to the analysis settings.
         input_location (str): Path to the input tar file.
         complex_data_files (list of complex_model_data_file): List of dicts containing
             on-disk and original filenames for required complex model data files.
@@ -215,7 +216,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
             notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, traceback_location, log_location, return_code = start_analysis(
-                analysis_settings_file,
+                analysis_settings,
                 input_location,
                 complex_data_files=complex_data_files
             )
@@ -227,7 +228,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
 
 
 @oasis_log()
-def start_analysis(analysis_settings_file, input_location, complex_data_files=None):
+def start_analysis(analysis_settings, input_location, complex_data_files=None):
     """Run an analysis.
 
     Args:
@@ -245,15 +246,6 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     logging.info(str(get_worker_versions()))
 
     config_path = get_oasislmf_config_path()
-
-    # Fetch generated inputs 
-    input_archive = filestore.get(input_location)
-    if not os.path.exists(input_archive):
-        raise MissingInputsException(input_archive)
-    if not tarfile.is_tarfile(input_archive):
-        raise InvalidInputsException(input_archive)
-
-
     tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
 
     if complex_data_files:
@@ -263,7 +255,16 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
 
     with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
 
-        oasis_files_dir = filestore.extract(input_archive, run_dir)
+        # Fetch generated inputs
+        analysis_settings_file = filestore.get(analysis_settings, run_dir)
+        input_archive = filestore.get(input_location, run_dir)
+        if not os.path.exists(input_archive):
+            raise MissingInputsException(input_archive)
+        if not tarfile.is_tarfile(input_archive):
+            raise InvalidInputsException(input_archive)
+
+        oasis_files_dir = os.path.join(run_dir, 'input')
+        filestore.extract(input_archive, oasis_files_dir)
 
         run_args = [
             '--oasis-files-dir', oasis_files_dir,
@@ -290,11 +291,11 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         if alloc_rule_ri:
             run_args += ['--ktools-alloc-rule-ri', alloc_rule_ri]
 
-# REFACTOR prepare_complex_model_file_inputs
-
-#        if complex_data_files:
-#            prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
-#            run_args += ['--user-data-dir', input_data_dir]
+        # REFACTOR prepare_complex_model_file_inputs
+        
+        #if complex_data_files:
+        #    prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
+        #    run_args += ['--user-data-dir', input_data_dir]
 
         if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
             run_args.append('--ktools-disable-guard')
@@ -310,7 +311,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
             " ".join([str(arg) for arg in mdk_args])
         ))
-
+        logging.info(run_args)
         result = subprocess.run(
             ['oasislmf', 'model', 'generate-losses'] + run_args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -322,11 +323,11 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         traceback_file = filestore.create_traceback(result)
         traceback_location = filestore.put(traceback_file)
 
-        # Ktools log Tar file 
+        # Ktools log Tar file
         log_directory = os.path.join(run_dir, "log")
         log_location = filestore.put(log_directory, suffix=ARCHIVE_FILE_SUFFIX)
 
-        # Results dir 
+        # Results dir
         output_directory = os.path.join(run_dir, "output")
         output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
 
@@ -347,7 +348,7 @@ def generate_input(analysis_pk,
     A temporary directory is created to contain the output oasis files.
 
     Args:
-        analysis_pk (int): ID of the analysis. 
+        analysis_pk (int): ID of the analysis.
         loc_file (str): Name of the portfolio locations file.
         acc_file (str): Name of the portfolio accounts file.
         info_file (str): Name of the portfolio reinsurance info file.
@@ -366,13 +367,6 @@ def generate_input(analysis_pk,
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
 
-    # Fetch input files 
-    location_file        = filestore.get(loc_file)
-    accounts_file        = filestore.get(acc_file)
-    ri_info_file         = filestore.get(info_file)
-    ri_scope_file        = filestore.get(scope_file)
-    lookup_settings_file = filestore.get(settings_file)
-
     config_path = get_oasislmf_config_path()
 
     tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
@@ -382,6 +376,14 @@ def generate_input(analysis_pk,
         tmp_input_dir = suppress()
 
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
+
+        # Fetch input files
+        location_file        = filestore.get(loc_file, oasis_files_dir)
+        accounts_file        = filestore.get(acc_file, oasis_files_dir)
+        ri_info_file         = filestore.get(info_file, oasis_files_dir)
+        ri_scope_file        = filestore.get(scope_file, oasis_files_dir)
+        lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
+
         run_args = [
             '--oasis-files-dir', oasis_files_dir,
             '--config', config_path,
@@ -423,9 +425,9 @@ def generate_input(analysis_pk,
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
-        # Store result files 
+        # Store result files
         traceback         = filestore.put(filestore.create_traceback(result))
-        lookup_error      = filestore.put(lookup_error_fp)       
+        lookup_error      = filestore.put(lookup_error_fp)
         lookup_success    = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels    = filestore.put(summary_levels_fp)

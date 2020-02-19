@@ -1,6 +1,6 @@
 import json
 
-from django.core.files.uploadedfile import InMemoryUploadedFile, UploadedFile
+from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
 
@@ -66,7 +66,7 @@ def _json_write_to_file(parent, field, request, serializer):
     # create file object
     with open(json_serializer.filenmame, 'wb+') as f:
         in_memory_file = UploadedFile(
-            file=f, 
+            file=f,
             name=json_serializer.filenmame,
             content_type='application/json',
             size=len(data.encode('utf-8')),
@@ -80,8 +80,8 @@ def _json_write_to_file(parent, field, request, serializer):
     file_obj['file'].seek(0)
     file_obj['file'].write(data.encode('utf-8'))
     serializer = RelatedFileSerializer(
-        data=file_obj, 
-        content_types='application/json', 
+        data=file_obj,
+        content_types='application/json',
         context={'request': request}
     )
 
@@ -91,7 +91,7 @@ def _json_write_to_file(parent, field, request, serializer):
     parent.save()
 
     # Override 'file' return to hide storage details with stored filename
-    response = Response(RelatedFileSerializer(instance=instance, content_types='application/json').data) 
+    response = Response(RelatedFileSerializer(instance=instance, content_types='application/json').data)
     response.data['file'] = instance.file.name
     return response
 
