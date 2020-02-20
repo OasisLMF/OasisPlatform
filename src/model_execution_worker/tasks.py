@@ -130,11 +130,6 @@ def register_worker(sender, **k):
     ).delay()
 
 
-class MissingInputsException(OasisException):
-    def __init__(self, input_archive):
-        super(MissingInputsException, self).__init__('Inputs location not found: {}'.format(input_archive))
-
-
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
         super(InvalidInputsException, self).__init__('Inputs location not a tarfile: {}'.format(input_archive))
@@ -158,15 +153,16 @@ def get_lock():
 def get_oasislmf_config_path(model_id=None):
     conf_var = settings.get('worker', 'oasislmf_config', fallback=None)
     if not model_id:
-        model_id = settings.get('worker', 'model_id')
+        model_id = settings.get('worker', 'model_id', fallback=None)
 
     if conf_var:
         return conf_var
 
-    model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/')
-    model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
-    if model_specific_conf.exists():
-        return str(model_specific_conf)
+    if model_id:
+        model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/')
+        model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
+        if model_specific_conf.exists():
+            return str(model_specific_conf)
 
     return str(Path(model_root, 'oasislmf.json'))
 
@@ -247,6 +243,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
 
     config_path = get_oasislmf_config_path()
     tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
+    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
     if complex_data_files:
         tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
@@ -258,8 +255,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         # Fetch generated inputs
         analysis_settings_file = filestore.get(analysis_settings, run_dir)
         input_archive = filestore.get(input_location, run_dir)
-        if not os.path.exists(input_archive):
-            raise MissingInputsException(input_archive)
         if not tarfile.is_tarfile(input_archive):
             raise InvalidInputsException(input_archive)
 
@@ -363,7 +358,7 @@ def generate_input(analysis_pk,
     logging.info(str(get_worker_versions()))
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
 
-    media_root = settings.get('worker', 'MEDIA_ROOT')
+    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
     config_path = get_oasislmf_config_path()
 

@@ -13,7 +13,8 @@ from mock import patch, Mock, ANY
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
-from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, MissingInputsException, \
+from src.model_execution_worker.storage_manager import MissingInputsException
+from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, \
     start_analysis_task, get_oasislmf_config_path
 
 
@@ -47,18 +48,33 @@ class StartAnalysis(TestCase):
     def test_input_tar_file_does_not_exist___exception_is_raised(self):
         with TemporaryDirectory() as media_root:
             with SettingsPatcher(MEDIA_ROOT=media_root):
-                self.assertRaises(MissingInputsException, start_analysis, {}, 'non-existant-location.tar')
+                Path(media_root, 'analysis_settings.json').touch()
+                with self.assertRaises(MissingInputsException):
+                    start_analysis(
+                        os.path.join(media_root, 'non-existant-location.tar'),
+                        os.path.join(media_root, 'analysis_settings.json')
+                    )
+
+    def test_settings_file_does_not_exist___exception_is_raised(self):
+        with TemporaryDirectory() as media_root:
+            with SettingsPatcher(MEDIA_ROOT=media_root):
+                self.create_tar(str(Path(media_root, 'location.tar')))
+                with self.assertRaises(MissingInputsException):
+                    start_analysis(
+                        os.path.join(media_root, 'location.tar'),
+                        os.path.join(media_root, 'analysis_settings.json')
+                    )
 
     def test_input_location_is_not_a_tar___exception_is_raised(self):
         with TemporaryDirectory() as media_root:
             with SettingsPatcher(MEDIA_ROOT=media_root):
                 Path(media_root, 'not-tar-file.tar').touch()
-
-                self.assertRaises(InvalidInputsException, start_analysis, {}, 'not-tar-file.tar')
+                self.assertRaises(InvalidInputsException, start_analysis, {}, os.path.join(media_root, 'not-tar-file.tar'))
 
     def test_custom_model_runner_does_not_exist___generate_losses_is_called_output_files_are_tared_up(self):
         with TemporaryDirectory() as media_root, \
                 TemporaryDirectory() as model_data_dir, \
+                TemporaryDirectory() as run_dir, \
                 TemporaryDirectory() as work_dir:
             with SettingsPatcher(
                     MODEL_SUPPLIER_ID='supplier',
@@ -68,6 +84,8 @@ class StartAnalysis(TestCase):
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,):
                 self.create_tar(str(Path(media_root, 'location.tar')))
+                Path(media_root, 'analysis_settings.json').touch()
+                Path(run_dir, 'output').mkdir(parents=True)
                 Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
 
                 cmd_instance = Mock()
@@ -75,29 +93,30 @@ class StartAnalysis(TestCase):
                 cmd_instance.stderr = b'errors'
 
                 @contextmanager
-                def fake_temp_dir(*args, **kwargs):
-                    yield 'temp_dir'
+                def fake_run_dir(*args, **kwargs):
+                    yield run_dir
 
                 with patch('src.model_execution_worker.tasks.subprocess.run', Mock(return_value=cmd_instance)) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
-                        patch('src.model_execution_worker.tasks.tarfile') as tarfile, \
-                        patch('src.model_execution_worker.tasks.TemporaryDir', fake_temp_dir):
+                        patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
+                        patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
+                    
                     output_location, log_location, error_location, returncode = start_analysis(
-                        'analysis_settings.json',
-                        'location.tar',
+                        os.path.join(media_root, 'analysis_settings.json'),
+                        os.path.join(media_root, 'location.tar'),
                     )
                     cmd_mock.assert_called_once_with(['oasislmf', 'model', 'generate-losses',
-                        '--oasis-files-dir', 'temp_dir/input',
+                        '--oasis-files-dir', os.path.join(run_dir, 'input'),
                         '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
-                        '--model-run-dir', 'temp_dir',
-                        '--analysis-settings-json', 'analysis_settings.json',
+                        '--model-run-dir', run_dir,
+                        '--analysis-settings-json', os.path.join(media_root, 'analysis_settings.json'),
                         '--ktools-fifo-relative',
                         '--ktools-num-processes', settings.get('worker', 'KTOOLS_NUM_PROCESSES'),
                         '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
                         '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
                         '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')
                     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                    self.assertEqual(tarfile.open.call_args_list[1][0], (str(Path(media_root, output_location)), 'w:gz'))
+                    tarfile.assert_called_once_with(output_location, os.path.join(run_dir, 'output'), 'output')
 
 
 class StartAnalysisTask(TestCase):
@@ -118,7 +137,7 @@ class StartAnalysisTask(TestCase):
             api_notify.assert_called_once_with(pk, 'RUN_STARTED')
             start_analysis_task.update_state.assert_called_once_with(state=OASIS_TASK_STATUS["running"]["id"])
             start_analysis_mock.assert_called_once_with(
-                os.path.join(settings.get('worker', 'media_root'), analysis_settings_path),
+                analysis_settings_path,
                 location,
                 complex_data_files=None
             )
