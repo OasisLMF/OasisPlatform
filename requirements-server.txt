@@ -71,4 +71,4 @@ whitenoise==5.0.1
 zipp==2.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==45.2.0        # via ipython, jsonschema, markdown
+# setuptools
