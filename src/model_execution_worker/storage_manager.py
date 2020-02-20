@@ -122,7 +122,7 @@ class BaseStorageConnector(object):
         if os.path.isfile(reference):
             return self._store_file(reference, suffix=suffix)
         elif os.path.isdir(reference):
-            return self._store_dir(reference, suffix=suffix, arcname=None)
+            return self._store_dir(reference, suffix=suffix, arcname=arcname)
         else:
             return None
 
