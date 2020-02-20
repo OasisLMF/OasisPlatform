@@ -1,10 +1,11 @@
-import os
+import boto3
 import io
+import logging 
+import os
+import shutil
 import tarfile
 import tempfile
 import uuid
-import shutil
-import boto3
 
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -17,7 +18,15 @@ ARCHIVE_FILE_SUFFIX = 'tar.gz'
 
 
 def StorageSelector(settings_conf):
-    """ Instantiate a storage connector based on workers config
+    """ Returns a `StorageConnector` class based on conf.ini
+
+    Call this method from model_execution_worker.task 
+
+    :param settings_conf: Settings object for worker
+    :type settings_conf: src.conf.iniconf.Settings
+
+    :return: Storeage connector class
+    :rtype BaseStorageConnector
     """
     selected_storage = settings_conf.get('worker', 'STORAGE_TYPE', fallback="")
 
@@ -25,17 +34,20 @@ def StorageSelector(settings_conf):
         return AwsObjectStore(settings_conf)
     #elif storage_type == '<azure enum>':
     #    return AzureObjectStore( ... )
-
     else:
         return BaseStorageConnector(settings_conf)
+
 
 class MissingInputsException(OasisException):
     def __init__(self, input_filepath):
         super(MissingInputsException, self).__init__('Input file not found: {}'.format(input_filepath))
 
-class BaseStorageConnector(object):
-    """ Base class to implement a storage service
 
+class BaseStorageConnector(object):
+    """ Base storage class
+
+    Implements storage for a local fileshare between 
+    `server` and `worker` containers
     """
     def __init__(self, setting):
         self.media_root = setting.get('worker', 'MEDIA_ROOT')
@@ -43,9 +55,29 @@ class BaseStorageConnector(object):
         self.settings = setting
 
     def _get_unique_filename(self, suffix=""):
-       return "{}.{}".format(uuid.uuid4().hex, suffix)
+        """ Returns a unique name
+
+        Parameters
+        ----------
+        :param suffix: Set the filename extension 
+        :type suffix: str 
+
+        :return: filename string
+        :rtype str 
+        """
+        return "{}.{}".format(uuid.uuid4().hex, suffix)
 
     def _is_valid_url(self, url):
+        """ Check if a String is a valid url
+
+        Parameters
+        ----------
+        :param url: String to check
+        :type url: str 
+            
+        :return: `True` if URL otherwise `False`
+        :rtype boolean
+        """
         if url:
             result = urlparse(url)
             return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
@@ -53,6 +85,21 @@ class BaseStorageConnector(object):
             return False
 
     def _store_file(self, file_path, suffix=None):
+        """ Copy a file to `media_root` 
+        
+        Places the file in `self.media_root` which is the shared storage location
+
+        Parameters
+        ----------
+        :param file_path: The path to the file to store.
+        :type  file_path: str 
+            
+        :param suffix: Set the filename extension 
+        :type  suffix: str 
+
+        :return: The absolute stored file path
+        :rtype str
+        """
         ext = file_path.split('.')[-1] if not suffix else suffix
         stored_fp = os.path.join(
             self.media_root,
@@ -60,33 +107,87 @@ class BaseStorageConnector(object):
         return shutil.copy(file_path, stored_fp)
 
     def _store_dir(self, directory_path, suffix=None, arcname=None):
-            ext = 'tar.gz' if not suffix else suffix
-            stored_fp = os.path.join(
-                self.media_root,
-                self._get_unique_filename(ext))
-            self.compress(stored_fp, directory_path, arcname)
-            return stored_fp
+        """ Compress and store a directory
+
+        Creates a compressed .tar.gz of all files under `directory_path`
+        Then copies it to `self.media_root`
+
+        Parameters
+        ----------
+        :param directory_path: Path to a directory for upload
+        :type  directory_path: str
+
+        :param suffix: Set the filename extension 
+                       defaults to `tar.gz` 
+        :type suffix: str 
+
+        :param arcname: If given, `arcname' set an alternative 
+                        name for the file in the archive.
+        :type arcname: str 
+         
+        :return: The absolute stored file path
+        :rtype str
+        """
+        ext = 'tar.gz' if not suffix else suffix
+        stored_fp = os.path.join(
+            self.media_root,
+            self._get_unique_filename(ext))
+        self.compress(stored_fp, directory_path, arcname)
+        return stored_fp
 
     def extract(self, archive_fp, directory):
+        """ Extract tar file
+
+        Parameters
+        ----------
+        :param archive_fp: Path to archive file
+        :type  archive_fp: str
+
+        :param directory: Path to extract contents to. 
+        :type  directory: str
+        """
         with tarfile.open(archive_fp) as f:
             f.extractall(directory)
 
     def compress(self, archive_fp, directory, arcname=None):
+        """ Compress a directory
+        
+        Parameters
+        ----------
+        :param archive_fp: Path to archive file
+        :type  archive_fp: str
+
+        :param directory: Path to extract contents to. 
+        :type  directory: str
+
+        :param arcname: If given, `arcname' set an alternative 
+                        name for the file in the archive.
+        :type arcname: str 
+        """
         arcname = arcname if arcname else '/'
         with tarfile.open(archive_fp, 'w:gz') as tar:
             tar.add(directory, arcname=arcname)
 
     def get(self, reference, output_dir=""):
-        """
-            Top level 'get from storage' function
+        """ Retrieve stored object
 
-            Case m: 'reference' is a URL to a remote file, download
-                    to `dest` location if set or CWD if None
+        Top level 'get from storage' function
+        Check if `reference` is either download `URL` or filename 
 
-            Case n: 'reference' is a valid path to a shared volumne file
-                    copy to 'dest' if set to a valid filepath
+        If URL: download the object and place in `output_dir`
+        If Filename: return stored file path of the shared object 
 
-                    return sf-share + filename
+        Parameters
+        ----------
+        :param reference: Filename or download URL
+        :type  reference: str
+
+        :param output_dir: If given, download to that directory.  
+        :type  output_dir: str 
+
+
+        :return: Absolute filepath to stored Object
+        :rtype str 
         """
         if self._is_valid_url(reference):
             response = urlopen(reference)
@@ -115,7 +216,27 @@ class BaseStorageConnector(object):
             return None
 
     def put(self, reference, suffix=None, arcname=None):
-        """ Top level send to storage function
+        """ Place object in storage 
+        
+        Top level send to storage function,
+        Create new connector classes by Overriding 
+        `self._store_file( .. )` and `self._store_dir( .. )`
+
+        Parameters
+        ----------
+        :param reference: Path to either a `File` or `Directory`
+        :type  reference: str
+
+        :param arcname: If given, `arcname' set an alternative 
+                        name for the file in the archive.
+        :type arcname: str 
+
+        :param suffix: Set the filename extension defaults to `tar.gz` 
+        :type suffix: str 
+
+        :return: access storage reference returned from self._store_file, self._store_dir
+                 This will either be a pre-signed URL or absolute filepath 
+        :rtype str 
         """
         if not reference:
             return None
@@ -140,15 +261,42 @@ class BaseStorageConnector(object):
 
 class AwsObjectStore(BaseStorageConnector):
     def __init__(self, settings):
-        # https://github.com/jschneier/django-storages/blob/master/storages/backends/s3boto3.py
-        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#id244
+        """ Storage Connector for Amazon S3 
 
+        Store objects in a bucket common to a single worker pool. Returns a pre-signed URL 
+        as a response to the server which is downloaded and stored by Django-storage module
+
+        Documentation 
+        -------------
+        https://github.com/jschneier/django-storages/blob/master/storages/backends/s3boto3.py
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#id244
+
+        TODO
+        ----
+
+        * Add optional local caching 
+        * option to set object expiry policy on bucket
+        
+            def _get_bucket_policy(self):
+                pass
+            def _set_lifecycle(self, ):
+                pass
+                https://stackoverflow.com/questions/14969273/s3-object-expiration-using-boto
+                https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-example-bucket-policies.html
+        
+        Parameters
+        ----------
+        :param settings_conf: Settings object for worker
+        :type settings_conf: src.conf.iniconf.Settings
+        """
+        # Required
         self.storage_connector = 'AWS-S3'
         self._bucket = None
         self._connection = None
         self.access_key = settings.get('worker', 'AWS_ACCESS_KEY_ID')
         self.secret_key = settings.get('worker', 'AWS_SECRET_ACCESS_KEY')
 
+        # Optional 
         self.file_overwrite = settings.get('worker', 'AWS_S3_FILE_OVERWRITE', fallback=True)
         self.object_parameters = settings.get('worker', 'AWS_S3_OBJECT_PARAMETERS', fallback={})
         self.bucket_name = settings.get('worker', 'AWS_BUCKET_NAME')
@@ -157,17 +305,19 @@ class AwsObjectStore(BaseStorageConnector):
         self.bucket_acl = settings.get('worker', 'AWS_BUCKET_ACL', fallback=self.default_acl)
         self.querystring_auth = settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback=True)
         self.querystring_expire = settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback=3600)
-        #self.signature_version = settings.get('worker', 'AWS_S3_SIGNATURE_VERSION')
         self.reduced_redundancy = settings.get('worker', 'AWS_REDUCED_REDUNDANCY', fallback=False)
         self.location = settings.get('worker', 'AWS_LOCATION', fallback='')
         self.encryption = settings.get('worker', 'AWS_S3_ENCRYPTION', fallback=False)
         self.security_token = settings.get('worker', 'AWS_SECURITY_TOKEN', fallback=None)
-        #self.custom_domain = settings.get('worker', 'AWS_S3_CUSTOM_DOMAIN')
-        #self.addressing_style = settings.get('worker', 'AWS_S3_ADDRESSING_STYLE')
         self.secure_urls = settings.get('worker', 'AWS_S3_SECURE_URLS', fallback=True)
         self.file_name_charset = settings.get('worker', 'AWS_S3_FILE_NAME_CHARSET', fallback='utf-8')
         self.gzip = settings.get('worker', 'AWS_IS_GZIPPED', fallback=False)
         self.preload_metadata = settings.get('worker', 'AWS_PRELOAD_METADATA', fallback=False)
+        self.url_protocol = settings.get('worker', 'AWS_S3_URL_PROTOCOL', fallback='http:')
+        self.region_name = settings.get('worker', 'AWS_S3_REGION_NAME', fallback=None)
+        self.use_ssl = settings.get('worker', 'AWS_S3_USE_SSL', fallback=True)
+        self.verify = settings.get('worker', 'AWS_S3_VERIFY', fallback=None)
+        self.max_memory_size = settings.get('worker', 'AWS_S3_MAX_MEMORY_SIZE', fallback=0)
         self.gzip_content_types = settings.get('worker', 'GZIP_CONTENT_TYPES', fallback=(
             'text/css',
             'text/javascript',
@@ -175,19 +325,15 @@ class AwsObjectStore(BaseStorageConnector):
             'application/x-javascript',
             'image/svg+xml',
         ))
-        self.url_protocol = settings.get('worker', 'AWS_S3_URL_PROTOCOL', fallback='http:')
-        #self.endpoint_url = settings.get('worker', 'AWS_S3_ENDPOINT_URL')
-        #self.proxies = settings.get('worker', 'AWS_S3_PROXIES')
-        self.region_name = settings.get('worker', 'AWS_S3_REGION_NAME', fallback=None)
-        self.use_ssl = settings.get('worker', 'AWS_S3_USE_SSL', fallback=True)
-        self.verify = settings.get('worker', 'AWS_S3_VERIFY', fallback=None)
-        self.max_memory_size = settings.get('worker', 'AWS_S3_MAX_MEMORY_SIZE', fallback=0)
-
         super(AwsObjectStore, self).__init__(settings)
+
 
     @property
     def connection(self):
-        """
+        """ Creates an S3 boto3 session
+
+        based on conf.ini or environment variables based on
+        a subset of variables used in Django-Storage AWS S3
         """
         if self._connection is None:
             session = boto3.session.Session()
@@ -198,16 +344,15 @@ class AwsObjectStore(BaseStorageConnector):
                 aws_session_token=self.security_token,
                 region_name=self.region_name,
                 use_ssl=self.use_ssl,
-                #endpoint_url=self.endpoint_url,
-                #config=self.config,
                 verify=self.verify,
             )
         return self._connection
 
     @property
     def bucket(self):
-        """
-        Get the current bucket. If there is no current bucket object
+        """ Get the current bucket. 
+        
+        If there is no current bucket object
         create it.
         """
         if self._bucket is None:
@@ -215,17 +360,24 @@ class AwsObjectStore(BaseStorageConnector):
         return self._bucket
 
 
-    """ TODO - Might be too dangrous to set policy based on conf file
-    def _get_bucket_policy(self):
-        pass
-    def _set_lifecycle(self, ):
-        pass
-        # https://stackoverflow.com/questions/14969273/s3-object-expiration-using-boto
-        # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-example-bucket-policies.html
-    """
-
     def _store_file(self, file_path, suffix=None):
-        """ Overloaded function for AWS filestorage
+        """ Overloaded function for AWS file storage
+
+        Uploads the Object pointed to by `file_path` 
+        with a unique filename 
+
+        Parameters
+        ----------
+        :param file_path: Path to a file object for upload
+        :type file_path: str
+
+        :param suffix: Set the filename extension 
+        :type suffix: str 
+
+        :return: Download URL for uploaded object 
+                 Expires after (n) seconds set by 
+                 `AWS_QUERYSTRING_EXPIRE`
+        :rtype str 
         """
         ext = file_path.split('.')[-1] if not suffix else suffix
         object_name = self._get_unique_filename(ext)
@@ -234,7 +386,28 @@ class AwsObjectStore(BaseStorageConnector):
         return self.url(object_name)
 
     def _store_dir(self, directory_path, suffix=None, arcname=None):
-        """ Overloaded function for AWS filestorage
+        """ Overloaded function for AWS Directory storage
+
+        Creates a compressed .tar.gz of all files under `directory_path`
+        Then uploads the tar to S3 with a unique filename
+
+        Parameters
+        ----------
+        :param directory_path: Path to a directory for upload
+        :type directory_path: str
+
+        :param suffix: Set the filename extension 
+                       defaults to `tar.gz` 
+        :type suffix: str 
+
+        :param arcname: If given, `arcname' set an alternative 
+                        name for the file in the archive.
+        :type arcname: str 
+         
+
+        :return: Download URL for uploaded object 
+                 Expires after (n) seconds set by 
+                 `AWS_QUERYSTRING_EXPIRE`
         """
         ext = 'tar.gz' if not suffix else suffix
         object_name = self._get_unique_filename(ext)
@@ -246,7 +419,29 @@ class AwsObjectStore(BaseStorageConnector):
         return self.url(object_name)
 
     def url(self, object_name, parameters=None, expire=None):
-        """
+        """ Return Pre-signed URL 
+        
+        Download URL to `object_name` in the connected bucket with a 
+        fixed expire time
+
+        Documentation 
+        -------------
+        https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-presigned-urls.html
+
+
+        Parameters
+        ----------
+        :param object_name: 'key' or name of object in bucket
+        :type  object_name: str
+        
+        :param parameters: Dictionary of parameters to send to the method (BOTO3)
+        :type  parameters: dict 
+
+        :param expire: Time in seconds for the presigned URL to remain valid
+        :type  expire: int 
+
+        :return: Presigned URL as string. If error, returns None.
+        :rtype str 
         """
         params = parameters.copy() if parameters else {}
         params['Bucket'] = self.bucket.name
@@ -264,7 +459,25 @@ class AwsObjectStore(BaseStorageConnector):
             ExpiresIn=expire)
 
     def upload(self, object_name, filepath, ExtraArgs=None):
-        """
+        """ Wrapper for BOTO3 bucket upload 
+
+        Documentation 
+        -------------
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_file
+
+
+        Parameters
+        ----------
+        :param object_name: 'key' or object name to upload as
+        :type  object_name: str
+        
+        :param filepath: The path to the file to upload.
+        :type  filepath: str
+
+        :param ExtraArgs: Extra arguments that may be passed to the client operation. 
+        :type  ExtraArgs: dict
+
+        :return: None
         """
         object_key = os.path.join(self.location, object_name)
         params = ExtraArgs.copy() if ExtraArgs else {}
