@@ -167,7 +167,7 @@ if STORAGE_TYPE == 'aws-s3':
     
     # Presigned generated URLs for private buckets 
     AWS_QUERYSTRING_AUTH = iniconf.settings.get('server', 'AWS_URL_AUTH', fallback=True)
-    AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_URL_EXPIRE', fallback=180)
+    AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_URL_EXPIRE', fallback=604800)
 
     # General optimization for faster delivery
     AWS_IS_GZIPPED = True

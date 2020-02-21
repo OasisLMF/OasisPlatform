@@ -308,7 +308,7 @@ class AwsObjectStore(BaseStorageConnector):
         self.default_acl = settings.get('worker', 'AWS_DEFAULT_ACL', fallback=None)
         self.bucket_acl = settings.get('worker', 'AWS_BUCKET_ACL', fallback=self.default_acl)
         self.querystring_auth = settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback=True)
-        self.querystring_expire = settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback=3600)
+        self.querystring_expire = settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
         self.reduced_redundancy = settings.get('worker', 'AWS_REDUCED_REDUNDANCY', fallback=False)
         self.location = settings.get('worker', 'AWS_LOCATION', fallback='')
         self.encryption = settings.get('worker', 'AWS_S3_ENCRYPTION', fallback=False)
@@ -424,6 +424,33 @@ class AwsObjectStore(BaseStorageConnector):
         self.logger.info('Stored S3: {} -> {}'.format(directory_path, object_name))
         return self.url(object_name)
 
+    def _strip_signing_parameters(self, url):
+        """ Duplicated Unsiged URLs from Django-Stroage
+        
+        Method from: https://github.com/jschneier/django-storages/blob/master/storages/backends/s3boto3.py
+
+        Boto3 does not currently support generating URLs that are unsigned. Instead we
+        take the signed URLs and strip any querystring params related to signing and expiration.
+        Note that this may end up with URLs that are still invalid, especially if params are
+        passed in that only work with signed URLs, e.g. response header params.
+        The code attempts to strip all query parameters that match names of known parameters
+        from v2 and v4 signatures, regardless of the actual signature version used.
+        """
+        split_url = urlparse.urlsplit(url)
+        qs = urlparse.parse_qsl(split_url.query, keep_blank_values=True)
+        blacklist = {
+            'x-amz-algorithm', 'x-amz-credential', 'x-amz-date',
+            'x-amz-expires', 'x-amz-signedheaders', 'x-amz-signature',
+            'x-amz-security-token', 'awsaccesskeyid', 'expires', 'signature',
+        }
+        filtered_qs = ((key, val) for key, val in qs if key.lower() not in blacklist)
+        # Note: Parameters that did not have a value in the original query string will have
+        # an '=' sign appended to it, e.g ?foo&bar becomes ?foo=&bar=
+        joined_qs = ('='.join(keyval) for keyval in filtered_qs)
+        split_url = split_url._replace(query="&".join(joined_qs))
+        return split_url.geturl()
+
+
     def url(self, object_name, parameters=None, expire=None):
         """ Return Pre-signed URL 
         
@@ -459,10 +486,15 @@ class AwsObjectStore(BaseStorageConnector):
         if expire is None:
             expire = self.querystring_expire
 
-        return self.bucket.meta.client.generate_presigned_url(
+        url = self.bucket.meta.client.generate_presigned_url(
             'get_object',
             Params=params,
             ExpiresIn=expire)
+
+        if self.querystring_auth:
+            return url
+        else:
+            return self._strip_signing_parameters(url)
 
     def upload(self, object_name, filepath, ExtraArgs=None):
         """ Wrapper for BOTO3 bucket upload 
