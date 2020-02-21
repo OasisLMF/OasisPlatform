@@ -49,10 +49,11 @@ class BaseStorageConnector(object):
     Implements storage for a local fileshare between 
     `server` and `worker` containers
     """
-    def __init__(self, setting):
+    def __init__(self, setting, logger=None):
         self.media_root = setting.get('worker', 'MEDIA_ROOT')
         self.storage_connector = 'FS-SHARE'
         self.settings = setting
+        self.logger = logger or logging.getLogger()
 
     def _get_unique_filename(self, suffix=""):
         """ Returns a unique name
@@ -104,6 +105,7 @@ class BaseStorageConnector(object):
         stored_fp = os.path.join(
             self.media_root,
             self._get_unique_filename(ext))
+        self.logger.info('Store file: {} -> {}'.format(file_path, stored_fp))
         return shutil.copy(file_path, stored_fp)
 
     def _store_dir(self, directory_path, suffix=None, arcname=None):
@@ -133,6 +135,7 @@ class BaseStorageConnector(object):
             self.media_root,
             self._get_unique_filename(ext))
         self.compress(stored_fp, directory_path, arcname)
+        self.logger.info('Store dir: {} -> {}'.format(directory_path, stored_fp))
         return stored_fp
 
     def extract(self, archive_fp, directory):
@@ -199,6 +202,7 @@ class BaseStorageConnector(object):
 
             with io.open(fpath, 'w+b') as f:
                 f.write(fdata)
+                logging.info('Get from URL: {}'.format(fname))
             return os.path.abspath(fpath)
 
         elif isinstance(reference, str):
@@ -207,7 +211,7 @@ class BaseStorageConnector(object):
                 os.path.basename(reference)
             )
             if os.path.isfile(fpath):
-                #logging.info('Fetch FILE: {}'.format(reference))
+                logging.info('Get shared file: {}'.format(reference))
                 return os.path.abspath(fpath)
             else:
                 raise MissingInputsException(fpath)
@@ -383,6 +387,7 @@ class AwsObjectStore(BaseStorageConnector):
         object_name = self._get_unique_filename(ext)
 
         self.upload(object_name, file_path)
+        self.logger.info('Stored S3: {} -> {}'.format(file_path, object_name))
         return self.url(object_name)
 
     def _store_dir(self, directory_path, suffix=None, arcname=None):
@@ -416,6 +421,7 @@ class AwsObjectStore(BaseStorageConnector):
             self.compress(archive_path, directory_path, arcname)
             self.upload(object_name, archive_path)
 
+        self.logger.info('Stored S3: {} -> {}'.format(directory_path, object_name))
         return self.url(object_name)
 
     def url(self, object_name, parameters=None, expire=None):
@@ -488,5 +494,4 @@ class AwsObjectStore(BaseStorageConnector):
         if self.default_acl:
             params['ACL'] = self.default_acl
 
-        #logging.info('Store S3: {} -> {}'.format(filepath, object_key))
         self.bucket.upload_file(filepath, object_key, ExtraArgs=params)
