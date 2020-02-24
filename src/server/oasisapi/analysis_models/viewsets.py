@@ -133,6 +133,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
+
     def create(self, *args, **kwargs):
         request = self.request
         keys = {

@@ -118,6 +118,7 @@ class Analysis(TimeStampedModel):
     def get_absolute_run_log_file_url(self, request=None):
         return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+
     def validate_run(self):
         valid_choices = [
             self.status_choices.READY,
@@ -125,13 +126,15 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_ERROR,
             self.status_choices.RUN_CANCELLED,
         ]
-
         if self.status not in valid_choices:
             raise ValidationError(
                 {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
             )
 
         errors = {}
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+
         if not self.settings_file:
             errors['settings_file'] = ['Must not be null']
 
@@ -207,6 +210,9 @@ class Analysis(TimeStampedModel):
         errors = {}
         if self.status not in valid_choices:
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
+
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
 
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
