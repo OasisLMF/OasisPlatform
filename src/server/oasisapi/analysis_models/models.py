@@ -18,6 +18,7 @@ class AnalysisModel(TimeStampedModel):
     ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
     ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
+    deleted = models.BooleanField(default=False, editable=False)
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')
@@ -28,6 +29,17 @@ class AnalysisModel(TimeStampedModel):
     @property
     def queue_name(self):
         return str(self)
+
+    def hard_delete(self):
+        super(AnalysisModel, self).delete()
+    
+    def delete(self):
+        self.deleted = True
+        self.save()
+    
+    def activate(self):
+        self.deleted = False
+        self.save()
 
     def get_absolute_resources_file_url(self, request=None):
         return reverse('analysis-model-resource-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)

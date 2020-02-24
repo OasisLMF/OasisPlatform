@@ -109,7 +109,9 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     Partially updates the specified model (only provided fields are updated)
     """
 
-    queryset = AnalysisModel.objects.all()
+    #queryset = AnalysisModel.objects.all()
+    # Hide soft-deleted Models 
+    queryset = AnalysisModel.objects.filter(deleted=False)
     serializer_class = AnalysisModelSerializer
     filter_class = AnalysisModelFilter
 
@@ -130,6 +132,23 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
+
+    def create(self, *args, **kwargs):
+        request = self.request
+        keys = {
+            "supplier_id": request.data['supplier_id'],
+            "model_id": request.data['model_id'],
+            "version_id": request.data['version_id']
+        }
+        # check if the model is Soft-deleted 
+        if AnalysisModel.objects.filter(**keys).exists():
+            model = AnalysisModel.objects.get(**keys)
+            if model.deleted:
+                # If yes, then 'restore' and return
+                model.activate()
+                return Response(AnalysisModelSerializer(instance=model, 
+                                context=self.get_serializer_context()).data)
+        return super(AnalysisModelViewSet, self).create(self.request)
 
     @action(methods=['get'], detail=True)
     def versions(self, request, pk=None, version=None):
