@@ -135,12 +135,12 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 
 
     def create(self, *args, **kwargs):
-        request = self.request
+        request_data = self.request.data
         unique_keys = ["supplier_id", "model_id", "version_id"]
 
         # check if the model is Soft-deleted 
-        if all(hasattr(request.data, attr) for attr in unique_keys):
-            keys = {k: request.data[k] for k in unique_keys}
+        if all(k in request_data for k in unique_keys):
+            keys = {k: request_data[k] for k in unique_keys}
             if AnalysisModel.objects.filter(**keys).exists():
                 model = AnalysisModel.objects.get(**keys)
                 if model.deleted:
