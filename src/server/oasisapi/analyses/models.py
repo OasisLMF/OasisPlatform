@@ -167,10 +167,12 @@ class Analysis(TimeStampedModel):
     @property
     def run_analysis_signature(self):
         complex_data_files = self.create_complex_model_data_file_dicts()
+        input_file = self.storage_link(self.input_file)
+        settings_file = self.storage_link(self.settings_file)
 
         return signature(
             'run_analysis',
-            args=(self.pk, self.input_file.file.name, self.settings_file.file.name, complex_data_files),
+            args=(self.pk, input_file, settings_file, complex_data_files),
             queue=self.model.queue_name,
         )
 
@@ -247,11 +249,11 @@ class Analysis(TimeStampedModel):
 
     @property
     def generate_input_signature(self):
-        loc_file = self.portfolio.location_file.file.name
-        acc_file = self.portfolio.accounts_file.file.name if self.portfolio.accounts_file else None
-        info_file = self.portfolio.reinsurance_info_file.file.name if self.portfolio.reinsurance_info_file else None
-        scope_file = self.portfolio.reinsurance_scope_file.file.name if self.portfolio.reinsurance_scope_file else None
-        settings_file = self.settings_file.file.name if self.settings_file else None
+        loc_file = self.storage_link(self.portfolio.location_file)
+        acc_file = self.storage_link(self.portfolio.accounts_file)
+        info_file = self.storage_link(self.portfolio.reinsurance_info_file)
+        scope_file = self.storage_link(self.portfolio.reinsurance_scope_file)
+        settings_file = self.storage_link(self.settings_file)
         complex_data_files = self.create_complex_model_data_file_dicts()
 
         return signature(
@@ -269,11 +271,35 @@ class Analysis(TimeStampedModel):
         """
         complex_data_files = [
             {
-                STORED_FILENAME: cmdf.file.file.name,
+                STORED_FILENAME: self.storage_link(cmdf.file),
                 ORIGINAL_FILENAME: cmdf.file.filename
             } for cmdf in self.complex_model_data_files.all()
         ]
         return complex_data_files
+
+
+    def storage_link(self, storage_obj):
+           """
+           Return link to file storage based on 'STORAGE_TYPE' value in settings.py
+
+            storage_obj should point to a `RelatedFile` Obj 
+
+           STORAGE_TYPE; 
+                'Default': local filesystem -> return filename
+                'AWS-S3': Remote Object Store -> Return URL with expire time
+           """
+           # GUARD check for file, return None it missing
+           if not hasattr(storage_obj, 'file'):
+               return None
+           if not storage_obj.file:
+               return None
+
+           # PreSigned URL  
+           if settings.STORAGE_TYPE == 'aws-s3':
+                return storage_obj.file.storage.url(storage_obj.file.name)
+           # Local filesystem ref     
+           else:
+                return storage_obj.file.name
 
     def copy(self):
         new_instance = self

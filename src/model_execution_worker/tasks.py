@@ -4,14 +4,12 @@ import glob
 import json
 import logging
 import os
+import subprocess
 import shutil
-import subprocess
-import tarfile
-import uuid
-import subprocess
 
 import fasteners
 import tempfile
+import tarfile
 
 from contextlib import contextmanager, suppress
 
@@ -28,17 +26,21 @@ from pathlib2 import Path
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
+from .storage_manager import StorageSelector
 
 '''
 Celery task wrapper for Oasis ktools calculation.
 '''
 
-LOG_FILE_SUFFIX = '.txt'
-ARCHIVE_FILE_SUFFIX = '.tar'
+LOG_FILE_SUFFIX = 'txt'
+ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 CELERY = Celery()
 CELERY.config_from_object(celery_conf)
 logging.info("Started worker")
+
+filestore = StorageSelector(settings)
+
 
 ## Required ENV
 logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
@@ -128,11 +130,6 @@ def register_worker(sender, **k):
     ).delay()
 
 
-class MissingInputsException(OasisException):
-    def __init__(self, input_archive):
-        super(MissingInputsException, self).__init__('Inputs location not found: {}'.format(input_archive))
-
-
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
         super(InvalidInputsException, self).__init__('Inputs location not a tarfile: {}'.format(input_archive))
@@ -153,31 +150,21 @@ def get_lock():
         lock.release()
 
 
-def get_oasislmf_config_path(model_id):
+def get_oasislmf_config_path(model_id=None):
     conf_var = settings.get('worker', 'oasislmf_config', fallback=None)
+    if not model_id:
+        model_id = settings.get('worker', 'model_id', fallback=None)
+
     if conf_var:
         return conf_var
 
-    model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/')
-    model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
-    if model_specific_conf.exists():
-        return str(model_specific_conf)
+    if model_id:
+        model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/')
+        model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
+        if model_specific_conf.exists():
+            return str(model_specific_conf)
 
     return str(Path(model_root, 'oasislmf.json'))
-
-
-def get_unique_filename(ext):
-    """Create a unique filename using a random UUID4.
-
-    Args:
-        ext (str): File extension to use.
-
-    Returns:
-        str: A random unique filename.
-
-    """
-    filename = "{}{}".format(uuid.uuid4().hex, ext)
-    return filename
 
 
 # Send notification back to the API Once task is read from Queue
@@ -194,12 +181,12 @@ def notify_api_status(analysis_pk, task_status):
 
 
 @task(name='run_analysis', bind=True)
-def start_analysis_task(self, analysis_pk, input_location, analysis_settings_file, complex_data_files=None):
+def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None):
     """Task wrapper for running an analysis.
 
     Args:
         self: Celery task instance.
-        analysis_settings_file (str): Path to the analysis settings.
+        analysis_settings (str): Path or URL to the analysis settings.
         input_location (str): Path to the input tar file.
         complex_data_files (list of complex_model_data_file): List of dicts containing
             on-disk and original filenames for required complex model data files.
@@ -225,7 +212,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
             notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, traceback_location, log_location, return_code = start_analysis(
-                os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
+                analysis_settings,
                 input_location,
                 complex_data_files=complex_data_files
             )
@@ -237,7 +224,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
 
 
 @oasis_log()
-def start_analysis(analysis_settings_file, input_location, complex_data_files=None):
+def start_analysis(analysis_settings, input_location, complex_data_files=None):
     """Run an analysis.
 
     Args:
@@ -254,18 +241,9 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
 
-    media_root = settings.get('worker', 'MEDIA_ROOT')
-    input_archive = os.path.join(media_root, input_location)
-
-    if not os.path.exists(input_archive):
-        raise MissingInputsException(input_archive)
-    if not tarfile.is_tarfile(input_archive):
-        raise InvalidInputsException(input_archive)
-
-    model_id = settings.get('worker', 'model_id')
-    config_path = get_oasislmf_config_path(model_id)
-
+    config_path = get_oasislmf_config_path()
     tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
+    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
     if complex_data_files:
         tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
@@ -274,9 +252,14 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
 
     with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
 
+        # Fetch generated inputs
+        analysis_settings_file = filestore.get(analysis_settings, run_dir)
+        input_archive = filestore.get(input_location, run_dir)
+        if not tarfile.is_tarfile(input_archive):
+            raise InvalidInputsException(input_archive)
+
         oasis_files_dir = os.path.join(run_dir, 'input')
-        with tarfile.open(input_archive) as f:
-            f.extractall(oasis_files_dir)
+        filestore.extract(input_archive, oasis_files_dir)
 
         run_args = [
             '--oasis-files-dir', oasis_files_dir,
@@ -304,7 +287,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
             run_args += ['--ktools-alloc-rule-ri', alloc_rule_ri]
 
         if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
+            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
 
         if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
@@ -321,7 +304,7 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
             " ".join([str(arg) for arg in mdk_args])
         ))
-
+        logging.info(run_args)
         result = subprocess.run(
             ['oasislmf', 'model', 'generate-losses'] + run_args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -330,28 +313,16 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         logging.info('stderr: {}'.format(result.stderr.decode()))
 
         # Traceback file (stdout + stderr)
-        traceback_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
-        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
-            if result.stdout:
-                f.write(result.stdout.decode())
-            if result.stderr:    
-                f.write(result.stderr.decode())
+        traceback_file = filestore.create_traceback(result, run_dir)
+        traceback_location = filestore.put(traceback_file)
 
-        # Ktools log Tar file 
-        log_location = None
+        # Ktools log Tar file
         log_directory = os.path.join(run_dir, "log")
-        if os.path.exists(log_directory):
-            log_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
-            logging.info("Log location = {}".format(log_location))
-            with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), log_location), "w:gz") as tar:
-                tar.add(log_directory, arcname="log")
+        log_location = filestore.put(log_directory, suffix=ARCHIVE_FILE_SUFFIX)
 
-        # Results Tar 
+        # Results dir
         output_directory = os.path.join(run_dir, "output")
-        output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
-        logging.info("Output location = {}".format(output_location))
-        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
-            tar.add(output_directory, arcname="output")
+        output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
 
     return output_location, traceback_location, log_location, result.returncode
 
@@ -370,7 +341,7 @@ def generate_input(analysis_pk,
     A temporary directory is created to contain the output oasis files.
 
     Args:
-        analysis_pk (int): ID of the analysis. 
+        analysis_pk (int): ID of the analysis.
         loc_file (str): Name of the portfolio locations file.
         acc_file (str): Name of the portfolio accounts file.
         info_file (str): Name of the portfolio reinsurance info file.
@@ -387,15 +358,9 @@ def generate_input(analysis_pk,
     logging.info(str(get_worker_versions()))
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
 
-    media_root = settings.get('worker', 'MEDIA_ROOT')
-    location_file = os.path.join(media_root, loc_file)
-    accounts_file = os.path.join(media_root, acc_file) if acc_file else None
-    ri_info_file = os.path.join(media_root, info_file) if info_file else None
-    ri_scope_file = os.path.join(media_root, scope_file) if scope_file else None
-    lookup_settings_file = os.path.join(media_root, settings_file) if settings_file else None
+    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
-    model_id = settings.get('worker', 'model_id')
-    config_path = get_oasislmf_config_path(model_id)
+    config_path = get_oasislmf_config_path()
 
     tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
     if complex_data_files:
@@ -404,6 +369,14 @@ def generate_input(analysis_pk,
         tmp_input_dir = suppress()
 
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
+
+        # Fetch input files
+        location_file        = filestore.get(loc_file, oasis_files_dir)
+        accounts_file        = filestore.get(acc_file, oasis_files_dir)
+        ri_info_file         = filestore.get(info_file, oasis_files_dir)
+        ri_scope_file        = filestore.get(scope_file, oasis_files_dir)
+        lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
+
         run_args = [
             '--oasis-files-dir', oasis_files_dir,
             '--config', config_path,
@@ -412,15 +385,20 @@ def generate_input(analysis_pk,
 
         if accounts_file:
             run_args += ['--oed-accounts-csv', accounts_file]
+
         if ri_info_file:
             run_args += ['--oed-info-csv', ri_info_file]
+
         if ri_scope_file:
             run_args += ['--oed-scope-csv', ri_scope_file]
+
         if lookup_settings_file:
             run_args += ['--lookup-complex-config-json', lookup_settings_file]
+
         if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, media_root, input_data_dir)
+            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
+
         if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
             run_args.append('--disable-summarise-exposure')
 
@@ -439,53 +417,22 @@ def generate_input(analysis_pk,
         logging.info('stdout: {}'.format(result.stdout.decode()))
         logging.info('stderr: {}'.format(result.stderr.decode()))
 
-        # Process Generated Files
+        # Find Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
         lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
-        # Traceback file (stdout + stderr)
-        traceback_location = uuid.uuid4().hex + LOG_FILE_SUFFIX
-        with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
-            if result.stdout:
-                f.write(result.stdout.decode())
-            if result.stderr:    
-                f.write(result.stderr.decode())
+        # Store result files
+        traceback_file    = filestore.create_traceback(result, oasis_files_dir)
+        traceback         = filestore.put(traceback_file)
+        lookup_error      = filestore.put(lookup_error_fp)
+        lookup_success    = filestore.put(lookup_success_fp)
+        lookup_validation = filestore.put(lookup_validation_fp)
+        summary_levels    = filestore.put(summary_levels_fp)
+        output_tar_path   = filestore.put(oasis_files_dir)
 
-        if lookup_error_fp:
-            hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
-            shutil.copy(lookup_error_fp, hashed_filename)
-            lookup_error_fp = str(Path(hashed_filename).relative_to(media_root))
-
-        if lookup_success_fp:
-            hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
-            shutil.copy(lookup_success_fp, hashed_filename)
-            lookup_success_fp = str(Path(hashed_filename).relative_to(media_root))
-
-        if lookup_validation_fp:
-            hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
-            shutil.copy(lookup_validation_fp, hashed_filename)
-            lookup_validation_fp = str(Path(hashed_filename).relative_to(media_root))
-
-        if summary_levels_fp:
-            hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
-            shutil.copy(summary_levels_fp, hashed_filename)
-            summary_levels_fp = str(Path(hashed_filename).relative_to(media_root))
-
-        output_tar_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
-        output_tar_path = str(Path(output_tar_name).relative_to(media_root))
-
-        logging.info("output_tar_fp: {}".format(output_tar_path))
-        logging.info("lookup_error_fp: {}".format(lookup_error_fp))
-        logging.info("lookup_success_fp: {}".format(lookup_success_fp))
-        logging.info("lookup_validation_fp: {}".format(lookup_validation_fp))
-        logging.info("summary_levels_fp: {}".format(summary_levels_fp))
-
-        with tarfile.open(output_tar_name, 'w:gz') as tar:
-            tar.add(oasis_files_dir, arcname='/')
-
-        return output_tar_path, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_location, result.returncode
+        return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, result.returncode
 
 
 @task(name='on_error')
@@ -504,7 +451,7 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
     ).delay()
 
 
-def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run_directory):
+def prepare_complex_model_file_inputs(complex_model_files, run_directory):
     """Places the specified complex model files in the run_directory.
 
     The unique upload filenames are converted back to the original upload names, so that the
@@ -515,7 +462,6 @@ def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run
     Args:
         complex_model_files (list of complex_model_data_file): List of dicts giving the files
             to make available.
-        upload_directory (str): Source directory containing the uploaded files with unique filenames.
         run_directory (str): Model inputs directory to place the files in.
 
     Returns:
@@ -523,10 +469,21 @@ def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run
 
     """
     for cmf in complex_model_files:
-        from_path = os.path.join(upload_directory, cmf[STORED_FILENAME])
-        to_path = os.path.join(run_directory, cmf[ORIGINAL_FILENAME])
+        stored_fn = cmf[STORED_FILENAME]
+        orig_fn = cmf[ORIGINAL_FILENAME]
 
-        if os.name == 'nt':
-            shutil.copy(from_path, to_path)
+        if filestore._is_valid_url(stored_fn):
+            # If reference is a URL, then download the file & rename to 'original_filename'
+            fpath = filestore.get(stored_fn, run_directory)
+            shutil.move(fpath, os.path.join(run_directory, orig_fn))
+        elif os.path.isfile(stored_fn):
+            # If refrence is local filepath check that it exisits and copy/symlink
+            from_path = filestore.get(stored_fn)
+            to_path = os.path.join(run_directory, orig_fn)
+            if os.name == 'nt':
+                shutil.copy(from_path, to_path)
+            else:
+                os.symlink(from_path, to_path)
         else:
-            os.symlink(from_path, to_path)
+            logging.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))
+            #raise OSError("Complex model file not found: {}".format(stored_fn))
