@@ -136,19 +136,19 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 
     def create(self, *args, **kwargs):
         request = self.request
-        keys = {
-            "supplier_id": request.data['supplier_id'],
-            "model_id": request.data['model_id'],
-            "version_id": request.data['version_id']
-        }
+        unique_keys = ["supplier_id", "model_id", "version_id"]
+
         # check if the model is Soft-deleted 
-        if AnalysisModel.objects.filter(**keys).exists():
-            model = AnalysisModel.objects.get(**keys)
-            if model.deleted:
-                # If yes, then 'restore' and return
-                model.activate()
-                return Response(AnalysisModelSerializer(instance=model, 
-                                context=self.get_serializer_context()).data)
+        if all(hasattr(request.data, attr) for attr in unique_keys):
+            keys = {k: request.data[k] for k in unique_keys}
+            if AnalysisModel.objects.filter(**keys).exists():
+                model = AnalysisModel.objects.get(**keys)
+                if model.deleted:
+                    # If yes, then 'restore' and return
+                    model.activate()
+                    return Response(AnalysisModelSerializer(instance=model, 
+                                    context=self.get_serializer_context()).data)
+
         return super(AnalysisModelViewSet, self).create(self.request)
 
     @action(methods=['get'], detail=True)

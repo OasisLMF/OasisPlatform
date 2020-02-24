@@ -104,9 +104,10 @@ class AnalysisSerializer(serializers.ModelSerializer):
             attrs['creator'] = self.context.get('request').user
 
         # check that model isn't soft-deleted
-        if attrs['model'].deleted:
-            error = {'model': ["Model pk \"{}\" - has been deleted.".format(attrs['model'].id)]}
-            raise ValidationError(detail=error)
+        if hasattr(attrs, 'model'):    
+            if attrs['model'].deleted:
+                error = {'model': ["Model pk \"{}\" - has been deleted.".format(attrs['model'].id)]}
+                raise ValidationError(detail=error)
         return attrs
 
 class AnalysisCopySerializer(AnalysisSerializer):
