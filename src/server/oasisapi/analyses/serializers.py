@@ -1,5 +1,6 @@
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from .models import Analysis
 
@@ -101,8 +102,13 @@ class AnalysisSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if not attrs.get('creator') and 'request' in self.context:
             attrs['creator'] = self.context.get('request').user
-        return attrs
 
+        # check that model isn't soft-deleted
+        if hasattr(attrs, 'model'):    
+            if attrs['model'].deleted:
+                error = {'model': ["Model pk \"{}\" - has been deleted.".format(attrs['model'].id)]}
+                raise ValidationError(detail=error)
+        return attrs
 
 class AnalysisCopySerializer(AnalysisSerializer):
     def __init__(self, *args, **kwargs):

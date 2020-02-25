@@ -38,7 +38,7 @@ class Analysis(TimeStampedModel):
 
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
-    model = models.ForeignKey(AnalysisModel, on_delete=models.DO_NOTHING, related_name='analyses', help_text=_('The model to link the analysis to'))
+    model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NEW, editable=False)
     task_started = models.DateTimeField(editable=False, null=True, default=None)
@@ -118,6 +118,7 @@ class Analysis(TimeStampedModel):
     def get_absolute_run_log_file_url(self, request=None):
         return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+
     def validate_run(self):
         valid_choices = [
             self.status_choices.READY,
@@ -125,13 +126,15 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_ERROR,
             self.status_choices.RUN_CANCELLED,
         ]
-
         if self.status not in valid_choices:
             raise ValidationError(
                 {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
             )
 
         errors = {}
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+
         if not self.settings_file:
             errors['settings_file'] = ['Must not be null']
 
@@ -207,6 +210,9 @@ class Analysis(TimeStampedModel):
         errors = {}
         if self.status not in valid_choices:
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
+
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
 
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']

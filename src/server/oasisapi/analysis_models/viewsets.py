@@ -131,6 +131,24 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
+    def create(self, *args, **kwargs):
+        request_data = self.request.data
+        unique_keys = ["supplier_id", "model_id", "version_id"]
+
+        # check if the model is Soft-deleted 
+        if all(k in request_data for k in unique_keys):
+            keys = {k: request_data[k] for k in unique_keys}
+            model = AnalysisModel.all_objects.filter(**keys)
+            if model.exists():
+                model = model.first()
+                if model.deleted:
+                    # If yes, then 'restore' and update
+                    model.activate(self.request)
+                    return Response(AnalysisModelSerializer(instance=model, 
+                                    context=self.get_serializer_context()).data)
+
+        return super(AnalysisModelViewSet, self).create(self.request)
+
     @action(methods=['get'], detail=True)
     def versions(self, request, pk=None, version=None):
         obj = self.get_object()
