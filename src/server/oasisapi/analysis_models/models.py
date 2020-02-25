@@ -8,6 +8,34 @@ from ..files.models import RelatedFile
 from ..data_files.models import DataFile
 
 
+class SoftDeleteManager(models.Manager):
+    def __init__(self, *args, **kwargs):
+        self.alive_only = kwargs.pop('alive_only', True)
+        super(SoftDeleteManager, self).__init__(*args, **kwargs)
+
+    def get_queryset(self):
+        if self.alive_only:
+            return SoftDeleteQuerySet(self.model).filter(deleted=False)
+        return SoftDeleteQuerySet(self.model)
+
+    def hard_delete(self):
+        return self.get_queryset().hard_delete()
+
+
+class SoftDeleteQuerySet(models.query.QuerySet):
+    def delete(self):
+        return super(SoftDeleteQuerySet, self).update(deleted=True)
+
+    def hard_delete(self):
+        return super(SoftDeleteQuerySet, self).delete()
+
+    def alive(self):
+        return self.filter(deleted=False)
+
+    def dead(self):
+        return self.exclude(deleted=False)
+
+
 class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
@@ -19,6 +47,10 @@ class AnalysisModel(TimeStampedModel):
     ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     deleted = models.BooleanField(default=False, editable=False)
+
+    # Logical Delete
+    objects = SoftDeleteManager()
+    all_objects = SoftDeleteManager(alive_only=False)
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')
@@ -37,8 +69,21 @@ class AnalysisModel(TimeStampedModel):
         self.deleted = True
         self.save()
     
-    def activate(self):
+    def activate(self, request=None):
         self.deleted = False
+
+        # Update model
+        if request:
+            self.creator = request.user
+            try:
+                # update Data_files
+                file_pks = request.data['data_files']
+                for current_file in self.data_files.all():
+                    self.data_files.remove(current_file)
+                for new_file in DataFile.objects.filter(pk__in=file_pks):
+                    self.data_files.add(new_file.id)
+            except KeyError:
+                pass
         self.save()
 
     def get_absolute_resources_file_url(self, request=None):
