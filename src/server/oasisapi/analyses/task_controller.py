@@ -1,17 +1,22 @@
+import json
+import os
+from itertools import chain as iterchain
 from collections import Iterable
-from typing import List, Union, Type, TYPE_CHECKING
 from importlib import import_module
+from math import ceil
+from typing import List, Union, Type, TYPE_CHECKING, Tuple, Optional
 
 from celery import signature, chord
-from celery.canvas import Signature
+from celery.canvas import Signature, chain
 from django.contrib.auth.models import User
 from django.utils.timezone import now
+from oasislmf.utils.data import get_dataframe
 
 from src.common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from src.conf.iniconf import settings
 
 if TYPE_CHECKING:
-    from src.server.oasisapi.analyses import Analysis
+    from src.server.oasisapi.analyses import Analysis, AnalysisTaskStatus
 
 
 class TaskParams:
@@ -50,13 +55,9 @@ class BaseController:
         :param success_callback: The task to queue once all tasks have completed
         :param error_callback: The task to queue if any of the tasks have failed
         """
-        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
         from src.server.oasisapi.analysis_models.models import QueueModelAssociation
 
         _now = now()
-
-        # delete all statuses so that new ones can me created
-        analysis.sub_task_statuses.all().delete()
 
         # create the queue association so that the model can be posted to the websocket
         QueueModelAssociation.objects.get_or_create(model=analysis.model, queue_name=queue)
@@ -69,9 +70,6 @@ class BaseController:
 
             # add task to record the results on failure
             sig.link_error(error_callback)
-
-            # create all the sub task status objects
-            AnalysisTaskStatus.objects.create_statuses(analysis, [sig.delay().id], queue)
         else:
             # if there is a list of param objects start a chord
             signatures = [
@@ -82,9 +80,7 @@ class BaseController:
             success_callback.link_error(error_callback)
             success_callback.link_error(cls.get_chord_error_callback())
             c = chord(signatures, body=success_callback)
-
-            # create all the sub task status objects
-            AnalysisTaskStatus.objects.create_statuses(analysis, [child.id for child in c.delay().parent.children], queue)
+            c.delay()
 
     @classmethod
     def get_subtask_signature(cls, analysis: 'Analysis', initiator:User, task_name: str, params: TaskParams, queue: str) -> signature:
@@ -153,7 +149,15 @@ class BaseController:
         settings_file = analysis.settings_file.file.name if analysis.settings_file else None
         complex_data_files = analysis.create_complex_model_data_file_dicts()
 
-        return TaskParams(analysis.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files)
+        return TaskParams(
+            analysis.pk,
+            loc_file,
+            acc_file=acc_file,
+            info_file=info_file,
+            scope_file=scope_file,
+            settings_file=settings_file,
+            complex_data_files=complex_data_files,
+        )
 
     @classmethod
     def generate_inputs(cls, analysis: 'Analysis', initiator: User):
@@ -163,12 +167,28 @@ class BaseController:
         :param analysis: The analysis to generate input data for
         :param initiator: The user who initiated the task
         """
+        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+
+        queue = cls.get_generate_inputs_queue(analysis, initiator)
+        params = cls.get_generate_inputs_tasks_params(analysis, initiator)
+
+        # delete all statuses so that new ones can me created
+        analysis.sub_task_statuses.all().delete()
+        AnalysisTaskStatus.objects.create_statuses(
+            AnalysisTaskStatus(
+                analysis=analysis,
+                slug=f'input-generation-{idx}',
+                name=f'Input Generation {idx}',
+            )
+            for idx, p in enumerate(params if isinstance(params, Iterable) else [params])
+        )
+
         cls._start(
             analysis,
             initiator,
-            cls.get_generate_inputs_queue(analysis, initiator),
+            queue,
             cls.get_generate_inputs_task_name(analysis, initiator),
-            cls.get_generate_inputs_tasks_params(analysis, initiator),
+            params,
             cls.get_generate_inputs_results_callback(analysis, initiator),
             cls.get_generate_inputs_error_callback(analysis, initiator),
         )
@@ -309,6 +329,157 @@ class BaseController:
             'record_run_analysis_failure',
             args=(analysis.pk, initiator.pk),
         )
+
+
+class ChunkedController(BaseController):
+    INPUT_GENERATION_CHUNK_SIZE = settings.get('worker', 'INPUT_GENERATION_CHUNK_SIZE', fallback=1)
+
+    @classmethod
+    def get_subtask_signature(cls, task_name, analysis, initiator, slug, queue, params: TaskParams) -> Signature:
+        from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
+        sig = signature(
+            task_name,
+            queue=queue,
+            args=params.args,
+            kwargs={'analysis_id': analysis.pk, 'slug': slug, **params.kwargs},
+        )
+
+        # add task to set the status of the sub task status record on success
+        sig.link(record_sub_task_success.s(analysis.pk, initiator.pk))
+        # add task to set the status of the sub task status record on failure
+        sig.link_error(record_sub_task_failure.s(analysis.pk, initiator.pk))
+
+        return sig
+
+    @classmethod
+    def get_subtask_status(cls, analysis: 'Analysis', name: str, slug: str) -> 'AnalysisTaskStatus':
+        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+
+        return AnalysisTaskStatus(
+            analysis=analysis,
+            slug=slug,
+            name=name,
+        )
+
+    @classmethod
+    def get_subtask_statuses_and_signature(
+        cls,
+        task_name,
+        analysis,
+        initiator,
+        status_name,
+        status_slug,
+        queue,
+        params: Optional[TaskParams] = None,
+    ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
+        params = params or TaskParams()
+        return (
+            [cls.get_subtask_status(analysis, status_name, status_slug)],
+            cls.get_subtask_signature(task_name, analysis, initiator, status_slug, queue, params),
+        )
+
+    @classmethod
+    def get_subchord_statuses_and_signature(
+        cls,
+        task_name,
+        analysis,
+        initiator,
+        status_name,
+        status_slug,
+        queue,
+        params: List[TaskParams],
+        body: Tuple['AnalysisTaskStatus', Signature],
+    ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
+        statuses, tasks = zip(*[
+            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, params=p)
+            for idx, p in enumerate(params)
+        ])
+
+        return (
+            list(iterchain(*statuses, body[0])),
+            chord(tasks, body=body[1], queue=queue)
+        )
+
+    @classmethod
+    def generate_inputs(cls, analysis: 'Analysis', initiator: User):
+        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+
+        media_root = settings.get('worker', 'MEDIA_ROOT')
+        location_data = get_dataframe(src_fp=os.path.join(media_root, analysis.portfolio.location_file.file.name))
+
+        num_chunks = ceil(len(location_data) / cls.INPUT_GENERATION_CHUNK_SIZE)
+
+        queue = cls.get_generate_inputs_queue(analysis, initiator)
+
+        statuses_and_tasks = [
+            cls.get_subtask_statuses_and_signature(
+                'prepare_input_generation_params',
+                analysis,
+                initiator,
+                'Prepare input generation params',
+                'prepare-input-generation-params',
+                queue,
+                TaskParams(
+                    loc_file=analysis.portfolio.location_file.file.name,
+                    acc_file=analysis.portfolio.accounts_file.file.name if analysis.portfolio.accounts_file else None,
+                    info_file=analysis.portfolio.reinsurance_info_file.file.name if analysis.portfolio.reinsurance_info_file else None,
+                    scope_file=analysis.portfolio.reinsurance_scope_file.file.name if analysis.portfolio.reinsurance_scope_file else None,
+                    settings_file=analysis.settings_file.file.name if analysis.settings_file else None,
+                    complex_data_files=analysis.create_complex_model_data_file_dicts(),
+                )
+            ),
+            cls.get_subtask_statuses_and_signature(
+                'prepare_inputs_directory',
+                analysis,
+                initiator,
+                'Prepare input directory',
+                'prepare-input-directory',
+                queue,
+            ),
+            cls.get_subchord_statuses_and_signature(
+                'prepare_keys_file_chunk',
+                analysis,
+                initiator,
+                'Prepare keys file',
+                'prepare-keys-file',
+                queue,
+                [TaskParams(idx, num_chunks) for idx in range(num_chunks)],
+                cls.get_subtask_statuses_and_signature(
+                    'collect_keys',
+                    analysis,
+                    initiator,
+                    'Collect keys',
+                    'collect-keys',
+                    queue,
+                ),
+            ),
+            cls.get_subtask_statuses_and_signature(
+                'write_input_files',
+                analysis,
+                initiator,
+                'Write input files',
+                'write-input-files',
+                queue,
+            ),
+            cls.get_subtask_statuses_and_signature(
+                'cleanup_input_generation',
+                analysis,
+                initiator,
+                'Cleanup input generation',
+                'cleanup-input-generation',
+                queue,
+            ),
+        ]
+
+        # setup each of the task status objects for each subtask
+        statuses, tasks = list(zip(*statuses_and_tasks))
+
+        analysis.sub_task_statuses.all().delete()
+        AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
+
+        c = chain(*tasks)
+        c.link_error(signature('cleanup_input_generation_on_error', args=(analysis.pk, )))
+        c.delay()
 
 
 def get_analysis_task_controller() -> Type[BaseController]:

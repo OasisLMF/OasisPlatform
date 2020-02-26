@@ -20,6 +20,7 @@ class AnalysisModel(TimeStampedModel):
     ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
     ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
+    oasislmf_config = models.TextField(default='')
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')

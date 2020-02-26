@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements-worker.in
 #
--e git+git://github.com/OasisLMF/OasisLMF.git@0bc1cb26aafc723848690b1487716ba96f9e90c3#egg=oasislmf
+-e git+git://github.com/OasisLMF/OasisLMF.git@feature/architecture2020#egg=oasislmf
 amqp==2.5.2               # via kombu
 anytree==2.8.0
 argparsetree==0.0.6
@@ -72,4 +72,4 @@ whichcraft==0.6.1         # via cookiecutter
 zipp==2.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==45.1.0        # via ipdb, ipython, rtree
+# setuptools==45.2.0        # via ipdb, ipython, rtree

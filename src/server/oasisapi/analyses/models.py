@@ -26,30 +26,16 @@ from ....conf import iniconf
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
-    def create_statuses(self, analysis, task_ids: List[str], queue):
+    def create_statuses(self, objs):
         """
         Creates all statuses initialising `queued_time`
 
-        :param analysis: The analysis object to generate task statuses for
-        :param task_ids: list of the task ids to create
-        :param queue: The name of the queue the tasks were sent to
-
-        :return:
+        :param objs: A list of instances to create, they should all be for the same
+            queue and analysis
         """
-        # get or create the objects, ideally we would bulk create all
-        # the statuses, however there is the possibility that a task will
-        # have started causing the status to exist already which would
-        # cause the bulks create to fail
-        statuses = [
-            AnalysisTaskStatus.objects.get_or_create(
-                task_id=task_id,
-                analysis=analysis,
-                defaults={
-                    'status': AnalysisTaskStatus.status_choices.QUEUED,
-                    'queue_name': queue
-                }
-            )[0] for task_id in task_ids
-        ]
+        statuses = self.bulk_create(objs)
+        queue = statuses[0].queue_name
+        analysis = statuses[0].analysis
 
         send_task_status_message([TaskStatusMessageItem(
             queue=q,
@@ -90,25 +76,28 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
 
 class AnalysisTaskStatus(models.Model):
     status_choices = Choices(
-        ('QUEUED', 'Run added to queue'),
-        ('STARTED', 'Run started'),
-        ('COMPLETED', 'Run completed'),
-        ('CANCELLED', 'Run cancelled'),
-        ('ERROR', 'Run error'),
+        ('PENDING', 'Task waiting to be added to the queue'),
+        ('QUEUED', 'Task added to queue'),
+        ('STARTED', 'Task started'),
+        ('COMPLETED', 'Task completed'),
+        ('CANCELLED', 'Task cancelled'),
+        ('ERROR', 'Task error'),
     )
 
     queue_name = models.CharField(max_length=255, blank=False, editable=False)
-    task_id = models.CharField(max_length=36, unique=True, editable=False)
+    task_id = models.CharField(max_length=36, blank=True, default='', editable=False)
     analysis = models.ForeignKey('Analysis', related_name='sub_task_statuses', on_delete=models.CASCADE, editable=False)
     status = models.CharField(
         max_length=max(len(c) for c in status_choices._db_values),
         choices=status_choices,
-        default=status_choices.QUEUED,
+        default=status_choices.PENDING,
         editable=False,
     )
     queue_time = models.DateTimeField(null=True, auto_now_add=True, editable=False)
     start_time = models.DateTimeField(null=True, default=None, editable=False)
     end_time = models.DateTimeField(null=True, default=None, editable=False)
+    name = models.CharField(max_length=255, editable=False)
+    slug = models.SlugField(max_length=255, editable=False)
 
     output_log = models.ForeignKey(
         RelatedFile,
@@ -129,6 +118,14 @@ class AnalysisTaskStatus(models.Model):
     )
 
     objects = AnalysisTaskStatusQuerySet.as_manager()
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(fields=['task_id'], condition=~models.Q(task_id=''), name='unique_task_id'),
+        )
+        unique_together = (
+            ('analysis', 'slug',)
+        )
 
     def get_output_log_url(self, request=None):
         return reverse('analysis-task-status-output-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)

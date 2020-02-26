@@ -1,4 +1,4 @@
--e git://github.com/OasisLMF/OasisLMF.git@0bc1cb26aafc723848690b1487716ba96f9e90c3#egg=oasislmf
+-e git://github.com/OasisLMF/OasisLMF.git@feature/architecture2020#egg=oasislmf
 
 billiard
 celery

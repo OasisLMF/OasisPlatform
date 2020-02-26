@@ -1,16 +1,28 @@
 from __future__ import absolute_import
 
+import json
+import os
+import tarfile
 import uuid
+from glob import glob
+from itertools import chain
+from shutil import copytree, rmtree
+from tempfile import TemporaryDirectory
+from typing import List, Tuple, Union
 
+from celery.signals import before_task_publish
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.db.models import When, Case, Value, F
 from django.http import HttpRequest
 from django.utils import timezone
 from django_celery_results.utils import now
 from six import StringIO
+import pandas as pd
 
+from src.conf.iniconf import settings
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelSettingsSerializer
@@ -21,8 +33,12 @@ from ..celery import celery_app
 logger = get_task_logger(__name__)
 
 
+TaskId = str
+PathStr = str
+
+
 @celery_app.task(name='run_register_worker')
-def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
+def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
         from django.contrib.auth.models import User
@@ -56,18 +72,22 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
                 logger.info('Failed to update model settings:')
                 logger.exception(str(e))
 
+        # Update the oasislmf config
+        if m_conf:
+            model.oasislmf_config = json.dumps(m_conf)
+
         # Update model version info
         if m_version:
             try:
                 model.ver_ktools =  m_version['ktools']
                 model.ver_oasislmf = m_version['oasislmf']
                 model.ver_platform = m_version['platform']
-                model.save()
                 logger.info('Updated model versions')
             except Exception as e:
                 logger.info('Failed to set model veriosns:')
                 logger.exception(str(e))
 
+        model.save()
 
     # Log unhandled execptions
     except Exception as e:
@@ -316,39 +336,42 @@ def start_loss_generation_task(analysis_pk, initiator_pk):
 
 
 @celery_app.task(bind=True, name='record_sub_task_start')
-def record_sub_task_start(self, analysis_id, task_id, queue_name):
+def record_sub_task_start(self, analysis_id, task_slug, task_id):
     _now = now()
 
-    status, created = AnalysisTaskStatus.objects.get_or_create(
-        task_id=task_id,
+    AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
-        defaults={
-            'start_time': _now,
-            'status': AnalysisTaskStatus.status_choices.STARTED,
-            'queue_name': queue_name,
-        }
+        task_slug=task_slug
+    ).update(
+        task_id=task_id,
+        start_time=Case(
+            When(
+                start_time__isnull=True,
+                then=Value(_now),
+            ),
+            default=F('start_time')
+        ),
+        status=Case(
+            When(
+                status=AnalysisTaskStatus.status_choices.QUEUED,
+                then=Value(AnalysisTaskStatus.status_choices.STARTED),
+            ),
+            default=F('status')
+        )
     )
-
-    if not created:
-        status.start_time = _now
-
-        # We dont want to change the state of the task if it has already finished
-        if status.status == AnalysisTaskStatus.status_choices.QUEUED:
-            status.status = AnalysisTaskStatus.status_choices.STARTED
-
-        status.save()
 
 
 @celery_app.task(bind=True, name='record_sub_task_success')
-def record_sub_task_success(self, res, analysis_id, initiator_id):
+def record_sub_task_success(self, res, analysis_id, initiator_id, slug):
     log_location = res['log_location']
     error_location = res['error_location']
 
     task_id = self.request.parent_id
     AnalysisTaskStatus.objects.filter(
-        task_id=task_id,
+        slug=slug,
         analysis_id=analysis_id,
     ).update(
+        task_id=task_id,
         status=AnalysisTaskStatus.status_choices.COMPLETED,
         end_time=now(),
         output_log=RelatedFile.objects.create(
@@ -367,12 +390,13 @@ def record_sub_task_success(self, res, analysis_id, initiator_id):
 
 
 @celery_app.task(bind=True, name='record_sub_task_failure')
-def record_sub_task_failure(self, request, exc, traceback, analysis_id, initiator_id):
+def record_sub_task_failure(self, request, exc, traceback, analysis_id, initiator_id, slug):
     task_id = self.request.parent_id
     AnalysisTaskStatus.objects.filter(
-        task_id=task_id,
+        slug=slug,
         analysis_id=analysis_id,
     ).update(
+        task_id=task_id,
         status=AnalysisTaskStatus.status_choices.ERROR,
         end_time=now(),
         error_log=RelatedFile.objects.create(
@@ -395,9 +419,36 @@ def chord_error_callback(self, analysis_id):
     celery_app.control.revoke(set(ids_to_revoke), terminate=True)
 
     AnalysisTaskStatus.objects.filter(
-        task_id__in=ids_to_revoke,
         status__in=unfinished_statuses,
+        analysis_id=analysis_id
     ).update(
         status=AnalysisTaskStatus.status_choices.CANCELLED,
         end_time=now(),
     )
+
+
+@celery_app.task(bind=True, name='cleanup_input_generation_on_error')
+def cleanup_input_generation_on_error(self, analysis_pk, *args, **kwargs):
+    media_root = settings.get('worker', 'media_root')
+    directories = chain(
+        glob(os.path.join(media_root, f'input-generation-oasis-files-dir-{analysis_pk}-*')),
+        glob(os.path.join(media_root, f'input-generation-input-data-dir-{analysis_pk}-*')),
+    )
+
+    for p in directories:
+        rmtree(p)
+
+
+@before_task_publish.connect
+def mark_task_as_queued(*args, headers=None, body=None, **kwargs):
+    analysis_id = body[1].get('analysis_id')
+    slug = body[1].get('slug')
+
+    if analysis_id and slug:
+        AnalysisTaskStatus.objects.filter(
+            analysis_id=analysis_id,
+            slug=slug,
+        ).update(
+            task_id=headers['id'],
+            status=AnalysisTaskStatus.status_choices.QUEUED
+        )

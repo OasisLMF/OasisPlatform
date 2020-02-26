@@ -9,6 +9,7 @@ import subprocess
 import tarfile
 import uuid
 import subprocess
+from math import ceil
 
 import fasteners
 import tempfile
@@ -18,12 +19,14 @@ from contextlib import contextmanager, suppress
 from celery import Celery, signature
 from celery.task import task
 from celery.signals import worker_ready
-from oasislmf.utils import status
+from oasislmf.manager import OasisManager
+from oasislmf.utils.data import get_json, get_dataframe
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from oasislmf import __version__ as mdk_version
 from pathlib2 import Path
+import pandas as pd
 
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
@@ -74,6 +77,7 @@ class TemporaryDir(object):
         if not self.persist and os.path.isdir(self.name):
             shutil.rmtree(self.name)
 
+
 def get_model_settings():
     """ Read the settings file from the path OASIS_MODEL_SETTINGS
         returning the contents as a python dict (none if not found)
@@ -88,7 +92,6 @@ def get_model_settings():
         logging.error("Failed to load Model settings: {}".format(e))
 
     return settings_data
-
 
 
 def get_worker_versions():
@@ -118,12 +121,15 @@ def register_worker(sender, **k):
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
     m_settings = get_model_settings()
     m_version = get_worker_versions()
+    m_conf = get_json(get_oasislmf_config_path(m_id))
     logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
     logging.info('settings: {}'.format(m_settings))
+    logging.info('oasislmf config: {}'.format(m_conf))
+
     signature(
         'run_register_worker',
-        args=(m_supplier, m_name, m_id, m_settings, m_version),
+        args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
         queue='celery'
     ).delay()
 
@@ -181,15 +187,15 @@ def get_unique_filename(ext):
 
 
 # Send notification back to the API Once task is read from Queue
-def notify_api_task_started(analysis_pk, task_id, queue_name):
-    logging.info("Notify API tasks has started: analysis_id={}, task_id={}, queue_name={}".format(
+def notify_api_task_started(analysis_pk, task_id, task_slug):
+    logging.info("Notify API tasks has started: analysis_id={}, task_id={}, task_slug={}".format(
         analysis_pk,
         task_id,
-        queue_name,
+        task_slug,
     ))
     signature(
         'record_sub_task_start',
-        args=(analysis_pk, task_id, queue_name),
+        args=(analysis_pk, task_slug, task_id),
         queue='celery'
     ).delay()
 
@@ -363,7 +369,8 @@ def generate_input(self,
                    info_file=None,
                    scope_file=None,
                    settings_file=None,
-                   complex_data_files=None):
+                   complex_data_files=None,
+                   chunk_index=None):
     """Generates the input files for the loss calculation stage.
 
     This function is a thin wrapper around "oasislmf model generate-oasis-files".
@@ -378,6 +385,7 @@ def generate_input(self,
         settings_file (str): Name of the analysis settings file.
         complex_data_files (list of complex_model_data_file): List of dicts containing
             on-disk and original filenames for required complex model data files.
+        chunk_index (int): The index of the chunk to process
 
     Returns:
         (tuple(str, str)) Paths to the outputs tar file and errors tar file.
@@ -385,7 +393,7 @@ def generate_input(self,
     """
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
-    notify_api_task_started(analysis_pk, self.request.id, self.request.delivery_info['routing_key'])
+    notify_api_task_started(analysis_pk, self.request.id, f'input-generation-{chunk_index or 0}')
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
@@ -493,8 +501,148 @@ def generate_input(self,
             'lookup_error_location': lookup_error_fp,
             'lookup_success_location': lookup_success_fp,
             'lookup_validation_location': lookup_validation_fp,
-            'summary_levels_location': summary_levels_fp
+            'summary_levels_location': summary_levels_fp,
+            'task_id': self.request.id,
         }
+
+
+@task(bind=True, name='prepare_input_generation_params')
+def prepare_input_generation_params(
+    self,
+    loc_file=None,
+    acc_file=None,
+    info_file=None,
+    scope_file=None,
+    settings_file=None,
+    complex_data_files=None,
+    multiprocessing=False,
+    analysis_id=None,
+    slug=None,
+):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+
+    media_root = settings.get('worker', 'MEDIA_ROOT')
+    location_file = os.path.join(media_root, loc_file)
+    accounts_file = os.path.join(media_root, acc_file) if acc_file else None
+    ri_info_file = os.path.join(media_root, info_file) if info_file else None
+    ri_scope_file = os.path.join(media_root, scope_file) if scope_file else None
+    lookup_settings_file = os.path.join(media_root, settings_file) if settings_file else None
+
+    model_id = settings.get('worker', 'model_id')
+    config_path = get_oasislmf_config_path(model_id)
+    config = get_json(config_path)
+
+    oasis_files_dir = os.path.join(media_root, f'input-generation-oasis-files-dir-{analysis_id}-{uuid.uuid4().hex}')
+    Path(oasis_files_dir).mkdir(parents=True, exist_ok=True)
+    if complex_data_files:
+        input_data_dir = os.path.join(media_root, f'input-generation-input-data-dir-{analysis_id}-{uuid.uuid4().hex}')
+        Path(input_data_dir).mkdir(parents=True, exist_ok=True)
+    else:
+        input_data_dir = None
+
+    params = OasisManager().prepare_input_generation_params(
+        oasis_files_dir,
+        location_file,
+        lookup_config_fp=os.path.join(os.path.dirname(config_path), config['lookup_config_file_path']),
+        summarise_exposure=not settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False),
+        accounts_fp=accounts_file,
+        multiprocessing=multiprocessing,
+        user_data_dir=input_data_dir,
+        complex_lookup_config_fp=lookup_settings_file,
+        ri_scope_fp=ri_scope_file,
+        ri_info_fp=ri_info_file,
+    )
+    return params
+
+
+@task(bind=True, name='prepare_inputs_directory')
+def prepare_inputs_directory(self, params, analysis_id=None, slug=None):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+    OasisManager().prepare_input_directory(**params)
+    return params
+
+
+@task(bind=True, name='prepare_keys_file_chunk')
+def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+
+    with TemporaryDir(persist=True) as d:
+        exposures = get_dataframe(src_fp=params.get('exposure_fp'))
+        chunk = pd.np.array_split(exposures, num_chunks)[chunk_idx]
+
+        exposures_fp = os.path.join(d, 'exposures.csv')
+        print(exposures_fp, '\n', chunk.head())
+        chunk.to_csv(exposures_fp)
+
+        chunk_target_dir = os.path.join(params['target_dir'], f'input-generation-chunk-{chunk_idx}')
+        Path(chunk_target_dir).mkdir(exist_ok=True, parents=True)
+        params['chunk_keys_fp'], params['chunk_keys_errors_fp'] = OasisManager().prepare_keys_file(
+            **{
+                **params,
+                'exposure_fp': exposures_fp,
+                'target_dir': chunk_target_dir,
+            }
+        )
+        return params
+
+
+@task(bind=True, name='collect_keys')
+def collect_keys(self, chunk_params, analysis_id=None, slug=None):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+    res = {**chunk_params[0]}
+
+    def load_dataframes(paths):
+        for p in paths:
+            try:
+                print(p)
+                df = get_dataframe(p)
+                print(df)
+                yield df
+            except OasisException:
+                pass
+
+    non_empty_frames = list(load_dataframes(p['chunk_keys_fp'] for p in chunk_params))
+    if non_empty_frames:
+        keys = pd.concat(non_empty_frames).reset_index()
+        res['keys_fp'] = os.path.join(res['target_dir'], 'keys.csv')
+        keys.to_csv(res['keys_fp'])
+    else:
+        res['keys_fp'] = None
+
+    non_empty_frames = list(load_dataframes(p['chunk_keys_errors_fp'] for p in chunk_params))
+    if non_empty_frames:
+        keys_errors = pd.concat(non_empty_frames).reset_index()
+        res['keys_errors_fp'] = os.path.join(res['target_dir'], 'keys-errors.csv')
+        keys_errors.to_csv(res['keys_errors_fp'])
+    else:
+        res['keys_errors_fp'] = None
+
+    return res
+
+
+@task(bind=True, name='write_input_files')
+def write_input_files(self, params, analysis_id=None, slug=None):
+    OasisManager().write_input_files(
+        keys_df=params['keys_fp'],
+        keys_errors_df=params.get('keys_errors_fp'),
+        accounts_df=params.get('accounts_fp'),
+        exposure_df=params.get('exposure_fp'),
+        **params
+    )
+    return params
+
+
+@task(bind=True, name='cleanup_input_generation')
+def cleanup_input_generation(self, params, analysis_id=None, slug=None):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+
+    if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
+        shutil.rmtree(params['target_dir'], ignore_errors=True)
+
+        if params['user_data_dir']:
+            shutil.rmtree(params['target_dir'], ignore_errors=True)
+
+    return params
 
 
 @task(name='on_error')
