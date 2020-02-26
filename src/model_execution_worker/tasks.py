@@ -70,8 +70,9 @@ class TemporaryDir(object):
         self.persist = persist
         self.basedir = basedir
 
-        if not os.path.isdir(basedir):
-            os.makedirs(basedir)
+        if basedir:
+            if not os.path.isdir(basedir):
+                os.makedirs(basedir)
 
     def __enter__(self):
         self.name = tempfile.mkdtemp(dir=self.basedir)
