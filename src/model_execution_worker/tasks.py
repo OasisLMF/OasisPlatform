@@ -59,17 +59,22 @@ logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_AL
 logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD', fallback=True)))
 logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
 logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
+logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback=None)))
 logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
 
 
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
 
-    def __init__(self, persist=False):
+    def __init__(self, persist=False, basedir=None):
         self.persist = persist
+        self.basedir = basedir
+
+        if not os.path.isdir(basedir):
+            os.makedirs(basedir)
 
     def __enter__(self):
-        self.name = tempfile.mkdtemp()
+        self.name = tempfile.mkdtemp(dir=self.basedir)
         return self.name
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -78,7 +83,7 @@ class TemporaryDir(object):
 
 def get_model_settings():
     """ Read the settings file from the path OASIS_MODEL_SETTINGS
-        returning the contents as a python dict (none if not found)
+        returning the contents as a python dicself.t (none if not found)
     """
     settings_data = None
     settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)
@@ -240,13 +245,16 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
     # Check that the input archive exists and is valid
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
+    tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
+    tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
+
 
     config_path = get_oasislmf_config_path()
-    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
+    tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
     filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
     if complex_data_files:
-        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
+        tmp_input_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
     else:
         tmp_input_dir = suppress()
 
@@ -359,12 +367,13 @@ def generate_input(analysis_pk,
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
 
     filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
-
     config_path = get_oasislmf_config_path()
+    tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
+    tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
-    tmp_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
+    tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
     if complex_data_files:
-        tmp_input_dir = TemporaryDir(persist=settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False))
+        tmp_input_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
     else:
         tmp_input_dir = suppress()
 
