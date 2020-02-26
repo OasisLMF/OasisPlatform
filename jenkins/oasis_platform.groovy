@@ -12,8 +12,9 @@ node {
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
-        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case control_set'],
+        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: 'control_set 0_case 1_case'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'AUTO_MERGE', defaultValue: Boolean.valueOf(true)],
@@ -124,6 +125,13 @@ node {
         )
         stage('Shell Env'){
             sh  PIPELINE + ' print_model_vars'
+            if (params.CHECK_COMPATIBILITY) {
+                dir(oasis_workspace) {
+                    sh "curl https://api.github.com/repos/OasisLMF/OasisPlatform/tags | jq -r '( first ) | .name' > last_release_tag"
+                    env.LAST_RELEASE_TAG = readFile('last_release_tag').trim()
+                    println("LAST_RELEASE = $env.LAST_RELEASE_TAG")
+                }
+            }
         }
         if (mdk_branch && ! params.PUBLISH){
             stage('Git install MDK'){
@@ -142,7 +150,9 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
+                        if (params.PUBLISH) {
+                            sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
+                        }
                         sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
 
                     }
@@ -151,7 +161,9 @@ node {
             build_model_execution_worker: {
                 stage('Build: model exec worker') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
+                        if (params.PUBLISH) {
+                            sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
+                        }
                         sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
                     }
                 }
@@ -183,6 +195,36 @@ node {
                 }
             }
         }
+
+       if (params.CHECK_COMPATIBILITY) {
+           stage("Compatibility with worker:${env.LAST_RELEASE_TAG}") {
+               dir(build_workspace) {
+                   // Set tags
+                   env.TAG_RUN_PLATFORM = params.RELEASE_TAG
+                   env.TAG_RUN_WORKER = env.LAST_RELEASE_TAG
+
+                   // Setup containers
+                   sh PIPELINE + " start_model"
+
+                   // run test
+                    sh PIPELINE + " run_test --test-case ${api_server_tests[0]}"
+               }
+           }    
+           stage("Compatibility with server:${env.LAST_RELEASE_TAG}") {
+               dir(build_workspace) {
+                   // Set tags
+                   env.TAG_RUN_PLATFORM = env.LAST_RELEASE_TAG
+                   env.TAG_RUN_WORKER = params.RELEASE_TAG
+
+                   // Setup containers
+                   sh PIPELINE + " start_model"
+
+                   // run test
+                   sh PIPELINE + " run_test --test-case ${api_server_tests[0]}"
+               }
+           }    
+       }
+
 
         if (params.PUBLISH){
             parallel(
@@ -258,9 +300,12 @@ node {
             sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
             if(params.PURGE){
                 sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
-                sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}-slim"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
-                sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-slim"
+
+                if (params.PUBLISH) {
+                    sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}-slim"
+                    sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-slim"
+                }
             }
         }
 
