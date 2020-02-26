@@ -20,6 +20,7 @@ from celery import Celery, signature
 from celery.task import task
 from celery.signals import worker_ready
 from oasislmf.manager import OasisManager
+from oasislmf.model_preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json, get_dataframe
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
@@ -566,24 +567,42 @@ def prepare_inputs_directory(self, params, analysis_id=None, slug=None):
 def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None):
     notify_api_task_started(analysis_id, self.request.id, slug)
 
-    with TemporaryDir(persist=True) as d:
-        exposures = get_dataframe(src_fp=params.get('exposure_fp'))
-        chunk = pd.np.array_split(exposures, num_chunks)[chunk_idx]
+    chunk_target_dir = os.path.join(params['target_dir'], f'input-generation-chunk-{chunk_idx}')
+    Path(chunk_target_dir).mkdir(exist_ok=True, parents=True)
+    params['chunk_keys_fp'] = os.path.join(chunk_target_dir, 'keys.csv')
+    params['chunk_keys_errors_fp'] = os.path.join(chunk_target_dir, 'keys-errors.csv')
 
-        exposures_fp = os.path.join(d, 'exposures.csv')
-        print(exposures_fp, '\n', chunk.head())
-        chunk.to_csv(exposures_fp)
+    lookup_config = params['lookup_config']
+    if lookup_config and lookup_config['keys_data_path'] in ['.', './']:
+        lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']))
+    elif lookup_config and not os.path.isabs(lookup_config['keys_data_path']):
+        lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']), lookup_config['keys_data_path'])
 
-        chunk_target_dir = os.path.join(params['target_dir'], f'input-generation-chunk-{chunk_idx}')
-        Path(chunk_target_dir).mkdir(exist_ok=True, parents=True)
-        params['chunk_keys_fp'], params['chunk_keys_errors_fp'] = OasisManager().prepare_keys_file(
-            **{
-                **params,
-                'exposure_fp': exposures_fp,
-                'target_dir': chunk_target_dir,
-            }
-        )
-        return params
+    _, lookup = OasisLookupFactory.create(
+        lookup_config=lookup_config,
+        model_keys_data_path=params['keys_data_fp'],
+        model_version_file_path=params['model_version_fp'],
+        lookup_package_path=params['lookup_package_fp'],
+        complex_lookup_config_fp=params['complex_lookup_config_fp'],
+        user_data_dir=params['user_data_dir'],
+        output_directory=chunk_target_dir,
+    )
+    # TODO: exposure_df is loaded twice, Elimilate step in `get_gul_input_items` if done here
+    location_df = OasisLookupFactory.get_exposure(
+        lookup=lookup,
+        source_exposure_fp=params['exposure_fp'],
+    )
+    location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
+
+    OasisLookupFactory.save_results(
+        lookup,
+        location_df=location_df,
+        successes_fp=params['chunk_keys_fp'],
+        errors_fp=params['chunk_keys_errors_fp'],
+        multiprocessing=params['multiprocessing'],
+    )
+
+    return params
 
 
 @task(bind=True, name='collect_keys')
@@ -594,26 +613,24 @@ def collect_keys(self, chunk_params, analysis_id=None, slug=None):
     def load_dataframes(paths):
         for p in paths:
             try:
-                print(p)
                 df = get_dataframe(p)
-                print(df)
                 yield df
             except OasisException:
                 pass
 
     non_empty_frames = list(load_dataframes(p['chunk_keys_fp'] for p in chunk_params))
     if non_empty_frames:
-        keys = pd.concat(non_empty_frames).reset_index()
+        keys = pd.concat(non_empty_frames)
         res['keys_fp'] = os.path.join(res['target_dir'], 'keys.csv')
-        keys.to_csv(res['keys_fp'])
+        keys.to_csv(res['keys_fp'], index=False, encoding='utf-8')
     else:
         res['keys_fp'] = None
 
     non_empty_frames = list(load_dataframes(p['chunk_keys_errors_fp'] for p in chunk_params))
     if non_empty_frames:
-        keys_errors = pd.concat(non_empty_frames).reset_index()
+        keys_errors = pd.concat(non_empty_frames)
         res['keys_errors_fp'] = os.path.join(res['target_dir'], 'keys-errors.csv')
-        keys_errors.to_csv(res['keys_errors_fp'])
+        keys_errors.to_csv(res['keys_errors_fp'], index=False, encoding='utf-8')
     else:
         res['keys_errors_fp'] = None
 
@@ -622,11 +639,11 @@ def collect_keys(self, chunk_params, analysis_id=None, slug=None):
 
 @task(bind=True, name='write_input_files')
 def write_input_files(self, params, analysis_id=None, slug=None):
+    print(params['keys_fp'], '\n', get_dataframe(params['keys_fp'])['locid'])
+    print(params['exposure_fp'], '\n', get_dataframe(params['exposure_fp']).index)
+
     OasisManager().write_input_files(
-        keys_df=params['keys_fp'],
-        keys_errors_df=params.get('keys_errors_fp'),
-        accounts_df=params.get('accounts_fp'),
-        exposure_df=params.get('exposure_fp'),
+        accounts_df=get_dataframe(params['accounts_fp']),
         **params
     )
     return params
