@@ -14,6 +14,7 @@ import os
 import sys
 
 from rest_framework.reverse import reverse_lazy
+from django.core.exceptions import ImproperlyConfigured
 
 from ...conf import iniconf  # noqa
 from ...conf.celeryconf import *  # noqa
@@ -151,7 +152,16 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html 
 STORAGE_TYPE = iniconf.settings.get('server', 'storage_type', fallback="").lower()
-if STORAGE_TYPE == 'aws-s3':
+LOCAL_FS = ['local-fs', 'share-fs']
+AWS_S3 = ['aws-s3', 's3', 'aws']
+
+if STORAGE_TYPE in LOCAL_FS:
+    # Set Storage to shared volumn mount
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
+
+elif STORAGE_TYPE in AWS_S3:
+    # AWS S3 Object Store via `Django-Storages`
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
     # Authenticate with S3
@@ -174,12 +184,8 @@ if STORAGE_TYPE == 'aws-s3':
     AWS_S3_OBJECT_PARAMETERS = {
         'CacheControl': 'max-age=86400',
     } 
-
-#elif STORAGE_TYPE == '<something-else>':
-
 else:
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-    MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
+    raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
 
 
 
