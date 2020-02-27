@@ -411,6 +411,7 @@ class ChunkedController(BaseController):
 
         queue = cls.get_generate_inputs_queue(analysis, initiator)
 
+        from src.server.oasisapi.analyses.tasks import record_input_files
         statuses_and_tasks = [
             cls.get_subtask_statuses_and_signature(
                 'prepare_input_generation_params',
@@ -461,6 +462,7 @@ class ChunkedController(BaseController):
                 'write-input-files',
                 queue,
             ),
+            [[], record_input_files.s(analysis.pk, initiator.pk)],
             cls.get_subtask_statuses_and_signature(
                 'cleanup_input_generation',
                 analysis,
@@ -479,7 +481,9 @@ class ChunkedController(BaseController):
 
         c = chain(*tasks)
         c.link_error(signature('cleanup_input_generation_on_error', args=(analysis.pk, )))
-        c.delay()
+
+        analysis.generate_inputs_task_id = c.delay().id
+        analysis.save()
 
 
 def get_analysis_task_controller() -> Type[BaseController]:

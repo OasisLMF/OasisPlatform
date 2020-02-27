@@ -639,13 +639,49 @@ def collect_keys(self, chunk_params, analysis_id=None, slug=None):
 
 @task(bind=True, name='write_input_files')
 def write_input_files(self, params, analysis_id=None, slug=None):
-    print(params['keys_fp'], '\n', get_dataframe(params['keys_fp'])['locid'])
-    print(params['exposure_fp'], '\n', get_dataframe(params['exposure_fp']).index)
-
     OasisManager().write_input_files(
         accounts_df=get_dataframe(params['accounts_fp']),
         **params
     )
+
+    media_root = settings.get('worker', 'MEDIA_ROOT')
+
+    if params.get('keys_error_fp'):
+        hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
+        shutil.copy(params['keys_error_fp'], hashed_filename)
+        params['lookup_error_location'] = str(Path(hashed_filename).relative_to(media_root))
+
+    lookup_success_fp = next(iter(glob.glob(os.path.join(params['target_dir'], 'gul_summary_map.csv'))), None)
+    if lookup_success_fp:
+        hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
+        shutil.copy(lookup_success_fp, hashed_filename)
+        params['lookup_success_location'] = str(Path(hashed_filename).relative_to(media_root))
+
+    lookup_validation_fp = next(iter(glob.glob(os.path.join(params['target_dir'], 'exposure_summary_report.json'))), None)
+    if lookup_validation_fp:
+        hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
+        shutil.copy(lookup_validation_fp, hashed_filename)
+        params['lookup_validation_location'] = str(Path(hashed_filename).relative_to(media_root))
+
+    summary_levels_fp = next(iter(glob.glob(os.path.join(params['target_dir'], 'exposure_summary_levels.json'))), None)
+    if summary_levels_fp:
+        hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
+        shutil.copy(summary_levels_fp, hashed_filename)
+        params['summary_levels_location'] = str(Path(hashed_filename).relative_to(media_root))
+
+    output_tar_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
+    output_tar_path = str(Path(output_tar_name).relative_to(media_root))
+
+    logging.info("output_tar_fp: {}".format(output_tar_path))
+    logging.info("lookup_error_fp: {}".format(params.get('keys_error_fp')))
+    logging.info("lookup_success_fp: {}".format(lookup_success_fp))
+    logging.info("lookup_validation_fp: {}".format(lookup_validation_fp))
+    logging.info("summary_levels_fp: {}".format(summary_levels_fp))
+
+    params['output_location'] = output_tar_path
+    with tarfile.open(output_tar_name, 'w:gz') as tar:
+        tar.add(params['target_dir'], arcname='/')
+
     return params
 
 
