@@ -8,6 +8,7 @@ from celery import Task
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
 
@@ -56,18 +57,19 @@ def store_file(reference, content_type, creator):
                 creator=creator,
             )
 
-    elif os.path.isfile(reference):
+    else:
         # create RelatedFile object from filepath
+        file_name = os.path.basename(reference) 
+        file_path = os.path.join(
+           settings.MEDIA_ROOT,
+           file_name,
+        )
         return RelatedFile.objects.create(
-            file=reference,
-            filename=os.path.basename(reference),
+            file=file_path,
+            filename=file_name,
             content_type=content_type,
             creator=creator,
         )
-
-    else:
-        # File Storage error
-        raise IOError('Error storing file reference: {}'.format(reference))
 
 
 class LogTaskError(Task):
