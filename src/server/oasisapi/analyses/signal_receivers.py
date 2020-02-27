@@ -4,7 +4,7 @@ from ..queues.utils import filter_queues_info
 
 def task_updated(instance, *args, **kwargs):
     # we post all new queues together in a group
-    if instance.status != instance.status_choices.QUEUED:
+    if instance.status != instance.status_choices.PENDING:
         send_task_status_message([TaskStatusMessageItem(
             queue=q,
             analyses=[TaskStatusMessageAnalysisItem(

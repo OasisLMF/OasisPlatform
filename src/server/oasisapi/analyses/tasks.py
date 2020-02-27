@@ -207,10 +207,11 @@ def record_run_analysis_failure(request, exc, traceback, analysis_pk, initiator_
         logger.exception(str(e))
 
 
-@celery_app.task(name='record_input_files')
-def record_input_files(result, analysis_pk, initiator_pk):
-    logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
-        result, analysis_pk, initiator_pk))
+@celery_app.task(bind=True, name='record_input_files')
+def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=None):
+    record_sub_task_start.delay(analysis_id, slug, self.request.id)
+    logger.info('result: {}, analysis_id: {}, initiator_id: {}'.format(
+        result, analysis_id, initiator_id))
     from .models import Analysis
 
     input_location = result.get('output_location')
@@ -221,7 +222,7 @@ def record_input_files(result, analysis_pk, initiator_pk):
     log_location = result.get('log_location')
     error_location = result.get('error_location')
 
-    analysis = Analysis.objects.get(pk=analysis_pk)
+    analysis = Analysis.objects.get(pk=analysis_id)
     analysis.status = Analysis.status_choices.READY
     analysis.task_finished = timezone.now()
 
@@ -229,32 +230,32 @@ def record_input_files(result, analysis_pk, initiator_pk):
         file=str(input_location),
         filename=str(input_location),
         content_type='application/gzip',
-        creator=get_user_model().objects.get(pk=initiator_pk),
+        creator=get_user_model().objects.get(pk=initiator_id),
     )
     analysis.lookup_errors_file = RelatedFile.objects.create(
         file=str(lookup_error_fp),
         filename=str('keys-errors.csv'),
         content_type='text/csv',
-        creator=get_user_model().objects.get(pk=initiator_pk),
+        creator=get_user_model().objects.get(pk=initiator_id),
     )
     analysis.lookup_success_file = RelatedFile.objects.create(
         file=str(lookup_success_fp),
         filename=str('gul_summary_map.csv'),
         content_type='text/csv',
-        creator=get_user_model().objects.get(pk=initiator_pk),
+        creator=get_user_model().objects.get(pk=initiator_id),
     )
     analysis.lookup_validation_file = RelatedFile.objects.create(
         file=str(lookup_validation_fp),
         filename=str('exposure_summary_report.json'),
         content_type='application/json',
-        creator=get_user_model().objects.get(pk=initiator_pk),
+        creator=get_user_model().objects.get(pk=initiator_id),
     )
 
     analysis.summary_levels_file = RelatedFile.objects.create(
         file=str(summary_levels_fp),
         filename=str('exposure_summary_levels.json'),
         content_type='application/json',
-        creator=get_user_model().objects.get(pk=initiator_pk),
+        creator=get_user_model().objects.get(pk=initiator_id),
     )
 
     # Delete previous error trace and create the new one if set
@@ -278,7 +279,7 @@ def record_input_files(result, analysis_pk, initiator_pk):
             file=File(StringIO(traceback_content), traceback_filename),
             filename=traceback_filename,
             content_type='text/plain',
-            creator_id=initiator_pk,
+            creator_id=initiator_id,
         )
 
     analysis.save()
@@ -362,8 +363,8 @@ def record_sub_task_start(self, analysis_id, task_slug, task_id):
 
 @celery_app.task(bind=True, name='record_sub_task_success')
 def record_sub_task_success(self, res, analysis_id, initiator_id, slug):
-    log_location = res['log_location']
-    error_location = res['error_location']
+    log_location = res.get('log_location')
+    error_location = res.get('error_location')
 
     task_id = self.request.parent_id
     AnalysisTaskStatus.objects.filter(
@@ -373,13 +374,13 @@ def record_sub_task_success(self, res, analysis_id, initiator_id, slug):
         task_id=task_id,
         status=AnalysisTaskStatus.status_choices.COMPLETED,
         end_time=now(),
-        output_log=RelatedFile.objects.create(
+        output_log=None if not log_location else RelatedFile.objects.create(
             file=str(log_location),
             filename='{}-output.log'.format(task_id),
             content_type='text/plain',
             creator_id=initiator_id,
         ),
-        error_log=RelatedFile.objects.create(
+        error_log=None if not error_location else RelatedFile.objects.create(
             file=str(error_location),
             filename='{}-error.log'.format(task_id),
             content_type='text/plain',
@@ -449,5 +450,6 @@ def mark_task_as_queued(*args, headers=None, body=None, **kwargs):
             slug=slug,
         ).update(
             task_id=headers['id'],
-            status=AnalysisTaskStatus.status_choices.QUEUED
+            status=AnalysisTaskStatus.status_choices.QUEUED,
+            queue_time=now(),
         )

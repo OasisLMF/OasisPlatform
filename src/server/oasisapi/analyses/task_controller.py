@@ -341,24 +341,25 @@ class ChunkedController(BaseController):
             task_name,
             queue=queue,
             args=params.args,
-            kwargs={'analysis_id': analysis.pk, 'slug': slug, **params.kwargs},
+            kwargs={'initiator_id': initiator.pk, 'analysis_id': analysis.pk, 'slug': slug, **params.kwargs},
         )
 
         # add task to set the status of the sub task status record on success
-        sig.link(record_sub_task_success.s(analysis.pk, initiator.pk))
+        sig.link(record_sub_task_success.s(analysis_id=analysis.pk, initiator_id=initiator.pk, slug=slug))
         # add task to set the status of the sub task status record on failure
-        sig.link_error(record_sub_task_failure.s(analysis.pk, initiator.pk))
+        sig.link_error(record_sub_task_failure.s(analysis_id=analysis.pk, initiator_id=initiator.pk, slug=slug))
 
         return sig
 
     @classmethod
-    def get_subtask_status(cls, analysis: 'Analysis', name: str, slug: str) -> 'AnalysisTaskStatus':
+    def get_subtask_status(cls, analysis: 'Analysis', name: str, slug: str, queue_name: str) -> 'AnalysisTaskStatus':
         from src.server.oasisapi.analyses.models import AnalysisTaskStatus
 
         return AnalysisTaskStatus(
             analysis=analysis,
             slug=slug,
             name=name,
+            queue_name=queue_name,
         )
 
     @classmethod
@@ -374,7 +375,7 @@ class ChunkedController(BaseController):
     ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
         params = params or TaskParams()
         return (
-            [cls.get_subtask_status(analysis, status_name, status_slug)],
+            [cls.get_subtask_status(analysis, status_name, status_slug, queue)],
             cls.get_subtask_signature(task_name, analysis, initiator, status_slug, queue, params),
         )
 
@@ -411,7 +412,6 @@ class ChunkedController(BaseController):
 
         queue = cls.get_generate_inputs_queue(analysis, initiator)
 
-        from src.server.oasisapi.analyses.tasks import record_input_files
         statuses_and_tasks = [
             cls.get_subtask_statuses_and_signature(
                 'prepare_input_generation_params',
@@ -462,7 +462,14 @@ class ChunkedController(BaseController):
                 'write-input-files',
                 queue,
             ),
-            [[], record_input_files.s(analysis.pk, initiator.pk)],
+            cls.get_subtask_statuses_and_signature(
+                'record_input_files',
+                analysis,
+                initiator,
+                'Record input files',
+                'record-input-files',
+                'celery',
+            ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_input_generation',
                 analysis,

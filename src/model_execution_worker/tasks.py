@@ -518,6 +518,7 @@ def prepare_input_generation_params(
     complex_data_files=None,
     multiprocessing=False,
     analysis_id=None,
+    initiator_id=None,
     slug=None,
 ):
     notify_api_task_started(analysis_id, self.request.id, slug)
@@ -557,14 +558,14 @@ def prepare_input_generation_params(
 
 
 @task(bind=True, name='prepare_inputs_directory')
-def prepare_inputs_directory(self, params, analysis_id=None, slug=None):
+def prepare_inputs_directory(self, params, analysis_id=None, initiator_id=None, slug=None):
     notify_api_task_started(analysis_id, self.request.id, slug)
     OasisManager().prepare_input_directory(**params)
     return params
 
 
 @task(bind=True, name='prepare_keys_file_chunk')
-def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None):
+def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, initiator_id=None, slug=None):
     notify_api_task_started(analysis_id, self.request.id, slug)
 
     chunk_target_dir = os.path.join(params['target_dir'], f'input-generation-chunk-{chunk_idx}')
@@ -606,7 +607,7 @@ def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=Non
 
 
 @task(bind=True, name='collect_keys')
-def collect_keys(self, chunk_params, analysis_id=None, slug=None):
+def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=None):
     notify_api_task_started(analysis_id, self.request.id, slug)
     res = {**chunk_params[0]}
 
@@ -638,7 +639,7 @@ def collect_keys(self, chunk_params, analysis_id=None, slug=None):
 
 
 @task(bind=True, name='write_input_files')
-def write_input_files(self, params, analysis_id=None, slug=None):
+def write_input_files(self, params, analysis_id=None, initiator_id=None, slug=None):
     OasisManager().write_input_files(
         accounts_df=get_dataframe(params['accounts_fp']),
         **params
@@ -686,7 +687,7 @@ def write_input_files(self, params, analysis_id=None, slug=None):
 
 
 @task(bind=True, name='cleanup_input_generation')
-def cleanup_input_generation(self, params, analysis_id=None, slug=None):
+def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, slug=None):
     notify_api_task_started(analysis_id, self.request.id, slug)
 
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):

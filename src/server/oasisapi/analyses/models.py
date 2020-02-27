@@ -26,31 +26,10 @@ from ....conf import iniconf
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
-    def create_statuses(self, objs):
-        """
-        Creates all statuses initialising `queued_time`
-
-        :param objs: A list of instances to create, they should all be for the same
-            queue and analysis
-        """
-        statuses = self.bulk_create(objs)
-        queue = statuses[0].queue_name
-        analysis = statuses[0].analysis
-
-        send_task_status_message([TaskStatusMessageItem(
-            queue=q,
-            analyses=[
-                TaskStatusMessageAnalysisItem(
-                    analysis=analysis,
-                    updated_tasks=statuses,
-                )
-            ]
-        ) for q in filter_queues_info(queue)])
-
-    def update(self, **kwargs):
-        res = super().update(**kwargs)
-
-        queues = filter_queues_info(self.values_list('queue_name', flat=True).distinct())
+    @classmethod
+    def _send_socket_messages(cls, objects):
+        queue_names = set(o.queue_name for o in objects)
+        queues = filter_queues_info(queue_names)
 
         # build and send the
         status_message = [TaskStatusMessageItem(
@@ -61,7 +40,7 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
         for message_item in status_message:
             analyses = {}
 
-            for status in filter(lambda s: s.queue_name == message_item.queue['name'], self):
+            for status in filter(lambda s: s.queue_name == message_item.queue['name'], objects):
                 analyses.setdefault(status.analysis, []).append(status)
 
             message_item.analyses.extend([TaskStatusMessageAnalysisItem(
@@ -70,6 +49,22 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
             ) for analysis, statuses in analyses.items()])
 
         send_task_status_message(status_message)
+
+    def create_statuses(self, objs):
+        """
+        Creates all statuses initialising `queued_time`
+
+        :param objs: A list of instances to create, they should all be for the same
+            queue and analysis
+        """
+        statuses = self.bulk_create(objs)
+
+        self._send_socket_messages(statuses)
+
+    def update(self, **kwargs):
+        res = super().update(**kwargs)
+
+        self._send_socket_messages(self)
 
         return res
 
@@ -93,7 +88,8 @@ class AnalysisTaskStatus(models.Model):
         default=status_choices.PENDING,
         editable=False,
     )
-    queue_time = models.DateTimeField(null=True, auto_now_add=True, editable=False)
+    pending_time = models.DateTimeField(null=True, auto_now_add=True, editable=False)
+    queue_time = models.DateTimeField(null=True, default=None, editable=False)
     start_time = models.DateTimeField(null=True, default=None, editable=False)
     end_time = models.DateTimeField(null=True, default=None, editable=False)
     name = models.CharField(max_length=255, editable=False)
