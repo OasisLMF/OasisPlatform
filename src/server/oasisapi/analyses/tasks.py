@@ -2,13 +2,11 @@ from __future__ import absolute_import
 
 import json
 import os
-import tarfile
 import uuid
+from datetime import datetime
 from glob import glob
 from itertools import chain
-from shutil import copytree, rmtree
-from tempfile import TemporaryDirectory
-from typing import List, Tuple, Union
+from shutil import rmtree
 
 from celery.signals import before_task_publish
 from celery.utils.log import get_task_logger
@@ -18,9 +16,7 @@ from django.core.files import File
 from django.db.models import When, Case, Value, F
 from django.http import HttpRequest
 from django.utils import timezone
-from django_celery_results.utils import now
 from six import StringIO
-import pandas as pd
 
 from src.conf.iniconf import settings
 from src.server.oasisapi.files.models import RelatedFile
@@ -209,7 +205,7 @@ def record_run_analysis_failure(request, exc, traceback, analysis_pk, initiator_
 
 @celery_app.task(bind=True, name='record_input_files')
 def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=None):
-    record_sub_task_start.delay(analysis_id, slug, self.request.id)
+    record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
     logger.info('result: {}, analysis_id: {}, initiator_id: {}'.format(
         result, analysis_id, initiator_id))
     from .models import Analysis
@@ -336,12 +332,12 @@ def start_loss_generation_task(analysis_pk, initiator_pk):
 
 
 @celery_app.task(bind=True, name='record_sub_task_start')
-def record_sub_task_start(self, analysis_id, task_slug, task_id):
-    _now = now()
+def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None):
+    _now = timezone.now()
 
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
-        task_slug=task_slug
+        slug=task_slug
     ).update(
         task_id=task_id,
         start_time=Case(
@@ -362,18 +358,18 @@ def record_sub_task_start(self, analysis_id, task_slug, task_id):
 
 
 @celery_app.task(bind=True, name='record_sub_task_success')
-def record_sub_task_success(self, res, analysis_id, initiator_id, slug):
+def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task_slug=None):
     log_location = res.get('log_location')
     error_location = res.get('error_location')
 
     task_id = self.request.parent_id
     AnalysisTaskStatus.objects.filter(
-        slug=slug,
+        slug=task_slug,
         analysis_id=analysis_id,
     ).update(
         task_id=task_id,
         status=AnalysisTaskStatus.status_choices.COMPLETED,
-        end_time=now(),
+        end_time=timezone.now(),
         output_log=None if not log_location else RelatedFile.objects.create(
             file=str(log_location),
             filename='{}-output.log'.format(task_id),
@@ -390,15 +386,15 @@ def record_sub_task_success(self, res, analysis_id, initiator_id, slug):
 
 
 @celery_app.task(bind=True, name='record_sub_task_failure')
-def record_sub_task_failure(self, request, exc, traceback, analysis_id, initiator_id, slug):
+def record_sub_task_failure(self, request, exc, traceback, analysis_id=None, initiator_id=None, task_slug=None):
     task_id = self.request.parent_id
     AnalysisTaskStatus.objects.filter(
-        slug=slug,
+        slug=task_slug,
         analysis_id=analysis_id,
     ).update(
         task_id=task_id,
         status=AnalysisTaskStatus.status_choices.ERROR,
-        end_time=now(),
+        end_time=timezone.now(),
         error_log=RelatedFile.objects.create(
             file=File(StringIO(traceback), name='{}.log'.format(uuid.uuid4())),
             filename='{}-error.log'.format(task_id),
@@ -423,7 +419,7 @@ def chord_error_callback(self, analysis_id):
         analysis_id=analysis_id
     ).update(
         status=AnalysisTaskStatus.status_choices.CANCELLED,
-        end_time=now(),
+        end_time=timezone.now(),
     )
 
 
@@ -440,16 +436,21 @@ def cleanup_input_generation_on_error(self, analysis_pk, *args, **kwargs):
 
 
 @before_task_publish.connect
-def mark_task_as_queued(*args, headers=None, body=None, **kwargs):
+def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
     analysis_id = body[1].get('analysis_id')
     slug = body[1].get('slug')
 
     if analysis_id and slug:
-        AnalysisTaskStatus.objects.filter(
-            analysis_id=analysis_id,
-            slug=slug,
-        ).update(
-            task_id=headers['id'],
-            status=AnalysisTaskStatus.status_choices.QUEUED,
-            queue_time=now(),
-        )
+        mark_task_as_queued(analysis_id, slug, headers['id'], timezone.now().timestamp())
+
+
+@celery_app.task(name='mark_task_as_queued')
+def mark_task_as_queued(analysis_id, slug, task_id, dt):
+    AnalysisTaskStatus.objects.filter(
+        analysis_id=analysis_id,
+        slug=slug,
+    ).update(
+        task_id=task_id,
+        status=AnalysisTaskStatus.status_choices.QUEUED,
+        queue_time=datetime.fromtimestamp(dt, tz=timezone.utc),
+    )

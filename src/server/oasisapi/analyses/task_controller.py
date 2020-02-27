@@ -345,9 +345,9 @@ class ChunkedController(BaseController):
         )
 
         # add task to set the status of the sub task status record on success
-        sig.link(record_sub_task_success.s(analysis_id=analysis.pk, initiator_id=initiator.pk, slug=slug))
+        sig.link(record_sub_task_success.s(analysis_id=analysis.pk, initiator_id=initiator.pk, task_slug=slug))
         # add task to set the status of the sub task status record on failure
-        sig.link_error(record_sub_task_failure.s(analysis_id=analysis.pk, initiator_id=initiator.pk, slug=slug))
+        sig.link_error(record_sub_task_failure.s(analysis_id=analysis.pk, initiator_id=initiator.pk, task_slug=slug))
 
         return sig
 

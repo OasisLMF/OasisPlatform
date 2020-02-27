@@ -9,6 +9,7 @@ import subprocess
 import tarfile
 import uuid
 import subprocess
+from datetime import datetime
 from math import ceil
 
 import fasteners
@@ -18,7 +19,7 @@ from contextlib import contextmanager, suppress
 
 from celery import Celery, signature
 from celery.task import task
-from celery.signals import worker_ready
+from celery.signals import worker_ready, before_task_publish
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json, get_dataframe
@@ -131,7 +132,6 @@ def register_worker(sender, **k):
     signature(
         'run_register_worker',
         args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
-        queue='celery'
     ).delay()
 
 
@@ -188,16 +188,19 @@ def get_unique_filename(ext):
 
 
 # Send notification back to the API Once task is read from Queue
-def notify_api_task_started(analysis_pk, task_id, task_slug):
+def notify_api_task_started(analysis_id, task_id, task_slug):
     logging.info("Notify API tasks has started: analysis_id={}, task_id={}, task_slug={}".format(
-        analysis_pk,
+        analysis_id,
         task_id,
         task_slug,
     ))
     signature(
         'record_sub_task_start',
-        args=(analysis_pk, task_slug, task_id),
-        queue='celery'
+        kwargs={
+            'analysis_id': analysis_id,
+            'task_slug': task_slug,
+            'task_id': task_id,
+        },
     ).delay()
 
 
@@ -711,7 +714,6 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
     signature(
         record_task_name,
         args=(analysis_pk, initiator_pk, traceback),
-        queue='celery'
     ).delay()
 
 
@@ -741,3 +743,16 @@ def prepare_complex_model_file_inputs(complex_model_files, upload_directory, run
             shutil.copy(from_path, to_path)
         else:
             os.symlink(from_path, to_path)
+
+
+@before_task_publish.connect
+def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
+    """
+    This receiver is replicated on the server side as it needs to be called from the
+    queueing thread to be triggered
+    """
+    analysis_id = body[1].get('analysis_id')
+    slug = body[1].get('slug')
+
+    if analysis_id and slug:
+        signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
