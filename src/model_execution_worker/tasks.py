@@ -205,7 +205,7 @@ def notify_api_task_started(analysis_id, task_id, task_slug):
 
 
 @task(name='run_analysis', bind=True)
-def start_analysis_task(self, analysis_pk, input_location, analysis_settings_file, complex_data_files=None):
+def start_analysis_task(self, analysis_id=None, initiator_id=None, input_location=None, analysis_settings_file=None, complex_data_files=None, slug=None):
     """Task wrapper for running an analysis.
 
     Args:
@@ -232,7 +232,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings_fil
         logging.info("Acquired resource lock")
 
         try:
-            notify_api_task_started(analysis_pk, self.request.id, self.request.delivery_info['routing_key'])
+            notify_api_task_started(analysis_id, self.request.id, self.request.delivery_info['routing_key'])
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, log_location, error_location, return_code = start_analysis(
                 os.path.join(settings.get('worker', 'MEDIA_ROOT'), analysis_settings_file),
@@ -352,13 +352,15 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
         log_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
         log_directory = os.path.join(run_dir, "log")
         with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), log_location), "w:gz") as tar:
-            tar.add(log_directory, arcname="log")
+            if os.path.exists(log_directory):
+                tar.add(log_directory, arcname="log")
 
         # Results Tar 
         output_location = uuid.uuid4().hex + ARCHIVE_FILE_SUFFIX
         output_directory = os.path.join(run_dir, "output")
         with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
-            tar.add(output_directory, arcname="output")
+            if os.path.exists(output_directory):
+                tar.add(output_directory, arcname="output")
 
     logging.info("Output location = {}".format(output_location))
 
@@ -367,8 +369,9 @@ def start_analysis(analysis_settings_file, input_location, complex_data_files=No
 
 @task(name='generate_input', bind=True)
 def generate_input(self,
-                   analysis_pk,
-                   loc_file,
+                   analysis_id=None,
+                   initiator_id=None,
+                   loc_file=None,
                    acc_file=None,
                    info_file=None,
                    scope_file=None,
@@ -382,6 +385,7 @@ def generate_input(self,
 
     Args:
         analysis_pk (int): ID of the analysis. 
+        analysis_pk (int): ID of the user starting the analysis.
         loc_file (str): Name of the portfolio locations file.
         acc_file (str): Name of the portfolio accounts file.
         info_file (str): Name of the portfolio reinsurance info file.
@@ -397,7 +401,7 @@ def generate_input(self,
     """
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
-    notify_api_task_started(analysis_pk, self.request.id, f'input-generation-{chunk_index or 0}')
+    notify_api_task_started(analysis_id, self.request.id, f'input-generation-{chunk_index or 0}')
 
     media_root = settings.get('worker', 'MEDIA_ROOT')
     location_file = os.path.join(media_root, loc_file)
@@ -613,6 +617,8 @@ def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=Non
 def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=None):
     notify_api_task_started(analysis_id, self.request.id, slug)
     res = {**chunk_params[0]}
+    del res['chunk_keys_fp']
+    del res['chunk_keys_errors_fp']
 
     def load_dataframes(paths):
         for p in paths:
@@ -637,6 +643,10 @@ def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=N
         keys_errors.to_csv(res['keys_errors_fp'], index=False, encoding='utf-8')
     else:
         res['keys_errors_fp'] = None
+
+    # remove all the chunk directories so that they dont break run directory prep
+    for p in glob.glob(os.path.join(res['target_dir'], 'input-generation-chunk-*')):
+        shutil.rmtree(p)
 
     return res
 

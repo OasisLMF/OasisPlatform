@@ -63,17 +63,19 @@ class BaseController:
         QueueModelAssociation.objects.get_or_create(model=analysis.model, queue_name=queue)
 
         if not isinstance(params, Iterable):
-            sig = cls.get_subtask_signature(analysis, initiator, task_name, params, queue)
+            sig = cls.get_subtask_signature(task_name, analysis, initiator, '', queue, params)
 
             # add task to record the results on success
             sig.link(success_callback)
 
             # add task to record the results on failure
             sig.link_error(error_callback)
+
+            sig.delay()
         else:
             # if there is a list of param objects start a chord
             signatures = [
-                cls.get_subtask_signature(analysis, initiator, task_name, p, queue)
+                cls.get_subtask_signature(task_name, analysis, initiator, '', queue, p)
                 for p in params
             ]
 
@@ -83,19 +85,19 @@ class BaseController:
             c.delay()
 
     @classmethod
-    def get_subtask_signature(cls, analysis: 'Analysis', initiator:User, task_name: str, params: TaskParams, queue: str) -> signature:
+    def get_subtask_signature(cls, task_name, analysis, initiator, slug, queue, params: TaskParams) -> Signature:
         from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
         sig = signature(
             task_name,
-            args=params.args,
-            kwargs=params.kwargs,
             queue=queue,
+            args=params.args,
+            kwargs={'initiator_id': initiator.pk, 'analysis_id': analysis.pk, 'slug': slug, **params.kwargs},
         )
 
         # add task to set the status of the sub task status record on success
-        sig.link(record_sub_task_success.s(analysis.pk, initiator.pk))
+        sig.link(record_sub_task_success.s(analysis_id=analysis.pk, initiator_id=initiator.pk, task_slug=slug))
         # add task to set the status of the sub task status record on failure
-        sig.link_error(record_sub_task_failure.s(analysis.pk, initiator.pk))
+        sig.link_error(record_sub_task_failure.s(analysis_id=analysis.pk, initiator_id=initiator.pk, task_slug=slug))
 
         return sig
 
@@ -150,8 +152,7 @@ class BaseController:
         complex_data_files = analysis.create_complex_model_data_file_dicts()
 
         return TaskParams(
-            analysis.pk,
-            loc_file,
+            loc_file=loc_file,
             acc_file=acc_file,
             info_file=info_file,
             scope_file=scope_file,
@@ -274,9 +275,8 @@ class BaseController:
         ]
 
         return TaskParams(
-            analysis.pk,
-            analysis.input_file.file.name,
-            analysis.settings_file.file.name,
+            input_location=analysis.input_file.file.name,
+            analysis_settings_file=analysis.settings_file.file.name,
             complex_data_files=complex_data_files or None
         )
 
@@ -333,23 +333,6 @@ class BaseController:
 
 class ChunkedController(BaseController):
     INPUT_GENERATION_CHUNK_SIZE = settings.get('worker', 'INPUT_GENERATION_CHUNK_SIZE', fallback=1)
-
-    @classmethod
-    def get_subtask_signature(cls, task_name, analysis, initiator, slug, queue, params: TaskParams) -> Signature:
-        from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
-        sig = signature(
-            task_name,
-            queue=queue,
-            args=params.args,
-            kwargs={'initiator_id': initiator.pk, 'analysis_id': analysis.pk, 'slug': slug, **params.kwargs},
-        )
-
-        # add task to set the status of the sub task status record on success
-        sig.link(record_sub_task_success.s(analysis_id=analysis.pk, initiator_id=initiator.pk, task_slug=slug))
-        # add task to set the status of the sub task status record on failure
-        sig.link_error(record_sub_task_failure.s(analysis_id=analysis.pk, initiator_id=initiator.pk, task_slug=slug))
-
-        return sig
 
     @classmethod
     def get_subtask_status(cls, analysis: 'Analysis', name: str, slug: str, queue_name: str) -> 'AnalysisTaskStatus':
