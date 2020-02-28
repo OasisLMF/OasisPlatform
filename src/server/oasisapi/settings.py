@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.analysis_models',
     'src.server.oasisapi.data_files',
     'src.server.oasisapi.healthcheck',
-    'src.server.oasisapi.oed_info',
+    'src.server.oasisapi.info',
 ]
 
 MIDDLEWARE = [
@@ -100,7 +100,6 @@ WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
 
@@ -142,51 +141,50 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
-
 MEDIA_URL = '/media/'
+MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
+# https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
+# Authenticate with S3
+AWS_ACCESS_KEY_ID = iniconf.settings.get('server', 'AWS_ACCESS_KEY_ID', fallback='')
+AWS_SECRET_ACCESS_KEY = iniconf.settings.get('server', 'AWS_SECRET_ACCESS_KEY', fallback='')
+AWS_STORAGE_BUCKET_NAME = iniconf.settings.get('server', 'AWS_BUCKET_NAME', fallback='')
 
-# https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html 
+# S3 Configuration options .
+AWS_DEFAULT_ACL = iniconf.settings.get('server', 'AWS_DEFAULT_ACL', fallback=None)
+AWS_S3_CUSTOM_DOMAIN = iniconf.settings.get('server', 'AWS_S3_CUSTOM_DOMAIN', fallback=None)
+AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='api-server')
+AWS_S3_REGION_NAME = iniconf.settings.get('server', 'AWS_S3_REGION_NAME', fallback=None)
+
+# Presigned generated URLs for private buckets
+AWS_QUERYSTRING_AUTH = iniconf.settings.get('server', 'AWS_QUERYSTRING_AUTH', fallback=True)
+AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
+
+# General optimization for faster delivery
+AWS_IS_GZIPPED = True
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+
+
+# Select Data Storage
 STORAGE_TYPE = iniconf.settings.get('server', 'storage_type', fallback="").lower()
-LOCAL_FS = ['local-fs', 'share-fs']
+LOCAL_FS = ['local-fs', 'shared-fs']
 AWS_S3 = ['aws-s3', 's3', 'aws']
 
 if STORAGE_TYPE in LOCAL_FS:
     # Set Storage to shared volumn mount
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-    MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 
 elif STORAGE_TYPE in AWS_S3:
     # AWS S3 Object Store via `Django-Storages`
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-    # Authenticate with S3
-    AWS_ACCESS_KEY_ID = iniconf.settings.get('server', 'AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = iniconf.settings.get('server', 'AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = iniconf.settings.get('server', 'AWS_BUCKET_NAME')
-    
-    # S3 Configuration options .
-    AWS_DEFAULT_ACL = iniconf.settings.get('server', 'AWS_DEFAULT_ACL', fallback=None)
-    AWS_S3_CUSTOM_DOMAIN = iniconf.settings.get('server', 'AWS_S3_CUSTOM_DOMAIN', fallback=None)
-    AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='api-server')
-    AWS_S3_REGION_NAME = iniconf.settings.get('server', 'AWS_S3_REGION_NAME', fallback=None)
-    
-    # Presigned generated URLs for private buckets 
-    AWS_QUERYSTRING_AUTH = iniconf.settings.get('server', 'AWS_QUERYSTRING_AUTH', fallback=True)
-    AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
-
-    # General optimization for faster delivery
-    AWS_IS_GZIPPED = True
-    AWS_S3_OBJECT_PARAMETERS = {
-        'CacheControl': 'max-age=86400',
-    } 
 else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
-
 
 
 # https://github.com/davesque/django-rest-framework-simplejwt
