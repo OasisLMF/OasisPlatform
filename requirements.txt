@@ -41,7 +41,7 @@ django==3.0.3
 djangorestframework-simplejwt==4.3.0
 djangorestframework==3.10.3
 docutils==0.15.2          # via botocore
-drf-yasg==1.16.1
+drf-yasg==1.17.1
 entrypoints==0.3          # via flake8
 fasteners==0.15
 filelock==3.0.12          # via tox
@@ -70,7 +70,7 @@ monotonic==1.5            # via fasteners
 more-itertools==7.2.0     # via pytest, zipp
 numpy==1.18.1             # via pandas
 oasislmf==1.5.1
-packaging==19.1           # via pytest, tox
+packaging==19.1           # via drf-yasg, pytest, tox
 pandas==0.25.3            # via oasislmf
 pathlib2==2.3.4
 pexpect==4.7.0            # via ipython

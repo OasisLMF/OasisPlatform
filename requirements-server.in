@@ -19,4 +19,4 @@ coreapi
 uwsgi
 whitenoise
 django_celery_results
-drf-yasg
+drf-yasg>=1.17.1
