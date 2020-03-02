@@ -30,7 +30,7 @@ def StorageSelector(settings_conf):
     """
     selected_storage = settings_conf.get('worker', 'STORAGE_TYPE', fallback="").lower()
 
-    if selected_storage in ['local-fs', 'share-fs']:
+    if selected_storage in ['local-fs', 'shared-fs']:
         return BaseStorageConnector(settings_conf)
     elif selected_storage in ['aws-s3', 'aws', 's3']:
         return AwsObjectStore(settings_conf)

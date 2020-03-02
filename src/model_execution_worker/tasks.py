@@ -71,8 +71,7 @@ class TemporaryDir(object):
         self.basedir = basedir
 
         if basedir:
-            if not os.path.isdir(basedir):
-                os.makedirs(basedir)
+            os.makedirs(basedir, exist_ok=True)
 
     def __enter__(self):
         self.name = tempfile.mkdtemp(dir=self.basedir)
