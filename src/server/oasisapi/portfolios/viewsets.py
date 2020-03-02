@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
@@ -71,7 +71,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
 
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioSerializer
-    filter_class = PortfolioFilter
+    filterset_class = PortfolioFilter
 
     def get_serializer_class(self):
         if self.action == 'create_analysis':

@@ -1,4 +1,4 @@
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
@@ -65,7 +65,7 @@ class DataFileFilter(TimeStampedFilter):
 class DataFileViewset(viewsets.ModelViewSet):
     queryset = DataFile.objects.all()
     serializer_class = DataFileSerializer
-    filter_class = DataFileFilter
+    filterset_class = DataFileFilter
 
     def get_serializer_class(self):
         if self.action in ['content', 'set_content']:

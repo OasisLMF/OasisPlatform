@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets, mixins
 
@@ -42,4 +42,4 @@ class FilesViewSet(mixins.RetrieveModelMixin,
     """
     queryset = RelatedFile.objects.all()
     serializer_class = RelatedFileSerializer
-    filter_class = FilesFilter
+    filterset_class = FilesFilter

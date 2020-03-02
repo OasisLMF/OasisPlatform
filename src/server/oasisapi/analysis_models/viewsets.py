@@ -5,7 +5,7 @@ import json
 import os
 
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from django.http import JsonResponse, Http404
 from drf_yasg.utils import swagger_auto_schema
@@ -111,7 +111,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 
     queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
-    filter_class = AnalysisModelFilter
+    filterset_class = AnalysisModelFilter
 
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:
@@ -195,7 +195,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 class ModelSettingsView(viewsets.ModelViewSet):
     queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
-    filter_class = AnalysisModelFilter
+    filterset_class = AnalysisModelFilter
 
     @swagger_auto_schema(method='get', responses={200: ModelParametersSerializer})
     @swagger_auto_schema(method='post', request_body=ModelParametersSerializer, responses={201: RelatedFileSerializer})
