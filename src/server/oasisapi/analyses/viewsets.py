@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -130,7 +130,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     queryset = Analysis.objects.all()
     serializer_class = AnalysisSerializer
-    filter_class = AnalysisFilter
+    filterset_class = AnalysisFilter
 
     file_action_types = ['settings_file',
                          'set_settings_file',
@@ -390,7 +390,7 @@ class AnalysisSettingsView(viewsets.ModelViewSet):
     """
     queryset = Analysis.objects.all()
     serializer_class = AnalysisSerializer
-    filter_class = AnalysisFilter
+    filterset_class = AnalysisFilter
 
     @swagger_auto_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
     @swagger_auto_schema(methods=['post'], request_body=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})

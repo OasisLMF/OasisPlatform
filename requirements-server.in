@@ -14,9 +14,9 @@ markdown
 django-filter
 django-storages
 djangorestframework_simplejwt
-django-model-utils
+django-model-utils>=4.0.0
 coreapi
 uwsgi
 whitenoise
 django_celery_results
-drf-yasg
+drf-yasg>=1.17.1
