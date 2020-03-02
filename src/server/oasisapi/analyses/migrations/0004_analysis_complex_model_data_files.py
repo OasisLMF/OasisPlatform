@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.AlterField(
             model_name='analysis',
             name='complex_model_data_files',
             field=models.ManyToManyField(blank=True, related_name='complex_model_files_analyses', to='data_files.DataFile'),
