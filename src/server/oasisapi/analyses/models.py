@@ -301,7 +301,7 @@ class Analysis(TimeStampedModel):
                return None
 
            # PreSigned URL  
-           if settings.STORAGE_TYPE == 'aws-s3':
+           if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws']:
                 return storage_obj.file.storage.url(storage_obj.file.name)
            # Local filesystem ref     
            else:

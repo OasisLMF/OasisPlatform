@@ -301,6 +301,8 @@ class AwsObjectStore(BaseStorageConnector):
         self.secret_key = settings.get('worker', 'AWS_SECRET_ACCESS_KEY')
 
         # Optional
+        self.endpoint_url = settings.get('worker', 'AWS_S3_ENDPOINT_URL', fallback=None)
+
         self.file_overwrite = settings.get('worker', 'AWS_S3_FILE_OVERWRITE', fallback=True)
         self.object_parameters = settings.get('worker', 'AWS_S3_OBJECT_PARAMETERS', fallback={})
         self.bucket_name = settings.get('worker', 'AWS_BUCKET_NAME')
@@ -349,6 +351,7 @@ class AwsObjectStore(BaseStorageConnector):
                 region_name=self.region_name,
                 use_ssl=self.use_ssl,
                 verify=self.verify,
+                endpoint_url=self.endpoint_url,
             )
         return self._connection
 
