@@ -302,7 +302,6 @@ class AwsObjectStore(BaseStorageConnector):
 
         # Optional
         self.endpoint_url = settings.get('worker', 'AWS_S3_ENDPOINT_URL', fallback=None)
-
         self.file_overwrite = settings.get('worker', 'AWS_S3_FILE_OVERWRITE', fallback=True)
         self.object_parameters = settings.get('worker', 'AWS_S3_OBJECT_PARAMETERS', fallback={})
         self.bucket_name = settings.get('worker', 'AWS_BUCKET_NAME')
