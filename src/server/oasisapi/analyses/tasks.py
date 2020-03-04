@@ -318,6 +318,7 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.RUN_ERROR
         analysis.task_finished = timezone.now()
+        analysis.save()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
         with TemporaryFile() as tmp_file:
@@ -349,6 +350,7 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
         analysis.task_finished = timezone.now()
+        analysis.save()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
         with TemporaryFile() as tmp_file:
