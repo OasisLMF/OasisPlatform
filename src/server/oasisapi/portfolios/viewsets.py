@@ -74,7 +74,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     filterset_class = PortfolioFilter
 
     supported_mime_types = [
-        'application/json', 
+        'application/json',
         'text/csv',
         'application/gzip',
         'application/x-bzip2',
