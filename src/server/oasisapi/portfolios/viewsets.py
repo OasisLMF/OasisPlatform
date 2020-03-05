@@ -73,6 +73,15 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     serializer_class = PortfolioSerializer
     filterset_class = PortfolioFilter
 
+    supported_mime_types = [
+        'application/json', 
+        'text/csv',
+        'application/gzip',
+        'application/x-bzip2',
+        'application/zip',
+        'application/x-bzip2',
+    ]
+
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
@@ -118,7 +127,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `accounts_file` with the portfolio
         """
-        return handle_related_file(self.get_object(), 'accounts_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types)
 
     @accounts_file.mapping.post
     def set_accounts_file(self, request, pk=None, version=None):
@@ -126,7 +135,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `accounts_file` contents
         """
-        return handle_related_file(self.get_object(), 'accounts_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
@@ -138,7 +147,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `location_file` contents
         """
-        return handle_related_file(self.get_object(), 'location_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types)
 
     @location_file.mapping.post
     def set_location_file(self, request, pk=None, version=None):
@@ -146,7 +155,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `location_file` contents
         """
-        return handle_related_file(self.get_object(), 'location_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
@@ -158,7 +167,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `reinsurance_info_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types)
 
     @reinsurance_info_file.mapping.post
     def set_reinsurance_info_file(self, request, pk=None, version=None):
@@ -166,7 +175,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `reinsurance_info_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
@@ -178,7 +187,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `reinsurance_scope_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types)
 
     @reinsurance_scope_file.mapping.post
     def set_reinsurance_scope_file(self, request, pk=None, version=None):
@@ -186,4 +195,4 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `reinsurance_scope_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, ['application/json', 'text/csv'])
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types)
