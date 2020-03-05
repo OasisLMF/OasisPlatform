@@ -2,12 +2,25 @@ OasisPlatform Changelog
 ==================
 
 .. start_latest_release
+`1.6.0`_
+--------
+* #321 - Updated Django to 3.0.3
+* #325 - Fixed Migration issue from version 1.1.2
+* #323 - Added 'server_info' endpoint for details on the running API
+* #317 - Added Backwards compatibility tests to CI
+* #313 - Added option to set run dir location in worker
+* #284 - Added support for S3 Object stores
+* #311 - Improved error logging in worker monitor 
+* #306 - Fixed logical deletion for AnalysisModels
+* #335 - Accept compressed CSV files as portfolio uploads
+* Added `tooltip` to model_settings schema
+
+.. end_latest_release
+
 `1.5.1`_
 --------
 * #309 - worker: Missing error logs from input generation
 * #307 - worker: Show subprocess output in worker logs 
-
-.. end_latest_release
 
 `1.5.0`_
 --------
@@ -190,6 +203,7 @@ OasisPlatform Changelog
 --------
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
+.. _`1.6.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.5.1...1.6.0
 .. _`1.5.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.5.0...1.5.1
 .. _`1.5.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.1...1.5.0
 .. _`1.4.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.0...1.4.1
