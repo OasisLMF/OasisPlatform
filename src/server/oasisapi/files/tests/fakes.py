@@ -1,6 +1,6 @@
 import six
 from django.core.files import File
-from django.utils.six import BytesIO
+from io import BytesIO
 from model_mommy import mommy
 
 from ..models import RelatedFile

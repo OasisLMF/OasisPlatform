@@ -144,11 +144,11 @@ class BaseController:
 
         :return: The name of the queue
         """
-        loc_file = analysis.portfolio.location_file.file.name
-        acc_file = analysis.portfolio.accounts_file.file.name if analysis.portfolio.accounts_file else None
-        info_file = analysis.portfolio.reinsurance_info_file.file.name if analysis.portfolio.reinsurance_info_file else None
-        scope_file = analysis.portfolio.reinsurance_scope_file.file.name if analysis.portfolio.reinsurance_scope_file else None
-        settings_file = analysis.settings_file.file.name if analysis.settings_file else None
+        loc_file = analysis.portfolio.location_file.get_link()
+        acc_file = analysis.portfolio.accounts_file.get_link()
+        info_file = analysis.portfolio.reinsurance_info_file.get_link()
+        scope_file = analysis.portfolio.reinsurance_scope_file.get_link()
+        settings_file = analysis.settings_file.get_link()
         complex_data_files = analysis.create_complex_model_data_file_dicts()
 
         return TaskParams(
@@ -275,8 +275,8 @@ class BaseController:
         ]
 
         return TaskParams(
-            input_location=analysis.input_file.file.name,
-            analysis_settings_file=analysis.settings_file.file.name,
+            input_location=analysis.input_file.get_link(),
+            analysis_settings_file=analysis.settings_file.get_link(),
             complex_data_files=complex_data_files or None
         )
 
@@ -389,7 +389,8 @@ class ChunkedController(BaseController):
         from src.server.oasisapi.analyses.models import AnalysisTaskStatus
 
         media_root = settings.get('worker', 'MEDIA_ROOT')
-        location_data = get_dataframe(src_fp=os.path.join(media_root, analysis.portfolio.location_file.file.name))
+        # Handle case where URL is returned from analysis.portfolio.location_file.get_link()
+        location_data = get_dataframe(src_fp=os.path.join(media_root, analysis.portfolio.location_file.get_link()))
 
         num_chunks = ceil(len(location_data) / cls.INPUT_GENERATION_CHUNK_SIZE)
 
@@ -404,11 +405,11 @@ class ChunkedController(BaseController):
                 'prepare-input-generation-params',
                 queue,
                 TaskParams(
-                    loc_file=analysis.portfolio.location_file.file.name,
-                    acc_file=analysis.portfolio.accounts_file.file.name if analysis.portfolio.accounts_file else None,
-                    info_file=analysis.portfolio.reinsurance_info_file.file.name if analysis.portfolio.reinsurance_info_file else None,
-                    scope_file=analysis.portfolio.reinsurance_scope_file.file.name if analysis.portfolio.reinsurance_scope_file else None,
-                    settings_file=analysis.settings_file.file.name if analysis.settings_file else None,
+                    loc_file=analysis.portfolio.location_file.get_link(),
+                    acc_file=analysis.portfolio.accounts_file.get_link(),
+                    info_file=analysis.portfolio.reinsurance_info_file.get_link(),
+                    scope_file=analysis.portfolio.reinsurance_scope_file.get_link(),
+                    settings_file=analysis.settings_file.get_link(),
                     complex_data_files=analysis.create_complex_model_data_file_dicts(),
                 )
             ),

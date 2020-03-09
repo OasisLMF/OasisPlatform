@@ -19,7 +19,7 @@ from ...portfolios.tests.fakes import fake_portfolio
 from ...files.tests.fakes import fake_related_file
 from ...auth.tests.fakes import fake_user
 from ..models import Analysis, AnalysisTaskStatus
-from ..tasks import record_run_analysis_result, generate_input_success
+from ..tasks import record_run_analysis_result, record_generate_input_result
 from .fakes import fake_analysis, FakeAsyncResultFactory, fake_analysis_task_status
 
 # Override default deadline for all tests to 8s

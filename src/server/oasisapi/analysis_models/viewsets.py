@@ -5,7 +5,7 @@ import json
 import os
 
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from django.http import JsonResponse, Http404
 from drf_yasg.utils import swagger_auto_schema
@@ -23,7 +23,7 @@ from ..filters import TimeStampedFilter
 from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
 from ..schemas.custom_swagger import FILE_RESPONSE
-from ..schemas.serializers import ModelSettingsSerializer
+from ..schemas.serializers import ModelParametersSerializer
 
 
 class AnalysisModelFilter(TimeStampedFilter):
@@ -111,7 +111,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 
     queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
-    filter_class = AnalysisModelFilter
+    filterset_class = AnalysisModelFilter
 
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:
@@ -130,6 +130,24 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
+
+    def create(self, *args, **kwargs):
+        request_data = self.request.data
+        unique_keys = ["supplier_id", "model_id", "version_id"]
+
+        # check if the model is Soft-deleted 
+        if all(k in request_data for k in unique_keys):
+            keys = {k: request_data[k] for k in unique_keys}
+            model = AnalysisModel.all_objects.filter(**keys)
+            if model.exists():
+                model = model.first()
+                if model.deleted:
+                    # If yes, then 'restore' and update
+                    model.activate(self.request)
+                    return Response(AnalysisModelSerializer(instance=model, 
+                                    context=self.get_serializer_context()).data)
+
+        return super(AnalysisModelViewSet, self).create(self.request)
 
     @action(methods=['get'], detail=True)
     def versions(self, request, pk=None, version=None):
@@ -177,10 +195,10 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
 class ModelSettingsView(viewsets.ModelViewSet):
     queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
-    filter_class = AnalysisModelFilter
+    filterset_class = AnalysisModelFilter
 
-    @swagger_auto_schema(method='get', responses={200: ModelSettingsSerializer})
-    @swagger_auto_schema(method='post', request_body=ModelSettingsSerializer, responses={201: RelatedFileSerializer})
+    @swagger_auto_schema(method='get', responses={200: ModelParametersSerializer})
+    @swagger_auto_schema(method='post', request_body=ModelParametersSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def model_settings(self, request, pk=None, version=None):
-        return handle_json_data(self.get_object(), 'resource_file', request, ModelSettingsSerializer)
+        return handle_json_data(self.get_object(), 'resource_file', request, ModelParametersSerializer)

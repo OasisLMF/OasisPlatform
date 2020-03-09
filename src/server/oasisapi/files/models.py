@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 
 
@@ -24,3 +24,12 @@ class RelatedFile(TimeStampedModel):
 
     def read(self, *args, **kwargs):
         return self.file.read(*args, **kwargs)
+
+    def get_link(self):
+       if not self.file:
+           return None
+
+        if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws']:
+            return self.file.storage.url(self.file.name)
+        else:
+            return self.file.name

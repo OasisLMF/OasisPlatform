@@ -11,7 +11,8 @@ from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTa
 from .portfolios.viewsets import PortfolioViewSet
 from .healthcheck.views import HealthcheckView
 from .data_files.viewsets import DataFileViewset
-from .oed_info.views import PerilcodesView
+from .info.views import PerilcodesView
+from .info.views import ServerInfoView
 from .queues.viewsets import QueueViewSet
 
 admin.autodiscover()
@@ -82,6 +83,7 @@ urlpatterns = [
     url(r'^', include('src.server.oasisapi.auth.urls', namespace='auth')),
     url(r'^healthcheck/$', HealthcheckView.as_view(), name='healthcheck'),
     url(r'^oed_peril_codes/$', PerilcodesView.as_view(), name='perilcodes'),
+    url(r'^server_info/$', ServerInfoView.as_view(), name='serverinfo'),
     url(r'^auth/', include('rest_framework.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^(?P<version>[^/]+)/', include(api_router.urls)),

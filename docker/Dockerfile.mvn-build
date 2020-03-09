@@ -1,0 +1,6 @@
+FROM maven:latest
+
+WORKDIR /home/build
+COPY ./docker/entrypoint_mvn-build.sh /usr/local/bin/mvm-build.sh
+COPY ./docker/pom.xml /tmp/
+ENTRYPOINT ["/bin/bash", "-c", "mvm-build.sh \"$@\"", "--"]

@@ -14,6 +14,7 @@ import os
 import sys
 
 from rest_framework.reverse import reverse_lazy
+from django.core.exceptions import ImproperlyConfigured
 
 from ...conf import iniconf  # noqa
 from ...conf.celeryconf import *  # noqa
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'rest_framework_simplejwt.token_blacklist',
     'channels',
+    'storages',
 
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
@@ -61,7 +63,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.analysis_models',
     'src.server.oasisapi.data_files',
     'src.server.oasisapi.healthcheck',
-    'src.server.oasisapi.oed_info',
+    'src.server.oasisapi.info',
     'src.server.oasisapi.queues',
 ]
 
@@ -100,7 +102,6 @@ WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
 
@@ -132,27 +133,62 @@ AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallba
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
-
+#
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
+
+# https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
+# Authenticate with S3
+AWS_ACCESS_KEY_ID = iniconf.settings.get('server', 'AWS_ACCESS_KEY_ID', fallback='')
+AWS_SECRET_ACCESS_KEY = iniconf.settings.get('server', 'AWS_SECRET_ACCESS_KEY', fallback='')
+AWS_STORAGE_BUCKET_NAME = iniconf.settings.get('server', 'AWS_BUCKET_NAME', fallback='')
+
+# S3 Configuration options .
+AWS_DEFAULT_ACL = iniconf.settings.get('server', 'AWS_DEFAULT_ACL', fallback=None)
+AWS_S3_CUSTOM_DOMAIN = iniconf.settings.get('server', 'AWS_S3_CUSTOM_DOMAIN', fallback=None)
+AWS_S3_ENDPOINT_URL = iniconf.settings.get('server', 'AWS_S3_ENDPOINT_URL', fallback=None)
+AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='api-server')
+AWS_S3_REGION_NAME = iniconf.settings.get('server', 'AWS_S3_REGION_NAME', fallback=None)
+
+# Presigned generated URLs for private buckets
+AWS_QUERYSTRING_AUTH = iniconf.settings.get('server', 'AWS_QUERYSTRING_AUTH', fallback=True)
+AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
+
+# General optimization for faster delivery
+AWS_IS_GZIPPED = True
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+
+
+# Select Data Storage
+STORAGE_TYPE = iniconf.settings.get('server', 'storage_type', fallback="").lower()
+LOCAL_FS = ['local-fs', 'shared-fs']
+AWS_S3 = ['aws-s3', 's3', 'aws']
+
+if STORAGE_TYPE in LOCAL_FS:
+    # Set Storage to shared volumn mount
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+elif STORAGE_TYPE in AWS_S3:
+    # AWS S3 Object Store via `Django-Storages`
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+else:
+    raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
+
 
 # https://github.com/davesque/django-rest-framework-simplejwt
 SIMPLE_JWT = {

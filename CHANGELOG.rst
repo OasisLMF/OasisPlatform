@@ -2,6 +2,47 @@ OasisPlatform Changelog
 ==================
 
 .. start_latest_release
+`1.6.0`_
+--------
+* #321 - Updated Django to 3.0.3
+* #325 - Fixed Migration issue from version 1.1.2
+* #323 - Added 'server_info' endpoint for details on the running API
+* #317 - Added Backwards compatibility tests to CI
+* #313 - Added option to set run dir location in worker
+* #284 - Added support for S3 Object stores
+* #311 - Improved error logging in worker monitor 
+* #306 - Fixed logical deletion for AnalysisModels
+* #335 - Accept compressed CSV files as portfolio uploads
+* Added `tooltip` to model_settings schema
+
+.. end_latest_release
+
+`1.5.1`_
+--------
+* #309 - worker: Missing error logs from input generation
+* #307 - worker: Show subprocess output in worker logs 
+
+`1.5.0`_
+--------
+
+* #304 - Slim image builds (Currently optional)
+* #303 - model settings schema Update
+* #302 - Add Maven Swagger API build test
+* #297 - Remove previous output results on run error
+* #297 - Fix Log and traceback storage
+* #222 - Update to  model settings schema
+* #275 - Fixed delete operations with multipart as content type in swagger
+* #274 - Fixed reverting behaviour for complex models (custom gulcalc)
+* #281 - Added Task Queued state
+* #268 - Store run trace on success
+* #287 - Store ktools log directory in an Analyses
+* #283 - Fixed Worker not releasing memory from Python process
+
+`1.4.1`_
+--------
+* Fixes #280 - JSON file schemas compatibility with swagger
+* Added models/{id}/versions endpoint
+* Improved worker environment variables logging and defaults
 
 `1.4.0`_
 --------
@@ -12,32 +53,30 @@ OasisPlatform Changelog
 * Workers log internal versions to the API and docker logs
 * Schemas updated for `analysis_settings` and `model_settings`
 
-.. end_latest_release
-
 `1.3.5`_
 --------
-* Automate GitHub release 
+* Automate GitHub release
 * Hotfix, Add option to disable ktools error monitor in worker
 
 `1.3.4`_
 --------
 * Fix for coverage reports
-* Fix for groovy script  
+* Fix for groovy script
 * Fixes for temporary directory manager
 * Update integration test script
 * Update worker for RI alloc rule
 
 `1.3.3`_
 --------
-* Fix for Cascade delete of traceback files 
+* Fix for Cascade delete of traceback files
 * Fix slow multiprocess lookup with newer billiard lib
 
 `1.3.2`_
 --------
 * Update Django and django-rest-framework to latest versions
-* Added option to rotate refresh token 
-* Fix to remove old error logs once analysis completes successfully 
-* Update worker for MDK 1.4.2  
+* Added option to rotate refresh token
+* Fix to remove old error logs once analysis completes successfully
+* Update worker for MDK 1.4.2
 
 `1.3.1`_
 --------
@@ -64,51 +103,51 @@ OasisPlatform Changelog
 * Added JWT key option to settings conf
 * exposure-summary files added as file endpoints to analyses `/v1/analyses/{id}/lookup_validation_file/`, `lookup_success_file/` and `lookup_errors_file/`
 * Generic `data_files` refactored and added to API
-* `/oed_peril_codes/` added for UI reference 
-* Removed `base` dockerfile 
+* `/oed_peril_codes/` added for UI reference
+* Removed `base` dockerfile
 * `/v1/analyses/{id}/summary_levels_file/` added to analyses
 * Default worker mount point changed from `/var/oasis/model_data` to `/var/oasis`
 * Oasislmf updated to 1.4.0
 
-`1.1.2`_ 
+`1.1.2`_
 --------
 * Hotfix - Set Oasislmf to 1.3.10
 
-`1.1.1`_ 
+`1.1.1`_
 --------
  * Update Oasislmf to 1.3.9
  * Update API test script
-`1.1.0`_ 
+`1.1.0`_
 --------
  * New endpoint `complex_data_files`
- * OasisLMF update to `1.3.8`                                                                  
+ * OasisLMF update to `1.3.8`
  * Ktools update to `v3.0.8`
  * Added environment variable `DEBUG_MODE` to worker for verbose logging
 
-`1.0.2`_ 
+`1.0.2`_
 --------
 * Fix file large file upload error
-* Add Env option to keep worker run directory 
-* Update python requirements 
-* Fix for unittests 
-* Update Oasislmf to 1.3.6 
+* Add Env option to keep worker run directory
+* Update python requirements
+* Fix for unittests
+* Update Oasislmf to 1.3.6
 
-`1.0.1`_ 
+`1.0.1`_
 --------
 * Oasislmf package `1.3.2 <https://github.com/OasisLMF/OasisLMF/tree/1.3.2>`_
 
-`1.0.0`_ 
+`1.0.0`_
 --------
 * Oasislmf package `1.3.1 <https://github.com/OasisLMF/OasisLMF/tree/1.3.1>`_
 * Initial release of New API based on Django REST Framework
-* Worker image updated to handle oasis files generation 
+* Worker image updated to handle oasis files generation
 * For full notes see `Release notes 1.0.0 <https://github.com/OasisLMF/OasisPlatform/blob/develop/RELEASE.md#100-732019>`_
 
 `0.397.3`_
 --------
 * oasislmf package `1.2.3 <https://github.com/OasisLMF/OasisLMF/tree/1.2.3>`_
 * Add Envrioment Variable to set Ktools Allocation rule in worker `KTOOLS_ALLOC_RULE`
-* Update to Automated testing script 
+* Update to Automated testing script
 
 `0.397.2`_
 --------
@@ -120,7 +159,7 @@ OasisPlatform Changelog
 
 `0.397.0`_
 --------
-* Fix for Retry Lock file issue 
+* Fix for Retry Lock file issue
 * Switch Environment variables prefix to `OASIS_<VAR_NAME>` from  `OASIS_API_<VAR_NAME>`
 
 `0.396.2`_
@@ -137,7 +176,7 @@ OasisPlatform Changelog
 `0.396.0`_
 --------
 * oasislmf package `1.2.1 <https://github.com/OasisLMF/OasisLMF/tree/1.2.1>`_
-* Added Dockerfile to build oasis_base via git install of oasislmf 
+* Added Dockerfile to build oasis_base via git install of oasislmf
 * Added Environment Variable for Ktools memory limit `KTOOLS_MEMORY_LIMIT`
 
 `0.395.3`_
@@ -164,6 +203,10 @@ OasisPlatform Changelog
 --------
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
+.. _`1.6.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.5.1...1.6.0
+.. _`1.5.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.5.0...1.5.1
+.. _`1.5.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.1...1.5.0
+.. _`1.4.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.0...1.4.1
 .. _`1.4.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.5...1.4.0
 .. _`1.3.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.4...1.3.5
 .. _`1.3.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.3.3...1.3.4

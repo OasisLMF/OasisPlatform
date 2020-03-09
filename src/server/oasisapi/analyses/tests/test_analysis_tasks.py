@@ -10,7 +10,6 @@ from django.test import override_settings
 from django.utils.timezone import now
 from freezegun import freeze_time
 from hypothesis import given, settings
-from hypothesis._strategies import sampled_from
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text
 from pathlib2 import Path
@@ -32,26 +31,25 @@ class RunAnalysisSuccess(TestCase):
     @given(
         output_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         log_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
-        error_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        traceback_location=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         return_code=sampled_from([0, 1])
     )
-    def test_output_file_and_status_are_updated(self, output_location, log_location, error_location, return_code):
+    def test_output_file_and_status_are_updated(self, output_location, log_location, traceback_location, return_code):
         expected_status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
-                Path(d, output_location).touch()
-                Path(d, log_location).touch()
-                Path(d, error_location).touch()
-
                 initiator = fake_user()
                 analysis = fake_analysis()
+                Path(d, output_location).touch()
+                Path(d, log_location).touch()
+                Path(d, traceback_location).touch()
 
                 record_run_analysis_result(
                     (
-                        output_location,
-                        log_location,
-                        error_location,
+                        os.path.join(d, output_location),
+                        os.path.join(d, traceback_location),
+                        os.path.join(d, log_location),
                         return_code,
                     ),
                     analysis.pk,
@@ -59,16 +57,19 @@ class RunAnalysisSuccess(TestCase):
                 )
 
                 analysis.refresh_from_db()
-                
-                self.assertEqual(analysis.output_file.file.name, output_location)
-                self.assertEqual(analysis.output_file.content_type, 'application/gzip')
-                self.assertEqual(analysis.output_file.creator, initiator)
 
-                self.assertEqual(analysis.run_log_file.file.name, log_location)
+                if return_code == 0:
+                    self.assertEqual(analysis.output_file.filename, output_location)
+                    self.assertEqual(analysis.output_file.content_type, 'application/gzip')
+                    self.assertEqual(analysis.output_file.creator, initiator)
+                else:
+                      self.assertEqual(analysis.output_file, None)
+
+                self.assertEqual(analysis.run_log_file.filename, log_location)
                 self.assertEqual(analysis.run_log_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.run_log_file.creator, initiator)
 
-                self.assertEqual(analysis.run_traceback_file.file.name, error_location)
+                self.assertEqual(analysis.run_traceback_file.filename, traceback_location)
                 self.assertEqual(analysis.run_traceback_file.content_type, 'text/plain')
                 self.assertEqual(analysis.run_traceback_file.creator, initiator)
 
@@ -101,8 +102,9 @@ class GenerateInputsSuccess(TestCase):
         lookup_success_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         lookup_validation_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
         summary_levels_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        traceback_fp=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
     )
-    def test_input_file_lookup_files_and_status_are_updated(self, input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp):
+    def test_input_file_lookup_files_and_status_are_updated(self, input_location, lookup_error_fp, lookup_success_fp, lookup_validation_fp, summary_levels_fp, traceback_fp):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 Path(d, input_location).touch()
@@ -110,6 +112,7 @@ class GenerateInputsSuccess(TestCase):
                 Path(d, lookup_success_fp).touch()
                 Path(d, lookup_validation_fp).touch()
                 Path(d, summary_levels_fp).touch()
+                Path(d, traceback_fp).touch()
 
                 initiator = fake_user()
                 analysis = fake_analysis()
@@ -126,23 +129,23 @@ class GenerateInputsSuccess(TestCase):
                 }, analysis.pk, initiator.pk)
                 analysis.refresh_from_db()
 
-                self.assertEqual(analysis.input_file.file.name, input_location)
+                self.assertEqual(analysis.input_file.filename, input_location)
                 self.assertEqual(analysis.input_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.input_file.creator, initiator)
 
-                self.assertEqual(analysis.lookup_errors_file.file.name, lookup_error_fp)
+                self.assertEqual(analysis.lookup_errors_file.filename, lookup_error_fp)
                 self.assertEqual(analysis.lookup_errors_file.content_type, 'text/csv')
                 self.assertEqual(analysis.lookup_errors_file.creator, initiator)
 
-                self.assertEqual(analysis.lookup_success_file.file.name, lookup_success_fp)
+                self.assertEqual(analysis.lookup_success_file.filename, lookup_success_fp)
                 self.assertEqual(analysis.lookup_success_file.content_type, 'text/csv')
                 self.assertEqual(analysis.lookup_success_file.creator, initiator)
 
-                self.assertEqual(analysis.lookup_validation_file.file.name, lookup_validation_fp)
+                self.assertEqual(analysis.lookup_validation_file.filename, lookup_validation_fp)
                 self.assertEqual(analysis.lookup_validation_file.content_type, 'application/json')
                 self.assertEqual(analysis.lookup_validation_file.creator, initiator)
 
-                self.assertEqual(analysis.summary_levels_file.file.name, summary_levels_fp)
+                self.assertEqual(analysis.summary_levels_file.filename, summary_levels_fp)
                 self.assertEqual(analysis.summary_levels_file.content_type, 'application/json')
                 self.assertEqual(analysis.summary_levels_file.creator, initiator)
 

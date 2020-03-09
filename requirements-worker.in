@@ -2,10 +2,10 @@
 
 billiard
 celery
+boto3
 configparser
 fasteners
-ipdb
 pathlib2
 pymysql
-pytest
 sqlalchemy
+pytest

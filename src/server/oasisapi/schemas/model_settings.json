@@ -25,8 +25,13 @@
                        },
                        "desc": {
                            "type": "string",
-                           "title": "UI tooltip",
+                           "title": "Short description",
                            "description": "UI description for selection"
+                       },
+                       "tooltip": {
+                           "type": "string",
+                           "title": "UI tooltip",
+                           "description": "Long description (optional)"
                        },
                        "default":{
                            "type": "string",
@@ -35,11 +40,11 @@
                        },
                        "options":{
                            "type": "array",
-                           "title": "Selection options",
+                           "title": "Selection options for events",
                            "description": "Array of possible event sets",
                            "items": {
                                "type": "object",
-                               "title": "Selection option",
+                               "title": "Selection option element",
                                "description": "Event sets option",
                                "additionalProperties": false,
                                "properties": {
@@ -52,8 +57,13 @@
                                    "desc": {
                                        "type": "string",
                                        "title": "Event set description",
-                                       "description": "Short string description for an event set file",
+                                       "description": "UI description for selection",
                                        "minLength": 1
+                                   },
+                                   "tooltip": {
+                                       "type": "string",
+                                       "title": "UI tooltip",
+                                       "description": "Long description (optional)"
                                    }
                                },
                                "required": ["id", "desc"]
@@ -77,8 +87,13 @@
                        },
                        "desc": {
                            "type": "string",
-                           "title": "UI tooltip",
+                           "title": "Short description",
                            "description": "UI description for selection"
+                       },
+                       "tooltip": {
+                           "type": "string",
+                           "title": "UI tooltip",
+                           "description": "Long description (optional)"
                        },
                        "default":{
                            "type": "string",
@@ -87,11 +102,11 @@
                        },
                        "options":{
                            "type": "array",
-                           "title": "Selection options",
+                           "title": "Selection options for occurrence" ,
                            "description": "Array of possible occurrence sets",
                            "items": {
                                "type": "object",
-                               "title": "Selection option",
+                               "title": "Selection option element",
                                "description": "Occurrence set options",
                                "additionalProperties": false,
                                "properties": {
@@ -104,8 +119,13 @@
                                    "desc": {
                                        "type": "string",
                                        "title": "Occurrence set description",
-                                       "description": "Short string description for an occurrence set file",
+                                       "description": "UI description for selection",
                                        "minLength": 1
+                                   },
+                                   "tooltip": {
+                                       "type": "string",
+                                       "title": "UI tooltip",
+                                       "description": "Long description (optional)"
                                    },
                                    "max_periods": {
                                        "type": "integer",
@@ -121,6 +141,7 @@
                    "required": ["name", "desc", "default", "options"]
                },
                "string_parameters": {
+                   "title": "Single string paramters",
                    "type":  "array",
                    "uniqueItems": true,
                    "items": {
@@ -138,8 +159,14 @@
                            },
                            "desc": {
                                "type": "string",
+                               "title": "Short description",
+                               "description": "UI description for selection",
+                               "minLength": 1
+                           },
+                           "tooltip": {
+                               "type": "string",
                                "title": "UI tooltip",
-                               "description": "UI description for selection"
+                               "description": "Long description (optional)"
                            },
                            "default":{
                                "type": "string",
@@ -151,6 +178,7 @@
                    }
                },
                "list_parameters": {
+                   "title": "List of strings parameters",
                    "type":  "array",
                    "uniqueItems": true,
                    "items": {
@@ -168,15 +196,21 @@
                            },
                            "desc": {
                                "type": "string",
+                               "title": "Short description",
+                               "description": "UI description for selection",
+                               "minLength": 1
+                           },
+                           "tooltip": {
+                               "type": "string",
                                "title": "UI tooltip",
-                               "description": "UI description for selection"
+                               "description": "Long description (optional)"
                            },
                            "default":{
                                "type": "array",
                                "title": "Default List value",
                                "description": "Default 'list' set for variable",
                                "items":{
-                                   "type": "string" 
+                                   "type": "string"
                                }
                            }
                        },
@@ -184,6 +218,7 @@
                    }
                },
                "dictionary_parameters": {
+                   "title": "Generic dictionary parameters",
                    "type":  "array",
                    "uniqueItems": true,
                    "items": {
@@ -201,8 +236,14 @@
                            },
                            "desc": {
                                "type": "string",
+                               "title": "Short description",
+                               "description": "UI description for selection",
+                               "minLength": 1
+                           },
+                           "tooltip": {
+                               "type": "string",
                                "title": "UI tooltip",
-                               "description": "UI description for selection"
+                               "description": "Long description (optional)"
                            },
                            "default":{
                                "type": "object",
@@ -214,6 +255,7 @@
                    }
                },
                "boolean_parameters": {
+                   "title": "Boolean parameters",
                    "type":  "array",
                    "uniqueItems": true,
                    "items": {
@@ -231,8 +273,14 @@
                            },
                            "desc": {
                                "type": "string",
+                               "title": "Short description",
+                               "description": "UI description for selection",
+                               "minLength": 1
+                           },
+                           "tooltip": {
+                               "type": "string",
                                "title": "UI tooltip",
-                               "description": "UI description for selection"
+                               "description": "Long description (optional)"
                            },
                            "default":{
                                "type": "boolean",
@@ -244,6 +292,7 @@
                    }
                },
                "float_parameters": {
+                   "title": "Bounded float paramters",
                    "type":  "array",
                    "uniqueItems": true,
                    "items": {
@@ -261,8 +310,14 @@
                            },
                            "desc": {
                                "type": "string",
+                               "title": "Short description",
+                               "description": "UI description for selection",
+                               "minLength": 1
+                           },
+                           "tooltip": {
+                               "type": "string",
                                "title": "UI tooltip",
-                               "description": "UI description for selection"
+                               "description": "Long description (optional)"
                            },
                            "default":{
                                "type": "number",
@@ -281,6 +336,157 @@
                            }
                        },
                        "required": ["name", "desc", "default", "max", "min"]
+                   }
+               },
+               "numeric_parameters": {
+                   "title": "unbounded numeric paramters",
+                   "type":  "array",
+                   "uniqueItems": true,
+                   "items": {
+                       "type": "object",
+                       "uniqueItems": false,
+                       "title": "Numeric option",
+                       "description": "Select float value",
+                       "additionalProperties": false,
+                       "properties":{
+                           "name": {
+                               "type": "string",
+                               "title": "UI Option",
+                               "description": "UI name for selection",
+                               "minLength": 1
+                           },
+                           "desc": {
+                               "type": "string",
+                               "title": "Short description",
+                               "description": "UI description for selection",
+                               "minLength": 1
+                           },
+                           "tooltip": {
+                               "type": "string",
+                               "title": "UI tooltip",
+                               "description": "Long description (optional)"
+                           },
+                           "default":{
+                               "type": "number",
+                               "title": "Initial value, integer or float",
+                               "description": "Default integer or float 'value' set for variable"
+                           }
+                       },
+                       "required": ["name", "desc", "default"]
+                   }
+               },
+               "dropdown_parameters": {
+                   "title": "Generic dropdown paramters",
+                   "type":  "array",
+                   "uniqueItems": true,
+                   "items": {
+                       "title": "dropdown option selector",
+                       "description": "The 'id' field is mapped into the analysis settings as 'paramter_name': '<id-selected>'",
+                       "type": "object",
+                       "uniqueItems": false,
+                       "additionalProperties": false,
+                       "properties":{
+                           "name": {
+                               "type": "string",
+                               "title": "UI Option",
+                               "description": "UI name for selection",
+                               "minLength": 1
+                           },
+                           "desc": {
+                               "type": "string",
+                               "title": "Short description",
+                               "description": "UI description for selection",
+                               "minLength": 1
+                           },
+                           "tooltip": {
+                               "type": "string",
+                               "title": "UI tooltip",
+                               "description": "Long description (optional)"
+                           },
+                           "default":{
+                               "type": "string",
+                               "title": "Default Event set",
+                               "description": "Initial setting for dropdown option"
+                           },
+                           "options":{
+                               "type": "array",
+                               "title": "Selection options",
+                               "description": "Array of possible event sets",
+                               "items": {
+                                   "type": "object",
+                                   "title": "Option element",
+                                   "description": "Dropdown option",
+                                   "additionalProperties": false,
+                                   "properties": {
+                                       "id": {
+                                           "type": "string",
+                                           "title": "event set suffix",
+                                           "description": "String value used to select an event set",
+                                           "minLength": 1
+                                       },
+                                       "desc": {
+                                           "type": "string",
+                                           "title": "Short description",
+                                           "description": "UI description for selection",
+                                           "minLength": 1
+                                       },
+                                       "tooltip": {
+                                           "type": "string",
+                                           "title": "UI tooltip",
+                                           "description": "Long description (optional)"
+                                       }
+                                   },
+                                   "required": ["id", "desc"]
+                               }
+                           }
+                       },
+                       "required": ["name", "desc", "default", "options"]
+                   }
+               },
+               "parameter_groups": {
+                   "title": "Parameter Groups",
+                   "type":  "array",
+                   "uniqueItems": true,
+                   "items": {
+                      "title": "Grouping element",
+                      "description": "Defines which parameter are related",
+                      "type": "object",
+                      "uniqueItems": false,
+                      "additionalProperties": false,
+                      "properties":{
+                          "name": {
+                              "type": "string",
+                              "title": "Group name",
+                              "description": "Reference for the group element",
+                              "minLength": 1
+                          },
+                          "desc": {
+                              "type": "string",
+                              "title": "Short description",
+                              "description": "UI description for selection",
+                              "minLength": 1
+                          },
+                          "tooltip": {
+                              "type": "string",
+                              "title": "UI tooltip",
+                              "description": "Long description (optional)"
+                          },
+                          "priority_id":{
+                              "type": "integer",
+                              "title": "Display priority",
+                              "description": "Set which parameter groups to display first"
+                          },
+                          "presentation_order":{
+                              "type": "array",
+                              "title": "presentation of grouped parameters",
+                              "description": "List of parameters reference by their 'name' property",
+                              "items":{
+                                  "type": "string",
+                                  "minItems": 1
+                              }
+                           }
+                       },
+                       "required": ["name", "desc", "priority_id", "presentation_order"]
                    }
                }
            }
@@ -317,6 +523,118 @@
                             }
                         },
                         "required": ["id", "desc"]
+                    }
+                }
+            }
+        },
+        "data_settings":{
+            "type": "object",
+            "title": "Model data settings",
+            "description": "Additional data options for a model",
+            "properties": {
+	       "group_fields": {
+		   "title": "Group OED fields",
+		   "description": "List of OED fields from location file to form groups",
+		   "type": "array",
+		   "items": {
+		       "type": "string"
+		   }
+	       },
+                "datafile_selectors": {
+                    "type": "array",
+                    "title": "`Data_files  Selector",
+                    "description": "Select file_ids from the API endpoint `/v1/data_files/` to connect with an analyses run",
+                    "additionalProperties": false,
+                    "items": {
+                        "type": "object",
+                        "title": "File Selection Parameter",
+                        "description": "",
+                        "additionalProperties": false,
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "title": "Name reference",
+                                "description": "name used store the selection under",
+                                "minLength": 1
+                            },
+                           "desc": {
+                               "type": "string",
+                               "title": "Short description",
+                               "description": "UI description for selection"
+                           },
+                           "tooltip": {
+                               "type": "string",
+                               "title": "UI tooltip",
+                               "description": "Long description (optional)"
+                           },
+                            "model_id":{
+                                "type": "integer",
+                                "title": "API Model_id reference",
+                                "description": "call to `/v1/models/{id}/data_files/` to filter files by model association"
+                            },
+                            "allow_multiple":{
+                                "type": "boolean",
+                                "title": "Multiple Files option",
+                                "description": "Allow the user to link multiple files to an analyses."
+                            },
+                            "search_filters":{
+                                "type": "array",
+                                "title": "File options filter",
+                                "description": "",
+                                "additionalProperties": false,
+                                "items": {
+                                    "type": "object",
+                                    "title": "File Filters values",
+                                    "description": "Build a query string from the following fields",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "user": {
+                                            "type": "string",
+                                            "title": "User filter",
+                                            "description": "File was uploaded by 'user'",
+                                            "minLength": 1
+                                        },
+                                        "filename": {
+                                            "type": "string",
+                                            "title": "Filename filter",
+                                            "description": "Filename exactly matches 'value'",
+                                            "minLength": 1
+                                        },
+                                        "filename__contains": {
+                                            "type": "string",
+                                            "title": "Filename contains filter",
+                                            "description": "'value' is a substring of filename",
+                                            "minLength": 1
+                                        },
+                                        "file_description": {
+                                            "type": "string",
+                                            "title": "File description filter",
+                                            "description": "File description matches 'value' exactly",
+                                            "minLength": 1
+                                        },
+                                        "file_description__contains": {
+                                            "type": "string",
+                                            "title": "File description contains filter",
+                                            "description": "'value' is a substring of a File's description'",
+                                            "minLength": 1
+                                        },
+                                        "content_type": {
+                                            "type": "string",
+                                            "title": "content type filter",
+                                            "description": "file exactly matches a MIME type",
+                                            "minLength": 1
+                                        },
+                                        "content_type__contains": {
+                                            "type": "string",
+                                            "title": "Content type contains filter",
+                                            "description": "A files MIME type contains 'value'",
+                                            "minLength": 1
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "required": ["name", "desc", "allow_multiple"]
                     }
                 }
             }

@@ -8,8 +8,7 @@ from src.server.oasisapi.celery import celery_app
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.utils.encoding import python_2_unicode_compatible
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
@@ -130,7 +129,6 @@ class AnalysisTaskStatus(models.Model):
         return reverse('analysis-task-status-error-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
-@python_2_unicode_compatible
 class Analysis(TimeStampedModel):
     status_choices = Choices(
         ('NEW', 'New'),
@@ -150,7 +148,7 @@ class Analysis(TimeStampedModel):
 
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
-    model = models.ForeignKey(AnalysisModel, on_delete=models.DO_NOTHING, related_name='analyses', help_text=_('The model to link the analysis to'))
+    model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NEW, editable=False)
     task_started = models.DateTimeField(editable=False, null=True, default=None)
@@ -228,6 +226,7 @@ class Analysis(TimeStampedModel):
     def get_absolute_run_log_file_url(self, request=None):
         return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+
     def validate_run(self):
         valid_choices = [
             self.status_choices.READY,
@@ -235,13 +234,15 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_ERROR,
             self.status_choices.RUN_CANCELLED,
         ]
-
         if self.status not in valid_choices:
             raise ValidationError(
                 {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
             )
 
         errors = {}
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+
         if not self.settings_file:
             errors['settings_file'] = ['Must not be null']
 
@@ -269,7 +270,6 @@ class Analysis(TimeStampedModel):
         self.validate_run()
 
         self.status = self.status_choices.RUN_QUEUED
-        self.input_generation_traceback_file_id = None
 
         task = self.run_analysis_signature
         task.on_error(celery_app.signature('record_run_analysis_failure', (self.pk, initiator.pk, )))
@@ -330,6 +330,9 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
 
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
 
@@ -361,11 +364,12 @@ class Analysis(TimeStampedModel):
         """
         complex_data_files = [
             {
-                STORED_FILENAME: cmdf.file.file.name,
+                STORED_FILENAME: cmdf.file.get_link(),
                 ORIGINAL_FILENAME: cmdf.file.filename
             } for cmdf in self.complex_model_data_files.all()
         ]
         return complex_data_files
+
 
     def copy(self):
         new_instance = self

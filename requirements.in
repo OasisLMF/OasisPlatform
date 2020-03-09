@@ -1,41 +1,20 @@
--e git://github.com/OasisLMF/OasisLMF.git@feature/architecture2020#egg=oasislmf
+-r ./requirements-worker.in
+-r ./requirements-server.in
 
-celery
-pymysql
-jsonpickle
-jsonschema
 requests
 pyopenssl
 fasteners
 coverage
 flake8
 backports.tempfile
-configparser
-pathlib2
 hypothesis
 mock
 tox
 pip-tools
 ipdb
-ipython<6
-sqlalchemy
 pytest
 pytest-cov
 pytest-django
-django
-djangorestframework
-markdown
-django-filter
 model_mommy
 django-webtest
-djangorestframework_simplejwt
-django-model-utils
-coreapi
-uwsgi
-whitenoise
-django_celery_results
-drf-yasg
 freezegun
-channels
-channels_redis
-pyrabbit

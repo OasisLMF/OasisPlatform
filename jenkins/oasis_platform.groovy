@@ -12,12 +12,12 @@ node {
         [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
-        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: '0_case 1_case control_set'],
-        //[$class: 'TextParameterDefinition',    name: 'APPEND_CHANGELOG', defaultValue: '\n\n'],
-        //[$class: 'TextParameterDefinition',    name: 'APPEND_RELEASE', defaultValue: '\n\n'],
+        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: 'control_set 0_case 1_case'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', name: 'AUTO_MERGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(true)]
       ])
     ])
@@ -27,11 +27,15 @@ node {
     String build_branch = params.BUILD_BRANCH
     String build_workspace = 'oasis_build'
 
-    // docker vars
-    String docker_api_sql  = "Dockerfile.api_server"
-    String image_api_sql   = "coreoasis/api_server"
-    String docker_worker   = "Dockerfile.model_worker"
-    String image_worker    = "coreoasis/model_worker"
+    // docker vars (main)
+    String docker_api    = "Dockerfile.api_server"
+    String image_api     = "coreoasis/api_server"
+    String docker_worker = "Dockerfile.model_worker"
+    String image_worker  = "coreoasis/model_worker"
+
+    // docker vars (slim)
+    String docker_api_slim    = "docker/Dockerfile.api_server_alpine"
+    String docker_worker_slim = "docker/Dockerfile.model_worker_slim"
 
     // platform vars
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
@@ -121,13 +125,19 @@ node {
         )
         stage('Shell Env'){
             sh  PIPELINE + ' print_model_vars'
+            if (params.CHECK_COMPATIBILITY) {
+                dir(oasis_workspace) {
+                    sh "curl https://api.github.com/repos/OasisLMF/OasisPlatform/tags | jq -r '( first ) | .name' > last_release_tag"
+                    env.LAST_RELEASE_TAG = readFile('last_release_tag').trim()
+                    println("LAST_RELEASE = $env.LAST_RELEASE_TAG")
+                }
+            }
         }
         if (mdk_branch && ! params.PUBLISH){
             stage('Git install MDK'){
                 dir(oasis_workspace) {
                     // update worker and server install lists
-                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
-                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.in"
+                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.txt"
                 }
             }
         }
@@ -140,7 +150,10 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_api_sql} ${image_api_sql} ${env.TAG_RELEASE}"
+                        if (params.PUBLISH) {
+                            sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
+                        }
+                        sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
 
                     }
                 }
@@ -148,6 +161,9 @@ node {
             build_model_execution_worker: {
                 stage('Build: model exec worker') {
                     dir(oasis_workspace) {
+                        if (params.PUBLISH) {
+                            sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
+                        }
                         sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
                     }
                 }
@@ -157,6 +173,11 @@ node {
             stage('Run: unittest') {
                 dir(oasis_workspace) {
                     sh " ./runtests.sh"
+                }
+            }
+            stage('Run: Test API schema') {
+                dir(oasis_workspace) {
+                    sh " ./build-maven.sh ${env.TAG_RELEASE}"
                 }
             }
         }
@@ -175,18 +196,50 @@ node {
             }
         }
 
+       if (params.CHECK_COMPATIBILITY) {
+           stage("Compatibility with worker:${env.LAST_RELEASE_TAG}") {
+               dir(build_workspace) {
+                   // Set tags
+                   env.TAG_RUN_PLATFORM = params.RELEASE_TAG
+                   env.TAG_RUN_WORKER = env.LAST_RELEASE_TAG
+
+                   // Setup containers
+                   sh PIPELINE + " start_model"
+
+                   // run test
+                    sh PIPELINE + " run_test --test-case ${api_server_tests[0]}"
+               }
+           }    
+           stage("Compatibility with server:${env.LAST_RELEASE_TAG}") {
+               dir(build_workspace) {
+                   // Set tags
+                   env.TAG_RUN_PLATFORM = env.LAST_RELEASE_TAG
+                   env.TAG_RUN_WORKER = params.RELEASE_TAG
+
+                   // Setup containers
+                   sh PIPELINE + " start_model"
+
+                   // run test
+                   sh PIPELINE + " run_test --test-case ${api_server_tests[0]}"
+               }
+           }    
+       }
+
+
         if (params.PUBLISH){
             parallel(
                 publish_api_server: {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api_sql} ${env.TAG_RELEASE}"
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-slim"
+                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
                         }
                     }
                 },
                 publish_model_worker: {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}-slim"
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
                         }
                     }
@@ -206,7 +259,7 @@ node {
                         sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                     }
                 }
-                
+
                 // Create Release
                 withCredentials([string(credentialsId: 'github-api-token', variable: 'gh_token')]) {
                     dir(oasis_workspace) {
@@ -224,7 +277,7 @@ node {
 
                         // Fetch release ID and post json schema
                         def response = readJSON file: "gh_response.json"
-                        release_id = response['id']                                                                                                                                                                                                                                               
+                        release_id = response['id']
                         dir('reports') {
                             filename='openapi-schema.json'
                             sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
@@ -246,8 +299,13 @@ node {
             sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor > ./stage/log/worker-monitor.log '
             sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
             if(params.PURGE){
-                sh PIPELINE + " purge_image ${image_api_sql} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
+
+                if (params.PUBLISH) {
+                    sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}-slim"
+                    sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-slim"
+                }
             }
         }
 
@@ -273,7 +331,7 @@ node {
             }
         }
         // Run merge back if publish
-        if (params.PUBLISH){ 
+        if (params.PUBLISH && params.AUTOMERGE){
             dir(oasis_workspace) {
                 sshagent (credentials: [git_creds]) {
                     sh "git stash"
@@ -281,8 +339,8 @@ node {
                     sh "git merge ${oasis_branch} && git push"
                     sh "git checkout develop && git pull"
                     sh "git merge master && git push"
-                }   
-            }   
-        }   
+                }
+            }
+        }
     }
 }
