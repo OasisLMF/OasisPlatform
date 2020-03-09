@@ -206,7 +206,7 @@ class BaseController:
         :return: The signature for the input recording task.
         """
         return signature(
-            'generate_input_success',
+            'record_generate_input_result',
             args=(analysis.pk, initiator.pk),
         )
 

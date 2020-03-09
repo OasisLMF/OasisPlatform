@@ -360,7 +360,8 @@ def generate_input(self,
                    scope_file=None,
                    settings_file=None,
                    complex_data_files=None,
-                   chunk_index=None):
+                   chunk_index=None,
+                   slug=None):
     """Generates the input files for the loss calculation stage.
 
     This function is a thin wrapper around "oasislmf model generate-oasis-files".
@@ -460,27 +461,22 @@ def generate_input(self,
         summary_levels    = filestore.put(summary_levels_fp)
         output_tar_path   = filestore.put(oasis_files_dir)
 
-        logging.info("output_tar_fp: {}".format(output_tar_path))
-        logging.info("lookup_error_fp: {}".format(lookup_error_fp))
-        logging.info("lookup_success_fp: {}".format(lookup_success_fp))
-        logging.info("lookup_validation_fp: {}".format(lookup_validation_fp))
-        logging.info("summary_levels_fp: {}".format(summary_levels_fp))
-
-        with tarfile.open(output_tar_name, 'w:gz') as tar:
-            tar.add(oasis_files_dir, arcname='/')
-
-        return {
+        # Store refs
+        task_results = {
             'output_location': output_tar_path,
             'log_location': traceback,
             #'error_location': traceback_fp,
-            'return_code': res.returncode,
+            'return_code':result.returncode,
             'lookup_error_location': lookup_error,
             'lookup_success_location': lookup_success,
             'lookup_validation_location': lookup_validation,
             'summary_levels_location': summary_levels,
             'task_id': self.request.id,
         }
-
+        ## Merge 'Store refs' and ' Store result files' ?
+        logging.debug("task_output: {}".format(task_results))
+        return task_results
+        
 
 @task(bind=True, name='prepare_input_generation_params')
 def prepare_input_generation_params(
