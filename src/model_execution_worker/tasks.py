@@ -513,6 +513,10 @@ def generate_input(self,
             'task_id': self.request.id,
         }
 
+#
+# input generation tasks
+#
+
 
 @task(bind=True, name='prepare_input_generation_params')
 def prepare_input_generation_params(
@@ -707,7 +711,134 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
         shutil.rmtree(params['target_dir'], ignore_errors=True)
 
         if params['user_data_dir']:
-            shutil.rmtree(params['target_dir'], ignore_errors=True)
+            shutil.rmtree(params['user_data_dir'], ignore_errors=True)
+
+    return params
+
+
+#
+# loss generation tasks
+#
+
+
+@task(bind=True, name='extract_losses_generation_inputs')
+def extract_losses_generation_inputs(
+    self,
+    inputs_location=None,
+    complex_data_files=None,
+    analysis_id=None,
+    initiator_id=None,
+    slug=None,
+):
+    media_root = settings.get('worker', 'MEDIA_ROOT')
+
+    run_dir = os.path.join(media_root, f'loss-generation-oasis-files-dir-{analysis_id}-{uuid.uuid4()}')
+    Path(run_dir).mkdir(parents=True, exist_ok=True)
+
+    media_root = settings.get('worker', 'MEDIA_ROOT')
+    input_archive = os.path.join(media_root, inputs_location)
+
+    if not os.path.exists(input_archive):
+        raise MissingInputsException(input_archive)
+    if not tarfile.is_tarfile(input_archive):
+        raise InvalidInputsException(input_archive)
+
+    input_data_dir = os.path.join(run_dir, 'input')
+    with tarfile.open(input_archive) as f:
+        f.extractall(input_data_dir)
+
+    if complex_data_files:
+        user_data_dir = os.path.join(media_root, f'loss-generation-oasis-files-dir-{analysis_id}-{uuid.uuid4()}')
+        Path(user_data_dir).mkdir(parents=True, exist_ok=True)
+        prepare_complex_model_file_inputs(complex_data_files, media_root, user_data_dir)
+    else:
+        user_data_dir = None
+
+    return run_dir, user_data_dir
+
+
+@task(bind=True, name='prepare_losses_generation_params')
+def prepare_losses_generation_params(
+    self,
+    run_paths,
+    analysis_id=None,
+    initiator_id=None,
+    analysis_settings_file=None,
+    slug=None,
+    num_chunks=None,
+):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+    run_path, user_data_dir = run_paths
+
+    media_root = settings.get('worker', 'MEDIA_ROOT')
+
+    model_id = settings.get('worker', 'model_id')
+    config_path = get_oasislmf_config_path(model_id)
+    config = get_json(config_path)
+
+    oasis_files_dir = os.path.join(run_path, 'input')
+
+    return OasisManager().prepare_loss_generation_params(
+        run_path,
+        oasis_files_dir,
+        os.path.join(media_root, analysis_settings_file),
+        os.path.join(os.path.dirname(config_path), config['model_data_path']),
+        user_data_dir=user_data_dir,
+        ktools_error_guard=settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True),
+        ktools_debug=settings.getboolean('worker', 'DEBUG_MODE', fallback=False),
+        ktools_fifo_relative=True,
+        ktools_alloc_rule_gul=settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None),
+        ktools_alloc_rule_il=settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None),
+        ktools_alloc_rule_ri=settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None),
+        ktools_num_processes=num_chunks,
+    )
+
+
+@task(bind=True, name='prepare_losses_generation_directory')
+def prepare_losses_generation_directory(self, params, analysis_id=None, initiator_id=None, slug=None):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+
+    params['analysis_settings'] = OasisManager().prepare_run_directory(**params)
+
+    return params
+
+
+@task(bind=True, name='generate_losses_chunk')
+def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, initiator_id=None, slug=None):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+
+    chunk_params = {**params, 'script_fp': f'{params["script_fp"]}.{chunk_idx}'}
+
+    params['fifo_queue_dir'], params['bash_trace'] = OasisManager().run_loss_generation(**chunk_params)
+
+    return {
+        **params,
+        'chunk_script_path': chunk_params['script_fp'],
+    }
+
+
+@task(bind=True, name='generate_losses_output')
+def generate_losses_output(self, params, analysis_id=None, initiator_id=None, slug=None):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+    res = {**params[0]}
+
+    OasisManager().run_loss_outputs(**res)
+    res['bash_trace'] = '\n\n'.join(
+        f'Analysis Chunk {idx}:\n{chunk["bash_trace"]}' for idx, chunk in enumerate(params)
+    )
+
+    return params[0]
+
+
+@task(bind=True, name='cleanup_losses_generation')
+def cleanup_losses_generation(self, params, analysis_id=None, initiator_id=None, slug=None):
+    notify_api_task_started(analysis_id, self.request.id, slug)
+
+    if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
+        shutil.rmtree(params['model_run_fp'], ignore_errors=True)
+
+        if params['user_data_dir']:
+            shutil.rmtree(params['user_data_dir'], ignore_errors=True)
 
     return params
 

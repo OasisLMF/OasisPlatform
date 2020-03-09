@@ -475,6 +475,94 @@ class ChunkedController(BaseController):
         analysis.generate_inputs_task_id = c.delay().id
         analysis.save()
 
+    @classmethod
+    def generate_losses(cls, analysis: 'Analysis', initiator: User):
+        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+
+        num_chunks = 4
+
+        queue = cls.get_generate_inputs_queue(analysis, initiator)
+
+        statuses_and_tasks = [
+            cls.get_subtask_statuses_and_signature(
+                'extract_losses_generation_inputs',
+                analysis,
+                initiator,
+                'Extract losses generation inputs',
+                'extract-losses-generation-inputs',
+                queue,
+                TaskParams(
+                    inputs_location=analysis.input_file.file.name,
+                    complex_data_files=analysis.create_complex_model_data_file_dicts(),
+                )
+            ),
+            cls.get_subtask_statuses_and_signature(
+                'prepare_losses_generation_params',
+                analysis,
+                initiator,
+                'Prepare losses generation params',
+                'prepare-losses-generation-params',
+                queue,
+                TaskParams(
+                    analysis_settings_file=analysis.settings_file.file.name if analysis.settings_file else None,
+                    num_chunks=num_chunks,
+                )
+            ),
+            cls.get_subtask_statuses_and_signature(
+                'prepare_losses_generation_directory',
+                analysis,
+                initiator,
+                'Prepare losses generation directory',
+                'prepare-losses-generation-directory',
+                queue,
+            ),
+            cls.get_subchord_statuses_and_signature(
+                'generate_losses_chunk',
+                analysis,
+                initiator,
+                'Generate losses chunk',
+                'generate-losses-chunk',
+                queue,
+                [TaskParams(idx, num_chunks) for idx in range(num_chunks)],
+                cls.get_subtask_statuses_and_signature(
+                    'generate_losses_output',
+                    analysis,
+                    initiator,
+                    'Generate losses output',
+                    'generate_losses_output',
+                    queue,
+                ),
+            ),
+            cls.get_subtask_statuses_and_signature(
+                'record_losses_files',
+                analysis,
+                initiator,
+                'Record losses files',
+                'record-losses-files',
+                'celery',
+            ),
+            cls.get_subtask_statuses_and_signature(
+                'cleanup_losses_generation',
+                analysis,
+                initiator,
+                'Cleanup losses generation',
+                'cleanup-losses-generation',
+                queue,
+            ),
+        ]
+
+        # setup each of the task status objects for each subtask
+        statuses, tasks = list(zip(*statuses_and_tasks))
+
+        analysis.sub_task_statuses.all().delete()
+        AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
+
+        c = chain(*tasks)
+        c.link_error(signature('cleanup_loss_generation_on_error', args=(analysis.pk, )))
+
+        analysis.generate_losses_task_id = c.delay().id
+        analysis.save()
+
 
 def get_analysis_task_controller() -> Type[BaseController]:
     controller_path = settings.get(

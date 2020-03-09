@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import json
 import os
+import tarfile
 import traceback
 import uuid
 from datetime import datetime
@@ -206,10 +207,11 @@ def record_run_analysis_failure(request, exc, traceback, analysis_pk, initiator_
 
 @celery_app.task(bind=True, name='record_input_files')
 def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=None):
+    from .models import Analysis
+
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
     logger.info('result: {}, analysis_id: {}, initiator_id: {}'.format(
         result, analysis_id, initiator_id))
-    from .models import Analysis
 
     input_location = result.get('output_location')
     lookup_error_fp = result.get('lookup_error_location')
@@ -306,6 +308,55 @@ def record_generate_input_failure(request, exc, traceback, analysis_pk, initiato
         analysis.save()
     except Exception as e:
         logger.exception(str(e))
+
+
+@celery_app.task(bind=True, name='record_losses_files')
+def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=None):
+    from .models import Analysis
+
+    record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
+
+    initiator = get_user_model().objects.get(pk=initiator_id)
+    analysis = Analysis.objects.get(pk=analysis_id)
+    analysis.status = Analysis.status_choices.RUN_COMPLETED
+    analysis.task_finished = timezone.now()
+
+    # Trace back file (stdout + stderr)
+    traceback_location = f'{uuid.uuid4().hex}.tar.gz'
+    with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
+        f.write(result['bash_trace'])
+
+    # Ktools log Tar file
+    log_location = f'{uuid.uuid4().hex}.tar.gz'
+    log_directory = os.path.join(result['model_run_fp'], "log")
+    if os.path.exists(log_directory):
+        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), log_location), "w:gz") as tar:
+            tar.add(log_directory, arcname="log")
+
+        analysis.run_log_file = RelatedFile.objects.create(
+            file=str(log_location),
+            filename=str(log_location),
+            content_type='application/gzip',
+            creator=initiator,
+        )
+
+    # Results Tar
+    output_location = f'{uuid.uuid4().hex}.tar.gz'
+    output_directory = os.path.join(result['model_run_fp'], "output")
+    if os.path.exists(output_directory):
+        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
+            tar.add(output_directory, arcname="output")
+
+        analysis.output_file = RelatedFile.objects.create(
+            file=str(output_location),
+            filename=str(output_location),
+            content_type='application/gzip',
+            creator=initiator,
+        )
+
+    analysis.save()
+
+    return result
 
 
 @celery_app.task(name='start_input_generation_task')
@@ -426,14 +477,29 @@ def chord_error_callback(self, analysis_id):
 
 @celery_app.task(bind=True, name='cleanup_input_generation_on_error')
 def cleanup_input_generation_on_error(self, analysis_pk, *args, **kwargs):
-    media_root = settings.get('worker', 'media_root')
-    directories = chain(
-        glob(os.path.join(media_root, f'input-generation-oasis-files-dir-{analysis_pk}-*')),
-        glob(os.path.join(media_root, f'input-generation-input-data-dir-{analysis_pk}-*')),
-    )
+    if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
+        media_root = settings.get('worker', 'media_root')
 
-    for p in directories:
-        rmtree(p)
+        directories = chain(
+            glob(os.path.join(media_root, f'input-generation-oasis-files-dir-{analysis_pk}-*')),
+            glob(os.path.join(media_root, f'input-generation-input-data-dir-{analysis_pk}-*')),
+        )
+
+        for p in directories:
+            rmtree(p)
+
+
+@celery_app.task(bind=True, name='cleanup_loss_generation_on_error')
+def cleanup_loss_generation_on_error(self, analysis_pk, *args, **kwargs):
+    if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
+        media_root = settings.get('worker', 'media_root')
+        directories = chain(
+            glob(os.path.join(media_root, f'loss-generation-oasis-files-dir-{analysis_pk}-*')),
+            glob(os.path.join(media_root, f'loss-generation-input-data-dir-{analysis_pk}-*')),
+        )
+
+        for p in directories:
+            rmtree(p)
 
 
 @before_task_publish.connect
