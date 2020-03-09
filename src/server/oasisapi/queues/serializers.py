@@ -7,6 +7,7 @@ from src.server.oasisapi.analysis_models.serializers import AnalysisModelSeriali
 
 class QueueSerializer(serializers.Serializer):
     name = serializers.CharField()
+    pending_count = serializers.IntegerField()
     worker_count = serializers.IntegerField()
     queued_count = serializers.IntegerField()
     running_count = serializers.IntegerField()

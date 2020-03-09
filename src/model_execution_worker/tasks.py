@@ -814,6 +814,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     return {
         **params,
         'chunk_script_path': chunk_params['script_fp'],
+        'process_number': chunk_idx + 1,
     }
 
 

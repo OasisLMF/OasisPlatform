@@ -66,6 +66,7 @@ def get_queues_info() -> List[QueueInfo]:
     res = [
         {
             'name': q,
+            'pending_count': 0,
             'queued_count': 0,
             'running_count': 0,
             'worker_count': 0,
@@ -87,6 +88,18 @@ def get_queues_info() -> List[QueueInfo]:
                 })
 
     # get the stats of the running and queued tasks
+    pending = reduce(
+        lambda current, value: _add_to_dict(current, value['queue_name'], value['count']),
+        AnalysisTaskStatus.objects.filter(
+            status=AnalysisTaskStatus.status_choices.PENDING,
+        ).values(
+            'queue_name',
+        ).annotate(
+            count=Count('pk'),
+        ),
+        {}
+    )
+
     running = reduce(
         lambda current, value: _add_to_dict(current, value['queue_name'], value['count']),
         AnalysisTaskStatus.objects.filter(
@@ -112,6 +125,7 @@ def get_queues_info() -> List[QueueInfo]:
     )
 
     for entry in res:
+        entry['pending_count'] = queued.get(entry['name'], 0)
         entry['queued_count'] = queued.get(entry['name'], 0)
         entry['running_count'] = running.get(entry['name'], 0)
 

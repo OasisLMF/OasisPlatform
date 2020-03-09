@@ -568,7 +568,7 @@ def get_analysis_task_controller() -> Type[BaseController]:
     controller_path = settings.get(
         'worker',
         'ANALYSIS_TASK_CONTROLLER',
-        fallback='src.server.oasisapi.analyses.task_controller.BaseController'
+        fallback='src.server.oasisapi.analyses.task_controller.ChunkedController'
     )
 
     controller_module, controller_class = controller_path.rsplit('.', maxsplit=1)
