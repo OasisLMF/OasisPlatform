@@ -25,7 +25,7 @@ from six import StringIO
 
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
-from src.server.oasisapi.schemas.serializers import ModelSettingsSerializer
+from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
 from tempfile import TemporaryFile
@@ -38,6 +38,7 @@ logger = get_task_logger(__name__)
 
 TaskId = str
 PathStr = str
+
 
 def is_valid_url(url):
     if url:
@@ -71,10 +72,10 @@ def store_file(reference, content_type, creator):
 
     else:
         # create RelatedFile object from filepath
-        file_name = os.path.basename(reference) 
+        file_name = os.path.basename(reference)
         file_path = os.path.join(
-           settings.MEDIA_ROOT,
-           file_name,
+            settings.MEDIA_ROOT,
+            file_name,
         )
         return RelatedFile.objects.create(
             file=file_path,
@@ -191,7 +192,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
         # Update model version info
         if m_version:
             try:
-                model.ver_ktools =  m_version['ktools']
+                model.ver_ktools = m_version['ktools']
                 model.ver_oasislmf = m_version['oasislmf']
                 model.ver_platform = m_version['platform']
                 logger.info('Updated model versions')
@@ -206,7 +207,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
         logger.exception(str(e))
         logger.exception(model)
 
-    
+
 @celery_app.task(name='run_analysis_success')
 def run_analysis_success(output_location, analysis_pk, initiator_pk):
     logger.warning('"run_analysis_success" is deprecated and should only be used to process tasks already on the queue.')
@@ -227,7 +228,6 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
     # Store results
     if return_code == 0:
         analysis.output_file = store_file(output_location, 'application/gzip', initiator)
-
 
     elif analysis.output_file:
         analysis.output_file.delete()
@@ -317,8 +317,7 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
 
 
 @celery_app.task(name='record_run_analysis_failure')
-def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
-    logger.warning('"run_analysis_success" is deprecated and should only be used to process tasks already on the queue.')
+def record_run_analysis_failure(request, exc, traceback, analysis_pk, initiator_pk):
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
         analysis_pk, initiator_pk, traceback))
 
@@ -328,61 +327,19 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.RUN_ERROR
         analysis.task_finished = timezone.now()
-        analysis.save()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
-        with TemporaryFile() as tmp_file:
-            tmp_file.write(traceback.encode('utf-8'))
-            analysis.run_traceback_file = RelatedFile.objects.create(
-                file=File(tmp_file, name=random_filename),
-                filename=random_filename,
-                content_type='text/plain',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
+        analysis.run_traceback_file = RelatedFile.objects.create(
+            file=File(StringIO(traceback), name=random_filename),
+            filename=random_filename,
+            content_type='text/plain',
+            creator=get_user_model().objects.get(pk=initiator_pk),
+        )
 
         # remove the current command log file
         if analysis.run_log_file:
             analysis.run_log_file.delete()
             analysis.run_log_file = None
-
-        # record the error file
-        if traceback_location:
-            analysis.run_traceback_file = RelatedFile.objects.create(
-                file=str(traceback_location),
-                filename=str(traceback_location),
-                content_type='text/plain',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
-
-        analysis.save()
-    except Exception as e:
-        logger.exception(str(e))
-
-## --- Deprecated tasks ---------------------------------------------------- ##
-
-@celery_app.task(name='record_run_analysis_failure')
-def record_run_analysis_failure(request, exc, traceback, analysis_pk, initiator_pk):
-    logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
-        analysis_pk, initiator_pk, traceback))
-
-    try:
-        from .models import Analysis
-        analysis = Analysis.objects.get(pk=analysis_pk)
-        analysis.status = Analysis.status_choices.RUN_COMPLETED
-        analysis.task_finished = timezone.now()
-
-        analysis.output_file = RelatedFile.objects.create(
-            file=str(output_location),
-            filename=str(output_location),
-            content_type='application/gzip',
-            creator=get_user_model().objects.get(pk=initiator_pk),
-        )
-
-        # Delete previous error trace
-        if analysis.run_traceback_file:
-            traceback = analysis.run_traceback_file
-            analysis.run_traceback_file = None
-            traceback.delete()
 
         analysis.save()
     except Exception as e:
