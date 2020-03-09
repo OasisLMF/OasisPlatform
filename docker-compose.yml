@@ -128,8 +128,6 @@ services:
       - MYSQL_USER=oasis
       - MYSQL_PASSWORD=oasis
       - MYSQL_DATABASE=oasis
-    ports:
-      - 3306:3306
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/server:/var/lib/mysql/:rw
   celery-db:
