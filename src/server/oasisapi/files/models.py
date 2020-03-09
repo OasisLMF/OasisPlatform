@@ -26,8 +26,8 @@ class RelatedFile(TimeStampedModel):
         return self.file.read(*args, **kwargs)
 
     def get_link(self):
-       if not self.file:
-           return None
+        if not self.file:
+            return None
 
         if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws']:
             return self.file.storage.url(self.file.name)
