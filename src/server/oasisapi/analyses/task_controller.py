@@ -206,8 +206,7 @@ class BaseController:
         :return: The signature for the input recording task.
         """
         return signature(
-            #'record_generate_input_result',
-            'record_input_files',
+            'record_generate_input_result',
             args=(analysis.pk, initiator.pk),
         )
 
@@ -333,7 +332,7 @@ class BaseController:
 
 
 class ChunkedController(BaseController):
-    INPUT_GENERATION_CHUNK_SIZE = settings.get('worker', 'INPUT_GENERATION_CHUNK_SIZE', fallback=1)
+    INPUT_GENERATION_CHUNK_SIZE = settings.getint('worker', 'INPUT_GENERATION_CHUNK_SIZE', fallback=1)
 
     @classmethod
     def get_subtask_status(cls, analysis: 'Analysis', name: str, slug: str, queue_name: str) -> 'AnalysisTaskStatus':
@@ -407,10 +406,10 @@ class ChunkedController(BaseController):
                 queue,
                 TaskParams(
                     loc_file=analysis.portfolio.location_file.get_link(),
-                    acc_file=analysis.portfolio.accounts_file.get_link(),
-                    info_file=analysis.portfolio.reinsurance_info_file.get_link(),
-                    scope_file=analysis.portfolio.reinsurance_scope_file.get_link(),
-                    settings_file=analysis.settings_file.get_link(),
+                    acc_file=analysis.portfolio.accounts_file.get_link() if analysis.portfolio.accounts_file else None,
+                    info_file=analysis.portfolio.reinsurance_info_file.get_link() if analysis.portfolio.reinsurance_info_file else None,
+                    scope_file=analysis.portfolio.reinsurance_scope_file.get_link() if analysis.portfolio.reinsurance_scope_file else None,
+                    settings_file=analysis.settings_file.get_link() if analysis.settings_file else None,
                     complex_data_files=analysis.create_complex_model_data_file_dicts(),
                 )
             ),

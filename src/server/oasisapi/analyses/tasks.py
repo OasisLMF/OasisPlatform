@@ -17,7 +17,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.db.models import When, Case, Value, F
-from django.conf import settings
+#from django.conf import settings
+from src.conf.iniconf import settings
 from django.http import HttpRequest
 from django.utils import timezone
 
@@ -50,6 +51,10 @@ def is_valid_url(url):
 
 
 def store_file(reference, content_type, creator):
+
+    if not reference:
+        return None
+
     if is_valid_url(reference):
         # Download to a tmp location and pass the file refrence for storage
         response = urlopen(reference)
@@ -75,7 +80,7 @@ def store_file(reference, content_type, creator):
         # create RelatedFile object from filepath
         file_name = os.path.basename(reference)
         file_path = os.path.join(
-            settings.MEDIA_ROOT,
+            settings.get('worker', 'MEDIA_ROOT'),
             file_name,
         )
         return RelatedFile.objects.create(
@@ -352,67 +357,42 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=N
     from .models import Analysis
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
-    logger.info('result: {}, analysis_id: {}, initiator_id: {}'.format(
-        result, analysis_id, initiator_id))
+    logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id)) 
+    logger.info('results: {}'.format(result))
 
     input_location = result.get('output_location')
     lookup_error_fp = result.get('lookup_error_location')
     lookup_success_fp = result.get('lookup_success_location')
     lookup_validation_fp = result.get('lookup_validation_location')
     summary_levels_fp = result.get('summary_levels_location')
-    log_location = result.get('log_location')
-    return_code = result.get('return_code')
+    #log_location = result.get('log_location')
+    #return_code = result.get('return_code')
+
+    logger.info('args: {}'.format({
+        'output_location': input_location,
+        'lookup_error_location': lookup_error_fp,
+        'lookup_success_location': lookup_success_fp,
+        'lookup_validation_location': lookup_validation_fp,
+        'summary_levels_location': summary_levels_fp,
+        #'log_location': log_location,
+        #'return_code': return_code,
+    }))
 
     analysis = Analysis.objects.get(pk=analysis_id)
     analysis.task_finished = timezone.now()
+    initiator = get_user_model().objects.get(pk=initiator_id)
 
     # SUCCESS
-    if return_code == 0:
-        analysis.status = Analysis.status_choices.READY
-        analysis.input_file = store_file(input_location, 'application/gzip', initiator)
-        analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator)
-        analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator)
-        analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator)
-        analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator)
+    analysis.status = Analysis.status_choices.READY
+    analysis.input_file = store_file(input_location, 'application/gzip', initiator)
+    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator)
+    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator)
+    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator)
+    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator)
 
-    # FAILED
-    else:
-        analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
-        # Delete previous output
-        if analysis.input_file:
-            ref = analysis.input_file
-            analysis.input_file = None
-            ref.delete()
-
-        if analysis.lookup_errors_file:
-            ref = analysis.lookup_errors_file
-            analysis.lookup_errors_file = None
-            ref.delete()
-
-        if analysis.lookup_success_file:
-            ref = analysis.lookup_success_file
-            analysis.lookup_success_file = None
-            ref.delete()
-
-        if analysis.lookup_validation_file:
-            ref = analysis.lookup_validation_file
-            analysis.lookup_validation_file = None
-            ref.delete()
-
-        if analysis.summary_levels_file:
-            ref = analysis.summary_levels_file
-            analysis.summary_levels_file = None
-            ref.delete()
-
-        if analysis.input_generation_traceback_file:
-            ref = analysis.input_generation_traceback_file
-            analysis.input_generation_traceback_file = None
-            ref.delete()
-
-    # always store traceback
-    if log_location:
-        analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
-        logger.info(analysis.input_generation_traceback_file)
+    #if log_location:
+    #    analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
+    #    logger.info(analysis.input_generation_traceback_file)
 
     analysis.save()
     return result

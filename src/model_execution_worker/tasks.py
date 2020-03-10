@@ -8,6 +8,7 @@ import subprocess
 from datetime import datetime
 from math import ceil
 import shutil
+import uuid
 
 import fasteners
 import tempfile
@@ -148,8 +149,8 @@ class InvalidInputsException(OasisException):
 
 
 class MissingModelDataException(OasisException):
-    def __init__(self, model_data_path):
-        super(MissingModelDataException, self).__init__('Model data not found: {}'.format(model_data_path))
+    def __init__(self, model_data_dir):
+        super(MissingModelDataException, self).__init__('Model data not found: {}'.format(model_data_dir))
 
 
 @contextmanager
@@ -368,7 +369,7 @@ def generate_input(self,
     A temporary directory is created to contain the output oasis files.
 
     Args:
-        analysis_id (int): ID of the analysis. 
+        analysis_id (int): ID of the analysis.
         loc_file (str): Name of the portfolio locations file.
         acc_file (str): Name of the portfolio accounts file.
         info_file (str): Name of the portfolio reinsurance info file.
@@ -476,7 +477,7 @@ def generate_input(self,
         ## Merge 'Store refs' and ' Store result files' ?
         logging.debug("task_output: {}".format(results))
         return results
-        
+
 #
 # input generation tasks
 #
@@ -496,31 +497,39 @@ def prepare_input_generation_params(
     initiator_id=None,
     slug=None,
 ):
+    logging.info("prepare_input_generation_params: {}".format(str(locals())))
     notify_api_task_started(analysis_id, self.request.id, slug)
-
-    media_root = settings.get('worker', 'MEDIA_ROOT')
-    location_file = os.path.join(media_root, loc_file)
-    accounts_file = os.path.join(media_root, acc_file) if acc_file else None
-    ri_info_file = os.path.join(media_root, info_file) if info_file else None
-    ri_scope_file = os.path.join(media_root, scope_file) if scope_file else None
-    lookup_settings_file = os.path.join(media_root, settings_file) if settings_file else None
-
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
 
+    media_root = settings.get('worker', 'MEDIA_ROOT')
     oasis_files_dir = os.path.join(media_root, f'input-generation-oasis-files-dir-{analysis_id}-{uuid.uuid4().hex}')
     Path(oasis_files_dir).mkdir(parents=True, exist_ok=True)
+
+    location_file        = filestore.get(loc_file, oasis_files_dir)
+    accounts_file        = filestore.get(acc_file, oasis_files_dir)
+    ri_info_file         = filestore.get(info_file, oasis_files_dir)
+    ri_scope_file        = filestore.get(scope_file, oasis_files_dir)
+    lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
+
     if complex_data_files:
         input_data_dir = os.path.join(media_root, f'input-generation-input-data-dir-{analysis_id}-{uuid.uuid4().hex}')
         Path(input_data_dir).mkdir(parents=True, exist_ok=True)
     else:
         input_data_dir = None
 
+    if config.get('lookup_config_json'):
+        lookup_config_json = os.path.join(
+            os.path.dirname(config_path),
+            config.get('lookup_config_json'))
+    else:
+        lookup_config_json = None
+
     params = OasisManager().prepare_input_generation_params(
         oasis_files_dir,
         location_file,
-        lookup_config_fp=os.path.join(os.path.dirname(config_path), config['lookup_config_file_path']),
+        lookup_config_fp=lookup_config_json,
         summarise_exposure=not settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False),
         accounts_fp=accounts_file,
         multiprocessing=multiprocessing,
@@ -563,7 +572,6 @@ def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=Non
         user_data_dir=params['user_data_dir'],
         output_directory=chunk_target_dir,
     )
-    # TODO: exposure_df is loaded twice, Elimilate step in `get_gul_input_items` if done here
     location_df = OasisLookupFactory.get_exposure(
         lookup=lookup,
         source_exposure_fp=params['exposure_fp'],
@@ -621,8 +629,25 @@ def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=N
 
 @task(bind=True, name='write_input_files')
 def write_input_files(self, params, analysis_id=None, initiator_id=None, slug=None):
+    logging.info('write_input_files: analysis_id={}, initiator_id={}, slug={}'.format(
+        analysis_id, initiator_id, slug
+    ))
+
+    logging.info("args: {}".format({
+        'exposure_fp': params['exposure_fp'],
+        'accounts_fp': params['accounts_fp'],
+        'ri_info_fp': params['ri_info_fp'],
+        'ri_scope_fp': params['ri_scope_fp'],
+        'target_dir': params['target_dir'],
+        'summarise_exposure': params['summarise_exposure'],
+        'deterministic': params['deterministic'],
+        'keys_fp': params['keys_fp'],
+        'keys_errors_fp': params['keys_errors_fp'],
+        'group_id_cols': params['group_id_cols'],
+        'oasis_files_prefixes': params['oasis_files_prefixes']
+    }))
+
     OasisManager().write_input_files(
-        accounts_df=get_dataframe(params['accounts_fp']),
         **params
     )
 
@@ -746,7 +771,7 @@ def prepare_losses_generation_params(
         run_path,
         oasis_files_dir,
         os.path.join(media_root, analysis_settings_file),
-        os.path.join(os.path.dirname(config_path), config['model_data_path']),
+        os.path.join(os.path.dirname(config_path), config['model_data_dir']),
         user_data_dir=user_data_dir,
         ktools_error_guard=settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True),
         ktools_debug=settings.getboolean('worker', 'DEBUG_MODE', fallback=False),
