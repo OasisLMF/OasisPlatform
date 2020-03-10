@@ -462,11 +462,11 @@ def generate_input(self,
         output_tar_path   = filestore.put(oasis_files_dir)
 
         # Store refs
-        task_results = {
+        results = {
             'output_location': output_tar_path,
             'log_location': traceback,
             #'error_location': traceback_fp,
-            'return_code':result.returncode,
+            'return_code': result.returncode,
             'lookup_error_location': lookup_error,
             'lookup_success_location': lookup_success,
             'lookup_validation_location': lookup_validation,
@@ -474,8 +474,8 @@ def generate_input(self,
             'task_id': self.request.id,
         }
         ## Merge 'Store refs' and ' Store result files' ?
-        logging.debug("task_output: {}".format(task_results))
-        return task_results
+        logging.debug("task_output: {}".format(results))
+        return results
         
 
 @task(bind=True, name='prepare_input_generation_params')

@@ -359,70 +359,60 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=N
     lookup_validation_fp = result.get('lookup_validation_location')
     summary_levels_fp = result.get('summary_levels_location')
     log_location = result.get('log_location')
-    error_location = result.get('error_location')
+    return_code = result.get('return_code')
 
     analysis = Analysis.objects.get(pk=analysis_id)
-    analysis.status = Analysis.status_choices.READY
     analysis.task_finished = timezone.now()
 
-    analysis.input_file = RelatedFile.objects.create(
-        file=str(input_location),
-        filename=str(input_location),
-        content_type='application/gzip',
-        creator=get_user_model().objects.get(pk=initiator_id),
-    )
-    analysis.lookup_errors_file = RelatedFile.objects.create(
-        file=str(lookup_error_fp),
-        filename=str('keys-errors.csv'),
-        content_type='text/csv',
-        creator=get_user_model().objects.get(pk=initiator_id),
-    )
-    analysis.lookup_success_file = RelatedFile.objects.create(
-        file=str(lookup_success_fp),
-        filename=str('gul_summary_map.csv'),
-        content_type='text/csv',
-        creator=get_user_model().objects.get(pk=initiator_id),
-    )
-    analysis.lookup_validation_file = RelatedFile.objects.create(
-        file=str(lookup_validation_fp),
-        filename=str('exposure_summary_report.json'),
-        content_type='application/json',
-        creator=get_user_model().objects.get(pk=initiator_id),
-    )
+    # SUCCESS
+    if return_code == 0:
+        analysis.status = Analysis.status_choices.READY
+        analysis.input_file = store_file(input_location, 'application/gzip', initiator)
+        analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator)
+        analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator)
+        analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator)
+        analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator)
 
-    analysis.summary_levels_file = RelatedFile.objects.create(
-        file=str(summary_levels_fp),
-        filename=str('exposure_summary_levels.json'),
-        content_type='application/json',
-        creator=get_user_model().objects.get(pk=initiator_id),
-    )
+    # FAILED
+    else:
+        analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
+        # Delete previous output
+        if analysis.input_file:
+            ref = analysis.input_file
+            analysis.input_file = None
+            ref.delete()
 
-    # Delete previous error trace and create the new one if set
-    if analysis.input_generation_traceback_file:
-        traceback = analysis.input_generation_traceback_file
-        analysis.input_generation_traceback_file = None
-        traceback.delete()
+        if analysis.lookup_errors_file:
+            ref = analysis.lookup_errors_file
+            analysis.lookup_errors_file = None
+            ref.delete()
 
-    traceback_content = ''
+        if analysis.lookup_success_file:
+            ref = analysis.lookup_success_file
+            analysis.lookup_success_file = None
+            ref.delete()
+
+        if analysis.lookup_validation_file:
+            ref = analysis.lookup_validation_file
+            analysis.lookup_validation_file = None
+            ref.delete()
+
+        if analysis.summary_levels_file:
+            ref = analysis.summary_levels_file
+            analysis.summary_levels_file = None
+            ref.delete()
+
+        if analysis.input_generation_traceback_file:
+            ref = analysis.input_generation_traceback_file
+            analysis.input_generation_traceback_file = None
+            ref.delete()
+
+    # always store traceback
     if log_location:
-        with open(log_location, 'r') as f:
-            traceback_content += f.read()
-
-    if error_location:
-        with open(error_location, 'w') as f:
-            traceback_content += f.read()
-
-    if traceback_content:
-        traceback_filename = '{}.txt'.format(uuid.uuid4().hex)
-        analysis.input_generation_traceback_file = RelatedFile.objects.create(
-            file=File(StringIO(traceback_content), traceback_filename),
-            filename=traceback_filename,
-            content_type='text/plain',
-            creator_id=initiator_id,
-        )
+        analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
+        logger.info(analysis.input_generation_traceback_file)
 
     analysis.save()
-
     return result
 
 
