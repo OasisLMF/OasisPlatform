@@ -271,3 +271,6 @@ if IN_TEST:
             'BACKEND': 'channels.layers.InMemoryChannelLayer',
         },
     }
+
+
+CELERY_TASK_ALWAYS_EAGER = True

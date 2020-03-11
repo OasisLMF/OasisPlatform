@@ -64,6 +64,8 @@ services:
      - OASIS_CELERY_DB_PORT=3306
    volumes:
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
+   ports:
+     - 6900:6900
   celery-beat:
    restart: always
    image: coreoasis/api_server:latest

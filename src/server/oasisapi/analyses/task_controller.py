@@ -472,7 +472,8 @@ class ChunkedController(BaseController):
         AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
 
         c = chain(*tasks)
-        c.link_error(signature('cleanup_input_generation_on_error', args=(analysis.pk, )))
+        c.link_error(signature('cleanup_input_generation_on_error', kwargs={'analysis_id': analysis.pk}))
+        c.link_error(signature('record_generate_input_failure', kwargs={'analysis_id': analysis.pk, 'initiator_id': initiator.pk}))
 
         analysis.generate_inputs_task_id = c.delay().id
         analysis.save()
@@ -560,7 +561,8 @@ class ChunkedController(BaseController):
         AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
 
         c = chain(*tasks)
-        c.link_error(signature('cleanup_loss_generation_on_error', args=(analysis.pk, )))
+        c.link_error(signature('cleanup_loss_generation_on_error', kwargs={'analysis_id': analysis.pk}))
+        c.link_error(signature('record_run_analysis_failure', kwargs={'analysis_id': analysis.pk, 'initiator_id': initiator.pk}))
 
         analysis.generate_losses_task_id = c.delay().id
         analysis.save()

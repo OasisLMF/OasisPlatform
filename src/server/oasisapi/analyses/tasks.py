@@ -10,6 +10,7 @@ from glob import glob
 from itertools import chain
 from shutil import rmtree
 
+from celery.result import AsyncResult
 from celery.signals import before_task_publish
 from celery.utils.log import get_task_logger
 from celery import Task
@@ -318,14 +319,19 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
 
 
 @celery_app.task(name='record_run_analysis_failure')
-def record_run_analysis_failure(request, exc, traceback, analysis_pk, initiator_pk):
+def record_run_analysis_failure(self, *args, analysis_id=None, initiator_id=None):
+    try:
+        request, exc, traceback = args
+    except:
+        failing_res = AsyncResult(args[0])
+        traceback = failing_res.traceback
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
-        analysis_pk, initiator_pk, traceback))
+        analysis_id, initiator_id, traceback))
 
     try:
         from .models import Analysis
 
-        analysis = Analysis.objects.get(pk=analysis_pk)
+        analysis = Analysis.objects.get(pk=analysis_id)
         analysis.status = Analysis.status_choices.RUN_ERROR
         analysis.task_finished = timezone.now()
 
@@ -334,7 +340,7 @@ def record_run_analysis_failure(request, exc, traceback, analysis_pk, initiator_
             file=File(StringIO(traceback), name=random_filename),
             filename=random_filename,
             content_type='text/plain',
-            creator=get_user_model().objects.get(pk=initiator_pk),
+            creator=get_user_model().objects.get(pk=initiator_id),
         )
 
         # remove the current command log file
@@ -418,14 +424,20 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=N
     return result
 
 
-@celery_app.task(name='record_generate_input_failure')
-def record_generate_input_failure(request, exc, traceback, analysis_pk, initiator_pk):
+@celery_app.task(bind=True, name='record_generate_input_failure')
+def record_generate_input_failure(self, *args, analysis_id=None, initiator_id=None):
+    try:
+        request, exc, traceback = args
+    except:
+        failing_res = AsyncResult(args[0])
+        traceback = failing_res.traceback
+
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
-        analysis_pk, initiator_pk, traceback))
+        analysis_id, initiator_id, traceback))
     try:
         from .models import Analysis
 
-        analysis = Analysis.objects.get(pk=analysis_pk)
+        analysis = Analysis.objects.get(pk=analysis_id)
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
         analysis.task_finished = timezone.now()
 
@@ -434,7 +446,7 @@ def record_generate_input_failure(request, exc, traceback, analysis_pk, initiato
             file=File(StringIO(traceback), name=random_filename),
             filename=random_filename,
             content_type='text/plain',
-            creator=get_user_model().objects.get(pk=initiator_pk),
+            creator=get_user_model().objects.get(pk=initiator_id),
         )
 
         analysis.save()
@@ -570,7 +582,13 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
 
 
 @celery_app.task(bind=True, name='record_sub_task_failure')
-def record_sub_task_failure(self, request, exc, traceback, analysis_id=None, initiator_id=None, task_slug=None):
+def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, task_slug=None):
+    try:
+        request, exc, traceback = args
+    except:
+        failing_res = AsyncResult(args[0])
+        traceback = failing_res.traceback
+
     task_id = self.request.parent_id
     AnalysisTaskStatus.objects.filter(
         slug=task_slug,
@@ -608,13 +626,13 @@ def chord_error_callback(self, analysis_id):
 
 
 @celery_app.task(bind=True, name='cleanup_input_generation_on_error')
-def cleanup_input_generation_on_error(self, analysis_pk, *args, **kwargs):
+def cleanup_input_generation_on_error(self, *args, analysis_id=None **kwargs):
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
         media_root = settings.get('worker', 'media_root')
 
         directories = chain(
-            glob(os.path.join(media_root, f'input-generation-oasis-files-dir-{analysis_pk}-*')),
-            glob(os.path.join(media_root, f'input-generation-input-data-dir-{analysis_pk}-*')),
+            glob(os.path.join(media_root, f'input-generation-oasis-files-dir-{analysis_id}-*')),
+            glob(os.path.join(media_root, f'input-generation-input-data-dir-{analysis_id}-*')),
         )
 
         for p in directories:
@@ -622,12 +640,12 @@ def cleanup_input_generation_on_error(self, analysis_pk, *args, **kwargs):
 
 
 @celery_app.task(bind=True, name='cleanup_loss_generation_on_error')
-def cleanup_loss_generation_on_error(self, analysis_pk, *args, **kwargs):
+def cleanup_loss_generation_on_error(self, *args, analysis_id=None, **kwargs):
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
         media_root = settings.get('worker', 'media_root')
         directories = chain(
-            glob(os.path.join(media_root, f'loss-generation-oasis-files-dir-{analysis_pk}-*')),
-            glob(os.path.join(media_root, f'loss-generation-input-data-dir-{analysis_pk}-*')),
+            glob(os.path.join(media_root, f'loss-generation-oasis-files-dir-{analysis_id}-*')),
+            glob(os.path.join(media_root, f'loss-generation-input-data-dir-{analysis_id}-*')),
         )
 
         for p in directories:
