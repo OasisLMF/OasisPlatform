@@ -6,8 +6,8 @@ import logging
 import os
 import subprocess
 from datetime import datetime
-from math import ceil
 import shutil
+import uuid
 
 import fasteners
 import tempfile
@@ -31,7 +31,7 @@ import pandas as pd
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
-from .storage_manager import StorageSelector
+from .storage_manager import StorageSelector, MissingInputsException
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -714,7 +714,7 @@ def extract_losses_generation_inputs(
     if complex_data_files:
         user_data_dir = os.path.join(media_root, f'loss-generation-oasis-files-dir-{analysis_id}-{uuid.uuid4()}')
         Path(user_data_dir).mkdir(parents=True, exist_ok=True)
-        prepare_complex_model_file_inputs(complex_data_files, media_root, user_data_dir)
+        prepare_complex_model_file_inputs(complex_data_files, os.path.join(media_root, user_data_dir))
     else:
         user_data_dir = None
 

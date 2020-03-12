@@ -64,8 +64,6 @@ services:
      - OASIS_CELERY_DB_PORT=3306
    volumes:
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
-   ports:
-     - 6900:6900
   celery-beat:
    restart: always
    image: coreoasis/api_server:latest
@@ -132,6 +130,8 @@ services:
       - MYSQL_DATABASE=oasis
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/server:/var/lib/mysql/:rw
+    ports:
+      - 33307:3306
   celery-db:
     restart: always
     image: mysql
