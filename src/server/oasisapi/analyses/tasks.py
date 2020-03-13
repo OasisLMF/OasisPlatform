@@ -152,9 +152,9 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=N
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator)
     analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator)
 
-    if log_location:
-        analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
-        logger.info(analysis.input_generation_traceback_file)
+    #if log_location:
+    #    analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
+    #    logger.info(analysis.input_generation_traceback_file)
 
     analysis.save()
     return result

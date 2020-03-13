@@ -347,7 +347,7 @@ class Analysis(TimeStampedModel):
         self.input_generation_traceback_file_id = None
 
         task = self.generate_input_signature
-        task.on_error(celery_app.signature('record_generate_input_failure', (self.pk, initiator.pk), ))
+        task.on_error(celery_app.signature('handle_task_failure', (self.pk, initiator.pk), ))
         task_id = task.delay(self.pk, initiator.pk).id
 
         self.generate_inputs_task_id = task_id

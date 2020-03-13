@@ -23,7 +23,7 @@ class TaskParams:
 
 
 class Controller:
-    INPUT_GENERATION_CHUNK_SIZE = settings.get('worker', 'INPUT_GENERATION_CHUNK_SIZE', fallback=1)
+    INPUT_GENERATION_CHUNK_SIZE = settings.getint('worker', 'INPUT_GENERATION_CHUNK_SIZE', fallback=1)
 
     @classmethod
     def get_subtask_signature(cls, task_name, analysis, initiator, slug, queue, params: TaskParams) -> Signature:
