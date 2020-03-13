@@ -1,4 +1,5 @@
 import os
+from io import StringIO
 from itertools import chain as iterchain
 from importlib import import_module
 from math import ceil
@@ -26,6 +27,18 @@ class Controller:
 
     @classmethod
     def get_subtask_signature(cls, task_name, analysis, initiator, slug, queue, params: TaskParams) -> Signature:
+        """
+        Generates a signature representing the subtask. This task will have the initiator_id, analysis_id and
+        slug set along with other provided kwargs.
+
+        :param task_name: The name of the task as registered with celery
+        :param analysis: The analysis object to run the task for
+        :param initiator: The initiator who started the parent task
+        :param slug: The slug identifier for the task, this should be unique for a given analysis
+        :param queue: The name of the queue the task will be published to
+        :param params: The parameters to send to the task
+        :return: Signature representing the task
+        """
         from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
         sig = signature(
             task_name,
@@ -43,6 +56,15 @@ class Controller:
 
     @classmethod
     def get_subtask_status(cls, analysis: 'Analysis', name: str, slug: str, queue_name: str) -> 'AnalysisTaskStatus':
+        """
+        Gets the task status object for a given subtask.
+
+        :param analysis: The analysis object to run the task for
+        :param name: A human readable name for the task
+        :param slug: The slug identifier for the task, this should be unique for a given analysis
+        :param queue_name: The name of the queue the task is sent to
+        :return: An uncommitted AnalysisTaskStatus object representing the task
+        """
         from src.server.oasisapi.analyses.models import AnalysisTaskStatus
 
         return AnalysisTaskStatus(
@@ -63,6 +85,18 @@ class Controller:
         queue,
         params: Optional[TaskParams] = None,
     ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
+        """
+        Gets all teh status objects and signature for a given subtask
+
+        :param task_name: The name of the task as registered with celery
+        :param analysis: The analysis object to run the task for
+        :param initiator: The initiator who started the parent task
+        :param status_name: A human readable name for the task
+        :param status_slug: The slug identifier for the task, this should be unique for a given analysis
+        :param queue: The name of the queue the task will be published to
+        :param params: The parameters to send to the task
+        :return: Signature representing the task
+        """
         params = params or TaskParams()
         return (
             [cls.get_subtask_status(analysis, status_name, status_slug, queue)],
@@ -81,6 +115,19 @@ class Controller:
         params: List[TaskParams],
         body: Tuple[List['AnalysisTaskStatus'], Signature],
     ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
+        """
+        Gets all the status objects and signature for a given subchord
+
+        :param task_name: The name of the task as registered with celery
+        :param analysis: The analysis object to run the task for
+        :param initiator: The initiator who started the parent task
+        :param status_name: A human readable name for the task
+        :param status_slug: The slug identifier for the task, this should be unique for a given analysis
+        :param queue: The name of the queue the task will be published to
+        :param params: The parameters to send to the task
+        :param body: A tuple containing the statuses and signature of the body task
+        :return: Signature representing the task
+        """
         statuses, tasks = zip(*[
             cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, params=p)
             for idx, p in enumerate(params)
@@ -92,8 +139,15 @@ class Controller:
         return list(iterchain(*statuses, body[0])), c
 
     @classmethod
-    def _split_tasks_and_statuses(cls, joined):
-        return list(zip(*joined))
+    def _split_tasks_and_statuses(cls, joined: List[Tuple[List['AnalysisTaskStatus'], Signature]]) -> Tuple[List['AnalysisTaskStatus'], List[Signature]]:
+        """
+        Takes a list of status list, signature tuples. Returns a tuple of a flattened
+        status list and a list of signatures.
+
+        :param joined: List of objects to split
+        :return: The flattened status and signatures tuple
+        """
+        return tuple(zip(*joined))
 
     @classmethod
     def _start(
@@ -105,7 +159,21 @@ class Controller:
         run_dir_patterns: List[str],
         traceback_property: str,
         failure_status: str,
-    ):
+    ) -> chain:
+        """
+        Starts the task running
+
+        :param analysis: The analysis to run the tasks for
+        :param initiator: The user starting the task
+        :param tasks: Signatures for the subtasks to run
+        :param statuses: Statuses for storing the status of the subtasks
+        :param run_dir_patterns: Pattern representing the temporary run directories
+        :param traceback_property: The property to store the traceback on failure
+        :param failure_status: The Status to use when the task fails
+
+        :return: The chain representing the running task, this has already been sent
+            to the broker
+        """
         from src.server.oasisapi.analyses.models import AnalysisTaskStatus
         analysis.sub_task_statuses.all().delete()
         AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
@@ -122,7 +190,7 @@ class Controller:
             },
         ))
         c.delay()
-        return c.id
+        return c
 
     @classmethod
     def get_generate_inputs_queue(cls, analysis: 'Analysis', initiator: User) -> str:
@@ -137,10 +205,16 @@ class Controller:
         return str(analysis.model)
 
     @classmethod
-    def get_inputs_generation_tasks(cls, analysis: 'Analysis', initiator: User):
-        media_root = settings.get('worker', 'MEDIA_ROOT')
-        # Handle case where URL is returned from analysis.portfolio.location_file.get_link()
-        location_data = get_dataframe(src_fp=os.path.join(media_root, analysis.portfolio.location_file.get_link()))
+    def get_inputs_generation_tasks(cls, analysis: 'Analysis', initiator: User) -> Tuple[List['AnalysisTaskStatus'], List[Signature]]:
+        """
+        Gets the tasks to chain together for input generation
+
+        :param analysis: The analysis to tun the tasks for
+        :param initiator: The user starting the tasks
+
+        :return: Tuple containing the statuses to create and signatures to chain
+        """
+        location_data = get_dataframe(src_buf=analysis.portfolio.location_file.read().decode())
 
         num_chunks = ceil(len(location_data) / cls.INPUT_GENERATION_CHUNK_SIZE)
 
@@ -215,7 +289,15 @@ class Controller:
         ])
 
     @classmethod
-    def generate_inputs(cls, analysis: 'Analysis', initiator: User):
+    def generate_inputs(cls, analysis: 'Analysis', initiator: User) -> chain:
+        """
+        Starts the input generation chain
+
+        :param analysis: The analysis to start input generation for
+        :param initiator: The user starting the input generation
+
+        :return: The started chain
+        """
         from src.server.oasisapi.analyses.models import Analysis
         statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator)
 
@@ -230,7 +312,7 @@ class Controller:
             ],
             'input_generation_traceback_file',
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
-        )
+        ).id or ''  # TODO: is shouldn't return None but is for some reason so for no guard against it
         analysis.save()
         return task
 
@@ -248,11 +330,15 @@ class Controller:
 
     @classmethod
     def get_loss_generation_tasks(cls, analysis: 'Analysis', initiator: User):
-        media_root = settings.get('worker', 'MEDIA_ROOT')
-        # Handle case where URL is returned from analysis.portfolio.location_file.get_link()
-        location_data = get_dataframe(src_fp=os.path.join(media_root, analysis.portfolio.location_file.get_link()))
+        """
+        Gets the tasks to chain together for loss generation
 
-        num_chunks = ceil(len(location_data) / cls.INPUT_GENERATION_CHUNK_SIZE)
+        :param analysis: The analysis to tun the tasks for
+        :param initiator: The user starting the tasks
+
+        :return: Tuple containing the statuses to create and signatures to chain
+        """
+        num_chunks = 4
 
         queue = cls.get_generate_losses_queue(analysis, initiator)
 
@@ -326,6 +412,14 @@ class Controller:
 
     @classmethod
     def generate_losses(cls, analysis: 'Analysis', initiator: User):
+        """
+        Starts the loss generation chain
+
+        :param analysis: The analysis to start loss generation for
+        :param initiator: The user starting the loss generation
+
+        :return: The started chain
+        """
         from src.server.oasisapi.analyses.models import Analysis
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator)
 
@@ -340,12 +434,19 @@ class Controller:
             ],
             'run_traceback_file',
             Analysis.status_choices.RUN_ERROR,
-        )
+        ).id or ''  # TODO: is shouldn't return None but is for some reason so for no guard against it
         analysis.save()
         return task
 
 
 def get_analysis_task_controller() -> Type[Controller]:
+    """
+    Gets the controller class for running analysis commands
+
+    This can be overridden by setting the worker.ANALYSIS_TASK_CONTROLLER setting.
+
+    :return: The type of controller specified
+    """
     controller_path = settings.get(
         'worker',
         'ANALYSIS_TASK_CONTROLLER',
