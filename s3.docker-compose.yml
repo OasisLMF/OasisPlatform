@@ -16,6 +16,7 @@ services:
      dockerfile: Dockerfile.api_server
    ports:
      - 8000:8000
+     - 51970:51970
    links:
      - server-db
      - celery-db
@@ -33,21 +34,20 @@ services:
      - OASIS_SERVER_DB_USER=oasis
      - OASIS_SERVER_DB_NAME=oasis
      - OASIS_SERVER_DB_PORT=3306
+     - OASIS_SERVER_CHANNEL_LAYER_HOST=channel-layer
      - OASIS_CELERY_DB_ENGINE=db+mysql+pymysql
      - OASIS_CELERY_DB_HOST=celery-db
      - OASIS_CELERY_DB_PASS=password
      - OASIS_CELERY_DB_USER=celery
      - OASIS_CELERY_DB_NAME=celery
      - OASIS_CELERY_DB_PORT=3306
+     - STARTUP_RUN_MIGRATIONS=true
      - OASIS_STORAGE_TYPE=S3
      - OASIS_AWS_S3_ENDPOINT_URL=http://localstack-s3:4572
-     - STARTUP_RUN_MIGRATIONS=true
-   volumes:
-     - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   worker-monitor:
    restart: always
    image: coreoasis/api_server:latest
-   command: [wait-for-server, 'server:8000', celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
+   command: [celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
    links:
      - server-db
      - celery-db
@@ -63,6 +63,7 @@ services:
      - OASIS_SERVER_DB_USER=oasis
      - OASIS_SERVER_DB_NAME=oasis
      - OASIS_SERVER_DB_PORT=3306
+     - OASIS_SERVER_CHANNEL_LAYER_HOST=channel-layer
      - OASIS_CELERY_DB_ENGINE=db+mysql+pymysql
      - OASIS_CELERY_DB_HOST=celery-db
      - OASIS_CELERY_DB_PASS=password
@@ -71,8 +72,32 @@ services:
      - OASIS_CELERY_DB_PORT=3306
      - OASIS_STORAGE_TYPE=S3
      - OASIS_AWS_S3_ENDPOINT_URL=http://localstack-s3:4572
-   volumes:
-     - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
+  celery-beat:
+   restart: always
+   image: coreoasis/api_server:latest
+   command: [celery, beat, -A, src.server.oasisapi, --loglevel=INFO]
+   links:
+     - server-db
+     - celery-db
+     - rabbit
+   environment:
+     - OASIS_DEBUG=1
+     - OASIS_RABBIT_HOST=rabbit
+     - OASIS_RABBIT_PORT=5672
+     - OASIS_RABBIT_USER=rabbit
+     - OASIS_RABBIT_PASS=rabbit
+     - OASIS_SERVER_DB_HOST=server-db
+     - OASIS_SERVER_DB_PASS=oasis
+     - OASIS_SERVER_DB_USER=oasis
+     - OASIS_SERVER_DB_NAME=oasis
+     - OASIS_SERVER_DB_PORT=3306
+     - OASIS_SERVER_CHANNEL_LAYER_HOST=channel-layer
+     - OASIS_CELERY_DB_ENGINE=db+mysql+pymysql
+     - OASIS_CELERY_DB_HOST=celery-db
+     - OASIS_CELERY_DB_PASS=password
+     - OASIS_CELERY_DB_USER=celery
+     - OASIS_CELERY_DB_NAME=celery
+     - OASIS_CELERY_DB_PORT=3306
   worker:
     restart: always
     image: coreoasis/model_worker:latest
@@ -100,7 +125,6 @@ services:
      - OASIS_AWS_S3_ENDPOINT_URL=http://localstack-s3:4572
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/var/oasis/:rw
-     - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   server-db:
     restart: always
     image: mysql:8.0
@@ -113,6 +137,8 @@ services:
       - MYSQL_DATABASE=oasis
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/server:/var/lib/mysql/:rw
+    ports:
+      - 33307:3306
   celery-db:
     restart: always
     image: mysql
@@ -123,6 +149,8 @@ services:
       - MYSQL_USER=celery
       - MYSQL_PASSWORD=password
       - MYSQL_DATABASE=celery
+    ports:
+      - 33306:3306
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/celery:/var/lib/mysql/:rw
   rabbit:
@@ -148,3 +176,8 @@ services:
     links:
      - celery-db
      - rabbit
+  channel-layer:
+    restart: always
+    image: redis:5.0.7
+    ports:
+      - 6379:6379
