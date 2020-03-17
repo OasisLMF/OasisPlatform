@@ -10,7 +10,6 @@ import uuid
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-from os import path
 from oasislmf.utils.exceptions import OasisException
 
 LOG_FILE_SUFFIX = 'txt'
@@ -51,6 +50,7 @@ class BaseStorageConnector(object):
     """
     def __init__(self, setting, logger=None):
         self.media_root = setting.get('worker', 'MEDIA_ROOT')
+        self.cache_root = setting.get('worker', 'CACHE_DIR', fallback='/tmp/cache')
         self.storage_connector = 'FS-SHARE'
         self.settings = setting
         self.logger = logger or logging.getLogger()
@@ -74,7 +74,7 @@ class BaseStorageConnector(object):
         Parameters
         ----------
         :param url: String to check
-        :type url: str
+        :type  url: str
 
         :return: `True` if URL otherwise `False`
         :rtype boolean
@@ -85,7 +85,7 @@ class BaseStorageConnector(object):
         else:
             return False
 
-    def _store_file(self, file_path, suffix=None):
+    def _store_file(self, file_path, storage_subdir, suffix=None, **kwargs):
         """ Copy a file to `media_root`
 
         Places the file in `self.media_root` which is the shared storage location
@@ -95,6 +95,9 @@ class BaseStorageConnector(object):
         :param file_path: The path to the file to store.
         :type  file_path: str
 
+        :param storage_subdir: Store object in given sub directory
+        :type  storage_subdir: str
+
         :param suffix: Set the filename extension
         :type  suffix: str
 
@@ -102,13 +105,14 @@ class BaseStorageConnector(object):
         :rtype str
         """
         ext = file_path.split('.')[-1] if not suffix else suffix
-        stored_fp = os.path.join(
-            self.media_root,
-            self._get_unique_filename(ext))
+        storage_dir = os.path.join(self.media_root, storage_subdir)
+        os.makedirs(storage_dir, exist_ok=True)
+
+        stored_fp = os.path.join(storage_dir, self._get_unique_filename(ext))
         self.logger.info('Store file: {} -> {}'.format(file_path, stored_fp))
         return shutil.copy(file_path, stored_fp)
 
-    def _store_dir(self, directory_path, suffix=None, arcname=None):
+    def _store_dir(self, directory_path, storage_subdir, suffix=None, arcname=None, **kwargs):
         """ Compress and store a directory
 
         Creates a compressed .tar.gz of all files under `directory_path`
@@ -123,6 +127,9 @@ class BaseStorageConnector(object):
                        defaults to `tar.gz`
         :type suffix: str
 
+        :param storage_subdir: Store object in given sub directory
+        :type  storage_subdir: str
+
         :param arcname: If given, `arcname' set an alternative
                         name for the file in the archive.
         :type arcname: str
@@ -131,9 +138,10 @@ class BaseStorageConnector(object):
         :rtype str
         """
         ext = 'tar.gz' if not suffix else suffix
-        stored_fp = os.path.join(
-            self.media_root,
-            self._get_unique_filename(ext))
+        storage_dir = os.path.join(self.media_root, storage_subdir)
+        os.makedirs(storage_dir, exist_ok=True)
+
+        stored_fp = os.path.join(storage_dir, self._get_unique_filename(ext))
         self.compress(stored_fp, directory_path, arcname)
         self.logger.info('Store dir: {} -> {}'.format(directory_path, stored_fp))
         return stored_fp
@@ -171,7 +179,7 @@ class BaseStorageConnector(object):
         with tarfile.open(archive_fp, 'w:gz') as tar:
             tar.add(directory, arcname=arcname)
 
-    def get(self, reference, output_dir=""):
+    def get(self, reference, output_dir="", cache_dir=None):
         """ Retrieve stored object
 
         Top level 'get from storage' function
@@ -188,6 +196,8 @@ class BaseStorageConnector(object):
         :param output_dir: If given, download to that directory.
         :type  output_dir: str
 
+        :param cache_dir: If given, check for requested file in cached before downloading.
+        :type  cache_dir: str
 
         :return: Absolute filepath to stored Object
         :rtype str
@@ -195,14 +205,22 @@ class BaseStorageConnector(object):
         if self._is_valid_url(reference):
             response = urlopen(reference)
             fdata = response.read()
-
             header_fname = response.headers.get('Content-Disposition', '').split('filename=')[-1]
             fname = header_fname if header_fname else os.path.basename(urlparse(reference).path)
             fpath = os.path.join(output_dir, fname)
 
+            if cache_dir:
+                cached_file = os.path.join(self.cache_root, cache_dir, fname)
+                if os.path.isfile(cached_file):
+                    logging.info('Get from Cache: {}'.format(fname))
+                    return os.path.abspath(cached_file)
+                else:
+                    fpath = cached_file
+
             with io.open(fpath, 'w+b') as f:
                 f.write(fdata)
                 logging.info('Get from URL: {}'.format(fname))
+
             return os.path.abspath(fpath)
 
         elif isinstance(reference, str):
@@ -219,7 +237,7 @@ class BaseStorageConnector(object):
         else:
             return None
 
-    def put(self, reference, suffix=None, arcname=None):
+    def put(self, reference, suffix=None, arcname=None, cache_dir=None, subdir=''):
         """ Place object in storage
 
         Top level send to storage function,
@@ -238,6 +256,12 @@ class BaseStorageConnector(object):
         :param suffix: Set the filename extension defaults to `tar.gz`
         :type suffix: str
 
+        :param subdir: Store `File` or `Directory` under a sub directory path
+        :type  subdir: str
+
+        :param cache_dir: When using remote storage also copy the object to `cache_dir`.
+        :type  cache_dir: str
+
         :return: access storage reference returned from self._store_file, self._store_dir
                  This will either be a pre-signed URL or absolute filepath
         :rtype str
@@ -245,12 +269,31 @@ class BaseStorageConnector(object):
         if not reference:
             return None
         if os.path.isfile(reference):
-            return self._store_file(reference, suffix=suffix)
+            return self._store_file(
+                reference,
+                cache_dir=cache_dir,
+                storage_subdir=subdir,
+                suffix=suffix
+            )
         elif os.path.isdir(reference):
-            return self._store_dir(reference, suffix=suffix, arcname=arcname)
+            return self._store_dir(
+                reference,
+                cache_dir=cache_dir,
+                storage_subdir=subdir,
+                suffix=suffix,
+                arcname=arcname
+            )
         else:
             return None
 
+    
+    def del(self, reference):
+        """
+        #
+        # Method to delete from shared-fd / aws-s3
+        #   - add Try and catch in case of permisions error
+        """
+        pass
 
     def create_traceback(self, subprocess_run, output_dir=""):
         traceback_file = self._get_unique_filename(LOG_FILE_SUFFIX)
@@ -332,7 +375,6 @@ class AwsObjectStore(BaseStorageConnector):
         ))
         super(AwsObjectStore, self).__init__(settings)
 
-
     @property
     def connection(self):
         """ Creates an S3 boto3 session
@@ -365,8 +407,7 @@ class AwsObjectStore(BaseStorageConnector):
             self._bucket = self.connection.Bucket(self.bucket_name)
         return self._bucket
 
-
-    def _store_file(self, file_path, suffix=None):
+    def _store_file(self, file_path, cache_dir, storage_subdir, suffix=None):
         """ Overloaded function for AWS file storage
 
         Uploads the Object pointed to by `file_path`
@@ -377,6 +418,9 @@ class AwsObjectStore(BaseStorageConnector):
         :param file_path: Path to a file object for upload
         :type file_path: str
 
+        :param storage_subdir: Store object in given sub directory
+        :type  storage_subdir: str
+
         :param suffix: Set the filename extension
         :type suffix: str
 
@@ -386,13 +430,18 @@ class AwsObjectStore(BaseStorageConnector):
         :rtype str
         """
         ext = file_path.split('.')[-1] if not suffix else suffix
-        object_name = self._get_unique_filename(ext)
+        filename = self._get_unique_filename(ext)
+        object_name = os.path.join(storage_subdir, filename)
+
+        if cache_dir:
+            cached_fp = os.path.join(self.cache_root, cache_dir, filename)
+            shutil.copy(file_path, cached_fp)
 
         self.upload(object_name, file_path)
         self.logger.info('Stored S3: {} -> {}'.format(file_path, object_name))
         return self.url(object_name)
 
-    def _store_dir(self, directory_path, suffix=None, arcname=None):
+    def _store_dir(self, directory_path, cache_dir, storage_subdir, suffix=None, arcname=None):
         """ Overloaded function for AWS Directory storage
 
         Creates a compressed .tar.gz of all files under `directory_path`
@@ -402,6 +451,9 @@ class AwsObjectStore(BaseStorageConnector):
         ----------
         :param directory_path: Path to a directory for upload
         :type directory_path: str
+
+        :param storage_subdir: Store object in given sub directory
+        :type  storage_subdir: str
 
         :param suffix: Set the filename extension
                        defaults to `tar.gz`
@@ -417,11 +469,17 @@ class AwsObjectStore(BaseStorageConnector):
                  `AWS_QUERYSTRING_EXPIRE`
         """
         ext = 'tar.gz' if not suffix else suffix
-        object_name = self._get_unique_filename(ext)
+        filename = self._get_unique_filename(ext)
+        object_name = os.path.join(storage_subdir, filename)
+
         with tempfile.TemporaryDirectory() as tmpdir:
             archive_path = os.path.join(tmpdir, object_name)
             self.compress(archive_path, directory_path, arcname)
             self.upload(object_name, archive_path)
+
+            if cache_dir:
+                cached_fp = os.path.join(self.cache_root, cache_dir, filename)
+                shutil.copy(archive_path, cached_fp)
 
         self.logger.info('Stored S3: {} -> {}'.format(directory_path, object_name))
         return self.url(object_name)
@@ -451,7 +509,6 @@ class AwsObjectStore(BaseStorageConnector):
         joined_qs = ('='.join(keyval) for keyval in filtered_qs)
         split_url = split_url._replace(query="&".join(joined_qs))
         return split_url.geturl()
-
 
     def url(self, object_name, parameters=None, expire=None):
         """ Return Pre-signed URL
