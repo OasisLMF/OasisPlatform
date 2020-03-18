@@ -237,14 +237,14 @@ class Controller:
                     complex_data_files=analysis.create_complex_model_data_file_dicts(),
                 )
             ),
-            cls.get_subtask_statuses_and_signature(
-                'prepare_inputs_directory',
-                analysis,
-                initiator,
-                'Prepare input directory',
-                'prepare-input-directory',
-                queue,
-            ),
+            #cls.get_subtask_statuses_and_signature(
+            #    'prepare_inputs_directory',
+            #    analysis,
+            #    initiator,
+            #    'Prepare input directory',
+            #    'prepare-input-directory',
+            #    queue,
+            #),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',
                 analysis,

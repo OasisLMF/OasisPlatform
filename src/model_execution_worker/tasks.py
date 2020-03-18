@@ -386,12 +386,12 @@ def generate_input(self,
     logging.info(str(get_worker_versions()))
     notify_api_task_started(analysis_id, self.request.id, f'input-generation-{chunk_index or 0}')
 
-    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
     config_path = get_oasislmf_config_path()
+    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
-
     tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
+
     if complex_data_files:
         tmp_input_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
     else:
@@ -499,24 +499,9 @@ def prepare_input_generation_params(
     logging.info("prepare_input_generation_params: {}".format(str(locals())))
     notify_api_task_started(analysis_id, self.request.id, slug)
     model_id = settings.get('worker', 'model_id')
+
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
-
-    media_root = settings.get('worker', 'MEDIA_ROOT')
-    oasis_files_dir = os.path.join(media_root, f'input-generation-oasis-files-dir-{analysis_id}-{uuid.uuid4().hex}')
-    Path(oasis_files_dir).mkdir(parents=True, exist_ok=True)
-
-    location_file        = filestore.get(loc_file, oasis_files_dir)
-    accounts_file        = filestore.get(acc_file, oasis_files_dir)
-    ri_info_file         = filestore.get(info_file, oasis_files_dir)
-    ri_scope_file        = filestore.get(scope_file, oasis_files_dir)
-    lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
-
-    if complex_data_files:
-        input_data_dir = os.path.join(media_root, f'input-generation-input-data-dir-{analysis_id}-{uuid.uuid4().hex}')
-        Path(input_data_dir).mkdir(parents=True, exist_ok=True)
-    else:
-        input_data_dir = None
 
     if config.get('lookup_config_json'):
         lookup_config_json = os.path.join(
@@ -525,65 +510,89 @@ def prepare_input_generation_params(
     else:
         lookup_config_json = None
 
+    # Remove pos arg for 'target_dir' and 'location_file'
+    UUID = uuid.uuid4().hex
     params = OasisManager().prepare_input_generation_params(
-        oasis_files_dir,
-        location_file,
+        target_dir=f'{UUID}/oasis-files',
+        exposure_fp='',
         lookup_config_fp=lookup_config_json,
         summarise_exposure=not settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False),
-        accounts_fp=accounts_file,
         multiprocessing=multiprocessing,
-        user_data_dir=input_data_dir,
-        complex_lookup_config_fp=lookup_settings_file,
-        ri_scope_fp=ri_scope_file,
-        ri_info_fp=ri_info_file,
     )
-    return params
 
+    # Store file References for `prepare_keys_file_chunk`
+    params['run_uuid'] = UUID
+    params['loc_file_ref'] = loc_file
+    params['acc_file_ref'] = acc_file
+    params['inf_file_ref'] = info_file
+    params['scope_file_ref'] = scope_file
+    params['settings_file_ref'] = settings_file
+    params['complex_data_files'] = complex_data_files
 
-@task(bind=True, name='prepare_inputs_directory')
-def prepare_inputs_directory(self, params, analysis_id=None, initiator_id=None, slug=None):
-    notify_api_task_started(analysis_id, self.request.id, slug)
-    OasisManager().prepare_input_directory(**params)
+    logging.info(params)
     return params
 
 
 @task(bind=True, name='prepare_keys_file_chunk')
 def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, initiator_id=None, slug=None):
     notify_api_task_started(analysis_id, self.request.id, slug)
+    tmp_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
-    chunk_target_dir = os.path.join(params['target_dir'], f'input-generation-chunk-{chunk_idx}')
-    Path(chunk_target_dir).mkdir(exist_ok=True, parents=True)
-    params['chunk_keys_fp'] = os.path.join(chunk_target_dir, 'keys.csv')
-    params['chunk_keys_errors_fp'] = os.path.join(chunk_target_dir, 'keys-errors.csv')
+    with TemporaryDir(persist=False, basedir=tmp_base) as chunk_target_dir:
+        lookup_config = params['lookup_config']
+        if lookup_config and lookup_config['keys_data_path'] in ['.', './']:
+            lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']))
+        elif lookup_config and not os.path.isabs(lookup_config['keys_data_path']):
+            lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']), lookup_config['keys_data_path'])
 
-    lookup_config = params['lookup_config']
-    if lookup_config and lookup_config['keys_data_path'] in ['.', './']:
-        lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']))
-    elif lookup_config and not os.path.isabs(lookup_config['keys_data_path']):
-        lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']), lookup_config['keys_data_path'])
+        # TODO: download & setup and download `user_data_dir`
+        # 'user_data_dir' and 'complex_lookup_config_fp'
 
-    _, lookup = OasisLookupFactory.create(
-        lookup_config=lookup_config,
-        model_keys_data_path=params['keys_data_fp'],
-        model_version_file_path=params['model_version_fp'],
-        lookup_package_path=params['lookup_package_fp'],
-        complex_lookup_config_fp=params['complex_lookup_config_fp'],
-        user_data_dir=params['user_data_dir'],
-        output_directory=chunk_target_dir,
-    )
-    location_df = OasisLookupFactory.get_exposure(
-        lookup=lookup,
-        source_exposure_fp=params['exposure_fp'],
-    )
-    location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
+        _, lookup = OasisLookupFactory.create(
+            lookup_config=lookup_config,
+            model_keys_data_path=params['keys_data_fp'],
+            model_version_file_path=params['model_version_fp'],
+            lookup_package_path=params['lookup_package_fp'],
+            complex_lookup_config_fp=params['complex_lookup_config_fp'],
+            user_data_dir=params['user_data_dir'],
+            output_directory=chunk_target_dir,
+        )
 
-    OasisLookupFactory.save_results(
-        lookup,
-        location_df=location_df,
-        successes_fp=params['chunk_keys_fp'],
-        errors_fp=params['chunk_keys_errors_fp'],
-        multiprocessing=params['multiprocessing'],
-    )
+        # Fetch location file for Storage (possibly from Cache)
+        location_file = filestore.get(params['loc_file_ref'], cache_dir=params['run_uuid'])
+
+
+        location_df = OasisLookupFactory.get_exposure(
+            lookup=lookup,
+            source_exposure_fp=location_file,
+        )
+
+        location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
+        chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
+        chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
+
+        OasisLookupFactory.save_results(
+            lookup,
+            location_df=location_df,
+            successes_fp=chunk_keys_fp,
+            errors_fp=chunk_keys_errors_fp,
+            multiprocessing=params['multiprocessing'],
+        )
+
+        # Store chunks
+        storage_subdir = f'{params["run_uuid"]}/oasis-files'
+        params['chunk_keys'] = filestore.put(
+            chunk_keys_fp,
+            filename=f'{chunk_idx}-keys-chunk.csv',
+            cache_dir=params['run_uuid'],
+            subdir=storage_subdir
+        )
+        params['chunk_keys_errors'] = filestore.put(
+            chunk_keys_errors_fp,
+            filename=f'{chunk_idx}-keys-error-chunk.csv',
+            cache_dir=params['run_uuid'],
+            subdir=storage_subdir
+        )
 
     return params
 
@@ -591,39 +600,74 @@ def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=Non
 @task(bind=True, name='collect_keys')
 def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=None):
     notify_api_task_started(analysis_id, self.request.id, slug)
-    res = {**chunk_params[0]}
-    del res['chunk_keys_fp']
-    del res['chunk_keys_errors_fp']
+
+    # Setup return params
+    params = {**chunk_params[0]}
+    del params['chunk_keys']
+    del params['chunk_keys_errors']
+
+    chunk_keys = [d['chunk_keys'] for d in chunk_params]
+    chunk_errors = [d['chunk_keys_errors'] for d in chunk_params]
+    logging.info('chunk_keys: {}'.format(chunk_keys))
+    logging.info('chunk_errors: {}'.format(chunk_errors))
 
     def load_dataframes(paths):
         for p in paths:
             try:
-                df = get_dataframe(p)
+                #df = get_dataframe(p)
+                df = pd.read_csv(p)
                 yield df
-            except OasisException:
+            #except OasisException:
+            except Exception:
+                logging.info('Failed to load chunk: {}'.format(p))
                 pass
 
-    non_empty_frames = list(load_dataframes(p['chunk_keys_fp'] for p in chunk_params))
-    if non_empty_frames:
-        keys = pd.concat(non_empty_frames)
-        res['keys_fp'] = os.path.join(res['target_dir'], 'keys.csv')
-        keys.to_csv(res['keys_fp'], index=False, encoding='utf-8')
-    else:
-        res['keys_fp'] = None
 
-    non_empty_frames = list(load_dataframes(p['chunk_keys_errors_fp'] for p in chunk_params))
-    if non_empty_frames:
-        keys_errors = pd.concat(non_empty_frames)
-        res['keys_errors_fp'] = os.path.join(res['target_dir'], 'keys-errors.csv')
-        keys_errors.to_csv(res['keys_errors_fp'], index=False, encoding='utf-8')
-    else:
-        res['keys_errors_fp'] = None
+    tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
+    with TemporaryDir(persist=False, basedir=tmpdir_base) as working_dir:
+        cache_dir = params['run_uuid']
+        filelist_keys = [filestore.get(r, working_dir, cache_dir=params['run_uuid']) for r in chunk_keys]
+        filelist_errors = [filestore.get(r, working_dir, cache_dir=params['run_uuid']) for r in chunk_errors]
+        logging.info('filelist_keys: {}'.format(filelist_keys))
+        logging.info('filelist_errors: {}'.format(filelist_errors))
 
-    # remove all the chunk directories so that they dont break run directory prep
-    for p in glob.glob(os.path.join(res['target_dir'], 'input-generation-chunk-*')):
-        shutil.rmtree(p)
+        storage_subdir = "{}/oasis-files".format(params['run_uuid'])
+        keys_frames = list(load_dataframes(filelist_keys))
+        if keys_frames:
+            keys = pd.concat(keys_frames)
+            keys_file = os.path.join(working_dir, 'keys.csv')
+            keys.to_csv(keys_file, index=False, encoding='utf-8')
 
-    return res
+            params['keys_ref'] = filestore.put(
+                keys_file,
+                filename=f'keys.csv',
+                cache_dir=params['run_uuid'],
+                subdir=storage_subdir
+            )
+        else:
+            params['keys_ref'] = None
+
+        errors_frames = list(load_dataframes(filelist_errors))
+        if errors_frames:
+            keys_errors = pd.concat(errors_frames)
+            keys_errors_file = os.path.join(working_dir, 'keys-errors.csv')
+            keys_errors.to_csv(keys_errors_file, index=False, encoding='utf-8')
+
+            params['keys_error_ref'] = filestore.put(
+                keys_errors_file,
+                filename='keys-errors.csv',
+                cache_dir=params['run_uuid'],
+                subdir=storage_subdir
+            )
+        else:
+            params['keys_error_ref'] = None
+
+        # Remove all keys-chunks for storage
+        #f for f in chunk_keys + chunk_errors:
+        #    filestore.delete(f ... )
+
+
+    return params
 
 
 @task(bind=True, name='write_input_files')
@@ -632,63 +676,53 @@ def write_input_files(self, params, analysis_id=None, initiator_id=None, slug=No
         analysis_id, initiator_id, slug
     ))
 
-    logging.info("args: {}".format({
-        'exposure_fp': params['exposure_fp'],
-        'accounts_fp': params['accounts_fp'],
-        'ri_info_fp': params['ri_info_fp'],
-        'ri_scope_fp': params['ri_scope_fp'],
-        'target_dir': params['target_dir'],
-        'summarise_exposure': params['summarise_exposure'],
-        'deterministic': params['deterministic'],
-        'keys_fp': params['keys_fp'],
-        'keys_errors_fp': params['keys_errors_fp'],
-        'group_id_cols': params['group_id_cols'],
-        'oasis_files_prefixes': params['oasis_files_prefixes']
-    }))
+    # Stage load chunk references to filepaths
+    cached_dir = params['run_uuid']
+    tmp_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
+    tmp_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
+    with TemporaryDir(persist=tmp_persist, basedir=tmp_base) as oasis_files_dir:
 
-    OasisManager().write_input_files(
-        **params
-    )
+        #if complex_data_files:
+        #    input_data_dir = os.path.join(run_dir_base, f'input-generation-input-data-dir-{analysis_id}-{uuid.uuid4().hex}')
+        #    Path(input_data_dir).mkdir(parents=True, exist_ok=True)
+        #else:
+        #    params['user_data_dir']  = None
 
-    media_root = settings.get('worker', 'MEDIA_ROOT')
+        params['target_dir']     = oasis_files_dir
+        params['user_data_dir']  = None
+        params['exposure_fp']    = filestore.get(params['loc_file_ref'], oasis_files_dir, cached_dir)
+        params['accounts_fp']    = filestore.get(params['acc_file_ref'], oasis_files_dir, cached_dir)
+        params['ri_scope_fp']    = filestore.get(params['scope_file_ref'], oasis_files_dir, cached_dir)
+        params['ri_info_fp']     = filestore.get(params['inf_file_ref'], oasis_files_dir, cached_dir)
+        params['keys_fp']        = filestore.get(params['keys_ref'], oasis_files_dir, cached_dir)
+        params['keys_errors_fp'] = filestore.get(params['keys_error_ref'], oasis_files_dir, cached_dir)
 
-    if params.get('keys_error_fp'):
-        hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
-        shutil.copy(params['keys_error_fp'], hashed_filename)
-        params['lookup_error_location'] = str(Path(hashed_filename).relative_to(media_root))
+        logging.info("args: {}".format({
+            'exposure_fp': params['exposure_fp'],
+            'accounts_fp': params['accounts_fp'],
+            'ri_info_fp': params['ri_info_fp'],
+            'ri_scope_fp': params['ri_scope_fp'],
+            'target_dir': params['target_dir'],
+            'summarise_exposure': params['summarise_exposure'],
+            'deterministic': params['deterministic'],
+            'keys_fp': params['keys_fp'],
+            'keys_errors_fp': params['keys_errors_fp'],
+            'group_id_cols': params['group_id_cols'],
+            'oasis_files_prefixes': params['oasis_files_prefixes']
+        }))
 
-    lookup_success_fp = next(iter(glob.glob(os.path.join(params['target_dir'], 'gul_summary_map.csv'))), None)
-    if lookup_success_fp:
-        hashed_filename = os.path.join(media_root, '{}.csv'.format(uuid.uuid4().hex))
-        shutil.copy(lookup_success_fp, hashed_filename)
-        params['lookup_success_location'] = str(Path(hashed_filename).relative_to(media_root))
+        OasisManager().prepare_input_directory(**params)
+        OasisManager().write_input_files(**params)
 
-    lookup_validation_fp = next(iter(glob.glob(os.path.join(params['target_dir'], 'exposure_summary_report.json'))), None)
-    if lookup_validation_fp:
-        hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
-        shutil.copy(lookup_validation_fp, hashed_filename)
-        params['lookup_validation_location'] = str(Path(hashed_filename).relative_to(media_root))
+        output_params = {
+            'lookup_error_location': filestore.put(os.path.join(oasis_files_dir, 'keys-errors.csv')),
+            'lookup_success_location': filestore.put(os.path.join(oasis_files_dir, 'gul_summary_map.csv')),
+            'lookup_validation_location': filestore.put(os.path.join(oasis_files_dir, 'exposure_summary_report.json')),
+            'summary_levels_location': filestore.put(os.path.join(oasis_files_dir, 'exposure_summary_report.json')),
+            'output_location': filestore.put(oasis_files_dir),
+        }
 
-    summary_levels_fp = next(iter(glob.glob(os.path.join(params['target_dir'], 'exposure_summary_levels.json'))), None)
-    if summary_levels_fp:
-        hashed_filename = os.path.join(media_root, '{}.json'.format(uuid.uuid4().hex))
-        shutil.copy(summary_levels_fp, hashed_filename)
-        params['summary_levels_location'] = str(Path(hashed_filename).relative_to(media_root))
-
-    output_tar_name = os.path.join(media_root, '{}.tar.gz'.format(uuid.uuid4().hex))
-    output_tar_path = str(Path(output_tar_name).relative_to(media_root))
-
-    logging.info("output_tar_fp: {}".format(output_tar_path))
-    logging.info("lookup_error_fp: {}".format(params.get('keys_error_fp')))
-    logging.info("lookup_success_fp: {}".format(lookup_success_fp))
-    logging.info("lookup_validation_fp: {}".format(lookup_validation_fp))
-    logging.info("summary_levels_fp: {}".format(summary_levels_fp))
-
-    params['output_location'] = output_tar_path
-    with tarfile.open(output_tar_name, 'w:gz') as tar:
-        tar.add(params['target_dir'], arcname='/')
-
-    return params
+    return output_params
 
 
 @task(bind=True, name='cleanup_input_generation')
