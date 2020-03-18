@@ -101,16 +101,19 @@ class BaseStorageConnector(object):
         :param suffix: Set the filename extension
         :type  suffix: str
 
-        :return: The absolute stored file path
+        :return: The reference to the file in storage
         :rtype str
         """
         ext = file_path.split('.')[-1] if not suffix else suffix
         storage_dir = os.path.join(self.media_root, storage_subdir)
         os.makedirs(storage_dir, exist_ok=True)
 
-        stored_fp = os.path.join(storage_dir, self._get_unique_filename(ext))
+        store_reference = self._get_unique_filename(ext)
+        stored_fp = os.path.join(storage_dir, store_reference)
+
         self.logger.info('Store file: {} -> {}'.format(file_path, stored_fp))
-        return shutil.copy(file_path, stored_fp)
+        shutil.copy(file_path, stored_fp)
+        return store_reference
 
     def _store_dir(self, directory_path, storage_subdir, suffix=None, arcname=None, **kwargs):
         """ Compress and store a directory
@@ -134,17 +137,19 @@ class BaseStorageConnector(object):
                         name for the file in the archive.
         :type arcname: str
 
-        :return: The absolute stored file path
+        :return: The reference to the file in storage
         :rtype str
         """
         ext = 'tar.gz' if not suffix else suffix
         storage_dir = os.path.join(self.media_root, storage_subdir)
         os.makedirs(storage_dir, exist_ok=True)
 
+        store_reference = self._get_unique_filename(ext)
         stored_fp = os.path.join(storage_dir, self._get_unique_filename(ext))
+
         self.compress(stored_fp, directory_path, arcname)
         self.logger.info('Store dir: {} -> {}'.format(directory_path, stored_fp))
-        return stored_fp
+        return store_reference
 
     def extract(self, archive_fp, directory):
         """ Extract tar file
@@ -157,8 +162,15 @@ class BaseStorageConnector(object):
         :param directory: Path to extract contents to.
         :type  directory: str
         """
-        with tarfile.open(archive_fp) as f:
-            f.extractall(directory)
+        temp_dir = tempfile.TemporaryDirectory()
+        try:
+            temp_dir_path = temp_dir.__enter__()
+            local_archive_path = self.get(archive_fp, os.path.join(temp_dir_path, os.path.basename(archive_fp)))
+
+            with tarfile.open(local_archive_path) as f:
+                f.extractall(directory)
+        finally:
+            temp_dir.cleanup()
 
     def compress(self, archive_fp, directory, arcname=None):
         """ Compress a directory
@@ -168,7 +180,7 @@ class BaseStorageConnector(object):
         :param archive_fp: Path to archive file
         :type  archive_fp: str
 
-        :param directory: Path to extract contents to.
+        :param directory: Path to archive.
         :type  directory: str
 
         :param arcname: If given, `arcname' set an alternative
@@ -193,8 +205,8 @@ class BaseStorageConnector(object):
         :param reference: Filename or download URL
         :type  reference: str
 
-        :param output_dir: If given, download to that directory.
-        :type  output_dir: str
+        :param output_path: If given, download to that directory.
+        :type  output_path: str
 
         :param cache_dir: If given, check for requested file in cached before downloading.
         :type  cache_dir: str
@@ -205,6 +217,7 @@ class BaseStorageConnector(object):
         if self._is_valid_url(reference):
             response = urlopen(reference)
             fdata = response.read()
+
             header_fname = response.headers.get('Content-Disposition', '').split('filename=')[-1]
             fname = header_fname if header_fname else os.path.basename(urlparse(reference).path)
             fpath = os.path.join(output_dir, fname)
@@ -230,6 +243,9 @@ class BaseStorageConnector(object):
             )
             if os.path.isfile(fpath):
                 logging.info('Get shared file: {}'.format(reference))
+                if output_dir:
+                    shutil.copy(fpath, output_dir)
+                    return os.path.abspath(output_dir)
                 return os.path.abspath(fpath)
             else:
                 raise MissingInputsException(fpath)
@@ -285,9 +301,8 @@ class BaseStorageConnector(object):
             )
         else:
             return None
-
     
-    def del(self, reference):
+    def delete(self, reference):
         """
         #
         # Method to delete from shared-fd / aws-s3

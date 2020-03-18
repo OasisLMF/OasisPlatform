@@ -1,7 +1,9 @@
 import os
+from io import BytesIO
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.files import File
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
@@ -10,6 +12,16 @@ from model_utils.models import TimeStampedModel
 def random_file_name(instance, filename):
     ext = os.path.splitext(filename)[-1]
     return '{}{}'.format(uuid4().hex, ext)
+
+
+class RelatedFileManager(models.Manager):
+    def create_from_content(self, content, filename, content_type, creator):
+        self.create(
+            creator=creator,
+            filename=filename,
+            content_type=content_type,
+            file=File(BytesIO(content))
+        )
 
 
 class RelatedFile(TimeStampedModel):
