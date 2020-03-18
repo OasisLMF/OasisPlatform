@@ -1,5 +1,4 @@
-import os
-from io import StringIO
+import uuid
 from itertools import chain as iterchain
 from importlib import import_module
 from math import ceil
@@ -26,7 +25,7 @@ class Controller:
     INPUT_GENERATION_CHUNK_SIZE = settings.getint('worker', 'INPUT_GENERATION_CHUNK_SIZE', fallback=1)
 
     @classmethod
-    def get_subtask_signature(cls, task_name, analysis, initiator, slug, queue, params: TaskParams) -> Signature:
+    def get_subtask_signature(cls, task_name, analysis, initiator, data_dir_suffix, slug, queue, params: TaskParams) -> Signature:
         """
         Generates a signature representing the subtask. This task will have the initiator_id, analysis_id and
         slug set along with other provided kwargs.
@@ -34,6 +33,7 @@ class Controller:
         :param task_name: The name of the task as registered with celery
         :param analysis: The analysis object to run the task for
         :param initiator: The initiator who started the parent task
+        :param data_dir_suffix: The suffix for the runs current data directory
         :param slug: The slug identifier for the task, this should be unique for a given analysis
         :param queue: The name of the queue the task will be published to
         :param params: The parameters to send to the task
@@ -44,7 +44,13 @@ class Controller:
             task_name,
             queue=queue,
             args=params.args,
-            kwargs={'initiator_id': initiator.pk, 'analysis_id': analysis.pk, 'slug': slug, **params.kwargs},
+            kwargs={
+                'initiator_id': initiator.pk,
+                'analysis_id': analysis.pk,
+                'slug': slug,
+                'data_dir_suffix': data_dir_suffix,
+                **params.kwargs,
+            },
         )
 
         # add task to set the status of the sub task status record on success
@@ -80,6 +86,7 @@ class Controller:
         task_name,
         analysis,
         initiator,
+        data_dir_suffix,
         status_name,
         status_slug,
         queue,
@@ -91,6 +98,7 @@ class Controller:
         :param task_name: The name of the task as registered with celery
         :param analysis: The analysis object to run the task for
         :param initiator: The initiator who started the parent task
+        :param data_dir_suffix: The suffix for the runs current data directory
         :param status_name: A human readable name for the task
         :param status_slug: The slug identifier for the task, this should be unique for a given analysis
         :param queue: The name of the queue the task will be published to
@@ -100,7 +108,7 @@ class Controller:
         params = params or TaskParams()
         return (
             [cls.get_subtask_status(analysis, status_name, status_slug, queue)],
-            cls.get_subtask_signature(task_name, analysis, initiator, status_slug, queue, params),
+            cls.get_subtask_signature(task_name, analysis, initiator, data_dir_suffix, status_slug, queue, params),
         )
 
     @classmethod
@@ -109,6 +117,7 @@ class Controller:
         task_name,
         analysis,
         initiator,
+        data_dir_suffix,
         status_name,
         status_slug,
         queue,
@@ -121,6 +130,7 @@ class Controller:
         :param task_name: The name of the task as registered with celery
         :param analysis: The analysis object to run the task for
         :param initiator: The initiator who started the parent task
+        :param data_dir_suffix: The suffix for the runs current data directory
         :param status_name: A human readable name for the task
         :param status_slug: The slug identifier for the task, this should be unique for a given analysis
         :param queue: The name of the queue the task will be published to
@@ -129,7 +139,7 @@ class Controller:
         :return: Signature representing the task
         """
         statuses, tasks = zip(*[
-            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, params=p)
+            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, data_dir_suffix, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, params=p)
             for idx, p in enumerate(params)
         ])
 
@@ -156,7 +166,7 @@ class Controller:
         initiator,
         tasks: List[Signature],
         statuses: List['AnalysisTaskStatus'],
-        run_dir_patterns: List[str],
+        data_dir_suffix: str,
         traceback_property: str,
         failure_status: str,
     ) -> chain:
@@ -167,7 +177,7 @@ class Controller:
         :param initiator: The user starting the task
         :param tasks: Signatures for the subtasks to run
         :param statuses: Statuses for storing the status of the subtasks
-        :param run_dir_patterns: Pattern representing the temporary run directories
+        :param data_dir_suffix: The suffix for the runs current data directory
         :param traceback_property: The property to store the traceback on failure
         :param failure_status: The Status to use when the task fails
 
@@ -184,12 +194,12 @@ class Controller:
             kwargs={
                 'analysis_id': analysis.pk,
                 'initiator_id': initiator.pk,
-                'run_dir_patterns': run_dir_patterns,
+                'data_dir_suffix': data_dir_suffix,
                 'traceback_property': traceback_property,
                 'failure_status': failure_status,
             },
         ))
-        c.delay()
+        c.delay({})
         return c
 
     @classmethod
@@ -205,12 +215,13 @@ class Controller:
         return str(analysis.model)
 
     @classmethod
-    def get_inputs_generation_tasks(cls, analysis: 'Analysis', initiator: User) -> Tuple[List['AnalysisTaskStatus'], List[Signature]]:
+    def get_inputs_generation_tasks(cls, analysis: 'Analysis', initiator: User, data_dir_suffix: str,) -> Tuple[List['AnalysisTaskStatus'], List[Signature]]:
         """
         Gets the tasks to chain together for input generation
 
         :param analysis: The analysis to tun the tasks for
         :param initiator: The user starting the tasks
+        :param data_dir_suffix: The suffix for the runs current data directory
 
         :return: Tuple containing the statuses to create and signatures to chain
         """
@@ -219,82 +230,95 @@ class Controller:
         num_chunks = ceil(len(location_data) / cls.INPUT_GENERATION_CHUNK_SIZE)
 
         queue = cls.get_generate_inputs_queue(analysis, initiator)
+        base_kwargs = {
+            'input_location': analysis.input_file.get_link(),
+            'settings_file': analysis.settings_file.get_link(),
+            'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
+        }
 
         return cls._split_tasks_and_statuses([
             cls.get_subtask_statuses_and_signature(
                 'prepare_input_generation_params',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Prepare input generation params',
                 'prepare-input-generation-params',
                 queue,
                 TaskParams(
                     loc_file=analysis.portfolio.location_file.get_link(),
-                    acc_file=analysis.portfolio.accounts_file.get_link() if analysis.portfolio.accounts_file else None,
-                    info_file=analysis.portfolio.reinsurance_info_file.get_link() if analysis.portfolio.reinsurance_info_file else None,
-                    scope_file=analysis.portfolio.reinsurance_scope_file.get_link() if analysis.portfolio.reinsurance_scope_file else None,
-                    settings_file=analysis.settings_file.get_link() if analysis.settings_file else None,
-                    complex_data_files=analysis.create_complex_model_data_file_dicts(),
-                )
+                    acc_file=analysis.portfolio.accounts_file.get_link(),
+                    info_file=analysis.portfolio.reinsurance_info_file.get_link(),
+                    scope_file=analysis.portfolio.reinsurance_scope_file.get_link(),
+                    **base_kwargs,
+                ),
             ),
-            #cls.get_subtask_statuses_and_signature(
-            #    'prepare_inputs_directory',
-            #    analysis,
-            #    initiator,
-            #    'Prepare input directory',
-            #    'prepare-input-directory',
-            #    queue,
-            #),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Prepare keys file',
                 'prepare-keys-file',
                 queue,
-                [TaskParams(idx, num_chunks) for idx in range(num_chunks)],
+                [
+                    TaskParams(
+                        idx,
+                        num_chunks,
+                        **base_kwargs,
+                    ) for idx in range(num_chunks)
+                ],
                 cls.get_subtask_statuses_and_signature(
                     'collect_keys',
                     analysis,
                     initiator,
+                    data_dir_suffix,
                     'Collect keys',
                     'collect-keys',
                     queue,
+                    TaskParams(**base_kwargs),
                 ),
             ),
             cls.get_subtask_statuses_and_signature(
                 'write_input_files',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Write input files',
                 'write-input-files',
                 queue,
+                TaskParams(**base_kwargs),
             ),
             cls.get_subtask_statuses_and_signature(
                 'record_input_files',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Record input files',
                 'record-input-files',
                 'celery',
+                TaskParams(**base_kwargs),
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_input_generation',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Cleanup input generation',
                 'cleanup-input-generation',
                 queue,
+                TaskParams(**base_kwargs),
             ),
         ])
 
     @classmethod
-    def generate_inputs(cls, analysis: 'Analysis', initiator: User) -> chain:
+    def generate_inputs(cls, analysis: 'Analysis', initiator: User, data_dir_suffix: str) -> chain:
         """
         Starts the input generation chain
 
         :param analysis: The analysis to start input generation for
         :param initiator: The user starting the input generation
+        :param data_dir_suffix: The suffix for the runs current data directory
 
         :return: The started chain
         """
@@ -306,10 +330,7 @@ class Controller:
             initiator,
             tasks,
             statuses,
-            [
-                f'input-generation-oasis-files-dir-{analysis.pk}-*',
-                f'input-generation-input-data-dir-{analysis.pk}-*',
-            ],
+            data_dir_suffix,
             'input_generation_traceback_file',
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
         ).id or ''  # TODO: is shouldn't return None but is for some reason so for no guard against it
@@ -329,84 +350,88 @@ class Controller:
         return str(analysis.model)
 
     @classmethod
-    def get_loss_generation_tasks(cls, analysis: 'Analysis', initiator: User):
+    def get_loss_generation_tasks(cls, analysis: 'Analysis', initiator: User, data_dir_suffix: str):
         """
         Gets the tasks to chain together for loss generation
 
         :param analysis: The analysis to tun the tasks for
         :param initiator: The user starting the tasks
+        :param data_dir_suffix: The suffix for the runs current data directory
 
         :return: Tuple containing the statuses to create and signatures to chain
         """
         num_chunks = 4
 
         queue = cls.get_generate_losses_queue(analysis, initiator)
+        base_kwargs = {
+            'input_location': analysis.input_file.get_link(),
+            'analysis_settings_file': analysis.settings_file.get_link(),
+            'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
+        }
 
         return cls._split_tasks_and_statuses([
-            cls.get_subtask_statuses_and_signature(
-                'extract_losses_generation_inputs',
-                analysis,
-                initiator,
-                'Extract losses generation inputs',
-                'extract-losses-generation-inputs',
-                queue,
-                TaskParams(
-                    inputs_location=analysis.input_file.file.name,
-                    complex_data_files=analysis.create_complex_model_data_file_dicts(),
-                )
-            ),
             cls.get_subtask_statuses_and_signature(
                 'prepare_losses_generation_params',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Prepare losses generation params',
                 'prepare-losses-generation-params',
                 queue,
                 TaskParams(
-                    analysis_settings_file=analysis.settings_file.file.name if analysis.settings_file else None,
                     num_chunks=num_chunks,
+                    **base_kwargs,
                 )
             ),
             cls.get_subtask_statuses_and_signature(
                 'prepare_losses_generation_directory',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Prepare losses generation directory',
                 'prepare-losses-generation-directory',
                 queue,
+                TaskParams(**base_kwargs),
             ),
             cls.get_subchord_statuses_and_signature(
                 'generate_losses_chunk',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Generate losses chunk',
                 'generate-losses-chunk',
                 queue,
-                [TaskParams(idx, num_chunks) for idx in range(num_chunks)],
+                [TaskParams(idx, num_chunks, **base_kwargs,) for idx in range(num_chunks)],
                 cls.get_subtask_statuses_and_signature(
                     'generate_losses_output',
                     analysis,
                     initiator,
+                    data_dir_suffix,
                     'Generate losses output',
                     'generate_losses_output',
                     queue,
+                    TaskParams(**base_kwargs),
                 ),
             ),
             cls.get_subtask_statuses_and_signature(
                 'record_losses_files',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Record losses files',
                 'record-losses-files',
                 'celery',
+                TaskParams(**base_kwargs),
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_losses_generation',
                 analysis,
                 initiator,
+                data_dir_suffix,
                 'Cleanup losses generation',
                 'cleanup-losses-generation',
                 queue,
+                TaskParams(**base_kwargs),
             ),
         ])
 
@@ -421,17 +446,16 @@ class Controller:
         :return: The started chain
         """
         from src.server.oasisapi.analyses.models import Analysis
-        statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator)
+
+        data_dir_suffix = uuid.uuid4().hex
+        statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, data_dir_suffix)
 
         task = analysis.run_task_id = cls._start(
             analysis,
             initiator,
             tasks,
             statuses,
-            [
-                f'loss-generation-oasis-files-dir-{analysis.pk}-*',
-                f'loss-generation-input-data-dir-{analysis.pk}-*',
-            ],
+            data_dir_suffix,
             'run_traceback_file',
             Analysis.status_choices.RUN_ERROR,
         ).id or ''  # TODO: is shouldn't return None but is for some reason so for no guard against it

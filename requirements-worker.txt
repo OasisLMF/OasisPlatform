@@ -25,6 +25,7 @@ configparser==4.0.2
 cookiecutter==1.7.0
 docutils==0.15.2          # via botocore
 fasteners==0.15
+filelock==3.0.12
 future==0.18.2            # via cookiecutter
 idna==2.8                 # via requests
 importlib-metadata==1.5.0  # via kombu, pluggy, pytest
@@ -64,4 +65,4 @@ whichcraft==0.6.1         # via cookiecutter
 zipp==2.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools
+# setuptools==46.0.0        # via rtree

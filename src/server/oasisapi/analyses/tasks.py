@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import json
 import os
 import tarfile
 import uuid
@@ -12,8 +13,10 @@ from celery.result import AsyncResult
 from celery.signals import before_task_publish
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.db.models import When, Case, Value, F
+from django.http import HttpRequest
 from django.utils import timezone
 
 # Remove this
@@ -28,6 +31,9 @@ from urllib.request import urlopen
 from urllib.parse import urlparse
 
 from ..celery import celery_app
+from ..files.views import handle_json_data
+from ..schemas.serializers import ModelParametersSerializer
+
 logger = get_task_logger(__name__)
 
 
@@ -81,6 +87,64 @@ def store_file(reference, content_type, creator):
             content_type=content_type,
             creator=creator,
         )
+
+
+@celery_app.task(name='run_register_worker')
+def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
+    logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
+    try:
+        from django.contrib.auth.models import User
+        from src.server.oasisapi.analysis_models.models import AnalysisModel
+
+        try:
+            model = AnalysisModel.objects.get(
+                model_id=m_name,
+                supplier_id=m_supplier,
+                version_id=m_id
+            )
+        except ObjectDoesNotExist:
+            user = User.objects.get(username='admin')
+            model = AnalysisModel.objects.create(
+                model_id=m_name,
+                supplier_id=m_supplier,
+                version_id=m_id,
+                creator=user
+            )
+
+        # Update model settings file
+        if m_settings:
+            try:
+                request = HttpRequest()
+                request.data = {**m_settings}
+                request.method = 'post'
+                request.user = model.creator
+                handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
+                logger.info('Updated model settings')
+            except Exception as e:
+                logger.info('Failed to update model settings:')
+                logger.exception(str(e))
+
+        # Update the oasislmf config
+        if m_conf:
+            model.oasislmf_config = json.dumps(m_conf)
+
+        # Update model version info
+        if m_version:
+            try:
+                model.ver_ktools = m_version['ktools']
+                model.ver_oasislmf = m_version['oasislmf']
+                model.ver_platform = m_version['platform']
+                logger.info('Updated model versions')
+            except Exception as e:
+                logger.info('Failed to set model veriosns:')
+                logger.exception(str(e))
+
+        model.save()
+
+    # Log unhandled execptions
+    except Exception as e:
+        logger.exception(str(e))
+        logger.exception(model)
 
 
 def _traceback_from_errback_args(*args):
@@ -172,37 +236,28 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
     analysis.task_finished = timezone.now()
 
     # Trace back file (stdout + stderr)
-    traceback_location = f'{uuid.uuid4().hex}.tar.gz'
-    with open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), traceback_location), 'w') as f:
-        f.write(result['bash_trace'])
+    analysis.run_traceback_file = RelatedFile.objects.create_from_content(
+        result['bash_trace'].encode(),
+        'run_traceback.txt',
+        'text/plain',
+        initiator
+    )
 
     # Ktools log Tar file
-    log_location = f'{uuid.uuid4().hex}.tar.gz'
-    log_directory = os.path.join(result['model_run_fp'], "log")
-    if os.path.exists(log_directory):
-        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), log_location), "w:gz") as tar:
-            tar.add(log_directory, arcname="log")
-
-        analysis.run_log_file = RelatedFile.objects.create(
-            file=str(log_location),
-            filename=str(log_location),
-            content_type='application/gzip',
-            creator=initiator,
-        )
+    analysis.run_log_file = RelatedFile.objects.create(
+        file=str(result['log_location']),
+        filename=str(result['log_location']),
+        content_type='application/gzip',
+        creator=initiator,
+    )
 
     # Results Tar
-    output_location = f'{uuid.uuid4().hex}.tar.gz'
-    output_directory = os.path.join(result['model_run_fp'], "output")
-    if os.path.exists(output_directory):
-        with tarfile.open(os.path.join(settings.get('worker', 'MEDIA_ROOT'), output_location), "w:gz") as tar:
-            tar.add(output_directory, arcname="output")
-
-        analysis.output_file = RelatedFile.objects.create(
-            file=str(output_location),
-            filename=str(output_location),
-            content_type='application/gzip',
-            creator=initiator,
-        )
+    analysis.output_file = RelatedFile.objects.create(
+        file=str(result['output_location']),
+        filename=str(result['output_location']),
+        content_type='application/gzip',
+        creator=initiator,
+    )
 
     analysis.save()
     return result
@@ -307,14 +362,14 @@ def handle_task_failure(
     *args,
     analysis_id=None,
     initiator_id=None,
-    run_dir_patterns=None,
+    data_dir_suffix=None,
     traceback_property=None,
     failure_status=None,
 ):
     tb = _traceback_from_errback_args(*args)
 
-    logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, run_dir_patterns: {}, failure_status: {}'.format(
-        analysis_id, initiator_id, tb, run_dir_patterns, failure_status))
+    logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, data_dir_suffix: {}, failure_status: {}'.format(
+        analysis_id, initiator_id, tb, data_dir_suffix, failure_status))
     try:
         from .models import Analysis
 
@@ -341,12 +396,9 @@ def handle_task_failure(
 
     # cleanup the temporary run files
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
-        media_root = settings.get('worker', 'media_root')
-
-        directories = chain(glob(os.path.join(media_root, p)) for p in run_dir_patterns)
-
-        for p in directories:
-            rmtree(p)
+        rmtree(
+            os.path.join(settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{data_dir_suffix}')
+        )
 
 
 @before_task_publish.connect
