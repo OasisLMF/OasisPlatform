@@ -7,6 +7,7 @@ from typing import List, Type, TYPE_CHECKING, Tuple, Optional
 from celery import signature, chord
 from celery.canvas import Signature, chain
 from django.contrib.auth.models import User
+from kombu.common import Broadcast
 from oasislmf.utils.data import get_dataframe
 
 from src.conf.iniconf import settings
@@ -430,7 +431,7 @@ class Controller:
                 run_data_uuid,
                 'Cleanup losses generation',
                 'cleanup-losses-generation',
-                queue,
+                'model-worker-broadcast',
                 TaskParams(**base_kwargs),
             ),
         ])

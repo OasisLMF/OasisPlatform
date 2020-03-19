@@ -88,6 +88,16 @@ class TemporaryDir(object):
             shutil.rmtree(self.name)
 
 
+def merge_dirs(src_root, dst_root):
+    for root, dirs, files in os.walk(src_root):
+        for f in files:
+            src = os.path.join(root, f)
+            rel_dst = os.path.relpath(src, src_root)
+            abs_dst = os.path.join(dst_root, rel_dst)
+            Path(abs_dst).parent.mkdir(exist_ok=True, parents=True)
+            shutil.copy(os.path.join(root, f), abs_dst)
+
+
 def get_model_settings():
     """ Read the settings file from the path OASIS_MODEL_SETTINGS
         returning the contents as a python dicself.t (none if not found)
@@ -763,15 +773,11 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
 #
 
 
-# class LossGenerationTask(Task):
 def loss_generation_task(fn):
     def maybe_extract_tar(filestore_ref, dst):
         with filelock.FileLock(f'{dst}.lock'):
             if not Path(dst).exists():
-                print(f'extracting {filestore_ref} -> {dst}')
                 filestore.extract(filestore_ref, dst)
-            else:
-                print(f'path {dst} already exists')
 
     def maybe_prepare_complex_data_files(complex_data_files, user_data_dir):
         with filelock.FileLock(f'{user_data_dir}.lock'):
@@ -780,23 +786,13 @@ def loss_generation_task(fn):
                 if not user_data_path.exists():
                     user_data_path.mkdir(parents=True, exist_ok=True)
                     prepare_complex_model_file_inputs(complex_data_files, str(user_data_path))
-                    print(f'preparing complex files into {user_data_path}')
-                else:
-                    print(f'path {user_data_path} already exists')
-            else:
-                print(f'no complex data files set')
 
     def maybe_fetch_analysis_settings(analysis_settings_file, analysis_settings_fp):
         with filelock.FileLock(f'{analysis_settings_fp}.lock'):
             if not Path(analysis_settings_fp).exists():
                 filestore.get(analysis_settings_file, analysis_settings_fp)
-                print(f'fetching {analysis_settings_file} -> {analysis_settings_fp}')
-            else:
-                print(f'path {analysis_settings_fp} already exists')
 
-    def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
-        print(kwargs)
-
+    def _prepare_directories(params, analysis_id, run_data_uuid, kwargs):
         params['root_data_dir'] = os.path.join(settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{run_data_uuid}')
         Path(params['root_data_dir']).mkdir(parents=True, exist_ok=True)
 
@@ -807,40 +803,39 @@ def loss_generation_task(fn):
         params.setdefault('analysis_settings_fp', os.path.join(params['root_data_dir'], 'analysis_settings.json'))
 
         input_location = kwargs.get('input_location')
-        print('input location:', input_location)
         if input_location:
             maybe_extract_tar(
                 input_location,
                 params['oasis_fp'],
             )
-        print(f'{params["oasis_fp"]} exists {Path(params["oasis_fp"]).exists()}')
 
         run_location = params.get('run_location')
-        print('run location:', run_location)
         if run_location:
             maybe_extract_tar(
                 run_location,
                 params['model_run_fp'],
             )
-        print(f'{params["model_run_fp"]} exists {Path(params["model_run_fp"]).exists()}')
 
         complex_data_files = kwargs.get('complex_data_files')
-        print('complex data files:', complex_data_files)
         if complex_data_files:
             maybe_prepare_complex_data_files(
                 complex_data_files,
                 params['user_data_dir'],
             )
-        print(f'{params["user_data_dir"]} exists {Path(params["user_data_dir"]).exists()}')
 
         analysis_settings_file = kwargs.get('analysis_settings_file')
-        print('analysis settings file:', analysis_settings_file)
         if analysis_settings_file:
             maybe_fetch_analysis_settings(
                 analysis_settings_file,
                 params['analysis_settings_fp']
             )
-        print(f'{params["analysis_settings_fp"]} exists {Path(params["analysis_settings_fp"]).exists()}')
+
+    def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
+        if isinstance(params, list):
+            for p in params:
+                _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
+        else:
+            _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
         return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
 
@@ -867,7 +862,8 @@ def prepare_losses_generation_params(
         model_data_fp=os.path.join(os.path.dirname(config_path), config['model_data_path']),
         ktools_error_guard=settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True),
         ktools_debug=settings.getboolean('worker', 'DEBUG_MODE', fallback=False),
-        ktools_fifo_relative=True,
+        ktools_fifo_queue_dir=os.path.join(params['model_run_fp'], 'fifo'),
+        ktools_work_dir=os.path.join(params['model_run_fp'], 'work'),
         ktools_alloc_rule_gul=settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None),
         ktools_alloc_rule_il=settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None),
         ktools_alloc_rule_ri=settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None),
@@ -902,6 +898,9 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             'ktools_work_dir': os.path.join(d, 'work'),
         }
 
+        Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
+        Path(chunk_params['ktools_fifo_queue_dir']).mkdir(parents=True, exist_ok=True)
+
         params['fifo_queue_dir'], params['bash_trace'] = OasisManager().run_loss_generation(**chunk_params)
 
         return {
@@ -919,14 +918,14 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
 
     abs_fifo_dir = os.path.join(
-        params['model_run_fp'],
-        params['ktools_fifo_queue_dir'],
+        res['model_run_fp'],
+        res['ktools_fifo_queue_dir'],
     )
     Path(abs_fifo_dir).mkdir(exist_ok=True, parents=True)
 
     abs_work_dir = os.path.join(
-        params['model_run_fp'],
-        params['ktools_work_dir'],
+        res['model_run_fp'],
+        res['ktools_work_dir'],
     )
     Path(abs_fifo_dir).mkdir(exist_ok=True, parents=True)
 
@@ -935,11 +934,8 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         with TemporaryDir() as d:
             filestore.extract(p['chunk_work_location'], d)
 
-            for src in glob.glob(os.path.join(d, 'work', '*')):
-                shutil.copytree(src, abs_work_dir)
-
-            for src in glob.glob(os.path.join(d, 'fifo', '*')):
-                shutil.copytree(src, abs_fifo_dir)
+            merge_dirs(os.path.join(d, 'work'), abs_work_dir)
+            merge_dirs(os.path.join(d, 'fifo'), abs_fifo_dir)
 
     OasisManager().run_loss_outputs(**res)
     res['bash_trace'] = '\n\n'.join(
@@ -948,8 +944,8 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
 
     return {
         **res,
-        'output_location': filestore.put(os.path.join(params['model_run_fp'], 'output')),
-        'log_location': filestore.put(os.path.join(params['model_run_fp'], 'log')),
+        'output_location': filestore.put(os.path.join(res['model_run_fp'], 'output')),
+        'log_location': filestore.put(os.path.join(res['model_run_fp'], 'log')),
     }
 
 

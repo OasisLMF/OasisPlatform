@@ -225,7 +225,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
 
 
 @celery_app.task(bind=True, name='record_losses_files')
-def record_losses_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None):
+def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     from .models import Analysis
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)

@@ -31,6 +31,8 @@ class RelatedFile(TimeStampedModel):
     # filehash_md5 = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
 
+    objects = RelatedFileManager()
+
     def __str__(self):
         return 'File_{}'.format(self.file)
 

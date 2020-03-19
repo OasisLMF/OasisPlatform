@@ -1,4 +1,5 @@
 from celery.schedules import crontab
+from kombu.common import Broadcast
 
 from src.conf.iniconf import settings
 
@@ -69,6 +70,7 @@ def crontab_from_string(s):
         month_of_year=month_of_year,
     )
 
+CELERY_TASK_QUEUES = (Broadcast('model-worker-broadcast'), )
 
 CELERYBEAT_SCHEDULE = {
     'send_queue_status_digest': {
