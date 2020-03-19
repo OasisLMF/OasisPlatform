@@ -37,11 +37,11 @@ class RelatedFile(TimeStampedModel):
     def read(self, *args, **kwargs):
         return self.file.read(*args, **kwargs)
 
-    def get_link(self):
+    def get_storage_reference(self):
         if not self.file:
             return None
 
-        if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws']:
+        if settings.DEFAULT_FILE_STORAGE == 'storages.backends.s3boto3.S3Boto3Storage':
             return self.file.storage.url(self.file.name)
         else:
             return self.file.name

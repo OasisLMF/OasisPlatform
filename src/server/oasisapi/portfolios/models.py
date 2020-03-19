@@ -21,6 +21,24 @@ class Portfolio(TimeStampedModel):
     def __str__(self):
         return self.name
 
+    def get_link(self, file_attribute):
+        """
+        returns the file link based on if file is connected
+        if not then return 'None'
+
+        """
+        file_fields = [
+            'accounts_file',
+            'location_file',
+            'reinsurance_info_file',
+            'reinsurance_scope_file',
+        ]
+        if file_attribute in file_fields:
+            related_file = getattr(self, file_attribute)
+            if related_file:
+                return related_file.get_storage_reference()
+        return None
+
     def get_absolute_url(self, request=None):
         return reverse('portfolio-detail', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
