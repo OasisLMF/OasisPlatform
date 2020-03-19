@@ -320,22 +320,24 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
 @celery_app.task(bind=True, name='record_sub_task_failure')
 def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, task_slug=None):
     tb = _traceback_from_errback_args(*args)
-
     task_id = self.request.parent_id
-    AnalysisTaskStatus.objects.filter(
-        slug=task_slug,
-        analysis_id=analysis_id,
-    ).update(
-        task_id=task_id,
-        status=AnalysisTaskStatus.status_choices.ERROR,
-        end_time=timezone.now(),
-        error_log=RelatedFile.objects.create(
-            file=File(StringIO(tb), name='{}.log'.format(uuid.uuid4())),
-            filename='{}-error.log'.format(task_id),
-            content_type='text/plain',
-            creator_id=initiator_id,
+
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(tb.encode('utf-8'))
+        AnalysisTaskStatus.objects.filter(
+            slug=task_slug,
+            analysis_id=analysis_id,
+        ).update(
+            task_id=task_id,
+            status=AnalysisTaskStatus.status_choices.ERROR,
+            end_time=timezone.now(),
+            error_log=RelatedFile.objects.create(
+                file=File(tmp_file, name='{}.log'.format(uuid.uuid4())),
+                filename='{}-error.log'.format(task_id),
+                content_type='text/plain',
+                creator_id=initiator_id,
+            )
         )
-    )
 
 
 @celery_app.task(bind=True, name='chord_error_callback')
@@ -378,12 +380,14 @@ def handle_task_failure(
         analysis.task_finished = timezone.now()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
-        setattr(analysis, traceback_property, RelatedFile.objects.create(
-            file=File(StringIO(tb), name=random_filename),
-            filename=random_filename,
-            content_type='text/plain',
-            creator=get_user_model().objects.get(pk=initiator_id),
-        ))
+        with TemporaryFile() as tmp_file:
+            tmp_file.write(tb.encode('utf-8'))
+            setattr(analysis, traceback_property, RelatedFile.objects.create(
+                file=File(tmp_file, name=random_filename),
+                filename=random_filename,
+                content_type='text/plain',
+                creator=get_user_model().objects.get(pk=initiator_id),
+            ))
 
         # remove the current command log file
         if analysis.run_log_file:
