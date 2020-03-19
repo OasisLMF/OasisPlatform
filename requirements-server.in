@@ -1,3 +1,5 @@
+-e git://github.com/OasisLMF/OasisLMF.git@feature/architecture2020#egg=oasislmf
+
 boto3
 celery
 chainmap
