@@ -182,7 +182,7 @@ def start_loss_generation_task(analysis_pk, initiator_pk):
 
 
 @celery_app.task(bind=True, name='record_input_files')
-def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=None):
+def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None):
     from .models import Analysis
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
@@ -225,7 +225,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, slug=N
 
 
 @celery_app.task(bind=True, name='record_losses_files')
-def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=None):
+def record_losses_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None):
     from .models import Analysis
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
@@ -362,14 +362,14 @@ def handle_task_failure(
     *args,
     analysis_id=None,
     initiator_id=None,
-    data_dir_suffix=None,
+    run_data_uuid=None,
     traceback_property=None,
     failure_status=None,
 ):
     tb = _traceback_from_errback_args(*args)
 
-    logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, data_dir_suffix: {}, failure_status: {}'.format(
-        analysis_id, initiator_id, tb, data_dir_suffix, failure_status))
+    logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, run_data_uuid: {}, failure_status: {}'.format(
+        analysis_id, initiator_id, tb, run_data_uuid, failure_status))
     try:
         from .models import Analysis
 
@@ -397,7 +397,7 @@ def handle_task_failure(
     # cleanup the temporary run files
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
         rmtree(
-            os.path.join(settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{data_dir_suffix}')
+            os.path.join(settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{run_data_uuid}')
         )
 
 

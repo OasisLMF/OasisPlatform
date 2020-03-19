@@ -486,6 +486,7 @@ def generate_input(self,
 @task(bind=True, name='prepare_input_generation_params')
 def prepare_input_generation_params(
     self,
+    params,
     loc_file=None,
     acc_file=None,
     info_file=None,
@@ -493,9 +494,11 @@ def prepare_input_generation_params(
     settings_file=None,
     complex_data_files=None,
     multiprocessing=False,
+    run_data_uuid=None,
     analysis_id=None,
     initiator_id=None,
     slug=None,
+    **kwargs,
 ):
     logging.info("prepare_input_generation_params: {}".format(str(locals())))
     notify_api_task_started(analysis_id, self.request.id, slug)
@@ -512,9 +515,8 @@ def prepare_input_generation_params(
         lookup_config_json = None
 
     # Remove pos arg for 'target_dir' and 'location_file'
-    UUID = uuid.uuid4().hex
     params = OasisManager().prepare_input_generation_params(
-        target_dir=f'{UUID}/oasis-files',
+        target_dir=f'{run_data_uuid}/oasis-files',
         exposure_fp='',
         lookup_config_fp=lookup_config_json,
         summarise_exposure=not settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False),
@@ -522,7 +524,6 @@ def prepare_input_generation_params(
     )
 
     # Store file References for `prepare_keys_file_chunk`
-    params['run_uuid'] = UUID
     params['loc_file_ref'] = loc_file
     params['acc_file_ref'] = acc_file
     params['inf_file_ref'] = info_file
@@ -535,7 +536,17 @@ def prepare_input_generation_params(
 
 
 @task(bind=True, name='prepare_keys_file_chunk')
-def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, initiator_id=None, slug=None):
+def prepare_keys_file_chunk(
+    self, 
+    params, 
+    chunk_idx, 
+    num_chunks, 
+    run_data_uuid=None, 
+    analysis_id=None, 
+    initiator_id=None, 
+    slug=None,
+    **kwargs
+):
     notify_api_task_started(analysis_id, self.request.id, slug)
     tmp_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
@@ -560,7 +571,7 @@ def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=Non
         )
 
         # Fetch location file for Storage (possibly from Cache)
-        location_file = filestore.get(params['loc_file_ref'], cache_dir=params['run_uuid'])
+        location_file = filestore.get(params['loc_file_ref'], cache_dir=run_data_uuid)
 
 
         location_df = OasisLookupFactory.get_exposure(
@@ -581,17 +592,17 @@ def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=Non
         )
 
         # Store chunks
-        storage_subdir = f'{params["run_uuid"]}/oasis-files'
+        storage_subdir = f'{run_data_uuid}/oasis-files'
         params['chunk_keys'] = filestore.put(
             chunk_keys_fp,
             filename=f'{chunk_idx}-keys-chunk.csv',
-            cache_dir=params['run_uuid'],
+            cache_dir=run_data_uuid,
             subdir=storage_subdir
         )
         params['chunk_keys_errors'] = filestore.put(
             chunk_keys_errors_fp,
             filename=f'{chunk_idx}-keys-error-chunk.csv',
-            cache_dir=params['run_uuid'],
+            cache_dir=run_data_uuid,
             subdir=storage_subdir
         )
 
@@ -599,7 +610,15 @@ def prepare_keys_file_chunk(self, params, chunk_idx, num_chunks, analysis_id=Non
 
 
 @task(bind=True, name='collect_keys')
-def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=None):
+def collect_keys(
+    self, 
+    chunk_params, 
+    run_data_uuid=None,
+    analysis_id=None,
+    initiator_id=None,
+    slug=None,
+    **kwargs
+ ):
     notify_api_task_started(analysis_id, self.request.id, slug)
 
     # Setup return params
@@ -626,13 +645,13 @@ def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=N
 
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
     with TemporaryDir(persist=False, basedir=tmpdir_base) as working_dir:
-        cache_dir = params['run_uuid']
-        filelist_keys = [filestore.get(r, working_dir, cache_dir=params['run_uuid']) for r in chunk_keys]
-        filelist_errors = [filestore.get(r, working_dir, cache_dir=params['run_uuid']) for r in chunk_errors]
+        cache_dir = run_data_uuid
+        filelist_keys = [filestore.get(r, working_dir, cache_dir=run_data_uuid) for r in chunk_keys]
+        filelist_errors = [filestore.get(r, working_dir, cache_dir=run_data_uuid) for r in chunk_errors]
         logging.info('filelist_keys: {}'.format(filelist_keys))
         logging.info('filelist_errors: {}'.format(filelist_errors))
 
-        storage_subdir = "{}/oasis-files".format(params['run_uuid'])
+        storage_subdir = "{}/oasis-files".format(run_data_uuid)
         keys_frames = list(load_dataframes(filelist_keys))
         if keys_frames:
             keys = pd.concat(keys_frames)
@@ -642,7 +661,7 @@ def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=N
             params['keys_ref'] = filestore.put(
                 keys_file,
                 filename=f'keys.csv',
-                cache_dir=params['run_uuid'],
+                cache_dir=run_data_uuid,
                 subdir=storage_subdir
             )
         else:
@@ -657,7 +676,7 @@ def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=N
             params['keys_error_ref'] = filestore.put(
                 keys_errors_file,
                 filename='keys-errors.csv',
-                cache_dir=params['run_uuid'],
+                cache_dir=run_data_uuid,
                 subdir=storage_subdir
             )
         else:
@@ -672,13 +691,13 @@ def collect_keys(self, chunk_params, analysis_id=None, initiator_id=None, slug=N
 
 
 @task(bind=True, name='write_input_files')
-def write_input_files(self, params, analysis_id=None, initiator_id=None, slug=None):
+def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     logging.info('write_input_files: analysis_id={}, initiator_id={}, slug={}'.format(
         analysis_id, initiator_id, slug
     ))
 
     # Stage load chunk references to filepaths
-    cached_dir = params['run_uuid']
+    cached_dir = run_data_uuid
     tmp_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmp_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
     with TemporaryDir(persist=tmp_persist, basedir=tmp_base) as oasis_files_dir:
@@ -775,10 +794,10 @@ def loss_generation_task(fn):
             else:
                 print(f'path {analysis_settings_fp} already exists')
 
-    def run(self, params, *args, data_dir_suffix=None, analysis_id=None, **kwargs):
+    def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         print(kwargs)
 
-        params['root_data_dir'] = os.path.join(settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{data_dir_suffix}')
+        params['root_data_dir'] = os.path.join(settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{run_data_uuid}')
         Path(params['root_data_dir']).mkdir(parents=True, exist_ok=True)
 
         params.setdefault('oasis_fp', os.path.join(params['root_data_dir'], f'input-data'))
