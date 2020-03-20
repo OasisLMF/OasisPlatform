@@ -243,21 +243,9 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
         initiator
     )
 
-    # Ktools log Tar file
-    analysis.run_log_file = RelatedFile.objects.create(
-        file=str(result['log_location']),
-        filename=str(result['log_location']),
-        content_type='application/gzip',
-        creator=initiator,
-    )
-
-    # Results Tar
-    analysis.output_file = RelatedFile.objects.create(
-        file=str(result['output_location']),
-        filename=str(result['output_location']),
-        content_type='application/gzip',
-        creator=initiator,
-    )
+    # Store logs and output
+    analysis.run_log_file = store_file(result['log_location'], 'application/gzip', initiator)
+    analysis.output_file  = store_file(result['output_location'], 'application/gzip', initiator)
 
     analysis.save()
     return result
