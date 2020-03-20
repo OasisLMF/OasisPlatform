@@ -50,7 +50,7 @@ class BaseStorageConnector(object):
     """
     def __init__(self, setting, logger=None):
         self.media_root = setting.get('worker', 'MEDIA_ROOT')
-        self.cache_root = setting.get('worker', 'CACHE_DIR', fallback='/tmp/cache')
+        self.cache_root = setting.get('worker', 'CACHE_DIR', fallback='/tmp/data')
         self.storage_connector = 'FS-SHARE'
         self.settings = setting
         self.logger = logger or logging.getLogger()
@@ -195,7 +195,7 @@ class BaseStorageConnector(object):
         with tarfile.open(archive_fp, 'w:gz') as tar:
             tar.add(directory, arcname=arcname)
 
-    def get(self, reference, output_dir="", cache_dir=None):
+    def get(self, reference, output_path="", cache_dir=None):
         """ Retrieve stored object
 
         Top level 'get from storage' function
@@ -224,7 +224,10 @@ class BaseStorageConnector(object):
 
             header_fname = response.headers.get('Content-Disposition', '').split('filename=')[-1]
             fname = header_fname if header_fname else os.path.basename(urlparse(reference).path)
-            fpath = os.path.join(output_dir, fname)
+            if os.path.isdir(output_path):
+                fpath = os.path.join(output_path, fname)
+            else:
+                fpath = output_path
 
             if cache_dir:
                 cached_dir_path = os.path.join(self.cache_root, cache_dir)
@@ -236,6 +239,7 @@ class BaseStorageConnector(object):
                     os.makedirs(cached_dir_path, exist_ok=True)
                     fpath = cached_file
 
+            os.makedirs(os.path.dirname(fpath), exist_ok=True)
             with io.open(fpath, 'w+b') as f:
                 f.write(fdata)
                 logging.info('Get from URL: {}'.format(fname))
@@ -249,9 +253,9 @@ class BaseStorageConnector(object):
             )
             if os.path.isfile(fpath):
                 logging.info('Get shared file: {}'.format(reference))
-                if output_dir:
-                    shutil.copy(fpath, output_dir)
-                    return os.path.abspath(output_dir)
+                if output_path:
+                    shutil.copy(fpath, output_path)
+                    return os.path.abspath(output_path)
                 return os.path.abspath(fpath)
             else:
                 raise MissingInputsException(fpath)

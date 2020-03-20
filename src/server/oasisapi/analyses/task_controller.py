@@ -306,7 +306,7 @@ class Controller:
                 'Cleanup input generation',
                 'cleanup-input-generation',
                 queue,
-                TaskParams(**base_kwargs),
+                #TaskParams(**base_kwargs),
             ),
         ])
 
