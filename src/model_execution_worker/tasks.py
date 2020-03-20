@@ -547,13 +547,13 @@ def prepare_input_generation_params(
 
 @task(bind=True, name='prepare_keys_file_chunk')
 def prepare_keys_file_chunk(
-    self, 
-    params, 
-    chunk_idx, 
-    num_chunks, 
-    run_data_uuid=None, 
-    analysis_id=None, 
-    initiator_id=None, 
+    self,
+    params,
+    chunk_idx,
+    num_chunks,
+    run_data_uuid=None,
+    analysis_id=None,
+    initiator_id=None,
     slug=None,
     **kwargs
 ):
@@ -623,8 +623,8 @@ def prepare_keys_file_chunk(
 
 @task(bind=True, name='collect_keys')
 def collect_keys(
-    self, 
-    chunk_params, 
+    self,
+    chunk_params,
     run_data_uuid=None,
     analysis_id=None,
     initiator_id=None,
@@ -658,8 +658,23 @@ def collect_keys(
 
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
     with TemporaryDir(persist=False, basedir=tmpdir_base) as working_dir:
-        filelist_keys = [filestore.get(r, working_dir, cache_dir=run_data_uuid) for r in chunk_keys]
-        filelist_errors = [filestore.get(r, working_dir, cache_dir=run_data_uuid) for r in chunk_errors]
+
+        # Collect Keys
+        filelist_keys = [filestore.get(
+            chunk_idx,
+            working_dir,
+            subdir=run_data_subdir,
+            cache_dir=run_data_uuid
+        ) for chunk_idx in chunk_keys]
+
+        # Collect keys-errors
+        filelist_errors = [filestore.get(
+            chunk_idx,
+            working_dir,
+            subdir=run_data_subdir,
+            cache_dir=run_data_uuid
+        ) for chunk_idx in chunk_errors]
+
         logging.info('filelist_keys: {}'.format(filelist_keys))
         logging.info('filelist_errors: {}'.format(filelist_errors))
 
@@ -721,12 +736,12 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
 
         params['target_dir']     = oasis_files_dir
         params['user_data_dir']  = None
-        params['exposure_fp']    = filestore.get(params['loc_file_ref'], oasis_files_dir, run_data_subdir)
-        params['accounts_fp']    = filestore.get(params['acc_file_ref'], oasis_files_dir, run_data_subdir)
-        params['ri_scope_fp']    = filestore.get(params['scope_file_ref'], oasis_files_dir, run_data_subdir)
-        params['ri_info_fp']     = filestore.get(params['inf_file_ref'], oasis_files_dir, run_data_subdir)
-        params['keys_fp']        = filestore.get(params['keys_ref'], oasis_files_dir, run_data_subdir)
-        params['keys_errors_fp'] = filestore.get(params['keys_error_ref'], oasis_files_dir, run_data_subdir)
+        params['exposure_fp']    = filestore.get(params['loc_file_ref'],   oasis_files_dir, cache_dir=run_data_subdir)
+        params['accounts_fp']    = filestore.get(params['acc_file_ref'],   oasis_files_dir, cache_dir=run_data_subdir)
+        params['ri_scope_fp']    = filestore.get(params['scope_file_ref'], oasis_files_dir, cache_dir=run_data_subdir)
+        params['ri_info_fp']     = filestore.get(params['inf_file_ref'],   oasis_files_dir, cache_dir=run_data_subdir)
+        params['keys_fp']        = filestore.get(params['keys_ref'],       oasis_files_dir, subdir=run_data_subdir, cache_dir=run_data_subdir)
+        params['keys_errors_fp'] = filestore.get(params['keys_error_ref'], oasis_files_dir, subdir=run_data_subdir, cache_dir=run_data_subdir)
 
         logging.info("args: {}".format({
             'exposure_fp': params['exposure_fp'],

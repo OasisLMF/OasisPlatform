@@ -95,7 +95,7 @@ class BaseStorageConnector(object):
         :param file_path: The path to the file to store.
         :type  file_path: str
 
-        :param storage_fname: Set the name of stored file, instead of uuid 
+        :param storage_fname: Set the name of stored file, instead of uuid
         :type  storage_fname: str
 
         :param storage_subdir: Store object in given sub directory
@@ -132,7 +132,7 @@ class BaseStorageConnector(object):
                        defaults to `tar.gz`
         :type suffix: str
 
-        :param storage_fname: Set the name of stored file, instead of uuid 
+        :param storage_fname: Set the name of stored file, instead of uuid
         :type  storage_fname: str
 
         :param storage_subdir: Store object in given sub directory
@@ -195,7 +195,7 @@ class BaseStorageConnector(object):
         with tarfile.open(archive_fp, 'w:gz') as tar:
             tar.add(directory, arcname=arcname)
 
-    def get(self, reference, output_path="", cache_dir=None):
+    def get(self, reference, output_path="", subdir='', cache_dir=None):
         """ Retrieve stored object
 
         Top level 'get from storage' function
@@ -211,6 +211,9 @@ class BaseStorageConnector(object):
 
         :param output_path: If given, download to that directory.
         :type  output_path: str
+
+        :param subdir: Store a file under this sub directory path
+        :type  subdir: str
 
         :param cache_dir: If given, check for requested file in cached before downloading.
         :type  cache_dir: str
@@ -249,14 +252,16 @@ class BaseStorageConnector(object):
         elif isinstance(reference, str):
             fpath = os.path.join(
                 self.media_root,
+                subdir,
                 os.path.basename(reference)
             )
+            logging.info('fpath: {}'.format(fpath))
             if os.path.isfile(fpath):
                 logging.info('Get shared file: {}'.format(reference))
                 if output_path:
                     shutil.copy(fpath, output_path)
-                    return os.path.abspath(output_path)
                 return os.path.abspath(fpath)
+
             else:
                 raise MissingInputsException(fpath)
 
@@ -275,7 +280,7 @@ class BaseStorageConnector(object):
         :param reference: Path to either a `File` or `Directory`
         :type  reference: str
 
-        :param filename: Set the name of stored file, instead of uuid 
+        :param filename: Set the name of stored file, instead of uuid
         :type  filename: str
 
         :param subdir: Store a file under this sub directory path
@@ -316,7 +321,7 @@ class BaseStorageConnector(object):
             )
         else:
             return None
-    
+
     def delete(self, reference):
         """
         #
@@ -448,7 +453,7 @@ class AwsObjectStore(BaseStorageConnector):
         :param file_path: Path to a file object for upload
         :type file_path: str
 
-        :param storage_fname: Set the name of stored file, instead of uuid 
+        :param storage_fname: Set the name of stored file, instead of uuid
         :type  storage_fname: str
 
         :param storage_subdir: Store object in given sub directory
@@ -487,7 +492,7 @@ class AwsObjectStore(BaseStorageConnector):
         :param directory_path: Path to a directory for upload
         :type directory_path: str
 
-        :param storage_fname: Set the name of stored file, instead of uuid 
+        :param storage_fname: Set the name of stored file, instead of uuid
         :type  storage_fname: str
 
         :param storage_subdir: Store object in given sub directory
