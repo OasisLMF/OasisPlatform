@@ -361,7 +361,8 @@ class Controller:
 
         :return: Tuple containing the statuses to create and signatures to chain
         """
-        num_chunks = 4
+        default_num_chunks = settings.getint('worker', 'default_num_analysis_chunks', fallback=4)
+        num_chunks = analysis.model.num_analysis_chunks or default_num_chunks
 
         queue = cls.get_generate_losses_queue(analysis, initiator)
         base_kwargs = {

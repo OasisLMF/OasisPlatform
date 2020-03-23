@@ -48,6 +48,7 @@ class AnalysisModel(TimeStampedModel):
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     oasislmf_config = models.TextField(default='')
     deleted = models.BooleanField(default=False, editable=False)
+    num_analysis_chunks = models.PositiveSmallIntegerField(default=None, null=True)
 
     # Logical Delete
     objects = SoftDeleteManager()

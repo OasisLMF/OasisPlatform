@@ -139,6 +139,7 @@ def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
+    num_analysis_chunks = os.environ.get('OASIS_MODEL_NUM_ANALYSIS_CHUNKS')
     m_settings = get_model_settings()
     m_version = get_worker_versions()
     m_conf = get_json(get_oasislmf_config_path(m_id))
@@ -150,6 +151,7 @@ def register_worker(sender, **k):
     signature(
         'run_register_worker',
         args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
+        kwargs={'num_analysis_chunks': num_analysis_chunks},
     ).delay()
 
 

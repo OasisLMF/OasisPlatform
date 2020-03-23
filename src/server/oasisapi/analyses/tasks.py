@@ -90,7 +90,7 @@ def store_file(reference, content_type, creator):
 
 
 @celery_app.task(name='run_register_worker')
-def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
+def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf, num_analysis_chunks=None):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
         from django.contrib.auth.models import User
@@ -100,7 +100,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
             model = AnalysisModel.objects.get(
                 model_id=m_name,
                 supplier_id=m_supplier,
-                version_id=m_id
+                version_id=m_id,
             )
         except ObjectDoesNotExist:
             user = User.objects.get(username='admin')
@@ -108,7 +108,8 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
                 model_id=m_name,
                 supplier_id=m_supplier,
                 version_id=m_id,
-                creator=user
+                creator=user,
+                num_analysis_chunks=num_analysis_chunks,
             )
 
         # Update model settings file
@@ -138,6 +139,8 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
             except Exception as e:
                 logger.info('Failed to set model veriosns:')
                 logger.exception(str(e))
+
+        model.num_analysis_chunks = num_analysis_chunks
 
         model.save()
 
