@@ -4,35 +4,32 @@ import glob
 import json
 import logging
 import os
-import subprocess
-from datetime import datetime
 import shutil
-import uuid
+import subprocess
+import tarfile
+import tempfile
+from contextlib import contextmanager, suppress
+from datetime import datetime
 
 import fasteners
-import tempfile
-import tarfile
-
-from contextlib import contextmanager, suppress
-
 import filelock
+import pandas as pd
 from celery import Celery, signature
-from celery.task import task, Task
 from celery.signals import worker_ready, before_task_publish
+from celery.task import task
+from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
-from oasislmf.utils.data import get_json, get_dataframe
+from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils.status import OASIS_TASK_STATUS
-from oasislmf import __version__ as mdk_version
 from pathlib2 import Path
-import pandas as pd
 
+from .storage_manager import StorageSelector
+from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
-from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
-from .storage_manager import StorageSelector, MissingInputsException
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -209,287 +206,6 @@ def notify_api_task_started(analysis_id, task_id, task_slug):
     ).delay()
 
 
-@task(name='run_analysis', bind=True)
-def start_analysis_task(self, analysis_id=None, initiator_id=None, input_location=None, analysis_settings_file=None, complex_data_files=None, slug=None):
-    """Task wrapper for running an analysis.
-
-    Args:
-        self: Celery task instance.
-        analysis_settings (str): Path or URL to the analysis settings.
-        input_location (str): Path to the input tar file.
-        complex_data_files (list of complex_model_data_file): List of dicts containing
-            on-disk and original filenames for required complex model data files.
-
-    Returns:
-        (string) The location of the outputs.
-    """
-    logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
-    logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
-        settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
-
-    with get_lock() as gotten:
-        if not gotten:
-            logging.info("Failed to get resource lock - retry task")
-            raise self.retry(
-                max_retries=None,
-                countdown=settings.getint('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS'))
-
-        logging.info("Acquired resource lock")
-
-        try:
-            notify_api_task_started(analysis_id, self.request.id, self.request.delivery_info['routing_key'])
-            self.update_state(state=RUNNING_TASK_STATUS)
-            output_location, traceback_location, log_location, return_code = start_analysis(
-                analysis_settings,
-                input_location,
-                complex_data_files=complex_data_files
-            )
-        except Exception:
-            logging.exception("Model execution task failed.")
-            raise
-
-        return {
-            'output_location': output_location,
-            'log_location': log_location,
-            'error_location': error_location,
-            'return_code': return_code,
-        }
-
-
-@oasis_log()
-def start_analysis(analysis_settings, input_location, complex_data_files=None):
-    """Run an analysis.
-
-    Args:
-        analysis_settings_file (str): Path to the analysis settings.
-        input_location (str): Path to the input tar file.
-        complex_data_files (list of complex_model_data_file): List of dicts containing
-            on-disk and original filenames for required complex model data files.
-
-    Returns:
-        (string) The location of the outputs.
-
-    """
-    # Check that the input archive exists and is valid
-    logging.info("args: {}".format(str(locals())))
-    logging.info(str(get_worker_versions()))
-    tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
-    tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
-
-
-    config_path = get_oasislmf_config_path()
-    tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
-    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
-
-    if complex_data_files:
-        tmp_input_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
-    else:
-        tmp_input_dir = suppress()
-
-    with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
-
-        # Fetch generated inputs
-        analysis_settings_file = filestore.get(analysis_settings, run_dir)
-        input_archive = filestore.get(input_location, run_dir)
-        if not tarfile.is_tarfile(input_archive):
-            raise InvalidInputsException(input_archive)
-
-        oasis_files_dir = os.path.join(run_dir, 'input')
-        filestore.extract(input_archive, oasis_files_dir)
-
-        run_args = [
-            '--oasis-files-dir', oasis_files_dir,
-            '--config', config_path,
-            '--model-run-dir', run_dir,
-            '--analysis-settings-json', analysis_settings_file,
-            '--ktools-fifo-relative'
-        ]
-
-        # Optional Args:
-        num_processes = settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)
-        if num_processes:
-            run_args += ['--ktools-num-processes', num_processes]
-
-        alloc_rule_gul = settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)
-        if alloc_rule_gul:
-            run_args += ['--ktools-alloc-rule-gul', alloc_rule_gul]
-
-        alloc_rule_il = settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)
-        if alloc_rule_il:
-            run_args += ['--ktools-alloc-rule-il', alloc_rule_il]
-
-        alloc_rule_ri = settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)
-        if alloc_rule_ri:
-            run_args += ['--ktools-alloc-rule-ri', alloc_rule_ri]
-
-        if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
-            run_args += ['--user-data-dir', input_data_dir]
-
-        if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
-            run_args.append('--ktools-disable-guard')
-
-        if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
-            run_args.append('--verbose')
-            logging.info('run_directory: {}'.format(oasis_files_dir))
-            logging.info('args_list: {}'.format(str(run_args)))
-
-        # Log MDK run command
-        args_list = run_args + [''] if (len(run_args) % 2) else run_args
-        mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
-        logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
-            " ".join([str(arg) for arg in mdk_args])
-        ))
-        logging.info(run_args)
-        result = subprocess.run(
-            ['oasislmf', 'model', 'generate-losses'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        logging.info('stdout: {}'.format(result.stdout.decode()))
-        logging.info('stderr: {}'.format(result.stderr.decode()))
-
-        # Traceback file (stdout + stderr)
-        traceback_file = filestore.create_traceback(result, run_dir)
-        traceback_location = filestore.put(traceback_file)
-
-        # Ktools log Tar file
-        log_directory = os.path.join(run_dir, "log")
-        log_location = filestore.put(log_directory, suffix=ARCHIVE_FILE_SUFFIX)
-
-        # Results dir
-        output_directory = os.path.join(run_dir, "output")
-        output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
-
-    return output_location, traceback_location, log_location, result.returncode
-
-
-@task(name='generate_input', bind=True)
-def generate_input(self,
-                   analysis_id=None,
-                   initiator_id=None,
-                   loc_file=None,
-                   acc_file=None,
-                   info_file=None,
-                   scope_file=None,
-                   settings_file=None,
-                   complex_data_files=None,
-                   chunk_index=None,
-                   slug=None):
-    """Generates the input files for the loss calculation stage.
-
-    This function is a thin wrapper around "oasislmf model generate-oasis-files".
-    A temporary directory is created to contain the output oasis files.
-
-    Args:
-        analysis_id (int): ID of the analysis.
-        loc_file (str): Name of the portfolio locations file.
-        acc_file (str): Name of the portfolio accounts file.
-        info_file (str): Name of the portfolio reinsurance info file.
-        scope_file (str): Name of the portfolio reinsurance scope file.
-        settings_file (str): Name of the analysis settings file.
-        complex_data_files (list of complex_model_data_file): List of dicts containing
-            on-disk and original filenames for required complex model data files.
-        chunk_index (int): The index of the chunk to process
-
-    Returns:
-        (tuple(str, str)) Paths to the outputs tar file and errors tar file.
-
-    """
-    logging.info("args: {}".format(str(locals())))
-    logging.info(str(get_worker_versions()))
-    notify_api_task_started(analysis_id, self.request.id, f'input-generation-{chunk_index or 0}')
-
-    config_path = get_oasislmf_config_path()
-    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
-    tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
-    tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
-    tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
-
-    if complex_data_files:
-        tmp_input_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
-    else:
-        tmp_input_dir = suppress()
-
-    with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
-
-        # Fetch input files
-        location_file        = filestore.get(loc_file, oasis_files_dir)
-        accounts_file        = filestore.get(acc_file, oasis_files_dir)
-        ri_info_file         = filestore.get(info_file, oasis_files_dir)
-        ri_scope_file        = filestore.get(scope_file, oasis_files_dir)
-        lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
-
-        run_args = [
-            '--oasis-files-dir', oasis_files_dir,
-            '--config', config_path,
-            '--oed-location-csv', location_file,
-        ]
-
-        if accounts_file:
-            run_args += ['--oed-accounts-csv', accounts_file]
-
-        if ri_info_file:
-            run_args += ['--oed-info-csv', ri_info_file]
-
-        if ri_scope_file:
-            run_args += ['--oed-scope-csv', ri_scope_file]
-
-        if lookup_settings_file:
-            run_args += ['--lookup-complex-config-json', lookup_settings_file]
-
-        if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
-            run_args += ['--user-data-dir', input_data_dir]
-
-        if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
-            run_args.append('--disable-summarise-exposure')
-
-        # Log MDK generate command
-        args_list = run_args + [''] if (len(run_args) % 2) else run_args
-        mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
-        logging.info('run_directory: {}'.format(oasis_files_dir))
-        logging.info('args_list: {}'.format(str(run_args)))
-        logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
-            " ".join([str(arg) for arg in mdk_args])
-        ))
-
-        result = subprocess.run(['oasislmf', 'model', 'generate-oasis-files'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        logging.info('stdout: {}'.format(result.stdout.decode()))
-        logging.info('stderr: {}'.format(result.stderr.decode()))
-
-        # Find Generated Files
-        lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
-        lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
-        lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
-        summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
-
-        # Store result files
-        traceback_file    = filestore.create_traceback(result, oasis_files_dir)
-        traceback         = filestore.put(traceback_file)
-        lookup_error      = filestore.put(lookup_error_fp)
-        lookup_success    = filestore.put(lookup_success_fp)
-        lookup_validation = filestore.put(lookup_validation_fp)
-        summary_levels    = filestore.put(summary_levels_fp)
-        output_tar_path   = filestore.put(oasis_files_dir)
-
-        # Store refs
-        results = {
-            'output_location': output_tar_path,
-            'log_location': traceback,
-            #'error_location': traceback_fp,
-            'return_code': result.returncode,
-            'lookup_error_location': lookup_error,
-            'lookup_success_location': lookup_success,
-            'lookup_validation_location': lookup_validation,
-            'summary_levels_location': summary_levels,
-            'task_id': self.request.id,
-        }
-        ## Merge 'Store refs' and ' Store result files' ?
-        logging.debug("task_output: {}".format(results))
-        return results
-
 #
 # input generation tasks
 #
@@ -562,7 +278,6 @@ def prepare_keys_file_chunk(
     notify_api_task_started(analysis_id, self.request.id, slug)
     tmp_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
     run_data_subdir = f'analysis-{analysis_id}-{run_data_uuid}'
-
 
     with TemporaryDir(persist=False, basedir=tmp_base) as chunk_target_dir:
         lookup_config = params['lookup_config']

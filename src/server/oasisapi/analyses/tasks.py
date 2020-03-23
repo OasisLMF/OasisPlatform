@@ -2,12 +2,12 @@ from __future__ import absolute_import
 
 import json
 import os
-import tarfile
 import uuid
 from datetime import datetime
-from glob import glob
-from itertools import chain
 from shutil import rmtree
+from tempfile import TemporaryFile
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 from celery.result import AsyncResult
 from celery.signals import before_task_publish
@@ -19,20 +19,15 @@ from django.db.models import When, Case, Value, F
 from django.http import HttpRequest
 from django.utils import timezone
 
-# Remove this
-from six import StringIO
-
 from src.conf.iniconf import settings
 from src.server.oasisapi.files.models import RelatedFile
 from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
-from tempfile import TemporaryFile
-from urllib.request import urlopen
-from urllib.parse import urlparse
-
 from ..celery import celery_app
 from ..files.views import handle_json_data
 from ..schemas.serializers import ModelParametersSerializer
+
+# Remove this
 
 logger = get_task_logger(__name__)
 
