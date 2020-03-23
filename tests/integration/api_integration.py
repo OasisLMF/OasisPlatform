@@ -111,7 +111,7 @@ def case_fixture(session_fixture):
     case, session = session_fixture
     ids = {}
 
-    #  Add or find model
+    # find model
     _model = {
         'supplier_id': config.get(test_model, 'SUPPLIER_ID'),
         'model_id': config.get(test_model, 'MODEL_ID'),
@@ -119,13 +119,17 @@ def case_fixture(session_fixture):
     }
 
     r_model = session.models.search(_model)
-    if len(r_model.json()) < 1:
-        # Model not found - Add new model
-        r_model = session.models.create(**_model)
-        ids['model'] = r_model.json()['id']
-    else:
-        # Model found - Use result of search
-        ids['model'] = r_model.json()[0]['id']
+    retry_max = 6
+    for retry in range(retry_max):
+        if len(r_model.json()) < 1:
+            if retry+1 <= retry_max:
+                print('Model not found - sleep({})'.format(2**retry))
+                time.sleep(2**retry)
+
+    assert r_model.json()[0]['supplier_id'] == _model['supplier_id']
+    assert r_model.json()[0]['model_id'] == _model['model_id']
+    assert r_model.json()[0]['version_id'] == _model['version_id']
+    ids['model'] = r_model.json()[0]['id']
 
     # Create Portfolio
     loc_fp = get_path(f'{test_model}.{case}', 'LOC_FILE')
