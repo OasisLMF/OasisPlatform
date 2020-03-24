@@ -2,6 +2,11 @@ OasisPlatform Changelog
 ==================
 
 .. start_latest_release
+`1.6.1`_
+--------
+* #343 - Avoid task failure for missing non-essential files on inputs generation
+
+.. end_latest_release
 `1.6.0`_
 --------
 * #321 - Updated Django to 3.0.3
@@ -14,8 +19,6 @@ OasisPlatform Changelog
 * #306 - Fixed logical deletion for AnalysisModels
 * #335 - Accept compressed CSV files as portfolio uploads
 * Added `tooltip` to model_settings schema
-
-.. end_latest_release
 
 `1.5.1`_
 --------
@@ -203,6 +206,7 @@ OasisPlatform Changelog
 --------
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
+.. _`1.6.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.6.0...1.6.1
 .. _`1.6.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.5.1...1.6.0
 .. _`1.5.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.5.0...1.5.1
 .. _`1.5.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.4.1...1.5.0
