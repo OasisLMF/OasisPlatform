@@ -35,7 +35,24 @@ def is_valid_url(url):
         return False
 
 
-def store_file(reference, content_type, creator):
+def store_file(reference, content_type, creator, required=True):
+    """ Returns a `RelatedFile` obejct to store 
+
+    :param reference: Storage reference of file (url or file path)
+    :type  reference: string
+
+    :param content_type: Mime type of file
+    :type  content_type: string
+
+    :param creator: Id of Django user
+    :type  creator: int
+
+    :param required: Allow for None returns if set to false
+    :type  required: boolean
+
+    :return: Model Object holding a Django file 
+    :rtype RelatedFile
+    """
     if is_valid_url(reference):
         # Download to a tmp location and pass the file refrence for storage
         response = urlopen(reference)
@@ -46,7 +63,7 @@ def store_file(reference, content_type, creator):
         fname = header_fname if header_fname else os.path.basename(urlparse(reference).path)
         logger.info('Store file: {}'.format(fname))
 
-        # Store in a temp file and upload
+        # Create temp file, download content and store
         with TemporaryFile() as tmp_file:
             tmp_file.write(fdata)
             tmp_file.seek(0)
@@ -56,10 +73,9 @@ def store_file(reference, content_type, creator):
                 content_type=content_type,
                 creator=creator,
             )
-
-    else:
+    try:
         # create RelatedFile object from filepath
-        file_name = os.path.basename(reference) 
+        file_name = os.path.basename(reference)
         file_path = os.path.join(
            settings.MEDIA_ROOT,
            file_name,
@@ -70,7 +86,12 @@ def store_file(reference, content_type, creator):
             content_type=content_type,
             creator=creator,
         )
-
+    except TypeError as e:
+        if not required:
+            logger.warning(f'Failed to store file reference: {reference} - {e}') 
+            return None
+        else:
+            raise e
 
 class LogTaskError(Task):
     # from gist https://gist.github.com/darklow/c70a8d1147f05be877c3
@@ -260,10 +281,10 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     if return_code == 0:
         analysis.status = Analysis.status_choices.READY
         analysis.input_file = store_file(input_location, 'application/gzip', initiator)
-        analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator)
         analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator)
-        analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator)
-        analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator)
+        analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False)
+        analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False)
+        analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False)
 
     # FAILED
     else:
