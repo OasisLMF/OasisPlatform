@@ -53,7 +53,7 @@ docutils==0.15.2          # via botocore
 drf-yasg==1.17.1
 entrypoints==0.3          # via flake8
 fasteners==0.15
-filelock==3.0.12          # via tox
+filelock==3.0.12
 flake8==3.7.8
 freezegun==0.3.14
 future==0.17.1            # via cookiecutter
@@ -112,6 +112,7 @@ pytest-django==3.8.0
 pytest==5.1.2
 python-dateutil==2.8.0    # via arrow, botocore, freezegun, pandas
 pytz==2019.2              # via celery, django, pandas
+redis==3.4.1
 requests-toolbelt==0.9.1
 requests==2.20.1
 rtree==0.8.3
@@ -148,4 +149,4 @@ zipp==0.6.0               # via importlib-metadata
 zope.interface==4.7.1     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools
+# setuptools==46.1.1        # via ipdb, ipython, markdown, rtree, zope.interface

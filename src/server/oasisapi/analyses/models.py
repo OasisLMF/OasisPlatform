@@ -296,7 +296,12 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_QUEUED
 
         task = self.run_analysis_signature
-        task.on_error(celery_app.signature('record_run_analysis_failure', (self.pk, initiator.pk, )))
+        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+            'analysis_id': self.pk,
+            'initiator_id': initiator.pk,
+            'traceback_property': 'run_traceback_file',
+            'failure_status': Analysis.status_choices.RUN_ERROR,
+        }))
         task_id = task.delay(self.pk, initiator.pk).id
 
         self.run_task_id = task_id
@@ -371,7 +376,12 @@ class Analysis(TimeStampedModel):
         self.input_generation_traceback_file_id = None
 
         task = self.generate_input_signature
-        task.on_error(celery_app.signature('handle_task_failure', (self.pk, initiator.pk), ))
+        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+            'analysis_id': self.pk,
+            'initiator_id': initiator.pk,
+            'traceback_property': 'input_generation_traceback_file',
+            'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
+        }))
         task_id = task.delay(self.pk, initiator.pk).id
 
         self.generate_inputs_task_id = task_id

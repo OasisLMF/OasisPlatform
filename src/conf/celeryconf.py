@@ -7,11 +7,15 @@ from src.conf.iniconf import settings
 CELERY_IGNORE_RESULT = False
 
 #: Celery config - IP address of the server running RabbitMQ and Celery
-BROKER_URL = "amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".format(
-    RABBIT_USER=settings.get('celery', 'rabbit_user', fallback='rabbit'),
-    RABBIT_PASS=settings.get('celery', 'rabbit_pass', fallback='rabbit'),
-    RABBIT_HOST=settings.get('celery', 'rabbit_host', fallback='127.0.0.1'),
-    RABBIT_PORT=settings.get('celery', 'rabbit_port', fallback='5672'),
+BROKER_URL = settings.get(
+    'celery',
+    'broker_url',
+    fallback="amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".format(
+        RABBIT_USER=settings.get('celery', 'rabbit_user', fallback='rabbit'),
+        RABBIT_PASS=settings.get('celery', 'rabbit_pass', fallback='rabbit'),
+        RABBIT_HOST=settings.get('celery', 'rabbit_host', fallback='127.0.0.1'),
+        RABBIT_PORT=settings.get('celery', 'rabbit_port', fallback='5672'),
+    )
 )
 CELERY_BROKER_URL = BROKER_URL
 

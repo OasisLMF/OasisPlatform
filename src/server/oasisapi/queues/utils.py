@@ -3,11 +3,9 @@ from typing import Union, List, Dict, Optional, Collection
 
 from django.conf import settings
 from django.db.models import Count
-from pyrabbit import Client
+from kombu import Connection
 
-from src.conf import iniconf
 from src.server.oasisapi.celery import celery_app
-
 
 QueueInfo = Dict[str, int]
 
@@ -19,15 +17,11 @@ def _add_to_dict(d, k, v):
 
 def _get_broker_queue_names():
     if settings.BROKER_URL.startswith('amqp://'):
-        c = Client(
-            '{}:{}/'.format(
-                iniconf.settings.get('celery', 'rabbit_host', fallback='127.0.0.1'),
-                iniconf.settings.get('celery', 'rabbit_management_port', fallback=15672),
-            ),
-            iniconf.settings.get('celery', 'rabbit_user', fallback='rabbit'),
-            iniconf.settings.get('celery', 'rabbit_pass', fallback='rabbit'),
-        )
-        return (q['name'] for q in c.get_queues())
+        c = Connection(settings.BROKER_URL)
+        return (q['name'] for q in c.connection.client.manager.get_queues())
+    if settings.BROKER_URL.startswith('redis://'):
+        c = Connection(settings.BROKER_URL)
+        return (q['name'] for q in c.connection.client.manager.channel.active_queues)
     elif settings.BROKER_URL.startswith('memory://'):
         #
         # TODO: figure out how to get this to work for memory broker

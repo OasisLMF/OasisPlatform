@@ -7,58 +7,72 @@
 -e git+git://github.com/OasisLMF/OasisLMF.git@feature/architecture2020#egg=oasislmf
 aioredis==1.3.1           # via channels-redis
 amqp==2.5.2               # via kombu
+anytree==2.8.0
+argparsetree==0.0.6
+arrow==0.15.5             # via jinja2-time
 asgiref==3.2.3            # via channels, channels-redis, daphne, django
 async-timeout==3.0.1      # via aioredis
 attrs==19.3.0             # via automat, jsonschema, service-identity, twisted
 autobahn==20.3.1          # via daphne
 automat==20.2.0           # via twisted
+backports.tempfile==1.0
+backports.weakref==1.0.post1  # via backports.tempfile
 billiard==3.6.1.0         # via celery
-boto3==1.11.15            # via -r requirements-server.in
+binaryornot==0.4.4        # via cookiecutter
+boto3==1.11.15
 botocore==1.14.15         # via boto3, s3transfer
-celery==4.4.0             # via -r requirements-server.in, django-celery-results
+celery==4.4.0
 certifi==2019.11.28       # via requests
 cffi==1.14.0              # via cryptography
-chainmap==1.0.3           # via -r requirements-server.in
-channels-redis==2.4.2     # via -r requirements-server.in
-channels==2.4.0           # via -r requirements-server.in, channels-redis
-chardet==3.0.4            # via requests
-configparser==4.0.2       # via -r requirements-server.in
+chainmap==1.0.3
+channels-redis==2.4.2
+channels==2.4.0
+chardet==3.0.4            # via binaryornot, requests
+click==7.1.1              # via cookiecutter
+configparser==4.0.2
 constantly==15.1.0        # via twisted
-coreapi==2.3.3            # via -r requirements-server.in, drf-yasg
+cookiecutter==1.7.0
+coreapi==2.3.3
 coreschema==0.0.4         # via coreapi, drf-yasg
 cryptography==2.8         # via autobahn, pyopenssl, service-identity
 daphne==2.4.1             # via channels
 decorator==4.4.1          # via ipython, traitlets
-django-celery-results==1.1.2  # via -r requirements-server.in
-django-filter==2.2.0      # via -r requirements-server.in
-django-model-utils==4.0.0  # via -r requirements-server.in
-django-storages==1.9.1    # via -r requirements-server.in
-django==3.0.3             # via -r requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg
-djangorestframework-simplejwt==4.4.0  # via -r requirements-server.in
-djangorestframework==3.11.0  # via -r requirements-server.in, djangorestframework-simplejwt, drf-yasg
+django-celery-results==1.1.2
+django-filter==2.2.0
+django-model-utils==4.0.0
+django-storages==1.9.1
+django==3.0.3
+djangorestframework-simplejwt==4.4.0
+djangorestframework==3.11.0
 docutils==0.15.2          # via botocore
-drf-yasg==1.17.1          # via -r requirements-server.in
+drf-yasg==1.17.1
+future==0.18.2            # via cookiecutter
 hiredis==1.0.1            # via aioredis
 httplib2==0.17.0          # via pyrabbit
 hyperlink==19.0.0         # via twisted
 idna==2.8                 # via hyperlink, requests, twisted
+importlib-metadata==1.5.0  # via jsonschema, kombu
 incremental==17.5.0       # via twisted
 inflection==0.3.1         # via drf-yasg
 ipython-genutils==0.2.0   # via traitlets
-ipython==5.8.0            # via -r requirements-server.in
+ipython==5.8.0
 itypes==1.1.0             # via coreapi
-jinja2==2.11.0            # via coreschema
+jinja2-time==0.2.0        # via cookiecutter
+jinja2==2.11.0            # via cookiecutter, coreschema, jinja2-time
 jmespath==0.9.4           # via boto3, botocore
-jsonpickle==1.2           # via -r requirements-server.in
-jsonschema==3.2.0         # via -r requirements-server.in
+jsonpickle==1.2
+jsonschema==3.2.0
 kombu==4.6.7              # via celery
-markdown==3.1.1           # via -r requirements-server.in
+markdown==3.1.1
 markupsafe==1.1.1         # via jinja2
 msgpack==0.6.2            # via channels-redis
+numpy==1.18.2             # via pandas
 packaging==20.1           # via drf-yasg
-pathlib2==2.3.5           # via -r requirements-server.in
+pandas==1.0.3
+pathlib2==2.3.5
 pexpect==4.8.0            # via ipython
 pickleshare==0.7.5        # via ipython
+poyo==0.5.0               # via cookiecutter
 prompt-toolkit==1.0.18    # via ipython
 ptyprocess==0.6.0         # via pexpect
 pyasn1-modules==0.2.8     # via service-identity
@@ -67,31 +81,41 @@ pycparser==2.20           # via cffi
 pygments==2.5.2           # via ipython
 pyhamcrest==2.0.2         # via twisted
 pyjwt==1.7.1              # via djangorestframework-simplejwt
-pymysql==0.9.3            # via -r requirements-server.in
+pymysql==0.9.3
 pyopenssl==19.1.0         # via twisted
 pyparsing==2.4.6          # via packaging
-pyrabbit==1.1.0           # via -r requirements-server.in
+pyrabbit==1.1.0
 pyrsistent==0.15.7        # via jsonschema
-python-dateutil==2.8.1    # via botocore
-pytz==2019.3              # via celery, django
-requests==2.22.0          # via coreapi
+python-dateutil==2.8.1    # via arrow, botocore, pandas
+pytz==2019.3              # via celery, django, pandas
+redis==3.4.1
+requests-toolbelt==0.9.1
+requests==2.22.0          # via cookiecutter, coreapi, requests-toolbelt
+rtree==0.9.4
+ruamel.yaml.clib==0.2.0   # via ruamel.yaml
 ruamel.yaml==0.16.6       # via drf-yasg
 s3transfer==0.3.3         # via boto3
 service-identity==18.1.0  # via twisted
+shapely==1.7.0
+shutilwhich==1.1.0
 simplegeneric==0.8.1      # via ipython
-six==1.14.0               # via automat, cryptography, drf-yasg, jsonschema, packaging, pathlib2, prompt-toolkit, pyopenssl, pyrsistent, python-dateutil, traitlets, txaio
-sqlalchemy==1.3.13        # via -r requirements-server.in
+six==1.14.0               # via anytree, automat, cryptography, drf-yasg, jsonschema, packaging, pathlib2, prompt-toolkit, pyopenssl, pyrsistent, python-dateutil, traitlets, txaio
+sqlalchemy==1.3.13
 sqlparse==0.3.0           # via django
+tabulate==0.8.7
+tqdm==4.43.0
 traitlets==4.3.3          # via ipython
 twisted[tls]==19.10.0     # via daphne
 txaio==20.1.1             # via autobahn
 uritemplate==3.0.1        # via coreapi, drf-yasg
 urllib3==1.25.8           # via botocore, requests
-uwsgi==2.0.18             # via -r requirements-server.in
+uwsgi==2.0.18
 vine==1.3.0               # via amqp, celery
 wcwidth==0.1.8            # via prompt-toolkit
-whitenoise==5.0.1         # via -r requirements-server.in
+whichcraft==0.6.1         # via cookiecutter
+whitenoise==5.0.1
+zipp==3.1.0               # via importlib-metadata
 zope.interface==4.7.2     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools
+# setuptools==46.1.1        # via ipython, jsonschema, markdown, rtree, zope.interface

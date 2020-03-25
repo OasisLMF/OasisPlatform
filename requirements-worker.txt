@@ -48,6 +48,7 @@ pyparsing==2.4.6          # via packaging
 pytest==5.3.5
 python-dateutil==2.8.1    # via arrow, botocore, pandas
 pytz==2019.3              # via celery, pandas
+redis==3.4.1
 requests-toolbelt==0.9.1
 requests==2.22.0          # via cookiecutter, requests-toolbelt
 rtree==0.9.3
@@ -65,4 +66,4 @@ whichcraft==0.6.1         # via cookiecutter
 zipp==2.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==46.0.0        # via rtree
+# setuptools==46.1.1        # via rtree

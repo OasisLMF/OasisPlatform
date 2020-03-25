@@ -10,3 +10,4 @@ pymysql
 sqlalchemy
 pytest
 filelock
+redis

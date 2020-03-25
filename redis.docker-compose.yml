@@ -1,7 +1,7 @@
 version: '3.4'
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
-  OASIS_CELERY_BROKER_URL: "amqp://rabbit:rabbit@broker:5672"
+  OASIS_CELERY_BROKER_URL: "redis://broker:6379"
   OASIS_SERVER_DB_HOST: server-db
   OASIS_SERVER_DB_PASS: oasis
   OASIS_SERVER_DB_USER: oasis
@@ -16,17 +16,9 @@ x-shared-env: &shared-env
   OASIS_CELERY_DB_PORT: 3306
   OASIS_INPUT_GENERATION_CONTROLLER_QUEUE: task-controller
   OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE: task-controller
-  OASIS_STORAGE_TYPE: S3
-  OASIS_AWS_S3_ENDPOINT_URL: http://localstack-s3:4572
+x-volumes: &shared-volumes
+  - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
 services:
-  localstack-s3:
-    image: localstack/localstack
-    environment:
-      - SERVICES=s3
-    ports:
-      - "4567-4599:4567-4599" 
-    volumes:    
-      - ./tests/localstack/:/docker-entrypoint-initaws.d
   server:
    restart: always
    image: coreoasis/api_server:latest
@@ -42,9 +34,10 @@ services:
      - broker
    environment:
      <<: *shared-env
+     STARTUP_RUN_MIGRATIONS: "true"
      OASIS_ADMIN_USER: admin
      OASIS_ADMIN_PASS: password
-     STARTUP_RUN_MIGRATIONS: 'true'
+   volumes: *shared-volumes
   worker-monitor:
    restart: always
    image: coreoasis/api_server:latest
@@ -55,16 +48,18 @@ services:
      - broker
    environment:
      <<: *shared-env
+   volumes: *shared-volumes
   task-controller:
-    restart: always
-    image: coreoasis/api_server:latest
-    command: [celery, worker, -A, src.server.oasisapi, --loglevel=INFO, -Q, task-controller]
-    links:
-      - server-db
-      - celery-db
-      - broker
-    environment:
-      <<: *shared-env
+   restart: always
+   image: coreoasis/api_server:latest
+   command: [celery, worker, -A, src.server.oasisapi, --loglevel=INFO, -Q, task-controller]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+   volumes: *shared-volumes
   celery-beat:
    restart: always
    image: coreoasis/api_server:latest
@@ -75,6 +70,7 @@ services:
      - broker
    environment:
      <<: *shared-env
+   volumes: *shared-volumes
   worker:
     restart: always
     image: coreoasis/model_worker:latest
@@ -83,14 +79,16 @@ services:
       dockerfile: Dockerfile.model_worker
     links:
      - celery-db
-     - broker
+     - broker:mybroker
     environment:
-      <<: *shared-env
-      OASIS_MODEL_SUPPLIER_ID: OasisLMF
-      OASIS_MODEL_ID: PiWind
-      OASIS_MODEL_VERSION_ID: 1
+     <<: *shared-env
+     OASIS_MODEL_SUPPLIER_ID: OasisLMF
+     OASIS_MODEL_ID: PiWind
+     OASIS_MODEL_VERSION_ID: 1
+     OASIS_MODEL_NUM_ANALYSIS_CHUNKS: 8
     volumes:
-      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/var/oasis/:rw
+     - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/var/oasis/:rw
   server-db:
     restart: always
     image: mysql:8.0
@@ -121,13 +119,9 @@ services:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/celery:/var/lib/mysql/:rw
   broker:
     restart: always
-    image: rabbitmq:3-management
-    environment:
-      - RABBITMQ_DEFAULT_USER=rabbit
-      - RABBITMQ_DEFAULT_PASS=rabbit
+    image: redis:5.0.7
     ports:
-      - 5672:5672
-      - 15672:15672
+      - 6379
   flower:
     restart: always
     image: iserko/docker-celery-flower 
@@ -138,7 +132,7 @@ services:
     entrypoint:
       - flower 
       - --port=5555 
-      - --broker_api=http://rabbit:rabbit@rabbit:15672/api/
+      - --broker_api=http://rabbit:rabbit@broker:15672/api/
     links:
      - celery-db
      - broker

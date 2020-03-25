@@ -25,3 +25,4 @@ drf-yasg>=1.17.1
 channels
 channels_redis
 pyrabbit
+redis
