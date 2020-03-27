@@ -243,7 +243,7 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     # Store logs and output
     analysis.run_log_file = store_file(result['log_location'], 'application/gzip', initiator)
-    analysis.output_file  = store_file(result['output_location'], 'application/gzip', initiator)
+    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator)
 
     analysis.save()
     return result

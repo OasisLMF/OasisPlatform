@@ -1,3 +1,4 @@
+from asgiref.sync import sync_to_async
 from channels.auth import UserLazyObject
 from channels.middleware import BaseMiddleware
 from channels.routing import ProtocolTypeRouter, URLRouter
@@ -22,7 +23,9 @@ async def get_user(scope):
     token = backend.get_validated_token(token)
 
     try:
-        return backend.get_user(token)
+        async_get_user = sync_to_async(backend.get_user, thread_sensitive=True)
+        user = await async_get_user(token)
+        return user
     except Exception as e:
         return AnonymousUser()
 

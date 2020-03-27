@@ -663,7 +663,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         res['model_run_fp'],
         res['ktools_work_dir'],
     )
-    Path(abs_fifo_dir).mkdir(exist_ok=True, parents=True)
+    Path(abs_work_dir).mkdir(exist_ok=True, parents=True)
 
     # collect the run results
     for p in params:

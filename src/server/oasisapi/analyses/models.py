@@ -404,7 +404,6 @@ class Analysis(TimeStampedModel):
         ]
         return complex_data_files
 
-
     def copy(self):
         new_instance = self
         new_instance.pk = None
