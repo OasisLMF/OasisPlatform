@@ -119,7 +119,7 @@ def get_queues_info() -> List[QueueInfo]:
     )
 
     for entry in res:
-        entry['pending_count'] = queued.get(entry['name'], 0)
+        entry['pending_count'] = pending.get(entry['name'], 0)
         entry['queued_count'] = queued.get(entry['name'], 0)
         entry['running_count'] = running.get(entry['name'], 0)
 
