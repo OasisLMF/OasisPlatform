@@ -59,7 +59,7 @@ def build_all_queue_status_message():
 
     # filter queues with some nodes or activity
     all_queues = get_queues_info()
-    active_queues = list(q for q in all_queues if (q['worker_count'] or q['running_count'] or q['queued_count']))
+    active_queues = list(q for q in all_queues if (q['worker_count'] or q['pending_count'] or q['running_count'] or q['queued_count']))
 
     status_message = []
     for q in active_queues:
