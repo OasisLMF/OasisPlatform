@@ -631,7 +631,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         **params,
         'script_fp': f'{params["script_fp"]}.{chunk_idx}',
         'ktools_fifo_queue_dir': os.path.join(params['model_run_fp'], 'fifo'),
-        'ktools_work_dir': os.path.join(params['model_run_fp'], 'work/'),
+        'ktools_work_dir': os.path.join(params['model_run_fp'], 'work'),
     }
 
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
@@ -642,6 +642,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     return {
         **params,
         'chunk_work_location': filestore.put(params['ktools_work_dir']),
+        'chunk_fifo_location': filestore.put(params['ktools_fifo_queue_dir']),
         'chunk_script_path': chunk_params['script_fp'],
         'process_number': chunk_idx + 1,
     }
@@ -669,9 +670,11 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     for p in params:
         with TemporaryDir() as d:
             filestore.extract(p['chunk_work_location'], d)
+            merge_dirs(d, abs_work_dir)
 
-            merge_dirs(os.path.join(d, 'work'), abs_work_dir)
-            merge_dirs(os.path.join(d, 'fifo'), abs_fifo_dir)
+        with TemporaryDir() as d:
+            filestore.extract(p['chunk_fifo_location'], d)
+            merge_dirs(d, abs_fifo_dir)
 
     OasisManager().run_loss_outputs(**res)
     res['bash_trace'] = '\n\n'.join(

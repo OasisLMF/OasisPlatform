@@ -65,7 +65,6 @@ wait_for_wrapper()
 # process arguments
 while [[ $# -gt 0 ]]
 do
-    echo "param ${1}"
     case "$1" in
         *://* )
         userhostportpath=(${1#*://})
