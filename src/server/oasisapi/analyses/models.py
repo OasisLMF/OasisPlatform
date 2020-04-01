@@ -314,11 +314,15 @@ class Analysis(TimeStampedModel):
 
         # cleanup the the sub tasks
         qs = self.sub_task_statuses.filter(
-            status__in=[AnalysisTaskStatus.status_choices.QUEUED, AnalysisTaskStatus.status_choices.STARTED]
+            status__in=[
+                AnalysisTaskStatus.status_choices.PENDING,
+                AnalysisTaskStatus.status_choices.QUEUED,
+                AnalysisTaskStatus.status_choices.STARTED]
         )
 
         for task_id in qs.values_list('task_id', flat=True):
-            AsyncResult(task_id).revoke(signal='SIGKILL', terminate=True)
+            if task_id:
+                AsyncResult(task_id).revoke(signal='SIGKILL', terminate=True)
 
         qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
 

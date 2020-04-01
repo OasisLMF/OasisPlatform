@@ -380,6 +380,7 @@ def handle_task_failure(
             analysis.run_log_file.delete()
             analysis.run_log_file = None
 
+        analysis.cancel()
         analysis.save()
     except Exception as e:
         logger.exception(str(e))
