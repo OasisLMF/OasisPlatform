@@ -1,7 +1,9 @@
 from django.conf import settings
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import views
 from rest_framework.response import Response
 from .peril import PERIL_GROUPS, PERILS
+from ..schemas.custom_swagger import SERVER_INFO
 
 
 class PerilcodesView(views.APIView):
@@ -32,6 +34,7 @@ class ServerInfoView(views.APIView):
     Return a list of all support OED peril codes in the oasislmf package
     """
 
+    @swagger_auto_schema(responses={200: SERVER_INFO})
     def get(self, request):
         server_version = ""
         server_config = dict()

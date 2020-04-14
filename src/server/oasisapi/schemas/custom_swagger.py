@@ -33,6 +33,25 @@ HEALTHCHECK = Schema(
     }
 )
 
+SERVER_INFO = Schema(
+    title='ServerInfo',
+    type='object',
+    required=["version", "config"],
+    properties={
+        "version": Schema(
+            title='Server version', 
+            description="Version of oasis platform",
+            read_only=True, 
+            type='string', 
+        ),
+        "config": Schema(
+            title='Server config', 
+            description="Oasis server public configuration",
+            type='object', 
+        )
+    }
+)
+
 TOKEN_REFRESH_HEADER = openapi.Parameter(
     'authorization',
     'header',
