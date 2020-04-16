@@ -282,6 +282,9 @@ node {
                             filename='openapi-schema.json'
                             sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
                         }
+
+                        // Create milestone 
+                        sh PIPELINE + " create_milestone ${gh_token} ${repo} ${env.TAG_RELEASE} CHANGELOG.rst"
                     }
                 }
             }
