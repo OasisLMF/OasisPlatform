@@ -485,13 +485,15 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
             # If reference is a URL, then download the file & rename to 'original_filename'
             fpath = filestore.get(stored_fn, run_directory)
             shutil.move(fpath, os.path.join(run_directory, orig_fn))
-        elif os.path.isfile(stored_fn):
+        elif filestore._is_locally_stored(stored_fn):
             # If refrence is local filepath check that it exisits and copy/symlink
             from_path = filestore.get(stored_fn)
             to_path = os.path.join(run_directory, orig_fn)
             if os.name == 'nt':
+                logging.info(f'complex_model_file: copy {from_path} to {to_path}')
                 shutil.copy(from_path, to_path)
             else:
+                logging.info(f'complex_model_file: link {from_path} to {to_path}')
                 os.symlink(from_path, to_path)
         else:
             logging.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))

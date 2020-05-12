@@ -68,6 +68,21 @@ class BaseStorageConnector(object):
         """
         return "{}.{}".format(uuid.uuid4().hex, suffix)
 
+    def _is_locally_stored(self, fname):
+        """ Check if file is stored in media root
+        Parameters
+        ----------
+        :param fname: filename to check
+        :type fname: str
+
+        :return: `True` if URL otherwise `False`
+        :rtype boolean
+        """
+        return os.path.isfile(os.path.join(
+            self.media_root,
+            os.path.basename(fname)
+        ))
+
     def _is_valid_url(self, url):
         """ Check if a String is a valid url
 
