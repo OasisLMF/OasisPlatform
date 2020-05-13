@@ -2,14 +2,18 @@ OasisPlatform Changelog
 ==================
 
 .. start_latest_release
+`1.7.1`_
+--------
+* #359 - Fix, Model data files not available in worker
+
+.. end_latest_release
+
 `1.7.0`_
 --------
 * #342 - automate milestone creation
 * #346 - Fix schema for server_info endpoint
 * #339 - Add collapseable option to parameter grouping
 * #345 - sets of configuration parameters
-
-.. end_latest_release
 
 `1.6.1`_
 --------
@@ -214,6 +218,7 @@ OasisPlatform Changelog
 --------
 * oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
 
+.. _`1.7.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.7.0...1.7.1
 .. _`1.7.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.6.1...1.7.0
 .. _`1.6.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.6.0...1.6.1
 .. _`1.6.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.5.1...1.6.0
