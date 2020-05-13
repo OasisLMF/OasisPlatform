@@ -762,9 +762,9 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 )
 
                 validation_error =  {
-                    'number_of_samples': '0 is less than the minimum of 1',
-                    'gul_summaries-0-aalcalc': "'Not-A-Boolean' is not of type 'boolean'",
-                    'required': "'source_tag' is a required property"
+                    'number_of_samples': ['0 is less than the minimum of 1'],
+                    'gul_summaries-0-aalcalc': ["'Not-A-Boolean' is not of type 'boolean'"],
+                    'required': ["'source_tag' is a required property"]
                 }
                 self.assertEqual(400, response.status_code)
                 self.assertEqual(json.loads(response.body), validation_error)

@@ -188,14 +188,15 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 )
 
                 validation_error =  {
-                    'model_settings': "Additional properties are not allowed ('float_parameter' was unexpected)",
-                    'model_settings-event_set': "'desc' is a required property",
-                    'model_settings-event_occurrence_id-default': "1 is not of type 'string'",
-                    'model_settings-boolean_parameters-0-default': "1.1 is not of type 'boolean'",
-                    'lookup_settings-supported_perils-0': "'id' is a required property",
-                    'lookup_settings-supported_perils-1': "'desc' is a required property",
-                    'lookup_settings-supported_perils-2-id': "'WW11' is too long"
+                    'model_settings': ["Additional properties are not allowed ('float_parameter' was unexpected)"], 
+                    'model_settings-event_set': ["'desc' is a required property"],
+                    'model_settings-event_occurrence_id-default': ["1 is not of type 'string'"],
+                    'model_settings-boolean_parameters-0-default': ["1.1 is not of type 'boolean'"],
+                    'lookup_settings-supported_perils-0': ["Additional properties are not allowed ('i' was unexpected)", "'id' is a required property"],
+                    'lookup_settings-supported_perils-1': ["Additional properties are not allowed ('des' was unexpected)", "'desc' is a required property"],
+                    'lookup_settings-supported_perils-2-id': ["'WW11' is too long"]
                 }
+
                 self.assertEqual(400, response.status_code)
                 self.assertDictEqual.__self__.maxDiff = None
                 self.assertDictEqual(json.loads(response.body), validation_error)
