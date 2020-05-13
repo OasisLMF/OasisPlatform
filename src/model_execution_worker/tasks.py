@@ -53,6 +53,7 @@ logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DAT
 logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)))
 logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback=None)))
 logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)))
+logging.info("KTOOLS_LEGACY_GUL_STREAM: {}".format(settings.get('worker', 'KTOOLS_LEGACY_GUL_STREAM', fallback=False)))
 logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)))
 logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)))
 logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)))
@@ -300,6 +301,9 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
 
         if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
             run_args.append('--ktools-disable-guard')
+
+        if settings.getboolean('worker', 'KTOOLS_LEGACY_GUL_STREAM', fallback=False):
+            run_args.append('--ktools-legacy-gul-stream')
 
         if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
             run_args.append('--verbose')
