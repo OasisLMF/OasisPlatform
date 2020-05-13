@@ -143,7 +143,11 @@ class JsonSettingsSerializer(serializers.Serializer):
                         field = '-'.join([str(e) for e in err.schema_path])
                     else:
                         field = 'error'
-                    exception_msgs[field] = err.message
+
+                    if field in exception_msgs:
+                        exception_msgs[field].append(err.message)
+                    else:          
+                        exception_msgs[field] = [err.message]  
                 raise serializers.ValidationError(exception_msgs)
 
         except (JSONSchemaValidationError, JSONSchemaError) as e:
