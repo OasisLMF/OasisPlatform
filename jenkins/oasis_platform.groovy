@@ -51,6 +51,9 @@ node {
     String model_name       = params.MODEL_NAME
     String model_workspace  = "${model_name}_workspace"
     String model_git_url    = "git@github.com:OasisLMF/${model_name}.git"
+    String model_test_dir  = "${env.WORKSPACE}/${model_workspace}/tests/"
+    String model_test_ini  = "test-config.ini"
+
 
     String script_dir = env.WORKSPACE + "/${build_workspace}"
     String git_creds  = "1335b248-336a-47a9-b0f6-9f7314d6f1f4"
@@ -75,7 +78,7 @@ node {
     env.IMAGE_WORKER   = image_worker
     // Should read these values from test/conf.ini
     env.TEST_MAX_RUNTIME = '190'
-    env.TEST_DATA_DIR = "${env.WORKSPACE}/${model_workspace}/tests"
+    env.TEST_DATA_DIR = model_test_dir
     env.MODEL_SUPPLIER = 'OasisLMF'
     env.MODEL_VARIENT  = 'PiWind'
     env.MODEL_ID       = '1'
@@ -191,7 +194,7 @@ node {
         for(int i=0; i < api_server_tests.size(); i++) {
             stage("Run : ${api_server_tests[i]}"){
                 dir(build_workspace) {
-                    sh PIPELINE + " run_test --test-case ${api_server_tests[i]}"
+                    sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[i]}"
                 }
             }
         }
@@ -207,7 +210,7 @@ node {
                    sh PIPELINE + " start_model"
 
                    // run test
-                    sh PIPELINE + " run_test --test-case ${api_server_tests[0]}"
+                    sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
                }
            }    
            stage("Compatibility with server:${env.LAST_RELEASE_TAG}") {
@@ -220,7 +223,7 @@ node {
                    sh PIPELINE + " start_model"
 
                    // run test
-                   sh PIPELINE + " run_test --test-case ${api_server_tests[0]}"
+                   sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
                }
            }    
        }
