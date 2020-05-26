@@ -7,7 +7,7 @@ import tarfile
 import tempfile
 import uuid
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit, parse_qsl
 from urllib.request import urlopen
 
 from os import path
@@ -312,8 +312,8 @@ class AwsObjectStore(BaseStorageConnector):
         self.storage_connector = 'AWS-S3'
         self._bucket = None
         self._connection = None
-        self.access_key = settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='')
-        self.secret_key = settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback='')
+        self.access_key = settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback=None)
+        self.secret_key = settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None)
 
         # Optional
         self.endpoint_url = settings.get('worker', 'AWS_S3_ENDPOINT_URL', fallback=None)
@@ -453,8 +453,8 @@ class AwsObjectStore(BaseStorageConnector):
         The code attempts to strip all query parameters that match names of known parameters
         from v2 and v4 signatures, regardless of the actual signature version used.
         """
-        split_url = urlparse.urlsplit(url)
-        qs = urlparse.parse_qsl(split_url.query, keep_blank_values=True)
+        split_url = urlsplit(url)
+        qs = parse_qsl(split_url.query, keep_blank_values=True)
         blacklist = {
             'x-amz-algorithm', 'x-amz-credential', 'x-amz-date',
             'x-amz-expires', 'x-amz-signedheaders', 'x-amz-signature',
