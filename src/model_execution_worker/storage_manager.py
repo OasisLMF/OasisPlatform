@@ -7,7 +7,7 @@ import tarfile
 import tempfile
 import uuid
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit, parse_qsl
 from urllib.request import urlopen
 
 from os import path
@@ -312,30 +312,30 @@ class AwsObjectStore(BaseStorageConnector):
         self.storage_connector = 'AWS-S3'
         self._bucket = None
         self._connection = None
-        self.access_key = settings.get('worker', 'AWS_ACCESS_KEY_ID')
-        self.secret_key = settings.get('worker', 'AWS_SECRET_ACCESS_KEY')
+        self.access_key = settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback=None)
+        self.secret_key = settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None)
 
         # Optional
         self.endpoint_url = settings.get('worker', 'AWS_S3_ENDPOINT_URL', fallback=None)
-        self.file_overwrite = settings.get('worker', 'AWS_S3_FILE_OVERWRITE', fallback=True)
+        self.file_overwrite = settings.getboolean('worker', 'AWS_S3_FILE_OVERWRITE', fallback=True)
         self.object_parameters = settings.get('worker', 'AWS_S3_OBJECT_PARAMETERS', fallback={})
         self.bucket_name = settings.get('worker', 'AWS_BUCKET_NAME')
-        self.auto_create_bucket = settings.get('worker', 'AWS_AUTO_CREATE_BUCKET', fallback=False)
+        self.auto_create_bucket = settings.getboolean('worker', 'AWS_AUTO_CREATE_BUCKET', fallback=False)
         self.default_acl = settings.get('worker', 'AWS_DEFAULT_ACL', fallback=None)
         self.bucket_acl = settings.get('worker', 'AWS_BUCKET_ACL', fallback=self.default_acl)
-        self.querystring_auth = settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback=True)
+        self.querystring_auth = settings.getboolean('worker', 'AWS_QUERYSTRING_AUTH', fallback=False)
         self.querystring_expire = settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
-        self.reduced_redundancy = settings.get('worker', 'AWS_REDUCED_REDUNDANCY', fallback=False)
+        self.reduced_redundancy = settings.getboolean('worker', 'AWS_REDUCED_REDUNDANCY', fallback=False)
         self.location = settings.get('worker', 'AWS_LOCATION', fallback='')
-        self.encryption = settings.get('worker', 'AWS_S3_ENCRYPTION', fallback=False)
+        self.encryption = settings.getboolean('worker', 'AWS_S3_ENCRYPTION', fallback=False)
         self.security_token = settings.get('worker', 'AWS_SECURITY_TOKEN', fallback=None)
-        self.secure_urls = settings.get('worker', 'AWS_S3_SECURE_URLS', fallback=True)
+        self.secure_urls = settings.getboolean('worker', 'AWS_S3_SECURE_URLS', fallback=True)
         self.file_name_charset = settings.get('worker', 'AWS_S3_FILE_NAME_CHARSET', fallback='utf-8')
-        self.gzip = settings.get('worker', 'AWS_IS_GZIPPED', fallback=False)
-        self.preload_metadata = settings.get('worker', 'AWS_PRELOAD_METADATA', fallback=False)
+        self.gzip = settings.getboolean('worker', 'AWS_IS_GZIPPED', fallback=False)
+        self.preload_metadata = settings.getboolean('worker', 'AWS_PRELOAD_METADATA', fallback=False)
         self.url_protocol = settings.get('worker', 'AWS_S3_URL_PROTOCOL', fallback='http:')
         self.region_name = settings.get('worker', 'AWS_S3_REGION_NAME', fallback=None)
-        self.use_ssl = settings.get('worker', 'AWS_S3_USE_SSL', fallback=True)
+        self.use_ssl = settings.getboolean('worker', 'AWS_S3_USE_SSL', fallback=True)
         self.verify = settings.get('worker', 'AWS_S3_VERIFY', fallback=None)
         self.max_memory_size = settings.get('worker', 'AWS_S3_MAX_MEMORY_SIZE', fallback=0)
         self.gzip_content_types = settings.get('worker', 'GZIP_CONTENT_TYPES', fallback=(
@@ -453,8 +453,8 @@ class AwsObjectStore(BaseStorageConnector):
         The code attempts to strip all query parameters that match names of known parameters
         from v2 and v4 signatures, regardless of the actual signature version used.
         """
-        split_url = urlparse.urlsplit(url)
-        qs = urlparse.parse_qsl(split_url.query, keep_blank_values=True)
+        split_url = urlsplit(url)
+        qs = parse_qsl(split_url.query, keep_blank_values=True)
         blacklist = {
             'x-amz-algorithm', 'x-amz-credential', 'x-amz-date',
             'x-amz-expires', 'x-amz-signedheaders', 'x-amz-signature',

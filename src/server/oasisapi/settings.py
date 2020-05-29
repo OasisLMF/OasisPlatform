@@ -29,7 +29,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = iniconf.settings.get('server', 'debug', fallback=True)
+DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=True)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = iniconf.settings.get('server', 'secret_key', fallback='' if not DEBUG else 'supersecret')
@@ -150,8 +150,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
 # Authenticate with S3
-AWS_ACCESS_KEY_ID = iniconf.settings.get('server', 'AWS_ACCESS_KEY_ID', fallback='')
-AWS_SECRET_ACCESS_KEY = iniconf.settings.get('server', 'AWS_SECRET_ACCESS_KEY', fallback='')
+AWS_ACCESS_KEY_ID = iniconf.settings.get('server', 'AWS_ACCESS_KEY_ID', fallback=None)
+AWS_SECRET_ACCESS_KEY = iniconf.settings.get('server', 'AWS_SECRET_ACCESS_KEY', fallback=None)
 AWS_STORAGE_BUCKET_NAME = iniconf.settings.get('server', 'AWS_BUCKET_NAME', fallback='')
 
 # S3 Configuration options .
@@ -162,7 +162,7 @@ AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='api-serv
 AWS_S3_REGION_NAME = iniconf.settings.get('server', 'AWS_S3_REGION_NAME', fallback=None)
 
 # Presigned generated URLs for private buckets
-AWS_QUERYSTRING_AUTH = iniconf.settings.get('server', 'AWS_QUERYSTRING_AUTH', fallback=True)
+AWS_QUERYSTRING_AUTH = iniconf.settings.getboolean('server', 'AWS_QUERYSTRING_AUTH', fallback=False)
 AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
 
 # General optimization for faster delivery
