@@ -13,6 +13,8 @@ from urllib.request import urlopen
 from os import path
 from oasislmf.utils.exceptions import OasisException
 
+from botocore.exceptions import ClientError as S3_ClientError
+
 LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 
@@ -68,9 +70,11 @@ class BaseStorageConnector(object):
         """
         return "{}.{}".format(uuid.uuid4().hex, suffix)
 
-    def _is_locally_stored(self, fname):
+    def _is_stored(self, fname):
         """ Check if file is stored in media root
         Parameters
+        
+        Override this method depending on storage type
         ----------
         :param fname: filename to check
         :type fname: str
@@ -153,6 +157,14 @@ class BaseStorageConnector(object):
         self.logger.info('Store dir: {} -> {}'.format(directory_path, stored_fp))
         return stored_fp
 
+    def _fetch_file(self, reference, output_dir):
+        fpath = os.path.join(
+            self.media_root,
+            os.path.basename(reference)
+        )
+        logging.info('Get shared file: {}'.format(reference))
+        return os.path.abspath(fpath)
+
     def extract(self, archive_fp, directory):
         """ Extract tar file
 
@@ -220,18 +232,10 @@ class BaseStorageConnector(object):
                 logging.info('Get from URL: {}'.format(fname))
             return os.path.abspath(fpath)
 
-        elif isinstance(reference, str):
-            fpath = os.path.join(
-                self.media_root,
-                os.path.basename(reference)
-            )
-            if os.path.isfile(fpath):
-                logging.info('Get shared file: {}'.format(reference))
-                return os.path.abspath(fpath)
-            else:
-                raise MissingInputsException(fpath)
-
+        elif self._is_stored(reference):
+            return self._fetch_file(reference, output_dir)
         else:
+            # Replace this with exeception?    
             return None
 
     def put(self, reference, suffix=None, arcname=None):
@@ -338,6 +342,7 @@ class AwsObjectStore(BaseStorageConnector):
         self.use_ssl = settings.getboolean('worker', 'AWS_S3_USE_SSL', fallback=True)
         self.verify = settings.get('worker', 'AWS_S3_VERIFY', fallback=None)
         self.max_memory_size = settings.get('worker', 'AWS_S3_MAX_MEMORY_SIZE', fallback=0)
+        self.shared_bucket = settings.getboolean('worker', 'AWS_SHARED_BUCKET', fallback=False)
         self.gzip_content_types = settings.get('worker', 'GZIP_CONTENT_TYPES', fallback=(
             'text/css',
             'text/javascript',
@@ -380,6 +385,35 @@ class AwsObjectStore(BaseStorageConnector):
             self._bucket = self.connection.Bucket(self.bucket_name)
         return self._bucket
 
+    def _is_stored(self, object_key):
+        #https://stackoverflow.com/questions/33842944/check-if-a-key-exists-in-a-bucket-in-s3-using-boto3
+        try:
+            self.bucket.Object(object_key).load()
+            return True
+        except S3_ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                return False
+            else:
+                # Not a 404 re-raise the execption
+                raise e
+
+    def _fetch_file(self, reference, output_dir=""):
+        """
+        Download an S3 object to a file 
+
+        Parameters
+        ----------
+        :param file_path: Path to a file object for upload
+        :type  file_path: str
+
+        """
+        fpath = os.path.join(
+            output_dir,
+            os.path.basename(reference)
+        )
+        self.bucket.download_file(reference, fpath)
+        logging.info('Get S3: {}'.format(reference))
+        return os.path.abspath(fpath)
 
     def _store_file(self, file_path, suffix=None):
         """ Overloaded function for AWS file storage
@@ -405,7 +439,13 @@ class AwsObjectStore(BaseStorageConnector):
 
         self.upload(object_name, file_path)
         self.logger.info('Stored S3: {} -> {}'.format(file_path, object_name))
-        return self.url(object_name)
+
+        if self.shared_bucket:
+            # Return Object Key
+            return os.path.join(self.location, object_name)
+        else:
+            # Return URL
+            return self.url(object_name)
 
     def _store_dir(self, directory_path, suffix=None, arcname=None):
         """ Overloaded function for AWS Directory storage
@@ -439,7 +479,12 @@ class AwsObjectStore(BaseStorageConnector):
             self.upload(object_name, archive_path)
 
         self.logger.info('Stored S3: {} -> {}'.format(directory_path, object_name))
-        return self.url(object_name)
+        if self.shared_bucket:
+            # Return Object Key
+            return os.path.join(self.location, object_name)
+        else:
+            # Return URL
+            return self.url(object_name)
 
     def _strip_signing_parameters(self, url):
         """ Duplicated Unsiged URLs from Django-Stroage
