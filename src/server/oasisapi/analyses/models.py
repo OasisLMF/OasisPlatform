@@ -10,6 +10,7 @@ from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
+from os import path
 
 from ..files.models import RelatedFile
 from ..analysis_models.models import AnalysisModel
@@ -288,9 +289,9 @@ class Analysis(TimeStampedModel):
            """
            Return link to file storage based on 'STORAGE_TYPE' value in settings.py
 
-            storage_obj should point to a `RelatedFile` Obj 
+            storage_obj should point to a `RelatedFile` Obj
 
-           STORAGE_TYPE; 
+           STORAGE_TYPE;
                 'Default': local filesystem -> return filename
                 'AWS-S3': Remote Object Store -> Return URL with expire time
            """
@@ -300,10 +301,19 @@ class Analysis(TimeStampedModel):
            if not storage_obj.file:
                return None
 
-           # PreSigned URL  
+           # S3 storage links
            if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws']:
-                return storage_obj.file.storage.url(storage_obj.file.name)
-           # Local filesystem ref     
+                if settings.AWS_SHARED_BUCKET:
+                    # Return object key for shared S3 bucket
+                    return path.join(
+                        storage_obj.file.storage.location,
+                        storage_obj.file.name,
+                    )
+                else:
+                    # Return Download URL to S3 Object
+                    return storage_obj.file.storage.url(storage_obj.file.name)
+
+           # Shared FS filename
            else:
                 return storage_obj.file.name
 

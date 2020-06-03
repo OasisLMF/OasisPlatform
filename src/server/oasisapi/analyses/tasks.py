@@ -8,6 +8,7 @@ from celery import Task
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
@@ -15,6 +16,7 @@ from django.utils import timezone
 # Remove this
 from six import StringIO
 
+from botocore.exceptions import ClientError as S3_ClientError
 from tempfile import TemporaryFile
 from urllib.request import urlopen
 from urllib.parse import urlparse
@@ -33,6 +35,19 @@ def is_valid_url(url):
         return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
     else:
         return False
+
+def is_in_bucket(object_key):
+    if not hasattr(default_storage, 'bucket'):
+        return False
+    else:    
+        try:
+            default_storage.bucket.Object(object_key).load()
+            return True
+        except S3_ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                return False
+            else:
+                raise e
 
 
 def store_file(reference, content_type, creator, required=True):
@@ -53,8 +68,9 @@ def store_file(reference, content_type, creator, required=True):
     :return: Model Object holding a Django file 
     :rtype RelatedFile
     """
+
+    # Download data from URL
     if is_valid_url(reference):
-        # Download to a tmp location and pass the file refrence for storage
         response = urlopen(reference)
         fdata = response.read()
 
@@ -73,6 +89,19 @@ def store_file(reference, content_type, creator, required=True):
                 content_type=content_type,
                 creator=creator,
             )
+
+    # Download data from S3 Bucket 
+    if is_in_bucket(reference): 
+        with TemporaryFile() as tmp_file:
+            default_storage.bucket.download_fileobj(reference, tmp_file)
+            fname = os.path.basename(reference)
+            return RelatedFile.objects.create(
+                file=File(tmp_file, name=fname),
+                filename=fname,
+                content_type=content_type,
+                creator=creator,
+            )
+
     try:
         # create RelatedFile object from filepath
         file_name = os.path.basename(reference)
