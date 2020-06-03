@@ -262,8 +262,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
     with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
 
         # Fetch generated inputs
-        analysis_settings_file = filestore.get(analysis_settings, run_dir)
-        input_archive = filestore.get(input_location, run_dir)
+        analysis_settings_file = filestore.get(analysis_settings, run_dir, required=True)
+        input_archive = filestore.get(input_location, run_dir, required=True)
         if not tarfile.is_tarfile(input_archive):
             raise InvalidInputsException(input_archive)
 
@@ -384,7 +384,7 @@ def generate_input(analysis_pk,
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
 
         # Fetch input files
-        location_file        = filestore.get(loc_file, oasis_files_dir)
+        location_file        = filestore.get(loc_file, oasis_files_dir, required=True)
         accounts_file        = filestore.get(acc_file, oasis_files_dir)
         ri_info_file         = filestore.get(info_file, oasis_files_dir)
         ri_scope_file        = filestore.get(scope_file, oasis_files_dir)

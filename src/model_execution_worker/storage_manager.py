@@ -10,7 +10,6 @@ import uuid
 from urllib.parse import urlparse, urlsplit, parse_qsl
 from urllib.request import urlopen
 
-from os import path
 from oasislmf.utils.exceptions import OasisException
 
 from botocore.exceptions import ClientError as S3_ClientError
@@ -73,7 +72,7 @@ class BaseStorageConnector(object):
     def _is_stored(self, fname):
         """ Check if file is stored in media root
         Parameters
-        
+
         Override this method depending on storage type
         ----------
         :param fname: filename to check
@@ -82,6 +81,8 @@ class BaseStorageConnector(object):
         :return: `True` if URL otherwise `False`
         :rtype boolean
         """
+        if not isinstance(fname, str):
+            return False
         return os.path.isfile(os.path.join(
             self.media_root,
             os.path.basename(fname)
@@ -198,7 +199,7 @@ class BaseStorageConnector(object):
         with tarfile.open(archive_fp, 'w:gz') as tar:
             tar.add(directory, arcname=arcname)
 
-    def get(self, reference, output_dir=""):
+    def get(self, reference, output_dir="", required=False):
         """ Retrieve stored object
 
         Top level 'get from storage' function
@@ -235,8 +236,11 @@ class BaseStorageConnector(object):
         elif self._is_stored(reference):
             return self._fetch_file(reference, output_dir)
         else:
-            # Replace this with exeception?    
-            return None
+            # Replace this with exeception?
+            if required:
+                raise MissingInputsException(reference)
+            else:    
+                return None
 
     def put(self, reference, suffix=None, arcname=None):
         """ Place object in storage
@@ -386,7 +390,8 @@ class AwsObjectStore(BaseStorageConnector):
         return self._bucket
 
     def _is_stored(self, object_key):
-        #https://stackoverflow.com/questions/33842944/check-if-a-key-exists-in-a-bucket-in-s3-using-boto3
+        if not isinstance(object_key, str):
+            return False
         try:
             self.bucket.Object(object_key).load()
             return True
@@ -395,11 +400,12 @@ class AwsObjectStore(BaseStorageConnector):
                 return False
             else:
                 # Not a 404 re-raise the execption
+                logging.info(e.response)
                 raise e
 
     def _fetch_file(self, reference, output_dir=""):
         """
-        Download an S3 object to a file 
+        Download an S3 object to a file
 
         Parameters
         ----------
