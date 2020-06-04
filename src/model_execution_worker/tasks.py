@@ -4,8 +4,9 @@ import glob
 import json
 import logging
 import os
-import subprocess
 import shutil
+import subprocess
+import time
 
 import fasteners
 import tempfile
@@ -40,28 +41,6 @@ CELERY.config_from_object(celery_conf)
 logging.info("Started worker")
 
 filestore = StorageSelector(settings)
-
-
-## Required ENV
-logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
-logging.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS')))
-logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
-logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
-
-## Optional ENV
-logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
-logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)))
-logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback=None)))
-logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)))
-logging.info("KTOOLS_LEGACY_GUL_STREAM: {}".format(settings.get('worker', 'KTOOLS_LEGACY_GUL_STREAM', fallback=False)))
-logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)))
-logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)))
-logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)))
-logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD', fallback=True)))
-logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
-logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
-logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback=None)))
-logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
 
 
 class TemporaryDir(object):
@@ -121,6 +100,7 @@ def get_worker_versions():
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
+    time.sleep(1) # Workaround, pause for 1 sec to makesure log messages are printed
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
@@ -134,6 +114,43 @@ def register_worker(sender, **k):
         args=(m_supplier, m_name, m_id, m_settings, m_version),
         queue='celery'
     ).delay()
+
+    ## Required ENV
+    logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
+    logging.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS')))
+    logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
+
+    ## Storage Mode
+    selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
+    logging.info("STORAGE_MANAGER: {}".format(type(filestore)))
+    logging.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
+
+    if selected_storage in ['local-fs', 'shared-fs']:
+        logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
+
+    elif selected_storage in ['aws-s3', 'aws', 's3']:
+        logging.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
+        logging.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
+        logging.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
+        logging.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
+        logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
+        logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
+
+    ## Optional ENV
+    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
+    logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
+    logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback='None')))
+    logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback='None')))
+    logging.info("KTOOLS_LEGACY_GUL_STREAM: {}".format(settings.get('worker', 'KTOOLS_LEGACY_GUL_STREAM', fallback=False)))
+    logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback='None')))
+    logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback='None')))
+    logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback='None')))
+    logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD', fallback=True)))
+    logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
+    logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
+    logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
+    logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
+
 
 
 class InvalidInputsException(OasisException):
