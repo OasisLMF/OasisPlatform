@@ -5,6 +5,7 @@ import os
 
 from celery.utils.log import get_task_logger
 from celery import Task
+from celery.signals import worker_ready
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
@@ -108,7 +109,7 @@ def store_file(reference, content_type, creator, required=True):
         file_path = os.path.join(
            settings.MEDIA_ROOT,
            file_name,
-        )
+        )    
         return RelatedFile.objects.create(
             file=file_path,
             filename=file_name,
@@ -186,6 +187,21 @@ class LogTaskError(Task):
                 analysis.save()
                 raise e
 
+
+@worker_ready.connect
+def log_worker_monitor(sender, **k):
+    logger.info('DEBUG: {}'.format(settings.DEBUG))    
+    logger.info('DB_ENGINE: {}'.format(settings.DB_ENGINE))    
+    logger.info('STORAGE_TYPE: {}'.format(settings.STORAGE_TYPE))    
+    logger.info('DEFAULT_FILE_STORAGE: {}'.format(settings.DEFAULT_FILE_STORAGE))    
+    logger.info('MEDIA_ROOT: {}'.format(settings.MEDIA_ROOT))    
+    logger.info('AWS_STORAGE_BUCKET_NAME: {}'.format(settings.AWS_STORAGE_BUCKET_NAME))    
+    logger.info('AWS_LOCATION: {}'.format(settings.AWS_LOCATION))    
+    logger.info('AWS_S3_REGION_NAME: {}'.format(settings.AWS_S3_REGION_NAME))    
+    logger.info('AWS_QUERYSTRING_AUTH: {}'.format(settings.AWS_QUERYSTRING_AUTH))    
+    logger.info('AWS_QUERYSTRING_EXPIRE: {}'.format(settings.AWS_QUERYSTRING_EXPIRE))    
+    logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))    
+    logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))    
 
 @celery_app.task(name='run_register_worker')
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
