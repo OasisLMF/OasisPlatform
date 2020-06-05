@@ -1,12 +1,20 @@
 OasisPlatform Changelog
-==================
+=======================
+.. * [#_](https://github.com/OasisLMF/OasisPlatform/issues/_) -
 
+`1.8.0`_
+---------
 .. start_latest_release
+* [#353](https://github.com/OasisLMF/OasisPlatform/issues/353) - Add Slack notification for software releases
+* [#369](https://github.com/OasisLMF/OasisPlatform/issues/369) - Add Known issues to release notes
+* [#370](https://github.com/OasisLMF/OasisPlatform/issues/370) - Fix for unsigned URLS in S3 Storage manager 
+* [#372](https://github.com/OasisLMF/OasisPlatform/issues/372) - Exposure summary produces incorrect 'overview' TIV
+* [#374](https://github.com/OasisLMF/OasisPlatform/issues/374) - Schema fix analysis_settings.json
+.. end_latest_release
+
 `1.7.1`_
 --------
 * #359 - Fix, Model data files not available in worker
-
-.. end_latest_release
 
 `1.7.0`_
 --------
@@ -132,6 +140,7 @@ OasisPlatform Changelog
 --------
  * Update Oasislmf to 1.3.9
  * Update API test script
+ 
 `1.1.0`_
 --------
  * New endpoint `complex_data_files`
@@ -149,75 +158,76 @@ OasisPlatform Changelog
 
 `1.0.1`_
 --------
-* Oasislmf package `1.3.2 <https://github.com/OasisLMF/OasisLMF/tree/1.3.2>`_
+* Oasislmf package [1.3.2](https://github.com/OasisLMF/OasisLMF/tree/1.3.2)
 
 `1.0.0`_
 --------
-* Oasislmf package `1.3.1 <https://github.com/OasisLMF/OasisLMF/tree/1.3.1>`_
+* Oasislmf package [1.3.1](https://github.com/OasisLMF/OasisLMF/tree/1.3.1)
 * Initial release of New API based on Django REST Framework
 * Worker image updated to handle oasis files generation
 * For full notes see `Release notes 1.0.0 <https://github.com/OasisLMF/OasisPlatform/blob/develop/RELEASE.md#100-732019>`_
 
 `0.397.3`_
---------
-* oasislmf package `1.2.3 <https://github.com/OasisLMF/OasisLMF/tree/1.2.3>`_
+----------
 * Add Envrioment Variable to set Ktools Allocation rule in worker `KTOOLS_ALLOC_RULE`
 * Update to Automated testing script
 
 `0.397.2`_
---------
-* oasislmf package `1.2.3 <https://github.com/OasisLMF/OasisLMF/tree/1.2.3>`_
+----------
+* oasislmf package 1.2.3
 
 `0.397.1`_
---------
-* oasislmf package `1.2.2 <https://github.com/OasisLMF/OasisLMF/tree/1.2.2>`_
+----------
+* oasislmf package 1.2.2
 
 `0.397.0`_
---------
+----------
+* oasislmf package 1.2.1
 * Fix for Retry Lock file issue
 * Switch Environment variables prefix to `OASIS_<VAR_NAME>` from  `OASIS_API_<VAR_NAME>`
 
 `0.396.2`_
---------
-* oasislmf package `1.2.1 <https://github.com/OasisLMF/OasisLMF/tree/1.2.1>`_
+----------
+* oasislmf package 1.2.1
 
 
 `0.396.1`_
---------
-* oasislmf package `1.2.1 <https://github.com/OasisLMF/OasisLMF/tree/1.2.1>`_
+----------
+* oasislmf package 1.2.1
 * No Change in Base images
 
 
 `0.396.0`_
---------
-* oasislmf package `1.2.1 <https://github.com/OasisLMF/OasisLMF/tree/1.2.1>`_
+----------
+* oasislmf package 1.2.1
 * Added Dockerfile to build oasis_base via git install of oasislmf
 * Added Environment Variable for Ktools memory limit `KTOOLS_MEMORY_LIMIT`
 
 `0.395.3`_
---------
-* oasislmf package `1.2.1 <https://github.com/OasisLMF/OasisLMF/tree/1.2.1>`_
+----------
+* oasislmf package 1.2.1
 
 
 `0.395.2`_
---------
-* oasislmf package `1.1.26 <https://github.com/OasisLMF/OasisLMF/tree/1.1.26>`_
+----------
+* oasislmf package 1.1.26
 * Add LICENSE file
 
 `0.395.1`_
---------
-* oasislmf package `1.1.26 <https://github.com/OasisLMF/OasisLMF/tree/1.1.26>`_
+----------
+* oasislmf package 1.1.26
 
 
 `0.395.0`_
---------
-* oasislmf package `1.1.26 <https://github.com/OasisLMF/OasisLMF/tree/1.1.26>`_
+----------
+* oasislmf package 1.1.26
 * Added Reinsurance support + test RI files
 
 `0.394.1`_
---------
-* oasislmf package `1.1.25 <https://github.com/OasisLMF/OasisLMF/tree/1.1.25>`_
+----------
+* oasislmf package 1.1.25
 
+.. _`1.8.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.7.1...1.8.0
 .. _`1.7.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.7.0...1.7.1
 .. _`1.7.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.6.1...1.7.0
 .. _`1.6.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.6.0...1.6.1
