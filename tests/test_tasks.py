@@ -19,7 +19,7 @@ from src.model_execution_worker.tasks import start_analysis, InvalidInputsExcept
 
 
 #from oasislmf.utils.status import OASIS_TASK_STATUS
-OASIS_TASK_STATUS = { 
+OASIS_TASK_STATUS = {
     'pending': {'id': 'PENDING', 'desc': 'Pending'},
     'running': {'id': 'RUNNING', 'desc': 'Running'},
     'success': {'id': 'SUCCESS', 'desc': 'Success'},
@@ -51,8 +51,8 @@ class StartAnalysis(TestCase):
                 Path(media_root, 'analysis_settings.json').touch()
                 with self.assertRaises(MissingInputsException):
                     start_analysis(
-                        os.path.join(media_root, 'non-existant-location.tar'),
-                        os.path.join(media_root, 'analysis_settings.json')
+                        input_location=os.path.join(media_root, 'non-existant-location.tar'),
+                        analysis_settings=os.path.join(media_root, 'analysis_settings.json')
                     )
 
     def test_settings_file_does_not_exist___exception_is_raised(self):
@@ -61,15 +61,19 @@ class StartAnalysis(TestCase):
                 self.create_tar(str(Path(media_root, 'location.tar')))
                 with self.assertRaises(MissingInputsException):
                     start_analysis(
-                        os.path.join(media_root, 'location.tar'),
-                        os.path.join(media_root, 'analysis_settings.json')
+                        input_location=os.path.join(media_root, 'location.tar'),
+                        analysis_settings=os.path.join(media_root, 'analysis_settings.json')
                     )
 
     def test_input_location_is_not_a_tar___exception_is_raised(self):
         with TemporaryDirectory() as media_root:
             with SettingsPatcher(MEDIA_ROOT=media_root):
                 Path(media_root, 'not-tar-file.tar').touch()
-                self.assertRaises(InvalidInputsException, start_analysis, {}, os.path.join(media_root, 'not-tar-file.tar'))
+                Path(media_root, 'analysis_settings.json').touch()
+                self.assertRaises(InvalidInputsException, start_analysis, 
+                    os.path.join(media_root, 'analysis_settings.json'), 
+                    os.path.join(media_root, 'not-tar-file.tar')
+                )
 
     def test_custom_model_runner_does_not_exist___generate_losses_is_called_output_files_are_tared_up(self):
         with TemporaryDirectory() as media_root, \
@@ -100,7 +104,7 @@ class StartAnalysis(TestCase):
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
                         patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
-                    
+
                     output_location, log_location, error_location, returncode = start_analysis(
                         os.path.join(media_root, 'analysis_settings.json'),
                         os.path.join(media_root, 'location.tar'),

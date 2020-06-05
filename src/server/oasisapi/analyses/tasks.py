@@ -5,9 +5,11 @@ import os
 
 from celery.utils.log import get_task_logger
 from celery import Task
+from celery.signals import worker_ready
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
@@ -15,6 +17,7 @@ from django.utils import timezone
 # Remove this
 from six import StringIO
 
+from botocore.exceptions import ClientError as S3_ClientError
 from tempfile import TemporaryFile
 from urllib.request import urlopen
 from urllib.parse import urlparse
@@ -33,6 +36,19 @@ def is_valid_url(url):
         return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
     else:
         return False
+
+def is_in_bucket(object_key):
+    if not hasattr(default_storage, 'bucket'):
+        return False
+    else:    
+        try:
+            default_storage.bucket.Object(object_key).load()
+            return True
+        except S3_ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                return False
+            else:
+                raise e
 
 
 def store_file(reference, content_type, creator, required=True):
@@ -53,8 +69,9 @@ def store_file(reference, content_type, creator, required=True):
     :return: Model Object holding a Django file 
     :rtype RelatedFile
     """
+
+    # Download data from URL
     if is_valid_url(reference):
-        # Download to a tmp location and pass the file refrence for storage
         response = urlopen(reference)
         fdata = response.read()
 
@@ -73,13 +90,26 @@ def store_file(reference, content_type, creator, required=True):
                 content_type=content_type,
                 creator=creator,
             )
+
+    # Download data from S3 Bucket 
+    if is_in_bucket(reference): 
+        with TemporaryFile() as tmp_file:
+            default_storage.bucket.download_fileobj(reference, tmp_file)
+            fname = os.path.basename(reference)
+            return RelatedFile.objects.create(
+                file=File(tmp_file, name=fname),
+                filename=fname,
+                content_type=content_type,
+                creator=creator,
+            )
+
     try:
         # create RelatedFile object from filepath
         file_name = os.path.basename(reference)
         file_path = os.path.join(
            settings.MEDIA_ROOT,
            file_name,
-        )
+        )    
         return RelatedFile.objects.create(
             file=file_path,
             filename=file_name,
@@ -157,6 +187,21 @@ class LogTaskError(Task):
                 analysis.save()
                 raise e
 
+
+@worker_ready.connect
+def log_worker_monitor(sender, **k):
+    logger.info('DEBUG: {}'.format(settings.DEBUG))    
+    logger.info('DB_ENGINE: {}'.format(settings.DB_ENGINE))    
+    logger.info('STORAGE_TYPE: {}'.format(settings.STORAGE_TYPE))    
+    logger.info('DEFAULT_FILE_STORAGE: {}'.format(settings.DEFAULT_FILE_STORAGE))    
+    logger.info('MEDIA_ROOT: {}'.format(settings.MEDIA_ROOT))    
+    logger.info('AWS_STORAGE_BUCKET_NAME: {}'.format(settings.AWS_STORAGE_BUCKET_NAME))    
+    logger.info('AWS_LOCATION: {}'.format(settings.AWS_LOCATION))    
+    logger.info('AWS_S3_REGION_NAME: {}'.format(settings.AWS_S3_REGION_NAME))    
+    logger.info('AWS_QUERYSTRING_AUTH: {}'.format(settings.AWS_QUERYSTRING_AUTH))    
+    logger.info('AWS_QUERYSTRING_EXPIRE: {}'.format(settings.AWS_QUERYSTRING_EXPIRE))    
+    logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))    
+    logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))    
 
 @celery_app.task(name='run_register_worker')
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):

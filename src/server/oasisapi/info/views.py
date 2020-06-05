@@ -59,6 +59,9 @@ class ServerInfoView(views.APIView):
         server_config['MEDIA_ROOT'] = settings.MEDIA_ROOT
         server_config['AWS_STORAGE_BUCKET_NAME'] = settings.AWS_STORAGE_BUCKET_NAME
         server_config['AWS_LOCATION'] = settings.AWS_LOCATION
+        server_config['AWS_SHARED_BUCKET'] = settings.AWS_SHARED_BUCKET
+        server_config['AWS_QUERYSTRING_EXPIRE'] = settings.AWS_QUERYSTRING_EXPIRE
+        server_config['AWS_QUERYSTRING_AUTH'] = settings.AWS_QUERYSTRING_AUTH
 
         # Token Conf
         server_config['ROTATE_REFRESH_TOKEN'] = settings.SIMPLE_JWT['ROTATE_REFRESH_TOKENS']

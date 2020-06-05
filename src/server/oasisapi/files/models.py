@@ -8,7 +8,11 @@ from model_utils.models import TimeStampedModel
 
 
 def random_file_name(instance, filename):
-    ext = os.path.splitext(filename)[-1]
+    # Work around: S3 objects pushed as '<hash>.gz' should be '<hash>.tar.gz'
+    if filename.endswith('.tar.gz'):
+        ext = '.tar.gz'
+    else:
+        ext = os.path.splitext(filename)[-1]
     return '{}{}'.format(uuid4().hex, ext)
 
 
