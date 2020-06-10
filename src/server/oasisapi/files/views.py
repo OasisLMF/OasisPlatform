@@ -29,20 +29,11 @@ def _handle_get_related_file(parent, field):
 
 
 def _handle_post_related_file(parent, field, request, content_types):
-    try:
-        data = request.data.copy()
-    except TypeError:
-        # Work around for: https://code.djangoproject.com/ticket/29510
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info("Fallback copy method")
-        data = {k: request.data[k] for k in request.data.keys()}
-
-    serializer = RelatedFileSerializer(data=data, content_types=content_types, context={'request': request})
+    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request})
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
     setattr(parent, field, instance)
-    parent.save()
+    parent.save(update_fields=[field])
 
     # Override 'file' return to hide storage details with stored filename
     response = Response(RelatedFileSerializer(instance=instance, content_types=content_types).data)
@@ -55,7 +46,7 @@ def _handle_delete_related_file(parent, field):
         raise Http404()
 
     setattr(parent, field, None)
-    parent.save()
+    parent.save(update_fields=[field])
     return Response()
 
 
@@ -88,7 +79,7 @@ def _json_write_to_file(parent, field, request, serializer):
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
     setattr(parent, field, instance)
-    parent.save()
+    parent.save(update_fields=[field])
 
     # Override 'file' return to hide storage details with stored filename
     response = Response(RelatedFileSerializer(instance=instance, content_types='application/json').data)
