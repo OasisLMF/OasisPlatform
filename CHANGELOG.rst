@@ -1,16 +1,19 @@
 OasisPlatform Changelog
 =======================
-.. * [#_](https://github.com/OasisLMF/OasisPlatform/issues/_) -
+
+`1.8.1`_
+---------
+.. start_latest_release
+* [#380](https://github.com/OasisLMF/OasisPlatform/issues/380) -  Use partial update of FileFields to prevent overwrite
+.. end_latest_release
 
 `1.8.0`_
 ---------
-.. start_latest_release
 * [#353](https://github.com/OasisLMF/OasisPlatform/issues/353) - Add Slack notification for software releases
 * [#369](https://github.com/OasisLMF/OasisPlatform/issues/369) - Add Known issues to release notes
 * [#370](https://github.com/OasisLMF/OasisPlatform/issues/370) - Fix for unsigned URLS in S3 Storage manager 
 * [#372](https://github.com/OasisLMF/OasisPlatform/issues/372) - Exposure summary produces incorrect 'overview' TIV
 * [#374](https://github.com/OasisLMF/OasisPlatform/issues/374) - Schema fix analysis_settings.json
-.. end_latest_release
 
 `1.7.1`_
 --------
@@ -227,6 +230,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.8.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.0...1.8.1
 .. _`1.8.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.7.1...1.8.0
 .. _`1.7.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.7.0...1.7.1
 .. _`1.7.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.6.1...1.7.0
