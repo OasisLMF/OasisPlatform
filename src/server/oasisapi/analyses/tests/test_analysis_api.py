@@ -730,7 +730,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                         "analysis_tag": "test_analysis",
                         "module_supplier_id": "OasisIM",
                         "model_version_id": "1",
-                        "number_of_samples": 0,
+                        "number_of_samples": -1,
                         "gul_threshold": 0,
                         "model_settings": {
                           "use_random_number_file": True,
@@ -762,7 +762,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 )
 
                 validation_error =  {
-                    'number_of_samples': ['0 is less than the minimum of 1'],
+                    'number_of_samples': ['-1 is less than the minimum of 0'],
                     'gul_summaries-0-aalcalc': ["'Not-A-Boolean' is not of type 'boolean'"],
                     'required': ["'source_tag' is a required property"]
                 }
