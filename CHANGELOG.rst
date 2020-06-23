@@ -1,17 +1,21 @@
 OasisPlatform Changelog
 =======================
 
-`1.8.1`_
+`1.8.2`_
 ---------
 .. start_latest_release
-* [#380](https://github.com/OasisLMF/OasisPlatform/issues/380) -  Use partial update of FileFields to prevent overwrite
+* Update MDK to 1.8.2
 .. end_latest_release
+
+`1.8.1`_
+---------
+* [#380](https://github.com/OasisLMF/OasisPlatform/issues/380) -  Use partial update of FileFields to prevent overwrite
 
 `1.8.0`_
 ---------
 * [#353](https://github.com/OasisLMF/OasisPlatform/issues/353) - Add Slack notification for software releases
 * [#369](https://github.com/OasisLMF/OasisPlatform/issues/369) - Add Known issues to release notes
-* [#370](https://github.com/OasisLMF/OasisPlatform/issues/370) - Fix for unsigned URLS in S3 Storage manager 
+* [#370](https://github.com/OasisLMF/OasisPlatform/issues/370) - Fix for unsigned URLS in S3 Storage manager
 * [#372](https://github.com/OasisLMF/OasisPlatform/issues/372) - Exposure summary produces incorrect 'overview' TIV
 * [#374](https://github.com/OasisLMF/OasisPlatform/issues/374) - Schema fix analysis_settings.json
 
@@ -38,7 +42,7 @@ OasisPlatform Changelog
 * #317 - Added Backwards compatibility tests to CI
 * #313 - Added option to set run dir location in worker
 * #284 - Added support for S3 Object stores
-* #311 - Improved error logging in worker monitor 
+* #311 - Improved error logging in worker monitor
 * #306 - Fixed logical deletion for AnalysisModels
 * #335 - Accept compressed CSV files as portfolio uploads
 * Added `tooltip` to model_settings schema
@@ -46,7 +50,7 @@ OasisPlatform Changelog
 `1.5.1`_
 --------
 * #309 - worker: Missing error logs from input generation
-* #307 - worker: Show subprocess output in worker logs 
+* #307 - worker: Show subprocess output in worker logs
 
 `1.5.0`_
 --------
@@ -143,7 +147,7 @@ OasisPlatform Changelog
 --------
  * Update Oasislmf to 1.3.9
  * Update API test script
- 
+
 `1.1.0`_
 --------
  * New endpoint `complex_data_files`
@@ -230,6 +234,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.8.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.1...1.8.2
 .. _`1.8.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.0...1.8.1
 .. _`1.8.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.7.1...1.8.0
 .. _`1.7.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.7.0...1.7.1
