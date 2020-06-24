@@ -1,11 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`1.8.3`_
+--------
+.. start_latest_release
+* Update MDK to 1.8.3
+.. end_latest_release
+
 `1.8.2`_
 ---------
-.. start_latest_release
 * Update MDK to 1.8.2
-.. end_latest_release
 
 `1.8.1`_
 ---------

@@ -35,7 +35,7 @@ markupsafe==1.1.1         # via jinja2
 monotonic==1.5            # via fasteners
 more-itertools==8.2.0     # via pytest
 numpy==1.18.1             # via pandas
-oasislmf==1.8.2
+oasislmf==1.8.3
 packaging==20.1           # via pytest
 pandas==1.0.3             # via oasislmf
 pathlib2==2.3.5
