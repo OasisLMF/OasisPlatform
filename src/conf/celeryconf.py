@@ -48,3 +48,7 @@ CELERY_ENABLE_UTC = True
 
 #: Celery config - concurrency
 CELERYD_CONCURRENCY = 1
+
+#: Celery config - Send task fail signal on lost worker
+CELERY_TASK_REJECT_ON_WORKER_LOST = False
+CELERY_SEND_EVENTS = True
