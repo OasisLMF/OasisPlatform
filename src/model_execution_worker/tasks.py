@@ -97,6 +97,34 @@ def get_worker_versions():
     }
 
 
+
+def check_worker_lost(task, analysis_pk):
+    """
+    SAFE GUARD: - Fail any tasks received from dead workers 
+    -------------------------------------------------------
+    Setting the option `acks_late` means tasks will remain on the Queue until after 
+    a tasks has completed. If the worker goes down during the execution of `generate_input` 
+    or `start_analysis_task` then if another work is available the task will be picked up
+    on an active worker. 
+
+    When the task is picked up for a 2nd time, the new worker will reject it will 
+    'WorkerLostError' and mark the execution as failed.
+
+    Note that this is not the ideal approach, since at least one alive worker is required to
+    fail as crash workers task. 
+
+    A better method is to use either tasks signals or celery events to fail the task immediately,
+    so this should be viewed as a fallback option.
+    """
+    current_state = task.AsyncResult(task.request.id).state
+    logging.info(current_state)
+    if current_state == RUNNING_TASK_STATUS:
+        raise WorkerLostError(
+            'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
+        )
+    task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
+    
+
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
@@ -222,30 +250,6 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
         settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 
 
-    """
-    SAFE GUARD: - Fail any tasks received from dead workers 
-    -------------------------------------------------------
-    Setting the option `acks_late` means tasks will remain on the Queue until after 
-    a tasks has completed. If the worker goes down during the execution of `generate_input` 
-    or `start_analysis_task` then if another work is available the task will be picked up
-    on an active worker. 
-
-    When the task is picked up for a 2nd time, the new worker will reject it will 
-    'WorkerLostError' and mark the execution as failed.
-
-    Note that this is not the ideal approach, since at least one alive worker is required to
-    fail as crash workers task. 
-
-    A better method is to use either tasks signals or celery events to fail the task immediately,
-    so this should be viewed as a fallback option.
-    """
-    current_state = self.AsyncResult(self.request.id).state
-    logging.info(current_state)
-    if current_state == RUNNING_TASK_STATUS:
-        raise WorkerLostError('Received task from dead worker')
-    self.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
-
-
     with get_lock() as gotten:
         if not gotten:
             logging.info("Failed to get resource lock - retry task")
@@ -256,6 +260,9 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
         logging.info("Acquired resource lock")
 
         try:
+            # Check if this task was re-queued from a lost worker
+            check_worker_lost(self, analysis_pk)
+
             notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
             output_location, traceback_location, log_location, return_code = start_analysis(
@@ -411,30 +418,8 @@ def generate_input(self,
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
 
-
-    """
-    SAFE GUARD: - Fail any tasks received from dead workers 
-    -------------------------------------------------------
-    Setting the option `acks_late` means tasks will remain on the Queue until after 
-    a tasks has completed. If the worker goes down during the execution of `generate_input` 
-    or `start_analysis_task` then if another work is available the task will be picked up
-    on an active worker. 
-
-    When the task is picked up for a 2nd time, the new worker will reject it will 
-    'WorkerLostError' and mark the execution as failed.
-
-    Note that this is not the ideal approach, since at least one alive worker is required to
-    fail as crash workers task. 
-
-    A better method is to use either tasks signals or celery events to fail the task immediately,
-    so this should be viewed as a fallback option.
-    """
-    current_state = self.AsyncResult(self.request.id).state
-    logging.info(current_state)
-    if current_state == RUNNING_TASK_STATUS:
-        raise WorkerLostError('Received task from dead worker')
-    self.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
-
+    # Check if this task was re-queued from a lost worker
+    check_worker_lost(self, analysis_pk)
 
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
     filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
