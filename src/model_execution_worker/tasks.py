@@ -17,6 +17,7 @@ from contextlib import contextmanager, suppress
 from celery import Celery, signature
 from celery.task import task
 from celery.signals import worker_ready
+from celery.exceptions import WorkerLostError
 from oasislmf.utils import status
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
@@ -41,7 +42,6 @@ CELERY.config_from_object(celery_conf)
 logging.info("Started worker")
 
 filestore = StorageSelector(settings)
-
 
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
@@ -203,7 +203,7 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
-@task(name='run_analysis', bind=True)
+@task(name='run_analysis', bind=True, acks_late=True)
 def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None):
     """Task wrapper for running an analysis.
 
@@ -217,10 +217,34 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
     Returns:
         (string) The location of the outputs.
     """
-
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
     logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
         settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
+
+
+    """
+    SAFE GUARD: - Fail any tasks received from dead workers 
+    -------------------------------------------------------
+    Setting the option `acks_late` means tasks will remain on the Queue until after 
+    a tasks has completed. If the worker goes down during the execution of `generate_input` 
+    or `start_analysis_task` then if another work is available the task will be picked up
+    on an active worker. 
+
+    When the task is picked up for a 2nd time, the new worker will reject it will 
+    'WorkerLostError' and mark the execution as failed.
+
+    Note that this is not the ideal approach, since at least one alive worker is required to
+    fail as crash workers task. 
+
+    A better method is to use either tasks signals or celery events to fail the task immediately,
+    so this should be viewed as a fallback option.
+    """
+    current_state = self.AsyncResult(self.request.id).state
+    logging.info(current_state)
+    if current_state == RUNNING_TASK_STATUS:
+        raise WorkerLostError('Received task from dead worker')
+    self.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
+
 
     with get_lock() as gotten:
         if not gotten:
@@ -356,8 +380,9 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
     return output_location, traceback_location, log_location, result.returncode
 
 
-@task(name='generate_input')
-def generate_input(analysis_pk,
+@task(name='generate_input', bind=True, acks_late=True)
+def generate_input(self,
+                   analysis_pk,
                    loc_file,
                    acc_file=None,
                    info_file=None,
@@ -385,8 +410,33 @@ def generate_input(analysis_pk,
     """
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
-    notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
 
+
+    """
+    SAFE GUARD: - Fail any tasks received from dead workers 
+    -------------------------------------------------------
+    Setting the option `acks_late` means tasks will remain on the Queue until after 
+    a tasks has completed. If the worker goes down during the execution of `generate_input` 
+    or `start_analysis_task` then if another work is available the task will be picked up
+    on an active worker. 
+
+    When the task is picked up for a 2nd time, the new worker will reject it will 
+    'WorkerLostError' and mark the execution as failed.
+
+    Note that this is not the ideal approach, since at least one alive worker is required to
+    fail as crash workers task. 
+
+    A better method is to use either tasks signals or celery events to fail the task immediately,
+    so this should be viewed as a fallback option.
+    """
+    current_state = self.AsyncResult(self.request.id).state
+    logging.info(current_state)
+    if current_state == RUNNING_TASK_STATUS:
+        raise WorkerLostError('Received task from dead worker')
+    self.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
+
+
+    notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
     filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
     config_path = get_oasislmf_config_path()
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
