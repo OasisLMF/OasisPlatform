@@ -30,17 +30,6 @@ from ..celery import celery_app
 logger = get_task_logger(__name__)
 
 
-## Stub for task signal handler
-@signals.task_retry.connect
-@signals.task_failure.connect
-@signals.task_success.connect
-@signals.task_revoked.connect
-@signals.task_unknown.connect
-@signals.task_received.connect
-def task_signal_handler(**kwargs):
-    logger.debug('TASK SIGNAL: {}'.format(kwargs))
-
-
 def is_valid_url(url):
     if url:
         result = urlparse(url)
