@@ -5,7 +5,7 @@ import os
 
 from celery.utils.log import get_task_logger
 from celery import Task
-from celery.signals import worker_ready
+from celery import signals
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
@@ -40,7 +40,7 @@ def is_valid_url(url):
 def is_in_bucket(object_key):
     if not hasattr(default_storage, 'bucket'):
         return False
-    else:    
+    else:
         try:
             default_storage.bucket.Object(object_key).load()
             return True
@@ -52,7 +52,7 @@ def is_in_bucket(object_key):
 
 
 def store_file(reference, content_type, creator, required=True):
-    """ Returns a `RelatedFile` obejct to store 
+    """ Returns a `RelatedFile` obejct to store
 
     :param reference: Storage reference of file (url or file path)
     :type  reference: string
@@ -66,7 +66,7 @@ def store_file(reference, content_type, creator, required=True):
     :param required: Allow for None returns if set to false
     :type  required: boolean
 
-    :return: Model Object holding a Django file 
+    :return: Model Object holding a Django file
     :rtype RelatedFile
     """
 
@@ -91,8 +91,8 @@ def store_file(reference, content_type, creator, required=True):
                 creator=creator,
             )
 
-    # Download data from S3 Bucket 
-    if is_in_bucket(reference): 
+    # Download data from S3 Bucket
+    if is_in_bucket(reference):
         with TemporaryFile() as tmp_file:
             default_storage.bucket.download_fileobj(reference, tmp_file)
             fname = os.path.basename(reference)
@@ -109,7 +109,7 @@ def store_file(reference, content_type, creator, required=True):
         file_path = os.path.join(
            settings.MEDIA_ROOT,
            file_name,
-        )    
+        )
         return RelatedFile.objects.create(
             file=file_path,
             filename=file_name,
@@ -118,7 +118,7 @@ def store_file(reference, content_type, creator, required=True):
         )
     except TypeError as e:
         if not required:
-            logger.warning(f'Failed to store file reference: {reference} - {e}') 
+            logger.warning(f'Failed to store file reference: {reference} - {e}')
             return None
         else:
             raise e
@@ -188,20 +188,20 @@ class LogTaskError(Task):
                 raise e
 
 
-@worker_ready.connect
+@signals.worker_ready.connect
 def log_worker_monitor(sender, **k):
-    logger.info('DEBUG: {}'.format(settings.DEBUG))    
-    logger.info('DB_ENGINE: {}'.format(settings.DB_ENGINE))    
-    logger.info('STORAGE_TYPE: {}'.format(settings.STORAGE_TYPE))    
-    logger.info('DEFAULT_FILE_STORAGE: {}'.format(settings.DEFAULT_FILE_STORAGE))    
-    logger.info('MEDIA_ROOT: {}'.format(settings.MEDIA_ROOT))    
-    logger.info('AWS_STORAGE_BUCKET_NAME: {}'.format(settings.AWS_STORAGE_BUCKET_NAME))    
-    logger.info('AWS_LOCATION: {}'.format(settings.AWS_LOCATION))    
-    logger.info('AWS_S3_REGION_NAME: {}'.format(settings.AWS_S3_REGION_NAME))    
-    logger.info('AWS_QUERYSTRING_AUTH: {}'.format(settings.AWS_QUERYSTRING_AUTH))    
-    logger.info('AWS_QUERYSTRING_EXPIRE: {}'.format(settings.AWS_QUERYSTRING_EXPIRE))    
-    logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))    
-    logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))    
+    logger.info('DEBUG: {}'.format(settings.DEBUG))
+    logger.info('DB_ENGINE: {}'.format(settings.DB_ENGINE))
+    logger.info('STORAGE_TYPE: {}'.format(settings.STORAGE_TYPE))
+    logger.info('DEFAULT_FILE_STORAGE: {}'.format(settings.DEFAULT_FILE_STORAGE))
+    logger.info('MEDIA_ROOT: {}'.format(settings.MEDIA_ROOT))
+    logger.info('AWS_STORAGE_BUCKET_NAME: {}'.format(settings.AWS_STORAGE_BUCKET_NAME))
+    logger.info('AWS_LOCATION: {}'.format(settings.AWS_LOCATION))
+    logger.info('AWS_S3_REGION_NAME: {}'.format(settings.AWS_S3_REGION_NAME))
+    logger.info('AWS_QUERYSTRING_AUTH: {}'.format(settings.AWS_QUERYSTRING_AUTH))
+    logger.info('AWS_QUERYSTRING_EXPIRE: {}'.format(settings.AWS_QUERYSTRING_EXPIRE))
+    logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))
+    logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 @celery_app.task(name='run_register_worker')
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
