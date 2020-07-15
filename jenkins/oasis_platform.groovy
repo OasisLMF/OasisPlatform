@@ -1,4 +1,4 @@
-//JOB TEMPLATE                                                                                                                                                 
+//JOB TEMPLATE
 def createStage(stage_name, stage_params, propagate_flag) {
     return {
         stage("Test: ${stage_name}") {
@@ -7,7 +7,7 @@ def createStage(stage_name, stage_params, propagate_flag) {
     }
 }
 
-// LIST of default models sub-jobs to trigger as part of regression testing 
+// LIST of default models sub-jobs to trigger as part of regression testing
 def model_regression_list = """
 oasis_PiWind/develop
 GemFoundation_GMO/master
@@ -26,10 +26,6 @@ node {
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: 'develop'],
-        //[$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'develop'],
-        //[$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
-        //[$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: 'control_set 0_case 1_case'],
-        //[$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
         [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
@@ -67,8 +63,6 @@ node {
     String oasis_func      = "oasis_server"
 
     // oasis base model test
-    //String model_branch     = params.MODEL_BRANCH  // Git repo branch to build from
-    //String model_name       = params.MODEL_NAME
     String model_branch     = 'develop'
     String model_name       = 'OasisPiWind'
     String model_tests      = 'control_set'
@@ -210,7 +204,7 @@ node {
         }
 
        if (params.CHECK_COMPATIBILITY) {
-            // START API for base model tests 
+            // START API for base model tests
             stage('Run: API Server') {
                 dir(build_workspace) {
                     sh PIPELINE + " start_model"
@@ -240,7 +234,7 @@ node {
                    // run test
                     sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
                }
-           }    
+           }
            stage("Compatibility with server:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
                    // Set tags
@@ -253,14 +247,14 @@ node {
                    // run test
                    sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
                }
-           }    
+           }
        }
 
        if (params.RUN_REGRESSION) {
-           // RUN model regression tests 
+           // RUN model regression tests
            job_params = [
                 [$class: 'StringParameterValue',  name: 'TAG_OASIS', value: params.RELEASE_TAG]
-           ]     
+           ]
             //RUN SEQUENTIAL JOBS -  Fail on error
             if (params.MODEL_REGRESSION){
                 jobs_sequential = params.MODEL_REGRESSION.split()
@@ -277,7 +271,7 @@ node {
                 }
             }
 
-            //RUN SEQUENTIAL JOBS - Continue on error 
+            //RUN SEQUENTIAL JOBS - Continue on error
             if (params.SEQUENTIAL_JOB_LIST_NOFAIL){
                 jobs_sequential = params.SEQUENTIAL_JOB_LIST_NOFAIL.split()
                 for (pipeline in jobs_sequential){
@@ -344,7 +338,7 @@ node {
                             sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
                         }
 
-                        // Create milestone 
+                        // Create milestone
                         sh PIPELINE + " create_milestone ${gh_token} ${repo} ${env.TAG_RELEASE} CHANGELOG.rst"
                     }
                 }
