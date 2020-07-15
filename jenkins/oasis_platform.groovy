@@ -7,10 +7,19 @@ def createStage(stage_name, stage_params, propagate_flag) {
     }
 }
 
+// LIST of default models sub-jobs to trigger as part of regression testing 
+def model_regression_list = """
+oasis_PiWind/master
+GemFoundation_GMO/master
+corelogic_quake/master
+RiskFrontiers_hail/master
+"""
+
 node {
     hasFailed = false
     sh 'sudo /var/lib/jenkins/jenkins-chown'
     deleteDir() // wipe out the workspace
+
 
     properties([
       parameters([
@@ -20,9 +29,9 @@ node {
         //[$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'develop'],
         //[$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
         //[$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: 'control_set 0_case 1_case'],
-        [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
+        //[$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
-        [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: '\n\n'],
+        [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
@@ -82,7 +91,7 @@ node {
     env.PIPELINE_LOAD = script_dir + utils_sh
 
     env.OASIS_MODEL_DATA_DIR = "${env.WORKSPACE}/${model_workspace}"
-    env.TAG_BASE             = params.BASE_TAG     //Build TAG for base set of images
+    //env.TAG_BASE             = params.BASE_TAG     //Build TAG for base set of images
     env.TAG_RELEASE          = params.RELEASE_TAG  //Build TAG for TARGET image
     env.TAG_RUN_PLATFORM     = params.RELEASE_TAG
     env.TAG_RUN_WORKER       = params.RELEASE_TAG
@@ -258,6 +267,24 @@ node {
                 ["${it}": createStage(it, job_params, true)]
             }
         }
+        /*
+        //RUN SEQUENTIAL JOBS -  Fail on error
+        if (params.SEQUENTIAL_JOB_LIST){
+            jobs_sequential = params.SEQUENTIAL_JOB_LIST.split()
+            for (pipeline in jobs_sequential){
+                createStage(pipeline, job_params, true).call()
+            }
+        }
+
+
+        //RUN SEQUENTIAL JOBS - Continue on error 
+        if (params.SEQUENTIAL_JOB_LIST_NOFAIL){
+            jobs_sequential = params.SEQUENTIAL_JOB_LIST_NOFAIL.split()
+            for (pipeline in jobs_sequential){
+                createStage(pipeline, job_params, false).call()
+            }
+        }
+        **/
 
        if (params.PUBLISH){
             parallel(
