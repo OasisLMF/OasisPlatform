@@ -1,7 +1,7 @@
 //JOB TEMPLATE                                                                                                                                                 
 def createStage(stage_name, stage_params, propagate_flag) {
     return {
-        stage("Build: ${stage_name}") {
+        stage("Test: ${stage_name}") {
             build job: "${stage_name}", parameters: stage_params, propagate: propagate_flag
         }
     }
