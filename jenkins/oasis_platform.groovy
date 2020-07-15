@@ -1,20 +1,36 @@
+//JOB TEMPLATE
+def createStage(stage_name, stage_params, propagate_flag) {
+    return {
+        stage("Test: ${stage_name}") {
+            build job: "${stage_name}", parameters: stage_params, propagate: propagate_flag
+        }
+    }
+}
+
+// LIST of default models sub-jobs to trigger as part of regression testing
+def model_regression_list = """
+oasis_PiWind/develop
+GemFoundation_GMO/master
+corelogic_quake/master
+RiskFrontiers_hail/master
+"""
+
 node {
     hasFailed = false
     sh 'sudo /var/lib/jenkins/jenkins-chown'
     deleteDir() // wipe out the workspace
 
+
     properties([
       parameters([
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'develop'],
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: 'develop'],
-        [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
-        [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
-        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: 'control_set 0_case 1_case'],
+        [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'RUN_REGRESSION', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'AUTO_MERGE', defaultValue: Boolean.valueOf(true)],
@@ -46,9 +62,10 @@ node {
     String utils_sh        = '/buildscript/utils.sh'
     String oasis_func      = "oasis_server"
 
-    // oasis model test
-    String model_branch     = params.MODEL_BRANCH  // Git repo branch to build from
-    String model_name       = params.MODEL_NAME
+    // oasis base model test
+    String model_branch     = 'develop'
+    String model_name       = 'OasisPiWind'
+    String model_tests      = 'control_set'
     String model_workspace  = "${model_name}_workspace"
     String model_git_url    = "git@github.com:OasisLMF/${model_name}.git"
     String model_test_dir  = "${env.WORKSPACE}/${model_workspace}/tests/"
@@ -69,7 +86,7 @@ node {
     env.PIPELINE_LOAD = script_dir + utils_sh
 
     env.OASIS_MODEL_DATA_DIR = "${env.WORKSPACE}/${model_workspace}"
-    env.TAG_BASE             = params.BASE_TAG     //Build TAG for base set of images
+    //env.TAG_BASE             = params.BASE_TAG     //Build TAG for base set of images
     env.TAG_RELEASE          = params.RELEASE_TAG  //Build TAG for TARGET image
     env.TAG_RUN_PLATFORM     = params.RELEASE_TAG
     env.TAG_RUN_WORKER       = params.RELEASE_TAG
@@ -140,8 +157,8 @@ node {
             stage('Git install MDK'){
                 dir(oasis_workspace) {
                     // update worker and server install lists
-                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.txt"
-                    sh "sed -i 's|^oasislmf.*|-e git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
+                    sh "sed -i 's|^oasislmf.*| git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.txt"
+                    sh "sed -i 's|^oasislmf.*| git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
                 }
             }
         }
@@ -185,22 +202,26 @@ node {
                 }
             }
         }
-        stage('Run: API Server') {
-            dir(build_workspace) {
-                sh PIPELINE + " start_model"
-            }
-        }
-
-        api_server_tests = params.RUN_TESTS.split()
-        for(int i=0; i < api_server_tests.size(); i++) {
-            stage("Run : ${api_server_tests[i]}"){
-                dir(build_workspace) {
-                    sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[i]}"
-                }
-            }
-        }
 
        if (params.CHECK_COMPATIBILITY) {
+            // START API for base model tests
+            stage('Run: API Server') {
+                dir(build_workspace) {
+                    sh PIPELINE + " start_model"
+                }
+            }
+
+            // RUN and test piwind
+            api_server_tests = model_tests.split()
+            for(int i=0; i < api_server_tests.size(); i++) {
+                stage("Run : ${api_server_tests[i]}"){
+                    dir(build_workspace) {
+                        sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[i]}"
+                    }
+                }
+            }
+
+           // CHECK last release compatibility
            stage("Compatibility with worker:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
                    // Set tags
@@ -213,7 +234,7 @@ node {
                    // run test
                     sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
                }
-           }    
+           }
            stage("Compatibility with server:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
                    // Set tags
@@ -226,11 +247,41 @@ node {
                    // run test
                    sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
                }
-           }    
+           }
        }
 
+       if (params.RUN_REGRESSION) {
+           // RUN model regression tests
+           job_params = [
+                [$class: 'StringParameterValue',  name: 'TAG_OASIS', value: params.RELEASE_TAG]
+           ]
+            //RUN SEQUENTIAL JOBS -  Fail on error
+            if (params.MODEL_REGRESSION){
+                jobs_sequential = params.MODEL_REGRESSION.split()
+                for (pipeline in jobs_sequential){
+                    createStage(pipeline, job_params, true).call()
+                }
+            }
+            /*
+            //RUN PARALLEL JOBS
+            if (params.MODEL_REGRESSION){
+                jobs_parallel   = params.MODEL_REGRESSION.split()
+                parallel jobs_parallel.collectEntries {
+                    ["${it}": createStage(it, job_params, true)]
+                }
+            }
 
-        if (params.PUBLISH){
+            //RUN SEQUENTIAL JOBS - Continue on error
+            if (params.SEQUENTIAL_JOB_LIST_NOFAIL){
+                jobs_sequential = params.SEQUENTIAL_JOB_LIST_NOFAIL.split()
+                for (pipeline in jobs_sequential){
+                    createStage(pipeline, job_params, false).call()
+                }
+            }
+            **/
+       }
+
+       if (params.PUBLISH){
             parallel(
                 publish_api_server: {
                     stage ('Publish: api_server') {
@@ -287,7 +338,7 @@ node {
                             sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
                         }
 
-                        // Create milestone 
+                        // Create milestone
                         sh PIPELINE + " create_milestone ${gh_token} ${repo} ${env.TAG_RELEASE} CHANGELOG.rst"
                     }
                 }
