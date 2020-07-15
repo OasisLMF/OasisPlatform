@@ -7,12 +7,13 @@ node {
       parameters([
         [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'develop'],
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: 'develop'],
-        [$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
+        //[$class: 'StringParameterDefinition',  name: 'MODEL_BRANCH', defaultValue: 'develop'],
+        //[$class: 'StringParameterDefinition',  name: 'MODEL_NAME', defaultValue: 'OasisPiWind'],
+        //[$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: 'control_set 0_case 1_case'],
         [$class: 'StringParameterDefinition',  name: 'BASE_TAG', defaultValue: 'latest'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
-        [$class: 'StringParameterDefinition',  name: 'RUN_TESTS', defaultValue: 'control_set 0_case 1_case'],
+        [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: '\n\n'],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
@@ -46,9 +47,12 @@ node {
     String utils_sh        = '/buildscript/utils.sh'
     String oasis_func      = "oasis_server"
 
-    // oasis model test
-    String model_branch     = params.MODEL_BRANCH  // Git repo branch to build from
-    String model_name       = params.MODEL_NAME
+    // oasis base model test
+    //String model_branch     = params.MODEL_BRANCH  // Git repo branch to build from
+    //String model_name       = params.MODEL_NAME
+    String model_branch     = 'develop'
+    String model_name       = 'OasisPiWind'
+    String model_tests      = 'control_set'
     String model_workspace  = "${model_name}_workspace"
     String model_git_url    = "git@github.com:OasisLMF/${model_name}.git"
     String model_test_dir  = "${env.WORKSPACE}/${model_workspace}/tests/"
@@ -185,13 +189,16 @@ node {
                 }
             }
         }
+
+        // START API for base model tests 
         stage('Run: API Server') {
             dir(build_workspace) {
                 sh PIPELINE + " start_model"
             }
         }
 
-        api_server_tests = params.RUN_TESTS.split()
+        // RUN and test piwind
+        api_server_tests = model_tests.split()
         for(int i=0; i < api_server_tests.size(); i++) {
             stage("Run : ${api_server_tests[i]}"){
                 dir(build_workspace) {
@@ -200,6 +207,7 @@ node {
             }
         }
 
+       // CHECK last release compatibility
        if (params.CHECK_COMPATIBILITY) {
            stage("Compatibility with worker:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
@@ -229,8 +237,20 @@ node {
            }    
        }
 
+      
+       // RUN model regression tests 
+       job_params = [
+            [$class: 'StringParameterValue',  name: 'TAG_OASIS', value: params.RELEASE_TAG]
+       ]     
+        //RUN PARALLEL JOBS
+        if (params.MODEL_REGRESSION){
+            jobs_parallel   = params.MODEL_REGRESSION.split()
+            parallel jobs_parallel.collectEntries {
+                ["${it}": createStage(it, job_params, true)]
+            }
+        }
 
-        if (params.PUBLISH){
+       if (params.PUBLISH){
             parallel(
                 publish_api_server: {
                     stage ('Publish: api_server') {
