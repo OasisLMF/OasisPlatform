@@ -2,7 +2,7 @@
 def createStage(stage_name, stage_params, propagate_flag) {
     return {
         stage("Build: ${stage_name}") {
-            build job: "./${stage_name}", parameters: stage_params, propagate: propagate_flag
+            build job: "${stage_name}", parameters: stage_params, propagate: propagate_flag
         }
     }
 }
@@ -199,25 +199,25 @@ node {
             }
         }
 
-        // START API for base model tests 
-        stage('Run: API Server') {
-            dir(build_workspace) {
-                sh PIPELINE + " start_model"
-            }
-        }
-
-        // RUN and test piwind
-        api_server_tests = model_tests.split()
-        for(int i=0; i < api_server_tests.size(); i++) {
-            stage("Run : ${api_server_tests[i]}"){
+       if (params.CHECK_COMPATIBILITY) {
+            // START API for base model tests 
+            stage('Run: API Server') {
                 dir(build_workspace) {
-                    sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[i]}"
+                    sh PIPELINE + " start_model"
                 }
             }
-        }
 
-       // CHECK last release compatibility
-       if (params.CHECK_COMPATIBILITY) {
+            // RUN and test piwind
+            api_server_tests = model_tests.split()
+            for(int i=0; i < api_server_tests.size(); i++) {
+                stage("Run : ${api_server_tests[i]}"){
+                    dir(build_workspace) {
+                        sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[i]}"
+                    }
+                }
+            }
+
+           // CHECK last release compatibility
            stage("Compatibility with worker:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
                    // Set tags
