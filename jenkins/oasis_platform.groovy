@@ -9,7 +9,7 @@ def createStage(stage_name, stage_params, propagate_flag) {
 
 // LIST of default models sub-jobs to trigger as part of regression testing 
 def model_regression_list = """
-oasis_PiWind/master
+oasis_PiWind/develop
 GemFoundation_GMO/master
 corelogic_quake/master
 RiskFrontiers_hail/master
@@ -34,6 +34,7 @@ node {
         [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'RUN_REGRESSION', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'AUTO_MERGE', defaultValue: Boolean.valueOf(true)],
@@ -255,36 +256,36 @@ node {
            }    
        }
 
-      
-       // RUN model regression tests 
-       job_params = [
-            [$class: 'StringParameterValue',  name: 'TAG_OASIS', value: params.RELEASE_TAG]
-       ]     
-        //RUN PARALLEL JOBS
-        if (params.MODEL_REGRESSION){
-            jobs_parallel   = params.MODEL_REGRESSION.split()
-            parallel jobs_parallel.collectEntries {
-                ["${it}": createStage(it, job_params, true)]
+       if (params.RUN_REGRESSION) {
+           // RUN model regression tests 
+           job_params = [
+                [$class: 'StringParameterValue',  name: 'TAG_OASIS', value: params.RELEASE_TAG]
+           ]     
+            //RUN SEQUENTIAL JOBS -  Fail on error
+            if (params.MODEL_REGRESSION){
+                jobs_sequential = params.MODEL_REGRESSION.split()
+                for (pipeline in jobs_sequential){
+                    createStage(pipeline, job_params, true).call()
+                }
             }
-        }
-        /*
-        //RUN SEQUENTIAL JOBS -  Fail on error
-        if (params.SEQUENTIAL_JOB_LIST){
-            jobs_sequential = params.SEQUENTIAL_JOB_LIST.split()
-            for (pipeline in jobs_sequential){
-                createStage(pipeline, job_params, true).call()
+            /*
+            //RUN PARALLEL JOBS
+            if (params.MODEL_REGRESSION){
+                jobs_parallel   = params.MODEL_REGRESSION.split()
+                parallel jobs_parallel.collectEntries {
+                    ["${it}": createStage(it, job_params, true)]
+                }
             }
-        }
 
-
-        //RUN SEQUENTIAL JOBS - Continue on error 
-        if (params.SEQUENTIAL_JOB_LIST_NOFAIL){
-            jobs_sequential = params.SEQUENTIAL_JOB_LIST_NOFAIL.split()
-            for (pipeline in jobs_sequential){
-                createStage(pipeline, job_params, false).call()
+            //RUN SEQUENTIAL JOBS - Continue on error 
+            if (params.SEQUENTIAL_JOB_LIST_NOFAIL){
+                jobs_sequential = params.SEQUENTIAL_JOB_LIST_NOFAIL.split()
+                for (pipeline in jobs_sequential){
+                    createStage(pipeline, job_params, false).call()
+                }
             }
-        }
-        **/
+            **/
+       }
 
        if (params.PUBLISH){
             parallel(
