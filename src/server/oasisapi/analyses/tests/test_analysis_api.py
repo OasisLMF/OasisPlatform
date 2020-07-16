@@ -85,7 +85,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 self.maxDiff = None
                 user = fake_user()
                 model = fake_analysis_model()
-                portfolio = fake_portfolio()
+                portfolio = fake_portfolio(location_file=fake_related_file())
 
                 response = self.app.post(
                     reverse('analysis-list', kwargs={'version': 'v1'}),
@@ -149,7 +149,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 self.maxDiff = None
                 user = fake_user()
                 model = fake_analysis_model()
-                portfolio = fake_portfolio()
+                portfolio = fake_portfolio(location_file=fake_related_file())
 
                 response = self.app.post(
                     reverse('analysis-list', kwargs={'version': 'v1'}),
@@ -516,7 +516,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
     def test_portfolio_is_supplied___portfolio_is_replaced(self):
         user = fake_user()
         analysis = fake_analysis()
-        new_portfolio = fake_portfolio()
+        new_portfolio = fake_portfolio(location_file=fake_related_file())
 
         response = self.app.post(
             analysis.get_absolute_copy_url(),
