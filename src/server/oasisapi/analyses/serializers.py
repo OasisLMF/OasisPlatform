@@ -104,11 +104,12 @@ class AnalysisSerializer(serializers.ModelSerializer):
             attrs['creator'] = self.context.get('request').user
 
         # Check that portfilio has a location file
-        if not attrs['portfolio'].location_file:
-            raise ValidationError({'portfolio': '"location_file" must not be null'})
+        if attrs.get('portfolio'):
+            if not attrs['portfolio'].location_file:
+                raise ValidationError({'portfolio': '"location_file" must not be null'})
 
         # check that model isn't soft-deleted
-        if hasattr(attrs, 'model'):    
+        if attrs.get('model'):    
             if attrs['model'].deleted:
                 error = {'model': ["Model pk \"{}\" - has been deleted.".format(attrs['model'].id)]}
                 raise ValidationError(detail=error)
