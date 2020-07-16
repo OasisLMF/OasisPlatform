@@ -1,11 +1,20 @@
 OasisPlatform Changelog
 =======================
 
-`1.8.3`_
+`1.9.0`_
 --------
 .. start_latest_release
-* Update MDK to 1.8.3
+* [#391](https://github.com/OasisLMF/OasisPlatform/issues/391) - Store `keys-errors.csv` in API on Generate Inputs error
+* [#375](https://github.com/OasisLMF/OasisPlatform/issues/375) - Add check for non-null location_file to analyses serializer
+* [#394](https://github.com/OasisLMF/OasisPlatform/issues/394) - Pass model_settings.json to generate-oasis-files
+* [#381](https://github.com/OasisLMF/OasisPlatform/issues/381) - Worker Monitor - Not updating DB on failure
+* [#385](https://github.com/OasisLMF/OasisPlatform/issues/385) - Jenkins, improve model regression testing
+* [PR 396](https://github.com/OasisLMF/OasisPlatform/pull/396) - Added Django security patches (3.0.7)
 .. end_latest_release
+
+`1.8.3`_
+--------
+* Update MDK to 1.8.3
 
 `1.8.2`_
 ---------
@@ -238,6 +247,8 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.9.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.3...1.9.0
+.. _`1.8.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.2...1.8.3
 .. _`1.8.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.1...1.8.2
 .. _`1.8.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.0...1.8.1
 .. _`1.8.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.7.1...1.8.0
