@@ -100,18 +100,18 @@ def get_worker_versions():
 
 def check_worker_lost(task, analysis_pk):
     """
-    SAFE GUARD: - Fail any tasks received from dead workers 
+    SAFE GUARD: - Fail any tasks received from dead workers
     -------------------------------------------------------
-    Setting the option `acks_late` means tasks will remain on the Queue until after 
-    a tasks has completed. If the worker goes down during the execution of `generate_input` 
+    Setting the option `acks_late` means tasks will remain on the Queue until after
+    a tasks has completed. If the worker goes down during the execution of `generate_input`
     or `start_analysis_task` then if another work is available the task will be picked up
-    on an active worker. 
+    on an active worker.
 
-    When the task is picked up for a 2nd time, the new worker will reject it will 
+    When the task is picked up for a 2nd time, the new worker will reject it will
     'WorkerLostError' and mark the execution as failed.
 
     Note that this is not the ideal approach, since at least one alive worker is required to
-    fail as crash workers task. 
+    fail as crash workers task.
 
     A better method is to use either tasks signals or celery events to fail the task immediately,
     so this should be viewed as a fallback option.
@@ -123,7 +123,7 @@ def check_worker_lost(task, analysis_pk):
             'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
         )
     task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
-    
+
 
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
@@ -466,6 +466,10 @@ def generate_input(self,
 
         if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
             run_args.append('--disable-summarise-exposure')
+
+        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
+        if model_settings_fp and os.path.isfile(model_settings_fp):
+            run_args += ['--model-settings-json', model_settings_fp]
 
         # Log MDK generate command
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
