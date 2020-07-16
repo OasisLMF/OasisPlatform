@@ -325,45 +325,36 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     # SUCCESS
     if return_code == 0:
         analysis.status = Analysis.status_choices.READY
-        analysis.input_file = store_file(input_location, 'application/gzip', initiator)
-        analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator)
-        analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False)
-        analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False)
-        analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False)
-
     # FAILED
     else:
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
-        # Delete previous output
-        if analysis.input_file:
-            ref = analysis.input_file
-            analysis.input_file = None
-            ref.delete()
 
-        if analysis.lookup_errors_file:
-            ref = analysis.lookup_errors_file
-            analysis.lookup_errors_file = None
-            ref.delete()
+    # Delete previous output
+    if analysis.input_file:
+        ref = analysis.input_file
+        ref.delete()
+    if analysis.lookup_errors_file:
+        ref = analysis.lookup_errors_file
+        ref.delete()
+    if analysis.lookup_success_file:
+        ref = analysis.lookup_success_file
+        ref.delete()
+    if analysis.lookup_validation_file:
+        ref = analysis.lookup_validation_file
+        ref.delete()
+    if analysis.summary_levels_file:
+        ref = analysis.summary_levels_file
+        ref.delete()
+    if analysis.input_generation_traceback_file:
+        ref = analysis.input_generation_traceback_file
+        ref.delete()
 
-        if analysis.lookup_success_file:
-            ref = analysis.lookup_success_file
-            analysis.lookup_success_file = None
-            ref.delete()
-
-        if analysis.lookup_validation_file:
-            ref = analysis.lookup_validation_file
-            analysis.lookup_validation_file = None
-            ref.delete()
-
-        if analysis.summary_levels_file:
-            ref = analysis.summary_levels_file
-            analysis.summary_levels_file = None
-            ref.delete()
-
-        if analysis.input_generation_traceback_file:
-            ref = analysis.input_generation_traceback_file
-            analysis.input_generation_traceback_file = None
-            ref.delete()
+    # Add current Output 
+    analysis.input_file = store_file(input_location, 'application/gzip', initiator) if input_location else None
+    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator) if lookup_success_fp else None
+    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False) if lookup_error_fp else None
+    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False) if lookup_validation_fp else None
+    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False) if summary_levels_fp else None
 
     # always store traceback
     if traceback_fp:
