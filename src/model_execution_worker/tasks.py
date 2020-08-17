@@ -167,19 +167,9 @@ def register_worker(sender, **k):
     ## Optional ENV
     logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
-    logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback='None')))
-    logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback='None')))
-    logging.info("KTOOLS_LEGACY_GUL_STREAM: {}".format(settings.get('worker', 'KTOOLS_LEGACY_GUL_STREAM', fallback=False)))
-    logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback='None')))
-    logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback='None')))
-    logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback='None')))
-    logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD', fallback=True)))
-    logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
-    logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
-
-
+    logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback='None')))
 
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
@@ -326,45 +316,21 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             '--ktools-fifo-relative'
         ]
 
-        # Optional Args:
-        num_processes = settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)
-        if num_processes:
-            run_args += ['--ktools-num-processes', num_processes]
-
-        alloc_rule_gul = settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)
-        if alloc_rule_gul:
-            run_args += ['--ktools-alloc-rule-gul', alloc_rule_gul]
-
-        alloc_rule_il = settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)
-        if alloc_rule_il:
-            run_args += ['--ktools-alloc-rule-il', alloc_rule_il]
-
-        alloc_rule_ri = settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)
-        if alloc_rule_ri:
-            run_args += ['--ktools-alloc-rule-ri', alloc_rule_ri]
-
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
 
-        if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
-            run_args.append('--ktools-disable-guard')
-
-        if settings.getboolean('worker', 'KTOOLS_LEGACY_GUL_STREAM', fallback=False):
-            run_args.append('--ktools-legacy-gul-stream')
-
-        if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
-            run_args.append('--verbose')
-            logging.info('run_directory: {}'.format(oasis_files_dir))
-            logging.info('args_list: {}'.format(str(run_args)))
-
         # Log MDK run command
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
         mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
+        logging.info('run_directory: {}'.format(oasis_files_dir))
+        logging.info('args_list: {}'.format(str(run_args)))
         logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
             " ".join([str(arg) for arg in mdk_args])
         ))
         logging.info(run_args)
+
+        # Run model losses
         result = subprocess.run(
             ['oasislmf', 'model', 'generate-losses'] + run_args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -463,9 +429,6 @@ def generate_input(self,
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
-
-        if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
-            run_args.append('--disable-summarise-exposure')
 
         model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
         if model_settings_fp and os.path.isfile(model_settings_fp):
