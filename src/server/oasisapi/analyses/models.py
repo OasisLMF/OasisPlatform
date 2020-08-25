@@ -1,9 +1,9 @@
 from __future__ import absolute_import, print_function
 
-import copy
 from celery import signature
 from celery.result import AsyncResult
 from django.conf import settings
+from django.core.files.base import File
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
@@ -320,16 +320,18 @@ class Analysis(TimeStampedModel):
            else:
                 return storage_obj.file.name
 
-    def copy_object(self, obj):
+    def copy_file(self, obj):
         """ Duplicate a conneced DB object and 
         store under a new ID 
         """
         if obj is None:
             return None
-        new_object = copy.copy(obj)
-        new_object.pk = None
-        new_object.save()
-        return new_object
+        return RelatedFile.objects.create(
+            file=File(obj.file),
+            filename=obj.filename,                                                                                                                                
+            content_type=obj.content_type,
+            creator=obj.creator,
+        ) 
 
     def copy(self):
         new_instance = self
@@ -338,7 +340,7 @@ class Analysis(TimeStampedModel):
         new_instance.run_task_id = ''
         new_instance.generate_inputs_task_id = ''
         new_instance.status = self.status_choices.NEW
-        new_instance.settings_file = self.copy_object(new_instance.settings_file)
+        new_instance.settings_file = self.copy_file(new_instance.settings_file)
 
         new_instance.input_file = None
         new_instance.input_generation_traceback_file = None
