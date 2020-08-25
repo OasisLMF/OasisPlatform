@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 from celery import signature
 from celery.result import AsyncResult
 from django.conf import settings
+from django.core.files.base import File
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -317,6 +318,19 @@ class Analysis(TimeStampedModel):
            else:
                 return storage_obj.file.name
 
+    def copy_file(self, obj):
+        """ Duplicate a conneced DB object and
+        store under a new ID
+        """
+        if obj is None:
+            return None
+        return RelatedFile.objects.create(
+            file=File(obj.file),
+            filename=obj.filename,
+            content_type=obj.content_type,
+            creator=obj.creator,
+        )
+
     def copy(self):
         new_instance = self
         new_instance.pk = None
@@ -324,9 +338,16 @@ class Analysis(TimeStampedModel):
         new_instance.run_task_id = ''
         new_instance.generate_inputs_task_id = ''
         new_instance.status = self.status_choices.NEW
+        new_instance.settings_file = self.copy_file(new_instance.settings_file)
+
+        new_instance.input_file = None
+        new_instance.input_generation_traceback_file = None
+        new_instance.output_file = None
+        new_instance.run_traceback_file = None
+        new_instance.run_log_file = None
+
         new_instance.lookup_errors_file = None
         new_instance.lookup_success_file = None
         new_instance.lookup_validation_file = None
         new_instance.summary_levels_file = None
-        new_instance.output_file = None
         return new_instance
