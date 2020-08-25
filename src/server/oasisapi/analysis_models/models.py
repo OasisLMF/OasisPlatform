@@ -63,6 +63,7 @@ class AnalysisModel(TimeStampedModel):
         return str(self)
 
     def hard_delete(self):
+        self.resource_file.delete()
         super(AnalysisModel, self).delete()
     
     def delete(self):
