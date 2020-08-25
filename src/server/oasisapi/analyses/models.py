@@ -322,6 +322,8 @@ class Analysis(TimeStampedModel):
         """ Duplicate a conneced DB object and 
         store under a new ID 
         """
+        if obj is None:
+            return None
         new_object = copy.copy(obj)
         new_object.pk = None
         new_object.save()
