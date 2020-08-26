@@ -607,9 +607,9 @@ class AnalysisCopy(WebTestMixin, TestCase):
                     }
                 )
 
-                self.assertEqual(Analysis.objects.get(pk=response.json['id']).settings_file.pk, analysis.settings_file.pk)
+                self.assertEqual(Analysis.objects.get(pk=response.json['id']).settings_file.pk, Analysis.objects.get(pk=response.json['id']).pk)
 
-    def test_input_file_is_not_supplied___input_file_is_copied(self):
+    def test_input_file_is_not_supplied___input_file_is_not_copied(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
@@ -622,7 +622,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
                     }
                 )
 
-                self.assertEqual(Analysis.objects.get(pk=response.json['id']).input_file, analysis.input_file)
+                self.assertEqual(Analysis.objects.get(pk=response.json['id']).input_file, None)
 
     def test_lookup_errors_file_is_cleared(self):
         with TemporaryDirectory() as d:
