@@ -115,10 +115,7 @@ class StartAnalysis(TestCase):
                         '--model-run-dir', run_dir,
                         '--analysis-settings-json', os.path.join(media_root, 'analysis_settings.json'),
                         '--ktools-fifo-relative',
-                        '--ktools-num-processes', settings.get('worker', 'KTOOLS_NUM_PROCESSES'),
-                        '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
-                        '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
-                        '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')
+                        '--verbose',
                     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
                     tarfile.assert_called_once_with(output_location, os.path.join(run_dir, 'output'), 'output')
 

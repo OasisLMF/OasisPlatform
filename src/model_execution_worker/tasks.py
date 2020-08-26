@@ -132,16 +132,25 @@ def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
-    m_settings = get_model_settings()
     m_version = get_worker_versions()
-    logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
+    logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
-    logging.info('settings: {}'.format(m_settings))
-    signature(
-        'run_register_worker',
-        args=(m_supplier, m_name, m_id, m_settings, m_version),
-        queue='celery'
-    ).delay()
+
+    ## Check for 'DISABLE_WORKER_REG' before sending task to API
+    if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False'):
+        logging.info(('Worker auto-registration with the Oasis API disabled, to enable:\n'
+                      'set DISABLE_WORKER_REG=False in conf.ini or\n'
+                      'set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
+    else:
+        logging.info('Auto registrating with the Oasis API:')
+        m_settings = get_model_settings()
+        logging.info('settings: {}'.format(json.dumps(m_settings, indent=4)))
+
+        signature(
+            'run_register_worker',
+            args=(m_supplier, m_name, m_id, m_settings, m_version),
+            queue='celery'
+        ).delay()
 
     ## Required ENV
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
@@ -167,9 +176,13 @@ def register_worker(sender, **k):
     ## Optional ENV
     logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
+    logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback='None')))
+
+    ## Log All Env variables
+    logging.info('OASIS_ENV_VARS:' + json.dumps({k:v for (k,v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
 
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
@@ -204,7 +217,6 @@ def get_oasislmf_config_path(model_id=None):
         model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
         if model_specific_conf.exists():
             return str(model_specific_conf)
-
     return str(Path(model_root, 'oasislmf.json'))
 
 
@@ -313,7 +325,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             '--config', config_path,
             '--model-run-dir', run_dir,
             '--analysis-settings-json', analysis_settings_file,
-            '--ktools-fifo-relative'
+            '--ktools-fifo-relative',
+            '--verbose'
         ]
 
         if complex_data_files:
@@ -463,7 +476,6 @@ def generate_input(self,
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels    = filestore.put(summary_levels_fp)
         output_tar_path   = filestore.put(oasis_files_dir)
-
         return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, result.returncode
 
 
@@ -520,4 +532,3 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
                 os.symlink(from_path, to_path)
         else:
             logging.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))
-            #raise OSError("Complex model file not found: {}".format(stored_fn))
