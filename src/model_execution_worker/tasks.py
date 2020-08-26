@@ -138,13 +138,13 @@ def register_worker(sender, **k):
 
     ## Check for 'DISABLE_WORKER_REG' before sending task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False'):
-        logging.info(('Worker auto-registration with the Oasis API disabled, to enable:\n'
-                      'set DISABLE_WORKER_REG=False in conf.ini or\n'
-                      'set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
+        logging.info(('Worker auto-registration DISABLED: to enable:\n'
+                      '  set DISABLE_WORKER_REG=False in conf.ini or\n'
+                      '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
     else:
         logging.info('Auto registrating with the Oasis API:')
         m_settings = get_model_settings()
-        logging.info('settings: {}'.format(json.dumps(m_settings, indent=4)))
+        logging.info('settings: {}'.format(m_settings))
 
         signature(
             'run_register_worker',
@@ -344,9 +344,10 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         logging.info(run_args)
 
         # Run model losses
+        worker_env = os.environ.copy()
         result = subprocess.run(
             ['oasislmf', 'model', 'generate-losses'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
         )
         logging.info('stdout: {}'.format(result.stdout.decode()))
         logging.info('stderr: {}'.format(result.stderr.decode()))
@@ -456,8 +457,9 @@ def generate_input(self,
             " ".join([str(arg) for arg in mdk_args])
         ))
 
+        worker_env = os.environ.copy()
         result = subprocess.run(['oasislmf', 'model', 'generate-oasis-files'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
         )
         logging.info('stdout: {}'.format(result.stdout.decode()))
         logging.info('stderr: {}'.format(result.stderr.decode()))
