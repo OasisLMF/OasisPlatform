@@ -1,16 +1,26 @@
 OasisPlatform Changelog
 =======================
 
+`1.10.0`_
+---------
+.. start_latest_release
+* [#401](https://github.com/OasisLMF/OasisPlatform/issues/401) - Fix CASCADE deletes on analyses copy
+* [#398](https://github.com/OasisLMF/OasisPlatform/issues/398) - Added option to disable worker auto-registration
+* [RP 406](https://github.com/OasisLMF/OasisPlatform/pull/406) - Clean up for worker configuration 
+.. end_latest_release
+
+`1.9.1`_
+--------
+* Update oasislmf package to 1.9.1
+
 `1.9.0`_
 --------
-.. start_latest_release
 * [#391](https://github.com/OasisLMF/OasisPlatform/issues/391) - Store `keys-errors.csv` in API on Generate Inputs error
 * [#375](https://github.com/OasisLMF/OasisPlatform/issues/375) - Add check for non-null location_file to analyses serializer
 * [#394](https://github.com/OasisLMF/OasisPlatform/issues/394) - Pass model_settings.json to generate-oasis-files
 * [#381](https://github.com/OasisLMF/OasisPlatform/issues/381) - Worker Monitor - Not updating DB on failure
 * [#385](https://github.com/OasisLMF/OasisPlatform/issues/385) - Jenkins, improve model regression testing
 * [PR 396](https://github.com/OasisLMF/OasisPlatform/pull/396) - Added Django security patches (3.0.7)
-.. end_latest_release
 
 `1.8.3`_
 --------
@@ -247,6 +257,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.10.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.9.1...1.10.0
 .. _`1.9.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.3...1.9.0
 .. _`1.8.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.2...1.8.3
 .. _`1.8.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.1...1.8.2
