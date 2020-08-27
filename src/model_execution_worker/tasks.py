@@ -132,16 +132,25 @@ def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
-    m_settings = get_model_settings()
     m_version = get_worker_versions()
-    logging.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
+    logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
-    logging.info('settings: {}'.format(m_settings))
-    signature(
-        'run_register_worker',
-        args=(m_supplier, m_name, m_id, m_settings, m_version),
-        queue='celery'
-    ).delay()
+
+    ## Check for 'DISABLE_WORKER_REG' before sending task to API
+    if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False'):
+        logging.info(('Worker auto-registration DISABLED: to enable:\n'
+                      '  set DISABLE_WORKER_REG=False in conf.ini or\n'
+                      '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
+    else:
+        logging.info('Auto registrating with the Oasis API:')
+        m_settings = get_model_settings()
+        logging.info('settings: {}'.format(m_settings))
+
+        signature(
+            'run_register_worker',
+            args=(m_supplier, m_name, m_id, m_settings, m_version),
+            queue='celery'
+        ).delay()
 
     ## Required ENV
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
@@ -167,19 +176,13 @@ def register_worker(sender, **k):
     ## Optional ENV
     logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
-    logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback='None')))
-    logging.info("KTOOLS_NUM_PROCESSES: {}".format(settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback='None')))
-    logging.info("KTOOLS_LEGACY_GUL_STREAM: {}".format(settings.get('worker', 'KTOOLS_LEGACY_GUL_STREAM', fallback=False)))
-    logging.info("KTOOLS_ALLOC_RULE_GUL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback='None')))
-    logging.info("KTOOLS_ALLOC_RULE_IL: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback='None')))
-    logging.info("KTOOLS_ALLOC_RULE_RI: {}".format(settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback='None')))
-    logging.info("KTOOLS_ERROR_GUARD: {}".format(settings.get('worker', 'KTOOLS_ERROR_GUARD', fallback=True)))
-    logging.info("DEBUG_MODE: {}".format(settings.get('worker', 'DEBUG_MODE', fallback=False)))
+    logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback=False)))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
-    logging.info("DISABLE_EXPOSURE_SUMMARY: {}".format(settings.get('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False)))
+    logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback='None')))
 
-
+    ## Log All Env variables
+    logging.info('OASIS_ENV_VARS:' + json.dumps({k:v for (k,v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
 
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
@@ -214,7 +217,6 @@ def get_oasislmf_config_path(model_id=None):
         model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
         if model_specific_conf.exists():
             return str(model_specific_conf)
-
     return str(Path(model_root, 'oasislmf.json'))
 
 
@@ -323,51 +325,29 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             '--config', config_path,
             '--model-run-dir', run_dir,
             '--analysis-settings-json', analysis_settings_file,
-            '--ktools-fifo-relative'
+            '--ktools-fifo-relative',
+            '--verbose'
         ]
-
-        # Optional Args:
-        num_processes = settings.get('worker', 'KTOOLS_NUM_PROCESSES', fallback=None)
-        if num_processes:
-            run_args += ['--ktools-num-processes', num_processes]
-
-        alloc_rule_gul = settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None)
-        if alloc_rule_gul:
-            run_args += ['--ktools-alloc-rule-gul', alloc_rule_gul]
-
-        alloc_rule_il = settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None)
-        if alloc_rule_il:
-            run_args += ['--ktools-alloc-rule-il', alloc_rule_il]
-
-        alloc_rule_ri = settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None)
-        if alloc_rule_ri:
-            run_args += ['--ktools-alloc-rule-ri', alloc_rule_ri]
 
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
 
-        if not settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True):
-            run_args.append('--ktools-disable-guard')
-
-        if settings.getboolean('worker', 'KTOOLS_LEGACY_GUL_STREAM', fallback=False):
-            run_args.append('--ktools-legacy-gul-stream')
-
-        if settings.getboolean('worker', 'DEBUG_MODE', fallback=False):
-            run_args.append('--verbose')
-            logging.info('run_directory: {}'.format(oasis_files_dir))
-            logging.info('args_list: {}'.format(str(run_args)))
-
         # Log MDK run command
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
         mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
+        logging.info('run_directory: {}'.format(oasis_files_dir))
+        logging.info('args_list: {}'.format(str(run_args)))
         logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
             " ".join([str(arg) for arg in mdk_args])
         ))
         logging.info(run_args)
+
+        # Run model losses
+        worker_env = os.environ.copy()
         result = subprocess.run(
             ['oasislmf', 'model', 'generate-losses'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
         )
         logging.info('stdout: {}'.format(result.stdout.decode()))
         logging.info('stderr: {}'.format(result.stderr.decode()))
@@ -464,9 +444,6 @@ def generate_input(self,
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
 
-        if settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False):
-            run_args.append('--disable-summarise-exposure')
-
         model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
         if model_settings_fp and os.path.isfile(model_settings_fp):
             run_args += ['--model-settings-json', model_settings_fp]
@@ -480,8 +457,9 @@ def generate_input(self,
             " ".join([str(arg) for arg in mdk_args])
         ))
 
+        worker_env = os.environ.copy()
         result = subprocess.run(['oasislmf', 'model', 'generate-oasis-files'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
         )
         logging.info('stdout: {}'.format(result.stdout.decode()))
         logging.info('stderr: {}'.format(result.stderr.decode()))
@@ -500,7 +478,6 @@ def generate_input(self,
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels    = filestore.put(summary_levels_fp)
         output_tar_path   = filestore.put(oasis_files_dir)
-
         return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, result.returncode
 
 
@@ -557,4 +534,3 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
                 os.symlink(from_path, to_path)
         else:
             logging.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))
-            #raise OSError("Complex model file not found: {}".format(stored_fn))

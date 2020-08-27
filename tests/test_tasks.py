@@ -109,17 +109,15 @@ class StartAnalysis(TestCase):
                         os.path.join(media_root, 'analysis_settings.json'),
                         os.path.join(media_root, 'location.tar'),
                     )
+                    test_env = os.environ.copy()
                     cmd_mock.assert_called_once_with(['oasislmf', 'model', 'generate-losses',
                         '--oasis-files-dir', os.path.join(run_dir, 'input'),
                         '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
                         '--model-run-dir', run_dir,
                         '--analysis-settings-json', os.path.join(media_root, 'analysis_settings.json'),
                         '--ktools-fifo-relative',
-                        '--ktools-num-processes', settings.get('worker', 'KTOOLS_NUM_PROCESSES'),
-                        '--ktools-alloc-rule-gul', settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL'),
-                        '--ktools-alloc-rule-il', settings.get('worker', 'KTOOLS_ALLOC_RULE_IL'),
-                        '--ktools-alloc-rule-ri', settings.get('worker', 'KTOOLS_ALLOC_RULE_RI')
-                    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                        '--verbose',
+                    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env)
                     tarfile.assert_called_once_with(output_location, os.path.join(run_dir, 'output'), 'output')
 
 
