@@ -1,13 +1,17 @@
 OasisPlatform Changelog
 =======================
 
-`1.10.0`_
+`1.10.1`_
 ---------
 .. start_latest_release
+* Fix issue with supplier model runner
+.. end_latest_release
+
+`1.10.0`_
+---------
 * [#401](https://github.com/OasisLMF/OasisPlatform/issues/401) - Fix CASCADE deletes on analyses copy
 * [#398](https://github.com/OasisLMF/OasisPlatform/issues/398) - Added option to disable worker auto-registration
 * [RP 406](https://github.com/OasisLMF/OasisPlatform/pull/406) - Clean up for worker configuration 
-.. end_latest_release
 
 `1.9.1`_
 --------
