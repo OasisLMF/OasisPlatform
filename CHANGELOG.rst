@@ -5,13 +5,14 @@ OasisPlatform Changelog
 ---------
 .. start_latest_release
 * Fix issue with supplier model runner
+* [#401](https://github.com/OasisLMF/OasisPlatform/issues/401) - Fix CASCADE deletes on analyses copy
+* [#398](https://github.com/OasisLMF/OasisPlatform/issues/398) - Added option to disable worker auto-registration
+* [RP 406](https://github.com/OasisLMF/OasisPlatform/pull/406) - Clean up for worker configuration 
 .. end_latest_release
 
 `1.10.0`_
 ---------
-* [#401](https://github.com/OasisLMF/OasisPlatform/issues/401) - Fix CASCADE deletes on analyses copy
-* [#398](https://github.com/OasisLMF/OasisPlatform/issues/398) - Added option to disable worker auto-registration
-* [RP 406](https://github.com/OasisLMF/OasisPlatform/pull/406) - Clean up for worker configuration 
+* Skipped due to oasislmf hotfix 1.10.1
 
 `1.9.1`_
 --------
@@ -261,7 +262,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
-.. _`1.10.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.9.1...1.10.0
+.. _`1.10.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.9.1...1.10.1
 .. _`1.9.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.3...1.9.0
 .. _`1.8.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.2...1.8.3
 .. _`1.8.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.8.1...1.8.2
