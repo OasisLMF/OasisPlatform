@@ -1,6 +1,10 @@
 OasisPlatform Changelog
 =======================
 
+`1.10.2`_
+---------
+* Update oasislmf package to 1.10.2
+
 `1.10.1`_
 ---------
 .. start_latest_release
