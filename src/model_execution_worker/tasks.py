@@ -360,8 +360,11 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         log_directory = os.path.join(run_dir, "log")
         log_location = filestore.put(log_directory, suffix=ARCHIVE_FILE_SUFFIX)
 
-        # Results dir
+        # Results dir & analysis-settings
         output_directory = os.path.join(run_dir, "output")
+        settings_src = os.path.join(run_dir, 'analysis_settings.json')
+        settings_dst = os.path.join(output_directory, 'analysis_settings.json')
+        shutil.copyfile(settings_src, settings_dst)
         output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
 
     return output_location, traceback_location, log_location, result.returncode
