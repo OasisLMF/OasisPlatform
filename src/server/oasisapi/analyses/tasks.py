@@ -261,8 +261,9 @@ def set_task_status(analysis_pk, task_status):
         from .models import Analysis
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = task_status
-        analysis.save(update_fields=["status"])
-        logger.info('Task Status Update: analysis_pk: {}, status: {}'.format(analysis_pk, task_status))
+        analysis.task_started = timezone.now()
+        analysis.save(update_fields=["status", "task_started"])
+        logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
     except Exception as e:
         logger.error('Task Status Update: Failed')
         logger.exception(str(e))

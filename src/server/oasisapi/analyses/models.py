@@ -165,7 +165,7 @@ class Analysis(TimeStampedModel):
         )
         dispatched_task = run_analysis_signature.delay()
         self.run_task_id = dispatched_task.id
-        self.task_started = timezone.now()
+        self.task_started = None
         self.task_finished = None
         self.save()
 
@@ -235,7 +235,7 @@ class Analysis(TimeStampedModel):
             signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
         self.generate_inputs_task_id = generate_input_signature.delay().id
-        self.task_started = timezone.now()
+        self.task_started = None
         self.task_finished = None
         self.save()
 
