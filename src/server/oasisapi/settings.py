@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.data_files',
     'src.server.oasisapi.healthcheck',
     'src.server.oasisapi.info',
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 MIDDLEWARE = [
@@ -252,3 +253,5 @@ SWAGGER_SETTINGS = {
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
 }
+
+

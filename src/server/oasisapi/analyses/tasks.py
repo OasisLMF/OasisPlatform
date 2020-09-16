@@ -104,24 +104,40 @@ def store_file(reference, content_type, creator, required=True):
             )
 
     try:
-        # create RelatedFile object from filepath
-        file_name = os.path.basename(reference)
-        file_path = os.path.join(
-           settings.MEDIA_ROOT,
-           file_name,
-        )
-        return RelatedFile.objects.create(
-            file=file_path,
-            filename=file_name,
-            content_type=content_type,
-            creator=creator,
-        )
+        fname = os.path.basename(reference)
+        with open(reference, 'r+b') as f: 
+            return RelatedFile.objects.create(
+                file=File(f, name=fname),
+                filename=fname,
+                content_type=content_type,
+                creator=creator,
+            )
     except TypeError as e:
         if not required:
             logger.warning(f'Failed to store file reference: {reference} - {e}')
             return None
         else:
             raise e
+
+
+def delete_prev_output(object_model, field_list=[]):
+    files_for_removal = list()
+
+    # collect prev attached files
+    for field in field_list:
+        current_file = getattr(object_model, field)
+        if current_file:
+            logger.info('delete {}: {}'.format(field, current_file))
+            setattr(object_model, field, None)
+            files_for_removal.append(current_file)
+
+    # Clear fields
+    object_model.save(update_fields=field_list)
+
+    # delete old files
+    for f in files_for_removal:
+        f.delete()
+
 
 class LogTaskError(Task):
     # from gist https://gist.github.com/darklow/c70a8d1147f05be877c3
@@ -139,6 +155,7 @@ class LogTaskError(Task):
         logger.info('args: {}'.format(args))
         logger.info('kwargs: {}'.format(kwargs))
         logger.info('traceback: {}'.format(traceback))
+        files_for_removal = list()
 
         if self.name in ['record_run_analysis_result', 'record_generate_input_result']:
             _, analysis_pk, initiator_pk = args
@@ -177,9 +194,7 @@ class LogTaskError(Task):
                             content_type='text/plain',
                             creator=initiator,
                         )
-                    if analysis.run_log_file:
-                        analysis.run_log_file.delete()
-                        analysis.run_log_file = None
+                    delete_prev_output(analysis, ['run_log_file'])
                 analysis.save()
 
             except Exception as e:
@@ -281,22 +296,14 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
     analysis.status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
     analysis.task_finished = timezone.now()
 
+    delete_prev_output(analysis, ['output_file', 'run_log_file', 'run_traceback_file'])
+
     # Store results
     if return_code == 0:
         analysis.output_file = store_file(output_location, 'application/gzip', initiator)
-
-
-    elif analysis.output_file:
-        analysis.output_file.delete()
-        analysis.output_file = None
-
     # Store Ktools logs
     if log_location:
         analysis.run_log_file = store_file(log_location, 'application/gzip', initiator)
-    elif analysis.run_log_file:
-        analysis.run_log_file.delete()
-        analysis.run_log_file = None
-
     # record the error file
     if traceback_location:
         analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator)
@@ -320,8 +327,20 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     ) = result
 
     analysis = Analysis.objects.get(pk=analysis_pk)
-    analysis.task_finished = timezone.now()
     initiator = get_user_model().objects.get(pk=initiator_pk)
+
+    # Remove previous output
+    delete_prev_output(analysis, [
+        'output_file',
+        'input_file',
+        'lookup_errors_file',
+        'lookup_success_file',
+        'lookup_validation_file',
+        'summary_levels_file',
+        'input_generation_traceback_file',
+        'run_traceback_file',
+        'run_log_file',
+    ])
 
     # SUCCESS
     if return_code == 0:
@@ -330,39 +349,19 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     else:
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
 
-    # Delete previous output
-    if analysis.input_file:
-        ref = analysis.input_file
-        ref.delete()
-    if analysis.lookup_errors_file:
-        ref = analysis.lookup_errors_file
-        ref.delete()
-    if analysis.lookup_success_file:
-        ref = analysis.lookup_success_file
-        ref.delete()
-    if analysis.lookup_validation_file:
-        ref = analysis.lookup_validation_file
-        ref.delete()
-    if analysis.summary_levels_file:
-        ref = analysis.summary_levels_file
-        ref.delete()
-    if analysis.input_generation_traceback_file:
-        ref = analysis.input_generation_traceback_file
-        ref.delete()
-
-    # Add current Output 
+    # Add current Output
     analysis.input_file = store_file(input_location, 'application/gzip', initiator) if input_location else None
     analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator) if lookup_success_fp else None
     analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False) if lookup_error_fp else None
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False) if lookup_validation_fp else None
     analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False) if summary_levels_fp else None
+    analysis.task_finished = timezone.now()
 
     # always store traceback
     if traceback_fp:
         analysis.input_generation_traceback_file = store_file(traceback_fp, 'text/plain', initiator)
         logger.info(analysis.input_generation_traceback_file)
     analysis.save()
-
 
 @celery_app.task(name='record_run_analysis_failure')
 def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):

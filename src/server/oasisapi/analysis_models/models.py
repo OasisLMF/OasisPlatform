@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
 
@@ -92,3 +94,15 @@ class AnalysisModel(TimeStampedModel):
         return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
     def get_absolute_settings_url(self, request=None):
         return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+@receiver(post_delete, sender=AnalysisModel)
+def delete_connected_files(sender, instance, **kwargs):
+    """ Post delete handler to clear out any dangaling analyses files
+    """
+    files_for_removal = [ 
+         'resource_file',
+    ]   
+    for ref in files_for_removal:
+        file_ref = getattr(instance, ref)
+        if file_ref:
+            file_ref.delete()

@@ -13,6 +13,7 @@ djangorestframework
 markdown
 django-filter
 django-storages
+django-cleanup
 djangorestframework_simplejwt
 django-model-utils>=4.0.0
 coreapi

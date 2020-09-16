@@ -1,8 +1,11 @@
 from __future__ import absolute_import, print_function
 
+
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
 
@@ -44,3 +47,18 @@ class PortfolioStatus(TimeStampedModel):
 
     def __str__(self):
         pass
+
+@receiver(post_delete, sender=Portfolio)
+def delete_connected_files(sender, instance, **kwargs):
+    """ Post delete handler to clear out any dangaling analyses files
+    """
+    files_for_removal = [ 
+         'accounts_file',
+         'location_file',
+         'reinsurance_info_file',
+         'reinsurance_scope_file',
+    ]   
+    for ref in files_for_removal:
+        file_ref = getattr(instance, ref)
+        if file_ref:
+            file_ref.delete()

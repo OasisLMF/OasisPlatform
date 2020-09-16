@@ -19,5 +19,5 @@ class CatModelAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return self.model.all_objects
     
-    delete_hard.short_description = "Permanent Delete of model and linked analyses"
-    delete_selected_.short_description = "Logical Delete of AnalysisModel"
+    delete_hard.short_description = "Cascade Delete of model and linked analyses"
+    delete_selected_.short_description = "Delete"
