@@ -225,12 +225,6 @@ class Analysis(TimeStampedModel):
             raise ValidationError(errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
-        #self.lookup_errors_file = None
-        #self.lookup_success_file = None
-        #self.lookup_validation_file = None
-        #self.summary_levels_file = None
-        #self.input_generation_traceback_file_id = None
-
         generate_input_signature = self.generate_input_signature
         generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
         generate_input_signature.link_error(
