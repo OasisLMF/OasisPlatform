@@ -56,17 +56,17 @@ class RunAnalysisSuccess(TestCase):
                 analysis.refresh_from_db()
 
                 if return_code == 0:
-                    self.assertEqual(analysis.output_file.filename, output_location)
+                    self.assertEqual(analysis.output_file.file.name, output_location)
                     self.assertEqual(analysis.output_file.content_type, 'application/gzip')
                     self.assertEqual(analysis.output_file.creator, initiator)
                 else:
                       self.assertEqual(analysis.output_file, None)
 
-                self.assertEqual(analysis.run_log_file.filename, log_location)
+                self.assertEqual(analysis.run_log_file.file.name, log_location)
                 self.assertEqual(analysis.run_log_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.run_log_file.creator, initiator)
 
-                self.assertEqual(analysis.run_traceback_file.filename, traceback_location)
+                self.assertEqual(analysis.run_traceback_file.file.name, traceback_location)
                 self.assertEqual(analysis.run_traceback_file.content_type, 'text/plain')
                 self.assertEqual(analysis.run_traceback_file.creator, initiator)
 
@@ -125,23 +125,23 @@ class GenerateInputsSuccess(TestCase):
                     return_code), analysis.pk, initiator.pk)
                 analysis.refresh_from_db()
 
-                self.assertEqual(analysis.input_file.filename, input_location)
+                self.assertEqual(analysis.input_file.file.name, input_location)
                 self.assertEqual(analysis.input_file.content_type, 'application/gzip')
                 self.assertEqual(analysis.input_file.creator, initiator)
 
-                self.assertEqual(analysis.lookup_errors_file.filename, lookup_error_fp)
+                self.assertEqual(analysis.lookup_errors_file.file.name, lookup_error_fp)
                 self.assertEqual(analysis.lookup_errors_file.content_type, 'text/csv')
                 self.assertEqual(analysis.lookup_errors_file.creator, initiator)
 
-                self.assertEqual(analysis.lookup_success_file.filename, lookup_success_fp)
+                self.assertEqual(analysis.lookup_success_file.file.name, lookup_success_fp)
                 self.assertEqual(analysis.lookup_success_file.content_type, 'text/csv')
                 self.assertEqual(analysis.lookup_success_file.creator, initiator)
 
-                self.assertEqual(analysis.lookup_validation_file.filename, lookup_validation_fp)
+                self.assertEqual(analysis.lookup_validation_file.file.name, lookup_validation_fp)
                 self.assertEqual(analysis.lookup_validation_file.content_type, 'application/json')
                 self.assertEqual(analysis.lookup_validation_file.creator, initiator)
 
-                self.assertEqual(analysis.summary_levels_file.filename, summary_levels_fp)
+                self.assertEqual(analysis.summary_levels_file.file.name, summary_levels_fp)
                 self.assertEqual(analysis.summary_levels_file.content_type, 'application/json')
                 self.assertEqual(analysis.summary_levels_file.creator, initiator)
 
