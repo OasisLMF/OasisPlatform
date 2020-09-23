@@ -479,10 +479,16 @@ class AwsObjectStore(BaseStorageConnector):
         """
         ext = 'tar.gz' if not suffix else suffix
         object_name = self._get_unique_filename(ext)
+        object_args = {
+            'ContentType': 'application/x-gzip', 
+            'ContentEncoding': 'gzip'
+        }
+
         with tempfile.TemporaryDirectory() as tmpdir:
             archive_path = os.path.join(tmpdir, object_name)
             self.compress(archive_path, directory_path, arcname)
-            self.upload(object_name, archive_path)
+            self.upload(object_name, archive_path, ExtraArgs=object_args)
+            #self.upload(object_name, archive_path)
 
         self.logger.info('Stored S3: {} -> {}'.format(directory_path, object_name))
         if self.shared_bucket:
