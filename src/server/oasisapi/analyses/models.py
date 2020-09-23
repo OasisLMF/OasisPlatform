@@ -5,6 +5,8 @@ from celery.result import AsyncResult
 from django.conf import settings
 from django.core.files.base import File
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
@@ -165,7 +167,7 @@ class Analysis(TimeStampedModel):
         )
         dispatched_task = run_analysis_signature.delay()
         self.run_task_id = dispatched_task.id
-        self.task_started = timezone.now()
+        self.task_started = None
         self.task_finished = None
         self.save()
 
@@ -223,19 +225,13 @@ class Analysis(TimeStampedModel):
             raise ValidationError(errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
-        self.lookup_errors_file = None
-        self.lookup_success_file = None
-        self.lookup_validation_file = None
-        self.summary_levels_file = None
-        self.input_generation_traceback_file_id = None
-
         generate_input_signature = self.generate_input_signature
         generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
         generate_input_signature.link_error(
             signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
         self.generate_inputs_task_id = generate_input_signature.delay().id
-        self.task_started = timezone.now()
+        self.task_started = None
         self.task_finished = None
         self.save()
 
@@ -351,3 +347,24 @@ class Analysis(TimeStampedModel):
         new_instance.lookup_validation_file = None
         new_instance.summary_levels_file = None
         return new_instance
+
+@receiver(post_delete, sender=Analysis)
+def delete_connected_files(sender, instance, **kwargs):
+    """ Post delete handler to clear out any dangaling analyses files
+    """
+    files_for_removal = [ 
+         'settings_file',
+         'input_file',
+         'input_generation_traceback_file',
+         'output_file',
+         'run_traceback_file',
+         'run_log_file',
+         'lookup_errors_file',
+         'lookup_success_file',
+         'lookup_validation_file',
+         'summary_levels_file',
+    ]   
+    for ref in files_for_removal:
+        file_ref = getattr(instance, ref)
+        if file_ref:
+            file_ref.delete()

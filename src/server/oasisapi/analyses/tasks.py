@@ -51,7 +51,7 @@ def is_in_bucket(object_key):
                 raise e
 
 
-def store_file(reference, content_type, creator, required=True):
+def store_file(reference, content_type, creator, required=True, filename=None):
     """ Returns a `RelatedFile` obejct to store
 
     :param reference: Storage reference of file (url or file path)
@@ -77,15 +77,16 @@ def store_file(reference, content_type, creator, required=True):
 
         # Find file name
         header_fname = response.headers.get('Content-Disposition', '').split('filename=')[-1]
-        fname = header_fname if header_fname else os.path.basename(urlparse(reference).path)
-        logger.info('Store file: {}'.format(fname))
+        ref = header_fname if header_fname else os.path.basename(urlparse(reference).path)
+        fname = filename if filename else ref 
+        logger.info('Store file: {}'.format(ref))
 
         # Create temp file, download content and store
         with TemporaryFile() as tmp_file:
             tmp_file.write(fdata)
             tmp_file.seek(0)
             return RelatedFile.objects.create(
-                file=File(tmp_file, name=fname),
+                file=File(tmp_file, name=ref),
                 filename=fname,
                 content_type=content_type,
                 creator=creator,
@@ -95,24 +96,21 @@ def store_file(reference, content_type, creator, required=True):
     if is_in_bucket(reference):
         with TemporaryFile() as tmp_file:
             default_storage.bucket.download_fileobj(reference, tmp_file)
-            fname = os.path.basename(reference)
+            ref = os.path.basename(reference)
+            fname = filename if filename else ref 
             return RelatedFile.objects.create(
-                file=File(tmp_file, name=fname),
+                file=File(tmp_file, name=ref),
                 filename=fname,
                 content_type=content_type,
                 creator=creator,
             )
 
     try:
-        # create RelatedFile object from filepath
-        file_name = os.path.basename(reference)
-        file_path = os.path.join(
-           settings.MEDIA_ROOT,
-           file_name,
-        )
+        ref = str(os.path.basename(reference))
+        fname = filename if filename else ref
         return RelatedFile.objects.create(
-            file=file_path,
-            filename=file_name,
+            file=ref,
+            filename=fname,
             content_type=content_type,
             creator=creator,
         )
@@ -122,6 +120,26 @@ def store_file(reference, content_type, creator, required=True):
             return None
         else:
             raise e
+
+
+def delete_prev_output(object_model, field_list=[]):
+    files_for_removal = list()
+
+    # collect prev attached files
+    for field in field_list:
+        current_file = getattr(object_model, field)
+        if current_file:
+            logger.info('delete {}: {}'.format(field, current_file))
+            setattr(object_model, field, None)
+            files_for_removal.append(current_file)
+
+    # Clear fields
+    object_model.save(update_fields=field_list)
+
+    # delete old files
+    for f in files_for_removal:
+        f.delete()
+
 
 class LogTaskError(Task):
     # from gist https://gist.github.com/darklow/c70a8d1147f05be877c3
@@ -139,6 +157,7 @@ class LogTaskError(Task):
         logger.info('args: {}'.format(args))
         logger.info('kwargs: {}'.format(kwargs))
         logger.info('traceback: {}'.format(traceback))
+        files_for_removal = list()
 
         if self.name in ['record_run_analysis_result', 'record_generate_input_result']:
             _, analysis_pk, initiator_pk = args
@@ -177,9 +196,7 @@ class LogTaskError(Task):
                             content_type='text/plain',
                             creator=initiator,
                         )
-                    if analysis.run_log_file:
-                        analysis.run_log_file.delete()
-                        analysis.run_log_file = None
+                    delete_prev_output(analysis, ['run_log_file'])
                 analysis.save()
 
             except Exception as e:
@@ -261,8 +278,9 @@ def set_task_status(analysis_pk, task_status):
         from .models import Analysis
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = task_status
-        analysis.save(update_fields=["status"])
-        logger.info('Task Status Update: analysis_pk: {}, status: {}'.format(analysis_pk, task_status))
+        analysis.task_started = timezone.now()
+        analysis.save(update_fields=["status", "task_started"])
+        logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
     except Exception as e:
         logger.error('Task Status Update: Failed')
         logger.exception(str(e))
@@ -280,25 +298,17 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
     analysis.status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
     analysis.task_finished = timezone.now()
 
+    delete_prev_output(analysis, ['output_file', 'run_log_file', 'run_traceback_file'])
+
     # Store results
     if return_code == 0:
-        analysis.output_file = store_file(output_location, 'application/gzip', initiator)
-
-
-    elif analysis.output_file:
-        analysis.output_file.delete()
-        analysis.output_file = None
-
+        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename='output.tar.gz')
     # Store Ktools logs
     if log_location:
-        analysis.run_log_file = store_file(log_location, 'application/gzip', initiator)
-    elif analysis.run_log_file:
-        analysis.run_log_file.delete()
-        analysis.run_log_file = None
-
+        analysis.run_log_file = store_file(log_location, 'application/gzip', initiator, filename='logs.tar.gz')
     # record the error file
     if traceback_location:
-        analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator)
+        analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator, filename='run_traceback.txt')
     analysis.save()
 
 
@@ -319,8 +329,20 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     ) = result
 
     analysis = Analysis.objects.get(pk=analysis_pk)
-    analysis.task_finished = timezone.now()
     initiator = get_user_model().objects.get(pk=initiator_pk)
+
+    # Remove previous output
+    delete_prev_output(analysis, [
+        'output_file',
+        'input_file',
+        'lookup_errors_file',
+        'lookup_success_file',
+        'lookup_validation_file',
+        'summary_levels_file',
+        'input_generation_traceback_file',
+        'run_traceback_file',
+        'run_log_file',
+    ])
 
     # SUCCESS
     if return_code == 0:
@@ -329,39 +351,19 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     else:
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
 
-    # Delete previous output
-    if analysis.input_file:
-        ref = analysis.input_file
-        ref.delete()
-    if analysis.lookup_errors_file:
-        ref = analysis.lookup_errors_file
-        ref.delete()
-    if analysis.lookup_success_file:
-        ref = analysis.lookup_success_file
-        ref.delete()
-    if analysis.lookup_validation_file:
-        ref = analysis.lookup_validation_file
-        ref.delete()
-    if analysis.summary_levels_file:
-        ref = analysis.summary_levels_file
-        ref.delete()
-    if analysis.input_generation_traceback_file:
-        ref = analysis.input_generation_traceback_file
-        ref.delete()
-
-    # Add current Output 
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator) if input_location else None
-    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator) if lookup_success_fp else None
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False) if lookup_error_fp else None
-    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False) if lookup_validation_fp else None
-    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False) if summary_levels_fp else None
+    # Add current Output
+    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename='inputs.tar.gz') if input_location else None
+    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename='gul_summary_map.csv') if lookup_success_fp else None
+    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False, filename='keys-errors.csv') if lookup_error_fp else None
+    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False, filename='exposure_summary_report.json') if lookup_validation_fp else None
+    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False, filename='exposure_summary_levels.json') if summary_levels_fp else None
+    analysis.task_finished = timezone.now()
 
     # always store traceback
     if traceback_fp:
-        analysis.input_generation_traceback_file = store_file(traceback_fp, 'text/plain', initiator)
+        analysis.input_generation_traceback_file = store_file(traceback_fp, 'text/plain', initiator, filename='generation_traceback.txt')
         logger.info(analysis.input_generation_traceback_file)
     analysis.save()
-
 
 @celery_app.task(name='record_run_analysis_failure')
 def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):

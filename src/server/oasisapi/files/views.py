@@ -7,6 +7,17 @@ from rest_framework.response import Response
 from .serializers import RelatedFileSerializer
 
 
+
+def _delete_related_file(parent, field):
+    """ Delete an attached RelatedFile model 
+        without triggering a cascade delete
+    """
+    if getattr(parent, field) is not None:
+        current = getattr(parent, field, None)
+        setattr(parent, field, None)
+        parent.save(update_fields=[field])
+        current.delete()
+
 def _get_chunked_content(f, chunk_size=1024):
     content = f.read(chunk_size)
     while content:
@@ -32,6 +43,10 @@ def _handle_post_related_file(parent, field, request, content_types):
     serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request})
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
+
+    # Check for exisiting file and delete
+    _delete_related_file(parent, field)
+
     setattr(parent, field, instance)
     parent.save(update_fields=[field])
 
@@ -45,8 +60,7 @@ def _handle_delete_related_file(parent, field):
     if not getattr(parent, field, None):
         raise Http404()
 
-    setattr(parent, field, None)
-    parent.save(update_fields=[field])
+    _delete_related_file(parent, field)
     return Response()
 
 
@@ -78,6 +92,10 @@ def _json_write_to_file(parent, field, request, serializer):
 
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
+
+    # Check for exisiting file and delete
+    _delete_related_file(parent, field)
+
     setattr(parent, field, instance)
     parent.save(update_fields=[field])
 
