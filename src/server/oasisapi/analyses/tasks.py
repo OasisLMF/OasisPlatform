@@ -86,10 +86,11 @@ def store_file(reference, content_type, creator, required=True, filename=None):
             tmp_file.write(fdata)
             tmp_file.seek(0)
             return RelatedFile.objects.create(
-                file=File(tmp_file, name=ref),
+                file=File(tmp_file, name=fname),
                 filename=fname,
                 content_type=content_type,
                 creator=creator,
+                store_as_filename=True,
             )
 
     # Download data from S3 Bucket
@@ -99,10 +100,11 @@ def store_file(reference, content_type, creator, required=True, filename=None):
             ref = os.path.basename(reference)
             fname = filename if filename else ref 
             return RelatedFile.objects.create(
-                file=File(tmp_file, name=ref),
+                file=File(tmp_file, name=fname),
                 filename=fname,
                 content_type=content_type,
                 creator=creator,
+                store_as_filename=True,
             )
 
     try:
@@ -113,6 +115,7 @@ def store_file(reference, content_type, creator, required=True, filename=None):
             filename=fname,
             content_type=content_type,
             creator=creator,
+            store_as_filename=True,
         )
     except TypeError as e:
         if not required:
@@ -302,13 +305,13 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
 
     # Store results
     if return_code == 0:
-        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename='output.tar.gz')
+        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_output.tar.gz')
     # Store Ktools logs
     if log_location:
-        analysis.run_log_file = store_file(log_location, 'application/gzip', initiator, filename='logs.tar.gz')
+        analysis.run_log_file = store_file(log_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_logs.tar.gz')
     # record the error file
     if traceback_location:
-        analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator, filename='run_traceback.txt')
+        analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator, filename=f'analysis_{analysis_pk}_run_traceback.txt')
     analysis.save()
 
 
@@ -352,16 +355,16 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
 
     # Add current Output
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename='inputs.tar.gz') if input_location else None
-    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename='gul_summary_map.csv') if lookup_success_fp else None
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False, filename='keys-errors.csv') if lookup_error_fp else None
-    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False, filename='exposure_summary_report.json') if lookup_validation_fp else None
-    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False, filename='exposure_summary_levels.json') if summary_levels_fp else None
+    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_inputs.tar.gz') if input_location else None
+    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_pk}_gul_summary_map.csv') if lookup_success_fp else None
+    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False, filename=f'analysis_{analysis_pk}_keys-errors.csv') if lookup_error_fp else None
+    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False, filename=f'analysis_{analysis_pk}_exposure_summary_report.json') if lookup_validation_fp else None
+    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False, filename=f'analysis_{analysis_pk}_exposure_summary_levels.json') if summary_levels_fp else None
     analysis.task_finished = timezone.now()
 
     # always store traceback
     if traceback_fp:
-        analysis.input_generation_traceback_file = store_file(traceback_fp, 'text/plain', initiator, filename='generation_traceback.txt')
+        analysis.input_generation_traceback_file = store_file(traceback_fp, 'text/plain', initiator, filename=f'analysis_{analysis_pk}_generation_traceback.txt')
         logger.info(analysis.input_generation_traceback_file)
     analysis.save()
 
@@ -384,7 +387,7 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
             tmp_file.write(traceback.encode('utf-8'))
             analysis.run_traceback_file = RelatedFile.objects.create(
                 file=File(tmp_file, name=random_filename),
-                filename=random_filename,
+                filename=f'analysis_{analysis_pk}_run_traceback.txt',
                 content_type='text/plain',
                 creator=get_user_model().objects.get(pk=initiator_pk),
             )
@@ -416,7 +419,7 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
             tmp_file.write(traceback.encode('utf-8'))
             analysis.input_generation_traceback_file = RelatedFile.objects.create(
                 file=File(tmp_file, name=random_filename),
-                filename=random_filename,
+                filename=f'analysis_{analysis_pk}_generation_traceback.txt',
                 content_type='text/plain',
                 creator=get_user_model().objects.get(pk=initiator_pk),
             )

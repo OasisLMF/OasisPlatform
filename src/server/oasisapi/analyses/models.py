@@ -303,7 +303,7 @@ class Analysis(TimeStampedModel):
                 if settings.AWS_SHARED_BUCKET:
                     # Return object key for shared S3 bucket
                     return path.join(
-                        storage_obj.file.storage.location,
+                        storage_obj.aws_location,
                         storage_obj.file.name,
                     )
                 else:

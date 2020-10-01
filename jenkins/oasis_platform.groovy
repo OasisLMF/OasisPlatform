@@ -237,6 +237,10 @@ node {
            }
            stage("Compatibility with server:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
+                   // reset db-data
+                   sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
+                   env.OASIS_DOCKER_DB_DATA_DIR = './db-data_pre-ver'
+
                    // Set tags
                    env.TAG_RUN_PLATFORM = env.LAST_RELEASE_TAG
                    env.TAG_RUN_WORKER = params.RELEASE_TAG

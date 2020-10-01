@@ -1,7 +1,7 @@
 version: '3'
 services:
   localstack-s3:
-    image: localstack/localstack
+    image: localstack/localstack:0.11.0
     environment:
       - SERVICES=s3
     ports:

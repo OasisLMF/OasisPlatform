@@ -159,7 +159,7 @@ AWS_STORAGE_BUCKET_NAME = iniconf.settings.get('server', 'AWS_BUCKET_NAME', fall
 AWS_DEFAULT_ACL = iniconf.settings.get('server', 'AWS_DEFAULT_ACL', fallback=None)
 AWS_S3_CUSTOM_DOMAIN = iniconf.settings.get('server', 'AWS_S3_CUSTOM_DOMAIN', fallback=None)
 AWS_S3_ENDPOINT_URL = iniconf.settings.get('server', 'AWS_S3_ENDPOINT_URL', fallback=None)
-AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='api-server')
+AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='')
 AWS_S3_REGION_NAME = iniconf.settings.get('server', 'AWS_S3_REGION_NAME', fallback=None)
 
 # Presigned generated URLs for private buckets
