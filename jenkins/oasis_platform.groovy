@@ -11,7 +11,7 @@ def createStage(stage_name, stage_params, propagate_flag) {
 def model_regression_list = """
 oasis_PiWind/develop
 GemFoundation_GMO/master
-corelogic_quake/master
+corelogic_quake/develop
 RiskFrontiers_hail/master
 """
 
