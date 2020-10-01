@@ -238,7 +238,8 @@ node {
            stage("Compatibility with server:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
                    // reset db-data
-                   sh 'sudo rm -rf compose/db-data'
+                   sh 'sudo /var/lib/jenkins/jenkins-chown'
+                   sh 'rm -rf compose/db-data'
 
                    // Set tags
                    env.TAG_RUN_PLATFORM = env.LAST_RELEASE_TAG
