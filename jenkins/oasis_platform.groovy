@@ -12,7 +12,6 @@ def model_regression_list = """
 oasis_PiWind/develop
 GemFoundation_GMO/master
 corelogic_quake/develop
-RiskFrontiers_hail/master
 """
 
 node {
