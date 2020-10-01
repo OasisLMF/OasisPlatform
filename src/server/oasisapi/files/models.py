@@ -25,8 +25,8 @@ class RelatedFile(TimeStampedModel):
     filename = models.CharField(max_length=255, editable=False, default="", blank=True)
     # filehash_md5 = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
-    store_as_filename = models.BooleanField(default=False)
-    aws_location = models.CharField(max_length=255, editable=False, default=settings.AWS_LOCATION, blank=True)
+    store_as_filename = models.BooleanField(default=False, blank=True, null=True)
+    aws_location = models.CharField(max_length=255, editable=False, default=settings.AWS_LOCATION, blank=True, null=True)
 
     def __str__(self):
         return 'File_{}'.format(self.file)
