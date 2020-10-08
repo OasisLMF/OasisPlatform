@@ -1,16 +1,21 @@
 OasisPlatform Changelog
 =======================
 
-`1.11.0`_
+`1.11.1`_
 ---------
 .. start_latest_release
+* Update oasislmf package to 1.11.1
+.. end_latest_release
+
+
+`1.11.0`_
+---------
 * [#377](https://github.com/OasisLMF/OasisPlatform/issues/377) - Changing S3 variable 'aws_location' invalidates stored files
 * [#417](https://github.com/OasisLMF/OasisPlatform/issues/417) - Store analysis S3 objects as `analysis_<id>_<filename>`
 * [#407](https://github.com/OasisLMF/OasisPlatform/issues/407) - Store analysis_settings.json in output.tar
 * [#404](https://github.com/OasisLMF/OasisPlatform/issues/404) - Cleanup dangling files using delete handlers
 * [#403](https://github.com/OasisLMF/OasisPlatform/issues/403) - Task timestamps - not updating on rerun
 * Fixed S3 example compose
-.. end_latest_release
 
 `1.10.2`_
 ---------
@@ -275,6 +280,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.11.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.11.0...1.11.1
 .. _`1.11.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.10.2...1.11.0
 .. _`1.10.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.10.1...1.10.2
 .. _`1.10.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.9.1...1.10.1
