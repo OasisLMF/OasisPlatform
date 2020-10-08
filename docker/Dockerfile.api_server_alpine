@@ -1,5 +1,5 @@
 # ---- STAGE 1 -----
-FROM python:3-alpine AS build-packages
+FROM python:3-alpine3.11 AS build-packages
 
 RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers
 COPY ./requirements-server.txt ./requirements.txt
