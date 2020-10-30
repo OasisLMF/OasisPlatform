@@ -117,6 +117,24 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             status=HTTP_201_CREATED,
         )
 
+    @action(methods=['get'], detail=True)
+    def storage_links(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the portfolios storage backed link references, `object keys` or `file paths`
+        """
+        serializer = self.get_serializer()
+        return Response(serializer.get_storage_links(self.get_object()))
+    
+    @storage_links.mapping.post
+    def set_storage_links(self, request, pk=None, version=None):
+        """
+        post:
+        Links a portfolio's file references to new, pre-existing, `object keys` or `file paths`
+        """
+        pass
+        #return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types)
+
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):

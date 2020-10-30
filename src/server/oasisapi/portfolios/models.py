@@ -42,7 +42,6 @@ class Portfolio(TimeStampedModel):
     def get_absolute_reinsurance_scope_file_url(self, request=None):
         return reverse('portfolio-reinsurance-scope-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-
 class PortfolioStatus(TimeStampedModel):
 
     def __str__(self):

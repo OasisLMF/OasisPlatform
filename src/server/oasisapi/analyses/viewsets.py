@@ -383,6 +383,17 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(df_serializer.data)
 
 
+    @action(methods=['get'], detail=True)
+    def storage_links(self, request, pk=None, version=None):
+        """
+        get:                                                                                                                                                 
+        Gets the analyses storage backed link references, `object keys` or `file paths`
+        """
+        import ipdb; ipdb.set_trace()
+        serializer = AnalysisSerializer(instance=self.get_object(), context=self.get_serializer_context())
+        return Response(serializer.get_storage_links(self.get_object()))
+
+
 class AnalysisSettingsView(viewsets.ModelViewSet):
     """
     list:

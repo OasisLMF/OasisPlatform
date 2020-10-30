@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from ..analyses.serializers import AnalysisSerializer
+from ..files.models import file_storage_link
 from .models import Portfolio
 
 from ..schemas.serializers import (
@@ -86,6 +87,14 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 "stored": str(instance.reinsurance_scope_file.file)
             }
 
+    def get_storage_links(self, instance):
+        # To DO -- add media root / aws_location 
+        return {
+            'location_file': file_storage_link(instance.location_file),
+            'accounts_file': file_storage_link(instance.accounts_file),
+            'reinsurance_info_file': file_storage_link(instance.reinsurance_info_file),
+            'reinsurance_scope_file': file_storage_link(instance.reinsurance_scope_file)
+        }    
 
 class CreateAnalysisSerializer(AnalysisSerializer):
     class Meta(AnalysisSerializer.Meta):

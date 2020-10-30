@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from .models import Analysis
+from ..files.models import file_storage_link
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
@@ -114,6 +115,22 @@ class AnalysisSerializer(serializers.ModelSerializer):
                 error = {'model': ["Model pk \"{}\" - has been deleted.".format(attrs['model'].id)]}
                 raise ValidationError(detail=error)
         return attrs
+
+    def get_storage_links(self, instance):
+            # To DO -- add media root / aws_location
+        return {
+            'settings_file': file_storage_link(instance.settings_file, True),
+            'input_file': file_storage_link(instance.input_file, True),
+            'input_generation_traceback_file': file_storage_link(instance.input_generation_traceback_file, True),
+            'output_file': file_storage_link(instance.output_file, True),
+            'run_traceback_file': file_storage_link(instance.run_traceback_file, True),
+            'run_log_file': file_storage_link(instance.run_log_file, True),
+            'lookup_errors_file': file_storage_link(instance.lookup_errors_file, True),
+            'lookup_success_file': file_storage_link(instance.lookup_success_file, True),
+            'lookup_validation_file': file_storage_link(instance.lookup_validation_file, True),
+            'summary_levels_file ': file_storage_link(instance.summary_levels_file, True)
+        }
+
 
 class AnalysisCopySerializer(AnalysisSerializer):
     def __init__(self, *args, **kwargs):
