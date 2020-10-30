@@ -1,4 +1,5 @@
 __all__ = [
+    'StorageLinkSerializer'
     'LocFileSerializer',
     'AccFileSerializer',
     'ReinsInfoFileSerializer',
@@ -41,6 +42,18 @@ class TokenRefreshResponseSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         raise NotImplementedError()
 
+
+class StorageLinkSerializer(serializers.Serializer):
+    accounts_file = serializers.CharField()
+    location_file = serializers.CharField()
+    reinsurance_info_file = serializers.CharField()
+    reinsurance_scope_file = serializers.CharField()
+
+    def create(self, validated_data):
+        raise NotImplementedError()
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError()
 
 class LocFileSerializer(serializers.Serializer):
     url = serializers.URLField()

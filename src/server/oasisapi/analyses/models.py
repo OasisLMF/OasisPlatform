@@ -120,6 +120,9 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_run_log_file_url(self, request=None):
         return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    
+    def get_absolute_storage_url(self, request=None):
+        return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
     def validate_run(self):

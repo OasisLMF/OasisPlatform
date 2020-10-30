@@ -11,7 +11,7 @@ from drf_yasg.utils import swagger_auto_schema
 from django_filters import rest_framework as filters
 
 from .models import Analysis
-from .serializers import AnalysisSerializer, AnalysisCopySerializer
+from .serializers import AnalysisSerializer, AnalysisCopySerializer, StorageAnalysisSerializer
 
 from ..analysis_models.models import AnalysisModel
 from ..data_files.serializers import DataFileSerializer
@@ -156,6 +156,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             return AnalysisCopySerializer
         elif self.action == 'data_files':
             return DataFileSerializer
+        elif self.action == 'storage_links':
+            return StorageAnalysisSerializer
         elif self.action in self.file_action_types:
             return RelatedFileSerializer
         else:
@@ -383,15 +385,15 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(df_serializer.data)
 
 
+    
     @action(methods=['get'], detail=True)
     def storage_links(self, request, pk=None, version=None):
         """
         get:                                                                                                                                                 
         Gets the analyses storage backed link references, `object keys` or `file paths`
         """
-        import ipdb; ipdb.set_trace()
-        serializer = AnalysisSerializer(instance=self.get_object(), context=self.get_serializer_context())
-        return Response(serializer.get_storage_links(self.get_object()))
+        serializer = self.get_serializer(self.get_object())
+        return Response(serializer.data)
 
 
 class AnalysisSettingsView(viewsets.ModelViewSet):

@@ -19,6 +19,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     location_file = serializers.SerializerMethodField()
     reinsurance_info_file = serializers.SerializerMethodField()
     reinsurance_scope_file = serializers.SerializerMethodField()
+    storage_links = serializers.SerializerMethodField()
 
     class Meta:
         model = Portfolio
@@ -31,6 +32,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'accounts_file',
             'reinsurance_info_file',
             'reinsurance_scope_file',
+            'storage_links',
         )
 
     def create(self, validated_data):
@@ -38,6 +40,11 @@ class PortfolioSerializer(serializers.ModelSerializer):
         if not data.get('creator') and 'request' in self.context:
             data['creator'] = self.context.get('request').user
         return super(PortfolioSerializer, self).create(data)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_storage_links(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_storage_url(request=request)
 
     @swagger_serializer_method(serializer_or_field=LocFileSerializer)
     def get_location_file(self, instance):
@@ -87,14 +94,54 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 "stored": str(instance.reinsurance_scope_file.file)
             }
 
-    def get_storage_links(self, instance):
-        # To DO -- add media root / aws_location 
-        return {
-            'location_file': file_storage_link(instance.location_file),
-            'accounts_file': file_storage_link(instance.accounts_file),
-            'reinsurance_info_file': file_storage_link(instance.reinsurance_info_file),
-            'reinsurance_scope_file': file_storage_link(instance.reinsurance_scope_file)
-        }    
+    
+
+
+class StoragePortfolioSerializer(serializers.ModelSerializer):
+    accounts_file = serializers.SerializerMethodField()
+    location_file = serializers.SerializerMethodField()
+    reinsurance_info_file = serializers.SerializerMethodField()
+    reinsurance_scope_file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Portfolio
+        fields = (
+            'location_file',
+            'accounts_file',
+            'reinsurance_info_file',
+            'reinsurance_scope_file',
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_location_file(self, instance):
+        return file_storage_link(instance.location_file, True)
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_accounts_file(self, instance):
+        return file_storage_link(instance.accounts_file, True)
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_reinsurance_info_file(self, instance):
+        return file_storage_link(instance.reinsurance_info_file, True)
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_reinsurance_scope_file(self, instance):
+        return file_storage_link(instance.reinsurance_scope_file, True)
+
+
+    def validate(self, attrs):
+        import ipdb; ipdb.set_trace()
+        ## TODO check file link refs here, create new FileFields to test?
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        import ipdb; ipdb.set_trace()
+        ## TODO update file fields here
+
+        #instance.save()
+        return instance
+
 
 class CreateAnalysisSerializer(AnalysisSerializer):
     class Meta(AnalysisSerializer.Meta):
