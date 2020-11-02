@@ -2,11 +2,12 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.files.storage import default_storage
-#from django.core.files import File
+from django.core.files import File
+from django.core.exceptions import ObjectDoesNotExist
 
 from ..analyses.serializers import AnalysisSerializer
 from ..files.models import file_storage_link
-from ..files.models import RelatedFile 
+from ..files.models import RelatedFile
 from .models import Portfolio
 
 
@@ -159,11 +160,11 @@ class StoragePortfolioSerializer(serializers.ModelSerializer):
                     errors[k] = "File '{}' not found in default storage".format(value)
                     continue
                 # Check that file isn't linked already (should this check exisit?)
-                else:    
-                    attached_files = RelatedFile.objects.filter(file=value)
-                    if attached_files.exists():
-                        errors[k] = "File '{}' is already referenced in the filestorage DB, multiple models cannot share a single file.".format(value)
-                        continue
+                #else:    
+                #    attached_files = RelatedFile.objects.filter(file=value)
+                #    if attached_files.exists():
+                #        errors[k] = "File '{}' is already referenced in the filestorage DB, multiple models cannot share a single file.".format(value)
+                #        continue
 
                 # Data is valid     
                 attrs[k] = value
@@ -171,11 +172,39 @@ class StoragePortfolioSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
         return super(StoragePortfolioSerializer, self).validate(attrs)
 
-    def update(self, instance, validated_data):
-        import ipdb; ipdb.set_trace()
-        ## TODO update file fields here
 
-        #instance.save()
+    def update(self, instance, validated_data):
+        files_for_removal = list()
+        for field in validated_data: 
+
+            #if isinstance(default_storage, django.core.files.storage.DefaultStorage) :
+            ## Fetch Content type
+            content_type='text/csv'
+            stored_file = default_storage.open(validated_data[field])
+            new_file = File(stored_file, name=validated_data[field])
+
+            new_related_file = RelatedFile.objects.create(
+                file=new_file,
+                filename=validated_data[field],
+                content_type=content_type,
+                creator=self.context['request'].user,
+                store_as_filename=True,
+            )
+
+            # Mark prev ref for deleation if it exisits
+            if hasattr(instance, field):
+                prev_file = getattr(instance, field)
+                files_for_removal.append(prev_file)
+
+            # Set new file ref
+            setattr(instance, field, new_related_file)
+
+        instance.save(update_fields=[k for k in validated_data])
+
+        # Delete prev linked files 
+        for f in files_for_removal:
+            f.delete()
+
         return instance
 
 
