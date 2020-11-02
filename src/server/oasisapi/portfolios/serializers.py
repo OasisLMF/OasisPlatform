@@ -1,9 +1,11 @@
+from os import path
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.files import File
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.base import ContentFile
+from botocore.exceptions import ClientError as S3_ClientError
 
 from ..analyses.serializers import AnalysisSerializer
 from ..files.models import file_storage_link
@@ -99,8 +101,6 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 "stored": str(instance.reinsurance_scope_file.file)
             }
 
-    
-
 
 class StoragePortfolioSerializer(serializers.ModelSerializer):
     accounts_file = serializers.SerializerMethodField()
@@ -133,15 +133,27 @@ class StoragePortfolioSerializer(serializers.ModelSerializer):
     def get_reinsurance_scope_file(self, instance):
         return file_storage_link(instance.reinsurance_scope_file, True)
 
+    def is_in_storage(self, value):
+        if not hasattr(default_storage, 'bucket'):
+            return default_storage.exists(value)
+        else:
+            try:
+                default_storage.bucket.Object(value).load()
+                return True
+            except S3_ClientError as e:
+                if e.response['Error']['Code'] == "404":
+                    return False
+                else:
+                    raise e
 
     def validate(self, attrs):
         file_keys = [k for k in self.fields.keys()]
 
         # Check for at least one entry
-        file_values = [v for k,v in self.initial_data.items() if k in file_keys]
+        file_values = [v for k, v in self.initial_data.items() if k in file_keys]
         if len(file_values) == 0:
             raise serializers.ValidationError('At least one file field reference required from [{}]'.format(', '.join(file_keys)))
-         
+
         errors = dict()
         for k in file_keys:
             value = self.initial_data.get(k)
@@ -150,46 +162,56 @@ class StoragePortfolioSerializer(serializers.ModelSerializer):
                 # Check type is string
                 if not isinstance(value, str):
                     errors[k] = "Value is not type string, found {}".format(type(value))
-                    continue 
-                # Check String is not empry     
+                    continue
+                # Check String is not empry
                 elif len(value.strip()) < 1:
-                    errors[k] = "Value is emtpry or whitespace string.".format(value)
-                    continue 
-                # Check that the file exisits 
-                elif not default_storage.exists(value):
+                    errors[k] = "Value is emtpry or whitespace string."
+                    continue
+                # Check that the file exisits
+                elif not self.is_in_storage(value):
                     errors[k] = "File '{}' not found in default storage".format(value)
                     continue
-                # Check that file isn't linked already (should this check exisit?)
-                #else:    
-                #    attached_files = RelatedFile.objects.filter(file=value)
-                #    if attached_files.exists():
-                #        errors[k] = "File '{}' is already referenced in the filestorage DB, multiple models cannot share a single file.".format(value)
-                #        continue
 
-                # Data is valid     
+                # Data is valid
                 attrs[k] = value
         if errors:
             raise serializers.ValidationError(errors)
         return super(StoragePortfolioSerializer, self).validate(attrs)
 
-
     def update(self, instance, validated_data):
         files_for_removal = list()
-        for field in validated_data: 
+        content_type = 'text/csv'
+        for field in validated_data:
 
-            #if isinstance(default_storage, django.core.files.storage.DefaultStorage) :
-            ## Fetch Content type
-            content_type='text/csv'
-            stored_file = default_storage.open(validated_data[field])
-            new_file = File(stored_file, name=validated_data[field])
+            # S3 storage - File copy needed
+            if hasattr(default_storage, 'bucket'):
+                fname = path.basename(validated_data[field])
+                new_file = ContentFile('')
+                new_file.name = default_storage.get_alternative_name(fname, '')
+                new_related_file = RelatedFile.objects.create(
+                    file=new_file,
+                    filename=fname,
+                    content_type=content_type,
+                    creator=self.context['request'].user,
+                    store_as_filename=True,
+                )
 
-            new_related_file = RelatedFile.objects.create(
-                file=new_file,
-                filename=validated_data[field],
-                content_type=content_type,
-                creator=self.context['request'].user,
-                store_as_filename=True,
-            )
+                # S3 storage -- need to copy existing key to new
+                bucket = default_storage.bucket
+                stored_file = default_storage.open(new_related_file.file.name)
+                stored_file.obj.copy({"Bucket": bucket.name, "Key": validated_data[field]})
+
+            # Shared-fs
+            else:
+                stored_file = default_storage.open(validated_data[field])
+                new_file = File(stored_file, name=validated_data[field])
+                new_related_file = RelatedFile.objects.create(
+                    file=new_file,
+                    filename=validated_data[field],
+                    content_type=content_type,
+                    creator=self.context['request'].user,
+                    store_as_filename=True,
+                )
 
             # Mark prev ref for deleation if it exisits
             if hasattr(instance, field):
@@ -201,7 +223,7 @@ class StoragePortfolioSerializer(serializers.ModelSerializer):
 
         instance.save(update_fields=[k for k in validated_data])
 
-        # Delete prev linked files 
+        # Delete prev linked files
         for f in files_for_removal:
             f.delete()
 
