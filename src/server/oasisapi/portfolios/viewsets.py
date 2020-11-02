@@ -132,25 +132,10 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(self.get_object())
             return Response(serializer.data)
         else:
-            import ipdb; ipdb.set_trace()
-            serializer = self.get_serializer(self.get_object(), request.data)
-            serializer.is_valid()
+            serializer = self.get_serializer(self.get_object(), data=request.data)
+            serializer.is_valid(raise_exception=True)
             serializer.save()
-
             return Response(serializer.data)
-        #return Response(serializer.get_storage_links(self.get_object()))
-        #return Response(serializer())
-    
-    #@swagger_auto_schema(methods=['post'], request_body=StoragePortfolioSerializer)
-    #@storage_links.mapping.post
-    #def set_storage_links(self, request, pk=None, version=None):
-    #    """
-    #    post:
-    #    Links a portfolio's file references to new, pre-existing, `object keys` or `file paths`
-    #    """
-    #    import ipdb; ipdb.set_trace()
-    #    serializer = self.get_serializer(data=request.data, portfolio=portfolio, context=self.get_serializer_context())
-    #    #return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)

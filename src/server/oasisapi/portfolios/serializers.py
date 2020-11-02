@@ -1,10 +1,14 @@
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from django.core.files.storage import default_storage
+#from django.core.files import File
 
 from ..analyses.serializers import AnalysisSerializer
 from ..files.models import file_storage_link
+from ..files.models import RelatedFile 
 from .models import Portfolio
+
 
 from ..schemas.serializers import (
     LocFileSerializer,
@@ -130,10 +134,42 @@ class StoragePortfolioSerializer(serializers.ModelSerializer):
 
 
     def validate(self, attrs):
-        import ipdb; ipdb.set_trace()
-        ## TODO check file link refs here, create new FileFields to test?
+        file_keys = [k for k in self.fields.keys()]
 
-        return attrs
+        # Check for at least one entry
+        file_values = [v for k,v in self.initial_data.items() if k in file_keys]
+        if len(file_values) == 0:
+            raise serializers.ValidationError('At least one file field reference required from [{}]'.format(', '.join(file_keys)))
+         
+        errors = dict()
+        for k in file_keys:
+            value = self.initial_data.get(k)
+            if value is not None:
+
+                # Check type is string
+                if not isinstance(value, str):
+                    errors[k] = "Value is not type string, found {}".format(type(value))
+                    continue 
+                # Check String is not empry     
+                elif len(value.strip()) < 1:
+                    errors[k] = "Value is emtpry or whitespace string.".format(value)
+                    continue 
+                # Check that the file exisits 
+                elif not default_storage.exists(value):
+                    errors[k] = "File '{}' not found in default storage".format(value)
+                    continue
+                # Check that file isn't linked already (should this check exisit?)
+                else:    
+                    attached_files = RelatedFile.objects.filter(file=value)
+                    if attached_files.exists():
+                        errors[k] = "File '{}' is already referenced in the filestorage DB, multiple models cannot share a single file.".format(value)
+                        continue
+
+                # Data is valid     
+                attrs[k] = value
+        if errors:
+            raise serializers.ValidationError(errors)
+        return super(StoragePortfolioSerializer, self).validate(attrs)
 
     def update(self, instance, validated_data):
         import ipdb; ipdb.set_trace()
