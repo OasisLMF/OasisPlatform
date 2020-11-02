@@ -133,6 +133,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                         "name": portfolio.reinsurance_scope_file.filename,
                         "stored": str(portfolio.reinsurance_scope_file.file)
                     },
+                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url()
                 }, response.json)
 
 
