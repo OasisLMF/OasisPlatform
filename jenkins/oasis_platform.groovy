@@ -29,6 +29,7 @@ node {
         [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', name: 'CHECK_S3', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'RUN_REGRESSION', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
@@ -252,7 +253,27 @@ node {
                }
            }
        }
+       
+       if (params.CHECK_S3) {
+           stage("Check S3 storage"){
+               dir(build_workspace) {
+                   // Stop prev 
+                   if params.CHECK_COMPATIBILITY) {
+                       sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
+                   }
 
+                   // Start S3 compose files 
+                   sh "docker-compose -f compose/s3.oasis.platform.yml -f compose/s3.model.worker.yml -f  up -d"
+
+                   // Reset tags 
+                   env.TAG_RUN_PLATFORM = params.RELEASE_TAG
+                   env.TAG_RUN_WORKER = params.RELEASE_TAG
+
+                   // run test
+                   sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
+               }    
+           }
+       } 
        if (params.RUN_REGRESSION) {
            // RUN model regression tests
            job_params = [
