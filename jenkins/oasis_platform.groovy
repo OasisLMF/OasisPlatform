@@ -270,7 +270,7 @@ node {
                    env.TAG_RUN_WORKER = params.RELEASE_TAG
 
                    // run test
-                   sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
+                   sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${model_tests}"
                }    
            }
        } 
