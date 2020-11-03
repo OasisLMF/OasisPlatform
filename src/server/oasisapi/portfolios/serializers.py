@@ -176,7 +176,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 attrs[k] = value
         if errors:
             raise serializers.ValidationError(errors)
-        return super(StoragePortfolioSerializer, self).validate(attrs)
+        return super(PortfolioStorageSerializer, self).validate(attrs)
 
     def update(self, instance, validated_data):
         files_for_removal = list()
