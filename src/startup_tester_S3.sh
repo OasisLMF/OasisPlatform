@@ -16,7 +16,7 @@ done
 
 # Wait for LOCALSTACK
 until [ $BUCKET_UP -gt 0 ] ; do
-  BUCKET_UP=$(curl -sI "http://localhost:4572/example-bucket" | grep -c "OK")
+  BUCKET_UP=$(curl -sI "http://localstack-s3:4572/example-bucket" | grep -c "OK")
   if [ "$BUCKET_UP" -lt 1 ]; then 
       >&2 echo "Waiting for LocalStack S3 bucket"
       sleep 2
