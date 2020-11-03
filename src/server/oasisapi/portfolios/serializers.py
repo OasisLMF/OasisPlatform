@@ -214,7 +214,8 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             # Mark prev ref for deleation if it exisits
             if hasattr(instance, field):
                 prev_file = getattr(instance, field)
-                files_for_removal.append(prev_file)
+                if prev_file:
+                    files_for_removal.append(prev_file)
 
             # Set new file ref
             setattr(instance, field, new_related_file)
