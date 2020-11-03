@@ -13,9 +13,8 @@ from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
-from os import path
 
-from ..files.models import RelatedFile
+from ..files.models import RelatedFile, file_storage_link
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
@@ -121,6 +120,9 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_run_log_file_url(self, request=None):
         return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    
+    def get_absolute_storage_url(self, request=None):
+        return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
     def validate_run(self):
@@ -174,8 +176,8 @@ class Analysis(TimeStampedModel):
     @property
     def run_analysis_signature(self):
         complex_data_files = self.create_complex_model_data_file_dicts()
-        input_file = self.storage_link(self.input_file)
-        settings_file = self.storage_link(self.settings_file)
+        input_file = file_storage_link(self.input_file)
+        settings_file = file_storage_link(self.settings_file)
 
         return signature(
             'run_analysis',
@@ -253,11 +255,11 @@ class Analysis(TimeStampedModel):
 
     @property
     def generate_input_signature(self):
-        loc_file = self.storage_link(self.portfolio.location_file)
-        acc_file = self.storage_link(self.portfolio.accounts_file)
-        info_file = self.storage_link(self.portfolio.reinsurance_info_file)
-        scope_file = self.storage_link(self.portfolio.reinsurance_scope_file)
-        settings_file = self.storage_link(self.settings_file)
+        loc_file = file_storage_link(self.portfolio.location_file)
+        acc_file = file_storage_link(self.portfolio.accounts_file)
+        info_file = file_storage_link(self.portfolio.reinsurance_info_file)
+        scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
+        settings_file = file_storage_link(self.settings_file)
         complex_data_files = self.create_complex_model_data_file_dicts()
 
         return signature(
@@ -275,44 +277,12 @@ class Analysis(TimeStampedModel):
         """
         complex_data_files = [
             {
-                STORED_FILENAME: self.storage_link(cmdf.file),
+                STORED_FILENAME: file_storage_link(cmdf.file),
                 ORIGINAL_FILENAME: cmdf.file.filename
             } for cmdf in self.complex_model_data_files.all()
         ]
         return complex_data_files
 
-
-    def storage_link(self, storage_obj):
-           """
-           Return link to file storage based on 'STORAGE_TYPE' value in settings.py
-
-            storage_obj should point to a `RelatedFile` Obj
-
-           STORAGE_TYPE;
-                'Default': local filesystem -> return filename
-                'AWS-S3': Remote Object Store -> Return URL with expire time
-           """
-           # GUARD check for file, return None it missing
-           if not hasattr(storage_obj, 'file'):
-               return None
-           if not storage_obj.file:
-               return None
-
-           # S3 storage links
-           if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws']:
-                if settings.AWS_SHARED_BUCKET:
-                    # Return object key for shared S3 bucket
-                    return path.join(
-                        storage_obj.file.storage.location,
-                        storage_obj.file.name,
-                    )
-                else:
-                    # Return Download URL to S3 Object
-                    return storage_obj.file.storage.url(storage_obj.file.name)
-
-           # Shared FS filename
-           else:
-                return storage_obj.file.name
 
     def copy_file(self, obj):
         """ Duplicate a conneced DB object and

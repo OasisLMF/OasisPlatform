@@ -9,6 +9,7 @@ from celery import signals
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
@@ -93,19 +94,21 @@ def store_file(reference, content_type, creator, required=True, filename=None):
                 store_as_filename=True,
             )
 
-    # Download data from S3 Bucket
+    # Issue S3 object Copy
     if is_in_bucket(reference):
-        with TemporaryFile() as tmp_file:
-            default_storage.bucket.download_fileobj(reference, tmp_file)
-            ref = os.path.basename(reference)
-            fname = filename if filename else ref 
-            return RelatedFile.objects.create(
-                file=File(tmp_file, name=fname),
-                filename=fname,
-                content_type=content_type,
-                creator=creator,
-                store_as_filename=True,
-            )
+        fname = filename if filename else ref
+        new_file = ContentFile('')
+        new_file.name = fname
+        new_related_file = RelatedFile.objects.create(
+            file=new_file,
+            filename=fname,
+            content_type=content_type,
+            creator=creator,
+            store_as_filename=True,
+        )   
+        stored_file = default_storage.open(new_related_file.file.name)
+        stored_file.obj.copy({"Bucket": default_storage.bucket.name, "Key": reference})
+        return new_related_file
 
     try:
         ref = str(os.path.basename(reference))

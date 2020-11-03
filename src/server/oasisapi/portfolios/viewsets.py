@@ -16,7 +16,8 @@ from ..files.views import handle_related_file
 from ..files.serializers import RelatedFileSerializer
 from .models import Portfolio
 from ..schemas.custom_swagger import FILE_RESPONSE
-from .serializers import PortfolioSerializer, CreateAnalysisSerializer
+from ..schemas.serializers import StorageLinkSerializer
+from .serializers import PortfolioSerializer, CreateAnalysisSerializer, PortfolioStorageSerializer
 
 
 class PortfolioFilter(TimeStampedFilter):
@@ -85,6 +86,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
+        elif self.action in ['set_storage_links', 'storage_links']:
+            return PortfolioStorageSerializer
         elif self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
             'set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file',
@@ -116,6 +119,23 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             AnalysisSerializer(instance=analysis, context=self.get_serializer_context()).data,
             status=HTTP_201_CREATED,
         )
+
+    @swagger_auto_schema(methods=['post'], request_body=StorageLinkSerializer)
+    @action(methods=['get', 'post'], detail=True)
+    def storage_links(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the portfolios storage backed link references, `object keys` or `file paths`
+        """
+        method = request.method.lower()
+        if method == 'get':
+            serializer = self.get_serializer(self.get_object())
+            return Response(serializer.data)
+        else:
+            serializer = self.get_serializer(self.get_object(), data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
