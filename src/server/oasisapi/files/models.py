@@ -29,6 +29,7 @@ def file_storage_link(storage_obj, fullpath=False):
             'Default': local filesystem -> return filename
             'AWS-S3': Remote Object Store -> Return URL with expire time
 
+       fullpath: return the S3 storage path with aws_location
        """
        # GUARD check for file, return None it missing
        if not hasattr(storage_obj, 'file'):
@@ -50,11 +51,11 @@ def file_storage_link(storage_obj, fullpath=False):
 
        # Shared FS filename
        else:
-           if fullpath:
-               return os.path.join(
-                   storage_obj.file.storage.location,
-                   storage_obj.file.name,
-               )    
+           #if fullpath:
+           #    return os.path.join(
+           #        storage_obj.file.storage.location,
+           #        storage_obj.file.name,
+           #    )    
            return storage_obj.file.name
 
 
