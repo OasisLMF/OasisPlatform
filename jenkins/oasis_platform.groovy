@@ -258,7 +258,7 @@ node {
            stage("Check S3 storage"){
                dir(build_workspace) {
                    // Stop prev 
-                   if params.CHECK_COMPATIBILITY) {
+                   if (params.CHECK_COMPATIBILITY) {
                        sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
                    }
 
