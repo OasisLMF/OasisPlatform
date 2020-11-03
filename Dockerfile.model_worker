@@ -14,6 +14,7 @@ RUN pip install -r ./requirements.txt
 # Copy startup script + server config
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/startup_tester.sh ./runtest
+COPY ./src/startup_tester_S3.sh ./runtest_S3
 COPY ./conf.ini ./
 
 COPY ./src/__init__.py ./src/
