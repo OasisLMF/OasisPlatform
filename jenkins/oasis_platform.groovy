@@ -263,7 +263,7 @@ node {
                    }
 
                    // Start S3 compose files 
-                   sh "docker-compose -f compose/s3.oasis.platform.yml -f compose/s3.model.worker.yml -f  up -d"
+                   sh "docker-compose -f compose/s3.oasis.platform.yml -f compose/s3.model.worker.yml up -d"
 
                    // Reset tags 
                    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
