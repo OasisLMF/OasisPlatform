@@ -11,7 +11,7 @@ from drf_yasg.utils import swagger_auto_schema
 from django_filters import rest_framework as filters
 
 from .models import Analysis
-from .serializers import AnalysisSerializer, AnalysisCopySerializer, StorageAnalysisSerializer
+from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisStorageSerializer
 
 from ..analysis_models.models import AnalysisModel
 from ..data_files.serializers import DataFileSerializer
@@ -157,7 +157,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         elif self.action == 'data_files':
             return DataFileSerializer
         elif self.action == 'storage_links':
-            return StorageAnalysisSerializer
+            return AnalysisStorageSerializer
         elif self.action in self.file_action_types:
             return RelatedFileSerializer
         else:

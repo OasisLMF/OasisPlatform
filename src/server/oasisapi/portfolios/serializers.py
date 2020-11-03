@@ -102,7 +102,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             }
 
 
-class StoragePortfolioSerializer(serializers.ModelSerializer):
+class PortfolioStorageSerializer(serializers.ModelSerializer):
     accounts_file = serializers.SerializerMethodField()
     location_file = serializers.SerializerMethodField()
     reinsurance_info_file = serializers.SerializerMethodField()
@@ -195,8 +195,6 @@ class StoragePortfolioSerializer(serializers.ModelSerializer):
                     creator=self.context['request'].user,
                     store_as_filename=True,
                 )
-
-                # S3 storage -- need to copy existing key to new
                 bucket = default_storage.bucket
                 stored_file = default_storage.open(new_related_file.file.name)
                 stored_file.obj.copy({"Bucket": bucket.name, "Key": validated_data[field]})
@@ -221,12 +219,10 @@ class StoragePortfolioSerializer(serializers.ModelSerializer):
             # Set new file ref
             setattr(instance, field, new_related_file)
 
+        # Update & Delete prev linked files
         instance.save(update_fields=[k for k in validated_data])
-
-        # Delete prev linked files
         for f in files_for_removal:
             f.delete()
-
         return instance
 
 

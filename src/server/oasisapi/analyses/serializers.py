@@ -125,7 +125,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class StorageAnalysisSerializer(serializers.ModelSerializer):
+class AnalysisStorageSerializer(serializers.ModelSerializer):
     settings_file = serializers.SerializerMethodField()
     input_file = serializers.SerializerMethodField()
     input_generation_traceback_file = serializers.SerializerMethodField()

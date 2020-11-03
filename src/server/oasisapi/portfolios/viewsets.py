@@ -17,7 +17,7 @@ from ..files.serializers import RelatedFileSerializer
 from .models import Portfolio
 from ..schemas.custom_swagger import FILE_RESPONSE
 from ..schemas.serializers import StorageLinkSerializer
-from .serializers import PortfolioSerializer, CreateAnalysisSerializer, StoragePortfolioSerializer
+from .serializers import PortfolioSerializer, CreateAnalysisSerializer, PortfolioStorageSerializer
 
 
 class PortfolioFilter(TimeStampedFilter):
@@ -87,7 +87,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
         elif self.action in ['set_storage_links', 'storage_links']:
-            return StoragePortfolioSerializer
+            return PortfolioStorageSerializer
         elif self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
             'set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file',
