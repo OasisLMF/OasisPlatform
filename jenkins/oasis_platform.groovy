@@ -263,14 +263,14 @@ node {
                    }
 
                    // Start S3 compose files 
-                   sh "docker-compose -f compose/s3.oasis.platform.yml -f compose/s3.model.worker.yml up -d"
+                   sh PIPELINE + " start_model_s3"
 
                    // Reset tags 
                    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
                    env.TAG_RUN_WORKER = params.RELEASE_TAG
 
                    // run test
-                   sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${model_tests}"
+                   sh PIPELINE + " run_test_s3 --config /var/oasis/test/${model_test_ini} --test-case ${model_tests}"
                }    
            }
        } 
