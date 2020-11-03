@@ -41,7 +41,7 @@ def file_storage_link(storage_obj, fullpath=False):
            if settings.AWS_SHARED_BUCKET or fullpath:
                # Return object key for shared S3 bucket
                return os.path.join(
-                   storage_obj.aws_location,
+                   storage_obj.file.storage.location,
                    storage_obj.file.name,
                )
            else:
