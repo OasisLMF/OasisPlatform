@@ -1,11 +1,22 @@
 OasisPlatform Changelog
 =======================
 
-`1.11.1`_
+
+`1.12.0`_
 ---------
 .. start_latest_release
-* Update oasislmf package to 1.11.1
+* [#422](https://github.com/OasisLMF/OasisPlatform/issues/422) - Add S3 Integration tests to the platform
+* [#419](https://github.com/OasisLMF/OasisPlatform/issues/419) - Give the API user the possibilty to manage files outside of oasis
+* [#424](https://github.com/OasisLMF/OasisPlatform/issues/424) - Fixed default value for DISABLE_WORKER_REG
+* [#400](https://github.com/OasisLMF/OasisPlatform/issues/400) - Extend model_settings.json with optional metadata from Nasdaq
+* [#423](https://github.com/OasisLMF/OasisPlatform/issues/423) - Revert feature #377 - always Read aws_location from confing dont store with file object
+* [#409](https://github.com/OasisLMF/OasisPlatform/issues/409) -  Differentiate model run time parameters between generation and losses steps in model_settings.json
 .. end_latest_release
+
+
+`1.11.1`_
+---------
+* Update oasislmf package to 1.11.1
 
 
 `1.11.0`_
@@ -26,7 +37,7 @@ OasisPlatform Changelog
 * Fix issue with supplier model runner
 * [#401](https://github.com/OasisLMF/OasisPlatform/issues/401) - Fix CASCADE deletes on analyses copy
 * [#398](https://github.com/OasisLMF/OasisPlatform/issues/398) - Added option to disable worker auto-registration
-* [PR 406](https://github.com/OasisLMF/OasisPlatform/pull/406) - Clean up for worker configuration 
+* [PR 406](https://github.com/OasisLMF/OasisPlatform/pull/406) - Clean up for worker configuration
 
 `1.10.0`_
 ---------
@@ -280,6 +291,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.12.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.11.1...1.12.0
 .. _`1.11.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.11.0...1.11.1
 .. _`1.11.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.10.2...1.11.0
 .. _`1.10.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.10.1...1.10.2
