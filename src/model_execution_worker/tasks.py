@@ -183,6 +183,11 @@ def register_worker(sender, **k):
     ## Log All Env variables
     logging.info('OASIS_ENV_VARS:' + json.dumps({k:v for (k,v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
 
+    ## Clean up multiprocess tmp dirs on startup
+    for tmpdir in glob.glob("/tmp/pymp-*"):
+        os.rmdir(tmpdir)
+        
+
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
         super(InvalidInputsException, self).__init__('Inputs location not a tarfile: {}'.format(input_archive))
