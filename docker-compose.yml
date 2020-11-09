@@ -37,7 +37,7 @@ services:
   worker-monitor:
    restart: always
    image: coreoasis/api_server:latest
-   command: [wait-for-server, 'server:8000', celery, worker, -A, src.server.oasisapi, --loglevel=INFO]
+   command: [wait-for-server, 'server:8000', celery, -A, src.server.oasisapi, worker, --loglevel=INFO]
    links:
      - server-db
      - celery-db
