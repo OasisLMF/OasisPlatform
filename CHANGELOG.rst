@@ -1,17 +1,21 @@
 OasisPlatform Changelog
 =======================
 
+`1.12.1`_
+---------
+.. start_latest_release
+* Update oasislmf package to 1.12.1
+.. end_latest_release
+
 
 `1.12.0`_
 ---------
-.. start_latest_release
 * [#422](https://github.com/OasisLMF/OasisPlatform/issues/422) - Add S3 Integration tests to the platform
 * [#419](https://github.com/OasisLMF/OasisPlatform/issues/419) - Give the API user the possibilty to manage files outside of oasis
 * [#424](https://github.com/OasisLMF/OasisPlatform/issues/424) - Fixed default value for DISABLE_WORKER_REG
 * [#400](https://github.com/OasisLMF/OasisPlatform/issues/400) - Extend model_settings.json with optional metadata from Nasdaq
 * [#423](https://github.com/OasisLMF/OasisPlatform/issues/423) - Revert feature #377 - always Read aws_location from confing dont store with file object
 * [#409](https://github.com/OasisLMF/OasisPlatform/issues/409) -  Differentiate model run time parameters between generation and losses steps in model_settings.json
-.. end_latest_release
 
 
 `1.11.1`_
