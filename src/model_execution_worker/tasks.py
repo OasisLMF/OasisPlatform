@@ -15,7 +15,6 @@ import tarfile
 from contextlib import contextmanager, suppress
 
 from celery import Celery, signature
-from celery.task import task
 from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError
 from oasislmf.utils import status
@@ -37,8 +36,8 @@ Celery task wrapper for Oasis ktools calculation.
 LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
-CELERY = Celery()
-CELERY.config_from_object(celery_conf)
+app = Celery()
+app.config_from_object(celery_conf)
 logging.info("Started worker")
 
 filestore = StorageSelector(settings)
@@ -184,6 +183,11 @@ def register_worker(sender, **k):
     ## Log All Env variables
     logging.info('OASIS_ENV_VARS:' + json.dumps({k:v for (k,v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
 
+    ## Clean up multiprocess tmp dirs on startup
+    for tmpdir in glob.glob("/tmp/pymp-*"):
+        os.rmdir(tmpdir)
+        
+
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
         super(InvalidInputsException, self).__init__('Inputs location not a tarfile: {}'.format(input_archive))
@@ -233,7 +237,7 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
-@task(name='run_analysis', bind=True, acks_late=True)
+@app.task(name='run_analysis', bind=True, acks_late=True)
 def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None):
     """Task wrapper for running an analysis.
 
@@ -371,7 +375,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
     return output_location, traceback_location, log_location, result.returncode
 
 
-@task(name='generate_input', bind=True, acks_late=True)
+@app.task(name='generate_input', bind=True, acks_late=True)
 def generate_input(self,
                    analysis_pk,
                    loc_file,
@@ -485,7 +489,7 @@ def generate_input(self,
         return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, result.returncode
 
 
-@task(name='on_error')
+@app.task(name='on_error')
 def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk):
     """
     Because of how celery works we need to include a celery task registered in the

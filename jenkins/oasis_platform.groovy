@@ -50,7 +50,7 @@ node {
     String image_worker  = "coreoasis/model_worker"
 
     // docker vars (slim)
-    String docker_api_slim    = "docker/Dockerfile.api_server_alpine"
+    //String docker_api_slim    = "docker/Dockerfile.api_server_alpine"
     String docker_worker_slim = "docker/Dockerfile.model_worker_slim"
 
     // platform vars
@@ -171,9 +171,9 @@ node {
             build_oasis_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        if (params.PUBLISH) {
-                            sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
-                        }
+                        //if (params.PUBLISH) {
+                        //    sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
+                        //}
                         sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
 
                     }
@@ -310,7 +310,7 @@ node {
                 publish_api_server: {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-slim"
+                            //sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-slim"
                             sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
                         }
                     }
