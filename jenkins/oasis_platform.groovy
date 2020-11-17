@@ -253,27 +253,27 @@ node {
                }
            }
        }
-       
+
        if (params.CHECK_S3) {
            stage("Check S3 storage"){
                dir(build_workspace) {
-                   // Stop prev 
+                   // Stop prev
                    if (params.CHECK_COMPATIBILITY) {
                        sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
                    }
 
-                   // Start S3 compose files 
+                   // Start S3 compose files
                    sh PIPELINE + " start_model_s3"
 
-                   // Reset tags 
+                   // Reset tags
                    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
                    env.TAG_RUN_WORKER = params.RELEASE_TAG
 
                    // run test
                    sh PIPELINE + " run_test_s3 --config /var/oasis/test/${model_test_ini} --test-case ${model_tests}"
-               }    
+               }
            }
-       } 
+       }
        if (params.RUN_REGRESSION) {
            // RUN model regression tests
            job_params = [
@@ -413,7 +413,7 @@ node {
             }
         }
         // Run merge back if publish
-        if (params.PUBLISH && params.AUTO_MERGE){
+        if (params.PUBLISH && params.AUTO_MERGE && ! hasFailed){
             dir(oasis_workspace) {
                 sshagent (credentials: [git_creds]) {
                     sh "git stash"
