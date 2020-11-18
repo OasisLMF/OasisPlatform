@@ -17,6 +17,7 @@ COPY --from=build-packages /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
 
 ENV OASIS_MEDIA_ROOT=/shared-fs
+ENV OASIS_ENV_OVERRIDE=true
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 

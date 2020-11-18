@@ -26,6 +26,7 @@ COPY --from=build-packages /root/.local /root/.local
 COPY --from=build-packages /usr/local/include/ /usr/local/include
 COPY --from=build-packages /usr/local/lib /usr/local/lib
 ENV PATH=/root/.local/bin:$PATH
+ENV OASIS_ENV_OVERRIDE=true
 
 #ENV OASIS_MEDIA_ROOT=/shared-fs
 #RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
