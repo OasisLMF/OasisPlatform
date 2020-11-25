@@ -407,6 +407,10 @@ node {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
+        //Clear tox
+        dir(oasis_workspace) {
+            //deleteDir() // wipe out python env to save space
+        }
         //Store reports
         if (params.UNITTEST){
             dir(oasis_workspace){
