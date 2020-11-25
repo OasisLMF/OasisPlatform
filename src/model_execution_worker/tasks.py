@@ -68,23 +68,23 @@ def get_oasislmf_config_path(model_id=None):
 
     # 1: Explicit location 
     conf_path = Path(settings.get('worker', 'oasislmf_config', fallback=""))
-    if conf_path.exists():
+    if conf_path.is_file():
         return str(conf_path)
 
     # 2: Fallback 'model specific conf'
     if model_id:
         conf_path = Path(model_root, '{}-oasislmf.json'.format(model_id))
-        if conf_path.exists():
+        if conf_path.is_file():
             return str(model_specific_conf)
 
     # 3: Fallback: Generic model conf 
     conf_path = Path(model_root, 'oasislmf.json')
-    if conf_path.exists():
+    if conf_path.is_file():
         return str(conf_path)
         
     # 4: Fallback: Compatibility check older model mount 
     conf_path = Path('/var/oasis', 'oasislmf.json')
-    if conf_path.exists():
+    if conf_path.is_file():
         return str(conf_path)
 
     raise FileNotFoundError('oasislmf.json Configuration file not found.')
