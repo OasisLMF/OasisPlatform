@@ -60,6 +60,37 @@ class TemporaryDir(object):
         if not self.persist and os.path.isdir(self.name):
             shutil.rmtree(self.name)
 
+def get_oasislmf_config_path(model_id=None):
+    """ Search for the oasislmf confiuration file 
+    """
+    conf_path = None
+    model_root = settings.get('worker', 'model_data_directory', fallback='/home/worker/model')
+
+    # 1: Explicit location 
+    conf_path = Path(settings.get('worker', 'oasislmf_config', fallback=""))
+    if conf_path.exists():
+        return str(conf_path)
+
+    # 2: Fallback 'model specific conf'
+    if model_id:
+        conf_path = Path(model_root, '{}-oasislmf.json'.format(model_id))
+        if conf_path.exists():
+            return str(model_specific_conf)
+
+    # 3: Fallback: Generic model conf 
+    conf_path = Path(model_root, 'oasislmf.json')
+    if conf_path.exists():
+        return str(conf_path)
+        
+    # 4: Fallback: Compatibility check older model mount 
+    conf_path = Path('/var/oasis', 'oasislmf.json')
+    if conf_path.exists():
+        return str(conf_path)
+
+    raise FileNotFoundError('oasislmf.json Configuration file not found.')
+
+
+
 def get_model_settings():
     """ Read the settings file from the path OASIS_MODEL_SETTINGS
         returning the contents as a python dicself.t (none if not found)
@@ -74,7 +105,6 @@ def get_model_settings():
         logging.error("Failed to load Model settings: {}".format(e))
 
     return settings_data
-
 
 
 def get_worker_versions():
@@ -173,7 +203,7 @@ def register_worker(sender, **k):
         logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
 
     ## Optional ENV
-    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
+    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
     logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
@@ -206,22 +236,6 @@ def get_lock():
 
     if gotten:
         lock.release()
-
-
-def get_oasislmf_config_path(model_id=None):
-    conf_var = settings.get('worker', 'oasislmf_config', fallback=None)
-    if not model_id:
-        model_id = settings.get('worker', 'model_id', fallback=None)
-
-    if conf_var:
-        return conf_var
-
-    if model_id:
-        model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/')
-        model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
-        if model_specific_conf.exists():
-            return str(model_specific_conf)
-    return str(Path(model_root, 'oasislmf.json'))
 
 
 # Send notification back to the API Once task is read from Queue
