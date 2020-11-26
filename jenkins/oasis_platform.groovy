@@ -72,10 +72,13 @@ node {
     String model_test_dir  = "${env.WORKSPACE}/${model_workspace}/tests/"
     String model_test_ini  = "test-config.ini"
 
-
     String script_dir = env.WORKSPACE + "/${build_workspace}"
     String git_creds  = "1335b248-336a-47a9-b0f6-9f7314d6f1f4"
     String PIPELINE   = script_dir + "/buildscript/pipeline.sh"
+
+    // Docker image scanning
+    String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
+    String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/reports:/tmp"
 
     // Update MDK branch based on model branch
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
@@ -196,10 +199,10 @@ node {
                 stage('Scan: API server'){
                     dir(oasis_workspace) {
                         // Genrate a report
-                        sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}/reports:/tmp aquasec/trivy image --output /tmp/DockerScan_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
+                        sh "docker run ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/DockerScan_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
                         // Fail on selected severity level
                         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
-                            sh "docker run aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
+                            sh "docker run ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
                         }
                     }
                 }
@@ -208,11 +211,11 @@ node {
                 stage('Scan: model worker'){
                     dir(oasis_workspace) {
                         // Genrate a report
-                        sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}/reports:/tmp aquasec/trivy image --output /tmp/DockerScan_api-server.txt ${image_api}:${env.TAG_RELEASE}"
+                        sh "docker run  ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/DockerScan_api-server.txt ${image_api}:${env.TAG_RELEASE}"
 
                         // Fail on selected severity level
                         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
-                            sh "docker run aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+                            sh "docker run ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
                         }
                     }
                 }
