@@ -78,7 +78,7 @@ node {
 
     // Docker image scanning
     String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
-    String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/cve_scans:/tmp"
+    String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/cve_reports:/tmp"
 
     // Update MDK branch based on model branch
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
@@ -182,6 +182,20 @@ node {
 
                     }
                 }
+            },
+            build_model_worker: {
+                stage('Build: Model worker') {
+                    dir(oasis_workspace) {
+                        if (params.PUBLISH) {
+                            sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
+                        }
+                        sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
+                    }
+                }
+            }
+        )
+        parallel(
+            scan_api_server: {
                 stage('Scan: API server'){
                     dir(oasis_workspace) {
                         // Genrate a report
@@ -193,17 +207,8 @@ node {
                         }
                     }
                 }
-
             },
-            build_model_worker: {
-                stage('Build: Model worker') {
-                    dir(oasis_workspace) {
-                        if (params.PUBLISH) {
-                            sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
-                        }
-                        sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
-                    }
-                }
+            scan_model_worker: {
                 stage('Scan: Model worker'){
                     dir(oasis_workspace) {
                         // Genrate a report
@@ -216,12 +221,6 @@ node {
                 }
             }
         )
-        //parallel(
-        //    scan_api_server: {
-        //    },
-        //    scan_model_worker: {
-        //    }
-        //)
         if (params.UNITTEST){
             stage('Run: unittest') {
                 dir(oasis_workspace) {
@@ -437,7 +436,10 @@ node {
         dir(build_workspace) {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
-                archiveArtifacts artifacts: 'cve_scans/**/*.*'
+        }
+        //Store CVE reports
+        dir(oasis_workspace){
+            archiveArtifacts artifacts: 'cve_reports/**/*.*'
         }
         //Store reports
         if (params.UNITTEST){
