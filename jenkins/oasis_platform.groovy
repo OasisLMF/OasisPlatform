@@ -181,7 +181,7 @@ node {
                         sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
 
                     }
-                },
+                }
                 stage('Scan: API server'){
                     dir(oasis_workspace) {
                         // Genrate a report
@@ -203,7 +203,7 @@ node {
                         }
                         sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
                     }
-                },
+                }
                 stage('Scan: Model worker'){
                     dir(oasis_workspace) {
                         // Genrate a report
