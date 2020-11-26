@@ -78,7 +78,7 @@ node {
 
     // Docker image scanning
     String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
-    String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/reports:/tmp"
+    String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/cve_scans:/tmp"
 
     // Update MDK branch based on model branch
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
@@ -181,37 +181,11 @@ node {
                         sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
 
                     }
-                }
-            },
-            build_model_worker: {
-                stage('Build: model worker') {
-                    dir(oasis_workspace) {
-                        if (params.PUBLISH) {
-                            sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
-                        }
-                        sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
-                    }
-                }
-            }
-        )
-        parallel(
-            scan_api_server: {
+                },
                 stage('Scan: API server'){
                     dir(oasis_workspace) {
                         // Genrate a report
-                        sh "docker run ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/DockerScan_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
-                        // Fail on selected severity level
-                        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
-                            sh "docker run ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
-                        }
-                    }
-                }
-            },
-            scan_model_worker: {
-                stage('Scan: model worker'){
-                    dir(oasis_workspace) {
-                        // Genrate a report
-                        sh "docker run  ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/DockerScan_api-server.txt ${image_api}:${env.TAG_RELEASE}"
+                        sh "docker run  ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/api-server.txt ${image_api}:${env.TAG_RELEASE}"
 
                         // Fail on selected severity level
                         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
@@ -219,8 +193,35 @@ node {
                         }
                     }
                 }
+
+            },
+            build_model_worker: {
+                stage('Build: Model worker') {
+                    dir(oasis_workspace) {
+                        if (params.PUBLISH) {
+                            sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
+                        }
+                        sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
+                    }
+                },
+                stage('Scan: Model worker'){
+                    dir(oasis_workspace) {
+                        // Genrate a report
+                        sh "docker run ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
+                        // Fail on selected severity level
+                        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+                            sh "docker run ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
+                        }
+                    }
+                }
             }
         )
+        //parallel(
+        //    scan_api_server: {
+        //    },
+        //    scan_model_worker: {
+        //    }
+        //)
         if (params.UNITTEST){
             stage('Run: unittest') {
                 dir(oasis_workspace) {
@@ -436,6 +437,7 @@ node {
         dir(build_workspace) {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
+                archiveArtifacts artifacts: 'cve_scans/**/*.*'
         }
         //Store reports
         if (params.UNITTEST){
