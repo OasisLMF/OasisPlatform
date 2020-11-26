@@ -77,6 +77,8 @@ node {
     String PIPELINE   = script_dir + "/buildscript/pipeline.sh"
 
     // Docker image scanning
+    String token_read_only = credentials('github-tkn-read')
+    String docker_gh_token = " -e GITHUB_TOKEN=${token_read_only}"
     String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
     String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/cve_reports:/tmp"
 
@@ -194,33 +196,30 @@ node {
                 }
             }
         )
-        parallel(
-            scan_api_server: {
-                stage('Scan: API server'){
-                    dir(oasis_workspace) {
-                        // Genrate a report
-                        sh "docker run  ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/api-server.txt ${image_api}:${env.TAG_RELEASE}"
-
-                        // Fail on selected severity level
-                        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
-                            sh "docker run ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+            parallel(
+                scan_api_server: {
+                    stage('Scan: API server'){
+                        dir(oasis_workspace) {
+                            // Genrate a report
+                            sh "docker run ${docker_gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/api-server.txt ${image_api}:${env.TAG_RELEASE}"
+                            // Fail on selected severity level
+                            sh "docker run ${docker_gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+                        }
+                    }
+                },
+                scan_model_worker: {
+                    stage('Scan: Model worker'){
+                        dir(oasis_workspace) {
+                            // Genrate a report
+                            sh "docker run ${docker_gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
+                            // Fail on selected severity level
+                            sh "docker run ${docker_gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
                         }
                     }
                 }
-            },
-            scan_model_worker: {
-                stage('Scan: Model worker'){
-                    dir(oasis_workspace) {
-                        // Genrate a report
-                        sh "docker run ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
-                        // Fail on selected severity level
-                        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
-                            sh "docker run ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
-                        }
-                    }
-                }
-            }
-        )
+            )
+        }    
         if (params.UNITTEST){
             stage('Run: unittest') {
                 dir(oasis_workspace) {
@@ -438,8 +437,10 @@ node {
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
         //Store CVE reports
-        dir(oasis_workspace){
-            archiveArtifacts artifacts: 'cve_reports/**/*.*'
+        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+            dir(oasis_workspace){
+                archiveArtifacts artifacts: 'cve_reports/**/*.*'
+            }
         }
         //Store reports
         if (params.UNITTEST){
