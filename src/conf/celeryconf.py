@@ -40,8 +40,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 #: Celery config - accept content type
 CELERY_ACCEPT_CONTENT = ['json']
 
-#: Celery config - timezone
-CELERY_TIMEZONE = 'Europe/London'
+#: Celery config - timezone (default == UTC)
+# CELERY_TIMEZONE = 'Europe/London'
 
 #: Celery config - enable UTC
 CELERY_ENABLE_UTC = True
