@@ -26,6 +26,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: 'develop'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
         [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
@@ -168,7 +169,7 @@ node {
             }
         }
         parallel(
-            build_oasis_api_server: {
+            build_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
                         //if (params.PUBLISH) {
@@ -179,13 +180,40 @@ node {
                     }
                 }
             },
-            build_model_execution_worker: {
-                stage('Build: model exec worker') {
+            build_model_worker: {
+                stage('Build: model worker') {
                     dir(oasis_workspace) {
                         if (params.PUBLISH) {
                             sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
                         }
                         sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
+                    }
+                }
+            }
+        )
+        parallel(
+            scan_api_server: {
+                stage('Scan: API server'){
+                    dir(oasis_workspace) {
+                        // Genrate a report
+                        sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}/reports:/tmp aquasec/trivy image --output /tmp/DockerScan_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
+                        // Fail on selected severity level
+                        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+                            sh "docker run aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
+                        }
+                    }
+                }
+            },
+            scan_model_worker: {
+                stage('Scan: model worker'){
+                    dir(oasis_workspace) {
+                        // Genrate a report
+                        sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}/reports:/tmp aquasec/trivy image --output /tmp/DockerScan_api-server.txt ${image_api}:${env.TAG_RELEASE}"
+
+                        // Fail on selected severity level
+                        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+                            sh "docker run aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+                        }
                     }
                 }
             }
