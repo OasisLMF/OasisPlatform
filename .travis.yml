@@ -1,0 +1,9 @@
+language: python
+python:
+  - 3.6
+  - "pypy3"  
+install:
+  - pip install safety
+script:
+  - safety check -r requirements-server.txt
+  - safety check -r requirements-worker.txt
