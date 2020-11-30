@@ -1,27 +1,32 @@
-# ---- STAGE 1 ----- Build python packages
+# ---- STAGE 1 -----
 FROM ubuntu:20.04 AS build-packages
 
+# Build python packages
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y libspatialindex-dev git curl g++ build-essential libtool autoconf automake python3 python3-pip
 COPY ./requirements-worker.txt ./requirements.txt
 RUN pip3 install --user --no-warn-script-location -r ./requirements.txt
 
 
-# ---- STAGE 2 ---- Create worker image
+# ---- STAGE 2 ----
 FROM ubuntu:20.04
 RUN apt-get update && apt-get install -y --no-install-recommends vim python3 python3-pip libspatialindex-dev curl procps && \
     rm -rf /var/lib/apt/lists/*
 
+# Copy built python packages 
+COPY --from=build-packages /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
 # Enviroment setup
-ENV PATH=/home/worker/.local/bin:$PATH
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_ENV_OVERRIDE=true
 
+# Setup worker dir and user
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
 
-COPY --from=build-packages /root/.local /root/.local
+# Copy in worker files 
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/startup_tester.sh ./runtest
 COPY ./src/startup_tester_S3.sh ./runtest_S3
@@ -35,11 +40,11 @@ COPY ./src/utils/worker_bashrc /root/.bashrc
 COPY ./tests/integration /home/worker/tests/integration
 COPY ./VERSION ./
 
+# Add required directories 
 RUN mkdir -p /var/oasis && \
     mkdir -p /var/log/oasis && \
     touch /var/log/oasis/worker.log && \
     chmod 777 /var/log/oasis/worker.log
-
 RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
     chown -R worker /home/worker && \
     chown -R worker /var/oasis && \
