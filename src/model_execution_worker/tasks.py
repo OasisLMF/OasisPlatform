@@ -17,7 +17,6 @@ from contextlib import contextmanager, suppress
 from celery import Celery, signature
 from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError
-from oasislmf.utils import status
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -39,8 +38,8 @@ RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 app = Celery()
 app.config_from_object(celery_conf)
 logging.info("Started worker")
-
 filestore = StorageSelector(settings)
+
 
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
@@ -60,6 +59,39 @@ class TemporaryDir(object):
         if not self.persist and os.path.isdir(self.name):
             shutil.rmtree(self.name)
 
+
+def get_oasislmf_config_path(model_id=None):
+    """ Search for the oasislmf confiuration file
+    """
+    conf_path = None
+    model_root = settings.get('worker', 'model_data_directory', fallback='/home/worker/model')
+
+    # 1: Explicit location
+    conf_path = Path(settings.get('worker', 'oasislmf_config', fallback=""))
+    if conf_path.is_file():
+        return str(conf_path)
+
+    # 2: try 'model specific conf'
+    if model_id:
+        conf_path = Path(model_root, '{}-oasislmf.json'.format(model_id))
+        if conf_path.is_file():
+            return str(conf_path)
+
+    # 3: Try generic model conf
+    conf_path = Path(model_root, 'oasislmf.json')
+    if conf_path.is_file():
+        return str(conf_path)
+
+    # 4: check compatibility look for older model mount
+    conf_path = Path('/var/oasis', 'oasislmf.json')
+    if conf_path.is_file():
+        return str(conf_path)
+
+    # 5: warn and return fallback   
+    logging.warning("WARNING: 'oasislmf.json' Configuration file not found")
+    return str(Path(model_root, 'oasislmf.json'))
+
+
 def get_model_settings():
     """ Read the settings file from the path OASIS_MODEL_SETTINGS
         returning the contents as a python dicself.t (none if not found)
@@ -74,7 +106,6 @@ def get_model_settings():
         logging.error("Failed to load Model settings: {}".format(e))
 
     return settings_data
-
 
 
 def get_worker_versions():
@@ -94,7 +125,6 @@ def get_worker_versions():
         "ktools": ktool_ver_str,
         "platform": plat_ver_str
     }
-
 
 
 def check_worker_lost(task, analysis_pk):
@@ -127,7 +157,7 @@ def check_worker_lost(task, analysis_pk):
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
-    time.sleep(1) # Workaround, pause for 1 sec to makesure log messages are printed
+    time.sleep(1)  # Workaround, pause for 1 sec to makesure log messages are printed
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
@@ -135,7 +165,7 @@ def register_worker(sender, **k):
     logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
 
-    ## Check for 'DISABLE_WORKER_REG' before sending task to API
+    # Check for 'DISABLE_WORKER_REG' before sending task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
         logging.info(('Worker auto-registration DISABLED: to enable:\n'
                       '  set DISABLE_WORKER_REG=False in conf.ini or\n'
@@ -151,12 +181,12 @@ def register_worker(sender, **k):
             queue='celery'
         ).delay()
 
-    ## Required ENV
+    # Required ENV
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
     logging.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS')))
     logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 
-    ## Storage Mode
+    # Storage Mode
     selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
     logging.info("STORAGE_MANAGER: {}".format(type(filestore)))
     logging.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
@@ -172,21 +202,21 @@ def register_worker(sender, **k):
         logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
         logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
 
-    ## Optional ENV
-    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/var/oasis/')))
+    # Optional ENV
+    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
     logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
-    logging.info("OASISLMF_CONFIG: {}".format( settings.get('worker', 'oasislmf_config', fallback='None')))
+    logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
 
-    ## Log All Env variables
-    logging.info('OASIS_ENV_VARS:' + json.dumps({k:v for (k,v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+    # Log All Env variables
+    logging.info('OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
 
-    ## Clean up multiprocess tmp dirs on startup
+    # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
         os.rmdir(tmpdir)
-        
+
 
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
@@ -206,22 +236,6 @@ def get_lock():
 
     if gotten:
         lock.release()
-
-
-def get_oasislmf_config_path(model_id=None):
-    conf_var = settings.get('worker', 'oasislmf_config', fallback=None)
-    if not model_id:
-        model_id = settings.get('worker', 'model_id', fallback=None)
-
-    if conf_var:
-        return conf_var
-
-    if model_id:
-        model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/')
-        model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
-        if model_specific_conf.exists():
-            return str(model_specific_conf)
-    return str(Path(model_root, 'oasislmf.json'))
 
 
 # Send notification back to the API Once task is read from Queue
@@ -254,7 +268,6 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
     logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
         settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
-
 
     with get_lock() as gotten:
         if not gotten:
@@ -302,7 +315,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
     logging.info(str(get_worker_versions()))
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
-
 
     config_path = get_oasislmf_config_path()
     tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
@@ -466,9 +478,9 @@ def generate_input(self,
         ))
 
         worker_env = os.environ.copy()
-        result = subprocess.run(['oasislmf', 'model', 'generate-oasis-files'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
-        )
+        result = subprocess.run(
+            ['oasislmf', 'model', 'generate-oasis-files'] + run_args,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env)
         logging.info('stdout: {}'.format(result.stdout.decode()))
         logging.info('stderr: {}'.format(result.stderr.decode()))
 
