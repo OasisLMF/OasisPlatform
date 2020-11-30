@@ -26,6 +26,7 @@ node {
         [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: 'develop'],
         [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
         [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
@@ -71,10 +72,13 @@ node {
     String model_test_dir  = "${env.WORKSPACE}/${model_workspace}/tests/"
     String model_test_ini  = "test-config.ini"
 
-
     String script_dir = env.WORKSPACE + "/${build_workspace}"
     String git_creds  = "1335b248-336a-47a9-b0f6-9f7314d6f1f4"
     String PIPELINE   = script_dir + "/buildscript/pipeline.sh"
+
+    // Docker image scanning
+    String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
+    String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/cve_reports:/tmp"
 
     // Update MDK branch based on model branch
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
@@ -169,7 +173,7 @@ node {
             }
         }
         parallel(
-            build_oasis_api_server: {
+            build_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
                         //if (params.PUBLISH) {
@@ -180,8 +184,8 @@ node {
                     }
                 }
             },
-            build_model_execution_worker: {
-                stage('Build: model exec worker') {
+            build_model_worker: {
+                stage('Build: Model worker') {
                     dir(oasis_workspace) {
                         if (params.PUBLISH) {
                             sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
@@ -191,6 +195,31 @@ node {
                 }
             }
         )
+
+        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+            parallel(
+                scan_api_server: {
+                    stage('Scan: API server'){
+                        dir(oasis_workspace) {
+                            withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/api-server.txt ${image_api}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+                            }
+                        }
+                    }
+                },
+                scan_model_worker: {
+                    stage('Scan: Model worker'){
+                        dir(oasis_workspace) {
+                            withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
+                            }
+                        }
+                    }
+                }
+            )
+        }    
         if (params.UNITTEST){
             stage('Run: unittest') {
                 dir(oasis_workspace) {
@@ -410,6 +439,12 @@ node {
         //Clear tox
         dir(oasis_workspace) {
             //deleteDir() // wipe out python env to save space
+        //Store CVE reports
+        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+            dir(oasis_workspace){
+                archiveArtifacts artifacts: 'cve_reports/**/*.*'
+            }
+
         }
         //Store reports
         if (params.UNITTEST){
