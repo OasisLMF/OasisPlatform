@@ -436,10 +436,6 @@ node {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
-        //Clear tox
-        dir(oasis_workspace + "/.tox") {
-            deleteDir() // wipe out python env to save space
-        }
         //Store CVE reports
         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
             dir(oasis_workspace){

@@ -9,4 +9,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install tox flake8 coverage
 
 WORKDIR /home
+COPY . .
 CMD ./docker/entrypoint_unittest.sh

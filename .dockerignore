@@ -2,6 +2,7 @@ db.sqlite3
 media/
 .hypothesis/
 .tox
+.git 
 db-data/
 data/
 docker-shared-fs/
