@@ -202,9 +202,9 @@ node {
                     stage('Scan: API server'){
                         dir(oasis_workspace) {
                             // Scan for Image Efficient
-                            sh " ./imagesize.sh  ${image_api}:${env.TAG_RELEASE} image_reports/size_model-worker.txt"
+                            sh " ./imagesize.sh  ${image_api}:${env.TAG_RELEASE} image_reports/size_api-server.txt"
 
-                            // Scan for CVE 
+                            // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
@@ -218,7 +218,7 @@ node {
                             // Scan for Image Efficient
                             sh " ./imagesize.sh  ${image_worker}:${env.TAG_RELEASE} image_reports/size_model-worker.txt"
 
-                            // Scan for CVE 
+                            // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
