@@ -207,7 +207,7 @@ node {
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
                             }
                             // Scan for Image Efficient
-                            sh "docker run ${mnt_docker_socket} wagoodman/dive --ci ${image_api}:${env.TAG_RELEASE} | tee image_reports/size_api-server.txt"
+                            sh " ./imagesize.sh  ${image_api}:${env.TAG_RELEASE} image_reports/size_model-worker.txt"
                         }
                     }
                 },
@@ -220,7 +220,7 @@ node {
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
                             }
                             // Scan for Image Efficient
-                            sh "docker run ${mnt_docker_socket} wagoodman/dive --ci ${image_worker}:${env.TAG_RELEASE} | tee image_reports/size_model-worker.txt"
+                            sh " ./imagesize.sh  ${image_worker}:${env.TAG_RELEASE} image_reports/size_model-worker.txt"
                         }
                     }
                 }
