@@ -40,11 +40,15 @@ CELERY_RESULT_SERIALIZER = 'json'
 #: Celery config - accept content type
 CELERY_ACCEPT_CONTENT = ['json']
 
-#: Celery config - timezone
-CELERY_TIMEZONE = 'Europe/London'
+#: Celery config - timezone (default == UTC)
+# CELERY_TIMEZONE = 'Europe/London'
 
 #: Celery config - enable UTC
 CELERY_ENABLE_UTC = True
 
 #: Celery config - concurrency
 CELERYD_CONCURRENCY = 1
+
+#: Disable celery task prefetch
+#: https://docs.celeryproject.org/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
+CELERYD_PREFETCH_MULTIPLIER = 1
