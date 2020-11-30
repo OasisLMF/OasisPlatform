@@ -15,6 +15,7 @@ class DataFileSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'file_description',
+            'file_category',
             'created',
             'modified',
             'file',

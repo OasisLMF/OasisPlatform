@@ -45,6 +45,16 @@ class DataFileFilter(TimeStampedFilter):
         lookup_expr='icontains',
         field_name='file_description'
     )
+    file_category = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `file_category` equal to the given string'),
+        lookup_expr='iexact',
+        field_name='file_category'
+    )
+    file_category__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `file_category` containing the given string'),
+        lookup_expr='icontains',
+        field_name='file_category'
+    )
     user = filters.CharFilter(
         help_text=_('Filter results by case insensitive `user` equal to the given string'),
         lookup_expr='iexact',
@@ -58,6 +68,8 @@ class DataFileFilter(TimeStampedFilter):
             'filename__contains',
             'file_description',
             'file_description__contains',
+            'file_category',
+            'file_category__contains',
             'user',
         ]
 

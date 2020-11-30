@@ -12,6 +12,13 @@ class DataFile(TimeStampedModel):
         max_length=255,
         help_text=_('Type of data contained within the file.')
     )
+    file_category= models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        default=None,
+        help_text=_('Grouping label for data files (optional value)')
+    )
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
