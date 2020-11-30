@@ -219,7 +219,7 @@ node {
                     }
                 }
             )
-        }    
+        }
         if (params.UNITTEST){
             stage('Run: unittest') {
                 dir(oasis_workspace) {
@@ -437,8 +437,9 @@ node {
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
         //Clear tox
-        dir(oasis_workspace) {
-            //deleteDir() // wipe out python env to save space
+        dir(oasis_workspace + "/.tox") {
+            deleteDir() // wipe out python env to save space
+        }
         //Store CVE reports
         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
             dir(oasis_workspace){
