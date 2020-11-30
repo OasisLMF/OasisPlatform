@@ -78,7 +78,7 @@ node {
 
     // Docker image scanning
     String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
-    String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/cve_reports:/tmp"
+    String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/image_reports:/tmp"
 
     // Update MDK branch based on model branch
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
@@ -201,20 +201,26 @@ node {
                 scan_api_server: {
                     stage('Scan: API server'){
                         dir(oasis_workspace) {
+                            // Scan for CVE 
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/api-server.txt ${image_api}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
                             }
+                            // Scan for Image Efficient
+                            sh "docker run ${mnt_docker_socket} wagoodman/dive --ci ${image_api}:${env.TAG_RELEASE} | tee image_reports/size_api-server.txt"
                         }
                     }
                 },
                 scan_model_worker: {
                     stage('Scan: Model worker'){
                         dir(oasis_workspace) {
+                            // Scan for CVE 
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
                             }
+                            // Scan for Image Efficient
+                            sh "docker run ${mnt_docker_socket} wagoodman/dive --ci ${image_worker}:${env.TAG_RELEASE} | tee image_reports/size_model-worker.txt"
                         }
                     }
                 }
@@ -436,10 +442,10 @@ node {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
-        //Store CVE reports
+        //Store Docker image reports
         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
             dir(oasis_workspace){
-                archiveArtifacts artifacts: 'cve_reports/**/*.*'
+                archiveArtifacts artifacts: 'image_reports/**/*.*'
             }
 
         }
