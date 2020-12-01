@@ -1,5 +1,6 @@
 db.sqlite3
 media/
+__pycache__
 .hypothesis/
 .tox
 .git 
