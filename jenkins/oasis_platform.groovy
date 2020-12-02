@@ -192,7 +192,7 @@ node {
             build_model_worker_debian: {
                 stage('Build: Model worker - Debian') {
                     dir(oasis_workspace) {
-                        sh PIPELINE + " build_image ${docker_worker} ${image_worker_debian} ${env.TAG_RELEASE}-debian"
+                        sh PIPELINE + " build_image ${docker_worker_debian} ${image_worker} ${env.TAG_RELEASE}-debian"
                     }
                 }
             }
