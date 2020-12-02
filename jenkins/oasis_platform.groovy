@@ -46,8 +46,9 @@ node {
 
     // docker vars (main)
     String docker_api    = "Dockerfile.api_server"
-    String image_api     = "coreoasis/api_server"
     String docker_worker = "Dockerfile.model_worker"
+    String docker_worker_debian = "Dockerfile.model_worker_debian"
+    String image_api     = "coreoasis/api_server"
     String image_worker  = "coreoasis/model_worker"
 
     // docker vars (slim)
@@ -176,21 +177,22 @@ node {
             build_api_server: {
                 stage('Build: API server') {
                     dir(oasis_workspace) {
-                        //if (params.PUBLISH) {
-                        //    sh PIPELINE + " build_image ${docker_api_slim} ${image_api} ${env.TAG_RELEASE}-slim"
-                        //}
                         sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
 
                     }
                 }
             },
-            build_model_worker: {
-                stage('Build: Model worker') {
+            build_model_worker_ubuntu: {
+                stage('Build: Model worker - Ubuntu') {
                     dir(oasis_workspace) {
-                        if (params.PUBLISH) {
-                            sh PIPELINE + " build_image ${docker_worker_slim} ${image_worker} ${env.TAG_RELEASE}-slim"
-                        }
                         sh PIPELINE + " build_image ${docker_worker} ${image_worker} ${env.TAG_RELEASE}"
+                    }
+                }
+            },
+            build_model_worker_debian: {
+                stage('Build: Model worker - Debian') {
+                    dir(oasis_workspace) {
+                        sh PIPELINE + " build_image ${docker_worker} ${image_worker_debian} ${env.TAG_RELEASE}-debian"
                     }
                 }
             }
@@ -348,7 +350,6 @@ node {
                 publish_api_server: {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
-                            //sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-slim"
                             sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
                         }
                     }
@@ -356,7 +357,7 @@ node {
                 publish_model_worker: {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}-slim"
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
                         }
                     }
