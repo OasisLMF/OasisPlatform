@@ -1,9 +1,15 @@
 OasisPlatform Changelog
 =======================
 
-`1.13.0`_
+`1.13.1`_
 ---------
 .. start_latest_release
+* Restore default model settings option
+* Update oasislmf package to 1.13.1
+.. end_latest_release
+
+`1.13.0`_
+---------
 * [#432](https://github.com/OasisLMF/OasisPlatform/pull/432) - Update Python dependencies
 * [#434](https://github.com/OasisLMF/OasisPlatform/pull/434) - Worker environment variables take precedence over config files 
 * [#387](https://github.com/OasisLMF/OasisPlatform/issues/387) - Disabled task prefetch in workers - blocks idle workers from executing
@@ -12,7 +18,6 @@ OasisPlatform Changelog
 * [#444](https://github.com/OasisLMF/OasisPlatform/issues/444) - Fix Swagger ui, broken with Django 3.1+
 * [#435](https://github.com/OasisLMF/OasisPlatform/issues/435) - Added `file_category` field to data_files endpoint
 * [#413](https://github.com/OasisLMF/OasisPlatform/issues/413) - Improved container security, added image vulnerability scanning, server base switched to apline and worker base switched to ubuntu:20.04
-.. end_latest_release
 
 `1.12.1`_
 ---------
