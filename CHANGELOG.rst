@@ -1,12 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+.. start_latest_release
+`1.13.2`_
+---------
+* [#456](https://github.com/OasisLMF/OasisPlatform/pull/456) - Fix JSON schema's to be inline with oasislmf
+.. end_latest_release
+
 `1.13.1`_
 ---------
-.. start_latest_release
 * Restore default model settings option
 * Update oasislmf package to 1.13.1
-.. end_latest_release
 
 `1.13.0`_
 ---------
@@ -311,6 +315,9 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.13.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.1...1.13.2
+.. _`1.13.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.0...1.13.1
+.. _`1.13.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.12.0...1.13.0
 .. _`1.12.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.11.1...1.12.0
 .. _`1.11.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.11.0...1.11.1
 .. _`1.11.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.10.2...1.11.0
