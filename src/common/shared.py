@@ -3,10 +3,10 @@ import logging
 def set_aws_log_level(log_level):
     # Set log level for s3boto3
     try:
-        LOG_LEVEL = getattr(logging, log_level.upper())    
+        LOG_LEVEL = getattr(logging, log_level.upper())
     except AttributeError:
-        LOG_LEVEL = logging.CRITICAL    
-    
+        LOG_LEVEL = logging.WARNING
+
     logging.getLogger('boto3').setLevel(LOG_LEVEL)
     logging.getLogger('botocore').setLevel(LOG_LEVEL)
     logging.getLogger('nose').setLevel(LOG_LEVEL)
