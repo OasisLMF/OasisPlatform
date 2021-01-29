@@ -18,6 +18,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 from ...conf import iniconf  # noqa
 from ...conf.celeryconf import *  # noqa
+from ...common.shared import set_aws_log_level
 
 IN_TEST = 'test' in sys.argv
 
@@ -161,6 +162,7 @@ AWS_S3_CUSTOM_DOMAIN = iniconf.settings.get('server', 'AWS_S3_CUSTOM_DOMAIN', fa
 AWS_S3_ENDPOINT_URL = iniconf.settings.get('server', 'AWS_S3_ENDPOINT_URL', fallback=None)
 AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='')
 AWS_S3_REGION_NAME = iniconf.settings.get('server', 'AWS_S3_REGION_NAME', fallback=None)
+AWS_LOG_EVEL = iniconf.settings.get('server', 'aws_log_level', fallback="")
 
 # Presigned generated URLs for private buckets
 AWS_QUERYSTRING_AUTH = iniconf.settings.getboolean('server', 'AWS_QUERYSTRING_AUTH', fallback=False)
@@ -188,6 +190,8 @@ if STORAGE_TYPE in LOCAL_FS:
 elif STORAGE_TYPE in AWS_S3:
     # AWS S3 Object Store via `Django-Storages`
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    set_aws_log_level(AWS_LOG_EVEL)
+    
 else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
 

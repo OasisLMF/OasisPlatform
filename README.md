@@ -104,6 +104,12 @@ admin interface or the api setting:
         version_id: "1",
     }
 
+### Running outside of a container 
+
+The server can be run directly in python by `./manage.py runserver`, note that if the server has `debug=false` set (the default value)
+then the command `./manage.py collectstatic` must be executed first
+
+
 ### Testing
 
 To test the code style run::
