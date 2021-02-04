@@ -222,6 +222,7 @@ def log_worker_monitor(sender, **k):
     logger.info('MEDIA_ROOT: {}'.format(settings.MEDIA_ROOT))
     logger.info('AWS_STORAGE_BUCKET_NAME: {}'.format(settings.AWS_STORAGE_BUCKET_NAME))
     logger.info('AWS_LOCATION: {}'.format(settings.AWS_LOCATION))
+    logger.info('AWS_LOG_LEVEL: {}'.format(settings.AWS_LOG_LEVEL))
     logger.info('AWS_S3_REGION_NAME: {}'.format(settings.AWS_S3_REGION_NAME))
     logger.info('AWS_QUERYSTRING_AUTH: {}'.format(settings.AWS_QUERYSTRING_AUTH))
     logger.info('AWS_QUERYSTRING_EXPIRE: {}'.format(settings.AWS_QUERYSTRING_EXPIRE))

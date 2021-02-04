@@ -11,8 +11,9 @@ from urllib.parse import urlparse, urlsplit, parse_qsl
 from urllib.request import urlopen
 
 from oasislmf.utils.exceptions import OasisException
-
 from botocore.exceptions import ClientError as S3_ClientError
+
+from ..common.shared import set_aws_log_level
 
 LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
@@ -34,6 +35,7 @@ def StorageSelector(settings_conf):
     if selected_storage in ['local-fs', 'shared-fs']:
         return BaseStorageConnector(settings_conf)
     elif selected_storage in ['aws-s3', 'aws', 's3']:
+        
         return AwsObjectStore(settings_conf)
     else:
         raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
@@ -347,6 +349,7 @@ class AwsObjectStore(BaseStorageConnector):
         self.verify = settings.get('worker', 'AWS_S3_VERIFY', fallback=None)
         self.max_memory_size = settings.get('worker', 'AWS_S3_MAX_MEMORY_SIZE', fallback=0)
         self.shared_bucket = settings.getboolean('worker', 'AWS_SHARED_BUCKET', fallback=False)
+        self.aws_log_level = settings.get('worker', 'AWS_LOG_LEVEL', fallback='')
         self.gzip_content_types = settings.get('worker', 'GZIP_CONTENT_TYPES', fallback=(
             'text/css',
             'text/javascript',
@@ -354,6 +357,7 @@ class AwsObjectStore(BaseStorageConnector):
             'application/x-javascript',
             'image/svg+xml',
         ))
+        set_aws_log_level(self.aws_log_level)
         super(AwsObjectStore, self).__init__(settings)
 
 
