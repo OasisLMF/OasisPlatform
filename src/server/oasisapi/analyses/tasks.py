@@ -3,6 +3,10 @@ from __future__ import absolute_import
 import uuid
 import os
 
+# Remote debugging 'rdb.set_trace()'
+# https://docs.celeryproject.org/en/stable/userguide/debugging.html
+from celery.contrib import rdb
+
 from celery.utils.log import get_task_logger
 from celery import Task
 from celery import signals
@@ -14,9 +18,6 @@ from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
-
-# Remove this
-from six import StringIO
 
 from botocore.exceptions import ClientError as S3_ClientError
 from tempfile import TemporaryFile
@@ -79,7 +80,7 @@ def store_file(reference, content_type, creator, required=True, filename=None):
         # Find file name
         header_fname = response.headers.get('Content-Disposition', '').split('filename=')[-1]
         ref = header_fname if header_fname else os.path.basename(urlparse(reference).path)
-        fname = filename if filename else ref 
+        fname = filename if filename else ref
         logger.info('Store file: {}'.format(ref))
 
         # Create temp file, download content and store
@@ -105,9 +106,10 @@ def store_file(reference, content_type, creator, required=True, filename=None):
             content_type=content_type,
             creator=creator,
             store_as_filename=True,
-        )   
+        )
         stored_file = default_storage.open(new_related_file.file.name)
         stored_file.obj.copy({"Bucket": default_storage.bucket.name, "Key": reference})
+        stored_file.obj.wait_until_exists()
         return new_related_file
 
     try:

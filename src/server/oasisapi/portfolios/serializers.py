@@ -198,6 +198,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 bucket = default_storage.bucket
                 stored_file = default_storage.open(new_related_file.file.name)
                 stored_file.obj.copy({"Bucket": bucket.name, "Key": validated_data[field]})
+                stored_file.obj.wait_until_exists()
 
             # Shared-fs
             else:
