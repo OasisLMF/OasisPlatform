@@ -40,7 +40,7 @@ msgpack==1.0.0            # via oasislmf
 numba==0.51.2             # via oasislmf
 numexpr==2.7.1            # via oasislmf
 numpy==1.19.4             # via numba, numexpr, pandas
-oasislmf==1.13.2          # via -r requirements-worker.in
+oasislmf==1.14.0          # via -r requirements-worker.in
 packaging==20.4           # via pytest
 pandas==1.1.4             # via oasislmf
 pathlib2==2.3.5           # via -r requirements-worker.in, oasislmf

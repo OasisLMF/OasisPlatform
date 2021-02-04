@@ -1,11 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`1.14.0`_
+---------
 .. start_latest_release
+* [#455](https://github.com/OasisLMF/OasisPlatform/issues/455) - Added `wait_until_exists()` call after coping a results object between worker and server storage spaces
+* [#454](https://github.com/OasisLMF/OasisPlatform/issues/454) - Added new config option `AWS454LOG454LEVEL` to set S3 logging level independently of the oasis logger
+.. end_latest_release
+
 `1.13.2`_
 ---------
 * [#456](https://github.com/OasisLMF/OasisPlatform/pull/456) - Fix JSON schema's to be inline with oasislmf
-.. end_latest_release
 
 `1.13.1`_
 ---------
@@ -315,6 +320,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.14.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.2...1.14.0
 .. _`1.13.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.1...1.13.2
 .. _`1.13.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.0...1.13.1
 .. _`1.13.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.12.0...1.13.0
