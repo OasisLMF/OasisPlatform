@@ -1,6 +1,8 @@
 boto3
+daphne
 celery
 chainmap
+channels
 pymysql
 jsonpickle
 jsonschema
