@@ -10,5 +10,4 @@ from django.core.asgi import get_asgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "src.server.oasisapi.settings")
 django.setup()
-#application = get_default_application()
 application = get_asgi_application()
