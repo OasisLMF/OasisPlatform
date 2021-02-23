@@ -98,7 +98,6 @@ TEMPLATES = [
     },
 ]
 
-#WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 ASGI_APPLICATION = "src.server.oasisapi.asgi.application"
 
 
