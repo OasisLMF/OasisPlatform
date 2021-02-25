@@ -1,7 +1,7 @@
 # ---- STAGE 1 -----
 FROM python:3.8-alpine3.11 AS build-packages
 
-RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers libressl-dev libffi-dev
+RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers libressl-dev libffi-dev postgresql-dev libpq
 
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
 COPY ./requirements-server.txt ./requirements.txt
@@ -11,8 +11,7 @@ RUN pip install --user --no-warn-script-location -r ./requirements.txt && pip in
 # ---- STAGE 2 ---- 
 FROM python:3.8-alpine3.11
 RUN apk update \
-    && apk add --no-cache mariadb-dev bash curl
-
+    && apk add --no-cache mariadb-dev libpq bash curl
 
 COPY --from=build-packages /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH

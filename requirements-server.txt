@@ -56,6 +56,7 @@ pathlib2==2.3.5           # via -r requirements-server.in
 pexpect==4.8.0            # via ipython
 pickleshare==0.7.5        # via ipython
 prompt-toolkit==1.0.18    # via click-repl, ipython
+psycopg2-binary==2.8.6
 ptyprocess==0.6.0         # via pexpect
 pyasn1-modules==0.2.8     # via service-identity
 pyasn1==0.4.8             # via pyasn1-modules, service-identity
