@@ -1,6 +1,8 @@
 boto3
+daphne
 celery
 chainmap
+channels
 pymysql
 jsonpickle
 jsonschema
@@ -17,6 +19,5 @@ django-cleanup
 djangorestframework_simplejwt
 django-model-utils>=4.0.0
 coreapi
-uwsgi
 whitenoise
 drf-yasg>=1.17.1
