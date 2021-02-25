@@ -256,7 +256,12 @@ node {
             for(int i=0; i < api_server_tests.size(); i++) {
                 stage("Run : ${api_server_tests[i]}"){
                     dir(build_workspace) {
-                        sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[i]}"
+                       sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[i]}"
+
+                       // show docker logs 
+                       sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server'
+                       sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker'
+                       sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor'
                     }
                 }
             }
@@ -273,6 +278,11 @@ node {
 
                    // run test
                     sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
+
+                   // show docker logs 
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server'
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker'
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor'
                }
            }
            stage("Compatibility with server:${env.LAST_RELEASE_TAG}") {
@@ -290,6 +300,11 @@ node {
 
                    // run test
                    sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
+
+                   // show docker logs 
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server'
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker'
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor'
                }
            }
        }
@@ -311,6 +326,11 @@ node {
 
                    // run test
                    sh PIPELINE + " run_test_s3 --config /var/oasis/test/${model_test_ini} --test-case ${model_tests}"
+
+                   // show docker logs 
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server'
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker'
+                   sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor'
                }
            }
        }
