@@ -1,12 +1,17 @@
 OasisPlatform Changelog
 =======================
 
-`1.14.0`_
+`1.15.0`_
 ---------
 .. start_latest_release
+* [#460](https://github.com/OasisLMF/OasisPlatform/issues/460) - Added required packages and example compose file for PostgreSQL support
+* [#459](https://github.com/OasisLMF/OasisPlatform/issues/459) - Fix for API load stability
+.. end_latest_release
+
+`1.14.0`_
+---------
 * [#455](https://github.com/OasisLMF/OasisPlatform/issues/455) - Added `wait_until_exists()` call after coping a results object between worker and server storage spaces
 * [#454](https://github.com/OasisLMF/OasisPlatform/issues/454) - Added new config option `AWS454LOG454LEVEL` to set S3 logging level independently of the oasis logger
-.. end_latest_release
 
 `1.13.2`_
 ---------
@@ -320,6 +325,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.15.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.14.0...1.15.0
 .. _`1.14.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.2...1.14.0
 .. _`1.13.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.1...1.13.2
 .. _`1.13.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.0...1.13.1
