@@ -98,7 +98,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
+ASGI_APPLICATION = "src.server.oasisapi.asgi.application"
 
 
 # Database
@@ -257,5 +257,4 @@ SWAGGER_SETTINGS = {
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
 }
-
 
