@@ -1,12 +1,16 @@
 OasisPlatform Changelog
 =======================
 
-`1.15.0`_
+`1.15.2`_
 ---------
 .. start_latest_release
+* Hotfix for core oasislmf package
+.. end_latest_release
+
+`1.15.0`_
+---------
 * [#460](https://github.com/OasisLMF/OasisPlatform/issues/460) - Added required packages and example compose file for PostgreSQL support
 * [#459](https://github.com/OasisLMF/OasisPlatform/issues/459) - Fix for API load stability
-.. end_latest_release
 
 `1.14.0`_
 ---------
@@ -25,7 +29,7 @@ OasisPlatform Changelog
 `1.13.0`_
 ---------
 * [#432](https://github.com/OasisLMF/OasisPlatform/pull/432) - Update Python dependencies
-* [#434](https://github.com/OasisLMF/OasisPlatform/pull/434) - Worker environment variables take precedence over config files 
+* [#434](https://github.com/OasisLMF/OasisPlatform/pull/434) - Worker environment variables take precedence over config files
 * [#387](https://github.com/OasisLMF/OasisPlatform/issues/387) - Disabled task prefetch in workers - blocks idle workers from executing
 * [#368](https://github.com/OasisLMF/OasisPlatform/issues/368) - Adjust Docker mount points for model files to `/home/worker/model`
 * [#438](https://github.com/OasisLMF/OasisPlatform/issues/438) - Add reporting output dependency by event_set to model_settings.json, see [PR #694](https://github.com/OasisLMF/OasisLMF/pull/694)
@@ -325,6 +329,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.15.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.0...1.15.2
 .. _`1.15.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.14.0...1.15.0
 .. _`1.14.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.2...1.14.0
 .. _`1.13.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.1...1.13.2
