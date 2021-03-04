@@ -1,11 +1,16 @@
 OasisPlatform Changelog
 =======================
 
-`1.15.2`_
+
+`1.15.3`_
 ---------
 .. start_latest_release
-* Hotfix for core oasislmf package
+* Hotfix for fmpy 
 .. end_latest_release
+
+`1.15.2`_
+---------
+* Hotfix for core oasislmf package
 
 `1.15.0`_
 ---------
@@ -329,6 +334,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.15.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.2...1.15.3
 .. _`1.15.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.0...1.15.2
 .. _`1.15.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.14.0...1.15.0
 .. _`1.14.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.2...1.14.0
