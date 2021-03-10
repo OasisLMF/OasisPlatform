@@ -1,11 +1,14 @@
 OasisPlatform Changelog
 =======================
 
-.. start_latest_release
+`1.13.3`_
+---------
+* [#464 - Hotfix](https://github.com/OasisLMF/OasisPlatform/issues/464) - Worker stuck idle on some bash errors
+* [#785 - Hotfix](https://github.com/OasisLMF/OasisLMF/issues/785) - fmsummaryxref.csv not copied into top level RI directory
+
 `1.13.2`_
 ---------
 * [#456](https://github.com/OasisLMF/OasisPlatform/pull/456) - Fix JSON schema's to be inline with oasislmf
-.. end_latest_release
 
 `1.13.1`_
 ---------
@@ -315,6 +318,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.13.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.2...1.13.3
 .. _`1.13.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.1...1.13.2
 .. _`1.13.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.0...1.13.1
 .. _`1.13.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.12.0...1.13.0
