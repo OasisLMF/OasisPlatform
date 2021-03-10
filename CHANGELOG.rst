@@ -1,12 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`1.14.1`_
+---------
+* [#464 - Hotfix](https://github.com/OasisLMF/OasisPlatform/issues/464) - Worker stuck idle on some bash errors
+* [#785 - Hotfix](https://github.com/OasisLMF/OasisLMF/issues/785) - fmsummaryxref.csv not copied into top level RI directory
+
 `1.14.0`_
 ---------
-.. start_latest_release
 * [#455](https://github.com/OasisLMF/OasisPlatform/issues/455) - Added `wait_until_exists()` call after coping a results object between worker and server storage spaces
 * [#454](https://github.com/OasisLMF/OasisPlatform/issues/454) - Added new config option `AWS454LOG454LEVEL` to set S3 logging level independently of the oasis logger
-.. end_latest_release
 
 `1.13.2`_
 ---------
@@ -320,6 +323,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.14.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.14.0...1.14.1
 .. _`1.14.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.2...1.14.0
 .. _`1.13.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.1...1.13.2
 .. _`1.13.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.13.0...1.13.1

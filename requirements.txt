@@ -4,6 +4,8 @@
 #
 #    pip-compile requirements.in
 #
+
+git+git://github.com/OasisLMF/OasisLMF.git@1.14.1#egg=oasislmf
 amqp==5.0.2               # via kombu
 anytree==2.8.0            # via oasislmf
 appdirs==1.4.4            # via virtualenv
@@ -74,7 +76,6 @@ msgpack==1.0.0            # via oasislmf
 numba==0.51.2             # via oasislmf
 numexpr==2.7.1            # via oasislmf
 numpy==1.19.4             # via numba, numexpr, pandas
-oasislmf>=1.14.0          # via -r ./requirements-worker.in
 packaging==20.4           # via drf-yasg, pytest, tox
 pandas==1.1.4             # via oasislmf
 pathlib2==2.3.5           # via -r ./requirements-server.in, -r ./requirements-worker.in, oasislmf
