@@ -4,6 +4,7 @@ import glob
 import json
 import logging
 import os
+import sys
 import shutil
 import subprocess
 import time
@@ -294,7 +295,8 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
             )
 
         except Terminated:    
-            notify_api_status(analysis_pk, 'RUN_CANCELED')
+            notify_api_status(analysis_pk, 'RUN_CANCELLED')
+            sys.exit('Task aborted')
         except Exception:
             logging.exception("Model execution task failed.")
             raise
