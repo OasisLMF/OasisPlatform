@@ -93,14 +93,16 @@ class StartAnalysis(TestCase):
                 Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
 
                 cmd_instance = Mock()
-                cmd_instance.stdout = b'output'
-                cmd_instance.stderr = b'errors'
+                #cmd_instance.stdout = b'output'
+                #cmd_instance.stderr = b'errors'
+                cmd_instance.returncode = 0
+                cmd_instance.communicate = Mock(return_value=(b'mock subprocess stdout', b'mock subprocess stderr'))
 
                 @contextmanager
                 def fake_run_dir(*args, **kwargs):
                     yield run_dir
 
-                with patch('src.model_execution_worker.tasks.subprocess.run', Mock(return_value=cmd_instance)) as cmd_mock, \
+                with patch('subprocess.Popen', Mock(return_value=cmd_instance)) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
                         patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
@@ -117,7 +119,7 @@ class StartAnalysis(TestCase):
                         '--analysis-settings-json', os.path.join(media_root, 'analysis_settings.json'),
                         '--ktools-fifo-relative',
                         '--verbose',
-                    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env)
+                    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
                     tarfile.assert_called_once_with(output_location, os.path.join(run_dir, 'output'), 'output')
 
 
