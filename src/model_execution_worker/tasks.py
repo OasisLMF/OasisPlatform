@@ -370,7 +370,10 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         logging.info('stderr: {}'.format(result.stderr.decode()))
 
         # Traceback file (stdout + stderr)
-        traceback_file = filestore.create_traceback(result, run_dir)
+        #traceback_file = filestore.create_traceback(result, run_dir)
+        # REPLACE WITH Popen 
+        filestore.create_traceback(stdout.decode(), stderr.decode(), run_dir)
+        
         traceback_location = filestore.put(traceback_file)
 
         # Ktools log Tar file
@@ -478,12 +481,51 @@ def generate_input(self,
             " ".join([str(arg) for arg in mdk_args])
         ))
 
+        proc = None 
+        def abort_handler(signum, frame):
+            logging.info('SIG HANDLER')
+            if proc is not None:
+                proc.kill()
+                proc.wait()
+                notify_api_status(analysis_pk, 'INPUTS_GENERATION_CANCELED')
+
+        from celery.platforms import signals
+        signals['SIGTERM'] = abort_handler
+
+
         worker_env = os.environ.copy()
-        result = subprocess.run(
+        proc = subprocess.Popen(
             ['oasislmf', 'model', 'generate-oasis-files'] + run_args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env)
-        logging.info('stdout: {}'.format(result.stdout.decode()))
-        logging.info('stderr: {}'.format(result.stderr.decode()))
+
+        # Track progress 
+        while True:
+            try:
+                proc.wait(1)
+                logging.info('--poll--')
+            except subprocess.TimeoutExpired:
+                logging.info('{}'.format(proc.stdout.read().decode()))
+                logging.info('{}'.format(proc.stderr.read().decode()))
+            else:
+                break
+
+
+        stdout, stderr = proc.communicate()
+        proc.terminate()
+
+        # Check for run errors 
+        # https://stackoverflow.com/questions/45650904/in-celery-how-to-abort-running-tasks-when-workers-are-about-to-shut-down
+        # https://stackoverflow.com/questions/16493364/stopping-celery-task-gracefully
+        #
+        # https://docs.celeryproject.org/en/latest/reference/celery.contrib.abortable.html
+        # https://docs.celeryproject.org/en/stable/userguide/signals.html
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                returncode = proc.returncode,
+                cmd = proc.args,
+                stderr = stderr
+            )
+        
 
         # Find Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
@@ -492,14 +534,14 @@ def generate_input(self,
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
         # Store result files
-        traceback_file    = filestore.create_traceback(result, oasis_files_dir)
+        traceback_file    = filestore.create_traceback(stdout.decode(), stderr.decode(), oasis_files_dir)
         traceback         = filestore.put(traceback_file)
         lookup_error      = filestore.put(lookup_error_fp)
         lookup_success    = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels    = filestore.put(summary_levels_fp)
         output_tar_path   = filestore.put(oasis_files_dir)
-        return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, result.returncode
+        return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, proc.returncode
 
 
 @app.task(name='on_error')
