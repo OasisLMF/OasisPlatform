@@ -200,8 +200,13 @@ class Analysis(TimeStampedModel):
             signal='SIGTERM',
             terminate=True,
         )
+        # If task is running the status is set to QUEUED 
+        if self.status is self.status_choices.RUN_STARTED:
+            self.status = self.status_choices.RUN_CANCEL_QUEUED
+        # If not then set directly to cancelled     
+        elif self.status is self.status_choices.RUN_QUEUED:
+            self.status = self.status_choices.RUN_CANCELLED
 
-        self.status = self.status_choices.RUN_CANCEL_QUEUED
         self.task_finished = timezone.now()
         self.save()
 
@@ -249,11 +254,18 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
-        self.status = self.status_choices.INPUTS_GENERATION_CANCEL_QUEUED
         AsyncResult(self.generate_inputs_task_id).revoke(
             signal='SIGTERM',
             terminate=True,
         )
+        # If task is running the status is set to QUEUED 
+        if self.status is self.status_choices.INPUTS_GENERATION_STARTED:
+            self.status = self.status_choices.INPUTS_GENERATION_CANCEL_QUEUED
+        # If not then set as cancelled     
+        elif self.status is self.status_choices.INPUTS_GENERATION_QUEUED:
+            self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
+            
+
         self.task_finished = timezone.now()
         self.save()
 
