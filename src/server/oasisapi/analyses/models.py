@@ -194,7 +194,7 @@ class Analysis(TimeStampedModel):
             raise ValidationError({'status': ['Analysis is not running or queued']})
 
         AsyncResult(self.run_task_id).revoke(
-            signal='SIGKILL',
+            signal='SIGTERM',
             terminate=True,
         )
 
@@ -247,7 +247,7 @@ class Analysis(TimeStampedModel):
 
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         AsyncResult(self.generate_inputs_task_id).revoke(
-            signal='SIGKILL',
+            signal='SIGTERM',
             terminate=True,
         )
         self.task_finished = timezone.now()
