@@ -457,11 +457,10 @@ def generate_input(self,
     def generate_input_cancel_handler(signum, frame):
         logging.info('TASK CANCELLATION')
         if proc is not None:
-            #proc.kill()
-            #proc.wait()
             os.killpg(os.getpgid(proc.pid), 15)
-            notify_api_status(analysis_pk, 'INPUTS_GENERATION_CANCELED')
+            notify_api_status(analysis_pk, 'INPUTS_GENERATION_CANCELLED')
         raise Terminated("Cancellation request sent from API")    
+
     proc = None  # Popen object for subpross runner
     signals['SIGTERM'] = generate_input_cancel_handler
 
@@ -570,11 +569,13 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
     This function takes the error and passes it on back to the server so that it can store
     the info on the analysis.
     """
-    signature(
-        record_task_name,
-        args=(analysis_pk, initiator_pk, traceback),
-        queue='celery'
-    ).delay()
+    # Ignore exceptions raised from Job cancellations 
+    if not isinstance(ex, Terminated):
+        signature(
+            record_task_name,
+            args=(analysis_pk, initiator_pk, traceback),
+            queue='celery'
+        ).delay()
 
 
 def prepare_complex_model_file_inputs(complex_model_files, run_directory):
