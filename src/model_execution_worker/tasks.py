@@ -294,7 +294,8 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
                 complex_data_files=complex_data_files
             )
 
-        except Terminated:    
+        except Terminated:
+            notify_api_status(analysis_pk, 'RUN_CANCELLED')
             sys.exit('Task aborted')
         except Exception:
             logging.exception("Model execution task failed.")
@@ -329,7 +330,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         logging.info('TASK CANCELLATION')
         if proc is not None:
             os.killpg(os.getpgid(proc.pid), 15)
-        raise Terminated("Cancellation request sent from API")    
+        raise Terminated("Cancellation request sent from API")
 
     proc = None  # Popen object for subpross runner
     signals['SIGTERM'] = analysis_cancel_handler
@@ -385,13 +386,13 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             preexec_fn=os.setsid,   # run the program in a new session, assigning a new process group to it and its children.
         )
 
-        # Log output and close 
+        # Log output and close
         stdout, stderr = proc.communicate()
         logging.info('stdout: {}'.format(stdout.decode()))
         logging.info('stderr: {}'.format(stderr.decode()))
         proc.terminate()
 
-        # Check error code 
+        # Check error code
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(
                 returncode = proc.returncode,
@@ -457,7 +458,8 @@ def generate_input(self,
         logging.info('TASK CANCELLATION')
         if proc is not None:
             os.killpg(os.getpgid(proc.pid), 15)
-        raise Terminated("Cancellation request sent from API")    
+            notify_api_status(analysis_pk, 'INPUTS_GENERATION_CANCELLED')
+        raise Terminated("Cancellation request sent from API")
 
     proc = None  # Popen object for subpross runner
     signals['SIGTERM'] = generate_input_cancel_handler
@@ -527,13 +529,13 @@ def generate_input(self,
             preexec_fn=os.setsid, # run in a new session, assigning a new process group to it and its children.
         )
 
-        # Log output and close 
+        # Log output and close
         stdout, stderr = proc.communicate()
         logging.info('stdout: {}'.format(stdout.decode()))
         logging.info('stderr: {}'.format(stderr.decode()))
         proc.terminate()
 
-        # Check error code 
+        # Check error code
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(
                 returncode = proc.returncode,
@@ -567,7 +569,7 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
     This function takes the error and passes it on back to the server so that it can store
     the info on the analysis.
     """
-    # Ignore exceptions raised from Job cancellations 
+    # Ignore exceptions raised from Job cancellations
     if not isinstance(ex, Terminated):
         signature(
             record_task_name,
