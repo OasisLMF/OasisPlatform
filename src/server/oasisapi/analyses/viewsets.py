@@ -175,7 +175,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def run(self, request, pk=None, version=None):
         """
         Runs all the analysis. The analysis must have one of the following
-        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCEL_QUEUED`, `RUN_CANCELLED` or
         `RUN_ERROR`
         """
         obj = self.get_object()
@@ -200,7 +200,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         Generates the inputs for the analysis based on the portfolio.
         The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
-        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCEL_QUEUED`, `RUN_CANCELLED` or
         `RUN_ERROR`.
         """
         obj = self.get_object()
