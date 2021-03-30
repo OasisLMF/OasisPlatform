@@ -4,6 +4,7 @@ import glob
 import json
 import logging
 import os
+import sys
 import shutil
 import subprocess
 import time
@@ -16,7 +17,9 @@ from contextlib import contextmanager, suppress
 
 from celery import Celery, signature
 from celery.signals import worker_ready
-from celery.exceptions import WorkerLostError
+from celery.exceptions import WorkerLostError, Terminated
+from celery.platforms import signals
+
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -87,7 +90,7 @@ def get_oasislmf_config_path(model_id=None):
     if conf_path.is_file():
         return str(conf_path)
 
-    # 5: warn and return fallback   
+    # 5: warn and return fallback
     logging.warning("WARNING: 'oasislmf.json' Configuration file not found")
     return str(Path(model_root, 'oasislmf.json'))
 
@@ -252,7 +255,7 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
-@app.task(name='run_analysis', bind=True, acks_late=True)
+@app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,))
 def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None):
     """Task wrapper for running an analysis.
 
@@ -290,6 +293,10 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
                 input_location,
                 complex_data_files=complex_data_files
             )
+
+        except Terminated:    
+            notify_api_status(analysis_pk, 'RUN_CANCELLED')
+            sys.exit('Task aborted')
         except Exception:
             logging.exception("Model execution task failed.")
             raise
@@ -316,6 +323,17 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
     logging.info(str(get_worker_versions()))
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
+
+
+    # Setup Job cancellation handler
+    def analysis_cancel_handler(signum, frame):
+        logging.info('TASK CANCELLATION')
+        if proc is not None:
+            os.killpg(os.getpgid(proc.pid), 15)
+        raise Terminated("Cancellation request sent from API")    
+
+    proc = None  # Popen object for subpross runner
+    signals['SIGTERM'] = analysis_cancel_handler
 
     config_path = get_oasislmf_config_path()
     tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
@@ -360,17 +378,30 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         ))
         logging.info(run_args)
 
-        # Run model losses
+        # Subprocess Execution
         worker_env = os.environ.copy()
-        result = subprocess.run(
+        proc = subprocess.Popen(
             ['oasislmf', 'model', 'generate-losses'] + run_args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
+            preexec_fn=os.setsid,   # run the program in a new session, assigning a new process group to it and its children.
         )
-        logging.info('stdout: {}'.format(result.stdout.decode()))
-        logging.info('stderr: {}'.format(result.stderr.decode()))
+
+        # Log output and close 
+        stdout, stderr = proc.communicate()
+        logging.info('stdout: {}'.format(stdout.decode()))
+        logging.info('stderr: {}'.format(stderr.decode()))
+        proc.terminate()
+
+        # Check error code 
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                returncode = proc.returncode,
+                cmd = proc.args,
+                stderr = stderr
+            )
 
         # Traceback file (stdout + stderr)
-        traceback_file = filestore.create_traceback(result, run_dir)
+        traceback_file = filestore.create_traceback(stdout.decode(), stderr.decode(), run_dir)
         traceback_location = filestore.put(traceback_file)
 
         # Ktools log Tar file
@@ -385,10 +416,10 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             shutil.copyfile(settings_src, settings_dst)
         output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
 
-    return output_location, traceback_location, log_location, result.returncode
+    return output_location, traceback_location, log_location, proc.returncode
 
 
-@app.task(name='generate_input', bind=True, acks_late=True)
+@app.task(name='generate_input', bind=True, acks_late=True, throws=(Terminated,))
 def generate_input(self,
                    analysis_pk,
                    loc_file,
@@ -422,6 +453,18 @@ def generate_input(self,
     # Check if this task was re-queued from a lost worker
     check_worker_lost(self, analysis_pk)
 
+    # Setup Job cancellation handler
+    def generate_input_cancel_handler(signum, frame):
+        logging.info('TASK CANCELLATION')
+        if proc is not None:
+            os.killpg(os.getpgid(proc.pid), 15)
+            notify_api_status(analysis_pk, 'INPUTS_GENERATION_CANCELLED')
+        raise Terminated("Cancellation request sent from API")    
+
+    proc = None  # Popen object for subpross runner
+    signals['SIGTERM'] = generate_input_cancel_handler
+
+    # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
     filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
     config_path = get_oasislmf_config_path()
@@ -478,12 +521,27 @@ def generate_input(self,
             " ".join([str(arg) for arg in mdk_args])
         ))
 
+        # Subprocess Execution
         worker_env = os.environ.copy()
-        result = subprocess.run(
+        proc = subprocess.Popen(
             ['oasislmf', 'model', 'generate-oasis-files'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env)
-        logging.info('stdout: {}'.format(result.stdout.decode()))
-        logging.info('stderr: {}'.format(result.stderr.decode()))
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
+            preexec_fn=os.setsid, # run in a new session, assigning a new process group to it and its children.
+        )
+
+        # Log output and close 
+        stdout, stderr = proc.communicate()
+        logging.info('stdout: {}'.format(stdout.decode()))
+        logging.info('stderr: {}'.format(stderr.decode()))
+        proc.terminate()
+
+        # Check error code 
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                returncode = proc.returncode,
+                cmd = proc.args,
+                stderr = stderr
+            )
 
         # Find Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
@@ -492,14 +550,14 @@ def generate_input(self,
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
         # Store result files
-        traceback_file    = filestore.create_traceback(result, oasis_files_dir)
+        traceback_file    = filestore.create_traceback(stdout.decode(), stderr.decode(), oasis_files_dir)
         traceback         = filestore.put(traceback_file)
         lookup_error      = filestore.put(lookup_error_fp)
         lookup_success    = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels    = filestore.put(summary_levels_fp)
         output_tar_path   = filestore.put(oasis_files_dir)
-        return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, result.returncode
+        return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, proc.returncode
 
 
 @app.task(name='on_error')
@@ -511,11 +569,13 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
     This function takes the error and passes it on back to the server so that it can store
     the info on the analysis.
     """
-    signature(
-        record_task_name,
-        args=(analysis_pk, initiator_pk, traceback),
-        queue='celery'
-    ).delay()
+    # Ignore exceptions raised from Job cancellations 
+    if not isinstance(ex, Terminated):
+        signature(
+            record_task_name,
+            args=(analysis_pk, initiator_pk, traceback),
+            queue='celery'
+        ).delay()
 
 
 def prepare_complex_model_file_inputs(complex_model_files, run_directory):
