@@ -502,7 +502,7 @@ def generate_input(self,
             run_args += ['--oed-scope-csv', ri_scope_file]
 
         if lookup_settings_file:
-            run_args += ['--lookup-complex-config-json', lookup_settings_file]
+            run_args += ['--lookup-config-json', lookup_settings_file]
 
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
