@@ -372,6 +372,9 @@ node {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+                            if (! params.PRE_RELEASE){
+                                sh PIPELINE + " push_image ${image_api} latest"
+                            {
                         }
                     }
                 },
@@ -380,6 +383,9 @@ node {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
+                            if (! params.PRE_RELEASE){
+                                sh PIPELINE + " push_image ${image_worker} latest"
+                            {
                         }
                     }
                 }
