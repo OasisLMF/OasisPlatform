@@ -5,6 +5,6 @@ configparser
 fasteners
 pathlib2
 pymysql
-psycopg2
+psycopg2-binary
 sqlalchemy
 pytest
