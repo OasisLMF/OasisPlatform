@@ -109,7 +109,7 @@ node {
 
 
     // Param Publish Guards
-    if (params.PUBLISH && ! ( oasis_branch.matches("release/(.*)") || oasis_branch.matches("hotfix/(.*)")) ){
+    if (params.PUBLISH && ! ( oasis_branch.matches("release/(.*)") || oasis_branch.matches("hotfix/(.*)") || oasis_branch.matches("backports/(.*)")) ){
         println("Publish Only allowed on a release/* or hotfix/* branches")
         sh "exit 1"
     }
