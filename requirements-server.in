@@ -9,7 +9,6 @@ jsonpickle
 jsonschema
 configparser
 pathlib2
-ipython<6
 sqlalchemy
 django
 djangorestframework
