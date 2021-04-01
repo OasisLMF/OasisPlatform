@@ -4,10 +4,10 @@ OasisPlatform Changelog
 `1.16.0rc1`_
 ---------
 .. start_latest_release
-* [#465](https://github.com/OasisLMF/OasisLMF/issues/465) - Fixed, cancelling running task doesn't terminate execution pipeline 
-* [#471](https://github.com/OasisLMF/OasisLMF/pull/471) - ORD outputs schema update 
-* [#475](https://github.com/OasisLMF/OasisLMF/issues/475) - Add pre-release process  
-* [#470](https://github.com/OasisLMF/OasisLMF/pull/470) - Update package requirements for security fixes 
+* [#465](https://github.com/OasisLMF/OasisPlatform/issues/465) - Fixed, cancelling running task doesn't terminate execution pipeline 
+* [#471](https://github.com/OasisLMF/OasisPlatform/pull/471) - ORD outputs schema update 
+* [#475](https://github.com/OasisLMF/OasisPlatform/issues/475) - Add pre-release process  
+* [#470](https://github.com/OasisLMF/OasisPlatform/pull/470) - Update package requirements for security fixes 
 .. end_latest_release
 
 `1.15.5`_
