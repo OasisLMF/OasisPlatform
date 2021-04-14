@@ -185,23 +185,6 @@ class Analysis(TimeStampedModel):
             queue=self.model.queue_name,
         )
 
-    def cancel(self):
-        valid_choices = [
-            self.status_choices.RUN_QUEUED,
-            self.status_choices.RUN_STARTED
-        ]
-        if self.status not in valid_choices:
-            raise ValidationError({'status': ['Analysis is not running or queued']})
-
-        AsyncResult(self.run_task_id).revoke(
-            signal='SIGTERM',
-            terminate=True,
-        )
-
-        self.status = self.status_choices.RUN_CANCELLED
-        self.task_finished = timezone.now()
-        self.save()
-
     def generate_inputs(self, initiator):
         valid_choices = [
             self.status_choices.NEW,
@@ -235,6 +218,43 @@ class Analysis(TimeStampedModel):
         self.generate_inputs_task_id = generate_input_signature.delay().id
         self.task_started = None
         self.task_finished = None
+        self.save()
+
+    def cancel_any(self):
+        INPUTS_GENERATION_STATES = [
+            self.status_choices.INPUTS_GENERATION_QUEUED,
+            self.status_choices.INPUTS_GENERATION_STARTED
+        ]
+        RUN_ANALYSIS_STATES = [
+            self.status_choices.RUN_QUEUED,
+            self.status_choices.RUN_STARTED
+        ]
+        valid_choices = INPUTS_GENERATION_STATES + RUN_ANALYSIS_STATES
+        if self.status not in valid_choices:
+            raise ValidationError({'status': ['Analysis is not running or queued']})
+        
+        if self.status in INPUTS_GENERATION_STATES:
+            self.cancel_generate_inputs()
+        
+        if self.status in RUN_ANALYSIS_STATES:
+            self.cancel_analysis()
+
+
+    def cancel_analysis(self):
+        valid_choices = [
+            self.status_choices.RUN_QUEUED,
+            self.status_choices.RUN_STARTED
+        ]
+        if self.status not in valid_choices:
+            raise ValidationError({'status': ['Analysis execution is not running or queued']})
+
+        AsyncResult(self.run_task_id).revoke(
+            signal='SIGTERM',
+            terminate=True,
+        )
+
+        self.status = self.status_choices.RUN_CANCELLED
+        self.task_finished = timezone.now()
         self.save()
 
     def cancel_generate_inputs(self):
