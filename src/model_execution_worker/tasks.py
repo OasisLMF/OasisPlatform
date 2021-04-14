@@ -295,7 +295,6 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
             )
 
         except Terminated:    
-            notify_api_status(analysis_pk, 'RUN_CANCELLED')
             sys.exit('Task aborted')
         except Exception:
             logging.exception("Model execution task failed.")
@@ -458,7 +457,6 @@ def generate_input(self,
         logging.info('TASK CANCELLATION')
         if proc is not None:
             os.killpg(os.getpgid(proc.pid), 15)
-            notify_api_status(analysis_pk, 'INPUTS_GENERATION_CANCELLED')
         raise Terminated("Cancellation request sent from API")    
 
     proc = None  # Popen object for subpross runner

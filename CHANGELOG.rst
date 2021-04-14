@@ -10,6 +10,10 @@ OasisPlatform Changelog
 ---------
 * [#803 - Hotfix](https://github.com/OasisLMF/OasisLMF/pull/802) - Partial fix for Max Ded back allocation in fmpy
 
+`1.15.6`_
+---------
+* [#803 - Hotfix](https://github.com/OasisLMF/OasisLMF/pull/802) - Partial fix for Max Ded back allocation in fmpy
+
 `1.15.5`_
 ---------
 * [#798 - Hotfix](https://github.com/OasisLMF/OasisLMF/issues/798) - Fix process cleanup on ktools script exit 
