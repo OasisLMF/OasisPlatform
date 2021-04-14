@@ -9,6 +9,7 @@ from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
 from drf_yasg.utils import swagger_auto_schema
 from django_filters import rest_framework as filters
+from django_filters import NumberFilter
 
 from .models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisStorageSerializer
@@ -48,9 +49,9 @@ class AnalysisFilter(TimeStampedFilter):
         field_name='status',
         label=_('Status in')
     )
-    model = filters.ModelChoiceFilter(
+    model = NumberFilter(
         help_text=_('Filter results by the id of the model the analysis belongs to'),
-        queryset=AnalysisModel.objects.all(),
+        field_name='model'
     )
     model__in = CsvModelMultipleChoiceFilter(
         help_text=_('Filter results by the id of the model the analysis belongs to'),
