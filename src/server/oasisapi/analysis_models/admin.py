@@ -3,21 +3,32 @@ from .models import AnalysisModel
 from django.contrib.admin.actions import delete_selected as delete_selected_
 
 
+""" Cascading delete of Model and anything linked to it via foreign key
+"""
 def delete_hard(modeladmin, request, queryset):
     if not modeladmin.has_delete_permission(request):
         raise PermissionDenied
     for obj in queryset:
         obj.hard_delete()
-#actions.delete_hard.short_description = "Permiment Delete of model and linked analyses"
+
+""" Re-enables a soft-deleted model by toggling database flag
+"""
+def activate_model(modeladmin, request, queryset):
+    if not modeladmin.has_add_permission(request):
+        raise PermissionDenied
+    for obj in queryset:
+        obj.activate()
+
 
 @admin.register(AnalysisModel)
 class CatModelAdmin(admin.ModelAdmin):
-    actions = [delete_hard]
+    actions = [delete_hard, activate_model]
 
     list_display = ['model_id', 'supplier_id', 'version_id', 'creator', 'deleted']
 
     def get_queryset(self, request):
         return self.model.all_objects
-    
-    delete_hard.short_description = "Cascade Delete of model and linked analyses"
-    delete_selected_.short_description = "Delete"
+
+    activate_model.short_description = "Activate Model"
+    delete_hard.short_description = "Delete model - removes all linked analyses"
+    delete_selected_.short_description = "Disable Model"
