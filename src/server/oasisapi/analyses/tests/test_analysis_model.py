@@ -29,7 +29,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
         analysis = fake_analysis(status=Analysis.status_choices.RUN_STARTED, run_task_id=task_id)
 
         with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
-            analysis.cancel()
+            analysis.cancel_analysis()
 
             self.assertEqual(Analysis.status_choices.RUN_CANCELLED, analysis.status)
             self.assertTrue(res_factory.revoke_called)
@@ -49,9 +49,9 @@ class AnalysisCancel(WebTestMixin, TestCase):
             analysis = fake_analysis(status=status, run_task_id=task_id)
 
             with self.assertRaises(ValidationError) as ex:
-                analysis.cancel()
+                analysis.cancel_analysis()
 
-            self.assertEqual({'status': ['Analysis is not running or queued']}, ex.exception.detail)
+            self.assertEqual({'status': ['Analysis execution is not running or queued']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 
@@ -159,8 +159,8 @@ class AnalysisCancelInputGeneration(WebTestMixin, TestCase):
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
     @given(
         status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
-            Analysis.status_choices.INPUTS_GENERATION_QUEUED, 
-            Analysis.status_choices.INPUTS_GENERATION_STARTED, 
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED,
+            Analysis.status_choices.INPUTS_GENERATION_STARTED,
             Analysis.status_choices.RUN_QUEUED,
             Analysis.status_choices.RUN_STARTED
         ]]),

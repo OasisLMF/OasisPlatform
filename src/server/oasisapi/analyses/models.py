@@ -79,6 +79,9 @@ class Analysis(TimeStampedModel):
     def get_absolute_cancel_url(self, request=None):
         return reverse('analysis-cancel', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+    def get_absolute_cancel_analysis_url(self, request=None):
+        return reverse('analysis-cancel-analysis-run', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
     def get_absolute_generate_inputs_url(self, request=None):
         return reverse('analysis-generate-inputs', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
