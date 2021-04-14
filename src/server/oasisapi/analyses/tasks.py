@@ -244,7 +244,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
             )
             # Re-enable model if soft deleted
             if model.deleted:
-                mymodel.activate()
+                model.activate()
 
         except ObjectDoesNotExist:
             user = User.objects.get(username='admin')
