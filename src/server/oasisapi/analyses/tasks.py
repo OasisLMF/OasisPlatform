@@ -237,11 +237,15 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
         from src.server.oasisapi.analysis_models.models import AnalysisModel
 
         try:
-            model = AnalysisModel.objects.get(
+            model = AnalysisModel.all_objects.get(
                 model_id=m_name,
                 supplier_id=m_supplier,
                 version_id=m_id
             )
+            # Re-enable model if soft deleted
+            if model.deleted:
+                mymodel.activate()
+
         except ObjectDoesNotExist:
             user = User.objects.get(username='admin')
             model = AnalysisModel.objects.create(
