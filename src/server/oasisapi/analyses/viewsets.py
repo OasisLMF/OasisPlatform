@@ -183,16 +183,27 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj.run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
+
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
-        Cancels a currently running analysis. The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
-        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or
-        `RUN_ERROR`.
+        Cancels either input generation or analysis execution depending on the active stage. 
+        The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED`, `INPUTS_GENERATION_STARTED`, `RUN_QUEUED` or `RUN_STARTED`
         """
         obj = self.get_object()
-        obj.cancel()
+        obj.cancel_any()
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+
+
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @action(methods=['post'], detail=True)
+    def cancel_analysis_run(self, request, pk=None, version=None):
+        """
+        Cancels a running analysis execution. The analysis must have one of the following statuses, `RUN_QUEUED` or `RUN_STARTED`
+        """
+        obj = self.get_object()
+        obj.cancel_analysis()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
@@ -200,9 +211,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def generate_inputs(self, request, pk=None, version=None):
         """
         Generates the inputs for the analysis based on the portfolio.
-        The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
-        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or
-        `RUN_ERROR`.
+        The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
         obj.generate_inputs(request.user)
