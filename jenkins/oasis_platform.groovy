@@ -100,7 +100,7 @@ node {
     env.TAG_RUN_WORKER       = params.RELEASE_TAG
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
 
-    env.IMAGE_WORKER   = image_worker
+    env.IMAGE_WORKER   = image_piwind
     // Should read these values from test/conf.ini
     env.TEST_MAX_RUNTIME = '190'
     env.TEST_DATA_DIR = model_test_dir
@@ -463,7 +463,6 @@ node {
             if(params.PURGE){
                 sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
-                sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-debian"
                 sh PIPELINE + " purge_image ${image_piwind} ${env.TAG_RELEASE}"
 
                 if (params.PUBLISH) {
