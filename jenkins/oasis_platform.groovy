@@ -254,7 +254,7 @@ node {
             // Build PiWind worker from new worker 
             stage('Build: PiWind worker') {
                 dir(model_workspace) {
-                    sh PIPELINE + "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
+                    sh "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
                 }
             }
 
