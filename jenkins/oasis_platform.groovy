@@ -1,4 +1,4 @@
-/JOB TEMPLATE
+//JOB TEMPLATE
 def createStage(stage_name, stage_params, propagate_flag) {
     return {
         stage("Test: ${stage_name}") {
