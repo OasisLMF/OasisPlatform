@@ -1,4 +1,4 @@
-//JOB TEMPLATE
+/JOB TEMPLATE
 def createStage(stage_name, stage_params, propagate_flag) {
     return {
         stage("Test: ${stage_name}") {
@@ -48,8 +48,11 @@ node {
     String docker_api    = "Dockerfile.api_server"
     String docker_worker = "Dockerfile.model_worker"
     String docker_worker_debian = "Dockerfile.model_worker_debian"
+    String docker_piwind = "docker/Dockerfile.piwind_worker"
+
     String image_api     = "coreoasis/api_server"
     String image_worker  = "coreoasis/model_worker"
+    String image_piwind  = "coreoasis/piwind_worker"
 
     // docker vars (slim)
     //String docker_api_slim    = "docker/Dockerfile.api_server_alpine"
@@ -243,7 +246,18 @@ node {
             }
         }
 
+
+
+
        if (params.CHECK_COMPATIBILITY) {
+
+            // Build PiWind worker from new worker 
+            stage('Build: PiWind worker') {
+                dir(model_workspace) {
+                    sh PIPELINE + "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
+                }
+            }
+
             // START API for base model tests
             stage('Run: API Server') {
                 dir(build_workspace) {
@@ -381,6 +395,13 @@ node {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
                         }
                     }
+                },
+                publish_piwind_worker: {
+                    stage('Publish: model_worker') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
+                        }
+                    }
                 }
             )
         }
@@ -442,6 +463,8 @@ node {
             if(params.PURGE){
                 sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-debian"
+                sh PIPELINE + " purge_image ${image_piwind} ${env.TAG_RELEASE}"
 
                 if (params.PUBLISH) {
                     sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}-slim"
