@@ -1,6 +1,11 @@
 OasisPlatform Changelog
 =======================
 
+`1.15.7`_
+---------
+* [#485 - Hotfix](https://github.com/OasisLMF/OasisLMF/pull/485) - Update critical CVE for `jsonpickle`
+* [#468 - Hotfix](https://github.com/OasisLMF/OasisPlatform/issues/468) - Automate piwind worker build on release
+
 `1.15.6`_
 ---------
 * [#803 - Hotfix](https://github.com/OasisLMF/OasisLMF/pull/802) - Partial fix for Max Ded back allocation in fmpy
@@ -346,6 +351,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.15.7`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.6...1.15.7
 .. _`1.15.6`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.5...1.15.6
 .. _`1.15.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.4...1.15.5
 .. _`1.15.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.3...1.15.4
