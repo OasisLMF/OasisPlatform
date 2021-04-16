@@ -9,7 +9,7 @@ RUN pip install --user --no-warn-script-location -r ./requirements.txt && pip in
 
 
 # ---- STAGE 2 ----
-FROM python:3.8-alpine3.11
+FROM python:3.8-alpine3.13
 RUN apk update \
  && apk add --no-cache mariadb-dev libpq bash curl \
  && apk upgrade --available
