@@ -8,15 +8,13 @@ COPY ./requirements-server.txt ./requirements.txt
 RUN pip install --user --no-warn-script-location -r ./requirements.txt && pip install --no-warn-script-location --user mysqlclient
 
 
-# ---- STAGE 2 ---- 
-FROM python:3.8-alpine3.11
+# ---- STAGE 2 ----
+FROM python:3.8-alpine3.13
 RUN apk update \
-    && apk add --no-cache mariadb-dev libpq bash curl \
-    busybox==1.31.1-r10 \
-    openssl==1.1.1k-r0 
+ && apk add --no-cache mariadb-dev libpq bash curl \
+ && apk upgrade --available
 
-# Note 'busybox>1.31.1-r10' required for CVE-2021-28831 (force update until fixed)
-#
+# Note general package upgrade can be problematic for consistent builds, but safer in terms of security
 
 
 COPY --from=build-packages /root/.local /root/.local
