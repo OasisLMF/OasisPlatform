@@ -284,6 +284,7 @@ node {
            stage("Compatibility with worker:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
                    // Set tags
+                   env.IMAGE_WORKER = image_worker
                    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
                    env.TAG_RUN_WORKER = env.LAST_RELEASE_TAG
 
@@ -306,6 +307,7 @@ node {
                    env.OASIS_DOCKER_DB_DATA_DIR = './db-data_pre-ver'
 
                    // Set tags
+                   env.IMAGE_WORKER = image_worker
                    env.TAG_RUN_PLATFORM = env.LAST_RELEASE_TAG
                    env.TAG_RUN_WORKER = params.RELEASE_TAG
 
@@ -335,6 +337,7 @@ node {
                    sh PIPELINE + " start_model_s3"
 
                    // Reset tags
+                   env.IMAGE_WORKER = image_worker
                    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
                    env.TAG_RUN_WORKER = params.RELEASE_TAG
 
