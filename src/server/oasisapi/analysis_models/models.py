@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from django.db.models.signals import post_delete
@@ -50,7 +51,7 @@ class AnalysisModel(TimeStampedModel):
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     deleted = models.BooleanField(default=False, editable=False)
 
-    # Logical Delete
+    ## Logical Delete
     objects = SoftDeleteManager()
     all_objects = SoftDeleteManager(alive_only=False)
 
@@ -66,11 +67,11 @@ class AnalysisModel(TimeStampedModel):
 
     def hard_delete(self):
         super(AnalysisModel, self).delete()
-    
+
     def delete(self):
         self.deleted = True
         self.save()
-    
+
     def activate(self, request=None):
         self.deleted = False
 
@@ -99,10 +100,13 @@ class AnalysisModel(TimeStampedModel):
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [ 
+    files_for_removal = [
          'resource_file',
-    ]   
+    ]
     for ref in files_for_removal:
-        file_ref = getattr(instance, ref)
-        if file_ref:
-            file_ref.delete()
+        try:
+            file_ref = getattr(instance, ref)
+            if file_ref:
+                file_ref.delete()
+        except ObjectDoesNotExist:
+            pass

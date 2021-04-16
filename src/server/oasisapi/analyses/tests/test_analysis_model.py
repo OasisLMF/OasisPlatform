@@ -29,9 +29,9 @@ class AnalysisCancel(WebTestMixin, TestCase):
         analysis = fake_analysis(status=Analysis.status_choices.RUN_STARTED, run_task_id=task_id)
 
         with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
-            analysis.cancel()
+            analysis.cancel_analysis()
 
-            self.assertEqual(Analysis.status_choices.RUN_CANCEL_QUEUED, analysis.status)
+            self.assertEqual(Analysis.status_choices.RUN_CANCELLED, analysis.status)
             self.assertTrue(res_factory.revoke_called)
             self.assertEqual({'signal': 'SIGTERM', 'terminate': True}, res_factory.revoke_kwargs)
 
@@ -49,9 +49,9 @@ class AnalysisCancel(WebTestMixin, TestCase):
             analysis = fake_analysis(status=status, run_task_id=task_id)
 
             with self.assertRaises(ValidationError) as ex:
-                analysis.cancel()
+                analysis.cancel_analysis()
 
-            self.assertEqual({'status': ['Analysis is not running or queued']}, ex.exception.detail)
+            self.assertEqual({'status': ['Analysis execution is not running or queued']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 
@@ -106,7 +106,7 @@ class AnalysisRun(WebTestMixin, TestCase):
             with self.assertRaises(ValidationError) as ex:
                 analysis.run(initiator)
 
-            self.assertEqual({'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED, RUN_CANCEL_QUEUED]']}, ex.exception.detail)
+            self.assertEqual({'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 
@@ -131,7 +131,7 @@ class AnalysisCancelInputGeneration(WebTestMixin, TestCase):
         with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
             analysis.cancel_generate_inputs()
 
-            self.assertEqual(Analysis.status_choices.INPUTS_GENERATION_CANCEL_QUEUED, analysis.status)
+            self.assertEqual(Analysis.status_choices.INPUTS_GENERATION_CANCELLED, analysis.status)
             self.assertTrue(res_factory.revoke_called)
             self.assertEqual({'signal': 'SIGTERM', 'terminate': True}, res_factory.revoke_kwargs)
 
@@ -161,9 +161,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
         status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
             Analysis.status_choices.INPUTS_GENERATION_QUEUED,
             Analysis.status_choices.INPUTS_GENERATION_STARTED,
-            Analysis.status_choices.INPUTS_GENERATION_CANCEL_QUEUED,
             Analysis.status_choices.RUN_QUEUED,
-            Analysis.status_choices.RUN_CANCEL_QUEUED,
             Analysis.status_choices.RUN_STARTED
         ]]),
         task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
@@ -208,7 +206,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                         analysis.generate_inputs(initiator)
 
                     self.assertEqual({'status': [
-                        'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCEL_QUEUED, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
+                        'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
                     ]}, ex.exception.detail)
                     self.assertEqual(status, analysis.status)
                     self.assertFalse(res_factory.revoke_called)

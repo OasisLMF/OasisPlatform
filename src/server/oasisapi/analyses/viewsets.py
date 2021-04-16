@@ -9,6 +9,7 @@ from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
 from drf_yasg.utils import swagger_auto_schema
 from django_filters import rest_framework as filters
+from django_filters import NumberFilter
 
 from .models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisStorageSerializer
@@ -48,9 +49,9 @@ class AnalysisFilter(TimeStampedFilter):
         field_name='status',
         label=_('Status in')
     )
-    model = filters.ModelChoiceFilter(
+    model = NumberFilter(
         help_text=_('Filter results by the id of the model the analysis belongs to'),
-        queryset=AnalysisModel.objects.all(),
+        field_name='model'
     )
     model__in = CsvModelMultipleChoiceFilter(
         help_text=_('Filter results by the id of the model the analysis belongs to'),
@@ -175,23 +176,34 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def run(self, request, pk=None, version=None):
         """
         Runs all the analysis. The analysis must have one of the following
-        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCEL_QUEUED`, `RUN_CANCELLED` or
+        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED` or
         `RUN_ERROR`
         """
         obj = self.get_object()
         obj.run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
+
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
-        Cancels a currently running analysis. The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
-        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or
-        `RUN_ERROR`.
+        Cancels either input generation or analysis execution depending on the active stage. 
+        The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED`, `INPUTS_GENERATION_STARTED`, `RUN_QUEUED` or `RUN_STARTED`
         """
         obj = self.get_object()
-        obj.cancel()
+        obj.cancel_any()
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+
+
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @action(methods=['post'], detail=True)
+    def cancel_analysis_run(self, request, pk=None, version=None):
+        """
+        Cancels a running analysis execution. The analysis must have one of the following statuses, `RUN_QUEUED` or `RUN_STARTED`
+        """
+        obj = self.get_object()
+        obj.cancel_analysis()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
@@ -199,9 +211,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def generate_inputs(self, request, pk=None, version=None):
         """
         Generates the inputs for the analysis based on the portfolio.
-        The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
-        `INPUTS_GENERATION_CANCELED`, `READY`, `RUN_COMPLETED`, `RUN_CANCEL_QUEUED`, `RUN_CANCELLED` or
-        `RUN_ERROR`.
+        The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
         obj.generate_inputs(request.user)

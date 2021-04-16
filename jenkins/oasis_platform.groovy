@@ -49,8 +49,11 @@ node {
     String docker_api    = "Dockerfile.api_server"
     String docker_worker = "Dockerfile.model_worker"
     String docker_worker_debian = "Dockerfile.model_worker_debian"
+    String docker_piwind = "docker/Dockerfile.piwind_worker"
+
     String image_api     = "coreoasis/api_server"
     String image_worker  = "coreoasis/model_worker"
+    String image_piwind  = "coreoasis/piwind_worker"
 
     // docker vars (slim)
     //String docker_api_slim    = "docker/Dockerfile.api_server_alpine"
@@ -104,7 +107,7 @@ node {
     env.TAG_RUN_WORKER       = params.RELEASE_TAG
     env.COMPOSE_PROJECT_NAME = UUID.randomUUID().toString().replaceAll("-","")
 
-    env.IMAGE_WORKER   = image_worker
+    env.IMAGE_WORKER   = image_piwind
     // Should read these values from test/conf.ini
     env.TEST_MAX_RUNTIME = '190'
     env.TEST_DATA_DIR = model_test_dir
@@ -250,7 +253,18 @@ node {
             }
         }
 
+
+
+
        if (params.CHECK_COMPATIBILITY) {
+
+            // Build PiWind worker from new worker 
+            stage('Build: PiWind worker') {
+                dir(model_workspace) {
+                    sh "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
+                }
+            }
+
             // START API for base model tests
             stage('Run: API Server') {
                 dir(build_workspace) {
@@ -277,6 +291,7 @@ node {
            stage("Compatibility with worker:${env.LAST_RELEASE_TAG}") {
                dir(build_workspace) {
                    // Set tags
+                   env.IMAGE_WORKER = image_worker
                    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
                    env.TAG_RUN_WORKER = env.LAST_RELEASE_TAG
 
@@ -299,6 +314,7 @@ node {
                    env.OASIS_DOCKER_DB_DATA_DIR = './db-data_pre-ver'
 
                    // Set tags
+                   env.IMAGE_WORKER = image_worker
                    env.TAG_RUN_PLATFORM = env.LAST_RELEASE_TAG
                    env.TAG_RUN_WORKER = params.RELEASE_TAG
 
@@ -328,6 +344,7 @@ node {
                    sh PIPELINE + " start_model_s3"
 
                    // Reset tags
+                   env.IMAGE_WORKER = image_worker
                    env.TAG_RUN_PLATFORM = params.RELEASE_TAG
                    env.TAG_RUN_WORKER = params.RELEASE_TAG
 
@@ -394,6 +411,13 @@ node {
                             }
                         }
                     }
+                },
+                publish_piwind_worker: {
+                    stage('Publish: model_worker') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
+                        }
+                    }
                 }
             )
         }
@@ -455,11 +479,8 @@ node {
             if(params.PURGE){
                 sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
-
-                if (params.PUBLISH) {
-                    sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}-slim"
-                    sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-slim"
-                }
+                sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-debian"
+                sh PIPELINE + " purge_image ${image_piwind} ${env.TAG_RELEASE}"
             }
         }
 
