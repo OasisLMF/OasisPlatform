@@ -463,12 +463,8 @@ node {
             if(params.PURGE){
                 sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-debian"
                 sh PIPELINE + " purge_image ${image_piwind} ${env.TAG_RELEASE}"
-
-                if (params.PUBLISH) {
-                    sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}-slim"
-                    sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-slim"
-                }
             }
         }
 
