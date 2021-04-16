@@ -10,8 +10,10 @@ RUN pip3 install --user --no-warn-script-location -r ./requirements.txt
 
 # ---- STAGE 2 ----
 FROM ubuntu:20.04
-RUN apt-get update && apt-get install -y --no-install-recommends vim python3 python3-pip libspatialindex-dev curl procps && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && apt-get upgrade -y \
+ && apt-get install -y --no-install-recommends vim python3 python3-pip libspatialindex-dev curl procps \
+ && rm -rf /var/lib/apt/lists/*
 
 # Copy built python packages 
 COPY --from=build-packages /root/.local /root/.local

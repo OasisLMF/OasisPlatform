@@ -46,7 +46,7 @@ ipython==5.10.0           # via -r requirements-server.in
 itypes==1.2.0             # via coreapi
 jinja2==2.11.2            # via coreschema
 jmespath==0.10.0          # via boto3, botocore
-jsonpickle==1.4.1         # via -r requirements-server.in
+jsonpickle==1.4.2         # via -r requirements-server.in
 jsonschema==3.2.0         # via -r requirements-server.in
 kombu==5.0.2              # via celery
 markdown==3.3.3           # via -r requirements-server.in

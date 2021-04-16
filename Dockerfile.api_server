@@ -8,10 +8,14 @@ COPY ./requirements-server.txt ./requirements.txt
 RUN pip install --user --no-warn-script-location -r ./requirements.txt && pip install --no-warn-script-location --user mysqlclient
 
 
-# ---- STAGE 2 ---- 
+# ---- STAGE 2 ----
 FROM python:3.8-alpine3.11
 RUN apk update \
-    && apk add --no-cache mariadb-dev libpq bash curl
+ && apk add --no-cache mariadb-dev libpq bash curl \
+ && apk upgrade --available
+
+# Note general package upgrade can be problematic for consistent builds, but safer in terms of security
+
 
 COPY --from=build-packages /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH

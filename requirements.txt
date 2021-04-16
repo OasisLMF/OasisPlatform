@@ -67,7 +67,7 @@ itypes==1.2.0             # via coreapi
 jinja2-time==0.2.0        # via cookiecutter
 jinja2==2.11.2            # via cookiecutter, coreschema, jinja2-time
 jmespath==0.10.0          # via boto3, botocore
-jsonpickle==1.4.1         # via -r ./requirements-server.in
+jsonpickle==1.4.2         # via -r ./requirements-server.in
 jsonschema==3.2.0         # via -r ./requirements-server.in, oasislmf
 kombu==5.0.2              # via celery
 llvmlite==0.34.0          # via numba
