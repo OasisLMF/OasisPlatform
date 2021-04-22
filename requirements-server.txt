@@ -10,8 +10,8 @@ attrs==20.3.0             # via automat, jsonschema, service-identity, twisted
 autobahn==21.3.1          # via daphne
 automat==20.2.0           # via twisted
 billiard==3.6.3.0         # via celery
-boto3==1.16.13            # via -r requirements-server.in
-botocore==1.19.13         # via boto3, s3transfer
+boto3==1.17.41            # via -r requirements-server.in
+botocore==1.20.41         # via boto3, s3transfer
 celery==5.0.5             # via -r requirements-server.in
 certifi==2020.12.5        # via requests
 cffi==1.14.5              # via cryptography
@@ -31,7 +31,7 @@ daphne==3.0.1             # via -r requirements-server.in, channels
 django-cleanup==5.1.0     # via -r requirements-server.in
 django-filter==2.4.0      # via -r requirements-server.in
 django-model-utils==4.1.1  # via -r requirements-server.in
-django-storages==1.10.1   # via -r requirements-server.in
+django-storages==1.11.1   # via -r requirements-server.in
 django==3.1.7             # via -r requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg
 djangorestframework-simplejwt==4.6.0  # via -r requirements-server.in
 djangorestframework==3.12.4  # via -r requirements-server.in, djangorestframework-simplejwt, drf-yasg
@@ -74,7 +74,7 @@ sqlparse==0.4.1           # via django
 twisted[tls]==21.2.0      # via daphne
 txaio==21.2.1             # via autobahn
 uritemplate==3.0.1        # via coreapi, drf-yasg
-urllib3==1.25.11          # via botocore, requests
+urllib3==1.26.4           # via botocore, requests
 vine==5.0.0               # via amqp, celery
 wcwidth==0.2.5            # via prompt-toolkit
 whitenoise==5.2.0         # via -r requirements-server.in
