@@ -34,6 +34,7 @@ node {
         [$class: 'BooleanParameterDefinition', name: 'RUN_REGRESSION', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', name: 'PRE_RELEASE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'AUTO_MERGE', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(true)]
       ])
@@ -89,6 +90,12 @@ node {
         MDK_BRANCH='master'
         MODEL_BRANCH='master'
     }
+
+    //make sure release candidate versions are tagged correctly                                                                              
+    if (params.PUBLISH && params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)rc(\\d+)$')) {
+        sh "echo release candidates must be tagged {version}rc{N}, example: 1.0.0rc1"
+        sh "exit 1"
+    } 
 
     // Set Global ENV
     env.PIPELINE_LOAD = script_dir + utils_sh
@@ -388,6 +395,9 @@ node {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+                            if (! params.PRE_RELEASE){
+                                sh PIPELINE + " push_image ${image_api} latest"
+                            }
                         }
                     }
                 },
@@ -396,6 +406,16 @@ node {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
+                            if (! params.PRE_RELEASE){
+                                sh PIPELINE + " push_image ${image_worker} latest"
+                            }
+                        }
+                    }
+                },
+                publish_piwind_worker: {
+                    stage('Publish: model_worker') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
                         }
                     }
                 },
@@ -433,7 +453,7 @@ node {
                         json_request['name'] = RELEASE_TAG
                         json_request['body'] = ""
                         json_request['draft'] = false
-                        json_request['prerelease'] = false
+                        json_request['prerelease'] = params.PRE_RELEASE
                         writeJSON file: 'gh_request.json', json: json_request
                         sh 'curl -XPOST -H "Authorization:token ' + gh_token + "\" --data @gh_request.json https://api.github.com/repos/$repo/releases > gh_response.json"
 
@@ -503,11 +523,19 @@ node {
         if (params.PUBLISH && params.AUTO_MERGE && ! hasFailed){
             dir(oasis_workspace) {
                 sshagent (credentials: [git_creds]) {
-                    sh "git stash"
-                    sh "git checkout master && git pull"
-                    sh "git merge ${oasis_branch} && git push"
-                    sh "git checkout develop && git pull"
-                    sh "git merge master && git push"
+                    if (! params.PRE_RELEASE) {
+                        // Release merge back into master
+                        sh "git stash"
+                        sh "git checkout master && git pull"
+                        sh "git merge ${oasis_branch} && git push"
+                        sh "git checkout develop && git pull"
+                        sh "git merge master && git push"
+                    } else {
+                        // pre_pelease merge back into develop
+                        sh "git stash"
+                        sh "git checkout develop && git pull"
+                        sh "git merge ${oasis_branch} && git push"
+                    }    
                 }
             }
         }

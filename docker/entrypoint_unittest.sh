@@ -17,7 +17,7 @@ BUILD_OUTPUT_DIR='/tmp/output/'
     tox | tee $LOG_TOX
 
     set +exu
-    TOX_FAILED=$(cat $LOG_TOX | grep -ci 'ERROR: InvocationError')
+    TOX_FAILED=$(cat $LOG_TOX | grep -ci 'Error')
     if [ $TOX_FAILED -ne 0 ]; then 
         echo "Unit testing failed - Exiting build"
         exit 1

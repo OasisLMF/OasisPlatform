@@ -98,7 +98,7 @@ def store_file(reference, content_type, creator, required=True, filename=None):
     # Issue S3 object Copy
     if is_in_bucket(reference):
         fname = filename if filename else ref
-        new_file = ContentFile('')
+        new_file = ContentFile(b'')
         new_file.name = fname
         new_related_file = RelatedFile.objects.create(
             file=new_file,
@@ -237,11 +237,15 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
         from src.server.oasisapi.analysis_models.models import AnalysisModel
 
         try:
-            model = AnalysisModel.objects.get(
+            model = AnalysisModel.all_objects.get(
                 model_id=m_name,
                 supplier_id=m_supplier,
                 version_id=m_id
             )
+            # Re-enable model if soft deleted
+            if model.deleted:
+                model.activate()
+
         except ObjectDoesNotExist:
             user = User.objects.get(username='admin')
             model = AnalysisModel.objects.create(

@@ -279,7 +279,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.post(analysis.get_absolute_cancel_url(), expect_errors=True)
+        response = self.app.post(analysis.get_absolute_cancel_analysis_url(), expect_errors=True)
         self.assertIn(response.status_code, [401,403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -297,12 +297,12 @@ class AnalysisCancel(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     def test_user_is_authenticated_object_exists___cancel_is_called(self):
-        with patch('src.server.oasisapi.analyses.models.Analysis.cancel', autospec=True) as cancel_mock:
+        with patch('src.server.oasisapi.analyses.models.Analysis.cancel_analysis', autospec=True) as cancel_mock:
             user = fake_user()
             analysis = fake_analysis()
 
             self.app.post(
-                analysis.get_absolute_cancel_url(),
+                analysis.get_absolute_cancel_analysis_url(),
                 headers={
                     'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                 }

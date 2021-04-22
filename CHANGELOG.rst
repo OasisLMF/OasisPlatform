@@ -1,6 +1,20 @@
 OasisPlatform Changelog
 =======================
 
+`1.16.0`_
+---------
+.. start_latest_release
+* [#480](https://github.com/OasisLMF/OasisPlatform/issues/480) - Revert new cancellation stauts, causes UI to crash
+* [#479](https://github.com/OasisLMF/OasisPlatform/issues/479) - Fix error in the swagger generation
+* [#467](https://github.com/OasisLMF/OasisPlatform/issues/468) - Automate piwind worker build on release
+* [#467](https://github.com/OasisLMF/OasisPlatform/issues/467) - Single endpoint which cancels either analysis run and generation
+* [#486](https://github.com/OasisLMF/OasisPlatform/pull/486) - Update alpine packages in server image for CVE fixes
+* [#465](https://github.com/OasisLMF/OasisPlatform/issues/465) - Fixed, cancelling running task doesn't terminate execution pipeline 
+* [#471](https://github.com/OasisLMF/OasisPlatform/pull/471) - ORD outputs schema update 
+* [#475](https://github.com/OasisLMF/OasisPlatform/issues/475) - Add pre-release process  
+* [#470](https://github.com/OasisLMF/OasisPlatform/pull/470) - Update package requirements for security fixes 
+.. end_latest_release
+
 `1.15.7`_
 ---------
 * [#485 - Hotfix](https://github.com/OasisLMF/OasisLMF/pull/485) - Update critical CVE for `jsonpickle`
@@ -351,6 +365,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
+.. _`1.16.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.7...1.16.0
 .. _`1.15.7`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.6...1.15.7
 .. _`1.15.6`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.5...1.15.6
 .. _`1.15.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.4...1.15.5
