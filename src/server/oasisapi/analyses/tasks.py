@@ -98,7 +98,7 @@ def store_file(reference, content_type, creator, required=True, filename=None):
     # Issue S3 object Copy
     if is_in_bucket(reference):
         fname = filename if filename else ref
-        new_file = ContentFile('')
+        new_file = ContentFile(b'')
         new_file.name = fname
         new_related_file = RelatedFile.objects.create(
             file=new_file,
