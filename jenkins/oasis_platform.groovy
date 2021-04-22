@@ -418,13 +418,6 @@ node {
                             sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
                         }
                     }
-                },
-                publish_piwind_worker: {
-                    stage('Publish: model_worker') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
-                        }
-                    }
                 }
             )
         }
