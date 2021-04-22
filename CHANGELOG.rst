@@ -4,6 +4,8 @@ OasisPlatform Changelog
 `1.16.0`_
 ---------
 .. start_latest_release
+* [#480](https://github.com/OasisLMF/OasisPlatform/issues/480) - Revert new cancellation stauts, causes UI to crash
+* [#479](https://github.com/OasisLMF/OasisPlatform/issues/479) - Fix error in the swagger generation
 * [#467](https://github.com/OasisLMF/OasisPlatform/issues/468) - Automate piwind worker build on release
 * [#467](https://github.com/OasisLMF/OasisPlatform/issues/467) - Single endpoint which cancels either analysis run and generation
 * [#486](https://github.com/OasisLMF/OasisPlatform/pull/486) - Update alpine packages in server image for CVE fixes
@@ -359,7 +361,7 @@ OasisPlatform Changelog
 ----------
 * oasislmf package 1.1.25
 
-.. _`1.16.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.16.6...1.16.0
+.. _`1.16.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.6...1.16.0
 .. _`1.15.6`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.5...1.15.6
 .. _`1.15.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.4...1.15.5
 .. _`1.15.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.3...1.15.4
