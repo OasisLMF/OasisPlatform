@@ -46,7 +46,7 @@ django-filter==2.4.0      # via -r ./requirements-server.in
 django-model-utils==4.1.1  # via -r ./requirements-server.in
 django-storages==1.11.1   # via -r ./requirements-server.in
 django-webtest==1.9.7     # via -r requirements.in
-django==3.1.7             # via -r ./requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg, model-mommy
+django==3.1.8             # via -r ./requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg, model-mommy
 djangorestframework-simplejwt==4.6.0  # via -r ./requirements-server.in
 djangorestframework==3.12.4  # via -r ./requirements-server.in, djangorestframework-simplejwt, drf-yasg
 drf-yasg==1.20.0          # via -r ./requirements-server.in
