@@ -1,6 +1,10 @@
 OasisPlatform Changelog
 =======================
 
+`1.15.8`_
+---------
+* [#465](https://github.com/OasisLMF/OasisPlatform/issues/465) - Fixed, cancelling running task doesn't terminate execution pipeline
+
 `1.15.7`_
 ---------
 * [#485 - Hotfix](https://github.com/OasisLMF/OasisLMF/pull/485) - Update critical CVE for `jsonpickle`
