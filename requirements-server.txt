@@ -32,7 +32,7 @@ django-cleanup==5.1.0     # via -r requirements-server.in
 django-filter==2.4.0      # via -r requirements-server.in
 django-model-utils==4.0.0  # via -r requirements-server.in
 django-storages==1.10.1   # via -r requirements-server.in
-django==3.0.11            # via -r requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg
+django==3.0.12            # via -r requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg
 djangorestframework-simplejwt==4.4.0  # via -r requirements-server.in
 djangorestframework==3.12.2  # via -r requirements-server.in, djangorestframework-simplejwt, drf-yasg
 drf-yasg==1.20.0          # via -r requirements-server.in
