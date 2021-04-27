@@ -4,6 +4,7 @@ OasisPlatform Changelog
 `1.15.8`_
 ---------
 * [#465](https://github.com/OasisLMF/OasisPlatform/issues/465) - Fixed, cancelling running task doesn't terminate execution pipeline
+* [#493](https://github.com/OasisLMF/OasisPlatform/issues/493) - Fix Python & Django CVE issues 
 
 `1.15.7`_
 ---------
