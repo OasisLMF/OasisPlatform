@@ -3,7 +3,8 @@
 # Note: PS1 and umask are already set in /etc/profile. You should not
 # need this unless you want different defaults for root.
 # umask 022
-PS1='\[\033[01;31m\]oasis-api(\h)\[\033[01;34m\] \w \$\[\033[00m\] '
+VER=$(cat /var/www/oasis/VERSION | sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+).*/\1/p')
+PS1='\[\033[01;31m\]oasis-api($VER)\[\033[01;34m\] \h \w \$\[\033[00m\] '
 
 # You may uncomment the following lines if you want `ls' to be colorized:
 export LS_OPTIONS='--color=auto'
