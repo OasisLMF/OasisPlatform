@@ -9,7 +9,7 @@ anytree==2.8.0            # via oasislmf
 appdirs==1.4.4            # via virtualenv
 argparsetree==0.0.6       # via oasislmf
 arrow==1.0.3              # via jinja2-time
-asgiref==3.3.1            # via channels, daphne, django
+asgiref==3.3.2            # via channels, daphne, django
 attrs==20.3.0             # via automat, hypothesis, jsonschema, pytest, service-identity, twisted
 autobahn==21.3.1          # via daphne
 automat==20.2.0           # via twisted
@@ -46,7 +46,7 @@ django-filter==2.4.0      # via -r ./requirements-server.in
 django-model-utils==4.1.1  # via -r ./requirements-server.in
 django-storages==1.11.1   # via -r ./requirements-server.in
 django-webtest==1.9.7     # via -r requirements.in
-django==3.1.8             # via -r ./requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg, model-mommy
+django==3.2.2             # via -r ./requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg, model-mommy
 djangorestframework-simplejwt==4.6.0  # via -r ./requirements-server.in
 djangorestframework==3.12.4  # via -r ./requirements-server.in, djangorestframework-simplejwt, drf-yasg
 drf-yasg==1.20.0          # via -r ./requirements-server.in
