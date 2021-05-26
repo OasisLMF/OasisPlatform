@@ -3,7 +3,6 @@ OasisPlatform Changelog
 
 `1.16.0`_
 ---------
-.. start_latest_release
 * [#480](https://github.com/OasisLMF/OasisPlatform/issues/480) - Revert new cancellation stauts, causes UI to crash
 * [#479](https://github.com/OasisLMF/OasisPlatform/issues/479) - Fix error in the swagger generation
 * [#467](https://github.com/OasisLMF/OasisPlatform/issues/468) - Automate piwind worker build on release
@@ -13,7 +12,6 @@ OasisPlatform Changelog
 * [#471](https://github.com/OasisLMF/OasisPlatform/pull/471) - ORD outputs schema update 
 * [#475](https://github.com/OasisLMF/OasisPlatform/issues/475) - Add pre-release process  
 * [#470](https://github.com/OasisLMF/OasisPlatform/pull/470) - Update package requirements for security fixes 
-.. end_latest_release
 
 `1.15.7`_
 ---------
