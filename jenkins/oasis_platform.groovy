@@ -212,6 +212,14 @@ node {
                 }
             }
         )
+        if(params.PUBLISH){
+            // Build chanagelog image
+            stage("Create Changelog builder") {
+                dir(build_workspace) {
+                    sh "docker build -f docker/Dockerfile.release-notes -t release-builder ."
+                }
+            }
+        }    
 
         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
             parallel(
@@ -418,13 +426,6 @@ node {
         }
 
         if(params.PUBLISH){
-            // Build chanagelog image
-            stage("Create Changelog builder") {
-                dir(build_workspace) {
-                    sh "docker build -f docker/Dockerfile.release-notes -t release-builder ."
-                }
-            }
-
             // Tag OasisPlatform / PiWind
             stage("Tag release") {
                 sshagent (credentials: [git_creds]) {
