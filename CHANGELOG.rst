@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`1.15.9`_
+ ---------
+* [#494](https://github.com/OasisLMF/OasisPlatform/pull/494) - Update python to 3.8.9 and Django to 3.0.12
+* [#495](https://github.com/OasisLMF/OasisPlatform/pull/495) - Align Platform schema with oasislmf
+* [#497](https://github.com/OasisLMF/OasisPlatform/pull/497) - Update bash promp to show oasis version number
+* [#501](https://github.com/OasisLMF/OasisPlatform/pull/501) - Update build script
+* [#504](https://github.com/OasisLMF/OasisPlatform/pull/504) - Add explicit version tags for auto-release notes
+.. _`1.15.9`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.8...1.15.9
+
 `1.15.8`_
 ---------
 * [#465](https://github.com/OasisLMF/OasisPlatform/issues/465) - Fixed, cancelling running task doesn't terminate execution pipeline
