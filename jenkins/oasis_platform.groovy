@@ -27,6 +27,10 @@ node {
         [$class: 'StringParameterDefinition',  description: "Install OasisLMF from branch",        name: 'MDK_BRANCH', defaultValue: 'develop'],
         [$class: 'StringParameterDefinition',  description: "Release tag to publish",              name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
         [$class: 'StringParameterDefinition',  description: "Last release, for changelog",         name: 'PREV_RELEASE_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "OasisLMF release notes ref",          name: 'OASISLMF_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "OasisLMF prev release notes ref",     name: 'OASISLMF_PREV_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "Ktools release notes ref",            name: 'KTOOLS_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "Ktools prev release notes ref",       name: 'KTOOLS_PREV_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
         [$class: 'TextParameterDefinition',    description: "List of models for Regression tests", name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', description: "Test previous API and Worker",        name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
@@ -440,7 +444,7 @@ node {
                 dir(oasis_workspace){
                     withCredentials([string(credentialsId: 'github-api-token', variable: 'gh_token')]) {
                         sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}:/tmp release-builder build-changelog --repo OasisPlatform --from-tag ${params.PREV_RELEASE_TAG} --to-tag ${params.RELEASE_TAG} --github-token ${gh_token} --local-repo-path ./ --output-path ./CHANGELOG.rst --apply-milestone"
-                        sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}:/tmp release-builder build-release-platform --platform-from-tag ${params.PREV_RELEASE_TAG} --platform-to-tag ${params.RELEASE_TAG} --github-token ${gh_token} --output-path ./RELEASE.md"
+                        sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}:/tmp release-builder build-release-platform --platform-from-tag ${params.PREV_RELEASE_TAG} --platform-to-tag ${params.RELEASE_TAG} --lmf-from-tag ${params.OASISLMF_PREV_TAG} --lmf-to-tag ${params.OASISLMF_TAG} --ktools-from-tag ${params.KTOOLS_PREV_TAG} --ktools-to-tag ${params.KTOOLS_TAG} --github-token ${gh_token} --output-path ./RELEASE.md"
                     }
                     sshagent (credentials: [git_creds]) {
                         sh "git add ./CHANGELOG.rst"
