@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.15.10`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.9...1.15.10
+
 `1.15.9`_
  ---------
 * [#494](https://github.com/OasisLMF/OasisPlatform/pull/494) - Update python to 3.8.9 and Django to 3.0.12
