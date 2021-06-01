@@ -4,8 +4,8 @@ FROM python:3.8.9-alpine3.13 AS build-packages
 RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers libressl-dev libffi-dev postgresql-dev libpq
 
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
-COPY ./requirements-server.txt ./requirements.txt
-RUN pip install --user --no-warn-script-location -r ./requirements.txt && pip install --no-warn-script-location --user mysqlclient
+COPY ./requirements-server.txt ./requirements-server.txt
+RUN pip install --user --no-warn-script-location -r ./requirements-server.txt && pip install --no-warn-script-location --user mysqlclient
 
 
 # ---- STAGE 2 ----

@@ -27,7 +27,6 @@ coreapi==2.3.3            # via -r requirements-server.in, drf-yasg
 coreschema==0.0.4         # via coreapi, drf-yasg
 cryptography==3.4.5       # via autobahn, pyopenssl, service-identity
 daphne==3.0.1             # via -r requirements-server.in, channels
-decorator==4.4.2          # via ipython, traitlets
 django-cleanup==5.1.0     # via -r requirements-server.in
 django-filter==2.4.0      # via -r requirements-server.in
 django-model-utils==4.0.0  # via -r requirements-server.in
@@ -41,8 +40,6 @@ idna==2.10                # via hyperlink, requests, twisted
 importlib-metadata==2.0.0  # via jsonpickle
 incremental==17.5.0       # via twisted
 inflection==0.5.1         # via drf-yasg
-ipython-genutils==0.2.0   # via traitlets
-ipython==5.10.0           # via -r requirements-server.in
 itypes==1.2.0             # via coreapi
 jinja2==2.11.2            # via coreschema
 jmespath==0.10.0          # via boto3, botocore
@@ -53,15 +50,11 @@ markdown==3.3.3           # via -r requirements-server.in
 markupsafe==1.1.1         # via jinja2
 packaging==20.4           # via drf-yasg
 pathlib2==2.3.5           # via -r requirements-server.in
-pexpect==4.8.0            # via ipython
-pickleshare==0.7.5        # via ipython
-prompt-toolkit==1.0.18    # via click-repl, ipython
+prompt-toolkit==1.0.18    # via click-repl
 psycopg2-binary==2.8.6
-ptyprocess==0.6.0         # via pexpect
 pyasn1-modules==0.2.8     # via service-identity
 pyasn1==0.4.8             # via pyasn1-modules, service-identity
 pycparser==2.20           # via cffi
-pygments==2.5.2           # via ipython
 pyhamcrest==2.0.2         # via twisted
 pyjwt==1.7.1              # via djangorestframework-simplejwt
 pymysql==0.10.1           # via -r requirements-server.in
@@ -75,11 +68,9 @@ ruamel.yaml.clib==0.2.2   # via ruamel.yaml
 ruamel.yaml==0.16.12      # via drf-yasg
 s3transfer==0.3.3         # via boto3
 service-identity==18.1.0  # via twisted
-simplegeneric==0.8.1      # via ipython
 six==1.15.0               # via automat, click-repl, jsonschema, packaging, pathlib2, prompt-toolkit, pyopenssl, python-dateutil, traitlets
 sqlalchemy==1.3.20        # via -r requirements-server.in
 sqlparse==0.4.1           # via django
-traitlets==4.3.3          # via ipython
 twisted[tls]==20.3.0      # via daphne
 txaio==20.12.1            # via autobahn
 uritemplate==3.0.1        # via coreapi, drf-yasg
