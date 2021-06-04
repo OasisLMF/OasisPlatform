@@ -22,21 +22,26 @@ node {
 
     properties([
       parameters([
-        [$class: 'StringParameterDefinition',  name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
-        [$class: 'StringParameterDefinition',  name: 'BUILD_BRANCH', defaultValue: 'master'],
-        [$class: 'StringParameterDefinition',  name: 'MDK_BRANCH', defaultValue: 'develop'],
-        [$class: 'StringParameterDefinition',  name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
-        [$class: 'StringParameterDefinition',  name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
-        [$class: 'TextParameterDefinition',    name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
-        [$class: 'BooleanParameterDefinition', name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'CHECK_S3', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'RUN_REGRESSION', defaultValue: Boolean.valueOf(false)],
-        [$class: 'BooleanParameterDefinition', name: 'PURGE', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
-        [$class: 'BooleanParameterDefinition', name: 'PRE_RELEASE', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'AUTO_MERGE', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(true)]
+        [$class: 'StringParameterDefinition',  description: "Oasis Build scripts branch",          name: 'BUILD_BRANCH', defaultValue: 'master'],
+        [$class: 'StringParameterDefinition',  description: "OasisPlatform branch",                name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
+        [$class: 'StringParameterDefinition',  description: "Install OasisLMF from branch",        name: 'MDK_BRANCH', defaultValue: 'develop'],
+        [$class: 'StringParameterDefinition',  description: "Release tag to publish",              name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
+        [$class: 'StringParameterDefinition',  description: "Last release, for changelog",         name: 'PREV_RELEASE_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "OasisLMF release notes ref",          name: 'OASISLMF_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "OasisLMF prev release notes ref",     name: 'OASISLMF_PREV_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "Ktools release notes ref",            name: 'KTOOLS_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "Ktools prev release notes ref",       name: 'KTOOLS_PREV_TAG', defaultValue: ""],
+        [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
+        [$class: 'TextParameterDefinition',    description: "List of models for Regression tests", name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
+        [$class: 'BooleanParameterDefinition', description: "Test previous API and Worker",        name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', description: "Test S3 storage using LocalStack",    name: 'CHECK_S3', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', description: "Run API unittests",                   name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', description: "Run Regression checks",               name: 'RUN_REGRESSION', defaultValue: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', description: "Purge docker images on completion",   name: 'PURGE', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', description: "Create release if checked",           name: 'PUBLISH', defaultValue: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', description: "Mark as pre-released software",       name: 'PRE_RELEASE', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', description: "Perform a gitflow merge",             name: 'AUTO_MERGE', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', description: "Send build status to slack",          name: 'SLACK_MESSAGE', defaultValue: Boolean.valueOf(true)]
       ])
     ])
 
@@ -91,11 +96,11 @@ node {
         MODEL_BRANCH='master'
     }
 
-    //make sure release candidate versions are tagged correctly                                                                              
+    //make sure release candidate versions are tagged correctly
     if (params.PUBLISH && params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)rc(\\d+)$')) {
         sh "echo release candidates must be tagged {version}rc{N}, example: 1.0.0rc1"
         sh "exit 1"
-    } 
+    }
 
     // Set Global ENV
     env.PIPELINE_LOAD = script_dir + utils_sh
@@ -207,6 +212,14 @@ node {
                 }
             }
         )
+        if(params.PUBLISH){
+            // Build chanagelog image
+            stage("Create Changelog builder") {
+                dir(build_workspace) {
+                    sh "docker build -f docker/Dockerfile.release-notes -t release-builder ."
+                }
+            }
+        }    
 
         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
             parallel(
@@ -252,13 +265,9 @@ node {
                 }
             }
         }
-
-
-
-
        if (params.CHECK_COMPATIBILITY) {
 
-            // Build PiWind worker from new worker 
+            // Build PiWind worker from new worker
             stage('Build: PiWind worker') {
                 dir(model_workspace) {
                     sh "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
@@ -279,7 +288,7 @@ node {
                     dir(build_workspace) {
                        sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[i]}"
 
-                       // show docker logs 
+                       // show docker logs
                        sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server'
                        sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker'
                        sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor'
@@ -301,7 +310,7 @@ node {
                    // run test
                     sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
 
-                   // show docker logs 
+                   // show docker logs
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server'
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker'
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor'
@@ -324,7 +333,7 @@ node {
                    // run test
                    sh PIPELINE + " run_test --config /var/oasis/test/${model_test_ini} --test-case ${api_server_tests[0]}"
 
-                   // show docker logs 
+                   // show docker logs
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server'
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker'
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor'
@@ -351,7 +360,7 @@ node {
                    // run test
                    sh PIPELINE + " run_test_s3 --config /var/oasis/test/${model_test_ini} --test-case ${model_tests}"
 
-                   // show docker logs 
+                   // show docker logs
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs server'
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker'
                    sh 'docker-compose -f compose/oasis.platform.yml -f compose/model.worker.yml logs worker-monitor'
@@ -423,7 +432,8 @@ node {
         }
 
         if(params.PUBLISH){
-            stage ('Create Release: GitHub') {
+            // Tag OasisPlatform / PiWind
+            stage("Tag release") {
                 sshagent (credentials: [git_creds]) {
                     dir(model_workspace) {
                         // Tag PiWind
@@ -434,17 +444,33 @@ node {
                         sh PIPELINE + " git_tag ${env.TAG_RELEASE}"
                     }
                 }
+            }
 
+            // Create release notes
+            stage('Create Changelog'){
+                dir(oasis_workspace){
+                    withCredentials([string(credentialsId: 'github-api-token', variable: 'gh_token')]) {
+                        sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}:/tmp release-builder build-changelog --repo OasisPlatform --from-tag ${params.PREV_RELEASE_TAG} --to-tag ${params.RELEASE_TAG} --github-token ${gh_token} --local-repo-path ./ --output-path ./CHANGELOG.rst --apply-milestone"
+                        sh "docker run -v ${env.WORKSPACE}/${oasis_workspace}:/tmp release-builder build-release-platform --platform-from-tag ${params.PREV_RELEASE_TAG} --platform-to-tag ${params.RELEASE_TAG} --lmf-from-tag ${params.OASISLMF_PREV_TAG} --lmf-to-tag ${params.OASISLMF_TAG} --ktools-from-tag ${params.KTOOLS_PREV_TAG} --ktools-to-tag ${params.KTOOLS_TAG} --github-token ${gh_token} --output-path ./RELEASE.md"
+                    }
+                    sshagent (credentials: [git_creds]) {
+                        sh "git add ./CHANGELOG.rst"
+                        sh "git commit -m 'Update changelog ${params.RELEASE_TAG}'"
+                        sh "git push"
+                    }
+                }
+            }
+            stage ('Create Release: GitHub') {
                 // Create Release
                 withCredentials([string(credentialsId: 'github-api-token', variable: 'gh_token')]) {
                     dir(oasis_workspace) {
                         String repo = "OasisLMF/OasisPlatform"
-
+                        def release_body = readFile(file: "${env.WORKSPACE}/${oasis_workspace}/RELEASE.md")
                         def json_request = readJSON text: '{}'
                         json_request['tag_name'] = RELEASE_TAG
                         json_request['target_commitish'] = 'master'
                         json_request['name'] = RELEASE_TAG
-                        json_request['body'] = ""
+                        json_request['body'] = release_body
                         json_request['draft'] = false
                         json_request['prerelease'] = params.PRE_RELEASE
                         writeJSON file: 'gh_request.json', json: json_request
@@ -457,9 +483,6 @@ node {
                             filename='openapi-schema.json'
                             sh 'curl -XPOST -H "Authorization:token ' + gh_token + '" -H "Content-Type:application/octet-stream" --data-binary @' + filename + " https://uploads.github.com/repos/$repo/releases/$release_id/assets?name=" + "openapi-schema-${RELEASE_TAG}.json"
                         }
-
-                        // Create milestone
-                        sh PIPELINE + " create_milestone ${gh_token} ${repo} ${env.TAG_RELEASE} CHANGELOG.rst"
                     }
                 }
             }
@@ -528,7 +551,7 @@ node {
                         sh "git stash"
                         sh "git checkout develop && git pull"
                         sh "git merge ${oasis_branch} && git push"
-                    }    
+                    }
                 }
             }
         }
