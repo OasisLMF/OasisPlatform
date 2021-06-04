@@ -69,7 +69,7 @@ tabulate==0.8.9           # via oasislmf
 text-unidecode==1.3       # via python-slugify
 toml==0.10.2              # via pytest
 tqdm==4.59.0              # via oasislmf
-urllib3==1.26.4           # via botocore, requests
+urllib3==1.26.5           # via botocore, requests
 vine==5.0.0               # via amqp, celery
 wcwidth==0.2.5            # via prompt-toolkit
 
