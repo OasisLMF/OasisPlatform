@@ -1,9 +1,36 @@
 OasisPlatform Changelog
 =======================
 
+`1.17.0`_
+ ---------
+* [#485](https://github.com/OasisLMF/OasisPlatform/pull/487) - Update critical CVE for backport 1.15.x
+* [#468](https://github.com/OasisLMF/OasisPlatform/pull/488) - Automate piwind worker build on release 
+* [#492](https://github.com/OasisLMF/OasisPlatform/pull/492) - Bump Django to 3.1.8 - CVE-2021-28658
+* [#495](https://github.com/OasisLMF/OasisPlatform/pull/495) - Align Platform schema with oasislmf
+* [#497](https://github.com/OasisLMF/OasisPlatform/pull/497) - Update bash promp to show oasis version number
+* [#498](https://github.com/OasisLMF/OasisPlatform/pull/499) - Portfolio s3 storage link issue (S3)
+* [#500](https://github.com/OasisLMF/OasisPlatform/pull/500) - Added Github Templates
+* [#501](https://github.com/OasisLMF/OasisPlatform/pull/501) - Update build script
+* [#504](https://github.com/OasisLMF/OasisPlatform/pull/504) - Add explicit version tags for auto-release notes
+* [#505](https://github.com/OasisLMF/OasisPlatform/pull/505) - Fix clash with requirements files
+* [#507](https://github.com/OasisLMF/OasisPlatform/pull/507) - Update urllib3 for CVE-2021-33503
+.. _`1.17.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.16.0...1.17.0
+
+`1.17.0rc1`_
+ ---------
+* [#485](https://github.com/OasisLMF/OasisPlatform/pull/487) - Update critical CVE for backport 1.15.x
+* [#468](https://github.com/OasisLMF/OasisPlatform/pull/488) - Automate piwind worker build on release 
+* [#492](https://github.com/OasisLMF/OasisPlatform/pull/492) - Bump Django to 3.1.8 - CVE-2021-28658
+* [#495](https://github.com/OasisLMF/OasisPlatform/pull/495) - Align Platform schema with oasislmf
+* [#497](https://github.com/OasisLMF/OasisPlatform/pull/497) - Update bash promp to show oasis version number
+* [#498](https://github.com/OasisLMF/OasisPlatform/pull/499) - Portfolio s3 storage link issue (S3)
+* [#500](https://github.com/OasisLMF/OasisPlatform/pull/500) - Added Github Templates
+* [#501](https://github.com/OasisLMF/OasisPlatform/pull/501) - Update build script
+* [#504](https://github.com/OasisLMF/OasisPlatform/pull/504) - Add explicit version tags for auto-release notes
+.. _`1.17.0rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.16.0...1.17.0rc1
+
 `1.16.0`_
 ---------
-.. start_latest_release
 * [#480](https://github.com/OasisLMF/OasisPlatform/issues/480) - Revert new cancellation stauts, causes UI to crash
 * [#479](https://github.com/OasisLMF/OasisPlatform/issues/479) - Fix error in the swagger generation
 * [#467](https://github.com/OasisLMF/OasisPlatform/issues/468) - Automate piwind worker build on release
@@ -13,7 +40,6 @@ OasisPlatform Changelog
 * [#471](https://github.com/OasisLMF/OasisPlatform/pull/471) - ORD outputs schema update 
 * [#475](https://github.com/OasisLMF/OasisPlatform/issues/475) - Add pre-release process  
 * [#470](https://github.com/OasisLMF/OasisPlatform/pull/470) - Update package requirements for security fixes 
-.. end_latest_release
 
 `1.15.7`_
 ---------
