@@ -12,13 +12,78 @@ from ..files.models import file_storage_link
 from ..files.models import RelatedFile
 from .models import Portfolio
 
-
 from ..schemas.serializers import (
     LocFileSerializer,
     AccFileSerializer,
     ReinsInfoFileSerializer,
     ReinsScopeFileSerializer,
 )
+
+
+""" Read Only Portfolio Deserializer for returning list of all 
+    Portfolios in DB 
+"""
+class PortfolioListSerializer(serializers.Serializer):
+
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    created = serializers.DateTimeField(read_only=True)
+    modified = serializers.DateTimeField(read_only=True)
+    accounts_file = serializers.SerializerMethodField(read_only=True)
+    location_file = serializers.SerializerMethodField(read_only=True)
+    reinsurance_info_file = serializers.SerializerMethodField(read_only=True)
+    reinsurance_scope_file = serializers.SerializerMethodField(read_only=True)
+    storage_links = serializers.SerializerMethodField(read_only=True)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_storage_links(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_storage_url(request=request)
+
+    @swagger_serializer_method(serializer_or_field=LocFileSerializer)
+    def get_location_file(self, instance):
+        if instance.location_file_id is None:
+            return None
+        request = self.context.get('request')
+        return {
+            "uri": instance.get_absolute_location_file_url(request=request),
+            "name": instance.location_file.filename,
+            "stored": str(instance.location_file.file)
+        }
+
+    @swagger_serializer_method(serializer_or_field=AccFileSerializer)
+    def get_accounts_file(self, instance):
+        if instance.accounts_file_id is None:
+            return None
+        request = self.context.get('request')
+        return {
+            "uri": instance.get_absolute_accounts_file_url(request=request),
+            "name": instance.accounts_file.filename,
+            "stored": str(instance.accounts_file.file)
+        }
+
+    @swagger_serializer_method(serializer_or_field=ReinsInfoFileSerializer)
+    def get_reinsurance_info_file(self, instance):
+        if instance.reinsurance_info_file_id is None:
+            return None
+
+        request = self.context.get('request')
+        return {
+            "uri": instance.get_absolute_reinsurance_info_file_url(request=request),
+            "name": instance.reinsurance_info_file.filename,
+            "stored": str(instance.reinsurance_info_file.file)
+        }
+
+    @swagger_serializer_method(serializer_or_field=ReinsScopeFileSerializer)
+    def get_reinsurance_scope_file(self, instance):
+        if instance.reinsurance_scope_file_id is None:
+            return None
+        request = self.context.get('request')
+        return {
+            "uri": instance.get_absolute_reinsurance_scope_file_url(request=request),
+            "name": instance.reinsurance_scope_file.filename,
+            "stored": str(instance.reinsurance_scope_file.file)
+        }
 
 
 class PortfolioSerializer(serializers.ModelSerializer):

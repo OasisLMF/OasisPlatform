@@ -96,6 +96,63 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         else:
             return super(PortfolioViewSet, self).get_serializer_class()
 
+    def list(self, request, pk=None, version=None):
+        import time 
+        #import ipdb; ipdb.set_trace()
+        #queryset = self.filter_queryset(self.get_queryset()).select_related(
+        #    'accounts_file',
+        #    'location_file',
+        #    'reinsurance_info_file',
+        #    'reinsurance_scope_file',
+        #)    
+
+
+        queryset = self.get_queryset().select_related('location_file', 'accounts_file', 'reinsurance_scope_file', 'reinsurance_info_file')
+        #queryset = self.get_queryset().raw('SELECT * from portfolios_portfolio;')
+
+
+        #queryset = self.get_queryset().raw('SELECT * from portfolios_portfolio;')
+
+
+        #queryset = self.get_queryset().values(
+        #    'id',
+        #    'name',
+        #    'created',
+        #    'modified',
+        #    'accounts_file_id',
+        #    'location_file_id',
+        #    'reinsurance_info_file_id',
+        #    'reinsurance_scope_file_id',
+        #)
+
+        from .serializers import PortfolioListSerializer
+        serializer_new =  PortfolioListSerializer(queryset, many=True)
+        #serializer_current = self.get_serializer(queryset, many=True)
+
+
+        # try new serializer
+        #start = time.time() 
+        result_data = serializer_new.data
+        #end = time.time()
+        #print("Portfolio fetch Time NEW: {}".format(end-start))
+        #import ipdb; ipdb.set_trace()
+        
+        #from django.db import connection
+        #print(connection.queries)
+
+
+
+        
+
+        ## compare to prev serializer    
+        #start = time.time() 
+        #result_data = serializer_current.data
+        #end = time.time()
+        #print("Portfolio fetch Time CURRENT: {}".format(end-start))
+
+        return Response(result_data)
+        
+
     @property
     def parser_classes(self):
         if getattr(self, 'action', None) in ['set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file']:
