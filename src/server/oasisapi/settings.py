@@ -20,6 +20,8 @@ from ...conf import iniconf  # noqa
 from ...conf.celeryconf import *  # noqa
 from ...common.shared import set_aws_log_level
 
+
+
 IN_TEST = 'test' in sys.argv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -31,6 +33,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
+DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = iniconf.settings.get('server', 'secret_key', fallback='' if not DEBUG else 'supersecret')
@@ -56,8 +59,6 @@ INSTALLED_APPS = [
     'drf_yasg',
     'rest_framework_simplejwt.token_blacklist',
     'storages',
-    ## DEBUG TOOLBAR 
-#    'debug_toolbar',
 
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
@@ -78,9 +79,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    ## DEBUG TOOLBAR 
-#    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
+
+
+if DEBUG_TOOLBAR:
+    INSTALLED_APPS.append('debug_toolbar')
+    MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+
 
 ROOT_URLCONF = 'src.server.oasisapi.urls'
 
@@ -262,7 +267,7 @@ SWAGGER_SETTINGS = {
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
 }
 
-## DEBUG TOOLBAR 
-#INTERNAL_IPS = [
-#    '127.0.0.1',
-#]
+if DEBUG_TOOLBAR:
+    INTERNAL_IPS = [
+        '127.0.0.1',
+    ]
