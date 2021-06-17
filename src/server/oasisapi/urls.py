@@ -14,8 +14,11 @@ from .data_files.viewsets import DataFileViewset
 from .info.views import PerilcodesView
 from .info.views import ServerInfoView
 
+if settings.DEBUG_TOOLBAR:
+    from django.urls import path
+    import debug_toolbar
+
 admin.autodiscover()
-#app_name = 'oasisapi'
 
 api_router = routers.DefaultRouter()
 api_router.include_root_view = False
@@ -88,3 +91,6 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if settings.DEBUG_TOOLBAR:
+    urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))

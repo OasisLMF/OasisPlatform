@@ -17,8 +17,12 @@ from ..files.serializers import RelatedFileSerializer
 from .models import Portfolio
 from ..schemas.custom_swagger import FILE_RESPONSE
 from ..schemas.serializers import StorageLinkSerializer
-from .serializers import PortfolioSerializer, CreateAnalysisSerializer, PortfolioStorageSerializer
-
+from .serializers import (
+    PortfolioSerializer,
+    CreateAnalysisSerializer,
+    PortfolioStorageSerializer,
+    PortfolioListSerializer
+)
 
 class PortfolioFilter(TimeStampedFilter):
     name = filters.CharFilter(help_text=_('Filter results by case insensitive names equal to the given string'), lookup_expr='iexact')
@@ -70,7 +74,12 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     Partially updates the specified portfolio (only provided fields are updated)
     """
 
-    queryset = Portfolio.objects.all()
+    queryset = Portfolio.objects.all().select_related(
+        'location_file',
+        'accounts_file',
+        'reinsurance_scope_file',
+        'reinsurance_info_file'
+    )
     serializer_class = PortfolioSerializer
     filterset_class = PortfolioFilter
 
@@ -86,6 +95,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
+        elif self.action in ['list']:
+            return PortfolioListSerializer
         elif self.action in ['set_storage_links', 'storage_links']:
             return PortfolioStorageSerializer
         elif self.action in [
@@ -95,6 +106,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             return RelatedFileSerializer
         else:
             return super(PortfolioViewSet, self).get_serializer_class()
+
 
     @property
     def parser_classes(self):

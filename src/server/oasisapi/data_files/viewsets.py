@@ -11,7 +11,7 @@ from ..files.views import handle_related_file
 from ..filters import TimeStampedFilter
 from .models import DataFile
 from ..schemas.custom_swagger import FILE_RESPONSE
-from .serializers import DataFileSerializer
+from .serializers import DataFileSerializer, DataFileListSerializer
 
 
 class DataFileFilter(TimeStampedFilter):
@@ -75,13 +75,15 @@ class DataFileFilter(TimeStampedFilter):
 
 
 class DataFileViewset(viewsets.ModelViewSet):
-    queryset = DataFile.objects.all()
+    queryset = DataFile.objects.all().select_related('file')
     serializer_class = DataFileSerializer
     filterset_class = DataFileFilter
 
     def get_serializer_class(self):
         if self.action in ['content', 'set_content']:
             return RelatedFileSerializer
+        elif self.action in  ['list']:   
+            return DataFileListSerializer
         else:
             return super(DataFileViewset, self).get_serializer_class()
 
