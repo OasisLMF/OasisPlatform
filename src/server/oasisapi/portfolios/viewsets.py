@@ -18,9 +18,9 @@ from .models import Portfolio
 from ..schemas.custom_swagger import FILE_RESPONSE
 from ..schemas.serializers import StorageLinkSerializer
 from .serializers import (
-    PortfolioSerializer, 
-    CreateAnalysisSerializer, 
-    PortfolioStorageSerializer, 
+    PortfolioSerializer,
+    CreateAnalysisSerializer,
+    PortfolioStorageSerializer,
     PortfolioListSerializer
 )
 
@@ -74,11 +74,10 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     Partially updates the specified portfolio (only provided fields are updated)
     """
 
-    #queryset = Portfolio.objects.all()
     queryset = Portfolio.objects.all().select_related(
-        'location_file', 
-        'accounts_file', 
-        'reinsurance_scope_file', 
+        'location_file',
+        'accounts_file',
+        'reinsurance_scope_file',
         'reinsurance_info_file'
     )
     serializer_class = PortfolioSerializer
@@ -96,8 +95,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
-        elif self.action in ['list']:
-            return PortfolioListSerializer  
+        elif self.action in ['list', 'retrieve']:
+            return PortfolioListSerializer
         elif self.action in ['set_storage_links', 'storage_links']:
             return PortfolioStorageSerializer
         elif self.action in [
@@ -108,19 +107,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         else:
             return super(PortfolioViewSet, self).get_serializer_class()
 
-
-    # Override default 'list' method to call queryset with `select_related`
-    def list(self, request, pk=None, version=None):
-        import ipdb; ipdb.set_trace()
-        queryset = self.filter_queryset(self.get_queryset()).select_related(
-            'accounts_file',
-            'location_file',
-            'reinsurance_info_file',
-            'reinsurance_scope_file',
-        )    
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-        
 
     @property
     def parser_classes(self):

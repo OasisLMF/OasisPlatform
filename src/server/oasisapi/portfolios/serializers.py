@@ -20,10 +20,10 @@ from ..schemas.serializers import (
 )
 
 
-""" Read Only Portfolio Deserializer for returning list of all 
-    Portfolios in DB 
-"""
 class PortfolioListSerializer(serializers.Serializer):
+    """ Read Only Portfolio Deserializer for efficiently returning a list of all 
+        Portfolios in DB 
+    """
 
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(read_only=True)
