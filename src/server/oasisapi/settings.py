@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'drf_yasg',
     'rest_framework_simplejwt.token_blacklist',
     'storages',
+    ## DEBUG TOOLBAR 
+#    'debug_toolbar',
 
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
@@ -76,6 +78,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    ## DEBUG TOOLBAR 
+#    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'src.server.oasisapi.urls'
@@ -258,3 +262,7 @@ SWAGGER_SETTINGS = {
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
 }
 
+## DEBUG TOOLBAR 
+#INTERNAL_IPS = [
+#    '127.0.0.1',
+#]

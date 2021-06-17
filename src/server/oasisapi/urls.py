@@ -6,6 +6,10 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import routers, permissions
 
+## DEBUG TOOLBAR 
+#from django.urls import path
+#import debug_toolbar
+
 from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView
 from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView
 from .portfolios.viewsets import PortfolioViewSet
@@ -15,7 +19,6 @@ from .info.views import PerilcodesView
 from .info.views import ServerInfoView
 
 admin.autodiscover()
-#app_name = 'oasisapi'
 
 api_router = routers.DefaultRouter()
 api_router.include_root_view = False
@@ -88,3 +91,5 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    ## DEBUG TOOLBAR 
+    #urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))
