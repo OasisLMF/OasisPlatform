@@ -12,7 +12,7 @@ from django_filters import rest_framework as filters
 from django_filters import NumberFilter
 
 from .models import Analysis
-from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisStorageSerializer
+from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisStorageSerializer, AnalysisListSerializer
 
 from ..analysis_models.models import AnalysisModel
 from ..data_files.serializers import DataFileSerializer
@@ -20,7 +20,7 @@ from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultip
 from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
 from ..schemas.custom_swagger import FILE_RESPONSE
-from ..schemas.serializers import AnalysisSettingsSerializer 
+from ..schemas.serializers import AnalysisSettingsSerializer
 
 
 class AnalysisFilter(TimeStampedFilter):
@@ -128,13 +128,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     partial_update:
     Partially updates the specified analysis (only provided fields are updated)
     """
-
-    queryset = Analysis.objects.all()
-    serializer_class = AnalysisSerializer
-    filterset_class = AnalysisFilter
-
     file_action_types = ['settings_file',
-                         'set_settings_file',
                          'input_file',
                          'lookup_errors_file',
                          'lookup_success_file',
@@ -150,9 +144,17 @@ class AnalysisViewSet(viewsets.ModelViewSet):
                          'generate_inputs',
                          'cancel_generate_inputs']
 
+    queryset = Analysis.objects.all().select_related(*file_action_types).prefetch_related('complex_model_data_files')
+    serializer_class = AnalysisSerializer
+    filterset_class = AnalysisFilter
+
+    file_action_types.append('set_settings_file')
+
     def get_serializer_class(self):
-        if self.action in ['retrieve', 'create', 'list', 'options', 'update', 'partial_update']:
+        if self.action in ['create', 'options', 'update', 'partial_update', 'retrieve']:
             return super(AnalysisViewSet, self).get_serializer_class()
+        elif self.action in ['list']:
+            return AnalysisListSerializer
         elif self.action == 'copy':
             return AnalysisCopySerializer
         elif self.action == 'data_files':
@@ -386,11 +388,11 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(df_serializer.data)
 
 
-    
+
     @action(methods=['get'], detail=True)
     def storage_links(self, request, pk=None, version=None):
         """
-        get:                                                                                                                                                 
+        get:
         Gets the analyses storage backed link references, `object keys` or `file paths`
         """
         serializer = self.get_serializer(self.get_object())
