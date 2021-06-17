@@ -5,40 +5,9 @@ from rest_framework.exceptions import ValidationError
 from .models import Analysis
 from ..files.models import file_storage_link
 
-
-from ..data_files.models import DataFile
-from ..data_files.serializers import DataFileSerializer
-
 class AnalysisListSerializer(serializers.Serializer):
     """ Read Only Analyses Deserializer for efficiently returning a list of all
-        Analyses in DB
-    """
-
-    """
-    {
-      "created": "2021-06-17T08:21:59.315040Z",
-      "modified": "2021-06-17T08:21:59.315040Z",
-      "name": "Analysis_17062021-092159",
-      "id": 1,
-      "portfolio": 1506,
-      "model": 3,
-      "status": "NEW",
-      "task_started": null,
-      "task_finished": null,
-      "complex_model_data_files": [],
-      "input_file": null,
-      "settings_file": "http://localhost:8000/v1/analyses/1/settings_file/",
-      "settings": "http://localhost:8000/v1/analyses/1/settings/",
-      "lookup_errors_file": null,
-      "lookup_success_file": null,
-      "lookup_validation_file": null,
-      "summary_levels_file": null,
-      "input_generation_traceback_file": null,
-      "output_file": null,
-      "run_traceback_file": null,
-      "run_log_file": null,
-      "storage_links": "http://localhost:8000/v1/analyses/1/storage_links/"
-    }
+        Analyses from DB
     """
 
     # model fields
@@ -52,7 +21,6 @@ class AnalysisListSerializer(serializers.Serializer):
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
 
     # file fields
     input_file = serializers.SerializerMethodField(read_only=True)
