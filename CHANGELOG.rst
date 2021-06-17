@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.15.12`_
+ ---------
+* [#505](https://github.com/OasisLMF/OasisPlatform/pull/505) - Fix clash with requirements files
+* [#509](https://github.com/OasisLMF/OasisPlatform/pull/510) - Slow portfolio queries 
+.. _`1.15.12`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.11...1.15.12
+
 `1.15.9`_
  ---------
 * [#494](https://github.com/OasisLMF/OasisPlatform/pull/494) - Update python to 3.8.9 and Django to 3.0.12
