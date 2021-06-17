@@ -151,9 +151,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     file_action_types.append('set_settings_file')
 
     def get_serializer_class(self):
-        if self.action in ['create', 'options', 'update', 'partial_update']:
+        if self.action in ['create', 'options', 'update', 'partial_update', 'retrieve']:
             return super(AnalysisViewSet, self).get_serializer_class()
-        elif self.action in ['list', 'retrieve']:
+        elif self.action in ['list']:
             return AnalysisListSerializer
         elif self.action == 'copy':
             return AnalysisCopySerializer

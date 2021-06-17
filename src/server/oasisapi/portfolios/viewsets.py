@@ -95,7 +95,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
-        elif self.action in ['list', 'retrieve']:
+        elif self.action in ['list']:
             return PortfolioListSerializer
         elif self.action in ['set_storage_links', 'storage_links']:
             return PortfolioStorageSerializer
