@@ -178,8 +178,8 @@ node {
             stage('Git install MDK'){
                 dir(oasis_workspace) {
                     // update worker and server install lists
-                    sh "sed -i 's|^oasislmf.*| git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements-worker.txt"
-                    sh "sed -i 's|^oasislmf.*| git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf|g' requirements.txt"
+                    sh "sed -i 's|^oasislmf.*| git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf[extra]|g' requirements-worker.txt"
+                    sh "sed -i 's|^oasislmf.*| git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf[extra]|g' requirements.txt"
                 }
             }
         }
@@ -219,7 +219,7 @@ node {
                     sh "docker build -f docker/Dockerfile.release-notes -t release-builder ."
                 }
             }
-        }    
+        }
 
         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
             parallel(
@@ -265,14 +265,18 @@ node {
                 }
             }
         }
-       if (params.CHECK_COMPATIBILITY) {
 
-            // Build PiWind worker from new worker
-            stage('Build: PiWind worker') {
-                dir(model_workspace) {
-                    sh "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
-                }
-            }
+        if (params.CHECK_S3 || params.CHECK_COMPATIBILITY) {
+              // Build PiWind worker from new worker
+              stage('Build: PiWind worker') {
+                  dir(model_workspace) {
+                      sh "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
+                  }
+              }
+
+         }
+
+         if (params.CHECK_COMPATIBILITY) {
 
             // START API for base model tests
             stage('Run: API Server') {
