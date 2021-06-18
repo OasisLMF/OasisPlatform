@@ -1,4 +1,4 @@
-oasislmf>=1.8.3
+oasislmf[extra]>=1.8.3
 celery
 boto3
 configparser
