@@ -29,11 +29,11 @@ cryptography==3.4.5       # via autobahn, pyopenssl, service-identity
 daphne==3.0.1             # via -r requirements-server.in, channels
 django-cleanup==5.1.0     # via -r requirements-server.in
 django-filter==2.4.0      # via -r requirements-server.in
-django-model-utils==4.0.0  # via -r requirements-server.in
-django-storages==1.10.1   # via -r requirements-server.in
-django==3.0.12            # via -r requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg
-djangorestframework-simplejwt==4.5.0  # via -r requirements-server.in
-djangorestframework==3.12.2  # via -r requirements-server.in, djangorestframework-simplejwt, drf-yasg
+django-model-utils==4.1.1  # via -r requirements-server.in
+django-storages==1.11.1   # via -r requirements-server.in
+django==3.2.4             # via -r requirements-server.in, channels, django-filter, django-model-utils, django-storages, djangorestframework, djangorestframework-simplejwt, drf-yasg
+djangorestframework-simplejwt==4.6.0  # via -r requirements-server.in
+djangorestframework==3.12.4  # via -r requirements-server.in, djangorestframework-simplejwt, drf-yasg
 drf-yasg==1.20.0          # via -r requirements-server.in
 hyperlink==21.0.0         # via autobahn, twisted
 idna==2.10                # via hyperlink, requests, twisted
