@@ -5,7 +5,7 @@
 #    pip-compile requirements-server.in
 #
 amqp==5.0.2               # via kombu
-asgiref==3.3.0            # via channels, daphne, django
+asgiref==3.3.2            # via channels, daphne, django
 attrs==20.3.0             # via automat, jsonschema, service-identity, twisted
 autobahn==21.2.1          # via daphne
 automat==20.2.0           # via twisted
