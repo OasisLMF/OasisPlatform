@@ -24,8 +24,8 @@ node {
       parameters([
         [$class: 'StringParameterDefinition',  description: "Oasis Build scripts branch",          name: 'BUILD_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  description: "OasisPlatform branch",                name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
-        [$class: 'StringParameterDefinition',  description: "Install OasisLMF from branch",        name: 'MDK_BRANCH', defaultValue: 'develop'],
-        [$class: 'StringParameterDefinition',  description: "Test API/Worker using PiWind branch", name: 'PIWIND_BRANCH', defaultValue: 'develop'],
+        [$class: 'StringParameterDefinition',  description: "Install OasisLMF from branch",        name: 'MDK_BRANCH', defaultValue: 'backports/1.15.x'],
+        [$class: 'StringParameterDefinition',  description: "Test API/Worker using PiWind branch", name: 'PIWIND_BRANCH', defaultValue: 'backports/1.15.x'],
         [$class: 'StringParameterDefinition',  description: "Release tag to publish",              name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
         [$class: 'StringParameterDefinition',  description: "Last release, for changelog",         name: 'PREV_RELEASE_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "OasisLMF release notes ref",          name: 'OASISLMF_TAG', defaultValue: ""],
