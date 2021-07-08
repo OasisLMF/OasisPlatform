@@ -1,6 +1,17 @@
 OasisPlatform Changelog
 =======================
 
+`1.18.0`_
+ ---------
+* [#512](https://github.com/OasisLMF/OasisPlatform/pull/512) - Fix/django CVE issues
+* [#500](https://github.com/OasisLMF/OasisPlatform/pull/500) - Added Github Templates
+* [#504](https://github.com/OasisLMF/OasisPlatform/pull/504) - Add explicit version tags for auto-release notes
+* [#505](https://github.com/OasisLMF/OasisPlatform/pull/505) - Fix clash with requirements files
+* [#507](https://github.com/OasisLMF/OasisPlatform/pull/507) - Update urllib3 for CVE-2021-33503
+* [#509](https://github.com/OasisLMF/OasisPlatform/pull/510) - Slow portfolio queries 
+* [#511](https://github.com/OasisLMF/OasisPlatform/pull/511) - Build model worker with optional packages
+.. _`1.18.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.17.0...1.18.0
+
 `1.17.0`_
  ---------
 * [#485](https://github.com/OasisLMF/OasisPlatform/pull/487) - Update critical CVE for backport 1.15.x
