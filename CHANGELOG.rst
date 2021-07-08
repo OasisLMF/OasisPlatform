@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.15.13`_
+ ---------
+* [#512](https://github.com/OasisLMF/OasisPlatform/pull/512) - Fix/django CVE issues
+* [#513](https://github.com/OasisLMF/OasisPlatform/pull/514) - CVE - Python
+.. _`1.15.13`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.12...1.15.13
+
 `1.15.12`_
  ---------
 * [#505](https://github.com/OasisLMF/OasisPlatform/pull/505) - Fix clash with requirements files
