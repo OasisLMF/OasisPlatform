@@ -220,7 +220,7 @@ node {
                     sh "docker build -f docker/Dockerfile.release-notes -t release-builder ."
                 }
             }
-        }    
+        }
 
         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
             parallel(
@@ -266,14 +266,17 @@ node {
                 }
             }
         }
-       if (params.CHECK_COMPATIBILITY) {
 
+       if (params.CHECK_S3 || params.CHECK_COMPATIBILITY) {
             // Build PiWind worker from new worker
             stage('Build: PiWind worker') {
                 dir(model_workspace) {
                     sh "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
                 }
             }
+       }
+
+       if (params.CHECK_COMPATIBILITY) {
 
             // START API for base model tests
             stage('Run: API Server') {
