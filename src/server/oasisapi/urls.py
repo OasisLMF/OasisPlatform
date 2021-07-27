@@ -7,12 +7,14 @@ from drf_yasg.views import get_schema_view
 from rest_framework import routers, permissions
 
 from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView
-from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView
+from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTaskStatusViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .healthcheck.views import HealthcheckView
 from .data_files.viewsets import DataFileViewset
 from .info.views import PerilcodesView
 from .info.views import ServerInfoView
+from .queues.viewsets import QueueViewSet
+from .queues.viewsets import WebsocketViewSet
 
 if settings.DEBUG_TOOLBAR:
     from django.urls import path
@@ -24,8 +26,11 @@ api_router = routers.DefaultRouter()
 api_router.include_root_view = False
 api_router.register('portfolios', PortfolioViewSet, basename='portfolio')
 api_router.register('analyses', AnalysisViewSet, basename='analysis')
+api_router.register('analysis-task-statuses', AnalysisTaskStatusViewSet, basename='analysis-task-status')
 api_router.register('models', AnalysisModelViewSet, basename='analysis-model')
 api_router.register('data_files', DataFileViewset, basename='data-file')
+api_router.register('queue', QueueViewSet, basename='queue')
+api_router.register('queue-status', WebsocketViewSet, basename='queue')
 # api_router.register('files', FilesViewSet, basename='file')
 
 

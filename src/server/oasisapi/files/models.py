@@ -2,6 +2,7 @@ import os
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.files import File
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
@@ -17,6 +18,16 @@ def random_file_name(instance, filename):
     else:
         ext = os.path.splitext(filename)[-1]
     return '{}{}'.format(uuid4().hex, ext)
+
+
+class RelatedFileManager(models.Manager):
+    def create_from_content(self, content, filename, content_type, creator):
+        self.create(
+            creator=creator,
+            filename=filename,
+            content_type=content_type,
+            file=File(BytesIO(content))
+        )
 
 
 def file_storage_link(storage_obj, fullpath=False):
@@ -65,6 +76,7 @@ class RelatedFile(TimeStampedModel):
     filename = models.CharField(max_length=255, editable=False, default="", blank=True)
     # filehash_md5 = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
+    objects = RelatedFileManager()  # ARCH2020 -- Is this actually used?? 
     store_as_filename = models.BooleanField(default=False, blank=True, null=True)
 
     def __str__(self):

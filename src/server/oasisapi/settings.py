@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'rest_framework_simplejwt.token_blacklist',
+    'channels',
     'storages',
 
     'src.server.oasisapi.files',
@@ -67,6 +68,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.data_files',
     'src.server.oasisapi.healthcheck',
     'src.server.oasisapi.info',
+    'src.server.oasisapi.queues',
     'django_cleanup.apps.CleanupConfig',
 ]
 
@@ -107,7 +109,11 @@ TEMPLATES = [
     },
 ]
 
+# Orig setting 
 ASGI_APPLICATION = "src.server.oasisapi.asgi.application"
+
+# from Arch 2020 
+#ASGI_APPLICATION = "src.server.oasisapi.routing.application"
 
 
 # Database
@@ -266,6 +272,32 @@ SWAGGER_SETTINGS = {
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
 }
+
+CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
+CHANNEL_LAYER_PASS = iniconf.settings.get('server', 'channel_layer_pass', fallback='')
+CHANNEL_LAYER_USER = iniconf.settings.get('server', 'channel_layer_user', fallback='')
+CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_user', fallback='6379')
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0'],
+            'symmetric_encryption_keys': [SECRET_KEY],
+        },
+    },
+}
+
+if IN_TEST:
+    BROKER_URL = 'memory://'
+    LOGGING['root'] = {}
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
+
+
+CELERY_TASK_ALWAYS_EAGER = True
 
 if DEBUG_TOOLBAR:
     INTERNAL_IPS = [
