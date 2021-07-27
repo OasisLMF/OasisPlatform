@@ -50,6 +50,7 @@ RUN OASIS_API_SECRET_KEY=supersecret python manage.py collectstatic --noinput
 ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
 
 EXPOSE 8000
+EXPOSE 51970
 
 ENTRYPOINT ["startup"]
 CMD ["./asgi/run-asgi.sh"]

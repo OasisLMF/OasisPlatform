@@ -66,6 +66,15 @@ wait_for_wrapper()
 while [[ $# -gt 0 ]]
 do
     case "$1" in
+        *://* )
+        userhostportpath=(${1#*://})
+        hostportpath=(${userhostportpath#*@})
+        hostport=(${hostportpath%%\/*})
+        split=(${hostport//:/ })
+        HOST=${split[0]}
+        PORT=${split[1]}
+        shift 1
+        ;;
         *:* )
         hostport=(${1//:/ })
         HOST=${hostport[0]}
