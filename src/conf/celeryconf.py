@@ -1,14 +1,21 @@
+from celery.schedules import crontab
+from kombu.common import Broadcast
+
 from src.conf.iniconf import settings
 
 #: Celery config - ignore result?
 CELERY_IGNORE_RESULT = False
 
 #: Celery config - IP address of the server running RabbitMQ and Celery
-BROKER_URL = "amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".format(
-    RABBIT_USER=settings.get('celery', 'rabbit_user', fallback='rabbit'),
-    RABBIT_PASS=settings.get('celery', 'rabbit_pass', fallback='rabbit'),
-    RABBIT_HOST=settings.get('celery', 'rabbit_host', fallback='127.0.0.1'),
-    RABBIT_PORT=settings.get('celery', 'rabbit_port', fallback='5672'),
+BROKER_URL = settings.get(
+    'celery',
+    'broker_url',
+    fallback="amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".format(
+        RABBIT_USER=settings.get('celery', 'rabbit_user', fallback='rabbit'),
+        RABBIT_PASS=settings.get('celery', 'rabbit_pass', fallback='rabbit'),
+        RABBIT_HOST=settings.get('celery', 'rabbit_host', fallback='127.0.0.1'),
+        RABBIT_PORT=settings.get('celery', 'rabbit_port', fallback='5672'),
+    )
 )
 
 #: Celery config - result backend URI
@@ -52,3 +59,31 @@ CELERYD_CONCURRENCY = 1
 #: Disable celery task prefetch
 #: https://docs.celeryproject.org/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
 CELERYD_PREFETCH_MULTIPLIER = 1
+
+### Added from Arch2020 branch ###
+
+# setup queues so that tasks aren't removed from the queue until
+# complete and reschedule if the task worker goes offline
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+
+
+# setup the beat schedule
+def crontab_from_string(s):
+    minute, hour, day_of_week, day_of_month, month_of_year = s.split(' ')
+    return crontab(
+        minute=minute,
+        hour=hour,
+        day_of_week=day_of_week,
+        day_of_month=day_of_month,
+        month_of_year=month_of_year,
+    )
+
+CELERY_TASK_QUEUES = (Broadcast('model-worker-broadcast'), )
+
+CELERYBEAT_SCHEDULE = {
+    'send_queue_status_digest': {
+        'task': 'send_queue_status_digest',
+        'schedule': crontab_from_string(settings.get('celery', 'queue_status_digest_schedule', fallback='* * * * *')),
+    }
+}
