@@ -23,7 +23,7 @@ from celery import signature
 from django.core.files.base import File
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-from .tasks import record_generate_input_result, record_run_analysis_result
+#from .tasks import record_generate_input_result, record_run_analysis_result
 ###############
 
 from ..analysis_models.models import AnalysisModel
