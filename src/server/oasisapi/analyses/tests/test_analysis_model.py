@@ -1,59 +1,151 @@
 import string
+from unittest import skip
 
 from backports.tempfile import TemporaryDirectory
 from celery import signature
 from django.test import override_settings
+from django.utils.timezone import now, utc
 from django_webtest import WebTestMixin
+from freezegun import freeze_time
 from hypothesis import given, settings
+from hypothesis._strategies import datetimes, just
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, sampled_from
 from mock import patch, PropertyMock, Mock
 from rest_framework.exceptions import ValidationError
 
+from src.conf import iniconf
 from ...portfolios.tests.fakes import fake_portfolio
 from ...files.tests.fakes import fake_related_file
 from ...auth.tests.fakes import fake_user
-from ..models import Analysis
+from ..models import Analysis, AnalysisTaskStatus
 from ..tasks import record_run_analysis_result, record_generate_input_result
-from .fakes import fake_analysis, FakeAsyncResultFactory
+from .fakes import fake_analysis, FakeAsyncResultFactory, fake_analysis_task_status
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
 
 
-class AnalysisCancel(WebTestMixin, TestCase):
-    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    def test_state_is_running___revoke_is_called(self, task_id):
-        res_factory = FakeAsyncResultFactory(target_task_id=task_id)
-        analysis = fake_analysis(status=Analysis.status_choices.RUN_STARTED, run_task_id=task_id)
+class CancelAnalysisTask(WebTestMixin, TestCase):
+    @given(orig_status=sampled_from([
+        Analysis.status_choices.INPUTS_GENERATION_QUEUED,
+        Analysis.status_choices.INPUTS_GENERATION_STARTED,
+    ]))
+    def test_analysis_is_running_input_generation___analysis_status_is_updated_and_running_children_are_cancelled(self, orig_status):
+        _now = now()
+        async_result_mock = Mock()
 
-        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
-            analysis.cancel_analysis()
+        with freeze_time(_now), \
+             patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
+            analysis = fake_analysis(status=orig_status)
 
-            self.assertEqual(Analysis.status_choices.RUN_CANCELLED, analysis.status)
-            self.assertTrue(res_factory.revoke_called)
-            self.assertEqual({'signal': 'SIGTERM', 'terminate': True}, res_factory.revoke_kwargs)
+            complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
+            error = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.ERROR)
+            queued = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.QUEUED)
+            started = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.STARTED)
+
+            analysis.cancel()
+
+            analysis.refresh_from_db()
+            complete.refresh_from_db()
+            error.refresh_from_db()
+            queued.refresh_from_db()
+            started.refresh_from_db()
+
+            self.assertEqual(analysis.status, Analysis.status_choices.INPUTS_GENERATION_CANCELLED)
+            self.assertEqual(analysis.task_finished, _now)
+
+            self.assertEqual(complete.status, AnalysisTaskStatus.status_choices.COMPLETED)
+            self.assertEqual(error.status, AnalysisTaskStatus.status_choices.ERROR)
+            self.assertEqual(queued.status, AnalysisTaskStatus.status_choices.CANCELLED)
+            self.assertEqual(started.status, AnalysisTaskStatus.status_choices.CANCELLED)
+
+            self.assertEqual(async_res_mock.call_count, 2)
+            self.assertEqual(async_result_mock.revoke.call_count, 2)
+            async_res_mock.assert_any_call(queued.task_id)
+            async_res_mock.assert_any_call(started.task_id)
+
+    @given(orig_status=sampled_from([
+        Analysis.status_choices.RUN_QUEUED,
+        Analysis.status_choices.RUN_STARTED,
+    ]))
+    def test_analysis_is_running_loss_generation___analysis_status_is_updated_and_running_children_are_cancelled(self, orig_status):
+        _now = now()
+        async_result_mock = Mock()
+
+        with freeze_time(_now), \
+             patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
+            analysis = fake_analysis(status=orig_status)
+
+            complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
+            error = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.ERROR)
+            queued = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.QUEUED)
+            started = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.STARTED)
+
+            analysis.cancel()
+
+            analysis.refresh_from_db()
+            complete.refresh_from_db()
+            error.refresh_from_db()
+            queued.refresh_from_db()
+            started.refresh_from_db()
+
+            self.assertEqual(analysis.status, Analysis.status_choices.RUN_CANCELLED)
+            self.assertEqual(analysis.task_finished, _now)
+
+            self.assertEqual(complete.status, AnalysisTaskStatus.status_choices.COMPLETED)
+            self.assertEqual(error.status, AnalysisTaskStatus.status_choices.ERROR)
+            self.assertEqual(queued.status, AnalysisTaskStatus.status_choices.CANCELLED)
+            self.assertEqual(started.status, AnalysisTaskStatus.status_choices.CANCELLED)
+
+            self.assertEqual(async_res_mock.call_count, 2)
+            self.assertEqual(async_result_mock.revoke.call_count, 2)
+            async_res_mock.assert_any_call(queued.task_id)
+            async_res_mock.assert_any_call(started.task_id)
 
     @given(
-        status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
-            Analysis.status_choices.RUN_STARTED,
-            Analysis.status_choices.RUN_QUEUED,
-        ]]),
-        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        end_time=datetimes(timezones=just(utc)),
+        orig_status=sampled_from([
+            Analysis.status_choices.INPUTS_GENERATION_ERROR,
+            Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
+            Analysis.status_choices.RUN_ERROR,
+            Analysis.status_choices.RUN_CANCELLED,
+        ])
     )
-    def test_state_is_not_running___validation_error_is_raised_revoke_is_not_called(self, status, task_id):
-        res_factory = FakeAsyncResultFactory(target_task_id=task_id)
+    def test_analysis_already_in_and_ended_state___analysis_status_is_unchanged(self, orig_status, end_time):
+        _now = now()
+        async_result_mock = Mock()
 
-        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
-            analysis = fake_analysis(status=status, run_task_id=task_id)
+        with freeze_time(_now), \
+             patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
+            analysis = fake_analysis(status=orig_status, task_finished=end_time)
 
-            with self.assertRaises(ValidationError) as ex:
-                analysis.cancel_analysis()
+            complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
+            error = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.ERROR)
+            queued = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.QUEUED)
+            started = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.STARTED)
 
-            self.assertEqual({'status': ['Analysis execution is not running or queued']}, ex.exception.detail)
-            self.assertEqual(status, analysis.status)
-            self.assertFalse(res_factory.revoke_called)
+            analysis.cancel()
+
+            analysis.refresh_from_db()
+            complete.refresh_from_db()
+            error.refresh_from_db()
+            queued.refresh_from_db()
+            started.refresh_from_db()
+
+            self.assertEqual(analysis.status, orig_status)
+            self.assertEqual(analysis.task_finished, end_time)
+
+            self.assertEqual(complete.status, AnalysisTaskStatus.status_choices.COMPLETED)
+            self.assertEqual(error.status, AnalysisTaskStatus.status_choices.ERROR)
+            self.assertEqual(queued.status, AnalysisTaskStatus.status_choices.CANCELLED)
+            self.assertEqual(started.status, AnalysisTaskStatus.status_choices.CANCELLED)
+
+            self.assertEqual(async_res_mock.call_count, 2)
+            self.assertEqual(async_result_mock.revoke.call_count, 2)
+            async_res_mock.assert_any_call(queued.task_id)
+            async_res_mock.assert_any_call(started.task_id)
 
 
 class AnalysisRun(WebTestMixin, TestCase):
@@ -79,11 +171,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 with patch('src.server.oasisapi.analyses.models.Analysis.run_analysis_signature', PropertyMock(return_value=sig_res)):
                     analysis.run(initiator)
 
-                    sig_res.link.assert_called_once_with(record_run_analysis_result.s(analysis.pk, initiator.pk))
-                    sig_res.link_error.assert_called_once_with(
-                        signature('on_error', args=('record_run_analysis_failure', analysis.pk, initiator.pk), queue=analysis.model.queue_name)
-                    )
-                    sig_res.delay.assert_called_once_with()
+                    sig_res.delay.assert_called_once_with(analysis.pk, initiator.pk)
 
     @given(
         status=sampled_from([
@@ -117,50 +205,18 @@ class AnalysisRun(WebTestMixin, TestCase):
 
                 sig = analysis.run_analysis_signature
 
-                self.assertEqual(sig.task, 'run_analysis')
-                self.assertEqual(sig.args, (analysis.id, analysis.input_file.file.name, analysis.settings_file.file.name, []))
-                self.assertEqual(sig.options['queue'], analysis.model.queue_name)
-
-
-class AnalysisCancelInputGeneration(WebTestMixin, TestCase):
-    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    def test_state_is_generating_inputs___revoke_is_called(self, task_id):
-        res_factory = FakeAsyncResultFactory(target_task_id=task_id)
-        analysis = fake_analysis(status=Analysis.status_choices.INPUTS_GENERATION_STARTED, generate_inputs_task_id=task_id)
-
-        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
-            analysis.cancel_generate_inputs()
-
-            self.assertEqual(Analysis.status_choices.INPUTS_GENERATION_CANCELLED, analysis.status)
-            self.assertTrue(res_factory.revoke_called)
-            self.assertEqual({'signal': 'SIGTERM', 'terminate': True}, res_factory.revoke_kwargs)
-
-    @given(
-        status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
-            Analysis.status_choices.INPUTS_GENERATION_STARTED,
-            Analysis.status_choices.INPUTS_GENERATION_QUEUED
-        ]]),
-        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
-    )
-    def test_state_is_not_generating_inputs___validation_error_is_raised_revoke_is_not_called(self, status, task_id):
-        res_factory = FakeAsyncResultFactory(target_task_id=task_id)
-
-        with patch('src.server.oasisapi.analyses.models.AsyncResult', res_factory):
-            analysis = fake_analysis(status=status, generate_inputs_task_id=task_id)
-
-            with self.assertRaises(ValidationError) as ex:
-                analysis.cancel_generate_inputs()
-
-            self.assertEqual({'status': ['Analysis input generation is not running or queued']}, ex.exception.detail)
-            self.assertEqual(status, analysis.status)
-            self.assertFalse(res_factory.revoke_called)
+                self.assertEqual(sig.task, 'start_loss_generation_task')
+                self.assertEqual(
+                    sig.options['queue'],
+                    iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                )
 
 
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
     @given(
         status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
-            Analysis.status_choices.INPUTS_GENERATION_QUEUED,
-            Analysis.status_choices.INPUTS_GENERATION_STARTED,
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED, 
+            Analysis.status_choices.INPUTS_GENERATION_STARTED, 
             Analysis.status_choices.RUN_QUEUED,
             Analysis.status_choices.RUN_STARTED
         ]]),
@@ -179,11 +235,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 with patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=sig_res)):
                     analysis.generate_inputs(initiator)
 
-                    sig_res.link.assert_called_once_with(record_generate_input_result.s(analysis.pk, initiator.pk))
-                    sig_res.link_error.assert_called_once_with(
-                        signature('on_error', args=('record_generate_input_failure', analysis.pk, initiator.pk), queue=analysis.model.queue_name)
-                    )
-                    sig_res.delay.assert_called_once_with()
+                    sig_res.delay.assert_called_once_with(analysis.pk, initiator.pk)
 
     @given(
         status=sampled_from([
@@ -237,6 +289,8 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
 
                 sig = analysis.generate_input_signature
 
-                self.assertEqual(sig.task, 'generate_input')
-                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))
-                self.assertEqual(sig.options['queue'], analysis.model.queue_name)
+                self.assertEqual(sig.task, 'start_input_generation_task')
+                self.assertEqual(
+                    sig.options['queue'],
+                    iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                )
