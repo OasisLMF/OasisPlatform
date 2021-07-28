@@ -2,8 +2,39 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from .models import Analysis
+from .models import Analysis, AnalysisTaskStatus
 from ..files.models import file_storage_link
+
+class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
+    output_log = serializers.SerializerMethodField()
+    error_log = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnalysisTaskStatus
+        fields = (
+            'task_id',
+            'status',
+            'queue_name',
+            'name',
+            'slug',
+            'pending_time',
+            'queue_time',
+            'start_time',
+            'end_time',
+            'output_log',
+            'error_log',
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_output_log(self, instance):
+        request = self.context.get('request')
+        return instance.get_output_log_url(request=request) if instance.output_log else None
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_error_log(self, instance):
+        request = self.context.get('request')
+        return instance.get_error_log_url(request=request) if instance.error_log else None
+
 
 class AnalysisListSerializer(serializers.Serializer):
     """ Read Only Analyses Deserializer for efficiently returning a list of all
@@ -21,6 +52,9 @@ class AnalysisListSerializer(serializers.Serializer):
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    ## check this for multiple SQL calls with the 'list' call
+    sub_task_statuses = AnalysisTaskStatusSerializer(many=True, read_only=True)
 
     # file fields
     input_file = serializers.SerializerMethodField(read_only=True)
@@ -112,6 +146,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     run_traceback_file = serializers.SerializerMethodField()
     run_log_file = serializers.SerializerMethodField()
     storage_links = serializers.SerializerMethodField()
+    sub_task_statuses = AnalysisTaskStatusSerializer(many=True, read_only=True)
 
     class Meta:
         model = Analysis
@@ -138,6 +173,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'run_traceback_file',
             'run_log_file',
             'storage_links',
+            'sub_task_statuses',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
