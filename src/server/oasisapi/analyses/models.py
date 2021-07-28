@@ -1,12 +1,12 @@
 from __future__ import absolute_import, print_function
 
-from celery import signature
+from typing import List
+
 from celery.result import AsyncResult
+
+from src.server.oasisapi.celery import celery_app
 from django.conf import settings
-from django.core.files.base import File
 from django.db import models
-from django.db.models.signals import post_delete
-from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
@@ -14,12 +14,129 @@ from model_utils.choices import Choices
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
+from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
+    TaskStatusMessageAnalysisItem, build_task_status_message
 from ..files.models import RelatedFile, file_storage_link
+
+## imports from prev non-2020 version 
+from celery import signature
+from django.core.files.base import File
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+from .tasks import record_generate_input_result, record_run_analysis_result
+###############
+
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
-from .tasks import record_generate_input_result, record_run_analysis_result
+from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
+from ....conf import iniconf
+
+
+class AnalysisTaskStatusQuerySet(models.QuerySet):
+    @classmethod
+    def _send_socket_messages(cls, objects):
+        queue_names = set(o.queue_name for o in objects)
+        queues = filter_queues_info(queue_names)
+
+        # build and send the
+        status_message = [TaskStatusMessageItem(
+            queue=q,
+            analyses=[],
+        ) for q in queues]
+
+        for message_item in status_message:
+            analyses = {}
+
+            for status in filter(lambda s: s.queue_name == message_item.queue['name'], objects):
+                analyses.setdefault(status.analysis, []).append(status)
+
+            message_item.analyses.extend([TaskStatusMessageAnalysisItem(
+                analysis=analysis,
+                updated_tasks=statuses,
+            ) for analysis, statuses in analyses.items()])
+
+        send_task_status_message(build_task_status_message(status_message))
+
+    def create_statuses(self, objs):
+        """
+        Creates all statuses initialising `queued_time`
+
+        :param objs: A list of instances to create, they should all be for the same
+            queue and analysis
+        """
+        statuses = self.bulk_create(objs)
+
+        self._send_socket_messages(statuses)
+
+    def update(self, **kwargs):
+        res = super().update(**kwargs)
+
+        self._send_socket_messages(self)
+
+        return res
+
+
+class AnalysisTaskStatus(models.Model):
+    status_choices = Choices(
+        ('PENDING', 'Task waiting to be added to the queue'),
+        ('QUEUED', 'Task added to queue'),
+        ('STARTED', 'Task started'),
+        ('COMPLETED', 'Task completed'),
+        ('CANCELLED', 'Task cancelled'),
+        ('ERROR', 'Task error'),
+    )
+
+    queue_name = models.CharField(max_length=255, blank=False, editable=False)
+    task_id = models.CharField(max_length=36, blank=True, default='', editable=False)
+    analysis = models.ForeignKey('Analysis', related_name='sub_task_statuses', on_delete=models.CASCADE, editable=False)
+    status = models.CharField(
+        max_length=max(len(c) for c in status_choices._db_values),
+        choices=status_choices,
+        default=status_choices.PENDING,
+        editable=False,
+    )
+    pending_time = models.DateTimeField(null=True, auto_now_add=True, editable=False)
+    queue_time = models.DateTimeField(null=True, default=None, editable=False)
+    start_time = models.DateTimeField(null=True, default=None, editable=False)
+    end_time = models.DateTimeField(null=True, default=None, editable=False)
+    name = models.CharField(max_length=255, editable=False)
+    slug = models.SlugField(max_length=255, editable=False)
+
+    output_log = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.SET_NULL,
+        blank=True, null=True,
+        default=None,
+        related_name='analysis_run_status_output_logs',
+        editable=False,
+    )
+    error_log = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
+        related_name='analysis_run_status_error_logs',
+        editable=False,
+    )
+
+    objects = AnalysisTaskStatusQuerySet.as_manager()
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(fields=['task_id'], condition=~models.Q(task_id=''), name='unique_task_id'),
+        )
+        unique_together = (
+            ('analysis', 'slug',)
+        )
+
+    def get_output_log_url(self, request=None):
+        return reverse('analysis-task-status-output-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def get_error_log_url(self, request=None):
+        return reverse('analysis-task-status-error-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
 class Analysis(TimeStampedModel):
@@ -160,32 +277,69 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
+    @property
+    def run_analysis_signature(self):
+        return celery_app.signature(
+            'start_loss_generation_task',
+            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+        )
+
     def run(self, initiator):
         self.validate_run()
 
         self.status = self.status_choices.RUN_QUEUED
 
-        run_analysis_signature = self.run_analysis_signature
-        run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
-        run_analysis_signature.link_error(
-            signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-        )
-        dispatched_task = run_analysis_signature.delay()
-        self.run_task_id = dispatched_task.id
-        self.task_started = None
+        task = self.run_analysis_signature
+        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+            'analysis_id': self.pk,
+            'initiator_id': initiator.pk,
+            'traceback_property': 'run_traceback_file',
+            'failure_status': Analysis.status_choices.RUN_ERROR,
+        }))
+        task_id = task.delay(self.pk, initiator.pk).id
+
+        self.run_task_id = task_id
+        self.task_started = timezone.now()
         self.task_finished = None
         self.save()
 
-    @property
-    def run_analysis_signature(self):
-        complex_data_files = self.create_complex_model_data_file_dicts()
-        input_file = file_storage_link(self.input_file)
-        settings_file = file_storage_link(self.settings_file)
+    def cancel(self):
+        _now = timezone.now()
 
-        return signature(
-            'run_analysis',
-            args=(self.pk, input_file, settings_file, complex_data_files),
-            queue=self.model.queue_name,
+        # cleanup the the sub tasks
+        qs = self.sub_task_statuses.filter(
+            status__in=[
+                AnalysisTaskStatus.status_choices.PENDING,
+                AnalysisTaskStatus.status_choices.QUEUED,
+                AnalysisTaskStatus.status_choices.STARTED]
+        )
+
+        for task_id in qs.values_list('task_id', flat=True):
+            if task_id:
+                AsyncResult(task_id).revoke(signal='SIGKILL', terminate=True)
+
+        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
+
+        # set the status on the analysis
+        status_map = {
+            Analysis.status_choices.INPUTS_GENERATION_STARTED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
+            Analysis.status_choices.RUN_QUEUED: Analysis.status_choices.RUN_CANCELLED,
+            Analysis.status_choices.RUN_STARTED: Analysis.status_choices.RUN_CANCELLED,
+        }
+
+        if self.status in status_map:
+            self.status = status_map[self.status]
+            self.task_finished = _now
+            self.save()
+
+    @property
+    def generate_input_signature(self):
+        return celery_app.signature(
+            'start_input_generation_task',
+            options={
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery'),
+            }
         )
 
     def generate_inputs(self, initiator):
@@ -213,13 +367,23 @@ class Analysis(TimeStampedModel):
             raise ValidationError(errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
-        generate_input_signature = self.generate_input_signature
-        generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
-        generate_input_signature.link_error(
-            signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-        )
-        self.generate_inputs_task_id = generate_input_signature.delay().id
-        self.task_started = None
+        self.lookup_errors_file = None
+        self.lookup_success_file = None
+        self.lookup_validation_file = None
+        self.summary_levels_file = None
+        self.input_generation_traceback_file_id = None
+
+        task = self.generate_input_signature
+        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+            'analysis_id': self.pk,
+            'initiator_id': initiator.pk,
+            'traceback_property': 'input_generation_traceback_file',
+            'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
+        }))
+        task_id = task.delay(self.pk, initiator.pk).id
+
+        self.generate_inputs_task_id = task_id
+        self.task_started = timezone.now()
         self.task_finished = None
         self.save()
 
@@ -276,20 +440,6 @@ class Analysis(TimeStampedModel):
         self.task_finished = timezone.now()
         self.save()
 
-    @property
-    def generate_input_signature(self):
-        loc_file = file_storage_link(self.portfolio.location_file)
-        acc_file = file_storage_link(self.portfolio.accounts_file)
-        info_file = file_storage_link(self.portfolio.reinsurance_info_file)
-        scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
-        settings_file = file_storage_link(self.settings_file)
-        complex_data_files = self.create_complex_model_data_file_dicts()
-
-        return signature(
-            'generate_input',
-            args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
-            queue=self.model.queue_name
-        )
 
     def create_complex_model_data_file_dicts(self):
         """Creates a list of tuples containing metadata for the complex model data files.
@@ -361,3 +511,88 @@ def delete_connected_files(sender, instance, **kwargs):
         file_ref = getattr(instance, ref)
         if file_ref:
             file_ref.delete()
+
+
+    # ### ORIG funcs #############################################################################
+    #
+    #def run(self, initiator):
+    #    self.validate_run()
+
+    #    self.status = self.status_choices.RUN_QUEUED
+
+    #    run_analysis_signature = self.run_analysis_signature
+    #    run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
+    #    run_analysis_signature.link_error(
+    #        signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+    #    )
+    #    dispatched_task = run_analysis_signature.delay()
+    #    self.run_task_id = dispatched_task.id
+    #    self.task_started = None
+    #    self.task_finished = None
+    #    self.save()
+        
+    #@property
+    #def run_analysis_signature(self):
+    #    complex_data_files = self.create_complex_model_data_file_dicts()
+    #    input_file = file_storage_link(self.input_file)
+    #    settings_file = file_storage_link(self.settings_file)
+
+    #    return signature(
+    #        'run_analysis',
+    #        args=(self.pk, input_file, settings_file, complex_data_files),
+    #        queue=self.model.queue_name,
+    #    )
+    #
+    #
+    #
+    #
+    #
+    #def generate_inputs(self, initiator):
+    #    valid_choices = [
+    #        self.status_choices.NEW,
+    #        self.status_choices.INPUTS_GENERATION_ERROR,
+    #        self.status_choices.INPUTS_GENERATION_CANCELLED,
+    #        self.status_choices.READY,
+    #        self.status_choices.RUN_COMPLETED,
+    #        self.status_choices.RUN_CANCELLED,
+    #        self.status_choices.RUN_ERROR,
+    #    ]
+
+    #    errors = {}
+    #    if self.status not in valid_choices:
+    #        errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
+
+    #    if self.model.deleted:
+    #        errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+
+    #    if not self.portfolio.location_file:
+    #        errors['portfolio'] = ['"location_file" must not be null']
+
+    #    if errors:
+    #        raise ValidationError(errors)
+
+    #    self.status = self.status_choices.INPUTS_GENERATION_QUEUED
+    #    generate_input_signature = self.generate_input_signature
+    #    generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
+    #    generate_input_signature.link_error(
+    #        signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+    #    )
+    #    self.generate_inputs_task_id = generate_input_signature.delay().id
+    #    self.task_started = None
+    #    self.task_finished = None
+    #    self.save()
+    #
+    #@property
+    #def generate_input_signature(self):
+    #    loc_file = file_storage_link(self.portfolio.location_file)
+    #    acc_file = file_storage_link(self.portfolio.accounts_file)
+    #    info_file = file_storage_link(self.portfolio.reinsurance_info_file)
+    #    scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
+    #    settings_file = file_storage_link(self.settings_file)
+    #    complex_data_files = self.create_complex_model_data_file_dicts()
+
+    #    return signature(
+    #        'generate_input',
+    #        args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
+    #        queue=self.model.queue_name
+    #    )

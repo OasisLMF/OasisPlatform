@@ -49,9 +49,11 @@ class AnalysisModel(TimeStampedModel):
     ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
     ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
+    oasislmf_config = models.TextField(default='')
     deleted = models.BooleanField(default=False, editable=False)
+    num_analysis_chunks = models.PositiveSmallIntegerField(default=None, null=True)
 
-    ## Logical Delete
+    # Logical Delete
     objects = SoftDeleteManager()
     all_objects = SoftDeleteManager(alive_only=False)
 
@@ -67,11 +69,11 @@ class AnalysisModel(TimeStampedModel):
 
     def hard_delete(self):
         super(AnalysisModel, self).delete()
-
+    
     def delete(self):
         self.deleted = True
         self.save()
-
+    
     def activate(self, request=None):
         self.deleted = False
 
@@ -95,6 +97,18 @@ class AnalysisModel(TimeStampedModel):
         return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
     def get_absolute_settings_url(self, request=None):
         return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+
+class QueueModelAssociation(models.Model):
+    model = models.ForeignKey(AnalysisModel, null=False, on_delete=models.CASCADE, related_name='queue_associations')
+    queue_name = models.CharField(max_length=255, blank=False, editable=False)
+
+    class Meta:
+        unique_together = (('model', 'queue_name'), )
+
+    def __str__(self):
+        return f'{self.model}: {self.queue_name}'
+
 
 @receiver(post_delete, sender=AnalysisModel)
 def delete_connected_files(sender, instance, **kwargs):
