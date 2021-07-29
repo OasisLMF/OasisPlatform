@@ -136,7 +136,7 @@ services:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/celery:/var/lib/mysql/:rw
   rabbit:
     restart: always
-    image: rabbitmq:3-management
+    image: rabbitmq:3.8.14-management
     environment:
       - RABBITMQ_DEFAULT_USER=rabbit
       - RABBITMQ_DEFAULT_PASS=rabbit
