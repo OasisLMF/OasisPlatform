@@ -243,11 +243,14 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
         return super(PortfolioStorageSerializer, self).validate(attrs)
 
+    def get_content_type(self, stored_filename):
+        return RelatedFile.objects.get(file=stored_filename).content_type
+
     def update(self, instance, validated_data):
         files_for_removal = list()
-        content_type = 'text/csv'
-        for field in validated_data:
 
+        for field in validated_data:
+            content_type = self.get_content_type(validated_data[field])
             # S3 storage - File copy needed
             if hasattr(default_storage, 'bucket'):
                 fname = path.basename(validated_data[field])
