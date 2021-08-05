@@ -66,6 +66,7 @@ node {
     String docker_worker_slim = "docker/Dockerfile.model_worker_slim"
 
     // platform vars
+    String RELEASE_NUM_ONLY = ( params.RELEASE_TAG =~ '^(\\d+\\.)(\\d+\\.)(\\*|\\d+)' )[0][0]
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
     String mdk_branch      = params.MDK_BRANCH
     String oasis_name      = 'OasisPlatform'
@@ -107,14 +108,7 @@ node {
     if (params.PUBLISH &&  ! params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)-lts')) {
         sh "echo release candidates must be tagged {version}-lts, example: 1.0.0-lts"
         sh "exit 1"
-
-        String RELEASE_NUM_ONLY = ( params.RELEASE_TAG =~ '^(\\d+\\.)(\\d+\\.)(\\*|\\d+)' )[0][0]
-        println("Publishing images as - " + RELEASE_NUM_ONLY)
-        println("Publishing images as - " + params.RELEASE_TAG)
-
-
     }
-
 
 
     // Set Global ENV
@@ -202,10 +196,11 @@ node {
                 }
             }
         }
-        stage('Set version file'){
+        stage('Set version'){
             dir(oasis_workspace){
                 sh "echo ${env.TAG_RELEASE} - " + '$(git rev-parse --short HEAD), $(date) > VERSION'
             }
+            println("Publishing images as: '${RELEASE_NUM_ONLY}', '${params.RELEASE_TAG}' and  'latest-lts'")
         }
         parallel(
             build_api_server: {
