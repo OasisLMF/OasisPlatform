@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.19.0`_
+ ---------
+* [#513](https://github.com/OasisLMF/OasisPlatform/pull/514) - CVE - Python
+* [#519](https://github.com/OasisLMF/OasisPlatform/pull/519) - Workaround for issue #515
+.. _`1.19.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.18.0...1.19.0
+
 `1.19.0rc1`_
  ---------
 * [#513](https://github.com/OasisLMF/OasisPlatform/pull/514) - CVE - Python
