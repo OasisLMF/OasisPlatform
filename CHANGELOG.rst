@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#517](https://github.com/OasisLMF/OasisPlatform/pull/522) - Add 'LTS' to backport release tag
+.. _`1.15.14-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.13...1.15.14-lts
+
 `1.15.13`_
  ---------
 * [#512](https://github.com/OasisLMF/OasisPlatform/pull/512) - Fix/django CVE issues
