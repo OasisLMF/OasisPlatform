@@ -234,7 +234,7 @@ numpy==1.20.3
     #   numba
     #   numexpr
     #   pandas
-oasislmf[extra]==1.19.0rc1
+oasislmf[extra]==1.19.0
     # via -r ./requirements-worker.in
 packaging==20.9
     # via
