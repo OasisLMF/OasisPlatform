@@ -103,6 +103,20 @@ node {
         sh "exit 1"
     }
 
+    //Make sure releases are tagged as LTS
+    if (params.PUBLISH &&  ! params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)-lts')) {
+        sh "echo release candidates must be tagged {version}-lts, example: 1.0.0-lts"
+        sh "exit 1"
+
+        String RELEASE_NUM_ONLY = ( params.RELEASE_TAG =~ '^(\\d+\\.)(\\d+\\.)(\\*|\\d+)' )[0][0]
+        println("Publishing images as - " + RELEASE_NUM_ONLY)
+        println("Publishing images as - " + params.RELEASE_TAG)
+
+
+    }
+
+
+
     // Set Global ENV
     env.PIPELINE_LOAD = script_dir + utils_sh
 
@@ -171,11 +185,11 @@ node {
                 dir(oasis_workspace) {
                     if (params.PREV_RELEASE_TAG){
                         env.LAST_RELEASE_TAG = params.PREV_RELEASE_TAG
-                    } else {    
+                    } else {
                         sh "curl https://api.github.com/repos/OasisLMF/OasisPlatform/tags | jq -r '( first ) | .name' > last_release_tag"
                         env.LAST_RELEASE_TAG = readFile('last_release_tag').trim()
                         println("LAST_RELEASE = $env.LAST_RELEASE_TAG")
-                    }    
+                    }
                 }
             }
         }
@@ -412,6 +426,13 @@ node {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+
+                            // push lts tags
+                            sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:latest-lts"
+                            sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:${RELEASE_NUM_ONLY}"
+
+                            sh "docker push ${image_api}:latest-lts"
+                            sh "docker push ${image_api}:${RELEASE_NUM_ONLY}"
                         }
                     }
                 },
@@ -420,6 +441,13 @@ node {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
+
+                            // push lts tags
+                            sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:latest-lts"
+                            sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:${RELEASE_NUM_ONLY}"
+
+                            sh "docker push ${image_worker}:latest-lts"
+                            sh "docker push ${image_worker}:${RELEASE_NUM_ONLY}"
                         }
                     }
                 },
@@ -427,6 +455,13 @@ node {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
+
+                            // push lts tags
+                            sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:latest-lts"
+                            sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:${RELEASE_NUM_ONLY}"
+
+                            sh "docker push ${image_piwind}:latest-lts"
+                            sh "docker push ${image_piwind}:${RELEASE_NUM_ONLY}"
                         }
                     }
                 }
