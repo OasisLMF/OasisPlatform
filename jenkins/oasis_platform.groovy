@@ -102,6 +102,14 @@ node {
         sh "echo release candidates must be tagged {version}rc{N}, example: 1.0.0rc1"
         sh "exit 1"
     }
+    
+    //Make sure releases are tagged as LTS
+    if (params.PUBLISH &&  ! params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)-lts')) {
+        sh "echo release candidates must be tagged {version}-lts, example: 1.0.0-lts"
+        sh "exit 1"
+    }
+    
+
 
     // Set Global ENV
     env.PIPELINE_LOAD = script_dir + utils_sh
@@ -412,6 +420,11 @@ node {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+
+                            // Add latest-lts tag
+                            sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:latest-lts"
+                            sh "docker push ${image_api}:latest-lts"
+
                         }
                     }
                 },
@@ -420,6 +433,10 @@ node {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
+
+                            // Add latest-lts tag
+                            sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:latest-lts"
+                            sh "docker push ${image_worker}:latest-lts"
                         }
                     }
                 },
@@ -427,6 +444,10 @@ node {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
+
+                            // Add latest-lts tag
+                            sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:latest-lts"
+                            sh "docker push ${image_piwind}:latest-lts"
                         }
                     }
                 }
