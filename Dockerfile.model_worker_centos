@@ -1,17 +1,20 @@
-# ---- STAGE 1 -----
 FROM centos:7
 
-RUN yum update -y && yum install -y libspatialindex-dev git curl gcc-c++ libtool autoconf automake python3 python3-pip procps
+RUN yum update -y
+RUN yum install -y libspatialindex-dev git curl gcc-c++ libtool autoconf automake 
+RUN yum install -y openssl-devel bzip2-devel libffi-devel zlib-devel wget xz-devel
 RUN yum groupinstall -y 'Development Tools'
 
-RUN yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget
-RUN wget https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz 
-RUN tar xzf Python-3.9.6.tgz
+RUN wget https://www.python.org/ftp/python/3.8.10/Python-3.8.10.tgz 
+RUN tar xzf Python-3.8.10.tgz
 
-WORKDIR /Python-3.9.6
+WORKDIR /Python-3.8.10
 RUN ./configure --enable-optimizations
 RUN make install 
 
+RUN yum install -y python3-pip procps
+
+WORKDIR /tmp
 COPY ./requirements-worker.txt ./requirements-worker.txt
 RUN pip3 install --user -r ./requirements-worker.txt
 
@@ -25,6 +28,7 @@ ENV OASIS_ENV_OVERRIDE=true
 
 # Setup worker dir and user
 RUN adduser --shell /bin/bash  worker
+
 WORKDIR /home/worker
 
 # Copy in worker files 
