@@ -29,7 +29,7 @@ from pathlib2 import Path
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
-from .storage_manager import StorageSelector
+from .orig_storage_manager import StorageSelector
 
 '''
 Celery task wrapper for Oasis ktools calculation.

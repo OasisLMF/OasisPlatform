@@ -109,11 +109,7 @@ TEMPLATES = [
     },
 ]
 
-# Orig setting 
-ASGI_APPLICATION = "src.server.oasisapi.asgi.application"
-
-# from Arch 2020 
-#ASGI_APPLICATION = "src.server.oasisapi.routing.application"
+ASGI_APPLICATION = "src.server.oasisapi.routing.application"
 
 
 # Database

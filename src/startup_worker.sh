@@ -10,14 +10,17 @@ export OASIS_INI_PATH="${SCRIPT_DIR}/conf.ini"
 # Delete celeryd.pid file - fix que pickup issues on reboot of server
 rm -f /home/worker/celeryd.pid
 
-# OLD - wait for it (test and remove)
-#./src/utils/wait-for-it.sh "$OASIS_RABBIT_HOST:$OASIS_RABBIT_PORT" -t 60
 
-./src/utils/wait-for-it.sh "$OASIS_CELERY_BROKER_URL" -t 60
+# ---- needs to be one or the other?? --- 
+    # OLD - wait for it (test and remove)
+    #./src/utils/wait-for-it.sh "$OASIS_RABBIT_HOST:$OASIS_RABBIT_PORT" -t 60
+    # use for REDIS
+    ./src/utils/wait-for-it.sh "$OASIS_CELERY_BROKER_URL" -t 60
+
 ./src/utils/wait-for-it.sh "$OASIS_CELERY_DB_HOST:$OASIS_CELERY_DB_PORT" -t 60
 
-# Start worker on init
-celery worker -A src.model_execution_worker.tasks --detach --loglevel=INFO --logfile="/var/log/oasis/worker.log" -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}",model-worker-broadcast "$@" |& tee -a /var/log/oasis/worker.log
-
-# OLD celery cmd (test and remove)
+# Start current worker on init
 # celery --app src.model_execution_worker.tasks worker --concurrency=1 --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}" |& tee -a /var/log/oasis/worker.log
+
+# Start new worker on init
+celery --app src.model_execution_worker.distributed_tasks worker --concurrency=1 --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}" |& tee -a /var/log/oasis/worker.log

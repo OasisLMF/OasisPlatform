@@ -4,7 +4,10 @@
 #
 #    pip-compile requirements-worker.in
 #
--e git+git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf[extra]
+
+#-e git+git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2019#egg=oasislmf[extra]
+
+oasislmf[extra]==1.19.0
     # via -r requirements-worker.in
 amqp==5.0.6
     # via kombu

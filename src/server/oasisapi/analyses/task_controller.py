@@ -12,6 +12,8 @@ from oasislmf.utils.data import get_dataframe
 
 from src.conf.iniconf import settings
 
+from ..files.models import file_storage_link
+
 if TYPE_CHECKING:
     from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
 
@@ -232,18 +234,31 @@ class Controller:
 
         queue = cls.get_generate_inputs_queue(analysis, initiator)
         base_kwargs = {
-            'loc_file': analysis.portfolio.get_link('location_file'),
-            'settings_file': analysis.get_link('settings_file'),
+            'loc_file': file_storage_link(analysis.portfolio.location_file),
+            'settings_file': file_storage_link(analysis.settings_file),
             'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
         }
         files_kwargs = {
-            'loc_file': analysis.portfolio.get_link('location_file'),
-            'acc_file': analysis.portfolio.get_link('accounts_file'),
-            'info_file': analysis.portfolio.get_link('reinsurance_info_file'),
-            'scope_file': analysis.portfolio.get_link('reinsurance_scope_file'),
-            'analysis_settings_file': analysis.get_link('settings_file'),
+            'loc_file': file_storage_link(analysis.portfolio.location_file),
+            'acc_file': file_storage_link(analysis.portfolio.accounts_file),
+            'info_file': file_storage_link(analysis.portfolio.reinsurance_info_file),
+            'scope_file': file_storage_link(analysis.portfolio.reinsurance_scope_file),
+            'analysis_settings_file': file_storage_link(analysis.settings_file),
             'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
         }
+        #base_kwargs = {
+        #    'loc_file': analysis.portfolio.get_link('location_file'),
+        #    'settings_file': analysis.get_link('settings_file'),
+        #    'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
+        #}
+        #files_kwargs = {
+        #    'loc_file': analysis.portfolio.get_link('location_file'),
+        #    'acc_file': analysis.portfolio.get_link('accounts_file'),
+        #    'info_file': analysis.portfolio.get_link('reinsurance_info_file'),
+        #    'scope_file': analysis.portfolio.get_link('reinsurance_scope_file'),
+        #    'analysis_settings_file': analysis.get_link('settings_file'),
+        #    'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
+        #}
 
         return cls._split_tasks_and_statuses([
             cls.get_subtask_statuses_and_signature(
@@ -368,8 +383,8 @@ class Controller:
 
         queue = cls.get_generate_losses_queue(analysis, initiator)
         base_kwargs = {
-            'input_location': analysis.get_link('input_file'),
-            'analysis_settings_file': analysis.get_link('settings_file'),
+            'input_location': file_storage_link(analysis.input_file),
+            'analysis_settings_file': file_storage_link(analysis.settings_file),
             'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
         }
 

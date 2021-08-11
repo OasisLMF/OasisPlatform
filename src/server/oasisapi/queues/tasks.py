@@ -1,4 +1,4 @@
-from celery.task import task
+from celery.decorators import task
 from src.server.oasisapi.queues.consumers import send_task_status_message, build_all_queue_status_message
 
 
