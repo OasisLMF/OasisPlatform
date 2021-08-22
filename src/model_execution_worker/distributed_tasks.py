@@ -194,8 +194,8 @@ def register_worker(sender, **k):
 
         signature(
             'run_register_worker',
-            args=(m_supplier, m_name, m_id, m_settings, m_version),
-            queue='celery'
+            args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
+            kwargs={'num_analysis_chunks': num_analysis_chunks},
         ).delay()
 
     # Required ENV
