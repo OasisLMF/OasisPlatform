@@ -170,7 +170,6 @@ def check_worker_lost(task, analysis_pk):
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
-    time.sleep(1)  # Workaround, pause for 1 sec to makesure log messages are printed
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
