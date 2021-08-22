@@ -1,0 +1,77 @@
+{{- $workerControllerServiceAccountName := printf "%s-worker-controller" .Release.Name | lower }}
+{{- $clusterRoleBindingName := printf "%s-worker-controller-deployment-management" .Release.Name }}
+{{- $clusterRoleName := printf "%s-deployment-management" .Release.Name }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ $workerControllerServiceAccountName }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ $clusterRoleName }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["deployments"]
+    verbs: ["get", "watch", "list", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $clusterRoleBindingName }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $clusterRoleName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $workerControllerServiceAccountName }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oasis-worker-controller
+  labels:
+  {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: oasis-worker-controller
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: oasis-worker-controller
+      {{- include "h.labels" . | nindent 8}}
+      annotations:
+        checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisServer | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      serviceAccountName: {{ $workerControllerServiceAccountName }}
+      initContainers:
+      {{- include "h.initTcpAvailabilityCheck" (list . .Values.oasisServer) | nindent 8}}
+      containers:
+        - image: {{ .Values.images.oasis.worker_controller.image }}:{{ .Values.images.oasis.worker_controller.version }}
+          imagePullPolicy: {{ .Values.images.oasis.worker_controller.imagePullPolicy }}
+          name: main
+          env:
+            {{- include "h.serverApiVars" . | nindent 12}}
+            - name: OASIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-rest-service-account
+                  key: username
+            - name: OASIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-rest-service-account
+                  key: password
+            - name: OASIS_API_HOST
+              value: {{ .Values.oasisServer.name }}
+            - name: OASIS_API_PORT
+              value: {{ .Values.oasisServer.port | quote }}
+---

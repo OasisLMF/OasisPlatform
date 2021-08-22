@@ -185,12 +185,12 @@ Oasis server client variables
 - name: OASIS_ADMIN_USER
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.oasisServer.name }}
-      key: user
+      name: oasis-rest-service-account
+      key: username
 - name: OASIS_ADMIN_PASS
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.oasisServer.name }}
+      name: oasis-rest-service-account
       key: password
 {{- end }}
 
@@ -201,7 +201,7 @@ TODO: replace other m.initTcpAvailabilityCheck with this
 {{- define "h.initTcpAvailabilityCheckBySecret" -}}
 {{- $root := (index . 0) -}}
 - name: init-tcp-wait-by-secret
-  image: {{ $root.Values.images.init.image }}:{{ $root.Values.images.init.version }}
+  image: {{ $root.Values.modelImages.init.image }}:{{ $root.Values.modelImages.init.version }}
   env:
     {{- range $index, $name := slice . 1 }}
     - name: SERVICE_NAME_{{ $index }}

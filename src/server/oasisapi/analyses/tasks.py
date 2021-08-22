@@ -342,7 +342,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     from .models import Analysis
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
-    logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id)) 
+    logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id))
     logger.info('results: {}'.format(result))
 
     initiator = get_user_model().objects.get(id=initiator_id)
@@ -571,9 +571,9 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
     )
 
 ### Orig worker monitor functions #############################################
-# 
-# Update the older/ funcs with arch 2020 versions? 
-# Possible have handlers for both and add two versions of the "run" endpoints ? 
+#
+# Update the older/ funcs with arch 2020 versions?
+# Possible have handlers for both and add two versions of the "run" endpoints ?
 
 #@celery_app.task(name='set_task_status')
 #def set_task_status(analysis_pk, task_status):

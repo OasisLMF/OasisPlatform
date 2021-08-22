@@ -1,21 +1,26 @@
+import requests
 from django.utils.translation import gettext_lazy as _
+from rest_framework import exceptions
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt import settings as jwt_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer as BaseTokenRefreshSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
+
+from .. import settings
 
 
-class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
+class SimpleTokenObtainPairSerializer(BaseTokenObtainPairSerializer):
     def __init__(self, *args, **kwargs):
-        super(TokenObtainPairSerializer, self).__init__(*args, **kwargs)
+        super(SimpleTokenObtainPairSerializer, self).__init__(*args, **kwargs)
 
         self.fields[self.username_field].help_text = _('Your username')
         self.fields['password'].help_text = _('your password')
 
     def validate(self, attrs):
-        data = super(TokenObtainPairSerializer, self).validate(attrs)
+
+        data = super(SimpleTokenObtainPairSerializer, self).validate(attrs)
 
         data['refresh_token'] = data['refresh']
         data['access_token'] = data['access']
@@ -30,7 +35,7 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
         return data
 
 
-class TokenRefreshSerializer(BaseTokenRefreshSerializer):
+class SimpleTokenRefreshSerializer(BaseTokenRefreshSerializer):
     refresh = None
 
     def validate(self, attrs):
@@ -40,7 +45,7 @@ class TokenRefreshSerializer(BaseTokenRefreshSerializer):
         token = self.context['request'].META['HTTP_AUTHORIZATION'][7:]  # skip 'Bearer '
         attrs['refresh'] = token
 
-        data = super(TokenRefreshSerializer, self).validate(attrs)
+        data = super(SimpleTokenRefreshSerializer, self).validate(attrs)
         data['access_token'] = data['access']
         data['token_type'] = 'Bearer'
         data['expires_in'] = jwt_settings.api_settings.ACCESS_TOKEN_LIFETIME.total_seconds()
@@ -52,3 +57,76 @@ class TokenRefreshSerializer(BaseTokenRefreshSerializer):
         del data['access']
 
         return data
+
+
+class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
+    """
+    Token serializer to authenticate and obtain a access token from Keyloak
+    """
+    def __init__(self, *args, **kwargs):
+        super(OIDCTokenObtainPairSerializer, self).__init__(*args, **kwargs)
+
+        self.fields[self.username_field].help_text = _('Your username')
+        self.fields['password'].help_text = _('your password')
+
+    def validate(self, attrs):
+
+        response = requests.post(
+            settings.OIDC_OP_TOKEN_ENDPOINT,
+            data={
+                'grant_type': 'password',
+                'client_id': settings.OIDC_RP_CLIENT_ID,
+                'client_secret': settings.OIDC_RP_CLIENT_SECRET,
+                'username': attrs.get('username', None),
+                'password': attrs.get('password', None)
+            },
+            verify=False,
+        )
+
+        json = response.json()
+
+        if response.status_code != 200 or 'access_token' not in json:
+            raise exceptions.AuthenticationFailed(
+                self.error_messages['no_active_account'],
+                'no_active_account',
+            )
+
+        cleaned = {key: json[key] for key in ['access_token', 'refresh_token', 'token_type', 'expires_in']}
+
+        return cleaned
+
+
+class OIDCTokenRefreshSerializer(serializers.Serializer):
+
+    """
+    Token serializer to obtain a new access token from Keycloak
+    """
+
+    def validate(self, attrs):
+        if 'HTTP_AUTHORIZATION' not in self.context['request'].META.keys():
+            raise ValidationError({"Detail": "header 'authorization' must not be null"})
+
+        token = self.context['request'].META['HTTP_AUTHORIZATION'][7:]  # skip 'Bearer '
+
+        response = requests.post(
+            settings.OIDC_OP_TOKEN_ENDPOINT,
+            data={
+                'grant_type': 'refresh_token',
+                'client_id': settings.OIDC_RP_CLIENT_ID,
+                'client_secret': settings.OIDC_RP_CLIENT_SECRET,
+                'refresh_token': token
+            },
+            verify=False,
+        )
+
+        json = response.json()
+
+        if response.status_code != 200 or 'access_token' not in json:
+            raise exceptions.AuthenticationFailed(
+                self.error_messages['no_active_account'],
+                'no_active_account',
+            )
+
+        cleaned = {key: json[key] for key in ['access_token', 'refresh_token', 'token_type', 'expires_in']}
+
+        return cleaned

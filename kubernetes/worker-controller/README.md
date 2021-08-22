@@ -70,24 +70,8 @@ Before you build your image set the environment variables to use kubernetes dock
 ```
 eval $(minikube docker-env)
 
-docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
+# Then build the docker file as described above
 ```
 
 The image will be published directly into Minikubes image registry and kubernets can access it as `coreoasis/api_server:
-dev`. But we also first need prevent kubernetes from pulling the images by
-setting `images.oasis.platform.imagePullPolicy`
-and `images.oasis.worker_controller.imagePullPolicy` to `Never` in the oasis-platform chart values.
-
-### Run image in local docker
-
-```
-# docker run --rm <-e settings=value ...> coreoasis/worker_controller:dev
-docker run --rm \
-  -e OASIS_API_HOST=localhost \
-  -e OASIS_API_PORT=8000 \
-  -e OASIS_ADMIN_USER=admin \
-  -e OASIS_ADMIN_PASS=password \
-  -e CLUSTER=local \
-  coreoasis/worker_controller:dev
-```
-
+dev`.

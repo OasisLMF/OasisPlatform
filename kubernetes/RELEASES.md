@@ -57,3 +57,24 @@ Ticket: https://github.com/OasisLMF/OasisPlatform/issues/542
 
 Two issues were found with the websocket response and will impact testing before resolved. The autoscaler might shutdown
 workers incorrectly before these are fixed, but I think this mostly affects parallel runs.
+
+## Sprint 3
+
+Released on 2021-10-15
+
+**Features included:**
+
+* Platform chart improvements:
+  * Authentication setting: keycloak (default) or simple jwt
+  * Default oasis keycloak realm setup on install (default accounts, settings etc.)
+* Platform improvements:
+  * Support Keycloak as authentication backend (extended mozilla_django_oidc).
+  * Replicates Keycloak user/roles on the fly to Django user/groups.
+  * Swagger keycloak support with instructions.
+  * Auth endpoints works with Keycloak enabled for backward compatibility.
+* Updated documentation.
+
+**This covers the following in the functional summary:**
+
+* Most of Improved security and user-management (1.4) except for:
+  * Role isolation.

@@ -1,3 +1,15 @@
+# Table of contents
+
+1. [Overview](#overview)
+2. [Requirements](#requirements)
+3. [Build images](#build-images)
+4. [Quick start](#quick-start)
+5. [Accessing user interfaces](#accessing-user-interfaces)
+6. [Helm and customization](#helm-and-customization)
+7. [Chart details](#chart-details)
+8. [Keycloak](#keycloak)
+9. [Help scripts](#help-scripts)
+
 # Overview
 
 There are three [Helm](https://helm.sh) charts to manage your Oasis deployment on [Kubernetes](https://kubernetes.io/):
@@ -71,7 +83,7 @@ Make sure to upload update your chart settings before upgrade. Default images po
 images:
   oasis:
     platform:
-      image: localhost:5000/coreoasis/oasis_api_server
+      image: localhost:5000/coreoasis/api_server
       version: dev
     worker_controller:
       image: localhost:5000/coreoasis/worker_controller
@@ -85,15 +97,16 @@ and [Model data](#model-data).
 
 To deploy the Oasis Platform with a PiWind model (default settings):
 
-1. Deploy platform and the PiWind model to the `default` namespace in your cluster: 
+1. Deploy platform and the PiWind model to the `default` namespace in your cluster:
 
     ```
-    # In kubernetes/charts/
+    # If you are in the root of this repository
+    cd charts/
+   
     helm install platform oasis-platform
     helm install models oasis-models
    
     # If you want monitoring tools
-    helm dependency update oasis-monitoring
     helm install monitoring oasis-monitoring
     ```
 
@@ -140,7 +153,7 @@ Here is a short summary of two klusters:
 
 Type                      | IP
 --------------------------|--------
-Docker desktop on Windows | 127.0.0.1 
+Docker desktop on Windows | 127.0.0.1
 Minikube                  | <ol><li>Run `minikube tunnel` to expose cluster IP</li><li>Run `kubectl get service -l app.kubernetes.io/name=ingress-nginx` to get the IP from the `EXTERNAL-IP` column.</li></ol>
 
 ### Add hostnames
@@ -173,6 +186,7 @@ Now you should be able to access the following pages:
 
 - Oasis API - [https://api.oasis.local](https://api.oasis.local)
 - Oasis UI - [https://ui.oasis.local](https://ui.oasis.local)
+- Keycloak - [https://ui.oasis.local/auth/admin](https://ui.oasis.local/admin/auth/)
 - Prometheus - [https://ui.oasis.local/prometheus/](https://ui.oasis.local/prometheus/)
 - Alert manager - [https://ui.oasis.local/alert-manager/](https://ui.oasis.local/alert-manager/)
 - Grafana - [https://ui.oasis.local/grafana/](https://ui.oasis.local/grafana/)
@@ -191,6 +205,9 @@ kubectl port-forward deployment/oasis-server 8000:8000
 
 # Access Oasis UI on http://localhost:8080
 kubectl port-forward deployment/oasis-ui 8080:3838
+
+# Access Keycloak UI on http://localhost:8081
+kubectl port-forward deployment/keycloak 8081:8080
 
 # Access Prometheus on http://localhost:9090
 kubectl port-forward statefulset/prometheus-monitoring-kube-prometheus-prometheus 9090
@@ -216,16 +233,32 @@ store metadata about the installation in the cluster. You need to refer to this 
 helm install <name> <chart>
 ```
 
-## Customization
+You can also list all your helm installations by `helm ls`.
 
-All default settings for a chart are stored in `<chart>/values.yaml`. There are a few ways to change them:
+## Chart settings
 
-* Use helm with `--set` to override specific values. For example `--set generatePasswords=true` at installation to generate all passwords.
-* Make a copy of `<chart>/values.yaml`, edit your copy and then use `-f values-copy.yaml` as parameter to helm.
-* Edit `<chart>/values.yaml` directly.
+All default settings for a chart are stored and described in `<chart>/values.yaml`. There are a few ways to change them:
 
-The first option is usually the best. It will let you edit all settings easily and keep them to be used for all future
-upgrades.
+* Recommended way: Create your own values.yaml file by merging all chart values into one file:
+
+    ```
+    # cd kubernetes/charts/
+    
+    for chart in oasis-models oasis-platform oasis-monitoring; do
+        echo $chart
+        echo -e "###\n### Begin of $chart chart settings ###\n###\n" >> values.yaml
+        helm show values $chart | sed '/^## Values/,/^## End/d' >> values.yaml
+        echo -e "###\n### End of $chart chart settings ###\n###\n" >> values.yaml
+    done
+    ```
+  Pass the file to all helm operations by `-f values.yaml` and keep the file for future upgrades.
+
+* Make a copy of a specific charts values(`<chart>/values.yaml`), edit your copy and then
+  use `-f chart-values-copy.yaml` as parameter to helm.
+* Use helm with `--set` to override specific values. For example `--set ingress.uiHostname=ui.oasis.local` at
+  installation to generate the ingress with a specific hostname.
+* Edit `<chart>/values.yaml` directly. This is not recommended since the file is part of the repository and might be
+  overwritten by accident.
 
 ### Example 1 - Set custom credentials
 
@@ -439,15 +472,28 @@ To use your own certificate:
    helm upgrade <name> oasis-platform
    ```
 
+### Upgrade
+
+The ingress chart used in the oasis-platform chart sometime fails on upgrade. The workaround when this happens is to run
+this before the `helm upgrade`:
+
+```
+kubectl delete -A ValidatingWebhookConfiguration platform-ingress-nginx-admission
+```
+
 ## Models
 
-Some settings need to be in sync with values in oasis-platform. In case you customized names or shared-fs path please make sure models are deployed with same settings. Read oasis-models/values.yaml for more details.
+Some settings need to be in sync with values in oasis-platform. In case you customized names or shared-fs path please
+make sure models are deployed with same settings. Read `oasis-models/values.yaml` for more details.
 
-The chart will install/update/remove models based on what is defined in your `values.yaml` file. If you remove a model from `values.yaml` next upgrade will remove it from your cluster.
+The chart will install/update/remove models based on what is defined in your `values.yaml` file. If you remove a model
+from `values.yaml` next upgrade will remove it from your cluster.
 
 Deployment:
 
 ```
+kc delete jobs --field-selector status.successful=1 -l oasislmf/type=model-registration
+
 # Usage: helm install <name> oasis-models
 # Example:
 helm install models oasis-models
@@ -475,13 +521,82 @@ kubectl get pods
 kubectl delete jobs --field-selector status.successful=1 -l oasislmf/type=set-grafana-default-dashboard-job
 ```
 
-Once ready you can access Prometheus, Alert manager och Grafna by
+Once ready you can access Prometheus, Alert manager och Grafana by
 reading [Accessing user interfaces](#accessing-user-interfaces).
 
 Default credentials are admin/password.
 
 !!! Please note that upgrading this chart might reset changes in Prometheus, Alert manager and Grafana. Always make a
 backup of your changes before your upgrade.
+
+# Keycloak
+
+[Keycloak](https://keycloak.org) is now the default user manager and authentication service (can be disabled by chart
+settings). Read more about Keycloak [here](https://www.keycloak.org/docs/latest/getting_started/index.html).
+
+You can pick your preferred authentication by changing `oasisServer.apiAuthType` to either `keycloak` or `simple` for
+the standard simple jwt authentication.
+
+```
+oasisServer:
+  apiAuthType: keycloak
+  oidc:
+    endpoint: <open connect endpoint url>
+    clientName: <client name>
+    clientSecret: <client secret>
+```
+
+## Administration console
+
+Read [Accessing user interfaces](#accessing-user-interfaces) on how to access keycloak the administration console or use
+the default ingress link:
+
+[https://ui.oasis.local/auth/admin/](https://ui.oasis.local/auth/admin/)
+
+The keycloak administrator user is defined in your oasis-platform chart values:
+
+```
+keycloak:
+  user: keycloak
+  password: password
+```
+
+Full admin console documentation is found
+on [keycloak.org](https://www.keycloak.org/docs/latest/server_admin/#admin-console).
+
+### Realm Settings
+
+Contains generic settings for the realm. The most interesting one is probably the `Token` tab to set different timeouts.
+
+### Authentication
+
+From here you control the supported authentication methods. You can set password policies such as length and number of
+special characters required from the `Password Policy` tab.
+
+### Users
+
+Users are managed in the menu option `Manage / Users`. The user list is not loaded by default but once you
+click `View all users`. You can now edit and delete users. New passwords can be set from the Credentials tab of an
+opened user.
+
+Create a new user by clicking 'Add user' to the right.
+
+## Default settings
+
+The oasis-platform chart creates a default realm (keycloak security context) on the first deployment to manage all
+users, credentials, roles etc. for the oasis REST API.
+
+A default REST API user is created on `helm install` and to change the username and password edit the values:
+
+```
+keycloak:
+  oasisRestApi:
+    users:
+      - username: oasis
+        password: password
+```
+
+Default username is `oasis` with password `password`.
 
 # Help scripts
 

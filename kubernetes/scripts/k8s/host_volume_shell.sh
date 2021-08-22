@@ -53,6 +53,8 @@ while ! kc get pods host-volume-shell | grep Running | grep "1/1"; do
 done
 
 echo
+echo "Host volume mount point is /mnt/host/"
+echo
 
 kc exec -it host-volume-shell -- bash
 kc delete pod --grace-period=2 host-volume-shell

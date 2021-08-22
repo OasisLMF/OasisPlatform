@@ -18,28 +18,28 @@ source $(dirname $0)/common.sh
 
 case $CMD in
   "ls")
-    $CURL -H "$CAH" -X GET "${BASE_URL}/v1/analyses/" | jq -r '.[] | "\(.id) - \(.status) - \(.name)"'
+    $CURL -H "$CAH" -X GET "${API_URL}/v1/analyses/" | jq -r '.[] | "\(.id) - \(.status) - \(.name)"'
   ;;
   "cancel"|"stop")
     if [ -z "$ANALYSIS_ID" ]; then
       usage
     fi
 
-    $CURL -H "$CAH" -X POST "${BASE_URL}/v1/analyses/${ANALYSIS_ID}/cancel/" | jq -r '.status[0]'
+    $CURL -H "$CAH" -X POST "${API_URL}/v1/analyses/${ANALYSIS_ID}/cancel/" | jq -r '.status[0]'
   ;;
   "generate")
     if [ -z "$ANALYSIS_ID" ]; then
       usage
     fi
 
-    $CURL -H "$CAH" -X POST "${BASE_URL}/v1/analyses/${ANALYSIS_ID}/generate_inputs/" | jq -r '.status'
+    $CURL -H "$CAH" -X POST "${API_URL}/v1/analyses/${ANALYSIS_ID}/generate_inputs/" | jq -r '.status'
   ;;
   "execute")
     if [ -z "$ANALYSIS_ID" ]; then
       usage
     fi
 
-    $CURL -H "$CAH" -X POST "${BASE_URL}/v1/analyses/${ANALYSIS_ID}/run/" | jq -r '.status'
+    $CURL -H "$CAH" -X POST "${API_URL}/v1/analyses/${ANALYSIS_ID}/run/" | jq -r '.status'
   ;;
   "run")
 
@@ -50,7 +50,7 @@ case $CMD in
     $0 generate $ANALYSIS_ID
 
     while :; do
-      STATUS=$($CURL -H "$CAH" -X GET "${BASE_URL}/v1/analyses/${ANALYSIS_ID}/" | jq -r '.status')
+      STATUS=$($CURL -H "$CAH" -X GET "${API_URL}/v1/analyses/${ANALYSIS_ID}/" | jq -r '.status')
       echo $STATUS
 
       if [ $STATUS == "READY" ]; then
@@ -63,7 +63,7 @@ case $CMD in
     done
   ;;
   "queue-status"|"qs")
-    $CURL -H "$CAH" -X GET "${BASE_URL}/v1/queue-status/" | jq .
+    $CURL -H "$CAH" -X GET "${API_URL}/v1/queue-status/" | jq .
   ;;
   *)
     usage

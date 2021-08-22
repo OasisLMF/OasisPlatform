@@ -30,7 +30,7 @@ workers:
         type: model-data
 
 # Image used by model registration init container and tcp check init container
-images:
+modelImages:
   init:
     image: alpine
     version: 3.13.5

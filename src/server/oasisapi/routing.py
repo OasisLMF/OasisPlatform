@@ -4,8 +4,11 @@ from channels.middleware import BaseMiddleware
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.contrib.auth.models import AnonymousUser
 from django.urls import path
+from mozilla_django_oidc.contrib.drf import OIDCAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from src.server.oasisapi import settings
+from src.server.oasisapi.oidc.keycloak_auth import KeycloakOIDCAuthenticationBackend
 from src.server.oasisapi.queues.routing import websocket_urlpatterns
 
 url_patterns = [
@@ -14,18 +17,30 @@ url_patterns = [
 
 
 async def get_user(scope):
-    header_value = next((v for k, v in scope['headers'] if k == b'authorization'), None)
-    if not header_value:
-        return AnonymousUser()
-
-    backend = JWTAuthentication()
-    token = backend.get_raw_token(header_value)
-    token = backend.get_validated_token(token)
 
     try:
-        async_get_user = sync_to_async(backend.get_user, thread_sensitive=True)
-        user = await async_get_user(token)
-        return user
+        header_value = next((v for k, v in scope['headers'] if k == b'authorization'), None)
+        if not header_value:
+            return AnonymousUser()
+
+        if settings.API_AUTH_TYPE == 'keycloak':
+
+            backend = KeycloakOIDCAuthenticationBackend()
+            authentication = OIDCAuthentication(backend)
+            async_authentication = sync_to_async(authentication.authenticate, thread_sensitive=True)
+
+            request = type('', (), {'META': { 'HTTP_AUTHORIZATION': header_value}})()
+            user, access_token = await async_authentication(request)
+            return user
+        else:
+
+            backend = JWTAuthentication()
+            token = backend.get_raw_token(header_value)
+            token = backend.get_validated_token(token)
+
+            async_authentication = sync_to_async(backend.get_user, thread_sensitive=True)
+            user = await async_authentication(token)
+            return user
     except Exception as e:
         return AnonymousUser()
 

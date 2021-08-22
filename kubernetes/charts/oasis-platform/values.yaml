@@ -4,7 +4,7 @@
 images:
   oasis:
     platform:
-      image: localhost:5000/coreoasis/oasis_api_server
+      image: localhost:5000/coreoasis/api_server
       version: dev
       imagePullPolicy: Always
     ui:
@@ -123,15 +123,36 @@ databases:
 keycloak:
   name: keycloak
   port: 8080
+  # This is the keycloak admin account to manage the realm and all users
   user: keycloak
   password: password
+  oasisRestApi:
+    # These users will be created on the first deployment/installation but never updated. Use the keycloak admin
+    # console to manage users.
+
+    # The worker controller needs an account to listen to the web socket (queue)
+    platformServiceAccount:
+      username: platform-service-controller
+      password: x7e+GK6Y8ac#grb&9vT4
+    users:
+      # A default user is created at first deployment.
+      - username: oasis
+        password: password
 
 # Oasis API host, port and credentials
 oasisServer:
   name: oasis-server
   port: 8000
+  # Default django admin user - please note this is not a valid REST API user when Keyclock is enabled
   user: admin
   password: password
+
+  # Enable OIDC Keycloak authentication with 'keycloak or set to 'simple' for simple jwt.
+  apiAuthType: keycloak
+  oidc:
+    endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
+    clientName: oasis-server
+    clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
 
 oasisUI:
   name: oasis-ui

@@ -7,3 +7,5 @@ Open API:
 2. Open http://localhost:{{ .Values.oasisServer.port }} in your web browser
 
 Read README.md for more ways to access Oasis UI and API.
+
+REST API credentials are managed by {{ .Values.oasisServer.apiAuthType | default "django" }}
