@@ -24,7 +24,6 @@ whitenoise
 drf-yasg>=1.17.1
 
 # new requ?
--e git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf
 django_celery_results
 channels_redis
 pyrabbit

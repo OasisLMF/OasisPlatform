@@ -8,7 +8,7 @@ from celery import signature, chord
 from celery.canvas import Signature, chain
 from django.contrib.auth.models import User
 from kombu.common import Broadcast
-from oasislmf.utils.data import get_dataframe
+#from oasislmf.utils.data import get_dataframe
 
 from src.conf.iniconf import settings
 
@@ -228,9 +228,9 @@ class Controller:
 
         :return: Tuple containing the statuses to create and signatures to chain
         """
-        location_data = get_dataframe(src_buf=analysis.portfolio.location_file.read().decode())
-
-        num_chunks = ceil(len(location_data) / cls.INPUT_GENERATION_CHUNK_SIZE)
+        #location_data = get_dataframe(src_buf=analysis.portfolio.location_file.read().decode())
+        loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
+        num_chunks = ceil(loc_lines / cls.INPUT_GENERATION_CHUNK_SIZE)
 
         queue = cls.get_generate_inputs_queue(analysis, initiator)
         base_kwargs = {
@@ -246,19 +246,6 @@ class Controller:
             'analysis_settings_file': file_storage_link(analysis.settings_file),
             'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
         }
-        #base_kwargs = {
-        #    'loc_file': analysis.portfolio.get_link('location_file'),
-        #    'settings_file': analysis.get_link('settings_file'),
-        #    'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
-        #}
-        #files_kwargs = {
-        #    'loc_file': analysis.portfolio.get_link('location_file'),
-        #    'acc_file': analysis.portfolio.get_link('accounts_file'),
-        #    'info_file': analysis.portfolio.get_link('reinsurance_info_file'),
-        #    'scope_file': analysis.portfolio.get_link('reinsurance_scope_file'),
-        #    'analysis_settings_file': analysis.get_link('settings_file'),
-        #    'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
-        #}
 
         return cls._split_tasks_and_statuses([
             cls.get_subtask_statuses_and_signature(

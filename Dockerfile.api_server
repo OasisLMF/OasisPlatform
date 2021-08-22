@@ -1,8 +1,8 @@
 # ---- STAGE 1 -----
-#FROM python:3.9.5-alpine3.13 AS build-packages
-#RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers libressl-dev libffi-dev postgresql-dev libpq
-FROM ubuntu:20.04 AS build-packages
-RUN apt-get update && apt-get install -y curl gcc libmariadbclient-dev-compat bash musl-dev  libffi-dev libpq-dev python-dev  python3 python3-pip
+FROM python:3.9.5-alpine3.13 AS build-packages
+RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers libressl-dev libffi-dev postgresql-dev libpq
+#FROM ubuntu:20.04 AS build-packages
+#RUN apt-get update && apt-get install -y curl gcc libmariadbclient-dev-compat bash musl-dev  libffi-dev libpq-dev python-dev  python3 python3-pip
 
 
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
@@ -11,14 +11,14 @@ RUN pip install --user --no-warn-script-location -r ./requirements-server.txt &&
 
 
 # ---- STAGE 2 ----
-#FROM python:3.9.5-alpine3.13
-#RUN apk update \
-# && apk add --no-cache mariadb-dev libpq bash curl \
-# && apk upgrade --available
-FROM ubuntu:20.04
-RUN apt-get update && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends vim python3 python3-pip libmariadbclient-dev-compat bash curl \
- && rm -rf /var/lib/apt/lists/*
+FROM python:3.9.5-alpine3.13
+RUN apk update \
+ && apk add --no-cache mariadb-dev libpq bash curl \
+ && apk upgrade --available
+#FROM ubuntu:20.04
+#RUN apt-get update && apt-get upgrade -y \
+# && apt-get install -y --no-install-recommends vim python3 python3-pip libmariadbclient-dev-compat bash curl \
+# && rm -rf /var/lib/apt/lists/*
 
 # Note general package upgrade can be problematic for consistent builds, but safer in terms of security
 
