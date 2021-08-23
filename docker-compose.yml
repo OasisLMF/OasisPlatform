@@ -109,6 +109,8 @@ services:
       - POSTGRES_PASSWORD=password
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/celery-pg:/var/lib/postgresql/data:rw
+    ports:
+      - 33306:5432
   broker:
     restart: always
     image: redis:5.0.7
