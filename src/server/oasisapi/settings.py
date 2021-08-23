@@ -109,9 +109,6 @@ TEMPLATES = [
     },
 ]
 
-ASGI_APPLICATION = "src.server.oasisapi.routing.application"
-
-
 # Database
 
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
@@ -299,3 +296,8 @@ if DEBUG_TOOLBAR:
     INTERNAL_IPS = [
         '127.0.0.1',
     ]
+    
+ASGI_APPLICATION = "src.server.oasisapi.routing.application"
+WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
+
+
