@@ -1,5 +1,5 @@
-#oasislmf[extra]>=1.8.3
--e git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf[extra]
+oasislmf[extra]>=1.19.0
+#-e git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf[extra]
 celery
 boto3
 configparser
