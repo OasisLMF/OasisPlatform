@@ -99,7 +99,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
 
                 self.assertEqual(200, response.status_code)
 
-    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json', 'application/octet-stream', 'image/tiff']))
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json', 'image/tiff']))
     def test_data_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
