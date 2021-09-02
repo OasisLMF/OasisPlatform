@@ -66,7 +66,6 @@ node {
     String docker_worker_slim = "docker/Dockerfile.model_worker_slim"
 
     // platform vars
-    String RELEASE_NUM_ONLY = ( params.RELEASE_TAG =~ '^(\\d+\\.)(\\d+\\.)(\\*|\\d+)' )[0][0]
     String oasis_branch    = params.PLATFORM_BRANCH  // Git repo branch to build from
     String mdk_branch      = params.MDK_BRANCH
     String oasis_name      = 'OasisPlatform'
@@ -74,6 +73,7 @@ node {
     String oasis_workspace = 'platform_workspace'
     String utils_sh        = '/buildscript/utils.sh'
     String oasis_func      = "oasis_server"
+
 
     // oasis base model test
     String model_branch     = params.PIWIND_BRANCH
@@ -83,6 +83,7 @@ node {
     String model_git_url    = "git@github.com:OasisLMF/${model_name}.git"
     String model_test_dir  = "${env.WORKSPACE}/${model_workspace}/tests/"
     String model_test_ini  = "test-config.ini"
+    String RELEASE_NUM_ONLY = ""
 
     String script_dir = env.WORKSPACE + "/${build_workspace}"
     String git_creds  = "1335b248-336a-47a9-b0f6-9f7314d6f1f4"
@@ -108,6 +109,10 @@ node {
     if (params.PUBLISH &&  ! params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)-lts')) {
         sh "echo release candidates must be tagged {version}-lts, example: 1.0.0-lts"
         sh "exit 1"
+    } 
+
+    if (params.PUBLISH && params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)-lts')){
+        RELEASE_NUM_ONLY = ( params.RELEASE_TAG =~ '^(\\d+\\.)(\\d+\\.)(\\*|\\d+)' )[0][0]
     }
 
 
