@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#525](https://github.com/OasisLMF/OasisPlatform/pull/525) - Fix/update requirment packages [WIP]
+.. _`1.15.15-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.14-lts...1.15.15-lts
+
 * [#517](https://github.com/OasisLMF/OasisPlatform/pull/522) - Add 'LTS' to backport release tag
 .. _`1.15.14-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.13...1.15.14-lts
 
