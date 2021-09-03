@@ -2,6 +2,9 @@ OasisPlatform Changelog
 =======================
 
 * [#520](https://github.com/OasisLMF/OasisPlatform/pull/520) - Allow binary data as portfolio uploads + fix content_type setting on …
+.. _`1.20.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.19.0...1.20.0
+
+* [#520](https://github.com/OasisLMF/OasisPlatform/pull/520) - Allow binary data as portfolio uploads + fix content_type setting on …
 .. _`1.20.0rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.19.0...1.20.0rc1
 
 `1.19.0`_
