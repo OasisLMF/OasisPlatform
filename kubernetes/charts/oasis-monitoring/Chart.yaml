@@ -1,0 +1,10 @@
+apiVersion: v2
+name: oasis-monitoring
+version: 0.1.0
+type: application
+description: Deploys the Prometheus and Grafana to monitor Oasis
+
+dependencies:
+- name: kube-prometheus-stack
+  version: "18.0.5"
+  repository: https://prometheus-community.github.io/helm-charts

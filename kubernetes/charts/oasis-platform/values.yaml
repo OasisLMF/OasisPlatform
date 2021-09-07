@@ -1,0 +1,114 @@
+# Chart default values. Override by passing --set or -f to helm.
+
+images:
+  oasis:
+    platform:
+      image: coreoasis/api_server
+      version: ep-1.19.0-rc1
+    ui:
+      image: coreoasis/oasisui_app
+      version: 1.9.0
+  postgres:
+    image: postgres
+    version: 12.8-alpine3.14
+  mysql:
+    image: mysql
+    version: 8.0.26
+  keycloak:
+    image: quay.io/keycloak/keycloak
+    version: 15.0.2
+  init:
+    image: busybox
+    version: 1.28
+  redis:
+    image: redis
+    version: 5.0.7
+
+# Generate all password secretes
+generatePasswords: false
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Control how kubernetes deployed pods to nodes - this is applied to all pods managed by this chart
+#affinity:
+#  # Place all pods on nodes with label oasis/node-type set to either 'platform' or 'small'
+#  nodeAffinity:
+#    requiredDuringSchedulingIgnoredDuringExecution:
+#      nodeSelectorTerms:
+#        - matchExpressions:
+#            - key: oasis/node-type
+#              operator: In
+#              values:
+#                - platform
+#                - small
+#  # Do not schedule any pod on a node with a pod with label oasis/pod-type set to 'worker'
+#  podAntiAffinity:
+#    requiredDuringSchedulingIgnoredDuringExecution:
+#      - labelSelector:
+#          matchExpressions:
+#            - key: oasis/pod-type
+#              operator: In
+#              values:
+#                - worker
+#        topologyKey: "kubernetes.io/hostname"
+
+databases:
+# db_name:
+#   type: redis|postgres|mysql
+#   name: name (used as deployment and service)
+#   port: port (for service)
+  channel_layer:
+    type: redis
+    name: channel-layer
+    port: 6379
+  broker:
+    type: redis
+    name: broker
+    port: 6379
+  keycloak_db:
+    type: postgres
+    name: keycloak-db
+    dbName: keycloak
+    port: 5432
+    volumeSize: 2Gi
+    user: keycloak
+    password: password
+  celery_db:
+    type: postgres
+    name: celery-db
+    dbName: celery
+    port: 5432
+    volumeSize: 2Gi
+    user: celery
+    password: password
+  oasis_db:
+    type: postgres
+    name: server-db
+    dbName: oasis
+    port: 5432
+    volumeSize: 2Gi
+    user: oasis
+    password: password
+
+keycloak:
+  name: keycloak
+  port: 9990
+  user: keycloak
+  password: password
+
+oasisServer:
+  name: oasis-server
+  port: 8000
+  user: admin
+  password: password
+
+oasisUI:
+  name: oasis-ui
+  port: 8080
+
+volumes:
+  sharedFs:
+    name: shared-fs
+    storageCapacity: 2Gi
+    hostPath: /data/shared-fs/

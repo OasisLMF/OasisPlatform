@@ -1,0 +1,6 @@
+{{- range $k, $v := .Values.volumes }}
+{{ include "h.createPersistentVolume" (dict "name" $v.name "storageCapacity" $v.storageCapacity "hostPath" $v.hostPath) }}
+---
+{{ include "h.createPersistentVolumeClaim" (dict "name" $v.name "storageCapacity" $v.storageCapacity) }}
+---
+{{- end }}

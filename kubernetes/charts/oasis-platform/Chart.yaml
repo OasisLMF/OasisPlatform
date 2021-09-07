@@ -1,0 +1,8 @@
+apiVersion: v2
+name: oasis
+version: 0.1.0
+type: application
+description: Deploys the Oasis Platform
+
+appVersion: "1.19.0"
+home: https://github.com/OasisLMF

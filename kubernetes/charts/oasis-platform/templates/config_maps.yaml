@@ -1,0 +1,23 @@
+{{- $root := . }}
+
+{{/*
+   Config maps for database
+*/}}
+{{- range $k, $v := .Values.databases }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $v.name }}
+  labels:
+    {{- include "h.labels" $root | nindent 4 }}
+data:
+  host: {{ $v.name }}
+  port: {{ $v.port | quote }}
+  {{- if $v.dbName }}
+  dbName: {{ $v.dbName}}
+  {{- end }}
+  {{- if eq $v.type "redis" }}
+  uri: "redis://{{ $v.name }}:{{ $v.port }}"
+  {{- end }}
+---
+{{- end }}

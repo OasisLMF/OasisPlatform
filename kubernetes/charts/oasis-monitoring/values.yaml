@@ -1,0 +1,16 @@
+# Chart default values. Override by passing --set or -f to helm.
+
+homeDashboardUID: kduj80V7k-oasis-overview
+
+jobImage:
+  image: alpine
+  version: 3.13.5
+
+# Dependencies settings
+kube-prometheus-stack:
+  prometheus-node-exporter:
+    hostRootFsMount: false
+
+  grafana:
+    adminPassword: password
+

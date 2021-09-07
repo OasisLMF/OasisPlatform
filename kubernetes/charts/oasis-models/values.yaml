@@ -1,0 +1,71 @@
+# Chart default values. Override by passing --set or -f to helm.
+
+# Worker containers - model data + custom mounts
+modelVolumes:
+  # Piwind model data - hostPath must exist on the nodes fs
+  - name: piwind-model-data-pv
+    storageCapacity: 1Gi
+    hostPath: /data/model-data/piwind/
+
+workers:
+  - supplierId: OasisLMF
+    modelId: PiWind
+    modelVersionId: "1"
+    image: coreoasis/model_worker
+    version: ep-1.19.0-rc1
+    env: # Additional worker environment variables
+      - name: OASIS_DEBUG
+        value: "1"
+      - name: OASIS_MODEL_NUM_ANALYSIS_CHUNKS
+        value: "8"
+      - name: OASIS_MODEL_DATA_DIRECTORY
+        value: /home/worker/model
+    volumes: # Volume defined in modelVolumes
+      - name: piwind-model-data-pv
+        mountPath: /home/worker/model
+
+# Image used by model registration init container and tcp check init container
+images:
+  init:
+    image: alpine
+    version: 3.13.5
+
+# Control how kubernetes deployed pods to nodes - this is applied to all pods managed by this chart
+#affinity:
+#  # Place all pods on nodes with label oasis/node-type set to either 'platform' or 'small'
+#  nodeAffinity:
+#    requiredDuringSchedulingIgnoredDuringExecution:
+#      nodeSelectorTerms:
+#        - matchExpressions:
+#            - key: oasis/node-type
+#              operator: In
+#              values:
+#                - platform
+#                - small
+#  # Do not schedule any pod on a node with a pod with label oasis/pod-type set to 'worker'
+#  podAntiAffinity:
+#    requiredDuringSchedulingIgnoredDuringExecution:
+#      - labelSelector:
+#          matchExpressions:
+#            - key: oasis/pod-type
+#              operator: In
+#              values:
+#                - worker
+#        topologyKey: "kubernetes.io/hostname"
+
+## Values to keep in sync with oasis-platform values ##
+databases:
+  broker:
+    name: broker
+    port: 6379
+  celery_db:
+    name: celery-db
+    port: 5432
+
+oasisServer:
+  name: oasis-server
+
+volumes:
+  sharedFs:
+    name: shared-fs
+## End of sync with oasis-platform values ##

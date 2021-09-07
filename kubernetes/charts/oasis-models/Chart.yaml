@@ -1,0 +1,8 @@
+apiVersion: v2
+name: oasis-model
+version: 0.1.0
+type: application
+description: Manages Oasis models deployed on the Oasis platform
+
+appVersion: "1.19.0"
+home: https://github.com/OasisLMF

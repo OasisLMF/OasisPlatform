@@ -1,0 +1,101 @@
+{{- $root := . -}}
+{{- $initConfigMap := "init-model-registration" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $initConfigMap }}
+data:
+  model_registration.sh: |-
+    {{- .Files.Get "resources/model_registration.sh" | indent 4 }}
+---
+{{- range .Values.workers }}
+{{- $name := printf "worker-%s-%s-%s" .supplierId .modelId .modelVersionId | lower }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "h.labels" $root | nindent 4 }}
+    {{- include "h.workerLabels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        {{- include "h.labels" $root | nindent 8 }}
+        {{- include "h.workerLabels" . | nindent 8 }}
+      annotations:
+        checksum/oasis-server: {{ toJson $root.Values.oasisServer | sha256sum }}
+        checksum/model_registration: {{ $root.Files.Get "resources/model_registration.sh" | sha256sum }}
+    spec:
+      {{- include "h.affinity" $root | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheck" (list $root $root.Values.databases.broker $root.Values.databases.celery_db) | nindent 8}}
+        - image: {{ $root.Values.images.init.image }}:{{ $root.Values.images.init.version }}
+          name: init-model-registration
+          command: ["sh", "-c", "/tmp/model_registration.sh"]
+          env:
+            {{- include "h.modelEnvs" . | indent 12 }}
+            - name: OASIS_SERVER_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $root.Values.oasisServer.name }}
+                  key: host
+            - name: OASIS_SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $root.Values.oasisServer.name }}
+                  key: port
+            - name: OASIS_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $root.Values.oasisServer.name }}
+                  key: user
+            - name: OASIS_ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $root.Values.oasisServer.name }}
+                  key: password
+          volumeMounts:
+            - name: init-model-registration
+              mountPath: /tmp/model_registration.sh
+              subPath: model_registration.sh
+            {{- range .volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+      containers:
+        - image: {{ .image }}:{{ .version }}
+          name: worker
+          env:
+            {{- include "h.modelEnvs" . | indent 12 }}
+            {{- include "h.brokerVars" $root | indent 12 }}
+            {{- include "h.celeryDbVars" $root | indent 12}}
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+            {{- range .volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+      volumes:
+        - name: shared-fs-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ $root.Values.volumes.sharedFs.name }}
+        {{- range .volumes }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}
+        - name: init-model-registration
+          configMap:
+            name: {{ $initConfigMap }}
+            defaultMode: 0777
+---
+{{- end }}

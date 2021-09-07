@@ -1,0 +1,6 @@
+Oasis monitoring deployed.
+
+Open Grafana:
+1. $ kubectl --namespace {{ .Release.Namespace }} port-forward deployment/{{ .Release.Name }}-grafana 3000
+2. Open http://localhost:3000 in your web browser
+3. Credentials: admin/password (change after login)

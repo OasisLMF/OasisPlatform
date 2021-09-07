@@ -1,0 +1,162 @@
+{{- $root := . -}}
+{{- $fullname := include "h.fullname" . -}}
+{{- range $k, $v := .Values.databases }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $v.name }}
+  labels:
+  {{- include "h.labels" $root | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $v.port }}
+  ports:
+    - protocol: TCP
+      port: {{ $v.port }}
+      {{- if eq $v.type "postgres" }}
+      targetPort: 5432
+      {{- else if eq $v.type "mysql" }}
+      targetPort: 33060
+      {{- else if eq $v.type "redis" }}
+      targetPort: 6379
+      {{- end }}
+  selector:
+    app: {{ $v.name }}
+---
+{{- end -}}
+---
+{{- range $k, $v := .Values.databases }}
+{{- $pvHostPath := printf "/data/%s/pv/%s/" $fullname $v.name }}
+{{- if $v.user }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $v.name }}
+  namespace: default
+  labels:
+  {{- include "h.labels" $root | nindent 4 }}
+type: Opaque
+data:
+  user: {{ required (printf "A valid user for %s is required" $v.name) $v.user | b64enc }}
+  password: {{ include "h.password" (list .name "password" $root $v.password (printf "A valid password for %s is required" $v.name)) }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $v.name }}
+  labels:
+    {{- include "h.labels" $root | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $v.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $v.name }}
+        {{- include "h.selectorLabels" $root | nindent 8}}
+      annotations:
+        checksum/{{ $v.name }}: {{ toJson $v | sha256sum }}
+    spec:
+{{- if $v.volumeSize }}
+      volumes:
+        - name: db-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ $v.name }}
+{{- end }}
+      {{- include "h.affinity" $root | nindent 6 }}
+      containers:
+        - name: db
+          ports:
+            - containerPort: {{ $v.port }}
+              name: db
+{{- if eq $v.type "postgres" }}
+          image: {{ $root.Values.images.postgres.image }}:{{ $root.Values.images.postgres.version }}
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: password
+            - name: POSTGRES_DB
+              value: {{ .dbName }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: user
+          volumeMounts:
+            - name: db-persistent-storage
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["bash", "-c", "psql -w -U $POSTGRES_USER -d $POSTGRES_DB -c 'SELECT 1'"]
+            initialDelaySeconds: 10
+            periodSeconds: 2
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["bash", "-c", "psql -w -U $POSTGRES_USER -d $POSTGRES_DB -c 'SELECT 1'"]
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+{{- else if eq $v.type "mysql" }}
+          image: {{ $root.Values.images.mysql.image }}:{{ $root.Values.images.mysql.version }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: password
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: password
+            - name: MYSQL_DATABASE
+              value: {{ .dbName }}
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: user
+          volumeMounts:
+            - name: db-persistent-storage
+              mountPath: /var/lib/mysql
+          readinessProbe:
+            exec:
+              command: ["bash", "-c", "echo -en \"[client]\nuser=$MYSQL_USER\npassword=$MYSQL_PASSWORD\n\" > /tmp/file && cat /tmp/file && chmod go-rw /tmp/file && mysql --defaults-extra-file=/tmp/file -h 127.0.0.1 -e \"SELECT 1\"" ]
+            initialDelaySeconds: 3
+            periodSeconds: 2
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["mysqladmin", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+{{- else if eq $v.type "redis" }}
+          image: {{ $root.Values.images.redis.image }}:{{ $root.Values.images.redis.version }}
+          readinessProbe:
+            exec:
+              command: ["/usr/local/bin/redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 2
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["/usr/local/bin/redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+{{- end }}
+---
+{{- if $v.volumeSize }}
+{{ include "h.createPersistentVolume" (dict "name" $v.name "storageCapacity" $v.volumeSize "hostPath" $pvHostPath) }}
+---
+{{ include "h.createPersistentVolumeClaim" (dict "name" $v.name "storageCapacity" $v.volumeSize) }}
+---
+{{- end }}
+{{- end }}

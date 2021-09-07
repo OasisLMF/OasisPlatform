@@ -1,0 +1,314 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.oasisServer.name }}
+  namespace: default
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+type: Opaque
+data:
+  user: {{ required (printf "A valid user for oasis api is required") .Values.oasisServer.user | b64enc }}
+  password: {{ include "h.password" (list .Values.oasisServer.name "password" . .Values.oasisServer.password (printf "A valid password for %s is required" .Values.oasisServer.name)) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.oasisServer.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+data:
+  host: {{ .Values.oasisServer.name }}
+  port: "{{ .Values.oasisServer.port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.oasisServer.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.oasisServer.port }}
+  selector:
+    app: {{ .Values.oasisServer.name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.oasisUI.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.oasisUI.port }}
+      targetPort: 3838
+  selector:
+    app: {{ .Values.oasisUI.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.oasisServer.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.oasisServer.name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "h.labels" . | nindent 8}}
+        app: {{ .Values.oasisServer.name }}
+      annotations:
+        checksum/oasis-server: {{ toJson .Values.oasisServer | sha256sum }}
+        checksum/{{ .Values.databases.oasis_db.name }}: {{ toJson .Values.databases.oasis_db | sha256sum }}
+        checksum/{{ .Values.databases.celery_db.name }}: {{ toJson .Values.databases.celery_db | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db) | nindent 8}}
+      containers:
+        - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          name: {{ .Values.oasisServer.name }}
+          env:
+            - name: OASIS_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisServer.name }}
+                  key: user
+            - name: OASIS_ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisServer.name }}
+                  key: password
+            {{- include "h.serverDbVars" . | indent 12}}
+            {{- include "h.celeryDbVars" . | indent 12}}
+            {{- include "h.brokerVars" . | indent 12 }}
+            {{- include "h.channelLayerVars" . | indent 12 }}
+            - name: STARTUP_RUN_MIGRATIONS
+              value: "true"
+            - name: OASIS_DEBUG
+              value: "1"
+          ports:
+            - containerPort: {{ .Values.oasisServer.port }}
+              name: {{ .Values.oasisServer.name }}
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.oasisServer.port}}
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.oasisServer.port}}
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 2
+      volumes:
+        - name: shared-fs-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.sharedFs.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oasis-worker-monitor
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: oasis-worker-monitor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: oasis-worker-monitor
+        {{- include "h.labels" . | nindent 8}}
+      annotations:
+        checksum/oasis-server: {{ toJson .Values.oasisServer | sha256sum }}
+        checksum/{{ .Values.databases.oasis_db.name }}: versions{{ toJson .Values.databases.oasis_db | sha256sum }}
+        checksum/{{ .Values.databases.celery_db.name }}: versions{{ toJson .Values.databases.celery_db | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.oasisServer) | nindent 8}}
+      containers:
+        - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          name: oasis-worker-monitor
+          env:
+{{- include "h.serverDbVars" . | indent 12}}
+{{- include "h.celeryDbVars" . | indent 12}}
+{{- include "h.brokerVars" . | indent 12 }}
+{{- include "h.channelLayerVars" . | indent 12 }}
+            - name: OASIS_DEBUG
+              value: "1"
+          command: [ "celery", "-A", "src.server.oasisapi", "worker", "--loglevel=INFO" ]
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+      volumes:
+        - name: shared-fs-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.sharedFs.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.oasisUI.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.oasisUI.name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.oasisUI.name }}
+        {{- include "h.labels" . | nindent 8}}
+      annotations:
+        checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisServer | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheck" (list . .Values.oasisServer) | nindent 8}}
+      containers:
+        - image: {{ .Values.images.oasis.ui.image }}:{{ .Values.images.oasis.ui.version }}
+          name: {{ .Values.oasisUI.name }}
+          env:
+            - name: API_IP
+              valueFrom:
+                configMapKeyRef:
+                  name: {{.Values.oasisServer.name}}
+                  key: host
+            - name: API_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{.Values.oasisServer.name}}
+                  key: port
+            - name: API_VERSION
+              value: v1
+            - name: OASIS_ENVIRONMENT
+              value: oasis_localhost
+            - name: API_SHARE_FILEPATH
+              value: ./downloads
+          ports:
+            - containerPort: 3838
+              name: {{ .Values.oasisUI.name }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3838
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3838
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: celery-beat
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: celery-beat
+        {{- include "h.labels" . | nindent 8}}
+      annotations:
+        checksum/{{ .Values.databases.oasis_db.name }}: versions{{ toJson .Values.databases.oasis_db | sha256sum }}
+        checksum/{{ .Values.databases.celery_db.name }}: versions{{ toJson .Values.databases.celery_db | sha256sum }}
+        checksum/{{ .Values.databases.channel_layer.name }}: versions{{ toJson .Values.databases.channel_layer | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer) | nindent 8}}
+      containers:
+        - image: coreoasis/api_server:ep-1.19.0-rc1
+          name: celery-beat
+          command: ["celery", "-A", "src.server.oasisapi", "beat", "--loglevel=DEBUG"]
+          env:
+            {{- include "h.serverDbVars" . | indent 12}}
+            {{- include "h.celeryDbVars" . | indent 12}}
+            {{- include "h.channelLayerVars" . | indent 12 }}
+            - name: OASIS_DEBUG
+              value: "1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-controller
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: task-controller
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: task-controller
+        {{- include "h.labels" . | nindent 8}}
+      annotations:
+        checksum/{{ .Values.databases.oasis_db.name }}: versions{{ toJson .Values.databases.oasis_db | sha256sum }}
+        checksum/{{ .Values.databases.celery_db.name }}: versions{{ toJson .Values.databases.celery_db | sha256sum }}
+        checksum/{{ .Values.databases.broker.name }}: versions{{ toJson .Values.databases.broker | sha256sum }}
+        checksum/{{ .Values.databases.channel_layer.name }}: versions{{ toJson .Values.databases.channel_layer | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer .Values.databases.broker) | nindent 8}}
+      containers:
+        - image: coreoasis/api_server:ep-1.19.0-rc1
+          imagePullPolicy: Always
+          name: task-controller
+          command: ["celery", "-A", "src.server.oasisapi", "worker", "--loglevel=INFO", "-Q", "task-controller"]
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+          env:
+            {{- include "h.serverDbVars" . | indent 12}}
+            {{- include "h.celeryDbVars" . | indent 12}}
+            {{- include "h.brokerVars" . | indent 12 }}
+            {{- include "h.channelLayerVars" . | indent 12 }}
+            - name: OASIS_DEBUG
+              value: "1"
+      volumes:
+        - name: shared-fs-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.sharedFs.name }}
+---
