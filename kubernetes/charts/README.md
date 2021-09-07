@@ -85,16 +85,15 @@ and [Model data](#model-data).
 
 To deploy the Oasis Platform with a PiWind model (default settings):
 
-1. Deploy platform and the PiWind model to the `default` namespace in your cluster:
+1. Deploy platform and the PiWind model to the `default` namespace in your cluster: 
 
     ```
-    # If you are in the root of this repository
-    cd charts/
-   
+    # In kubernetes/charts/
     helm install platform oasis-platform
     helm install models oasis-models
    
     # If you want monitoring tools
+    helm dependency update oasis-monitoring
     helm install monitoring oasis-monitoring
     ```
 
@@ -217,15 +216,12 @@ store metadata about the installation in the cluster. You need to refer to this 
 helm install <name> <chart>
 ```
 
-You can also list all your helm installations by `helm ls`.
+## Customization
 
-## Chart settings
+All default settings for a chart are stored in `<chart>/values.yaml`. There are a few ways to change them:
 
-All default settings for a chart are stored and described in `<chart>/values.yaml`. There are a few ways to change them:
-
+* Use helm with `--set` to override specific values. For example `--set generatePasswords=true` at installation to generate all passwords.
 * Make a copy of `<chart>/values.yaml`, edit your copy and then use `-f values-copy.yaml` as parameter to helm.
-* Use helm with `--set` to override specific values. For example `--set ingress.uiHostname=ui.oasis.local` at
-  installation to generate the ingress with a specific hostname.
 * Edit `<chart>/values.yaml` directly.
 
 The first option is usually the best. It will let you edit all settings easily and keep them to be used for all future
@@ -445,17 +441,13 @@ To use your own certificate:
 
 ## Models
 
-Some settings need to be in sync with values in oasis-platform. In case you customized names or shared-fs path please
-make sure models are deployed with same settings. Read `oasis-models/values.yaml` for more details.
+Some settings need to be in sync with values in oasis-platform. In case you customized names or shared-fs path please make sure models are deployed with same settings. Read oasis-models/values.yaml for more details.
 
-The chart will install/update/remove models based on what is defined in your `values.yaml` file. If you remove a model
-from `values.yaml` next upgrade will remove it from your cluster.
+The chart will install/update/remove models based on what is defined in your `values.yaml` file. If you remove a model from `values.yaml` next upgrade will remove it from your cluster.
 
 Deployment:
 
 ```
-kc delete jobs --field-selector status.successful=1 -l oasislmf/type=model-registration
-
 # Usage: helm install <name> oasis-models
 # Example:
 helm install models oasis-models
