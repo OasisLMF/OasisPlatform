@@ -1,13 +1,4 @@
 {{- $root := . -}}
-{{- $initConfigMap := "init-model-registration" -}}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ $initConfigMap }}
-data:
-  model_registration.sh: |-
-    {{- .Files.Get "resources/model_registration.sh" | indent 4 }}
----
 {{- range .Values.workers }}
 {{- $name := printf "worker-%s-%s-%s" .supplierId .modelId .modelVersionId | lower }}
 apiVersion: apps/v1
@@ -17,6 +8,8 @@ metadata:
   labels:
     {{- include "h.labels" $root | nindent 4 }}
     {{- include "h.workerLabels" . | nindent 4 }}
+  annotations:
+    {{- include "h.workerDeploymentAnnotations" . | indent 4 }}
 spec:
   selector:
     matchLabels:
@@ -36,40 +29,7 @@ spec:
     spec:
       {{- include "h.affinity" $root | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list $root $root.Values.databases.broker $root.Values.databases.celery_db) | nindent 8}}
-        - image: {{ $root.Values.images.init.image }}:{{ $root.Values.images.init.version }}
-          name: init-model-registration
-          command: ["sh", "-c", "/tmp/model_registration.sh"]
-          env:
-            {{- include "h.modelEnvs" . | indent 12 }}
-            - name: OASIS_SERVER_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ $root.Values.oasisServer.name }}
-                  key: host
-            - name: OASIS_SERVER_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ $root.Values.oasisServer.name }}
-                  key: port
-            - name: OASIS_ADMIN_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $root.Values.oasisServer.name }}
-                  key: user
-            - name: OASIS_ADMIN_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $root.Values.oasisServer.name }}
-                  key: password
-          volumeMounts:
-            - name: init-model-registration
-              mountPath: /tmp/model_registration.sh
-              subPath: model_registration.sh
-            {{- range .volumes }}
-            - name: {{ .name }}
-              mountPath: {{ .mountPath }}
-            {{- end }}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.databases.broker.name $root.Values.databases.celery_db.name) | nindent 8}}
       containers:
         - image: {{ .image }}:{{ .version }}
           name: worker
@@ -93,9 +53,5 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .name }}
         {{- end }}
-        - name: init-model-registration
-          configMap:
-            name: {{ $initConfigMap }}
-            defaultMode: 0777
 ---
 {{- end }}

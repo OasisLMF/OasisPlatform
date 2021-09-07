@@ -1,16 +1,53 @@
 # Chart default values. Override by passing --set or -f to helm.
 
+# Default dashboard UID to set has home dashboard
 homeDashboardUID: kduj80V7k-oasis-overview
 
 jobImage:
   image: alpine
   version: 3.13.5
 
-# Dependencies settings
+# Dependencies / sub charts settings
 kube-prometheus-stack:
   prometheus-node-exporter:
     hostRootFsMount: false
 
+  prometheus:
+    prometheusSpec:
+      externalUrl: 'https://ui.oasis.local/prometheus/'
+      routePrefix: '/prometheus/'
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - ui.oasis.local
+      paths:
+        - /prometheus/
+
+  alertmanager:
+    alertmanagerSpec:
+      routePrefix: /alert-manager/
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - ui.oasis.local
+      paths:
+        - /alert-manager/
+
   grafana:
     adminPassword: password
-
+    grafana.ini:
+      server:
+        root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana/"
+        serve_from_sub_path: true
+      live:
+        # https://github.com/grafana/grafana/issues/36929
+        allowed_origins: "https://*"
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: nginx
+      hosts:
+        - ui.oasis.local
+      path: /grafana/

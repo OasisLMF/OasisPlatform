@@ -193,16 +193,7 @@ spec:
         - image: {{ .Values.images.oasis.ui.image }}:{{ .Values.images.oasis.ui.version }}
           name: {{ .Values.oasisUI.name }}
           env:
-            - name: API_IP
-              valueFrom:
-                configMapKeyRef:
-                  name: {{.Values.oasisServer.name}}
-                  key: host
-            - name: API_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{.Values.oasisServer.name}}
-                  key: port
+            {{- include "h.serverApiVars" . | nindent 12}}
             - name: API_VERSION
               value: v1
             - name: OASIS_ENVIRONMENT

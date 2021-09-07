@@ -29,6 +29,15 @@ oasislmf/model-version-id: {{ .modelVersionId | quote }}
 {{- end }}
 
 {{/*
+Annotations to set worker deployment behaviours like auto scaling rules
+*/}}
+{{- define "h.workerDeploymentAnnotations" -}}
+{{- range $k, $v := .autoScaling }}
+oasislmf-autoscaling/{{ $k | kebabcase }}: {{ $v | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 Persistent volume
 */}}
 {{- define "h.createPersistentVolume" }}
@@ -160,17 +169,59 @@ Oasis variables for a worker
 {{- end }}
 
 {{/*
-Init container to wait for a service to become available (tcp check only)
+Oasis server client variables
 */}}
-{{- define "h.initTcpAvailabilityCheck" -}}
+{{- define "h.oasisServerEnvs" }}
+- name: OASIS_SERVER_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.oasisServer.name }}
+      key: host
+- name: OASIS_SERVER_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.oasisServer.name }}
+      key: port
+- name: OASIS_ADMIN_USER
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.oasisServer.name }}
+      key: user
+- name: OASIS_ADMIN_PASS
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.oasisServer.name }}
+      key: password
+{{- end }}
+
+{{/*
+Init container to wait for a service to become available (tcp check only) based on host:port from secret
+TODO: replace other m.initTcpAvailabilityCheck with this
+*/}}
+{{- define "h.initTcpAvailabilityCheckBySecret" -}}
 {{- $root := (index . 0) -}}
-- name: init-tcp-wait
+- name: init-tcp-wait-by-secret
   image: {{ $root.Values.images.init.image }}:{{ $root.Values.images.init.version }}
-  command: ['sh', '-c', "
-    {{- range $s := slice . 1 -}}
-        until nc -zw 3 {{ $s.name }} {{ $s.port }}; do echo 'waiting for service {{ $s.name }}...'; sleep 1; done;
+  env:
+    {{- range $index, $name := slice . 1 }}
+    - name: SERVICE_NAME_{{ $index }}
+      value: {{ $name }}
+    - name: HOST_{{ $index }}
+      valueFrom:
+        configMapKeyRef:
+          name: {{ $name }}
+          key: host
+    - name: PORT_{{ $index }}
+      valueFrom:
+        configMapKeyRef:
+          name: {{ $name }}
+          key: port
+    {{- end }}
+  command: ['sh', '-c', 'echo "Waiting for services:{{ range $index, $name := slice . 1 }} {{ $name }} {{- end }}";
+    {{- range $index, $name := slice . 1 -}}
+        until nc -zw 3 $HOST_{{ $index }} $PORT_{{ $index }}; do echo "waiting for service $SERVICE_NAME_{{ $index }}..."; sleep 1; done;
     {{- end -}}
-    echo available"]
+    echo available']
 {{- end -}}
 
 {{/*

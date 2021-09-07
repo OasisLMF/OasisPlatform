@@ -1,5 +1,6 @@
 # Chart default values. Override by passing --set or -f to helm.
 
+# Images and versions used for all deployments
 images:
   oasis:
     platform:
@@ -24,7 +25,21 @@ images:
     image: redis
     version: 5.0.7
 
-# Generate all password secretes
+# Hostnames for Oasis UI, API, Prometheus, Alert manager and Grafana. If you change it, make sure you also
+# update hostnames in oasis-monitoring values.yaml file. Read more about how in the README.md and how to
+# reach your ingress.
+#
+# At the moment we need to keep the oasis API on a separate host since it can't coexist in the root with oasis
+# ui. In the future we might be able to put them on the same if either oasis ui or oasis api supports subpaths.
+ingress:
+  # Hostname for Oasis UI, Prometheus, Alert manager and Grafana
+  uiHostname: ui.oasis.local
+
+  # Hostname for the Oasis API
+  apiHostname: api.oasis.local
+
+# Generate all password secretes - get them by using kubectl:
+# kubectl get secrets/oasis-server --template={{.data.password}} | base64 -d
 generatePasswords: false
 
 nameOverride: ""
@@ -91,12 +106,14 @@ databases:
     user: oasis
     password: password
 
+# Keycloak host, port and console admin credentials
 keycloak:
   name: keycloak
   port: 9990
   user: keycloak
   password: password
 
+# Oasis API host, port and credentials
 oasisServer:
   name: oasis-server
   port: 8000
@@ -107,7 +124,9 @@ oasisUI:
   name: oasis-ui
   port: 8080
 
+# Volumes to mount and use within the platform
 volumes:
+  # Placement of the shared filesystem on the kubernetes host node
   sharedFs:
     name: shared-fs
     storageCapacity: 2Gi

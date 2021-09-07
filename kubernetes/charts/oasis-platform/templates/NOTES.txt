@@ -5,3 +5,5 @@ Open front:
 Open API:
 1. $ kubectl --namespace {{ .Release.Namespace }} port-forward deployment/{{ .Values.oasisServer.name }} {{ .Values.oasisServer.port }}:{{ .Values.oasisServer.port }}
 2. Open http://localhost:{{ .Values.oasisServer.port }} in your web browser
+
+Read README.md for more ways to access Oasis UI and API.

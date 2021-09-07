@@ -1,12 +1,14 @@
 #!/bin/sh
+# This file adds/updates oasis with the model set in environment variables.
+#
+# Model settings are read from model_settings.json in the model data volume.
+#
+# Script compatible with sh and not bash
 
 set -e
 
 BASE_URL="http://${OASIS_SERVER_HOST}:${OASIS_SERVER_PORT}"
 MODEL_SETTINGS_FILE="$OASIS_MODEL_DATA_DIRECTORY/model_settings.json"
-
-echo "Add curl and jq"
-apk add curl jq
 
 echo
 echo "=== Register model ==="
@@ -62,9 +64,9 @@ else
     -d "{\"supplier_id\": \"${OASIS_MODEL_SUPPLIER_ID}\",\"model_id\": \"${OASIS_MODEL_ID}\",\"version_id\": \"${OASIS_MODEL_VERSION_ID}\""} | jq .id)
   echo "Created with id $MODEL_ID"
 
-  echo "Uploading model settings"
-  curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
-
-  echo "Finished"
-
 fi
+
+echo "Uploading model settings"
+curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
+
+echo "Finished"

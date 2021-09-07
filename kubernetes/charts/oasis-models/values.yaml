@@ -1,7 +1,11 @@
 # Chart default values. Override by passing --set or -f to helm.
 
-# Worker containers - model data + custom mounts
+# Volumes made accessible for workers for model data or any other worker specific data.
+# Mount them in a worker by adding them to workers.volumes.
 modelVolumes:
+#  - name: A unique volume name
+#    storageCapacity: The size limit of this volume
+#    hostPath: Path on the data on the kubernetes host node.
   # Piwind model data - hostPath must exist on the nodes fs
   - name: piwind-model-data-pv
     storageCapacity: 1Gi
@@ -23,6 +27,8 @@ workers:
     volumes: # Volume defined in modelVolumes
       - name: piwind-model-data-pv
         mountPath: /home/worker/model
+        type: model-data
+    autoScaling: {} # Not yet supported
 
 # Image used by model registration init container and tcp check init container
 images:

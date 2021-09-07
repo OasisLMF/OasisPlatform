@@ -110,9 +110,12 @@ else
   echo "Create analysis"
   ANALYSIS_ID=$(curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/analyses/" -H "Content-Type: application/json" -d "{\"name\": \"A1 - ${PIWIND_VERSION}\", \"portfolio\": $PORTFOLIO_ID, \"model\": $PIWIND_ID}" | jq .id)
   echo "Created with id $ANALYSIS_ID"
+fi
 
-  TF=$(tempfile)
-  cat << EOF > $TF
+echo "Updating analysis settings"
+
+TF=$(tempfile)
+cat << EOF > $TF
 {
   "full_correlation": false,
   "gul_output": true,
@@ -171,10 +174,8 @@ else
 }
 EOF
 
-  curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/analyses/${ANALYSIS_ID}/settings/" -H "Content-Type: application/json" -d @${TF}
+curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/analyses/${ANALYSIS_ID}/settings/" -H "Content-Type: application/json" -d @${TF}
 
-  rm $TF
-
-fi
+rm $TF
 
 echo "End"

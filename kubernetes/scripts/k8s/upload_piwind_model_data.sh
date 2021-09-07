@@ -74,6 +74,8 @@ done
 echo " done"
 echo -n "Uploading files..."
 
+kubectl exec host-data-volume-pod -- mkdir -p /mnt/host/model-data/piwind/
+
 for file in $PW_FILES; do
   file=${PWP}/$file
   kubectl cp "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/

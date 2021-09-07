@@ -168,6 +168,22 @@ Variables for a channel layer client
 {{- end }}
 
 {{/*
+Oasis server API envs
+*/}}
+{{- define "h.serverApiVars" }}
+- name: API_IP
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.oasisServer.name }}
+      key: host
+- name: API_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.oasisServer.name }}
+      key: port
+{{- end }}
+
+{{/*
 Init container to wait for a service to become available (tcp check only)
 */}}
 {{- define "h.initTcpAvailabilityCheck" -}}
