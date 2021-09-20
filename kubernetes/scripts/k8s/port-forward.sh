@@ -4,23 +4,29 @@ pids=""
 
 function cleanup()
 {
-    echo "trap $pids"
-    kill $pids
-    ps $pids
+    if [ -n "$pids" ]; then
+      echo "trap $pids"
+      kill $pids
+      ps $pids
+    fi
 }
 
 trap cleanup EXIT
 
-kubectl port-forward deployment/oasis-server 8000:8000 &
-pids="$pids $!"
-kubectl port-forward deployment/oasis-ui 8080:3838 &
-pids="$pids $!"
-kubectl port-forward deployment/monitoring-grafana 3000:3000 &
-pids="$pids $!"
-kubectl port-forward statefulset/prometheus-monitoring-kube-prometheus-prometheus 9090 &
-pids="$pids $!"
-kubectl port-forward statefulset/alertmanager-monitoring-kube-prometheus-alertmanager 9093:9093 &
-pids="$pids $!"
+allThreads=(
+"deployment/oasis-server 8000:8000"
+"deployment/oasis-ui 8080:3838"
+"deployment/monitoring-grafana 3000:3000"
+"statefulset/prometheus-monitoring-kube-prometheus-prometheus 9090"
+"statefulset/alertmanager-monitoring-kube-prometheus-alertmanager 9093:9093"
+"deployment/server-db 5432"
+)
+
+for host in "${allThreads[@]}"; do
+  echo $host
+  kubectl port-forward $host &
+  pids="$pids $!"
+done
 
 # wait for all pids
 for pid in ${pids[*]}; do

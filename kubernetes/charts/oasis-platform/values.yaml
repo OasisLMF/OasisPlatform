@@ -4,11 +4,18 @@
 images:
   oasis:
     platform:
-      image: coreoasis/api_server
-      version: ep-1.19.0-rc1
+#      image: coreoasis/api_server
+#      version: ep-1.19.0-rc1
+      # TODO
+      image: localhost:5000/coreoasis/oasis_api_server
+      version: 2.0.0-rc5
     ui:
       image: coreoasis/oasisui_app
       version: 1.9.0
+    worker_controller:
+      # TODO public repo?
+      image: localhost:5000/coreoasis/worker_controller
+      version: dev
   postgres:
     image: postgres
     version: 12.8-alpine3.14
@@ -32,13 +39,22 @@ images:
 # At the moment we need to keep the oasis API on a separate host since it can't coexist in the root with oasis
 # ui. In the future we might be able to put them on the same if either oasis ui or oasis api supports subpaths.
 ingress:
+
+  # Certificate for TLS
+  tls:
+    # Set to true to use your certificate from the tls secret
+    # TODO disable
+    providedCertificate: true
+    # Name of the secret containing your certificate
+    providedCertificateSecret: oasis-ingress-tls
+
   # Hostname for Oasis UI, Prometheus, Alert manager and Grafana
   uiHostname: ui.oasis.local
 
   # Hostname for the Oasis API
   apiHostname: api.oasis.local
 
-# Generate all password secretes - get them by using kubectl:
+# Generate all password secrets - get them by using kubectl:
 # kubectl get secrets/oasis-server --template={{.data.password}} | base64 -d
 generatePasswords: false
 
@@ -109,7 +125,7 @@ databases:
 # Keycloak host, port and console admin credentials
 keycloak:
   name: keycloak
-  port: 9990
+  port: 8080
   user: keycloak
   password: password
 

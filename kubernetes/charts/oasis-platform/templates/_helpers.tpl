@@ -176,6 +176,11 @@ Oasis server API envs
     configMapKeyRef:
       name: {{ .Values.oasisServer.name }}
       key: host
+- name: API_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.oasisServer.name }}
+      key: host
 - name: API_PORT
   valueFrom:
     configMapKeyRef:

@@ -28,7 +28,30 @@ workers:
       - name: piwind-model-data-pv
         mountPath: /home/worker/model
         type: model-data
-    autoScaling: {} # Not yet supported
+    # This section contains setting for the worker-controller to know how the scale this worker.
+    # The content in autoScaling is converted to kebabcase and put in the worker deployment as
+    # annotations to make it easily to support custom scaling behaviours.
+    #
+    # Currently two types of scaling is supported: fixed and chunks_per_worker
+    autoScaling:
+      # Option 1
+      # --------
+      # Scale to a fixed number of workers
+      # type: fixed
+      # size: "2"
+
+      # Option 2
+      # --------
+      # Scale number of workers based on the number of chunks available:
+      #   chunk_workers = math.ceil(chunks / chunks_per_worker)
+      #   workers = min(chunk_workers, max_workers)
+      # type: chunks_per_worker
+      # chunksPerWorker: "2" # For every second new chunk create a new worker
+      # maxWorkers: "5" # Limit, never create more workers than this
+
+      type: chunks_per_worker
+      chunksPerWorker: "2"
+      maxWorkers: "5"
 
 # Image used by model registration init container and tcp check init container
 images:

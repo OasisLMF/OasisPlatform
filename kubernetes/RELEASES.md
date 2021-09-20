@@ -27,3 +27,7 @@ This covers the following in the functional summary:
     * Health checks - basic checks in place, works very well but will be improved.
     * RabbitMQ / Mysql support - Current helm charts use redis / postgres.
 * Model deployment (1.3)
+
+## Sprint 2
+
+TODO
