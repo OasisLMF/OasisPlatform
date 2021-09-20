@@ -1,0 +1,333 @@
+{
+  'time': '2021-10-01T07:37:26.462696Z',
+  'type': 'queue_status.updated',
+  'status': 'SUCCESS',
+  'content': [
+    {
+      'queue': {
+        'name': 'OasisLMF-PiWind-1',
+        'pending_count': 7,
+        'worker_count': 1,
+        'queued_count': 1,
+        'running_count': 0,
+        'models': [
+          {
+            'id': 1,
+            'supplier_id': 'OasisLMF',
+            'model_id': 'PiWind',
+            'version_id': '1',
+            'created': '2021-09-24T13:31:38.326204Z',
+            'modified': '2021-09-30T08:14:39.717092Z',
+            'data_files': [],
+            'resource_file': '/v1/models/1/resource_file/',
+            'settings': '/v1/models/1/settings/',
+            'versions': '/v1/models/1/versions/',
+            'scaling_configuration': '/v1/models/1/scaling_configuration/',
+            'chunking_configuration': '/v1/models/1/chunking_configuration/'
+          }
+        ]
+      },
+      'analyses': [
+        {
+          'analysis': {
+            'created': '2021-09-30T07:57:18.886014Z',
+            'modified': '2021-10-01T07:37:25.384591Z',
+            'name': 'A2 - 1',
+            'id': 2,
+            'portfolio': 1,
+            'model': 1,
+            'status': 'RUN_QUEUED',
+            'task_started': '2021-10-01T07:37:25.347075Z',
+            'task_finished': None,
+            'complex_model_data_files': [],
+            'input_file': '/v1/analyses/2/input_file/',
+            'settings_file': '/v1/analyses/2/settings_file/',
+            'settings': '/v1/analyses/2/settings/',
+            'lookup_errors_file': '/v1/analyses/2/lookup_errors_file/',
+            'lookup_success_file': '/v1/analyses/2/lookup_success_file/',
+            'lookup_validation_file': '/v1/analyses/2/lookup_validation_file/',
+            'summary_levels_file': '/v1/analyses/2/summary_levels_file/',
+            'input_generation_traceback_file': None,
+            'output_file': '/v1/analyses/2/output_file/',
+            'run_traceback_file': None,
+            'run_log_file': '/v1/analyses/2/run_log_file/',
+            'storage_links': '/v1/analyses/2/storage_links/',
+            'lookup_chunks': 1,
+            'analysis_chunks': 1,
+            'sub_task_count': 5,
+            'sub_task_statuses': [
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'OasisLMF-PiWind-1',
+                'name': 'Prepare losses generation params',
+                'slug': 'prepare-losses-generation-params',
+                'pending_time': '2021-10-01T07:37:25.395492Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'OasisLMF-PiWind-1',
+                'name': 'Prepare losses generation directory',
+                'slug': 'prepare-losses-generation-directory',
+                'pending_time': '2021-10-01T07:37:25.395678Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'OasisLMF-PiWind-1',
+                'name': 'Generate losses chunk 0',
+                'slug': 'generate-losses-chunk-0',
+                'pending_time': '2021-10-01T07:37:25.395801Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'OasisLMF-PiWind-1',
+                'name': 'Generate losses output',
+                'slug': 'generate_losses_output',
+                'pending_time': '2021-10-01T07:37:25.395877Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'celery',
+                'name': 'Record losses files',
+                'slug': 'record-losses-files',
+                'pending_time': '2021-10-01T07:37:25.395917Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'model-worker-broadcast',
+                'name': 'Cleanup losses generation',
+                'slug': 'cleanup-losses-generation',
+                'pending_time': '2021-10-01T07:37:25.395949Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              }
+            ]
+          },
+          'updated_tasks': [
+            {
+              'task_id': '',
+              'status': 'PENDING',
+              'queue_name': 'OasisLMF-PiWind-1',
+              'name': 'Prepare losses generation params',
+              'slug': 'prepare-losses-generation-params',
+              'pending_time': '2021-10-01T07:37:25.395492Z',
+              'queue_time': None,
+              'start_time': None,
+              'end_time': None,
+              'output_log': None,
+              'error_log': None
+            },
+            {
+              'task_id': '',
+              'status': 'PENDING',
+              'queue_name': 'OasisLMF-PiWind-1',
+              'name': 'Prepare losses generation directory',
+              'slug': 'prepare-losses-generation-directory',
+              'pending_time': '2021-10-01T07:37:25.395678Z',
+              'queue_time': None,
+              'start_time': None,
+              'end_time': None,
+              'output_log': None,
+              'error_log': None
+            },
+            {
+              'task_id': '',
+              'status': 'PENDING',
+              'queue_name': 'OasisLMF-PiWind-1',
+              'name': 'Generate losses chunk 0',
+              'slug': 'generate-losses-chunk-0',
+              'pending_time': '2021-10-01T07:37:25.395801Z',
+              'queue_time': None,
+              'start_time': None,
+              'end_time': None,
+              'output_log': None,
+              'error_log': None
+            },
+            {
+              'task_id': '',
+              'status': 'PENDING',
+              'queue_name': 'OasisLMF-PiWind-1',
+              'name': 'Generate losses output',
+              'slug': 'generate_losses_output',
+              'pending_time': '2021-10-01T07:37:25.395877Z',
+              'queue_time': None,
+              'start_time': None,
+              'end_time': None,
+              'output_log': None,
+              'error_log': None
+            }
+          ]
+        }
+      ]
+    },
+    {
+      'queue': {
+        'name': 'celery',
+        'pending_count': 2,
+        'worker_count': 1,
+        'queued_count': 0,
+        'running_count': 0,
+        'models': []
+      },
+      'analyses': [
+        {
+          'analysis': {
+            'created': '2021-09-30T07:57:18.886014Z',
+            'modified': '2021-10-01T07:37:25.384591Z',
+            'name': 'A2 - 1',
+            'id': 2,
+            'portfolio': 1,
+            'model': 1,
+            'status': 'RUN_QUEUED',
+            'task_started': '2021-10-01T07:37:25.347075Z',
+            'task_finished': None,
+            'complex_model_data_files': [],
+            'input_file': '/v1/analyses/2/input_file/',
+            'settings_file': '/v1/analyses/2/settings_file/',
+            'settings': '/v1/analyses/2/settings/',
+            'lookup_errors_file': '/v1/analyses/2/lookup_errors_file/',
+            'lookup_success_file': '/v1/analyses/2/lookup_success_file/',
+            'lookup_validation_file': '/v1/analyses/2/lookup_validation_file/',
+            'summary_levels_file': '/v1/analyses/2/summary_levels_file/',
+            'input_generation_traceback_file': None,
+            'output_file': '/v1/analyses/2/output_file/',
+            'run_traceback_file': None,
+            'run_log_file': '/v1/analyses/2/run_log_file/',
+            'storage_links': '/v1/analyses/2/storage_links/',
+            'lookup_chunks': 1,
+            'analysis_chunks': 1,
+            'sub_task_count': 5,
+            'sub_task_statuses': [
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'OasisLMF-PiWind-1',
+                'name': 'Prepare losses generation params',
+                'slug': 'prepare-losses-generation-params',
+                'pending_time': '2021-10-01T07:37:25.395492Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'OasisLMF-PiWind-1',
+                'name': 'Prepare losses generation directory',
+                'slug': 'prepare-losses-generation-directory',
+                'pending_time': '2021-10-01T07:37:25.395678Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'OasisLMF-PiWind-1',
+                'name': 'Generate losses chunk 0',
+                'slug': 'generate-losses-chunk-0',
+                'pending_time': '2021-10-01T07:37:25.395801Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'OasisLMF-PiWind-1',
+                'name': 'Generate losses output',
+                'slug': 'generate_losses_output',
+                'pending_time': '2021-10-01T07:37:25.395877Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'celery',
+                'name': 'Record losses files',
+                'slug': 'record-losses-files',
+                'pending_time': '2021-10-01T07:37:25.395917Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              },
+              {
+                'task_id': '',
+                'status': 'PENDING',
+                'queue_name': 'model-worker-broadcast',
+                'name': 'Cleanup losses generation',
+                'slug': 'cleanup-losses-generation',
+                'pending_time': '2021-10-01T07:37:25.395949Z',
+                'queue_time': None,
+                'start_time': None,
+                'end_time': None,
+                'output_log': None,
+                'error_log': None
+              }
+            ]
+          },
+          'updated_tasks': [
+            {
+              'task_id': '',
+              'status': 'PENDING',
+              'queue_name': 'celery',
+              'name': 'Record losses files',
+              'slug': 'record-losses-files',
+              'pending_time': '2021-10-01T07:37:25.395917Z',
+              'queue_time': None,
+              'start_time': None,
+              'end_time': None,
+              'output_log': None,
+              'error_log': None
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

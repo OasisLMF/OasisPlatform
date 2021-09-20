@@ -105,7 +105,7 @@ The oasis-platform deploys an [ingress](https://kubernetes.io/docs/concepts/serv
 oasis UI, oasis API, Prometheus, Alert manager and Grafana. To enable it we need to bind the ingress to 2 fake hostnames
 and if you run this locally you can fake them and have them redirected to localhost.
 
-Default hostnames are ui.oasis.local and api.oasis.local. You can change them by customizing your deployments.
+Default hostnames are `ui.oasis.local` and `api.oasis.local`. You can change them by customizing your deployments.
 
 **Add hostnames on linux:**
 
@@ -136,6 +136,9 @@ Now you should be able to access the following pages:
 - Prometheus - [https://ui.oasis.local/prometheus/](https://ui.oasis.local/prometheus/)
 - Alert manager - [https://ui.oasis.local/alert-manager/](https://ui.oasis.local/alert-manager/)
 - Grafana - [https://ui.oasis.local/grafana/](https://ui.oasis.local/grafana/)
+
+You might also need to [add](https://www.pico.net/kb/how-do-you-get-chrome-to-accept-a-self-signed-certificate/) the
+generated self signed certificate to your browsers trusted certificates or [add a valid certificate](#set-custom-tls-certificate).
 
 ## Port forwarding
 
@@ -374,6 +377,31 @@ kubectl get pods
 ```
 
 Once ready you can access Oasis UI and API by reading [Accessing user interfaces](#accessing-user-interfaces).
+
+### Set custom TLS certificate
+
+The ingress controller will generate a self signed certificate on deployment which your browser will warn you about.
+This might be enough for a local or isolated environment but please change this for production.
+
+To use your own certificate:
+
+1. Create a TLS secret of your certificate:
+
+   ```
+   # Usage: kubectl create secret tls <name> --key <key file> --cert <cert/pem file>
+   kubectl create secret tls oasis-ingress-tls --key certificate.key --cert certificate.crt
+   ```
+
+2. Enable chart values to enable your certificate:
+
+    - Set `ingress.tls.providedCertificate` to `true`
+    - Set `ingress.tls.providedCertificateSecret` to your secret name.
+
+3. Upgrade your platform:
+
+   ```
+   helm upgrade <name> oasis-platform
+   ```
 
 ## Models
 
