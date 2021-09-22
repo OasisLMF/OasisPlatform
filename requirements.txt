@@ -22,6 +22,7 @@ asgiref==3.3.4
 attrs==21.2.0
     # via
     #   automat
+    #   fiona
     #   hypothesis
     #   jsonschema
     #   pytest
@@ -56,7 +57,10 @@ celery==5.1.0
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
 certifi==2021.5.30
-    # via requests
+    # via
+    #   fiona
+    #   pyproj
+    #   requests
 cffi==1.14.5
     # via cryptography
 chainmap==1.0.3
@@ -70,20 +74,26 @@ chardet==4.0.0
     #   binaryornot
     #   oasislmf
     #   requests
-click-didyoumean==0.0.3
-    # via celery
-click-plugins==1.1.1
-    # via celery
-click-repl==0.2.0
-    # via celery
 click==7.1.2
     # via
     #   celery
     #   click-didyoumean
     #   click-plugins
     #   click-repl
+    #   cligj
     #   cookiecutter
+    #   fiona
     #   pip-tools
+click-didyoumean==0.0.3
+    # via celery
+click-plugins==1.1.1
+    # via
+    #   celery
+    #   fiona
+click-repl==0.2.0
+    # via celery
+cligj==0.7.2
+    # via fiona
 configparser==5.0.2
     # via
     #   -r ./requirements-server.in
@@ -104,6 +114,8 @@ coverage[toml]==5.5
     # via
     #   -r requirements.in
     #   pytest-cov
+cramjam==2.4.0
+    # via fastparquet
 cryptography==3.4.7
     # via
     #   autobahn
@@ -119,8 +131,24 @@ decorator==5.0.9
     #   ipython
 distlib==0.3.2
     # via virtualenv
+django==3.2.5
+    # via
+    #   -r ./requirements-server.in
+    #   channels
+    #   django-debug-toolbar
+    #   django-filter
+    #   django-model-utils
+    #   django-storages
+    #   djangorestframework
+    #   djangorestframework-simplejwt
+    #   drf-yasg
+    #   model-mommy
 django-cleanup==5.2.0
     # via -r ./requirements-server.in
+django-debug-toolbar==3.2.1
+    # via
+    #   -r ./requirements-server.in
+    #   -r requirements.in
 django-filter==2.4.0
     # via -r ./requirements-server.in
 django-model-utils==4.1.1
@@ -129,38 +157,33 @@ django-storages==1.11.1
     # via -r ./requirements-server.in
 django-webtest==1.9.7
     # via -r requirements.in
-django==3.2.4
-    # via
-    #   -r ./requirements-server.in
-    #   channels
-    #   django-filter
-    #   django-model-utils
-    #   django-storages
-    #   djangorestframework
-    #   djangorestframework-simplejwt
-    #   drf-yasg
-    #   model-mommy
-djangorestframework-simplejwt==4.7.1
-    # via -r ./requirements-server.in
 djangorestframework==3.12.4
     # via
     #   -r ./requirements-server.in
     #   djangorestframework-simplejwt
     #   drf-yasg
+djangorestframework-simplejwt==4.7.1
+    # via -r ./requirements-server.in
 drf-yasg==1.20.0
     # via -r ./requirements-server.in
-django-debug-toolbar==3.2.1 
-    # ia -r requirements-server.in
 fasteners==0.16
     # via
     #   -r ./requirements-worker.in
     #   -r requirements.in
+fastparquet==0.7.1
+    # via oasislmf
 filelock==3.0.12
     # via
     #   tox
     #   virtualenv
+fiona==1.8.20
+    # via geopandas
 flake8==3.9.2
     # via -r requirements.in
+fsspec==2021.8.1
+    # via fastparquet
+geopandas==0.9.0
+    # via oasislmf
 greenlet==1.1.0
     # via sqlalchemy
 hyperlink==21.0.0
@@ -182,25 +205,27 @@ iniconfig==1.1.1
     # via pytest
 ipdb==0.13.8
     # via -r requirements.in
-ipython-genutils==0.2.0
-    # via traitlets
 ipython==7.24.0
     # via ipdb
+ipython-genutils==0.2.0
+    # via traitlets
 itypes==1.2.0
     # via coreapi
 jedi==0.18.0
     # via ipython
-jinja2-time==0.2.0
-    # via cookiecutter
 jinja2==3.0.1
     # via
     #   cookiecutter
     #   coreschema
     #   jinja2-time
+jinja2-time==0.2.0
+    # via cookiecutter
 jmespath==0.10.0
     # via
     #   boto3
     #   botocore
+joblib==1.0.1
+    # via scikit-learn
 jsonpickle==2.0.0
     # via -r ./requirements-server.in
 jsonschema==3.2.0
@@ -225,15 +250,21 @@ model-mommy==2.0.0
     # via -r requirements.in
 msgpack==1.0.2
     # via oasislmf
+munch==2.5.0
+    # via fiona
 numba==0.53.1
     # via oasislmf
 numexpr==2.7.3
     # via oasislmf
 numpy==1.20.3
     # via
+    #   fastparquet
     #   numba
     #   numexpr
     #   pandas
+    #   pyarrow
+    #   scikit-learn
+    #   scipy
 oasislmf[extra]==1.20.1
     # via -r ./requirements-worker.in
 packaging==20.9
@@ -242,7 +273,10 @@ packaging==20.9
     #   pytest
     #   tox
 pandas==1.2.4
-    # via oasislmf
+    # via
+    #   fastparquet
+    #   geopandas
+    #   oasislmf
 parso==0.8.2
     # via jedi
 pathlib2==2.3.5
@@ -267,22 +301,24 @@ prompt-toolkit==3.0.18
     # via
     #   click-repl
     #   ipython
-psycopg2-binary==2.8.6
-    # via -r ./requirements-worker.in
 psycopg2==2.8.6
     # via -r ./requirements-server.in
+psycopg2-binary==2.8.6
+    # via -r ./requirements-worker.in
 ptyprocess==0.7.0
     # via pexpect
 py==1.10.0
     # via
     #   pytest
     #   tox
-pyasn1-modules==0.2.8
-    # via service-identity
+pyarrow==5.0.0
+    # via oasislmf
 pyasn1==0.4.8
     # via
     #   pyasn1-modules
     #   service-identity
+pyasn1-modules==0.2.8
+    # via service-identity
 pycodestyle==2.7.0
     # via flake8
 pycparser==2.20
@@ -303,18 +339,20 @@ pyopenssl==20.0.1
     #   twisted
 pyparsing==2.4.7
     # via packaging
+pyproj==3.2.1
+    # via geopandas
 pyrsistent==0.17.3
     # via jsonschema
-pytest-cov==2.12.0
-    # via -r requirements.in
-pytest-django==4.3.0
-    # via -r requirements.in
 pytest==6.2.4
     # via
     #   -r ./requirements-worker.in
     #   -r requirements.in
     #   pytest-cov
     #   pytest-django
+pytest-cov==2.12.0
+    # via -r requirements.in
+pytest-django==4.3.0
+    # via -r requirements.in
 python-dateutil==2.8.1
     # via
     #   arrow
@@ -328,8 +366,6 @@ pytz==2021.1
     #   django
     #   oasislmf
     #   pandas
-requests-toolbelt==0.9.1
-    # via oasislmf
 requests==2.25.1
     # via
     #   -r requirements.in
@@ -337,18 +373,26 @@ requests==2.25.1
     #   coreapi
     #   oasislmf
     #   requests-toolbelt
+requests-toolbelt==0.9.1
+    # via oasislmf
 rtree==0.9.7
     # via oasislmf
-ruamel.yaml.clib==0.2.2
-    # via ruamel.yaml
 ruamel.yaml==0.17.7
     # via drf-yasg
+ruamel.yaml.clib==0.2.2
+    # via ruamel.yaml
 s3transfer==0.4.2
     # via boto3
+scikit-learn==0.24.2
+    # via sklearn
+scipy==1.7.1
+    # via scikit-learn
 service-identity==21.1.0
     # via twisted
 shapely==1.7.1
-    # via oasislmf
+    # via
+    #   geopandas
+    #   oasislmf
 shutilwhich==1.1.0
     # via oasislmf
 six==1.16.0
@@ -358,14 +402,19 @@ six==1.16.0
     #   click-repl
     #   cookiecutter
     #   fasteners
+    #   fiona
     #   jsonschema
+    #   munch
     #   pathlib2
     #   pyopenssl
     #   python-dateutil
     #   service-identity
+    #   thrift
     #   tox
     #   virtualenv
     #   webtest
+sklearn==0.0
+    # via oasislmf
 sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.2.1
@@ -375,13 +424,19 @@ sqlalchemy==1.4.17
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
 sqlparse==0.4.1
-    # via django
+    # via
+    #   django
+    #   django-debug-toolbar
 tabulate==0.8.9
     # via oasislmf
 tblib==1.7.0
     # via oasislmf
 text-unidecode==1.3
     # via python-slugify
+threadpoolctl==2.2.0
+    # via scikit-learn
+thrift==0.13.0
+    # via fastparquet
 toml==0.10.2
     # via
     #   coverage
