@@ -218,20 +218,17 @@ class Controller:
         return str(analysis.model)
 
     @classmethod
-    def get_inputs_generation_tasks(cls, analysis: 'Analysis', initiator: User, run_data_uuid: str,) -> Tuple[List['AnalysisTaskStatus'], List[Signature]]:
+    def get_inputs_generation_tasks(cls, analysis: 'Analysis', initiator: User, run_data_uuid: str, num_chunks: int,) -> Tuple[List['AnalysisTaskStatus'], List[Signature]]:
         """
         Gets the tasks to chain together for input generation
 
         :param analysis: The analysis to tun the tasks for
         :param initiator: The user starting the tasks
         :param run_data_uuid: The suffix for the runs current data directory
+        :param num_chunks: The number of lookup chunks to split task into
 
         :return: Tuple containing the statuses to create and signatures to chain
         """
-        #location_data = get_dataframe(src_buf=analysis.portfolio.location_file.read().decode())
-        loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
-        num_chunks = ceil(loc_lines / cls.INPUT_GENERATION_CHUNK_SIZE)
-
         queue = cls.get_generate_inputs_queue(analysis, initiator)
         base_kwargs = {
             'loc_file': file_storage_link(analysis.portfolio.location_file),
@@ -327,8 +324,14 @@ class Controller:
         """
         from src.server.oasisapi.analyses.models import Analysis
 
+        # fetch the number of lookup chunks and store in analysis
+        loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
+        num_chunks = ceil(loc_lines / cls.INPUT_GENERATION_CHUNK_SIZE)
+        analysis.lookup_chunks = num_chunks
+        analysis.save()
+
         run_data_uuid = uuid.uuid4().hex
-        statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid)
+        statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
 
         task = analysis.generate_inputs_task_id = cls._start(
             analysis,
@@ -340,6 +343,7 @@ class Controller:
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
         ).id or ''  # TODO: is shouldn't return None but is for some reason so for no guard against it
         analysis.save()
+
         return task
 
     @classmethod
@@ -355,19 +359,17 @@ class Controller:
         return str(analysis.model)
 
     @classmethod
-    def get_loss_generation_tasks(cls, analysis: 'Analysis', initiator: User, run_data_uuid: str):
+    def get_loss_generation_tasks(cls, analysis: 'Analysis', initiator: User, run_data_uuid: str, num_chunks: int):
         """
         Gets the tasks to chain together for loss generation
 
         :param analysis: The analysis to tun the tasks for
         :param initiator: The user starting the tasks
         :param run_data_uuid: The suffix for the runs current data directory
+        :param num_chunks: The number of loss chunks to split task into
 
         :return: Tuple containing the statuses to create and signatures to chain
         """
-        default_num_chunks = settings.getint('worker', 'default_num_analysis_chunks', fallback=4)
-        num_chunks = analysis.model.num_analysis_chunks or default_num_chunks
-
         queue = cls.get_generate_losses_queue(analysis, initiator)
         base_kwargs = {
             'input_location': file_storage_link(analysis.input_file),
@@ -453,8 +455,14 @@ class Controller:
         """
         from src.server.oasisapi.analyses.models import Analysis
 
+        # Fetch number of event chunks
+        default_num_chunks = settings.getint('worker', 'default_num_analysis_chunks', fallback=4)
+        num_chunks = analysis.model.num_analysis_chunks or default_num_chunks
+        analysis.analysis_chunks = num_chunks
+        analysis.save()
+
         run_data_uuid = uuid.uuid4().hex
-        statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid)
+        statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
 
         task = analysis.run_task_id = cls._start(
             analysis,
