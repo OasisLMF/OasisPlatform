@@ -16,7 +16,12 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
 from .models import AnalysisModel
-from .serializers import AnalysisModelSerializer, ModelVersionsSerializer
+from .serializers import (
+    AnalysisModelSerializer,
+    ModelVersionsSerializer,
+    ModelScalingConfigSerializer,
+    ModelChunkingConfigSerializer,
+)
 
 from ..data_files.serializers import DataFileSerializer
 from ..filters import TimeStampedFilter
@@ -120,7 +125,10 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
             return DataFileSerializer
         elif self.action in ['versions']:
             return ModelVersionsSerializer
-
+        elif self.action in ['scaling_configuration']:
+            return ModelScalingConfigSerializer
+        elif self.action in ['chunking_configuration']:
+           return ModelChunkingConfigSerializer
         else:
             return super(AnalysisModelViewSet, self).get_serializer_class()
 
@@ -135,7 +143,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         request_data = self.request.data
         unique_keys = ["supplier_id", "model_id", "version_id"]
 
-        # check if the model is Soft-deleted 
+        # check if the model is Soft-deleted
         if all(k in request_data for k in unique_keys):
             keys = {k: request_data[k] for k in unique_keys}
             model = AnalysisModel.all_objects.filter(**keys)
@@ -144,7 +152,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
                 if model.deleted:
                     # If yes, then 'restore' and update
                     model.activate(self.request)
-                    return Response(AnalysisModelSerializer(instance=model, 
+                    return Response(AnalysisModelSerializer(instance=model,
                                     context=self.get_serializer_context()).data)
 
         return super(AnalysisModelViewSet, self).create(self.request)
@@ -153,6 +161,28 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     def versions(self, request, pk=None, version=None):
         obj = self.get_object()
         return Response(ModelVersionsSerializer(instance=obj, context=self.get_serializer_context()).data)
+
+    @action(methods=['get', 'post'], detail=True)
+    def scaling_configuration(self, request, pk=None, version=None):
+        method = request.method.lower()
+        if method == 'get':
+            serializer = self.get_serializer(self.get_object().scaling_options)
+        else:
+            serializer = self.get_serializer(self.get_object().scaling_options, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response(serializer.data)
+
+    @action(methods=['get', 'post'], detail=True)
+    def chunking_configuration(self, request, pk=None, version=None):
+        method = request.method.lower()
+        if method == 'get':
+            serializer = self.get_serializer(self.get_object().chunking_options)
+        else:
+            serializer = self.get_serializer(self.get_object().chunking_options, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response(serializer.data)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
