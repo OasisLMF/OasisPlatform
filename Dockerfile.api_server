@@ -1,5 +1,5 @@
 # ---- STAGE 1 -----
-FROM python:3.8-alpine3.13 AS build-packages
+FROM python:3.9.5-alpine3.13 AS build-packages
 
 RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers libressl-dev libffi-dev postgresql-dev libpq
 
@@ -9,7 +9,7 @@ RUN pip install --user --no-warn-script-location -r ./requirements-server.txt &&
 
 
 # ---- STAGE 2 ----
-FROM python:3.8-alpine3.13
+FROM python:3.9.5-alpine3.13
 RUN apk update \
  && apk add --no-cache mariadb-dev libpq bash curl \
  && apk upgrade --available

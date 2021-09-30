@@ -129,7 +129,7 @@ django-storages==1.11.1
     # via -r ./requirements-server.in
 django-webtest==1.9.7
     # via -r requirements.in
-django==3.2.3
+django==3.2.4
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -234,7 +234,7 @@ numpy==1.20.3
     #   numba
     #   numexpr
     #   pandas
-oasislmf[extra]==1.18.0
+oasislmf[extra]==1.20.1
     # via -r ./requirements-worker.in
 packaging==20.9
     # via

@@ -90,6 +90,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         'application/x-bzip2',
         'application/zip',
         'application/x-bzip2',
+        'application/octet-stream',
     ]
 
     def get_serializer_class(self):
