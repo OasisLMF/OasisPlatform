@@ -56,6 +56,7 @@ class AnalysisListSerializer(serializers.Serializer):
     ## check this for multiple SQL calls with the 'list' call
     analysis_chunks = serializers.IntegerField(read_only=True)
     lookup_chunks = serializers.IntegerField(read_only=True)
+    sub_task_count = serializers.IntegerField(read_only=True)
     sub_task_statuses = AnalysisTaskStatusSerializer(many=True, read_only=True)
 
     # file fields
@@ -177,6 +178,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'storage_links',
             'lookup_chunks',
             'analysis_chunks',
+            'sub_task_count',
             'sub_task_statuses',
         )
 
