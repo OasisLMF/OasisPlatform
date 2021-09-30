@@ -1,0 +1,59 @@
+FROM centos:7
+
+RUN yum update -y
+RUN yum install -y libspatialindex-dev git curl gcc-c++ libtool autoconf automake 
+RUN yum install -y openssl-devel bzip2-devel libffi-devel zlib-devel wget xz-devel
+RUN yum groupinstall -y 'Development Tools'
+
+RUN wget https://www.python.org/ftp/python/3.8.10/Python-3.8.10.tgz 
+RUN tar xzf Python-3.8.10.tgz
+
+WORKDIR /Python-3.8.10
+RUN ./configure --enable-optimizations
+RUN make install 
+
+RUN yum install -y python3-pip procps
+
+WORKDIR /tmp
+COPY ./requirements-worker.txt ./requirements-worker.txt
+RUN pip3 install --user -r ./requirements-worker.txt
+
+### Copy built python packages 
+#COPY --from=build-packages /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# Enviroment setup
+ENV OASIS_MEDIA_ROOT=/shared-fs
+ENV OASIS_ENV_OVERRIDE=true
+
+# Setup worker dir and user
+RUN adduser --shell /bin/bash  worker
+
+WORKDIR /home/worker
+
+# Copy in worker files 
+COPY ./src/startup_worker.sh ./startup.sh
+COPY ./src/startup_tester.sh ./runtest
+COPY ./src/startup_tester_S3.sh ./runtest_S3
+COPY ./conf.ini ./
+COPY ./src/__init__.py ./src/
+COPY ./src/common ./src/common/
+COPY ./src/conf ./src/conf/
+COPY ./src/model_execution_worker/ ./src/model_execution_worker/
+COPY ./src/utils/ ./src/utils/
+COPY ./src/utils/worker_bashrc /root/.bashrc
+COPY ./tests/integration /home/worker/tests/integration
+COPY ./VERSION ./
+
+# Add required directories 
+RUN mkdir -p /var/oasis && \
+    mkdir -p /home/worker/model && \
+    mkdir -p /var/log/oasis && \
+    touch /var/log/oasis/worker.log && \
+    chmod 777 /var/log/oasis/worker.log
+RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
+    chown -R worker /home/worker && \
+    chown -R worker /var/oasis && \
+    chown -R worker /var/log
+
+ENTRYPOINT ./startup.sh
