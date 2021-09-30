@@ -75,7 +75,8 @@ class ModelChunkingConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModelChunkingOptions
         fields = (
-            'strategy',
+            'lookup_strategy',
+            'loss_strategy',
             'dynamic_locations_per_lookup',
             'dynamic_events_per_analysis',
             'fixed_analysis_chunks',
@@ -113,7 +114,7 @@ class ModelScalingConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModelScalingOptions
         fields = (
-            'strategy',
+            'scaling_strategy',
             'worker_count_fixed',
             'worker_count_max',
             'chunks_per_worker'

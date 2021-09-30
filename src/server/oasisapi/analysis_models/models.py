@@ -45,7 +45,7 @@ class ModelScalingOptions(models.Model):
         ('FIXED_WORKERS', 'Fixed number of workers'),
         ('QUEUE_LOAD', 'Scale based on model queue load'),
     )
-    strategy = models.CharField(max_length=max(len(c) for c in scaling_types._db_values), choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
+    scaling_strategy = models.CharField(max_length=max(len(c) for c in scaling_types._db_values), choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
     worker_count_fixed = models.PositiveSmallIntegerField(default=1, null=False)
     worker_count_max = models.PositiveSmallIntegerField(default=10, null=False)
     chunks_per_worker = models.PositiveIntegerField(default=10, null=False)
@@ -56,7 +56,8 @@ class ModelChunkingOptions(models.Model):
         ('FIXED_CHUNKS', 'Fixed run partion sizes'),
         ('DYNAMIC_CHUNKS', 'Distribute runs based on input size'),
     )
-    strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values), choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
+    lookup_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values), choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
+    loss_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values), choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
     dynamic_locations_per_lookup = models.PositiveIntegerField(default=10000, null=False)
     dynamic_events_per_analysis = models.PositiveIntegerField(default=1, null=False)
     fixed_analysis_chunks = models.PositiveSmallIntegerField(default=1, null=True)

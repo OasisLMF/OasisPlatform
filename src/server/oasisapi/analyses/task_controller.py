@@ -25,7 +25,6 @@ class TaskParams:
 
 
 class Controller:
-    INPUT_GENERATION_CHUNK_SIZE = settings.getint('worker', 'INPUT_GENERATION_CHUNK_SIZE', fallback=1)
 
     @classmethod
     def get_subtask_signature(cls, task_name, analysis, initiator, run_data_uuid, slug, queue, params: TaskParams) -> Signature:
@@ -325,13 +324,20 @@ class Controller:
         from src.server.oasisapi.analyses.models import Analysis
 
         # fetch the number of lookup chunks and store in analysis
-        loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
-        num_chunks = ceil(loc_lines / cls.INPUT_GENERATION_CHUNK_SIZE)
-        analysis.lookup_chunks = num_chunks
-        analysis.save()
+        if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
+            num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
+        elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
+            loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
+            loc_lines_per_chunk =  analysis.model.chunking_options.dynamic_locations_per_lookup
+            num_chunks = ceil(loc_lines / loc_lines_per_chunk)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
+
+        # Add chunk info to analysis
+        analysis.lookup_chunks = num_chunks
+        analysis.sub_task_count = len(tasks)
+        analysis.save()
 
         task = analysis.generate_inputs_task_id = cls._start(
             analysis,
@@ -455,14 +461,19 @@ class Controller:
         """
         from src.server.oasisapi.analyses.models import Analysis
 
-        # Fetch number of event chunks
-        default_num_chunks = settings.getint('worker', 'default_num_analysis_chunks', fallback=4)
-        num_chunks = analysis.model.num_analysis_chunks or default_num_chunks
-        analysis.analysis_chunks = num_chunks
-        analysis.save()
+        # fetch number of event chunks
+        if analysis.model.chunking_options.loss_strategy == 'FIXED_CHUNKS':
+            num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
+        elif analysis.model.chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
+            raise notimplementederror("FEATURE NOT AVALIBLE -- need event set size from worker")
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
+
+        # add chunk info to analysis
+        analysis.analysis_chunks = num_chunks
+        analysis.sub_task_count = len(tasks)
+        analysis.save()
 
         task = analysis.run_task_id = cls._start(
             analysis,
