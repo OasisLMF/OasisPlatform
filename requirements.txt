@@ -374,7 +374,7 @@ sqlalchemy==1.4.17
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-sqlparse==0.4.1
+sqlparse==0.4.2
     # via django
 tabulate==0.8.9
     # via oasislmf
