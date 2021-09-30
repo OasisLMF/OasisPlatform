@@ -44,6 +44,7 @@ class ModelScalingOptions(models.Model):
     scaling_types = Choices(
         ('FIXED_WORKERS', 'Fixed number of workers'),
         ('QUEUE_LOAD', 'Scale based on model queue load'),
+        ('DYNAMIC_TASKS', 'Scale based on tasks per worker'),
     )
     scaling_strategy = models.CharField(max_length=max(len(c) for c in scaling_types._db_values), choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
     worker_count_fixed = models.PositiveSmallIntegerField(default=1, null=False)
