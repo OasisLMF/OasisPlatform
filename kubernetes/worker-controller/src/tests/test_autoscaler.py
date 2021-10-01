@@ -12,6 +12,10 @@ logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=loggi
 
 
 class TestAutoscaler(unittest.TestCase):
+    """
+    Test the flow of the autoscaler and that it correctly set the correct number of replicas depending on
+    number of runs and their configuration.
+    """
 
     def test_parse_queue_status(self):
 

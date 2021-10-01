@@ -1,8 +1,13 @@
-from typing import TypedDict, List, Dict
+"""
+Models used by the autoscaler.
+"""
+
+from typing import TypedDict, List
 
 
 class SocketQueueEntry(TypedDict):
     """
+    Websocket message - the /content/queue object.
     Type describing the used parts of the queue info
     """
     name: str
@@ -13,10 +18,16 @@ class SocketQueueEntry(TypedDict):
 
 
 class QueueStatusTask(TypedDict):
+    """
+    Websocket message - the /content/queue/analyses/analysis/sub_task_statuses object.
+    """
     queue_name: str
 
 
 class QueueStatusAnalysis(TypedDict):
+    """
+    Websocket message - the /content/queue/analyses/analysis/ object.
+    """
     id: int
     lookup_chunks: int
     analysis_chunks: int
@@ -25,12 +36,15 @@ class QueueStatusAnalysis(TypedDict):
 
 
 class QueueStatusAnalysesEntry(TypedDict):
+    """
+    Websocket message - the /content/queue/analyses object
+    """
     analysis: List[QueueStatusAnalysis]
 
 
 class QueueStatusContentEntry(TypedDict):
     """
-    Type describing the used parts of an entry in the web socket message
+    Websocket message - the /content/ object
     """
     queue: SocketQueueEntry
     analyses: List[QueueStatusAnalysesEntry]
@@ -38,18 +52,24 @@ class QueueStatusContentEntry(TypedDict):
 
 class QueueStatusSocketMessage(TypedDict):
     """
-    Type describing the used parts of the socket message
+    Websocket message - the root object
     """
     content: List[QueueStatusContentEntry]
 
-# TODO
 
 class RunningAnalysis(TypedDict):
+    """
+    Used to store analysis information from the websocket message.
+    """
     id: int
     tasks: int
     queue_names: List[str]
 
 
 class ModelState(TypedDict):
+    """
+    Used in the model states dict to store information about each models current states. For now number of tasks
+    and analyses for each model.
+    """
     tasks: int
     analyses: int

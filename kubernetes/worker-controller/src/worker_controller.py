@@ -8,8 +8,7 @@ It will use two input sources to monitor the state of the platform and act on ch
 1. The Oasis API (websocket) to get updates regarding runs and their statuses.
 2. The Kubernetes cluster to read and update worker deployments.
 
-Each worker deployment has its own auto scaling configuration, read the oasis-models chart documentation for
-more details.
+Each worker deployment has its own auto scaling configuration stored in the oasis API.
 
 This application will update the replicas attribute in the deployment configuration to control the number of
 pods. Each worker deployment has its own replicas attribute and kubernetes will monitor changes and start/stop
@@ -78,7 +77,7 @@ def main():
 
     # Create cluster client and load configuration
     cluster_client = ClusterClient()
-    event_loop.run_until_complete(cluster_client.load_config(args))
+    event_loop.run_until_complete(cluster_client.load_config(args.cluster))
 
     # Create the autoscaler to bind everything together
     autoscaler = AutoScaler(deployments, cluster_client, oasis_client)
@@ -89,7 +88,7 @@ def main():
     deployments.print_list()
 
     # Connect to the oasis api websocket
-    oasis_web_socket = OasisWebSocket(oasis_client, deployments, autoscaler)
+    oasis_web_socket = OasisWebSocket(oasis_client, autoscaler)
 
     # Watch changes in the clutser and oasis
     event_loop.create_task(deployments_watcher.watch())

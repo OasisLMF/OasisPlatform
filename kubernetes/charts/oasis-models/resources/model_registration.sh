@@ -71,11 +71,6 @@ fi
 echo "Uploading model settings"
 curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
 
-set +e
-set +x
-ls -l $CHUNKING_CONFIGURATION_FILE
-set -e
-
 if [ -f "$CHUNKING_CONFIGURATION_FILE" ]; then
   echo "Uploading chunking configuration"
   curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/models/${MODEL_ID}/chunking_configuration/" -H "Content-Type: application/json" -d @${CHUNKING_CONFIGURATION_FILE} | jq .

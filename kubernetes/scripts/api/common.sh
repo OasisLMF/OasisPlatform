@@ -1,6 +1,6 @@
 
 BASE_URL="https://api.oasis.local"
-CURL="curl -sk"
+CURL="curl.exe -sk"
 
 if [ -z "$OASIS_USERNAME" ] || [ -z "$OASIS_PASSWORD" ]; then
   echo "Set username and password as environment variables:"

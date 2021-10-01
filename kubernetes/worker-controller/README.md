@@ -1,14 +1,15 @@
 # Oasis worker controller
 
-This application controls the number of workers in a kubernetes cluster based on analyses running, worker deployments
-available and auto scaling configuration for each worker deployment.
+This application controls the number of workers in a kubernetes cluster based on analyses currently running, worker
+deployments available and autoscaling configuration for each worker deployment.
 
-The types of auto scaling configurations supported at the moment are:
+The types of autoscaling configurations supported at the moment are:
 
 - Fixed number of workers. When one or more analyses are running a fixed number of workers will be started. When no more
   analysis is running all workers are shutdown.
-- Based on chunk size. The number of workers to start is based on the chunk size of all running analysis per model. A
-  max worker limit is required to be set to not start too many.
+- Dynamic scaling based on number of analyses running.
+- Dynamic scaling based on tasks size. The number of workers to start is based on the tasks size of all running analysis
+  per model. A max worker limit is required to be set to not start too many.
 
 Read the oasis-models chart documentation for more details on how to configure each worker deployment.
 
@@ -57,8 +58,8 @@ docker tag coreoasis/worker_controller:dev localhost:5000/coreoasis/worker_contr
 docker push localhost:5000/coreoasis/worker_controller:dev
 ```
 
-Then configure your oasis-platform chart to use `localhost:5000/coreoasis/worker_controller` as image and `dev` as version
-for your worker controller.
+Then configure your oasis-platform chart to use `localhost:5000/coreoasis/worker_controller` as image and `dev` as
+version for your worker controller.
 
 ### Run image in local docker
 

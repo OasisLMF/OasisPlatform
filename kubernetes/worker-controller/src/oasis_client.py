@@ -1,9 +1,9 @@
 import asyncio
 import json
-import time
 from urllib.parse import urljoin
 
 import aiohttp
+import time
 from aiohttp import ClientResponse
 
 
@@ -99,19 +99,16 @@ class OasisClient:
 
     async def get_auto_scaling(self, model_id):
         """
-TODO
-        :param supplier_id: Supplier id
-        :param model_id: Model id
-        :param model_version_id: Model version id
-        :return: Oasis model id
+        Fetch a specific models auto scaling configuration.
+
+        :param model_id: the oasis model id.
+        :return: Autoscaling settings
         """
 
         await self.authenticate_if_needed()
 
         model = await self._get(f'/v1/models/{model_id}/scaling_configuration/')
 
-# TODO
-#         return model.get('autoscaling')
         return model
 
     async def _get(self, path, params=None):
