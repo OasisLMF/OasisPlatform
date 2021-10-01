@@ -174,6 +174,10 @@ class Analysis(TimeStampedModel):
     run_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='run_traceback_file_analyses')
     run_log_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='run_log_file_analyses')
 
+    analysis_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
+    lookup_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
+    sub_task_count = models.IntegerField(editable=False, default=None, blank=True, null=True)
+
     lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
     lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
     lookup_validation_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')

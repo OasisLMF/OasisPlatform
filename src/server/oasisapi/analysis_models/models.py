@@ -2,9 +2,10 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from django.db import models
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from model_utils.models import TimeStampedModel
+from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 
 from ..files.models import RelatedFile
@@ -39,6 +40,31 @@ class SoftDeleteQuerySet(models.query.QuerySet):
         return self.exclude(deleted=False)
 
 
+class ModelScalingOptions(models.Model):
+    scaling_types = Choices(
+        ('FIXED_WORKERS', 'Fixed number of workers'),
+        ('QUEUE_LOAD', 'Scale based on model queue load'),
+        ('DYNAMIC_TASKS', 'Scale based on tasks per worker'),
+    )
+    scaling_strategy = models.CharField(max_length=max(len(c) for c in scaling_types._db_values), choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
+    worker_count_fixed = models.PositiveSmallIntegerField(default=1, null=False)
+    worker_count_max = models.PositiveSmallIntegerField(default=10, null=False)
+    chunks_per_worker = models.PositiveIntegerField(default=10, null=False)
+
+
+class ModelChunkingOptions(models.Model):
+    chunking_types = Choices(
+        ('FIXED_CHUNKS', 'Fixed run partion sizes'),
+        ('DYNAMIC_CHUNKS', 'Distribute runs based on input size'),
+    )
+    lookup_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values), choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
+    loss_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values), choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
+    dynamic_locations_per_lookup = models.PositiveIntegerField(default=10000, null=False)
+    dynamic_events_per_analysis = models.PositiveIntegerField(default=1, null=False)
+    fixed_analysis_chunks = models.PositiveSmallIntegerField(default=1, null=True)
+    fixed_lookup_chunks = models.PositiveSmallIntegerField(default=1, null=True)
+
+
 class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
@@ -51,7 +77,9 @@ class AnalysisModel(TimeStampedModel):
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     oasislmf_config = models.TextField(default='')
     deleted = models.BooleanField(default=False, editable=False)
-    num_analysis_chunks = models.PositiveSmallIntegerField(default=None, null=True)
+
+    scaling_options = models.OneToOneField(ModelScalingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
+    chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
 
     # Logical Delete
     objects = SoftDeleteManager()
@@ -69,11 +97,11 @@ class AnalysisModel(TimeStampedModel):
 
     def hard_delete(self):
         super(AnalysisModel, self).delete()
-    
+
     def delete(self):
         self.deleted = True
         self.save()
-    
+
     def activate(self, request=None):
         self.deleted = False
 
@@ -97,7 +125,10 @@ class AnalysisModel(TimeStampedModel):
         return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
     def get_absolute_settings_url(self, request=None):
         return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
-
+    def get_absolute_scaling_configuration_url(self, request=None):
+        return reverse('analysis-model-scaling-configuration', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_chunking_configuration_url(self, request=None):
+        return reverse('analysis-model-chunking-configuration', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 class QueueModelAssociation(models.Model):
     model = models.ForeignKey(AnalysisModel, null=False, on_delete=models.CASCADE, related_name='queue_associations')
@@ -109,6 +140,20 @@ class QueueModelAssociation(models.Model):
     def __str__(self):
         return f'{self.model}: {self.queue_name}'
 
+
+
+@receiver(post_save, sender=AnalysisModel)
+def create_default_scaling_options(sender, instance, **kwargs):
+    """ Create a default scaling option if none is attached to a model on save
+    """
+    if instance.chunking_options is None:
+        instance.chunking_options = ModelChunkingOptions()
+        instance.chunking_options.save()
+        instance.save()
+    if instance.scaling_options is None:
+        instance.scaling_options = ModelScalingOptions()
+        instance.scaling_options.save()
+        instance.save()
 
 @receiver(post_delete, sender=AnalysisModel)
 def delete_connected_files(sender, instance, **kwargs):
