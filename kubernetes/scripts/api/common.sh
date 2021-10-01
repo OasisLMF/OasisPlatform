@@ -1,6 +1,6 @@
 
 BASE_URL="https://api.oasis.local"
-CURL="curl -sk"
+CURL="curl.exe -sk"
 
 if [ -f "/mnt/c/WINDOWS/system32/curl.exe" ]; then
   CURL="${CURL//curl/curl.exe}"
