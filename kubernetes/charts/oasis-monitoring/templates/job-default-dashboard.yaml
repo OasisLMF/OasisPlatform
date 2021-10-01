@@ -1,0 +1,37 @@
+{{/*
+This job sets a default Grafana dashboard by using the job-scripts/job-default-dashboard.sh script.
+*/}}
+{{- $name := "set-grafana-default-dashboard" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}-{{ randAlphaNum 6 | lower }}
+  labels:
+    oasislmf/type: set-grafana-default-dashboard-job
+spec:
+  ttlSecondsAfterFinished: 600 {{/* Kubernetes beta - will be supported in the future */}}
+  template:
+    spec:
+      containers:
+        - name: {{ $name }}
+          image: {{ .Values.jobImage.image }}:{{- .Values.jobImage.version }}
+          env:
+            - name: DASHBOARD_UID
+              value: {{ .Values.homeDashboardUID }}
+            - name: GRAFANA_HOST
+              value: {{ .Release.Name }}-grafana
+            - name: GRAFANA_USER
+              value: "admin"
+            - name: GRAFANA_PASSWORD
+              value: {{ (index $.Values "kube-prometheus-stack").grafana.adminPassword | quote }}
+          command: ["sh",  "-ec"]
+          args:
+            - |-
+              {{- range $.Files.Lines "job-scripts/job-default-dashboard.sh" }}
+                {{- if and (ne . "") (not (hasPrefix "#" .)) }}
+{{ trim . | indent 14 }}
+                {{- end }}
+              {{- end }}
+      restartPolicy: Never
+  backoffLimit: 4
+

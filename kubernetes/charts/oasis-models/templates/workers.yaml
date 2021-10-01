@@ -1,0 +1,57 @@
+{{- $root := . -}}
+{{- range .Values.workers }}
+{{- $name := printf "worker-%s-%s-%s" .supplierId .modelId .modelVersionId | lower }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "h.labels" $root | nindent 4 }}
+    {{- include "h.workerLabels" . | nindent 4 }}
+  annotations:
+    {{- include "h.workerDeploymentAnnotations" . | indent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        {{- include "h.labels" $root | nindent 8 }}
+        {{- include "h.workerLabels" . | nindent 8 }}
+      annotations:
+        checksum/oasis-server: {{ toJson $root.Values.oasisServer | sha256sum }}
+        checksum/model_registration: {{ $root.Files.Get "resources/model_registration.sh" | sha256sum }}
+    spec:
+      {{- include "h.affinity" $root | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.databases.broker.name $root.Values.databases.celery_db.name) | nindent 8}}
+      containers:
+        - image: {{ .image }}:{{ .version }}
+          name: worker
+          env:
+            {{- include "h.modelEnvs" . | indent 12 }}
+            {{- include "h.brokerVars" $root | indent 12 }}
+            {{- include "h.celeryDbVars" $root | indent 12}}
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+            {{- range .volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+      volumes:
+        - name: shared-fs-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ $root.Values.volumes.sharedFs.name }}
+        {{- range .volumes }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}
+---
+{{- end }}

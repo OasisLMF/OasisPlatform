@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "h.fullname" . }}-test-connection"
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: {{ .Values.images.init.image }}:{{ .Values.images.init.version }}
+      command: ['sh']
+      args: ['-c', 'wget -O /dev/null {{ .Values.oasisServer.name }}:{{ .Values.oasisServer.port }} && wget -O /dev/null {{ .Values.oasisUI.name }}:{{ .Values.oasisUI.port }}']
+  restartPolicy: Never

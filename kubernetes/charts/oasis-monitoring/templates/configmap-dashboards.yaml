@@ -1,0 +1,28 @@
+{{/*
+Creates config maps to add dashboards from dashboards-1.14/ to Grafana.
+*/}}
+{{- $files := .Files.Glob "dashboards-1.14/*.json" }}
+{{- if $files }}
+apiVersion: v1
+kind: ConfigMapList
+items:
+{{- range $path, $fileContents := $files }}
+{{- $dashboardName := regexReplaceAll "(^.*/)(.*)\\.json$" $path "${2}" }}
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) $dashboardName | trunc 63 | trimSuffix "-" }}
+      namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+      labels:
+        {{- if (index $.Values "kube-prometheus-stack").grafana.sidecar.dashboards.label }}
+        {{ (index $.Values "kube-prometheus-stack").grafana.sidecar.dashboards.label }}: "1"
+        {{- end }}
+        app.kubernetes.io/name: {{ $.Chart.Name }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+        {{ include "kube-prometheus-stack.labels" $ | indent 8 }}
+    data:
+      {{ $dashboardName }}.json: |-
+        {{- $.Files.Get $path | nindent 8 }}
+{{- end }}
+{{- end }}

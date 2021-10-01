@@ -1,0 +1,67 @@
+{{- $root := . -}}
+{{- $initConfigMap := "init-model-registration" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $initConfigMap }}
+data:
+  multiple_model_registration.sh: |-
+    {{- .Files.Get "resources/multiple_model_registration.sh" | indent 4 }}
+  model_registration.sh: |-
+    {{- .Files.Get "resources/model_registration.sh" | indent 4 }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: model-registration-{{ randAlphaNum 6 | lower }}
+  labels:
+    oasislmf/type: model-registration-job
+spec:
+  ttlSecondsAfterFinished: 600 {{/* Kubernetes beta - will be supported in the future */}}
+  template:
+    spec:
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.oasisServer.name) | nindent 8}}
+      containers:
+        - name: init-model-registration
+          image: {{ .Values.images.init.image }}:{{- .Values.images.init.version }}
+          env:
+            {{- include "h.oasisServerEnvs" $root | indent 12 }}
+            {{- range $index, $worker := .Values.workers }}
+            - name: OASIS_MODEL_SUPPLIER_ID_{{ $index }}
+              value: {{ .supplierId | quote}}
+            - name: OASIS_MODEL_ID_{{ $index }}
+              value: {{ .modelId | quote }}
+            - name: OASIS_MODEL_VERSION_ID_{{ $index }}
+              value: {{ .modelVersionId | quote }}
+            - name: OASIS_MODEL_DATA_DIRECTORY_{{ $index }}
+              value: /mnt/model_data_{{ $index }}
+            {{- end }}
+          command: ["sh", "-c", "/tmp/multiple_model_registration.sh"]
+          volumeMounts:
+            - name: init-model-registration
+              mountPath: /tmp/model_registration.sh
+              subPath: model_registration.sh
+            - name: init-model-registration
+              mountPath: /tmp/multiple_model_registration.sh
+              subPath: multiple_model_registration.sh
+            {{- range $index, $worker := .Values.workers }}
+              {{- range $worker.volumes }}
+                {{- if eq .type "model-data" }}
+            - name: {{ .name }}
+              mountPath: /mnt/model_data_{{ $index }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        - name: init-model-registration
+          configMap:
+            name: {{ $initConfigMap }}
+            defaultMode: 0777
+        {{- range $root.Values.modelVolumes }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}
+      restartPolicy: Never
+  backoffLimit: 4

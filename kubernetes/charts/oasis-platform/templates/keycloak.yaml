@@ -1,0 +1,126 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.keycloak.name }}
+  labels:
+  {{- include "h.labels" . | nindent 4 }}
+data:
+  host: {{ .Values.keycloak.name }}
+  port: {{ .Values.keycloak.port | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.keycloak.name }}
+  namespace: default
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+type: Opaque
+data:
+  user: {{ .Values.keycloak.user | b64enc }}
+  password: {{ include "h.password" (list .Values.keycloak.name "password" . .Values.keycloak.password (printf "A valid password for %s is required" .Values.keycloak.name)) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.keycloak.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.keycloak.port }}
+      targetPort: {{ .Values.keycloak.port }}
+      protocol: TCP
+      name: keycloak-http
+  selector:
+    {{- include "h.selectorLabels" . | nindent 4 }}
+    app: {{ .Values.keycloak.name }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.keycloak.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.keycloak.name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        {{- include "h.labels" . | nindent 8 }}
+        app: {{ .Values.keycloak.name }}
+      annotations:
+        checksum/{{ .Values.databases.keycloak_db.name }}: {{ toJson .Values.databases.keycloak_db | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.keycloak_db) | nindent 8}}
+      containers:
+        - name: {{ .Values.keycloak.name }}
+          image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
+          ports:
+            - containerPort: {{ .Values.keycloak.port }}
+          env:
+            - name: DB_VENDOR
+              value: postgres
+            - name: DB_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.databases.keycloak_db.name }}
+                  key: host
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.databases.keycloak_db.name }}
+                  key: port
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.databases.keycloak_db.name }}
+                  key: dbName
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.databases.keycloak_db.name }}
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.databases.keycloak_db.name }}
+                  key: password
+            - name: KEYCLOAK_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.keycloak.name }}
+                  key: user
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.keycloak.name }}
+                  key: password
+            - name: KEYCLOAK_LOGLEVEL
+              value: INFO
+            - name: PROXY_ADDRESS_FORWARDING
+              value: "true"
+{{/*            - name: JDBC_PARAMS*/}}
+{{/*              value: useSSL=false&allowPublicKeyRetrieval=true*/}}
+          readinessProbe:
+            httpGet:
+              path: /auth/realms/master
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /auth/
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 2

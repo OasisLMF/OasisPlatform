@@ -1,0 +1,6 @@
+{{- range .Values.modelVolumes -}}
+{{ include "h.createPersistentVolume" . }}
+---
+{{ include "h.createPersistentVolumeClaim" . }}
+---
+{{- end }}
