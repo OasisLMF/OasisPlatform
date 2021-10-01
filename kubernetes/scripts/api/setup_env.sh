@@ -24,32 +24,10 @@ else
 
   PIWIND_ID=$($CURL -H "$CAH" -X POST "${BASE_URL}/v1/models/" -H "Content-Type: application/json" -d "{\"supplier_id\": \"OasisLMF\",\"model_id\": \"PiWind\",\"version_id\": \"${PIWIND_VERSION}\""} | jq .id)
   echo "Created with id $PIWIND_ID"
-fi
 
-echo "Updating model chunking configuration..."
-cat << EOF | $CURL -H "$CAH" -X POST "${BASE_URL}/v1/models/${PIWIND_VERSION}/chunking_configuration/" -H "Content-Type: application/json" -d @- | jq .
-{
-  "strategy": "FIXED_CHUNKS",
-  "dynamic_locations_per_lookup": 10000,
-  "dynamic_events_per_analysis": 1,
-  "fixed_analysis_chunks": 1,
-  "fixed_lookup_chunks": 1
-}
-EOF
-
-echo "Updating model scaling configuration..."
-cat << EOF | $CURL -H "$CAH" -X POST "${BASE_URL}/v1/models/${PIWIND_VERSION}/scaling_configuration/" -H "Content-Type: application/json" -d @- | jq .
-{
-  "scaling_strategy": "FIXED_WORKERS",
-  "worker_count_fixed": 2,
-  "worker_count_max": 4,
-  "chunks_per_worker": 2
-}
-EOF
-
-echo "Updating model settings"
-TF=$(tempfile)
-cat << EOF > $TF
+  echo "Updating model settings"
+  TF=$(tempfile)
+  cat << EOF > $TF
 {
   "data_settings": {
     "group_fields": [
@@ -105,8 +83,31 @@ cat << EOF > $TF
 }
 EOF
 
-$CURL -H "$CAH" -X POST "${BASE_URL}/v1/models/${PIWIND_ID}/settings/" -H "Content-Type: application/json" -d @${TF}
-rm $TF
+  cat $TF | $CURL -H "$CAH" -X POST "${BASE_URL}/v1/models/${PIWIND_ID}/settings/" -H "Content-Type: application/json" -d @-
+  rm $TF
+fi
+
+echo "Updating model chunking configuration..."
+cat << EOF | $CURL -H "$CAH" -X POST "${BASE_URL}/v1/models/${PIWIND_VERSION}/chunking_configuration/" -H "Content-Type: application/json" -d @- | jq .
+{
+  "strategy": "FIXED_CHUNKS",
+  "dynamic_locations_per_lookup": 10000,
+  "dynamic_events_per_analysis": 1,
+  "fixed_analysis_chunks": 1,
+  "fixed_lookup_chunks": 1
+}
+EOF
+
+echo "Updating model scaling configuration..."
+cat << EOF | $CURL -H "$CAH" -X POST "${BASE_URL}/v1/models/${PIWIND_VERSION}/scaling_configuration/" -H "Content-Type: application/json" -d @- | jq .
+{
+  "scaling_strategy": "FIXED_WORKERS",
+  "worker_count_fixed": 1,
+  "worker_count_max": 4,
+  "chunks_per_worker": 2
+}
+EOF
+
 
 PORTFOLIO_ID=$($CURL -H "$CAH" -X GET "${BASE_URL}/v1/portfolios/" | jq '[.[] | select(.name == "P1")][0] | .id // empty')
 if [ -n "$PORTFOLIO_ID" ]; then
@@ -115,7 +116,7 @@ else
   echo "Create piwind portfolio"
 
   PORTFOLIO_ID=$($CURL -H "$CAH" -X POST "${BASE_URL}/v1/portfolios/" -H "Content-Type: application/json" -d '{"name": "P1"}' | jq .id)
-  echo "Created with id $PORTFOLIO_ID"
+  echo "Created portfolio with id $PORTFOLIO_ID"
 
   $CURL -H "$CAH" -X POST "${BASE_URL}/v1/portfolios/${PORTFOLIO_ID}/accounts_file/" -H "Content-Type: multipart/form-data" -F "file=@${ACC_FILE};type=application/vnd.ms-excel"
   $CURL -H "$CAH" -X POST "${BASE_URL}/v1/portfolios/${PORTFOLIO_ID}/location_file/" -H "Content-Type: multipart/form-data" -F "file=@${LOC_FILE};type=application/vnd.ms-excel"
@@ -143,7 +144,7 @@ for ANAME_ID in 1 2; do
   echo "Updating analysis settings"
 
   TF=$(tempfile)
-  cat << EOF > $TF
+cat << EOF > $TF
 {
   "full_correlation": false,
   "gul_output": true,
@@ -201,8 +202,7 @@ for ANAME_ID in 1 2; do
   "ri_output": false
 }
 EOF
-
-  $CURL -H "$CAH" -X POST "${BASE_URL}/v1/analyses/${ANALYSIS_ID}/settings/" -H "Content-Type: application/json" -d @${TF} | jq .
+  cat $TF | $CURL -H "$CAH" -X POST "${BASE_URL}/v1/analyses/${ANALYSIS_ID}/settings/" -H "Content-Type: application/json" -d @- | jq .
   rm $TF
 done
 

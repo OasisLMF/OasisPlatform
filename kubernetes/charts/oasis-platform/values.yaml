@@ -4,16 +4,12 @@
 images:
   oasis:
     platform:
-#      image: coreoasis/api_server
-#      version: ep-1.19.0-rc1
-      # TODO
       image: localhost:5000/coreoasis/oasis_api_server
-      version: 2.0.0-rc5
+      version: dev
     ui:
       image: coreoasis/oasisui_app
       version: 1.9.0
     worker_controller:
-      # TODO public repo?
       image: localhost:5000/coreoasis/worker_controller
       version: dev
   postgres:
@@ -43,10 +39,9 @@ ingress:
   # Certificate for TLS
   tls:
     # Set to true to use your certificate from the tls secret
-    # TODO disable
-    providedCertificate: true
+    providedCertificate: false
     # Name of the secret containing your certificate
-    providedCertificateSecret: oasis-ingress-tls
+#    providedCertificateSecret: oasis-ingress-tls
 
   # Hostname for Oasis UI, Prometheus, Alert manager and Grafana
   uiHostname: ui.oasis.local

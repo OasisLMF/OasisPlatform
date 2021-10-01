@@ -10,9 +10,16 @@ from worker_deployments import WorkerDeployment, WorkerDeployments
 
 
 class AutoScaler:
-
     """
-    TODO doc
+    This class handles the actual worker scaling. Summary of flow:
+
+    1. A websocket queue-status message is sent to process_queue_status_message.
+    2. The message is parsed and information such as number of analyses and tasks per model is saved.
+    3. For each model:
+    3.1. If the model is running:
+    3.1.1. Calculate de desired worker cound (desired replicas) and update the deployments replicas setting.
+    3.2. If the model is not running:
+    3.1.1. Add a delayed(20s) shutdown of all workers. It is aborted if any new analysis/tasks get submitted.
     """
 
     def __init__(self, deployments: WorkerDeployments, cluster: ClusterClient, oasis_client: OasisClient):
@@ -20,7 +27,9 @@ class AutoScaler:
         self.cluster = cluster
         self.oasis_client = oasis_client
 
+        # Cleanup timer used to remove all workers for a model with a delay.
         self.cleanup_timer = None
+        # Worker deployment names to be scaled to 0 in next cleanup cycle.
         self.cleanup_deployments = set()
 
     async def process_queue_status_message(self, msg):
@@ -32,16 +41,22 @@ class AutoScaler:
 
         running_analyses: [RunningAnalysis] = await self.parse_running_analyses(msg)
 
-        logging.info("Analyses running: %s", running_analyses)
+        logging.info('Analyses running: %s', running_analyses)
 
-        model_states = self.sum_info_per_model(running_analyses)
+        model_states = self._aggregate_model_states(running_analyses)
 
-        logging.debug("Model statuses: %s", model_states)
+        logging.debug('Model statuses: %s', model_states)
 
         await self._scale_models(model_states)
 
-    # TODO
-    def sum_info_per_model(self, analyses: []) -> dict:
+    def _aggregate_model_states(self, analyses: []) -> dict:
+        """
+        Aggregate the list of running analyses and return a dict with the model and its state.
+
+        :param analyses: List of running analyses
+        :return: Model states
+        """
+
         model_states = {}
 
         # Add all models from oasis API
@@ -73,7 +88,7 @@ class AutoScaler:
 
         :param wd: The WorkerDeployment for this model.
         :param analysis_in_progress: Is an analysis currently running for this model?
-        :param model_state: Number of chunks available to be processed by the worker pool for this model.
+        :param model_state: Number of taks available to be processed by the worker pool for this model.
         :return:
         """
 
@@ -89,9 +104,8 @@ class AutoScaler:
                 logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
 
         if desired_replicas > 0 and wd.name in self.cleanup_deployments:
-            print('desired replicas > 0. wd.name: ' + wd.name + ', cleanups: ' + str(self.cleanup_deployments))
+
             if wd.name in self.cleanup_deployments:
-                print('Removed ' + wd.name + ' from cleanup')
                 self.cleanup_deployments.remove(wd.name)
 
         if wd.replicas != desired_replicas:
@@ -100,31 +114,38 @@ class AutoScaler:
                 await self.cluster.set_replicas(wd.name, desired_replicas)
             else:
                 if self.cleanup_timer:
-                    print('reset timer')
                     self.cleanup_timer.cancel()
                     self.cleanup_timer = None
 
                 self.cleanup_deployments.add(wd.name)
 
                 loop = asyncio.get_event_loop()
-                self.cleanup_timer = loop.call_later(20, self.cleanup) # TODO 20 and doc
+                self.cleanup_timer = loop.call_later(20, self._cleanup)
 
-                print('cleanuped scheudled: ' + str(self.cleanup_deployments))
+    def _cleanup(self):
+        """
+        Timer function to shutdown workers with a delay from the last finished analysis. Shutdown is made by setting
+        the worker deployments replicas attribute to 0.
+        """
 
-    def cleanup(self):
+        if len(self.cleanup_deployments) > 0:
 
-        logging.info('start cleanup: %s', str(self.cleanup_deployments))
+            logging.info('Start cleanup of: %s', str(self.cleanup_deployments))
 
-        loop = asyncio.get_event_loop()
+            loop = asyncio.get_event_loop()
 
-        for name in self.cleanup_deployments:
-            loop.create_task(self.cluster.set_replicas(name, 0))
+            for name in self.cleanup_deployments:
+                loop.create_task(self.cluster.set_replicas(name, 0))
 
-        self.cleanup_deployments.clear()
-
-        logging.info('cleanup: %s', str(self.cleanup_deployments))
+            self.cleanup_deployments.clear()
 
     async def parse_running_analyses(self, msg) -> [RunningAnalysis]:
+        """
+        Parse the web socket message and return a list of running analyses.
+
+        :param msg: Web socket message
+        :return: A list of running analyses and their tasks.
+        """
         content: List[QueueStatusContentEntry] = msg['content']
 
         running_analyses: [RunningAnalysis] = {}
@@ -151,6 +172,12 @@ class AutoScaler:
         return running_analyses
 
     async def _scale_models(self, model_states: dict):
+        """
+        Iterate model_states and scale each models worker deployment based on the state and autoscaling configuration.
+        The server API is queried if needed to fetch oasis model id and auto scaling settings.
+
+        :param model_states: A dict of model names and their states.
+        """
 
         for model, state in model_states.items():
 
@@ -162,19 +189,19 @@ class AutoScaler:
                 if not wd.auto_scaling or wd.replicas == 0:
                     if not wd.oasis_model_id:
 
-                        logging.info("Get oasis model id from API for model %s", wd.id_string())
+                        logging.info('Get oasis model id from API for model %s', wd.id_string())
 
                         wd.oasis_model_id = await self.oasis_client.get_oasis_model_id(wd.supplier_id, wd.model_id, wd.model_version_id)
                         if not wd.oasis_model_id:
-                            logging.error("No model id found for model %s", wd.id_string())
+                            logging.error('No model id found for model %s', wd.id_string())
 
                     if wd.oasis_model_id:
 
-                        logging.info("Loading auto scaling settings from API for model %s", wd.id_string())
+                        logging.info('Loading auto scaling settings from API for model %s', wd.id_string())
                         wd.auto_scaling = await self.oasis_client.get_auto_scaling(wd.oasis_model_id)
 
                 if wd.auto_scaling:
                     analysis_in_progress = state.get('tasks', 0) > 0
                     await self._scale_deployment(wd, analysis_in_progress, state)
                 else:
-                    logging.warning("No auto scaling setting found for model %s", wd.id_string())
+                    logging.warning('No auto scaling setting found for model %s', wd.id_string())

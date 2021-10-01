@@ -4,10 +4,11 @@ This file contains classes to cache the models and worker deployments available 
 
 import logging
 
-# TODO rename?
+
 class WorkerDeployment:
     """
-    Represents a worker deployment in the kubernetes cluster.
+    Represents a worker deployment in the kubernetes cluster. Each update is replicated to this object. The auto_scaling
+    is actually not a part of the worker deployment in the cluster, it comes from the API, but kept here anyway.
     """
     def __init__(self, name: str, supplier_id: str, model_id: str, model_version_id: str):
         self.name = name
@@ -59,11 +60,11 @@ class WorkerDeployments:
             new_deployment = True
             wd = WorkerDeployment(name, supplier_id, model_id, model_version_id)
             self.worker_deployments.append(wd)
-            logging.info("Deployment %s: New", model_id_string)
+            logging.info('Deployment %s: New', model_id_string)
 
         if not new_deployment:
             if wd.replicas != replicas:
-                logging.info("Deployment %s: updated replicas: %s", model_id_string, replicas)
+                logging.info('Deployment %s: updated replicas: %s', model_id_string, replicas)
 
         wd.replicas = replicas
 
@@ -100,7 +101,7 @@ class WorkerDeployments:
         :param name: Worker deployment name.
         """
 
-        logging.info("Deployment %s deleted", name)
+        logging.info('Deployment %s deleted', name)
 
         self.worker_deployments = list(filter(lambda wd: wd.name != name, self.worker_deployments))
 
@@ -109,6 +110,6 @@ class WorkerDeployments:
         Print a list of all worker deployments in this object.
         """
 
-        logging.info("Current list of worker deployments:")
+        logging.info('Current list of worker deployments:')
         for ws in self.worker_deployments:
-            logging.info("- " + ws.name + " (replicas: %s)", ws.replicas)
+            logging.info('- ' + ws.name + ' (replicas: %s)', ws.replicas)

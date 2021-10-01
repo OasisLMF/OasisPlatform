@@ -2,8 +2,11 @@ import unittest
 import autoscaler_rules
 
 
-# TODO
 class TestScalingRules(unittest.TestCase):
+    """
+    Tests for all autoscaler rules. Check different outcomes (replicas) based on autoscaler configuration and
+    the states of the models (tasks, analyses running)
+    """
 
     def test_incorrect(self):
 
@@ -37,7 +40,7 @@ class TestScalingRules(unittest.TestCase):
             'worker_count_max': 5
         }
         state = {
-            "analyses": 3
+            'analyses': 3
         }
         desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
 
@@ -50,7 +53,7 @@ class TestScalingRules(unittest.TestCase):
             'worker_count_max': 5
         }
         state = {
-            "analyses": 30
+            'analyses': 30
         }
         desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
 
@@ -73,7 +76,7 @@ class TestScalingRules(unittest.TestCase):
 
         }
         state = {
-            "tasks": 8
+            'tasks': 8
         }
         desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
 
@@ -88,7 +91,7 @@ class TestScalingRules(unittest.TestCase):
 
         }
         state = {
-            "tasks": 80
+            'tasks': 80
         }
         desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
 
@@ -103,7 +106,7 @@ class TestScalingRules(unittest.TestCase):
 
         }
         state = {
-            "tasks": 80
+            'tasks': 80
         }
         desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
 
@@ -118,7 +121,7 @@ class TestScalingRules(unittest.TestCase):
 
         }
         state = {
-            "tasks": 80
+            'tasks': 80
         }
         desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
 

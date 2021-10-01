@@ -19,7 +19,6 @@ class WebSocketConnection:
     """
     def __init__(self, oasis_client: OasisClient):
         """
-
         :param oasis_client: Oasis API client.
         """
         self.oasis_client = oasis_client
@@ -66,15 +65,12 @@ class OasisWebSocket:
     based on rules defined in autoscaler_rules.
     """
 
-    def __init__(self, oasis_client: OasisClient, deployments: WorkerDeployments, autoscaler: AutoScaler):
+    def __init__(self, oasis_client: OasisClient, autoscaler: AutoScaler):
         """
-TODO
-        :param deployments: Cache of worker deployments available in the cluster.
-        :param cluster: Kubernetes cluster client.
-        :param oasis_client: Oasis
+        :param oasis_client: A initialized oasis client.
+        :param autoscaler: The autoscaler to forward websocket messages to.
         """
         self.oasis_client = oasis_client
-        self.deployments = deployments
         self.autoscaler = autoscaler
 
     async def watch(self):
@@ -90,7 +86,7 @@ TODO
                 async with WebSocketConnection(self.oasis_client) as socket:
 
                     async for msg in next_msg(socket):
-                        logging.info("Socket message: %s", msg)
+                        logging.info('Socket message: %s', msg)
                         await self.autoscaler.process_queue_status_message(msg)
             except ConnectionClosedError as e:
                 logging.exception(f'Connection to {self.oasis_client.host}:{self.oasis_client.port} was closed')

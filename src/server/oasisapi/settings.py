@@ -138,6 +138,8 @@ else:
 AUTH_PASSWORD_VALIDATORS = []
 AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
 
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
@@ -199,7 +201,7 @@ elif STORAGE_TYPE in AWS_S3:
     # AWS S3 Object Store via `Django-Storages`
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     set_aws_log_level(AWS_LOG_EVEL)
-    
+
 else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
 
@@ -264,6 +266,7 @@ SWAGGER_SETTINGS = {
     'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
+    "schemes": ["http", "https"]
 }
 
 CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
@@ -296,7 +299,7 @@ if DEBUG_TOOLBAR:
     INTERNAL_IPS = [
         '127.0.0.1',
     ]
-    
+
 ASGI_APPLICATION = "src.server.oasisapi.routing.application"
 WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 

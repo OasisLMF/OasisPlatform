@@ -24,8 +24,8 @@ Before you start make sure all requirements are meet:
 
 ## Model data
 
-Since this is a pure Kubernetes deployment (no cloud yet), we need to make sure our Kubernetes node(s) has access to the model data on
-its filesystem. Then we can mount this data in the worker pod for it to use.
+Since this is a pure Kubernetes deployment (no cloud yet), we need to make sure our Kubernetes node(s) has access to the
+model data on its filesystem. Then we can mount this data in the worker pod for it to use.
 
 ### Script for uploading PiWind
 
@@ -54,9 +54,34 @@ modelVolumes:
     hostPath: /data/model-data/piwind/ # This is the model data path on the kubernetes host node
 ```
 
+# Build images
+
+We need to build two images from this branch and publish the images in image registry:
+
+- api_server - read the `/README.md` for more details.
+- worker_controller - read the `../worker-controller/README.md` for more details.
+
+You need to push these images to an image registry available to your kubernetes system. Docker desktops internal image
+registry won't work since it isn't accessible by kubernetes. Check out the worker_controllers README.md for instructions
+how to easily setup one locally.
+
+Make sure to upload update your chart settings before upgrade. Default images points to:
+
+```
+images:
+  oasis:
+    platform:
+      image: localhost:5000/coreoasis/oasis_api_server
+      version: dev
+    worker_controller:
+      image: localhost:5000/coreoasis/worker_controller
+      version: dev
+```
+
 # Quick start
 
-Make sure you have set everything up correctly by reading [Requirements](#requirements) and [Model data](#model-data).
+Make sure you have set everything up correctly by reading [Requirements](#requirements), [Build images](#build-images)
+and [Model data](#model-data).
 
 To deploy the Oasis Platform with a PiWind model (default settings):
 
@@ -138,7 +163,8 @@ Now you should be able to access the following pages:
 - Grafana - [https://ui.oasis.local/grafana/](https://ui.oasis.local/grafana/)
 
 You might also need to [add](https://www.pico.net/kb/how-do-you-get-chrome-to-accept-a-self-signed-certificate/) the
-generated self signed certificate to your browsers trusted certificates or [add a valid certificate](#set-custom-tls-certificate).
+generated self signed certificate to your browsers trusted certificates
+or [add a valid certificate](#set-custom-tls-certificate).
 
 ## Port forwarding
 
@@ -163,13 +189,13 @@ kubectl port-forward deployment/monitoring-grafana 3000:3000
 
 ## Port forwarding by script
 
-The last option is to use the `scripts/k8s/port-forward.sh` script to bring up a tunnel for every service and close
-them on ctrl-c.
+The last option is to use the `scripts/k8s/port-forward.sh` script to bring up a tunnel for every service and close them
+on ctrl-c.
 
 # Helm and customization
 
-Helm installation requires a `<name>` parameter. This name can be anything you like, and helm will use this name to store
-metadata about the installation in the cluster. You need to refer to this name in future upgrades.
+Helm installation requires a `<name>` parameter. This name can be anything you like, and helm will use this name to
+store metadata about the installation in the cluster. You need to refer to this name in future upgrades.
 
 ```
 helm install <name> <chart>
@@ -207,7 +233,7 @@ only.
    ```
 3. Then we need to edit our value files to change the credentials:
     1. Edit `platform-values.yaml` and set the `oasisServer.user` and `oasisServer.password` to your new credentials:
-       
+
        ```
        oasisServer:
          user: oasis
@@ -238,7 +264,6 @@ only.
        ```
 5. You should now be able to use your new credentials in the oasis UI/API and Grafana.
 
-
 ### Example 2 - Set custom ingress hostnames
 
 Let's say we like to set custom hostnames for our ingress. The default values are `ui.oasis.local` and `api.oasis.local`
@@ -256,79 +281,79 @@ Please note that we need two different hostnames since both oasis UI and oasis A
    cp oasis-montoring/values.yaml monitoring-values.yaml
    ```
 2. Then we need to edit our files to change the ingress hostnames.
-   1. Edit `platform-values.yaml` and set the `ingress.uiHostname` and `ingress.apiHostname`:
+    1. Edit `platform-values.yaml` and set the `ingress.uiHostname` and `ingress.apiHostname`:
 
-      ```
-      ingress:
-        # Hostname for Oasis UI, Prometheus, Alert manager and Grafana
-        uiHostname: ui.oasis
-    
-        # Hostname for the Oasis API
-        apiHostname: api.oasis
-      ```
-   2. Edit `monitoring-values.yaml` ingress values for Prometheus, Alert manager and Grafana:
+       ```
+       ingress:
+         # Hostname for Oasis UI, Prometheus, Alert manager and Grafana
+         uiHostname: ui.oasis
+     
+         # Hostname for the Oasis API
+         apiHostname: api.oasis
+       ```
+    2. Edit `monitoring-values.yaml` ingress values for Prometheus, Alert manager and Grafana:
 
-      ```
-      kube-prometheus-stack:
-        prometheus:
-          prometheusSpec:
-            externalUrl: 'https://ui.oasis/prometheus/' # Change this
-          ingress:
-            hosts:
-              # Change this
-              - ui.oasis.local  # Change this
-
-        alertmanager:
-          ingress:
-            hosts:
-              - ui.oasis.local  # Change this
-
-        grafana:
-          ingress:
-            hosts:
-              - ui.oasis.local # Change this
-
-      ```
-   3. Optional: If you also want to change the paths for Prometheus, Alert manager and Grafana you can update these:
-      ```
-      kube-prometheus-stack:
-        prometheus:
-          prometheusSpec:
-            routePrefix: '/prometheus/' # Change this
-          ingress:
-            paths:
-              - /prometheus/ # Change this
-
-        alertmanager:
-          alertmanagerSpec:
-            routePrefix: /alert-manager/ # Change this
-          ingress:
-            paths:
-              - /alert-manager/ # Change this
-
-        grafana:
-          ingress:
-            path: /grafana/ # Change this
-
-      ```
+       ```
+       kube-prometheus-stack:
+         prometheus:
+           prometheusSpec:
+             externalUrl: 'https://ui.oasis/prometheus/' # Change this
+           ingress:
+             hosts:
+               # Change this
+               - ui.oasis.local  # Change this
+ 
+         alertmanager:
+           ingress:
+             hosts:
+               - ui.oasis.local  # Change this
+ 
+         grafana:
+           ingress:
+             hosts:
+               - ui.oasis.local # Change this
+ 
+       ```
+    3. Optional: If you also want to change the paths for Prometheus, Alert manager and Grafana you can update these:
+       ```
+       kube-prometheus-stack:
+         prometheus:
+           prometheusSpec:
+             routePrefix: '/prometheus/' # Change this
+           ingress:
+             paths:
+               - /prometheus/ # Change this
+ 
+         alertmanager:
+           alertmanagerSpec:
+             routePrefix: /alert-manager/ # Change this
+           ingress:
+             paths:
+               - /alert-manager/ # Change this
+ 
+         grafana:
+           ingress:
+             path: /grafana/ # Change this
+ 
+       ```
 3. Apply changes
-   1. If this is a first time installation:
-      ```
-      helm install platform oasis-platform -f platform-values.yaml
-      helm install monitoring oasis-monitoring -f platform-values.yaml
-      ```
-   2. If you already have installed the charts, you can update them:
-      ```
-      # Check what names you used to install the charts with
-      helm ls
-      
-      # Upgrade charts
-      helm upgrade <platform-name> oasis-platform -f platform-values.yaml
-      helm upgrade <monitoring-name> oasis-monitoring -f monitoring-values.yaml
-      ```
+    1. If this is a first time installation:
+       ```
+       helm install platform oasis-platform -f platform-values.yaml
+       helm install monitoring oasis-monitoring -f platform-values.yaml
+       ```
+    2. If you already have installed the charts, you can update them:
+       ```
+       # Check what names you used to install the charts with
+       helm ls
+       
+       # Upgrade charts
+       helm upgrade <platform-name> oasis-platform -f platform-values.yaml
+       helm upgrade <monitoring-name> oasis-monitoring -f monitoring-values.yaml
+       ```
 4. If needed - update your `hosts` file: [Ingress](#ingress)
-5. You should now be able to access your ingress on your custom hostnames: https://ui.oasis/, https://ui.oasis/prometheus/, https://ui.oasis/alert-manager/, https://ui.oasis/grafana and https://api.oasis/
-
+5. You should now be able to access your ingress on your custom hostnames: https://ui.oasis/
+   , https://ui.oasis/prometheus/, https://ui.oasis/alert-manager/, https://ui.oasis/grafana and https://api.oasis/
 
 ## Helm list, upgrade and uninstall
 
@@ -357,7 +382,6 @@ Make sure any pending volume termination has finished before you install any new
 ```
 kubectl get pv
 ```
-
 
 # Chart details
 
@@ -443,11 +467,13 @@ kubectl get pods
 kubectl delete jobs --field-selector status.successful=1 -l oasislmf/type=set-grafana-default-dashboard-job
 ```
 
-Once ready you can access Prometheus, Alert manager och Grafna by reading [Accessing user interfaces](#accessing-user-interfaces).
+Once ready you can access Prometheus, Alert manager och Grafna by
+reading [Accessing user interfaces](#accessing-user-interfaces).
 
 Default credentials are admin/password.
 
-!!! Please note that upgrading this chart might reset changes in Prometheus, Alert manager and Grafana. Always make a backup of your changes before your upgrade.
+!!! Please note that upgrading this chart might reset changes in Prometheus, Alert manager and Grafana. Always make a
+backup of your changes before your upgrade.
 
 # Help scripts
 
