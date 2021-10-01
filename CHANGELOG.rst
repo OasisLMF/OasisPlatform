@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.21.0rc1`_
+ ---------
+* [#539](https://github.com/OasisLMF/OasisPlatform/pull/539) - Fix/security patches
+* [#540](https://github.com/OasisLMF/OasisPlatform/pull/540) - Feature/centos worker image
+.. _`1.21.0rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.20.0...1.21.0rc1
+
 * [#520](https://github.com/OasisLMF/OasisPlatform/pull/520) - Allow binary data as portfolio uploads + fix content_type setting on …
 .. _`1.20.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.19.0...1.20.0
 
