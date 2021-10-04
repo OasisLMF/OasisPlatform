@@ -28,7 +28,7 @@ The new component reads the scaling settings on a per-model basis from the Oasis
 ```
 
 
-So when a test states 'Set a model to "scaling_strategy": "FIXED_WORKERS"' that setting is changed in the Oasis API and should be picked up by the auto-scaler on the fly.
+So when a test states <em>'Set a model to `"scaling_strategy": "FIXED_WORKERS"`'</em> that setting should be changed via the Oasis API and picked up on the fly by the auto-scaler.
 
 
 # Test cases
