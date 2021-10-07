@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.21.0`_
+ ---------
+* [#539](https://github.com/OasisLMF/OasisPlatform/pull/539) - Fix/security patches
+* [#540](https://github.com/OasisLMF/OasisPlatform/pull/540) - Feature/centos worker image
+.. _`1.21.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.20.0...1.21.0
+
 `1.21.0rc1`_
  ---------
 * [#539](https://github.com/OasisLMF/OasisPlatform/pull/539) - Fix/security patches
