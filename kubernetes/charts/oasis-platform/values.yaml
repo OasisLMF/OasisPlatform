@@ -5,7 +5,7 @@ images:
   oasis:
     platform:
       image: coreoasis/api_server
-      version: 2.0.0-rc3
+      version: 2.0.0-sprint2
       #image: localhost:5000/coreoasis/api_server
       #version: dev
     ui:
@@ -13,7 +13,7 @@ images:
       version: 1.9.0
     worker_controller:
       image: coreoasis/worker_controller
-      version: 2.0.0-rc3
+      version: 2.0.0-sprint2
       #image: localhost:5000/coreoasis/worker_controller
       #version: dev
   postgres:

@@ -16,7 +16,7 @@ workers:
     modelId: PiWind
     modelVersionId: "1"
     image: coreoasis/model_worker
-    version: ep-1.19.0-rc1
+    version: 2.0.0-sprint2
     env: # Additional worker environment variables
       - name: OASIS_DEBUG
         value: "1"
