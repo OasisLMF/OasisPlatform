@@ -276,7 +276,7 @@ spec:
     metadata:
       labels:
         app: oasis-task-controller
-        {{- include "h.labels" . | nindent 8}}
+      {{- include "h.labels" . | nindent 8}}
       annotations:
         checksum/{{ .Values.databases.oasis_db.name }}: versions{{ toJson .Values.databases.oasis_db | sha256sum }}
         checksum/{{ .Values.databases.celery_db.name }}: versions{{ toJson .Values.databases.celery_db | sha256sum }}
