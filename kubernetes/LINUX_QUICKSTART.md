@@ -235,7 +235,9 @@ kubectl logs -f <pod-name>
 ```
 
 3. Shell access to debug a running pod
+```
 kubectl exec --stdin --tty <pod-name> -- /bin/bash
+```
 
 4. Update helm config
 ```
