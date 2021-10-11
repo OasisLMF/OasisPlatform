@@ -221,6 +221,19 @@ Forwarding from [::1]:8080 -> 3838
 *  Grafana - https://localhost:3000
 
 
+## Docker image Versions
+
+| Image Name  | Tags | Feature Description  |
+|---|:---|:---|
+| coreoasis/api_server | `2.0.0-sprint2` | First implementation of auto scaler |
+| &nbsp; | &nbsp; | &nbsp; |
+| coreoasis/worker_controller | `2.0.0-sprint2` | First implementation of auto scaler |
+| &nbsp; | &nbsp; | &nbsp; |
+| coreoasis/model_worker | `2.0.0-sprint2` | Fixed chunking only |
+| &nbsp; | &nbsp; | &nbsp; |
+
+
+
 
 ## Misc helpful commands
 
