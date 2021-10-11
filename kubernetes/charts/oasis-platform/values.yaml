@@ -4,14 +4,18 @@
 images:
   oasis:
     platform:
-      image: localhost:5000/coreoasis/oasis_api_server
-      version: dev
+      image: coreoasis/api_server
+      version: 2.0.0-rc3
+      #image: localhost:5000/coreoasis/api_server
+      #version: dev
     ui:
       image: coreoasis/oasisui_app
       version: 1.9.0
     worker_controller:
-      image: localhost:5000/coreoasis/worker_controller
-      version: dev
+      image: coreoasis/worker_controller
+      version: 2.0.0-rc3
+      #image: localhost:5000/coreoasis/worker_controller
+      #version: dev
   postgres:
     image: postgres
     version: 12.8-alpine3.14
