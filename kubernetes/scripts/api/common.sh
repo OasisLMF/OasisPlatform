@@ -1,6 +1,10 @@
 
 BASE_URL="https://api.oasis.local"
-CURL="curl.exe -sk"
+CURL="curl -sk"
+
+if [ -f "/mnt/c/WINDOWS/system32/curl.exe" ]; then
+  CURL="${CURL//curl/curl.exe}"
+fi
 
 if [ -z "$OASIS_USERNAME" ] || [ -z "$OASIS_PASSWORD" ]; then
   echo "Set username and password as environment variables:"

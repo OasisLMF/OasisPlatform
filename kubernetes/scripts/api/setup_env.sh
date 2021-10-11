@@ -6,7 +6,7 @@ ACC_FILE=$1
 LOC_FILE=$2
 
 if [ -z "$LOC_FILE" ]; then
-  echo "Usage: $0 <oasisuser> <password> <account-file> <location-file>"
+  echo "Usage: $0 <account-file> <location-file>"
   exit 0
 fi
 

@@ -128,9 +128,23 @@ A kubernetes cluster is by default not accessible from the outside, but there ar
 
 The oasis-platform deploys an [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) to expose
 oasis UI, oasis API, Prometheus, Alert manager and Grafana. To enable it we need to bind the ingress to 2 fake hostnames
-and if you run this locally you can fake them and have them redirected to localhost.
+and if you run this locally you can fake them and have them redirected to your kubernetes cluster.
 
 Default hostnames are `ui.oasis.local` and `api.oasis.local`. You can change them by customizing your deployments.
+
+### Identify cluster IP
+
+Before we can add our fake hosts we need to find our cluster ip which depends on what type of kubernetes cluster you are
+running.
+
+Here is a short summary of two klusters:
+
+Type                      | IP
+--------------------------|--------
+Docker desktop on Windows | 127.0.0.1 
+Minikube                  | <ol><li>Run `minikube tunnel` to expose cluster IP</li><li>Run `kubectl get service -l app.kubernetes.io/name=ingress-nginx` to get the IP from the `EXTERNAL-IP` column.</li></ol>
+
+### Add hostnames
 
 **Add hostnames on linux:**
 
@@ -153,6 +167,8 @@ sudo sh -c 'echo "\n# Oasis Kubernetes cluster hostnames\n127.0.0.1 ui.oasis.loc
     ```
 
 6. Save the file and close notepad.
+
+### URLs
 
 Now you should be able to access the following pages:
 

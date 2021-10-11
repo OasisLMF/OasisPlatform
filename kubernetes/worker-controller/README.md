@@ -42,24 +42,39 @@ If you are behind a proxy and can't verify certificates and want to build locall
 docker build -t coreoasis/worker_controller:dev --build-arg PIP_TRUSTED_HOSTS="pypi.org files.pythonhosted.org" .
 ```
 
-### Run image in local kubernetes
+### Access image in your kubernetes cluster
 
-Your local kubernetes cluster can't access your docker desktop image registry. If you don't have any development image
-repository you can easily host one locally:
+To be able to build and use the image in your kubernets cluster you need to use docker image registry accessible both by
+your docker build and the kubernets cluster. In case you don't already have a registry like that you could try one of
+these options:
+
+**Windows docker desktop kubernetes**
+
+Create a local image registry and points kubernetes to it:
 
 ```
+# Setup your local image registry:
 docker run -d -p 5000:5000 --restart=always --name registry registry:2
-```
 
-Then push the image to the registry:
-
-```
+# Publish the image to the registry:
 docker tag coreoasis/worker_controller:dev localhost:5000/coreoasis/worker_controller:dev
 docker push localhost:5000/coreoasis/worker_controller:dev
 ```
 
-Then configure your oasis-platform chart to use `localhost:5000/coreoasis/worker_controller` as image and `dev` as
-version for your worker controller.
+The image `localhost:5000/coreoasis/worker_controller:dev` will be accessible by kubernetes.
+
+**Minikube**
+
+Before you build your image set the environment variables to use kubernetes docker settings:
+
+```
+eval $(minikube docker-env)
+
+docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
+```
+
+The image will be published directly into Minikubes image registry and kubernets can access it as `coreoasis/api_server:
+dev`.
 
 ### Run image in local docker
 
@@ -73,3 +88,4 @@ docker run --rm \
   -e CLUSTER=local \
   coreoasis/worker_controller:dev
 ```
+

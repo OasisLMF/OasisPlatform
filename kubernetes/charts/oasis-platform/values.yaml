@@ -6,12 +6,14 @@ images:
     platform:
       image: localhost:5000/coreoasis/oasis_api_server
       version: dev
+      imagePullPolicy: Always
     ui:
       image: coreoasis/oasisui_app
       version: 1.9.0
     worker_controller:
       image: localhost:5000/coreoasis/worker_controller
       version: dev
+      imagePullPolicy: Always
   postgres:
     image: postgres
     version: 12.8-alpine3.14

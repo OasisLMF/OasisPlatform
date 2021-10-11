@@ -93,7 +93,9 @@ done
 
 for file in $OPTIONAL_MODEL_FILES; do
   file=${PWP}/$file
-  kubectl cp "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/
+  if [ -f "$file" ] && ! [ -d "$file" ]; then
+    kubectl cp "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/
+  fi
   echo -n .
 done
 
