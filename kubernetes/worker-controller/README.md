@@ -74,7 +74,9 @@ docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
 ```
 
 The image will be published directly into Minikubes image registry and kubernets can access it as `coreoasis/api_server:
-dev`.
+dev`. But we also first need prevent kubernetes from pulling the images by
+setting `images.oasis.platform.imagePullPolicy`
+and `images.oasis.worker_controller.imagePullPolicy` to `Never` in the oasis-platform chart values.
 
 ### Run image in local docker
 
