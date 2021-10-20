@@ -241,7 +241,7 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 @celery_app.task(name='run_register_worker')
-def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf, num_analysis_chunks=None):
+def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
         from django.contrib.auth.models import User
@@ -264,7 +264,6 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf,
                 supplier_id=m_supplier,
                 version_id=m_id,
                 creator=user,
-                num_analysis_chunks=num_analysis_chunks,
             )
 
         # Update model settings file
@@ -290,7 +289,6 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf,
                 model.ver_ktools = m_version['ktools']
                 model.ver_oasislmf = m_version['oasislmf']
                 model.ver_platform = m_version['platform']
-                model.num_analysis_chunks = num_analysis_chunks
                 model.save()
                 logger.info('Updated model versions')
             except Exception as e:

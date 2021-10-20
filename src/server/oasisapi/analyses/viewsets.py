@@ -407,6 +407,16 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(self.get_object())
         return Response(serializer.data)
 
+    # -- NEW ----- 
+    @swagger_auto_schema(responses={200: AnalysisTaskStatusSerializer(many=True)})
+    @action(methods=['get'], detail=True)
+    def sub_tasks(self, request, pk=None, version=None):
+        sub_tasks_queryset = self.get_object().sub_task_statuses.all()
+        context = {'request': request}
+
+        serializer = AnalysisTaskStatusSerializer(sub_tasks_queryset, many=True, context=context)
+        return Response(serializer.data)
+
 
 class AnalysisSettingsView(viewsets.ModelViewSet):
     """

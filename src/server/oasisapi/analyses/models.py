@@ -248,6 +248,9 @@ class Analysis(TimeStampedModel):
     def get_absolute_storage_url(self, request=None):
         return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+    def get_absolute_subtask_url(self, request=None):
+        return reverse('analysis-sub-tasks', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
 
     def validate_run(self):
         valid_choices = [

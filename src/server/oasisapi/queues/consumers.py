@@ -37,7 +37,7 @@ def wrap_message_content(message_type, content, status=ContentStatus.SUCCESS):
 
 
 def build_task_status_message(items: List[TaskStatusMessageItem], message_type='queue_status.updated'):
-    from src.server.oasisapi.analyses.serializers import AnalysisSerializer, AnalysisTaskStatusSerializer
+    from src.server.oasisapi.analyses.serializers import AnalysisSerializer, AnalysisTaskStatusSerializer, AnalysisSerializerWebSocket
     from src.server.oasisapi.queues.serializers import QueueSerializer
 
     return wrap_message_content(
@@ -47,7 +47,8 @@ def build_task_status_message(items: List[TaskStatusMessageItem], message_type='
                 'queue': QueueSerializer(instance=item.queue).data,
                 'analyses': [
                     {
-                        'analysis': AnalysisSerializer(instance=analysis.analysis).data,
+                        'analysis': AnalysisSerializerWebSocket(instance=analysis.analysis).data,
+                        #'analysis': AnalysisSerializer(instance=analysis.analysis).data,
                         'updated_tasks': AnalysisTaskStatusSerializer(instance=analysis.updated_tasks, many=True).data,
                     }
                     for analysis in item.analyses
