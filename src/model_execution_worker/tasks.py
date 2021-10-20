@@ -391,14 +391,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         logging.info('stderr: {}'.format(stderr.decode()))
         proc.terminate()
 
-        # Check error code 
-        if proc.returncode != 0:
-            raise subprocess.CalledProcessError(
-                returncode = proc.returncode,
-                cmd = proc.args,
-                stderr = stderr
-            )
-
         # Traceback file (stdout + stderr)
         traceback_file = filestore.create_traceback(stdout.decode(), stderr.decode(), run_dir)
         traceback_location = filestore.put(traceback_file)
@@ -532,14 +524,6 @@ def generate_input(self,
         logging.info('stdout: {}'.format(stdout.decode()))
         logging.info('stderr: {}'.format(stderr.decode()))
         proc.terminate()
-
-        # Check error code 
-        if proc.returncode != 0:
-            raise subprocess.CalledProcessError(
-                returncode = proc.returncode,
-                cmd = proc.args,
-                stderr = stderr
-            )
 
         # Find Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
