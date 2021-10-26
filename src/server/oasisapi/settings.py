@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'channels',
     'storages',
 
+    'src.server.oasisapi.oidc',
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
     'src.server.oasisapi.analyses',
@@ -157,7 +158,6 @@ API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
 if API_AUTH_TYPE == 'keycloak':
 
     INSTALLED_APPS += (
-        'src.server.oasisapi.oidc',
         'mozilla_django_oidc',
     )
     AUTHENTICATION_BACKENDS = ('src.server.oasisapi.oidc.keycloak_auth.KeycloakOIDCAuthenticationBackend',)
