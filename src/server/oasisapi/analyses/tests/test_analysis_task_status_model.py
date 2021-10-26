@@ -1,8 +1,8 @@
 from unittest.mock import patch
 
 from hypothesis import given
-from hypothesis._strategies import sampled_from
 from hypothesis.extra.django import TestCase
+from hypothesis.strategies import sampled_from
 
 from src.server.oasisapi.analyses.models import AnalysisTaskStatus
 from src.server.oasisapi.analyses.tests.fakes import fake_analysis_task_status, fake_analysis

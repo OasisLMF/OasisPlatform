@@ -5,15 +5,18 @@ from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
+from ..permissions.group_auth import verify_user_is_in_obj_groups
 
 
-
-def _delete_related_file(parent, field):
-    """ Delete an attached RelatedFile model 
+def _delete_related_file(parent, field, user):
+    """ Delete an attached RelatedFile model
         without triggering a cascade delete
     """
     if getattr(parent, field) is not None:
         current = getattr(parent, field, None)
+
+        verify_user_is_in_obj_groups(user, current, 'You do not have permission to delete this file')
+
         setattr(parent, field, None)
         parent.save(update_fields=[field])
         current.delete()
@@ -25,11 +28,13 @@ def _get_chunked_content(f, chunk_size=1024):
         content = f.read(chunk_size)
 
 
-def _handle_get_related_file(parent, field):
+def _handle_get_related_file(parent, field, request):
     f = getattr(parent, field)
 
     if not f:
         raise Http404()
+
+    verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to delete this file')
 
     response = StreamingHttpResponse(_get_chunked_content(f.file), content_type=f.content_type)
     if f.filename:
@@ -44,8 +49,12 @@ def _handle_post_related_file(parent, field, request, content_types):
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 
+    if hasattr(parent, 'groups'):
+        instance.groups.set(parent.groups.all())
+        instance.save()
+
     # Check for exisiting file and delete
-    _delete_related_file(parent, field)
+    _delete_related_file(parent, field, request.user)
 
     setattr(parent, field, instance)
     parent.save(update_fields=[field])
@@ -56,11 +65,11 @@ def _handle_post_related_file(parent, field, request, content_types):
     return response
 
 
-def _handle_delete_related_file(parent, field):
+def _handle_delete_related_file(parent, field, request):
     if not getattr(parent, field, None):
         raise Http404()
 
-    _delete_related_file(parent, field)
+    _delete_related_file(parent, field, request.user)
     return Response()
 
 
@@ -94,7 +103,7 @@ def _json_write_to_file(parent, field, request, serializer):
     instance = serializer.create(serializer.validated_data)
 
     # Check for exisiting file and delete
-    _delete_related_file(parent, field)
+    _delete_related_file(parent, field, request.user)
 
     setattr(parent, field, instance)
     parent.save(update_fields=[field])
@@ -115,11 +124,11 @@ def handle_related_file(parent, field, request, content_types):
     method = request.method.lower()
 
     if method == 'get':
-        return _handle_get_related_file(parent, field)
+        return _handle_get_related_file(parent, field, request)
     elif method == 'post':
         return _handle_post_related_file(parent, field, request, content_types)
     elif method == 'delete':
-        return _handle_delete_related_file(parent, field)
+        return _handle_delete_related_file(parent, field, request)
 
 
 def handle_json_data(parent, field, request, serializer):
@@ -130,4 +139,4 @@ def handle_json_data(parent, field, request, serializer):
     elif method == 'post':
         return _json_write_to_file(parent, field, request, serializer)
     elif method == 'delete':
-        return _handle_delete_related_file(parent, field)
+        return _handle_delete_related_file(parent, field, request)

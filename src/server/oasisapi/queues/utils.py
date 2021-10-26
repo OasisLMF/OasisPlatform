@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db.models import Count
 from kombu import Connection
 
-from src.server.oasisapi.celery import celery_app
+from src.server.oasisapi.celery_app import celery_app
 
 QueueInfo = Dict[str, int]
 

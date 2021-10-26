@@ -6,8 +6,6 @@ from rest_framework.reverse import reverse
 
 from src.server.oasisapi import settings
 
-settings.API_AUTH_TYPE = 'keycloak'
-
 
 class MockResponse:
     """

@@ -1,9 +1,12 @@
 from drf_yasg.utils import swagger_serializer_method
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from .models import Analysis, AnalysisTaskStatus
 from ..files.models import file_storage_link
+from ..permissions.group_auth import verify_and_get_groups, validate_data_files
+
 
 class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     output_log = serializers.SerializerMethodField()
@@ -40,7 +43,6 @@ class AnalysisListSerializer(serializers.Serializer):
     """ Read Only Analyses Deserializer for efficiently returning a list of all
         Analyses from DB
     """
-
     # model fields
     created = serializers.DateTimeField(read_only=True)
     modified = serializers.DateTimeField(read_only=True)
@@ -52,6 +54,9 @@ class AnalysisListSerializer(serializers.Serializer):
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    # Groups - inherited from portfolio
+    groups = serializers.SerializerMethodField(read_only=True)
 
     ## check this for multiple SQL calls with the 'list' call
     analysis_chunks = serializers.IntegerField(read_only=True)
@@ -72,7 +77,6 @@ class AnalysisListSerializer(serializers.Serializer):
     run_traceback_file = serializers.SerializerMethodField(read_only=True)
     run_log_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
-
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_input_file(self, instance):
@@ -134,9 +138,13 @@ class AnalysisListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_groups(self, instance):
+        return instance.get_groups()
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
+
     input_file = serializers.SerializerMethodField()
     settings_file = serializers.SerializerMethodField()
     settings = serializers.SerializerMethodField()
@@ -150,6 +158,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
     run_log_file = serializers.SerializerMethodField()
     storage_links = serializers.SerializerMethodField()
     sub_task_statuses = AnalysisTaskStatusSerializer(many=True, read_only=True)
+
+    # Groups - inherited from portfolio
+    groups = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Analysis
@@ -180,6 +191,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'analysis_chunks',
             'sub_task_count',
             'sub_task_statuses',
+            "groups",
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
@@ -242,13 +254,33 @@ class AnalysisSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_groups(self, instance):
+        return instance.get_groups()
 
     def validate(self, attrs):
-        if not attrs.get('creator') and 'request' in self.context:
-            attrs['creator'] = self.context.get('request').user
 
-        # Check that portfilio has a location file
+        user = self.context.get('request').user
+
+        if not attrs.get('creator') and 'request' in self.context:
+            attrs['creator'] = user
+
+        validate_data_files(user, attrs.get('complex_model_data_files'))
+
+        if attrs.get('model'):
+            try:
+                verify_and_get_groups(user, attrs['model'].groups.all())
+            except ValidationError:
+                raise ValidationError({'model': 'You are not allowed to use this model'})
+
+        # Check that portfolio has a location file and user is allowed to use the portfolio
         if attrs.get('portfolio'):
+
+            try:
+                verify_and_get_groups(user, attrs['portfolio'].groups.all())
+            except ValidationError:
+                raise ValidationError({'portfolio': 'You are not allowed to use this portfolio'})
+
             if not attrs['portfolio'].location_file:
                 raise ValidationError({'portfolio': '"location_file" must not be null'})
 

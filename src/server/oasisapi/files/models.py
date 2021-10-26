@@ -3,6 +3,7 @@ from io import BytesIO
 from uuid import uuid4
 
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.core.files import File
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -67,7 +68,7 @@ def file_storage_link(storage_obj, fullpath=False):
            #    return os.path.join(
            #        storage_obj.file.storage.location,
            #        storage_obj.file.name,
-           #    )    
+           #    )
            return storage_obj.file.name
 
 
@@ -77,8 +78,9 @@ class RelatedFile(TimeStampedModel):
     filename = models.CharField(max_length=255, editable=False, default="", blank=True)
     # filehash_md5 = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
-    objects = RelatedFileManager()  # ARCH2020 -- Is this actually used?? 
+    objects = RelatedFileManager()  # ARCH2020 -- Is this actually used??
     store_as_filename = models.BooleanField(default=False, blank=True, null=True)
+    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
 
     def __str__(self):
         return 'File_{}'.format(self.file)

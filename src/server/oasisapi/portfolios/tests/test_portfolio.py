@@ -15,7 +15,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
 from ...analyses.models import Analysis
-from ...auth.tests.fakes import fake_user
+from ...auth.tests.fakes import fake_user, add_fake_group
 from ..models import Portfolio
 from .fakes import fake_portfolio
 
@@ -76,12 +76,16 @@ class PortfolioApi(WebTestMixin, TestCase):
 
         self.assertEqual(400, response.status_code)
 
-    @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
-    def test_cleaned_name_is_present___object_is_created(self, name):
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+        group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_cleaned_name_is_present___object_is_created(self, name, group_name):
         self.maxDiff = None
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
+                add_fake_group(user, group_name)
 
                 response = self.app.post(
                     reverse('portfolio-list', kwargs={'version': 'v1'}),
@@ -113,6 +117,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'name': name,
                     'created': portfolio.created.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'modified': portfolio.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                    'groups': [group_name],
                     'accounts_file': {
                         "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
                         "name": portfolio.accounts_file.filename,

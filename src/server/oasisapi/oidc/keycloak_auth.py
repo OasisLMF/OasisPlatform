@@ -52,6 +52,7 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
 
         user = self.UserModel.objects.create_user(username)
         self.update_groups(user, claims)
+        self.update_roles(user, claims)
         self.create_keycloak_user_id(user, claims.get('sub'))
         return user
 
@@ -68,6 +69,7 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
             user.username = username
             user.save()
 
+        self.update_roles(user, claims)
         self.update_groups(user, claims)
         return user
 
@@ -125,25 +127,38 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
 
     def update_groups(self, user, claims):
         """
-        Transform roles obtained from keycloak into Django Groups and
-        add them to the user. Note that any role not passed via keycloak
-        will be removed from the user.
+        Persist Keycloak groups as local Django groups.
         """
-        keycloak_roles = claims.get('realm_access', dict()).get('roles', [])
+        keycloak_groups = claims.get('groups', [])
+        for i, keycloak_group in enumerate(keycloak_groups):
+            if keycloak_group.startswith('/'):
+                keycloak_groups[i] = keycloak_group[1:]
 
         user_groups = list()
         for user_group in user.groups.all():
             user_groups.append(user_group.name)
 
-        keycloak_roles.sort()
+        keycloak_groups.sort()
         user_groups.sort()
 
-        if keycloak_roles != user_groups:
+        if keycloak_groups != user_groups:
             with transaction.atomic():
                 user.groups.clear()
-                for role in keycloak_roles:
-                    group, _ = Group.objects.get_or_create(name=role)
+                for group in keycloak_groups:
+                    group, _ = Group.objects.get_or_create(name=group)
                     group.user_set.add(user)
+
+    def update_roles(self, user, claims):
+        """
+        If a user belongs to the group admin we will enable django attributes is_superuser and is_admin.
+        """
+        keycloak_roles = claims.get('realm_access', dict()).get('roles', [])
+
+        is_admin = 'admin' in keycloak_roles
+        if is_admin != user.is_superuser or is_admin != user.is_staff:
+            user.is_superuser = is_admin
+            user.is_staff = is_admin
+            user.save()
 
     def create_keycloak_user_id(self, user, user_id):
         """

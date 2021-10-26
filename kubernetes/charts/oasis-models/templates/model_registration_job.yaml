@@ -36,6 +36,8 @@ spec:
               value: {{ .modelVersionId | quote }}
             - name: OASIS_MODEL_DATA_DIRECTORY_{{ $index }}
               value: /mnt/model_data_{{ $index }}
+            - name: OASIS_MODEL_GROUPS_{{ $index }}
+              value: {{ join "," $worker.groups | quote }}
             {{- end }}
           command: ["sh", "-c", "/tmp/multiple_model_registration.sh"]
           volumeMounts:

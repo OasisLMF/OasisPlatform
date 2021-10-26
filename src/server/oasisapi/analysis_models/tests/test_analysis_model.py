@@ -2,6 +2,7 @@ import json
 import string
 
 from backports.tempfile import TemporaryDirectory
+from django.contrib.auth.models import Group
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTest, WebTestMixin
@@ -10,10 +11,9 @@ from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ...auth.tests.fakes import fake_user
-from ..models import AnalysisModel
-
 from .fakes import fake_analysis_model
+from src.server.oasisapi.analysis_models.models import AnalysisModel
+from src.server.oasisapi.auth.tests.fakes import fake_user, add_fake_group
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
@@ -95,6 +95,118 @@ class AnalysisModelApi(WebTest, TestCase):
         self.assertEqual(model.version_id, version_id)
         self.assertEqual(model.model_id, model_id)
 
+
+    @given(
+        supplier_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        model_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        version_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+    )
+    def test_create_with_default_groups___response_is_201(self, supplier_id, model_id, version_id, group_name):
+        user = fake_user()
+        add_fake_group(user, group_name)
+
+        response = self.app.post(
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({
+                'supplier_id': supplier_id,
+                'model_id': model_id,
+                'version_id': version_id,
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(201, response.status_code)
+        groups = json.loads(response.body).get('groups')
+        self.assertEqual(1, len(groups))
+        self.assertEqual(group_name, groups[0])
+        self.assertTrue(AnalysisModel.objects.exists())
+
+    @given(
+        supplier_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        model_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        version_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+    )
+    def test_create_with_valid_groups___response_is_201(self, supplier_id, model_id, version_id, group_name):
+        user = fake_user()
+        add_fake_group(user, group_name)
+
+        response = self.app.post(
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({
+                'supplier_id': supplier_id,
+                'model_id': model_id,
+                'version_id': version_id,
+                'groups': [group_name]
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(201, response.status_code)
+        groups = json.loads(response.body).get('groups')
+        self.assertEqual(1, len(groups))
+        self.assertEqual(group_name, groups[0])
+        self.assertTrue(AnalysisModel.objects.exists())
+
+    @given(
+        supplier_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        model_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        version_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+    )
+    def test_create_with_invalid_groups___response_is_403(self, supplier_id, model_id, version_id):
+        user = fake_user()
+
+        response = self.app.post(
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({
+                'supplier_id': supplier_id,
+                'model_id': model_id,
+                'version_id': version_id,
+                'groups': ['non-existing-group']
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    @given(
+        group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+    )
+    def test_create_with_default_groups_and_get_with_other_groups___response_is_403(self, group_name):
+        user_with_group = fake_user()
+        add_fake_group(user_with_group, group_name)
+        model = AnalysisModel.objects.create(
+            supplier_id='s',
+            model_id='m',
+            version_id='v',
+            creator=user_with_group,
+        )
+        model.groups.add(user_with_group.groups.all()[0]);
+
+        user_without_group = fake_user()
+
+        response = self.app.get(
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+        )
+
+        self.assertEqual(403, response.status_code)
 
 
 class ModelSettingsJson(WebTestMixin, TestCase):
@@ -188,7 +300,7 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 )
 
                 validation_error =  {
-                    'model_settings': ["Additional properties are not allowed ('float_parameter' was unexpected)"], 
+                    'model_settings': ["Additional properties are not allowed ('float_parameter' was unexpected)"],
                     'model_settings-event_set': ["'desc' is a required property"],
                     'model_settings-event_occurrence_id-default': ["1 is not of type 'string'"],
                     'model_settings-boolean_parameters-0-default': ["1.1 is not of type 'boolean'"],

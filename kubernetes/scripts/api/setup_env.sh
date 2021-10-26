@@ -14,81 +14,16 @@ source $(dirname $0)/common.sh
 
 PIWIND_VERSION=1
 
-PIWIND_ID=$($CURL -H "$CAH" -X GET "${API_URL}/v1/models/" | jq ".[] | select((.supplier_id | ascii_downcase  == \"oasislmf\") and (.model_id | ascii_downcase == \"piwind\") and (.version_id == \"${PIWIND_VERSION}\")) | .id")
+PIWIND_ID=$(curlf -X GET "${API_URL}/v1/models/" | jq ".[] | select((.supplier_id | ascii_downcase  == \"oasislmf\") and (.model_id | ascii_downcase == \"piwind\") and (.version_id == \"${PIWIND_VERSION}\")) | .id")
 if [ -n "$PIWIND_ID" ]; then
   echo "Piwind found as model id $PIWIND_ID"
 else
   echo "Piwind $PIWIND_VERSION not found, add the model"
-
-  echo "Create piwind model"
-
-  PIWIND_ID=$($CURL -H "$CAH" -X POST "${API_URL}/v1/models/" -H "Content-Type: application/json" -d "{\"supplier_id\": \"OasisLMF\",\"model_id\": \"PiWind\",\"version_id\": \"${PIWIND_VERSION}\""} | jq .id)
-  echo "Created with id $PIWIND_ID"
-
-  echo "Updating model settings"
-  TF=$(tempfile)
-  cat << EOF > $TF
-{
-  "data_settings": {
-    "group_fields": [
-      "PortNumber",
-      "AccNumber",
-      "LocNumber"
-    ]
-  },
-  "lookup_settings": {
-    "supported_perils": [
-      {
-        "desc": "Single Peril: Storm Surge",
-        "id": "WSS"
-      },
-      {
-        "desc": "Single Peril: Tropical Cyclone",
-        "id": "WTC"
-      },
-      {
-        "desc": "Group Peril: Windstorm with storm surge",
-        "id": "WW1"
-      },
-      {
-        "desc": "Group Peril: Windstorm w/o storm surge",
-        "id": "WW2"
-      }
-    ]
-  },
-  "model_settings": {
-    "event_occurrence_id": {
-      "default": "lt",
-      "desc": "PiWind Occurrence selection",
-      "name": "Occurrence Set",
-      "options": [
-        {
-          "desc": "Long Term",
-          "id": "lt"
-        }
-      ]
-    },
-    "event_set": {
-      "default": "p",
-      "desc": "Piwind Event Set selection",
-      "name": "Event Set",
-      "options": [
-        {
-          "desc": "Probabilistic",
-          "id": "p"
-        }
-      ]
-    }
-  }
-}
-EOF
-
-  cat $TF | $CURL -H "$CAH" -X POST "${API_URL}/v1/models/${PIWIND_ID}/settings/" -H "Content-Type: application/json" -d @-
-  rm $TF
+  exit 1
 fi
 
 echo "Updating model chunking configuration..."
-cat << EOF | $CURL -H "$CAH" -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/chunking_configuration/" -H "Content-Type: application/json" -d @- | jq .
+cat << EOF | curlf -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/chunking_configuration/" -H "Content-Type: application/json" -d @- | jq .
 {
   "strategy": "FIXED_CHUNKS",
   "dynamic_locations_per_lookup": 10000,
@@ -99,7 +34,7 @@ cat << EOF | $CURL -H "$CAH" -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/chu
 EOF
 
 echo "Updating model scaling configuration..."
-cat << EOF | $CURL -H "$CAH" -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/scaling_configuration/" -H "Content-Type: application/json" -d @- | jq .
+cat << EOF | curlf -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/scaling_configuration/" -H "Content-Type: application/json" -d @- | jq .
 {
   "scaling_strategy": "FIXED_WORKERS",
   "worker_count_fixed": 1,
@@ -109,23 +44,23 @@ cat << EOF | $CURL -H "$CAH" -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/sca
 EOF
 
 
-PORTFOLIO_ID=$($CURL -H "$CAH" -X GET "${API_URL}/v1/portfolios/" | jq '[.[] | select(.name == "P1")][0] | .id // empty')
+PORTFOLIO_ID=$(curlf -X GET "${API_URL}/v1/portfolios/" | jq '[.[] | select(.name == "P1")][0] | .id // empty')
 if [ -n "$PORTFOLIO_ID" ]; then
   echo "Piwind portfolio found with id $PORTFOLIO_ID"
 else
   echo "Create piwind portfolio"
 
-  PORTFOLIO_ID=$($CURL -H "$CAH" -X POST "${API_URL}/v1/portfolios/" -H "Content-Type: application/json" -d '{"name": "P1"}' | jq .id)
+  PORTFOLIO_ID=$(curlf -X POST "${API_URL}/v1/portfolios/" -H "Content-Type: application/json" -d '{"name": "P1"}' | jq .id)
   echo "Created portfolio with id $PORTFOLIO_ID"
 
 fi
 
 echo "Uploads account file..."
-$CURL -H "$CAH" -X POST "${API_URL}/v1/portfolios/${PORTFOLIO_ID}/accounts_file/" -H "Content-Type: multipart/form-data" -F "file=@${ACC_FILE};type=application/vnd.ms-excel"
+curlf -X POST "${API_URL}/v1/portfolios/${PORTFOLIO_ID}/accounts_file/" -H "Content-Type: multipart/form-data" -F "file=@${ACC_FILE};type=application/vnd.ms-excel"
 echo
 
 echo "Uploads location file..."
-$CURL -H "$CAH" -X POST "${API_URL}/v1/portfolios/${PORTFOLIO_ID}/location_file/" -H "Content-Type: multipart/form-data" -F "file=@${LOC_FILE};type=application/vnd.ms-excel"
+curlf -X POST "${API_URL}/v1/portfolios/${PORTFOLIO_ID}/location_file/" -H "Content-Type: multipart/form-data" -F "file=@${LOC_FILE};type=application/vnd.ms-excel"
 echo
 
 for ANAME_ID in 1 2; do
@@ -134,20 +69,19 @@ for ANAME_ID in 1 2; do
 
   echo "Looking for $ANALYSIS_NAME"
 
-  ANALYSIS_ID=$($CURL -H "$CAH" -X GET "${API_URL}/v1/analyses/?model=${PIWIND_ID}" | jq ".[] | select(.name ==  \"${ANALYSIS_NAME}\") | .id // empty")
+  ANALYSIS_ID=$(curlf -X GET "${API_URL}/v1/analyses/?model=${PIWIND_ID}" | jq ".[] | select(.name ==  \"${ANALYSIS_NAME}\") | .id // empty")
   if [ -n "$ANALYSIS_ID" ]; then
     echo "Analysis exists with id $ANALYSIS_ID"
   else
     echo "Create analysis"
 
-    ANALYSIS_ID=$($CURL -H "$CAH" -X POST "${API_URL}/v1/analyses/" -H "Content-Type: application/json" -d "{\"name\": \"${ANALYSIS_NAME}\", \"portfolio\": $PORTFOLIO_ID, \"model\": $PIWIND_ID}" | jq .id)
+    ANALYSIS_ID=$(curlf -X POST "${API_URL}/v1/analyses/" -H "Content-Type: application/json" -d "{\"name\": \"${ANALYSIS_NAME}\", \"portfolio\": $PORTFOLIO_ID, \"model\": $PIWIND_ID}" | jq .id)
     echo "Created with id $ANALYSIS_ID"
   fi
 
   echo "Updating analysis settings"
 
-  TF=$(tempfile)
-cat << EOF > $TF
+  cat << EOF | curlf -X POST "${API_URL}/v1/analyses/${ANALYSIS_ID}/settings/" -H "Content-Type: application/json" -d @-
 {
   "full_correlation": false,
   "gul_output": true,
@@ -205,9 +139,7 @@ cat << EOF > $TF
   "ri_output": false
 }
 EOF
-  cat $TF | $CURL -H "$CAH" -X POST "${API_URL}/v1/analyses/${ANALYSIS_ID}/settings/" -H "Content-Type: application/json" -d @-
   echo
-  rm $TF
 done
 
 echo "Done"

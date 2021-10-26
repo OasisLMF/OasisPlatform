@@ -78,3 +78,27 @@ Released on 2021-10-15
 
 * Most of Improved security and user-management (1.4) except for:
   * Role isolation.
+
+## Sprint 4
+
+Released on 2021-10-27
+
+**Features included:**
+
+* Platform chart improvements:
+  * The default user account gets group **admin**
+  * A new service account is created also with group **admin**. This account is used by the model registration to update models.
+* Platform improvements:
+  * Groups in Keycloak are migrated to Django groups.
+  * POST/PATCH/PUT endpoints for portfolios, models and data files now accepts a `groups` parameter
+  * user without group
+    * Support Keycloak as authentication backend (extended mozilla_django_oidc).
+    * Replicates Keycloak user/roles on the fly to Django user/groups.
+    * Swagger keycloak support with instructions.
+    * Auth endpoints works with Keycloak enabled for backward compatibility.
+* Updated documentation.
+
+**This covers the following in the functional summary:**
+
+* Second part of Improved security and user-management (1.4):
+  * Group/role isolation.

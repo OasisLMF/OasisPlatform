@@ -1,8 +1,10 @@
+from django.contrib.auth.models import Group
 from drf_yasg.utils import swagger_serializer_method
-from django.core.files import File
 from rest_framework import serializers
 
 from .models import AnalysisModel, ModelScalingOptions, ModelChunkingOptions
+from ..permissions.group_auth import validate_and_update_groups, validate_data_files
+
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
     resource_file = serializers.SerializerMethodField()
@@ -10,6 +12,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     versions = serializers.SerializerMethodField()
     scaling_configuration = serializers.SerializerMethodField()
     chunking_configuration = serializers.SerializerMethodField()
+    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
 
     class Meta:
         model = AnalysisModel
@@ -26,7 +29,18 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'versions',
             'scaling_configuration',
             'chunking_configuration',
+            'groups',
         )
+
+    def validate(self, attrs):
+
+        user = self.context.get('request').user
+
+        # Validate and update groups parameter
+        validate_and_update_groups(self.partial, user, attrs)
+        validate_data_files(user, attrs.get('data_files'))
+
+        return attrs
 
     def create(self, validated_data):
         data = validated_data.copy()

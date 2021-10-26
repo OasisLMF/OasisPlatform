@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import os
 
+# from src.server.oasisapi.celeryimport.celeryimport import Celery
 from celery import Celery
 from django.conf import settings
 

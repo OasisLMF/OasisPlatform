@@ -1,16 +1,13 @@
 import string
-from unittest import skip
 
 from backports.tempfile import TemporaryDirectory
-from celery import signature
 from django.test import override_settings
 from django.utils.timezone import now, utc
 from django_webtest import WebTestMixin
 from freezegun import freeze_time
 from hypothesis import given, settings
-from hypothesis._strategies import datetimes, just
 from hypothesis.extra.django import TestCase
-from hypothesis.strategies import text, sampled_from
+from hypothesis.strategies import text, sampled_from, datetimes, just
 from mock import patch, PropertyMock, Mock
 from rest_framework.exceptions import ValidationError
 
@@ -19,7 +16,6 @@ from ...portfolios.tests.fakes import fake_portfolio
 from ...files.tests.fakes import fake_related_file
 from ...auth.tests.fakes import fake_user
 from ..models import Analysis, AnalysisTaskStatus
-from ..tasks import record_run_analysis_result, record_generate_input_result
 from .fakes import fake_analysis, FakeAsyncResultFactory, fake_analysis_task_status
 
 # Override default deadline for all tests to 8s
@@ -215,8 +211,8 @@ class AnalysisRun(WebTestMixin, TestCase):
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
     @given(
         status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
-            Analysis.status_choices.INPUTS_GENERATION_QUEUED, 
-            Analysis.status_choices.INPUTS_GENERATION_STARTED, 
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED,
+            Analysis.status_choices.INPUTS_GENERATION_STARTED,
             Analysis.status_choices.RUN_QUEUED,
             Analysis.status_choices.RUN_STARTED
         ]]),

@@ -1,6 +1,7 @@
-import logging
 import hashlib
+import logging
 
+from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -24,12 +25,16 @@ def md5_filehash(in_memory_file, chunk_size=4096):
 
 
 class RelatedFileSerializer(serializers.ModelSerializer):
+
+    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+
     class Meta:
         model = RelatedFile
         fields = (
             'created',
             'file',
             'filename',
+            'groups',
             # 'filehash_md5',
         )
 
@@ -41,6 +46,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['creator'] = self.context['request'].user
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name
+        attrs['groups'] = self.context['request'].user.groups.all()
         # attrs['filehash_md5'] = md5_filehash(self.context['request'].FILES['file'])
         return super(RelatedFileSerializer, self).validate(attrs)
 
