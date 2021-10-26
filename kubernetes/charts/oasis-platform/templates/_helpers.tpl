@@ -194,7 +194,7 @@ Init container to wait for a service to become available (tcp check only)
 {{- define "h.initTcpAvailabilityCheck" -}}
 {{- $root := (index . 0) -}}
 - name: init-tcp-wait
-  image: {{ $root.Values.modelImages.init.image }}:{{ $root.Values.modelImages.init.version }}
+  image: {{ $root.Values.images.init.image }}:{{ $root.Values.images.init.version }}
   command: ['sh', '-c', "
     {{- range $s := slice . 1 -}}
         until nc -zw 3 {{ $s.name }} {{ $s.port }}; do echo 'waiting for service {{ $s.name }}...'; sleep 1; done;

@@ -9,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: wget
-      image: {{ .Values.modelImages.init.image }}:{{ .Values.modelImages.init.version }}
+      image: {{ .Values.images.init.image }}:{{ .Values.images.init.version }}
       command: ['sh']
       args: ['-c', 'wget -O /dev/null {{ .Values.oasisServer.name }}:{{ .Values.oasisServer.port }} && wget -O /dev/null {{ .Values.oasisUI.name }}:{{ .Values.oasisUI.port }}']
   restartPolicy: Never
