@@ -100,7 +100,7 @@ numpy==1.19.4
     #   numba
     #   numexpr
     #   pandas
-oasislmf==1.15.17
+oasislmf==1.15.18
     # via -r requirements-worker.in
 packaging==20.4
     # via pytest
