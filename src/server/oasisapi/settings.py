@@ -11,16 +11,14 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+
 import sys
-
-from rest_framework.reverse import reverse_lazy
 from django.core.exceptions import ImproperlyConfigured
+from rest_framework.reverse import reverse_lazy
 
+from ...common.shared import set_aws_log_level
 from ...conf import iniconf  # noqa
 from ...conf.celeryconf import *  # noqa
-from ...common.shared import set_aws_log_level
-
-
 
 IN_TEST = 'test' in sys.argv
 
@@ -57,10 +55,10 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'drf_yasg',
-    'rest_framework_simplejwt.token_blacklist',
     'channels',
     'storages',
 
+    'src.server.oasisapi.oidc',
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
     'src.server.oasisapi.analyses',
@@ -82,7 +80,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
-
 
 if DEBUG_TOOLBAR:
     INSTALLED_APPS.append('debug_toolbar')
@@ -132,12 +129,86 @@ else:
         }
     }
 
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'src.server.oasisapi.filters.Backend',
+    ),
+    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_VERSION': 'v1',
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 
-AUTH_PASSWORD_VALIDATORS = []
 AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
+AUTH_PASSWORD_VALIDATORS = []
 
+API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
+
+if API_AUTH_TYPE == 'keycloak':
+
+    INSTALLED_APPS += (
+        'mozilla_django_oidc',
+    )
+    AUTHENTICATION_BACKENDS = ('src.server.oasisapi.oidc.keycloak_auth.KeycloakOIDCAuthenticationBackend',)
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('mozilla_django_oidc.contrib.drf.OIDCAuthentication',)
+
+    OIDC_RP_CLIENT_ID = iniconf.settings.get('server', 'OIDC_CLIENT_NAME')
+    OIDC_RP_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_CLIENT_SECRET')
+    KEYCLOAK_OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT')
+
+    OIDC_OP_AUTHORIZATION_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'auth'
+    OIDC_OP_TOKEN_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'token'
+    OIDC_OP_USER_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'userinfo'
+
+    # No need to verify our internal self signed keycloak certificate
+    OIDC_VERIFY_SSL = False
+
+    SWAGGER_SETTINGS = {
+        'USE_SESSION_AUTH': False,
+        'SECURITY_DEFINITIONS': {
+            "keycloak": {
+                "type": "oauth2",
+                "authorizationUrl": KEYCLOAK_OIDC_BASE_URL + 'auth',
+                "refreshUrl": OIDC_OP_TOKEN_ENDPOINT + 'auth',
+                "flow": "implicit",
+                "scopes": {}
+            }
+        },
+        "schemes": ["http", "https"]
+    }
+else:
+    INSTALLED_APPS += ('rest_framework_simplejwt.token_blacklist',)
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('rest_framework_simplejwt.authentication.JWTAuthentication',)
+
+    # https://github.com/davesque/django-rest-framework-simplejwt
+    SIMPLE_JWT = {
+        'ACCESS_TOKEN_LIFETIME':  iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
+        'REFRESH_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_REFRESH_LIFETIME', fallback='days=2'),
+        'ROTATE_REFRESH_TOKENS': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
+        'BLACKLIST_AFTER_ROTATION': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
+        'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
+    }
+
+    SWAGGER_SETTINGS = {
+        'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
+        'LOGIN_URL': reverse_lazy('rest_framework:login'),
+        'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
+        "schemes": ["http", "https"]
+    }
+
+
+# Make swagger aware of the protocol used by the client (web browser -> ingress)
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -206,35 +277,6 @@ else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
 
 
-# https://github.com/davesque/django-rest-framework-simplejwt
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
-    'REFRESH_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_REFRESH_LIFETIME', fallback='days=2'),
-    'ROTATE_REFRESH_TOKENS': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
-    'BLACKLIST_AFTER_ROTATION': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
-    'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
-}
-
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'src.server.oasisapi.filters.Backend',
-    ),
-    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
-    'DEFAULT_VERSION': 'v1',
-}
-
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
@@ -260,14 +302,6 @@ LOGGING = {
 if IN_TEST:
     BROKER_URL = 'memory://'
     LOGGING['root'] = {}
-
-
-SWAGGER_SETTINGS = {
-    'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
-    'LOGIN_URL': reverse_lazy('rest_framework:login'),
-    'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
-    "schemes": ["http", "https"]
-}
 
 CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
 CHANNEL_LAYER_PASS = iniconf.settings.get('server', 'channel_layer_pass', fallback='')

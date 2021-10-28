@@ -49,11 +49,11 @@ class ServerInfoView(views.APIView):
         server_config['LANGUAGE_CODE'] = settings.LANGUAGE_CODE
         server_config['TIME_ZONE'] = settings.TIME_ZONE
 
-        # Backends  
+        # Backends
         server_config['DEFAULT_FILE_STORAGE'] = settings.DEFAULT_FILE_STORAGE
         server_config['DB_ENGINE'] = settings.DB_ENGINE
 
-        # Storage 
+        # Storage
         server_config['STORAGE_TYPE'] = settings.STORAGE_TYPE
         server_config['MEDIA_ROOT'] = settings.MEDIA_ROOT
         server_config['AWS_STORAGE_BUCKET_NAME'] = settings.AWS_STORAGE_BUCKET_NAME
@@ -62,14 +62,21 @@ class ServerInfoView(views.APIView):
         server_config['AWS_QUERYSTRING_EXPIRE'] = settings.AWS_QUERYSTRING_EXPIRE
         server_config['AWS_QUERYSTRING_AUTH'] = settings.AWS_QUERYSTRING_AUTH
 
-        # Token Conf
-        server_config['ROTATE_REFRESH_TOKEN'] = settings.SIMPLE_JWT['ROTATE_REFRESH_TOKENS']
-        server_config['ACCESS_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
-        server_config['REFRESH_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
+        # Auth Conf
+        if settings.API_AUTH_TYPE == 'keycloak':
+            server_config['API_AUTH_TYPE'] = settings.API_AUTH_TYPE
+            server_config['OIDC_OP_AUTHORIZATION_ENDPOINT'] = settings.OIDC_OP_AUTHORIZATION_ENDPOINT
+            server_config['OIDC_OP_TOKEN_ENDPOINT'] = settings.OIDC_OP_TOKEN_ENDPOINT
+            server_config['OIDC_OP_USER_ENDPOINT'] = settings.OIDC_OP_USER_ENDPOINT
+        else:
+            server_config['API_AUTH_TYPE'] = "simple_jwt"
+            server_config['ROTATE_REFRESH_TOKEN'] = settings.SIMPLE_JWT['ROTATE_REFRESH_TOKENS']
+            server_config['ACCESS_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
+            server_config['REFRESH_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
+
+
 
         return Response({
             'version': server_version,
             'config': server_config
         })
-
-

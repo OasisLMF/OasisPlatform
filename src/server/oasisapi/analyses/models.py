@@ -1,37 +1,33 @@
 from __future__ import absolute_import, print_function
 
-from typing import List
-
 from celery.result import AsyncResult
-
-from src.server.oasisapi.celery import celery_app
 from django.conf import settings
+## imports from prev non-2020 version
+from django.core.files.base import File
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
+from model_utils.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
+from src.server.oasisapi.celery import celery_app
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
     TaskStatusMessageAnalysisItem, build_task_status_message
-from ..files.models import RelatedFile, file_storage_link
-
-## imports from prev non-2020 version 
-from celery import signature
-from django.core.files.base import File
-from django.db.models.signals import post_delete
-from django.dispatch import receiver
-#from .tasks import record_generate_input_result, record_run_analysis_result
-###############
-
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
+from ..files.models import RelatedFile, file_storage_link
 from ..portfolios.models import Portfolio
 from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
+
+
+# from .tasks import record_generate_input_result, record_run_analysis_result
+###############
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -244,7 +240,7 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_run_log_file_url(self, request=None):
         return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
-    
+
     def get_absolute_storage_url(self, request=None):
         return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
@@ -403,10 +399,10 @@ class Analysis(TimeStampedModel):
         valid_choices = INPUTS_GENERATION_STATES + RUN_ANALYSIS_STATES
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis is not running or queued']})
-        
+
         if self.status in INPUTS_GENERATION_STATES:
             self.cancel_generate_inputs()
-        
+
         if self.status in RUN_ANALYSIS_STATES:
             self.cancel_analysis()
 
@@ -499,7 +495,7 @@ class Analysis(TimeStampedModel):
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [ 
+    files_for_removal = [
          'settings_file',
          'input_file',
          'input_generation_traceback_file',
@@ -510,7 +506,7 @@ def delete_connected_files(sender, instance, **kwargs):
          'lookup_success_file',
          'lookup_validation_file',
          'summary_levels_file',
-    ]   
+    ]
     for ref in files_for_removal:
         file_ref = getattr(instance, ref)
         if file_ref:
@@ -534,7 +530,7 @@ def delete_connected_files(sender, instance, **kwargs):
     #    self.task_started = None
     #    self.task_finished = None
     #    self.save()
-        
+
     #@property
     #def run_analysis_signature(self):
     #    complex_data_files = self.create_complex_model_data_file_dicts()

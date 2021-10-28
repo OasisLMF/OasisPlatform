@@ -1,3 +1,4 @@
+{{ $realmSecretName := printf "%s-realm" .Values.keycloak.name }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -19,6 +20,20 @@ type: Opaque
 data:
   user: {{ .Values.keycloak.user | b64enc }}
   password: {{ include "h.password" (list .Values.keycloak.name "password" . .Values.keycloak.password (printf "A valid password for %s is required" .Values.keycloak.name)) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $realmSecretName }}
+data:
+  oasis: |-
+    {{- $userTemplate := .Files.Get "resources/oasis-realm-user.json" }}
+    {{- $userJson := list -}}
+    {{- $userJson = $userTemplate | replace "___UUID___" uuidv4 | replace "___USERNAME___" .Values.keycloak.oasisRestApi.platformServiceAccount.username | replace "___PASSWORD___" .Values.keycloak.oasisRestApi.platformServiceAccount.password | append $userJson -}}
+    {{- range $i, $user := .Values.keycloak.oasisRestApi.users }}
+    {{- $userJson = $userTemplate | replace "___UUID___" uuidv4 | replace "___USERNAME___" $user.username | replace "___PASSWORD___" $user.password | append $userJson -}}
+    {{- end }}
+    {{- .Files.Get "resources/oasis-realm.json" | replace "\"___USERS___\"" (join "," $userJson) | nindent 4 }}
 ---
 apiVersion: v1
 kind: Service
@@ -55,6 +70,7 @@ spec:
         app: {{ .Values.keycloak.name }}
       annotations:
         checksum/{{ .Values.databases.keycloak_db.name }}: {{ toJson .Values.databases.keycloak_db | sha256sum }}
+        checksum/realm: {{ .Files.Get "resources/oasis-realm.json" | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
@@ -106,8 +122,8 @@ spec:
               value: INFO
             - name: PROXY_ADDRESS_FORWARDING
               value: "true"
-{{/*            - name: JDBC_PARAMS*/}}
-{{/*              value: useSSL=false&allowPublicKeyRetrieval=true*/}}
+            - name: KEYCLOAK_IMPORT
+              value: "/opt/oasis-realm.json"
           readinessProbe:
             httpGet:
               path: /auth/realms/master
@@ -124,3 +140,11 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 2
             failureThreshold: 2
+          volumeMounts:
+            - name: realm-config
+              mountPath: /opt/oasis-realm.json
+              subPath: oasis
+      volumes:
+        - name: realm-config
+          configMap:
+            name: {{ $realmSecretName }}

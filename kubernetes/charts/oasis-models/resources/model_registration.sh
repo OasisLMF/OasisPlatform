@@ -82,3 +82,5 @@ if [ -f "$SCALING_CONFIGURATION_FILE" ]; then
 fi
 
 echo "Finished"
+
+fi

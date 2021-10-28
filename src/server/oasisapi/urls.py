@@ -33,17 +33,30 @@ api_router.register('queue', QueueViewSet, basename='queue')
 api_router.register('queue-status', WebsocketViewSet, basename='queue')
 # api_router.register('files', FilesViewSet, basename='file')
 
-
-api_info = openapi.Info(
-    title="Oasis Platform",
-    default_version='v1',
-    description="""
+api_info_description = """
 # Workflow
 The general workflow is as follows
+"""
 
-1. Authenticate your client, either supply your username and password to the `/refresh_token/`
-   endpoint or make a `post` request to `/access_token/` with the `HTTP_AUTHORIZATION` header
-   set as `Bearer <refresh_token>`.
+if settings.API_AUTH_TYPE == 'keycloak':
+    api_info_description += """
+1. Authenticate your client:
+    1. Post to the keycloak endpoint:
+       `grant_type=password&client_id=<client-id>&client_secret=<client-secret>&username=<username>&password=<password>`
+       Check your chart values to find the endpoint (`OIDC_ENDPOINT`), <client-id> (`OIDC_CLIENT_NAME`) and
+       <client-secret> (`OIDC_CLIENT_SECRET`).
+    2. Either supply your username and password to the `/access_token/` endpoint or make a `post` request
+       to `/refresh_token/` with the `HTTP_AUTHORIZATION` header set as `Bearer <refresh_token>`.
+    3. Here in swagger - click the `Authorize` button, enter 'swagger' as client_id and click Authorize. This will open
+       a new window with the keycloak login, enter your credentials and click Login. This will close the window and get
+       you back to the authorize dialog which you now can close."""
+else:
+    api_info_description += """
+1. Authenticate your client, either supply your username and password to the `/access_token/`
+   endpoint or make a `post` request to `/refresh_token/` with the `HTTP_AUTHORIZATION` header
+   set as `Bearer <refresh_token>`."""
+
+api_info_description += """
 2. Create a portfolio (post to `/portfolios/`).
 3. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
 4. Create the model object for your model (post to `/models/`).
@@ -51,7 +64,12 @@ The general workflow is as follows
    for the analysis.
 6. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
 7. Run the analysis (post to `/analyses/<pk>/run/`)
-8. Get the outputs (get `/analyses/<pk>/output_file/`)""",
+8. Get the outputs (get `/analyses/<pk>/output_file/`)"""
+
+api_info = openapi.Info(
+    title="Oasis Platform",
+    default_version='v1',
+    description=api_info_description,
 )
 
 schema_view = get_schema_view(
@@ -63,9 +81,9 @@ schema_view = get_schema_view(
 """ Developer note:
 
 These are custom routes to use the endpoint 'settings'
-adding the method 'def settings( .. )' fails under 
-viewsets.ModelViewSet due to it overriding 
-the internal Django settings object 
+adding the method 'def settings( .. )' fails under
+viewsets.ModelViewSet due to it overriding
+the internal Django settings object
 """
 
 model_settings = ModelSettingsView.as_view({
@@ -78,7 +96,6 @@ analyses_settings = AnalysisSettingsView.as_view({
     'post': 'analysis_settings',
     'delete': 'analysis_settings'
 })
-
 
 urlpatterns = [
     url(r'^(?P<version>[^/]+)/models/(?P<pk>\d+)/settings/', model_settings, name='model-settings'),

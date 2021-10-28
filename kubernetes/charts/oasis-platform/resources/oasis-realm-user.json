@@ -1,0 +1,17 @@
+{
+  "id" : "___UUID___",
+  "createdTimestamp" : 1632406965622,
+  "username" : "___USERNAME___",
+  "enabled" : true,
+  "totp" : false,
+  "emailVerified" : false,
+  "credentials" : [ {
+    "type" : "password",
+    "value": "___PASSWORD___"
+  } ],
+  "disableableCredentialTypes" : [ ],
+  "requiredActions" : [ ],
+  "realmRoles" : [ "default-roles-oasis" ],
+  "notBefore" : 0,
+  "groups" : [ ]
+}

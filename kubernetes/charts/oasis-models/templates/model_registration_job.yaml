@@ -24,7 +24,7 @@ spec:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.oasisServer.name) | nindent 8}}
       containers:
         - name: init-model-registration
-          image: {{ .Values.images.init.image }}:{{- .Values.images.init.version }}
+          image: {{ .Values.modelImages.init.image }}:{{- .Values.modelImages.init.version }}
           env:
             {{- include "h.oasisServerEnvs" $root | indent 12 }}
             {{- range $index, $worker := .Values.workers }}

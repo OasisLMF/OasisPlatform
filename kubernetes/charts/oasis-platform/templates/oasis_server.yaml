@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.oasisServer.name }}
+  namespace: default
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+type: Opaque
+data:
+  user: {{ required (printf "A valid user for oasis api is required") .Values.oasisServer.user | b64enc }}
+  password: {{ include "h.password" (list .Values.oasisServer.name "password" . .Values.oasisServer.password (printf "A valid password for %s is required" .Values.oasisServer.name)) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.oasisServer.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+data:
+  host: {{ .Values.oasisServer.name }}
+  port: "{{ .Values.oasisServer.port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.oasisServer.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.oasisServer.port }}
+  selector:
+    app: {{ .Values.oasisServer.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.oasisServer.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.oasisServer.name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "h.labels" . | nindent 8}}
+        app: {{ .Values.oasisServer.name }}
+      annotations:
+        checksum/oasis-server: {{ toJson .Values.oasisServer | sha256sum }}
+        checksum/{{ .Values.databases.oasis_db.name }}: {{ toJson .Values.databases.oasis_db | sha256sum }}
+        checksum/{{ .Values.databases.celery_db.name }}: {{ toJson .Values.databases.celery_db | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db) | nindent 8}}
+      containers:
+        - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          name: {{ .Values.oasisServer.name }}
+          imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
+          env:
+            - name: OASIS_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisServer.name }}
+                  key: user
+            - name: OASIS_ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisServer.name }}
+                  key: password
+            {{- include "h.serverDbVars" . | indent 12}}
+            {{- include "h.celeryDbVars" . | indent 12}}
+            {{- include "h.brokerVars" . | indent 12 }}
+            {{- include "h.channelLayerVars" . | indent 12 }}
+            - name: STARTUP_RUN_MIGRATIONS
+              value: "true"
+            - name: OASIS_DEBUG
+              value: "1"
+            - name: INGRESS_EXTERNAL_HOST
+              value: {{ .Values.ingress.uiHostname }}
+            - name: INGRESS_INTERNAL_HOST
+              value: {{ .Release.Name | lower }}-ingress-nginx-controller
+            {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
+            - name: OASIS_SERVER_API_AUTH_TYPE
+              value: keycloak
+            - name: OASIS_SERVER_OIDC_CLIENT_NAME
+              value: {{ .Values.oasisServer.oidc.clientName }}
+            - name: OASIS_SERVER_OIDC_CLIENT_SECRET
+              value: {{ .Values.oasisServer.oidc.clientSecret }}
+            - name: OASIS_SERVER_OIDC_ENDPOINT
+              value: {{ .Values.oasisServer.oidc.endpoint }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.oasisServer.port }}
+              name: {{ .Values.oasisServer.name }}
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.oasisServer.port}}
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.oasisServer.port}}
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 2
+      volumes:
+        - name: shared-fs-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.sharedFs.name }}
