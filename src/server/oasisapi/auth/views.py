@@ -25,7 +25,8 @@ class TokenRefreshView(BaseTokenRefreshView):
 
     @swagger_auto_schema(
         manual_parameters=[TOKEN_REFRESH_HEADER],
-        responses={status.HTTP_200_OK: TokenRefreshResponseSerializer})
+        responses={status.HTTP_200_OK: TokenRefreshResponseSerializer},
+        security=[])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
@@ -36,6 +37,8 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     """
     serializer_class = OIDCTokenObtainPairSerializer if settings.API_AUTH_TYPE == 'keycloak' else SimpleTokenObtainPairSerializer
 
-    @swagger_auto_schema(responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer})
+    @swagger_auto_schema(
+        responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
+        security=[])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
