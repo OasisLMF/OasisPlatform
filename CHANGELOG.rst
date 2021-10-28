@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.15.18-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.17-lts...1.15.18-lts
+
 * [#525](https://github.com/OasisLMF/OasisPlatform/pull/525) - Fix/update requirment packages [WIP]
 .. _`1.15.15-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.14-lts...1.15.15-lts
 
