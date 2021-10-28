@@ -3,8 +3,18 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
   name: {{ .Release.Name | lower }}-ingress
 spec:
+  {{- if .Values.ingress.tls.providedCertificate }}
+  tls:
+    - secretName: {{ .Values.ingress.tls.providedCertificateSecret }}
+      hosts:
+        - {{ .Values.ingress.uiHostname }}
+        - {{ .Values.ingress.apiHostname }}
+  {{- else }}
+  tls: []
+  {{- end }}
   rules:
     - host: {{ .Values.ingress.uiHostname }}
       http:
@@ -14,6 +24,13 @@ spec:
             backend:
               service:
                 name: oasis-ui
+                port:
+                  number: 8080
+          - path: /auth
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
                 port:
                   number: 8080
     - host: {{ .Values.ingress.apiHostname }}

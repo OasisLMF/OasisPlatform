@@ -74,6 +74,7 @@ spec:
         {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: {{ .Values.oasisServer.name }}
           env:
             - name: OASIS_ADMIN_USER
@@ -149,6 +150,7 @@ spec:
         {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.oasisServer) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: oasis-worker-monitor
           env:
 {{- include "h.serverDbVars" . | indent 12}}
@@ -247,7 +249,8 @@ spec:
       initContainers:
         {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer) | nindent 8}}
       containers:
-        - image: coreoasis/api_server:ep-1.19.0-rc1
+        - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: celery-beat
           command: ["celery", "-A", "src.server.oasisapi", "beat", "--loglevel=DEBUG"]
           env:
@@ -260,20 +263,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: task-controller
+  name: oasis-task-controller
   labels:
-    {{- include "h.labels" . | nindent 4}}
+  {{- include "h.labels" . | nindent 4}}
 spec:
   selector:
     matchLabels:
-      app: task-controller
+      app: oasis-task-controller
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: task-controller
-        {{- include "h.labels" . | nindent 8}}
+        app: oasis-task-controller
+      {{- include "h.labels" . | nindent 8}}
       annotations:
         checksum/{{ .Values.databases.oasis_db.name }}: versions{{ toJson .Values.databases.oasis_db | sha256sum }}
         checksum/{{ .Values.databases.celery_db.name }}: versions{{ toJson .Values.databases.celery_db | sha256sum }}
@@ -282,11 +285,11 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer .Values.databases.broker) | nindent 8}}
+      {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer .Values.databases.broker) | nindent 8}}
       containers:
-        - image: coreoasis/api_server:ep-1.19.0-rc1
-          imagePullPolicy: Always
-          name: task-controller
+        - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
+          name: main
           command: ["celery", "-A", "src.server.oasisapi", "worker", "--loglevel=INFO", "-Q", "task-controller"]
           volumeMounts:
             - name: shared-fs-persistent-storage
@@ -302,4 +305,81 @@ spec:
         - name: shared-fs-persistent-storage
           persistentVolumeClaim:
             claimName: {{ .Values.volumes.sharedFs.name }}
+---
+{{- $workerControllerServiceAccountName := printf "%s-worker-controller" .Release.Name | lower }}
+{{- $clusterRoleBindingName := printf "%s-worker-controller-deployment-management" .Release.Name }}
+{{- $clusterRoleName := printf "%s-deployment-management" .Release.Name }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ $workerControllerServiceAccountName }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ $clusterRoleName }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["deployments"]
+    verbs: ["get", "watch", "list", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $clusterRoleBindingName }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $clusterRoleName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $workerControllerServiceAccountName }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oasis-worker-controller
+  labels:
+  {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: oasis-worker-controller
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: oasis-worker-controller
+      {{- include "h.labels" . | nindent 8}}
+      annotations:
+        checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisServer | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      serviceAccountName: {{ $workerControllerServiceAccountName }}
+      initContainers:
+      {{- include "h.initTcpAvailabilityCheck" (list . .Values.oasisServer) | nindent 8}}
+      containers:
+        - image: {{ .Values.images.oasis.worker_controller.image }}:{{ .Values.images.oasis.worker_controller.version }}
+          imagePullPolicy: {{ .Values.images.oasis.worker_controller.imagePullPolicy }}
+          name: main
+          env:
+          {{- include "h.serverApiVars" . | nindent 12}}
+            - name: OASIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisServer.name }}
+                  key: user
+            - name: OASIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisServer.name }}
+                  key: password
+            - name: OASIS_API_HOST
+              value: {{ .Values.oasisServer.name }}
+            - name: OASIS_API_PORT
+              value: {{ .Values.oasisServer.port | quote }}
 ---

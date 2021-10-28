@@ -27,7 +27,7 @@ spec:
 {{- end -}}
 ---
 {{- range $k, $v := .Values.databases }}
-{{- $pvHostPath := printf "/data/%s/pv/%s/" $fullname $v.name }}
+{{- $pvHostPath := printf "/data/%s/%s/" $fullname $v.name }}
 {{- if $v.user }}
 apiVersion: v1
 kind: Secret

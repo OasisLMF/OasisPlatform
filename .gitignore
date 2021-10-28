@@ -106,3 +106,7 @@ db-data/
 # Intellij IDEA
 .idea
 *.iml
+
+# Static web
+src/server/static/
+

@@ -3,18 +3,27 @@
 set -e
 
 PWP=$1
-PW_FILES="meta-data/model_settings.json oasislmf.json model_data/ keys_data/ tests/"
+MODEL_PATHS="meta-data/model_settings.json oasislmf.json model_data/ keys_data/ tests/"
+OPTIONAL_MODEL_FILES="meta-data/chunking_configuration.json meta-data/scaling_configuration.json"
 
 if [ -z "$PWP" ] || ! [ -d "$PWP" ]; then
   echo "Usage: $0 <piwind git path>"
   exit
 fi
 
-for file in $PW_FILES; do
+for file in $MODEL_PATHS; do
   file="${PWP}/$file"
-  echo "Found file: $file"
   if ! [ -f "$file" ] && ! [ -d "$file" ]; then
     echo "Missing expected file: $file"
+    exit 1
+  fi
+  echo "Found file: $file"
+done
+
+for file in $OPTIONAL_MODEL_FILES; do
+  file="${PWP}/$file"
+  if [ -f "$file" ] && ! [ -d "$file" ]; then
+    echo "Found optional file: $file"
   fi
 done
 
@@ -76,9 +85,17 @@ echo -n "Uploading files..."
 
 kubectl exec host-data-volume-pod -- mkdir -p /mnt/host/model-data/piwind/
 
-for file in $PW_FILES; do
+for file in $MODEL_PATHS; do
   file=${PWP}/$file
   kubectl cp "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/
+  echo -n .
+done
+
+for file in $OPTIONAL_MODEL_FILES; do
+  file=${PWP}/$file
+  if [ -f "$file" ] && ! [ -d "$file" ]; then
+    kubectl cp "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/
+  fi
   echo -n .
 done
 

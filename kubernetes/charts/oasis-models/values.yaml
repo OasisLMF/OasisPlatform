@@ -28,7 +28,6 @@ workers:
       - name: piwind-model-data-pv
         mountPath: /home/worker/model
         type: model-data
-    autoScaling: {} # Not yet supported
 
 # Image used by model registration init container and tcp check init container
 images:

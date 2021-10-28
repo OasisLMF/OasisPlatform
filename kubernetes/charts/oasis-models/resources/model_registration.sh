@@ -9,6 +9,8 @@ set -e
 
 BASE_URL="http://${OASIS_SERVER_HOST}:${OASIS_SERVER_PORT}"
 MODEL_SETTINGS_FILE="$OASIS_MODEL_DATA_DIRECTORY/model_settings.json"
+CHUNKING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/chunking_configuration.json"
+SCALING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/scaling_configuration.json"
 
 echo
 echo "=== Register model ==="
@@ -68,5 +70,15 @@ fi
 
 echo "Uploading model settings"
 curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
+
+if [ -f "$CHUNKING_CONFIGURATION_FILE" ]; then
+  echo "Uploading chunking configuration"
+  curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/models/${MODEL_ID}/chunking_configuration/" -H "Content-Type: application/json" -d @${CHUNKING_CONFIGURATION_FILE} | jq .
+fi
+
+if [ -f "$SCALING_CONFIGURATION_FILE" ]; then
+  echo "Uploading scaling configuration"
+  curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X POST "${BASE_URL}/v1/models/${MODEL_ID}/scaling_configuration/" -H "Content-Type: application/json" -d @${SCALING_CONFIGURATION_FILE} | jq .
+fi
 
 echo "Finished"
