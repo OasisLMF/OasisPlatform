@@ -39,7 +39,7 @@ class TestGroupAuth(TestCase):
 
         self.assertRaises(ValidationError, verify_and_get_groups, user_no_group, [g1])
         self.assertRaises(ValidationError, verify_and_get_groups, user_1_group, [])
-        self.assertRaises(ValidationError, verify_and_get_groups, user_1_group, [g1, g2])
+        self.assertRaises(ValidationError, verify_and_get_groups, user_1_group, [g2])
 
     def test_verify_and_get_groups__valid_groups(self):
 
@@ -75,5 +75,4 @@ class TestGroupAuth(TestCase):
         # Verify users are in the group
         self.assertEqual(1, len(verify_and_get_groups(user_1_group, [g1])))
         self.assertEqual(2, len(verify_and_get_groups(user_2_group, [g1, g2])))
-        self.assertRaises(ValidationError, verify_and_get_groups, user_1_group, [g1, g2])
-
+        self.assertEqual(1, len(verify_and_get_groups(user_1_group, [g1, g2])))

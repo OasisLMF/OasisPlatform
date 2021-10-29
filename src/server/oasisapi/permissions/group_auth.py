@@ -42,10 +42,11 @@ def verify_and_get_groups(user: settings.AUTH_USER_MODEL, groups):
             raise ValidationError({'groups': f'user is required to specify groups'})
     elif not user.is_superuser:
         user_group_names = get_group_names(user_groups)
-
-        user_not_in_groups = list(get_group_names(groups) - user_group_names)
-        if user_not_in_groups:
+        group_names = get_group_names(groups)
+        user_not_in_groups = list(group_names - user_group_names)
+        if user_not_in_groups and len(user_not_in_groups) == len(group_names):
             raise ValidationError({'groups': f'user is not member of group(s): {user_not_in_groups}'})
+        return list(filter(lambda ug: ug.name not in user_not_in_groups, groups))
 
     return groups
 

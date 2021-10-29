@@ -3,6 +3,7 @@ import mimetypes
 import string
 
 from backports.tempfile import TemporaryDirectory
+from django.contrib.auth.models import Group
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
@@ -19,8 +20,8 @@ from ...auth.tests.fakes import fake_user, add_fake_group
 from ..models import Portfolio
 from .fakes import fake_portfolio
 
-# Override default deadline for all tests to 8s
-settings.register_profile("ci", deadline=800.0)
+# Override default deadline for all tests to 10s
+settings.register_profile("ci", deadline=1000.0)
 settings.load_profile("ci")
 
 
@@ -140,6 +141,48 @@ class PortfolioApi(WebTestMixin, TestCase):
                     },
                     'storage_links': response.request.application_url + portfolio.get_absolute_storage_url()
                 }, response.json)
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+        group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_default_empty_groups___visible_for_users_without_groups_only(self, name, group_name):
+
+        user_with_groups = fake_user()
+        add_fake_group(user_with_groups, group_name)
+
+        response = self.app.post(
+            reverse('portfolio-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_groups))
+            },
+            params=json.dumps({'name': name}),
+            content_type='application/json'
+        )
+        self.assertEqual(201, response.status_code)
+        groups = json.loads(response.body).get('groups')
+        self.assertEqual(1, len(groups))
+        self.assertEqual(group_name, groups[0])
+
+        # The same user who created it should also see it
+        response = self.app.get(
+            reverse('portfolio-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_groups))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(json.loads(response.body)))
+
+        # Another user that don't belong to the group should not see it
+        response = self.app.get(
+            reverse('portfolio-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(0, len(json.loads(response.body)))
 
 
 class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
@@ -359,6 +402,29 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 )
 
                 self.assertEqual(400, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
+    def test_accounts_file_user_is_not_permitted___response_is_403(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+                group, _ = Group.objects.get_or_create(name='fake-group')
+                portfolio.groups.add(group)
+                portfolio.save()
+
+                response = self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(403, response.status_code)
 
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_accounts_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):

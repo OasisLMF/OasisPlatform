@@ -23,3 +23,4 @@ def add_fake_group(user, group_name):
     group, _ = Group.objects.get_or_create(name=group_name)
     group.user_set.add(user)
     user.save()
+    return group

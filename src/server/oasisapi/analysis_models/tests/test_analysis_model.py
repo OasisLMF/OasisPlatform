@@ -185,7 +185,7 @@ class AnalysisModelApi(WebTest, TestCase):
     @given(
         group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
-    def test_create_with_default_groups_and_get_with_other_groups___response_is_403(self, group_name):
+    def test_create_with_default_groups_and_get_with_other_groups___response_is_empty(self, group_name):
         user_with_group = fake_user()
         add_fake_group(user_with_group, group_name)
         model = AnalysisModel.objects.create(
@@ -194,10 +194,22 @@ class AnalysisModelApi(WebTest, TestCase):
             version_id='v',
             creator=user_with_group,
         )
-        model.groups.add(user_with_group.groups.all()[0]);
+        model.groups.add(user_with_group.groups.all()[0])
 
+        # List models as the user that created it
+        response = self.app.get(
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group))
+            },
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(json.loads(response.body)))
+
+        # Test with a user not a member of the group the model was created with
         user_without_group = fake_user()
-
         response = self.app.get(
             reverse('analysis-model-list', kwargs={'version': 'v1'}),
             expect_errors=True,
@@ -206,7 +218,8 @@ class AnalysisModelApi(WebTest, TestCase):
             },
         )
 
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(0, len(json.loads(response.body)))
 
 
 class ModelSettingsJson(WebTestMixin, TestCase):

@@ -4,6 +4,7 @@ import string
 # from tempfile import NamedTemporaryFile
 # from django.conf import settings
 from backports.tempfile import TemporaryDirectory
+from django.contrib.auth.models import Group
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
@@ -16,7 +17,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
 from ...portfolios.tests.fakes import fake_portfolio
-from ...auth.tests.fakes import fake_user
+from ...auth.tests.fakes import fake_user, add_fake_group
 from ...data_files.tests.fakes import fake_data_file
 from ..models import Analysis
 from .fakes import fake_analysis
@@ -148,7 +149,9 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'sub_task_statuses': [],
                 }, response.json)
 
-    @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
     def test_complex_model_file_present___object_is_created(self, name):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
@@ -202,9 +205,9 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'status': Analysis.status_choices.NEW,
                     'storage_links': response.request.application_url + analysis.get_absolute_storage_url(),
                     'summary_levels_file': None,
+                    'groups': [],
                     'task_started': None,
                     'task_finished': None,
-                    'groups': [],
                     'analysis_chunks': None,
                     'lookup_chunks': None,
                     'sub_task_count': None,
@@ -248,6 +251,159 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(analysis.model, model)
 
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+        group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_portfolio_group_inheritance___same_groups_as_portfolio(self, name, group_name):
+
+        user = fake_user()
+        group = add_fake_group(user, group_name)
+        model = fake_analysis_model()
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        # Deny due to not in the same group as model
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+            content_type='application/json',
+            expect_errors=True,
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('You are not allowed to use this model', json.loads(response.body).get('model')[0])
+
+        model.groups.add(group)
+        model.save()
+
+        # Deny due to not in the same group as portfolio
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+            content_type='application/json',
+            expect_errors=True,
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('You are not allowed to use this portfolio', json.loads(response.body).get('portfolio')[0])
+
+        portfolio.groups.add(group)
+        portfolio.save()
+
+        # Successfully create
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+
+        analysis = Analysis.objects.get(pk=response.json['id'])
+
+        response = self.app.get(
+            analysis.get_absolute_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual([group_name], json.loads(response.body).get('groups'))
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+        group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+        group_name2=text(alphabet=string.ascii_letters, max_size=10, min_size=2),
+        group_name3=text(alphabet=string.ascii_letters, max_size=10, min_size=3),
+    )
+    def test_multiple_analyses_with_different_groups___user_should_not_see_each_others(self, name, group_name1, group_name2, group_name3):
+
+        group1, _ = Group.objects.get_or_create(name=group_name1)
+        group2, _ = Group.objects.get_or_create(name=group_name2)
+        group3, _ = Group.objects.get_or_create(name=group_name3)
+
+        user1 = fake_user()
+        user2 = fake_user()
+
+        group1.user_set.add(user1)
+        group1.user_set.add(user2)
+        group1.save()
+
+        group2.user_set.add(user1)
+        group2.save()
+
+        group3.user_set.add(user2)
+        group3.save()
+
+        model = fake_analysis_model()
+        model.groups.add(group1)
+        model.groups.add(group2)
+        model.groups.add(group3)
+        model.save()
+
+        portfolio1 = fake_portfolio(location_file=fake_related_file())
+        portfolio1.groups.add(group2)
+        portfolio1.save()
+
+        portfolio2 = fake_portfolio(location_file=fake_related_file())
+        portfolio2.groups.add(group3)
+        portfolio2.save()
+
+        # Create an analysis with portfolio1 - group2
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+        analysis1_id = response.json['id']
+
+        # Create an analysis with portfolio2 - group3
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio2.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+        analysis2_id = response.json['id']
+
+        # User1 should only se analysis 1 with groups2
+        response = self.app.get(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analysis = json.loads(response.body)[0]
+        self.assertEqual(analysis1_id, analysis.get('id'))
+        self.assertEqual([group_name2], analysis.get('groups'))
+
+        # User2 should only se analysis2 with groups3
+        response = self.app.get(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analysis = json.loads(response.body)[0]
+        self.assertEqual(analysis2_id, analysis.get('id'))
+        self.assertEqual([group_name3], analysis.get('groups'))
+
 
 class AnalysisRun(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -283,6 +439,24 @@ class AnalysisRun(WebTestMixin, TestCase):
             )
 
             run_mock.assert_called_once_with(analysis, user)
+
+    def test_user_is_not_in_same_model_group___run_is_denied(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        group, _ = Group.objects.get_or_create(name='group_name')
+        analysis.model.groups.add(group)
+        analysis.model.save()
+
+        response = self.app.post(
+            analysis.get_absolute_run_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(403, response.status_code)
+        self.assertEqual('You are not allowed to run this model', response.json.get('detail'))
 
 
 class AnalysisCancel(WebTestMixin, TestCase):
@@ -320,6 +494,24 @@ class AnalysisCancel(WebTestMixin, TestCase):
 
             cancel_mock.assert_called_once_with(analysis)
 
+    def test_user_is_not_in_same_model_group___cancel_is_denied(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        group, _ = Group.objects.get_or_create(name='group_name')
+        analysis.model.groups.add(group)
+        analysis.model.save()
+
+        response = self.app.post(
+            analysis.get_absolute_cancel_analysis_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(403, response.status_code)
+        self.assertEqual('You are not allowed to cancel this model', response.json.get('detail'))
+
 
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -356,6 +548,24 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
 
             generate_inputs_mock.assert_called_once_with(analysis, user)
 
+    def test_user_is_not_in_same_model_group___run_is_denied(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        group, _ = Group.objects.get_or_create(name='group_name')
+        analysis.model.groups.add(group)
+        analysis.model.save()
+
+        response = self.app.post(
+            analysis.get_absolute_generate_inputs_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(403, response.status_code)
+        self.assertEqual('You are not allowed to run this model', response.json.get('detail'))
+
 
 class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -391,6 +601,24 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
             )
 
             cancel_generate_inputs.assert_called_once_with(analysis)
+
+    def test_user_is_not_in_same_model_group___cancel_is_denied(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        group, _ = Group.objects.get_or_create(name='group_name')
+        analysis.model.groups.add(group)
+        analysis.model.save()
+
+        response = self.app.post(
+            analysis.get_absolute_cancel_inputs_generation_url(),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(403, response.status_code)
+        self.assertEqual('You are not allowed to cancel this model', response.json.get('detail'))
 
 
 class AnalysisCopy(WebTestMixin, TestCase):

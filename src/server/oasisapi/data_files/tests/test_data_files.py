@@ -12,7 +12,7 @@ from hypothesis.strategies import text, binary, sampled_from
 
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ...auth.tests.fakes import fake_user
+from ...auth.tests.fakes import fake_user, add_fake_group
 from ..models import DataFile
 from .fakes import fake_data_file
 
@@ -25,9 +25,11 @@ class ComplexModelFilesApi(WebTestMixin, TestCase):
 
     @given(
         file_description=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+        group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
-    def test_data_is_valid___object_is_created(self, file_description):
+    def test_data_is_valid___object_is_created(self, file_description, group_name):
         user = fake_user()
+        add_fake_group(user, group_name)
 
         response = self.app.post(
             reverse('data-file-list', kwargs={'version': 'v1'}),
@@ -44,6 +46,7 @@ class ComplexModelFilesApi(WebTestMixin, TestCase):
 
         self.assertEqual(201, response.status_code)
         self.assertEqual(model.file_description, file_description)
+        self.assertEqual([group_name], list(map(lambda m: m.name, model.groups.all())))
 
 
 class ComplexModelFileDataFile(WebTestMixin, TestCase):
@@ -51,7 +54,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
         cmf = fake_data_file()
 
         response = self.app.get(cmf.get_absolute_data_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_data_file_is_not_present___get_response_is_404(self):
         user = fake_user()
