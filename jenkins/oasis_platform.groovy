@@ -420,53 +420,6 @@ node {
             **/
        }
 
-       if (params.PUBLISH){
-            parallel(
-                publish_api_server: {
-                    stage ('Publish: api_server') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
-
-                            // push lts tags
-                            sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:latest-lts"
-                            sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:${RELEASE_NUM_ONLY}"
-
-                            sh "docker push ${image_api}:latest-lts"
-                            sh "docker push ${image_api}:${RELEASE_NUM_ONLY}"
-                        }
-                    }
-                },
-                publish_model_worker: {
-                    stage('Publish: model_worker') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
-                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
-
-                            // push lts tags
-                            sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:latest-lts"
-                            sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:${RELEASE_NUM_ONLY}"
-
-                            sh "docker push ${image_worker}:latest-lts"
-                            sh "docker push ${image_worker}:${RELEASE_NUM_ONLY}"
-                        }
-                    }
-                },
-                publish_piwind_worker: {
-                    stage('Publish: model_worker') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
-
-                            // push lts tags
-                            sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:latest-lts"
-                            sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:${RELEASE_NUM_ONLY}"
-
-                            sh "docker push ${image_piwind}:latest-lts"
-                            sh "docker push ${image_piwind}:${RELEASE_NUM_ONLY}"
-                        }
-                    }
-                }
-            )
-        }
 
         if(params.PUBLISH){
             // Tag OasisPlatform / PiWind
@@ -523,6 +476,52 @@ node {
                     }
                 }
             }
+
+            parallel(
+                publish_api_server: {
+                    stage ('Publish: api_server') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+
+                            // push lts tags
+                            sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:latest-lts"
+                            sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:${RELEASE_NUM_ONLY}"
+
+                            sh "docker push ${image_api}:latest-lts"
+                            sh "docker push ${image_api}:${RELEASE_NUM_ONLY}"
+                        }
+                    }
+                },
+                publish_model_worker: {
+                    stage('Publish: model_worker') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
+
+                            // push lts tags
+                            sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:latest-lts"
+                            sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:${RELEASE_NUM_ONLY}"
+
+                            sh "docker push ${image_worker}:latest-lts"
+                            sh "docker push ${image_worker}:${RELEASE_NUM_ONLY}"
+                        }
+                    }
+                },
+                publish_piwind_worker: {
+                    stage('Publish: model_worker') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
+
+                            // push lts tags
+                            sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:latest-lts"
+                            sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:${RELEASE_NUM_ONLY}"
+
+                            sh "docker push ${image_piwind}:latest-lts"
+                            sh "docker push ${image_piwind}:${RELEASE_NUM_ONLY}"
+                        }
+                    }
+                }
+            )
         }
     } catch(hudson.AbortException | org.jenkinsci.plugins.workflow.steps.FlowInterruptedException buildException) {
         hasFailed = true
