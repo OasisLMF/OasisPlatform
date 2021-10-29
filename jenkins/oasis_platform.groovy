@@ -407,39 +407,6 @@ node {
             **/
        }
 
-       if (params.PUBLISH){
-            parallel(
-                publish_api_server: {
-                    stage ('Publish: api_server') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
-                            if (! params.PRE_RELEASE){
-                                sh PIPELINE + " push_image ${image_api} latest"
-                            }
-                        }
-                    }
-                },
-                publish_model_worker: {
-                    stage('Publish: model_worker') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
-                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
-                            if (! params.PRE_RELEASE){
-                                sh PIPELINE + " push_image ${image_worker} latest"
-                            }
-                        }
-                    }
-                },
-                publish_piwind_worker: {
-                    stage('Publish: model_worker') {
-                        dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
-                        }
-                    }
-                }
-            )
-        }
-
         if(params.PUBLISH){
             // Tag OasisPlatform / PiWind
             stage("Tag release") {
@@ -495,6 +462,36 @@ node {
                     }
                 }
             }
+            parallel(
+                publish_api_server: {
+                    stage ('Publish: api_server') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+                            if (! params.PRE_RELEASE){
+                                sh PIPELINE + " push_image ${image_api} latest"
+                            }
+                        }
+                    }
+                },
+                publish_model_worker: {
+                    stage('Publish: model_worker') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
+                            sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
+                            if (! params.PRE_RELEASE){
+                                sh PIPELINE + " push_image ${image_worker} latest"
+                            }
+                        }
+                    }
+                },
+                publish_piwind_worker: {
+                    stage('Publish: model_worker') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
+                        }
+                    }
+                }
+            )
         }
     } catch(hudson.AbortException | org.jenkinsci.plugins.workflow.steps.FlowInterruptedException buildException) {
         hasFailed = true
