@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#554](https://github.com/OasisLMF/OasisPlatform/pull/554) - Remove error check in worker -- handled in monitor
+.. _`1.22.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.21.0...1.22.0
+
 `1.21.0`_
  ---------
 * [#539](https://github.com/OasisLMF/OasisPlatform/pull/539) - Fix/security patches
