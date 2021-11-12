@@ -18,7 +18,7 @@ from src.server.oasisapi.queues.consumers import send_task_status_message, TaskS
     TaskStatusMessageAnalysisItem, build_task_status_message
 from ..files.models import RelatedFile, file_storage_link
 
-## imports from prev non-2020 version 
+## imports from prev non-2020 version
 from celery import signature
 from django.core.files.base import File
 from django.db.models.signals import post_delete
@@ -244,12 +244,12 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_run_log_file_url(self, request=None):
         return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
-    
+
     def get_absolute_storage_url(self, request=None):
         return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-    def get_absolute_subtask_url(self, request=None):
-        return reverse('analysis-sub-tasks', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_subtask_list_url(self, request=None):
+        return reverse('analysis-sub-task-list', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
 
     def validate_run(self):
@@ -406,10 +406,10 @@ class Analysis(TimeStampedModel):
         valid_choices = INPUTS_GENERATION_STATES + RUN_ANALYSIS_STATES
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis is not running or queued']})
-        
+
         if self.status in INPUTS_GENERATION_STATES:
             self.cancel_generate_inputs()
-        
+
         if self.status in RUN_ANALYSIS_STATES:
             self.cancel_analysis()
 
@@ -502,7 +502,7 @@ class Analysis(TimeStampedModel):
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [ 
+    files_for_removal = [
          'settings_file',
          'input_file',
          'input_generation_traceback_file',
@@ -513,93 +513,8 @@ def delete_connected_files(sender, instance, **kwargs):
          'lookup_success_file',
          'lookup_validation_file',
          'summary_levels_file',
-    ]   
+    ]
     for ref in files_for_removal:
         file_ref = getattr(instance, ref)
         if file_ref:
             file_ref.delete()
-
-
-    # ### ORIG funcs #############################################################################
-    #
-    #def run(self, initiator):
-    #    self.validate_run()
-
-    #    self.status = self.status_choices.RUN_QUEUED
-
-    #    run_analysis_signature = self.run_analysis_signature
-    #    run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
-    #    run_analysis_signature.link_error(
-    #        signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-    #    )
-    #    dispatched_task = run_analysis_signature.delay()
-    #    self.run_task_id = dispatched_task.id
-    #    self.task_started = None
-    #    self.task_finished = None
-    #    self.save()
-        
-    #@property
-    #def run_analysis_signature(self):
-    #    complex_data_files = self.create_complex_model_data_file_dicts()
-    #    input_file = file_storage_link(self.input_file)
-    #    settings_file = file_storage_link(self.settings_file)
-
-    #    return signature(
-    #        'run_analysis',
-    #        args=(self.pk, input_file, settings_file, complex_data_files),
-    #        queue=self.model.queue_name,
-    #    )
-    #
-    #
-    #
-    #
-    #
-    #def generate_inputs(self, initiator):
-    #    valid_choices = [
-    #        self.status_choices.NEW,
-    #        self.status_choices.INPUTS_GENERATION_ERROR,
-    #        self.status_choices.INPUTS_GENERATION_CANCELLED,
-    #        self.status_choices.READY,
-    #        self.status_choices.RUN_COMPLETED,
-    #        self.status_choices.RUN_CANCELLED,
-    #        self.status_choices.RUN_ERROR,
-    #    ]
-
-    #    errors = {}
-    #    if self.status not in valid_choices:
-    #        errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
-
-    #    if self.model.deleted:
-    #        errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-
-    #    if not self.portfolio.location_file:
-    #        errors['portfolio'] = ['"location_file" must not be null']
-
-    #    if errors:
-    #        raise ValidationError(errors)
-
-    #    self.status = self.status_choices.INPUTS_GENERATION_QUEUED
-    #    generate_input_signature = self.generate_input_signature
-    #    generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
-    #    generate_input_signature.link_error(
-    #        signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-    #    )
-    #    self.generate_inputs_task_id = generate_input_signature.delay().id
-    #    self.task_started = None
-    #    self.task_finished = None
-    #    self.save()
-    #
-    #@property
-    #def generate_input_signature(self):
-    #    loc_file = file_storage_link(self.portfolio.location_file)
-    #    acc_file = file_storage_link(self.portfolio.accounts_file)
-    #    info_file = file_storage_link(self.portfolio.reinsurance_info_file)
-    #    scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
-    #    settings_file = file_storage_link(self.settings_file)
-    #    complex_data_files = self.create_complex_model_data_file_dicts()
-
-    #    return signature(
-    #        'generate_input',
-    #        args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
-    #        queue=self.model.queue_name
-    #    )

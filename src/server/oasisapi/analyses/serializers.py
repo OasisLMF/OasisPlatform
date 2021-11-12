@@ -72,12 +72,8 @@ class AnalysisListSerializer(serializers.Serializer):
     run_log_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
 
-
-    # -- REMOVE --
-    #sub_task_statuses = AnalysisTaskStatusSerializer(many=True, read_only=True)
-
-    # -- NEW --
-    sub_tasks = serializers.SerializerMethodField(read_only=True)
+    # sub task fields
+    sub_task_list = serializers.SerializerMethodField(read_only=True)
     status_ids = serializers.SerializerMethodField(read_only=True)
     status_count = serializers.SerializerMethodField(read_only=True)
 
@@ -143,9 +139,9 @@ class AnalysisListSerializer(serializers.Serializer):
         return instance.get_absolute_storage_url(request=request)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
-    def get_sub_tasks(self, instance):
+    def get_sub_task_list(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_subtask_url(request=request)
+        return instance.get_absolute_subtask_list_url(request=request)
 
     def get_status_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
@@ -161,7 +157,7 @@ class AnalysisListSerializer(serializers.Serializer):
     def get_status_count(self, instance):
         #request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        
+
         return {
             "TOTAL":     subtask_queryset.filter().count(),
             "PENDING":   subtask_queryset.filter(status='PENDING').count(),
@@ -171,131 +167,27 @@ class AnalysisListSerializer(serializers.Serializer):
             "CANCELLED": subtask_queryset.filter(status='CANCELLED').count(),
             "ERROR":     subtask_queryset.filter(status='ERROR').count()
         }
-
-
-
 
 
 class AnalysisSerializerWebSocket(serializers.Serializer):
     """ Minimal Analysis Infomation needed to send via WebSocket
     """
-
     # model fields
-    #created = serializers.DateTimeField(read_only=True)
-    #modified = serializers.DateTimeField(read_only=True)
     name = serializers.CharField(read_only=True)
     id = serializers.IntegerField(read_only=True)
     portfolio = serializers.IntegerField(source='portfolio_id', read_only=True)
     model = serializers.IntegerField(source='model_id', read_only=True)
     status = serializers.CharField(read_only=True)
-    #task_started = serializers.DateTimeField(read_only=True)
-    #task_finished = serializers.DateTimeField(read_only=True)
-    #complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
-    ## check this for multiple SQL calls with the 'list' call
+    # Status / Chunks
     analysis_chunks = serializers.IntegerField(read_only=True)
     lookup_chunks = serializers.IntegerField(read_only=True)
-    #sub_task_count = serializers.IntegerField(read_only=True)
-
-    # file fields
-    #input_file = serializers.SerializerMethodField(read_only=True)
-    #settings_file = serializers.SerializerMethodField(read_only=True)
-    #settings = serializers.SerializerMethodField(read_only=True)
-    #lookup_errors_file = serializers.SerializerMethodField(read_only=True)
-    #lookup_success_file = serializers.SerializerMethodField(read_only=True)
-    #lookup_validation_file = serializers.SerializerMethodField(read_only=True)
-    #summary_levels_file = serializers.SerializerMethodField(read_only=True)
-    #input_generation_traceback_file = serializers.SerializerMethodField(read_only=True)
-    #output_file = serializers.SerializerMethodField(read_only=True)
-    #run_traceback_file = serializers.SerializerMethodField(read_only=True)
-    #run_log_file = serializers.SerializerMethodField(read_only=True)
-    #storage_links = serializers.SerializerMethodField(read_only=True)
-
-
-    # -- REMOVE --
-    #sub_task_statuses = AnalysisTaskStatusSerializer(many=True, read_only=True)
-
-    # -- NEW --
-    #sub_tasks = serializers.SerializerMethodField(read_only=True)
-    status_ids = serializers.SerializerMethodField(read_only=True)
     status_count = serializers.SerializerMethodField(read_only=True)
-
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_input_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_input_file_url(request=request) if instance.input_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_settings_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_settings_file_url(request=request) if instance.settings_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_settings(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_settings_url(request=request) if instance.settings_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_lookup_errors_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_lookup_errors_file_url(request=request) if instance.lookup_errors_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_lookup_success_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_lookup_success_file_url(request=request) if instance.lookup_success_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_lookup_validation_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_lookup_validation_file_url(request=request) if instance.lookup_validation_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_summary_levels_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_summary_levels_file_url(request=request) if instance.summary_levels_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_input_generation_traceback_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_input_generation_traceback_file_url(request=request) if instance.input_generation_traceback_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_output_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_output_file_url(request=request) if instance.output_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_run_traceback_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_run_traceback_file_url(request=request) if instance.run_traceback_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_run_log_file(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_run_log_file_url(request=request) if instance.run_log_file_id else None
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_storage_links(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_storage_url(request=request)
-
-    def get_status_ids(self, instance):
-        subtask_queryset = instance.sub_task_statuses.get_queryset()
-        return {
-            "PENDING":   subtask_queryset.filter(status='PENDING').values_list('pk', flat=True),
-            "QUEUED":    subtask_queryset.filter(status='QUEUED').values_list('pk', flat=True),
-            "STARTED":   subtask_queryset.filter(status='STARTED').values_list('pk', flat=True),
-            "COMPLETED": subtask_queryset.filter(status='COMPLETED').values_list('pk', flat=True),
-            "CANCELLED": subtask_queryset.filter(status='CANCELLED').values_list('pk', flat=True),
-            "ERROR":     subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
-        }
 
     def get_status_count(self, instance):
         #request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        
+
         return {
             "TOTAL":     subtask_queryset.filter().count(),
             "PENDING":   subtask_queryset.filter(status='PENDING').count(),
@@ -305,8 +197,6 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
             "CANCELLED": subtask_queryset.filter(status='CANCELLED').count(),
             "ERROR":     subtask_queryset.filter(status='ERROR').count()
         }
-
-
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
@@ -323,15 +213,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
     run_log_file = serializers.SerializerMethodField()
     storage_links = serializers.SerializerMethodField()
 
-
-    # -- REMOVE --
-    #sub_task_statuses = AnalysisTaskStatusSerializer(many=True, read_only=True)
-
-    # -- NEW --
-    sub_tasks = serializers.SerializerMethodField()
+    sub_task_list = serializers.SerializerMethodField()
     status_ids = serializers.SerializerMethodField()
     status_count = serializers.SerializerMethodField()
-
 
     class Meta:
         model = Analysis
@@ -360,16 +244,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'storage_links',
             'lookup_chunks',
             'analysis_chunks',
-
-
-
-            # -- REMOVE -- 
-            'sub_task_count',
-            #'sub_task_statuses',
-
-
-            # -- NEW --
-            'sub_tasks',
+            'sub_task_list',
             'status_ids',
             'status_count',
         )
@@ -435,10 +310,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
         return instance.get_absolute_storage_url(request=request)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
-    def get_sub_tasks(self, instance):
+    def get_sub_task_list(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_subtask_url(request=request)
-
+        return instance.get_absolute_subtask_list_url(request=request)
 
     def get_status_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
@@ -452,9 +326,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
         }
 
     def get_status_count(self, instance):
-        #request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        
         return {
             "TOTAL":     subtask_queryset.filter().count(),
             "PENDING":   subtask_queryset.filter(status='PENDING').count(),
@@ -464,7 +336,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
             "CANCELLED": subtask_queryset.filter(status='CANCELLED').count(),
             "ERROR":     subtask_queryset.filter(status='ERROR').count()
         }
-        
 
     def validate(self, attrs):
         if not attrs.get('creator') and 'request' in self.context:
