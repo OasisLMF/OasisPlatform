@@ -2,7 +2,7 @@
 
 set -e
 
-cat << EOF | kc apply -f -
+cat << EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -47,7 +47,7 @@ spec:
 ---
 EOF
 
-while ! kc get pods host-volume-shell | grep Running | grep "1/1"; do
+while ! kubectl get pods host-volume-shell | grep Running | grep "1/1"; do
   sleep 1
   echo -n .
 done
@@ -56,7 +56,7 @@ echo
 echo "Host volume mount point is /mnt/host/"
 echo
 
-kc exec -it host-volume-shell -- bash
-kc delete pod --grace-period=2 host-volume-shell
-kc delete pvc host-pv-claim
-kc delete pv host-pv
+kubectl exec -it host-volume-shell -- bash
+kubectl delete pod --grace-period=2 host-volume-shell
+kubectl delete pvc host-pv-claim
+kubectl delete pv host-pv
