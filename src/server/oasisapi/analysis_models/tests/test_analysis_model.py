@@ -221,6 +221,55 @@ class AnalysisModelApi(WebTest, TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(json.loads(response.body)))
 
+    @given(
+        group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+    )
+    def test_as_admin_create_with_non_existing_groups___successfully(self, group_name):
+        admin_user = fake_user()
+        admin_user.is_staff = True
+        admin_user.save()
+
+        response = self.app.post(
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(admin_user))
+            },
+            params=json.dumps({
+                'supplier_id': 'supplier',
+                'model_id': 'model',
+                'version_id': 'version',
+                'groups': [group_name],
+            }),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+        groups = Group.objects.all()
+        self.assertEqual(1, len(groups))
+
+    @given(
+        group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
+    )
+    def test_as_admin_create_with_non_existing_groups___successfully(self, group_name):
+        ordinary_user = fake_user()
+
+        response = self.app.post(
+            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(ordinary_user))
+            },
+            params=json.dumps({
+                'supplier_id': 'supplier',
+                'model_id': 'model',
+                'version_id': 'version',
+                'groups': [group_name],
+            }),
+            content_type='application/json',
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({'groups': ['Object with name=' + group_name + ' does not exist.']}, json.loads(response.content))
+
 
 class ModelSettingsJson(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):

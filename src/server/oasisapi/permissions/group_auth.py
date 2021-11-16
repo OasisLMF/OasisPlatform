@@ -1,7 +1,8 @@
 from functools import reduce
 
 from django.conf import settings
-from django.db.models import Q
+from django.contrib.auth.models import Group
+from django.db.models import Q, QuerySet
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
@@ -38,9 +39,9 @@ def verify_and_get_groups(user: settings.AUTH_USER_MODEL, groups):
             return list(user_groups)
         elif len(user_groups) == 0 and len(groups) == 0:
             return []
-        elif not user.is_superuser:
+        elif not user.is_superuser and not user.is_staff:
             raise ValidationError({'groups': f'user is required to specify groups'})
-    elif not user.is_superuser:
+    elif not user.is_superuser and not user.is_staff:
         user_group_names = get_group_names(user_groups)
         group_names = get_group_names(groups)
         user_not_in_groups = list(group_names - user_group_names)
@@ -95,11 +96,10 @@ def validate_user_is_owner(user: settings.AUTH_USER_MODEL, obj):
 
     if hasattr(obj, 'groups'):
 
-        user_groups = set(user.groups.all())
         instance_groups = set(obj.groups.all())
 
-        if len(user_groups) > 0 or len(instance_groups) > 0:
-
+        if len(instance_groups) > 0:
+            user_groups = set(user.groups.all())
             diff = instance_groups - user_groups
 
             if len(diff) == len(instance_groups):
@@ -197,11 +197,14 @@ class VerifyGroupAccessModelViewSet(viewsets.ModelViewSet):
 
             user_groups = self.request.user.groups.all()
             if self.group_access_sub_model:
-                if user_groups == 0:
+                if len(user_groups) == 0:
                     user_sub_models = self.group_access_sub_model.objects.filter(groups=None)
                 else:
-                    query = reduce(lambda q, value: q | Q(groups=value), user_groups, Q())
+                    query = reduce(lambda q, value: q | Q(groups=value), user_groups, Q(groups=None))
                     user_sub_models = self.group_access_sub_model.objects.filter(query)
+
+                if len(user_sub_models) == 0:
+                    return self.group_access_model.objects.none()
 
                 query = reduce(lambda q, value: q | Q(portfolio=value), user_sub_models, Q())
             else:
@@ -229,3 +232,29 @@ class VerifyGroupAccessModelViewSet(viewsets.ModelViewSet):
                     self.group_access_model, sub_model_attribute=self.group_access_sub_attribute)]
 
         return class_permissions
+
+    def create(self, request, *args, **kwargs):
+        self.create_missing_groups(request)
+        return super().create(request, args, kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self.create_missing_groups(request)
+        return super().update(request, args, kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        self.create_missing_groups(request)
+        return super().partial_update(request, args, kwargs)
+
+    def create_missing_groups(self, request):
+        """
+        For admin/staff users create missing groups. This allows admin to create resources for groups not yet
+        replicated from keycloak.
+
+        :param request: Http request.
+        """
+        user = request.user
+        if user:
+            if user.is_superuser or user.is_staff:
+                groups = request.data.get('groups', [])
+                for group in groups:
+                    Group.objects.get_or_create(name=group)

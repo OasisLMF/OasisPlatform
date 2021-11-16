@@ -319,9 +319,9 @@ class AnalysisApi(WebTestMixin, TestCase):
 
     @given(
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
-        group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
-        group_name2=text(alphabet=string.ascii_letters, max_size=10, min_size=2),
-        group_name3=text(alphabet=string.ascii_letters, max_size=10, min_size=3),
+        group_name1=text(alphabet=string.ascii_letters, max_size=2, min_size=1),
+        group_name2=text(alphabet=string.ascii_letters, max_size=4, min_size=3),
+        group_name3=text(alphabet=string.ascii_letters, max_size=6, min_size=5),
     )
     def test_multiple_analyses_with_different_groups___user_should_not_see_each_others(self, name, group_name1, group_name2, group_name3):
 
@@ -400,9 +400,184 @@ class AnalysisApi(WebTestMixin, TestCase):
             },
         )
         self.assertEqual(200, response.status_code)
-        analysis = json.loads(response.body)[0]
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+        analysis = analyses[0]
         self.assertEqual(analysis2_id, analysis.get('id'))
         self.assertEqual([group_name3], analysis.get('groups'))
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+        group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_multiple_analyses_with_different_groups___user_without_group_should_not_see_them(self, name, group_name1):
+
+        group1, _ = Group.objects.get_or_create(name=group_name1)
+
+        user1 = fake_user()
+        group1.user_set.add(user1)
+        group1.save()
+
+        user2 = fake_user()
+
+        model = fake_analysis_model()
+        model.groups.add(group1)
+        model.save()
+
+        portfolio1 = fake_portfolio(location_file=fake_related_file())
+        portfolio1.groups.add(group1)
+        portfolio1.save()
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+
+        # User2 should not see any analysis
+        response = self.app.get(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(0, len(analyses))
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+        group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_user_with_and_without_group_can_access_portfolio_without_group(self, name, group_name1):
+
+        group1, _ = Group.objects.get_or_create(name=group_name1)
+
+        user_with_group1 = fake_user()
+        group1.user_set.add(user_with_group1)
+        group1.save()
+
+        user_without_group = fake_user()
+
+        model = fake_analysis_model()
+        model.save()
+
+        portfolio1 = fake_portfolio(location_file=fake_related_file())
+        portfolio1.save()
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+
+        # user_with_group1 should see the analysis
+        response = self.app.get(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+
+        # user_without_group should see the analysis
+        response = self.app.get(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+        group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_modify_analysis_without_group___successfully(self, name, group_name1):
+
+        group1, _ = Group.objects.get_or_create(name=group_name1)
+
+        user_with_group1 = fake_user()
+        group1.user_set.add(user_with_group1)
+        group1.save()
+
+        user_without_group = fake_user()
+
+        model = fake_analysis_model()
+        model.save()
+
+        portfolio1 = fake_portfolio(location_file=fake_related_file())
+        portfolio1.save()
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+
+        # user_with_group1 should see the analysis
+        response = self.app.get(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+        analysis_id = analyses[0].get('id')
+
+        # user_with_group1 should be allowed to write
+        response = self.app.post(
+            reverse('analysis-settings', kwargs={'version': 'v1', 'pk': analysis_id}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
+            },
+            params={},
+            expect_errors=True,
+        )
+        self.assertEqual(400, response.status_code)
+
+        # user_without_group should see the analysis
+        response = self.app.get(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+
+        # user_without_group should be allowed to write
+        response = self.app.post(
+            reverse('analysis-settings', kwargs={'version': 'v1', 'pk': analysis_id}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+            params={},
+            expect_errors=True,
+        )
+        self.assertEqual(400, response.status_code)
 
 
 class AnalysisRun(WebTestMixin, TestCase):

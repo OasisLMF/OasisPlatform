@@ -13,7 +13,6 @@ fi
 source $(dirname $0)/common.sh
 
 PIWIND_VERSION=1
-
 PIWIND_ID=$(curlf -X GET "${API_URL}/v1/models/" | jq ".[] | select((.supplier_id | ascii_downcase  == \"oasislmf\") and (.model_id | ascii_downcase == \"piwind\") and (.version_id == \"${PIWIND_VERSION}\")) | .id")
 if [ -n "$PIWIND_ID" ]; then
   echo "Piwind found as model id $PIWIND_ID"

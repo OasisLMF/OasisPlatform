@@ -1,8 +1,7 @@
 import requests
 from django.utils.translation import gettext_lazy as _
-from rest_framework import exceptions
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, AuthenticationFailed
 from rest_framework_simplejwt import settings as jwt_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
@@ -86,10 +85,7 @@ class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
         json = response.json()
 
         if response.status_code != 200 or 'access_token' not in json:
-            raise exceptions.AuthenticationFailed(
-                self.error_messages['no_active_account'],
-                'no_active_account',
-            )
+            raise AuthenticationFailed({'Detail': 'invalid credentials'})
 
         cleaned = {key: json[key] for key in ['access_token', 'refresh_token', 'token_type', 'expires_in']}
 
@@ -122,10 +118,7 @@ class OIDCTokenRefreshSerializer(serializers.Serializer):
         json = response.json()
 
         if response.status_code != 200 or 'access_token' not in json:
-            raise exceptions.AuthenticationFailed(
-                self.error_messages['no_active_account'],
-                'no_active_account',
-            )
+            raise AuthenticationFailed({'Detail': 'invalid refresh token'})
 
         cleaned = {key: json[key] for key in ['access_token', 'refresh_token', 'token_type', 'expires_in']}
 

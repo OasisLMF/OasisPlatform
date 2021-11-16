@@ -74,22 +74,24 @@ MODEL_ID=$(curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X GET \
   tr '[:upper:]' '[:lower:]')\") and (.model_id | ascii_downcase == \"$(echo ${OASIS_MODEL_ID} | \
   tr '[:upper:]' '[:lower:]')\") and (.version_id == \"$(echo ${OASIS_MODEL_VERSION_ID} | tr '[:upper:]' '[:lower:]')\")) | .id")
 
+MODEL_JSON_ID_ATTRIBUTES="\"supplier_id\": \"${OASIS_MODEL_SUPPLIER_ID}\",\"model_id\": \"${OASIS_MODEL_ID}\",\"version_id\": \"${OASIS_MODEL_VERSION_ID}\""
+
 if [ -n "$MODEL_ID" ]; then
   echo "Model exists with id $MODEL_ID"
 else
   echo "Model not found - registers it"
 
   MODEL_ID=$(curlf -X POST "${BASE_URL}/v1/models/" -H "Content-Type: application/json" \
-    -d "{\"supplier_id\": \"${OASIS_MODEL_SUPPLIER_ID}\",\"model_id\": \"${OASIS_MODEL_ID}\",\"version_id\": \"${OASIS_MODEL_VERSION_ID}\""} | jq .id)
+    -d "{${MODEL_JSON_ID_ATTRIBUTES}"} | jq .id)
   echo "Created with id $MODEL_ID"
 
 fi
 
 echo "Set model groups"
-GROUPS_JSON="{\"groups\": []}"
+GROUPS_JSON="{${MODEL_JSON_ID_ATTRIBUTES}, \"groups\": []}"
 if [ -n "$OASIS_MODEL_GROUPS" ]; then
 
-  GROUPS_JSON="{\"groups\": [\"$(echo $OASIS_MODEL_GROUPS | sed 's/,/","/g')\"]}"
+  GROUPS_JSON="{${MODEL_JSON_ID_ATTRIBUTES}, \"groups\": [\"$(echo $OASIS_MODEL_GROUPS | sed 's/,/","/g')\"]}"
 fi
 curlf -X PATCH "${BASE_URL}/v1/models/${MODEL_ID}/" -H "Content-Type: application/json" -d "$GROUPS_JSON" | jq .
 
