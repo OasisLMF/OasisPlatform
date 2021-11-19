@@ -54,7 +54,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.oasisServer) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
@@ -97,7 +97,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.oasisServer) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisServer.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.ui.image }}:{{ .Values.images.oasis.ui.version }}
           name: {{ .Values.oasisUI.name }}
@@ -154,7 +154,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.channel_layer.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
@@ -163,6 +163,7 @@ spec:
           env:
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
+            {{- include "h.brokerVars" . | indent 12 }}
             {{- include "h.channelLayerVars" . | indent 12 }}
             - name: OASIS_DEBUG
               value: "1"
@@ -192,7 +193,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer .Values.databases.broker) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.channel_layer.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}

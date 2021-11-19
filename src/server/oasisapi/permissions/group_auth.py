@@ -235,15 +235,15 @@ class VerifyGroupAccessModelViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         self.create_missing_groups(request)
-        return super().create(request, args, kwargs)
+        return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         self.create_missing_groups(request)
-        return super().update(request, args, kwargs)
+        return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         self.create_missing_groups(request)
-        return super().partial_update(request, args, kwargs)
+        return super().partial_update(request, *args, **kwargs)
 
     def create_missing_groups(self, request):
         """

@@ -1,8 +1,6 @@
 import json
 import string
 
-# from tempfile import NamedTemporaryFile
-# from django.conf import settings
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
@@ -147,6 +145,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'lookup_chunks': None,
                     'sub_task_count': None,
                     'sub_task_statuses': [],
+                    'priority': 6,
                 }, response.json)
 
     @given(
@@ -212,6 +211,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'lookup_chunks': None,
                     'sub_task_count': None,
                     'sub_task_statuses': [],
+                    'priority': 6,
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):
@@ -578,6 +578,68 @@ class AnalysisApi(WebTestMixin, TestCase):
             expect_errors=True,
         )
         self.assertEqual(400, response.status_code)
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_create_no_priority___successfully_set_default(self, name):
+
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': fake_analysis_model().pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+        analysis = json.loads(response.body)
+        self.assertEqual(6, analysis.get('priority'))
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_create_as_admin_low_priority___successfully(self, name):
+
+        user = fake_user()
+        user.is_staff = True
+        user.save()
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': fake_analysis_model().pk, 'priority': 1}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_create_as_no_admin_low_priority___rejected(self, name):
+
+        model = fake_analysis_model()
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk, 'priority': 1}),
+            content_type='application/json',
+            expect_errors=True
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('Levels restricted to administrators: [0, 1, 2]', json.loads(response.body).get('priority')[0])
 
 
 class AnalysisRun(WebTestMixin, TestCase):

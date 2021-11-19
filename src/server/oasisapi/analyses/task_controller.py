@@ -1,17 +1,14 @@
 import uuid
-from itertools import chain as iterchain
 from importlib import import_module
+from itertools import chain as iterchain
 from math import ceil
 from typing import List, Type, TYPE_CHECKING, Tuple, Optional
 
 from celery import signature, chord
 from celery.canvas import Signature, chain
 from django.contrib.auth.models import User
-from kombu.common import Broadcast
-#from oasislmf.utils.data import get_dataframe
 
 from src.conf.iniconf import settings
-
 from ..files.models import file_storage_link
 
 if TYPE_CHECKING:
@@ -27,7 +24,7 @@ class TaskParams:
 class Controller:
 
     @classmethod
-    def get_subtask_signature(cls, task_name, analysis, initiator, run_data_uuid, slug, queue, params: TaskParams) -> Signature:
+    def get_subtask_signature(cls, task_name, analysis, initiator, run_data_uuid, slug, queue, params: TaskParams, priority) -> Signature:
         """
         Generates a signature representing the subtask. This task will have the initiator_id, analysis_id and
         slug set along with other provided kwargs.
@@ -39,6 +36,7 @@ class Controller:
         :param slug: The slug identifier for the task, this should be unique for a given analysis
         :param queue: The name of the queue the task will be published to
         :param params: The parameters to send to the task
+        :param priority: Priority of this task
         :return: Signature representing the task
         """
         from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
@@ -46,6 +44,7 @@ class Controller:
             task_name,
             queue=queue,
             args=params.args,
+            priority=priority,
             kwargs={
                 'initiator_id': initiator.pk,
                 'analysis_id': analysis.pk,
@@ -93,6 +92,7 @@ class Controller:
         status_slug,
         queue,
         params: Optional[TaskParams] = None,
+        priority=9
     ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
         """
         Gets all teh status objects and signature for a given subtask
@@ -105,12 +105,13 @@ class Controller:
         :param status_slug: The slug identifier for the task, this should be unique for a given analysis
         :param queue: The name of the queue the task will be published to
         :param params: The parameters to send to the task
+        :param priority: Priority of this task
         :return: Signature representing the task
         """
         params = params or TaskParams()
         return (
             [cls.get_subtask_status(analysis, status_name, status_slug, queue)],
-            cls.get_subtask_signature(task_name, analysis, initiator, run_data_uuid, status_slug, queue, params),
+            cls.get_subtask_signature(task_name, analysis, initiator, run_data_uuid, status_slug, queue, params, priority),
         )
 
     @classmethod
@@ -125,6 +126,7 @@ class Controller:
         queue,
         params: List[TaskParams],
         body: Tuple[List['AnalysisTaskStatus'], Signature],
+        priority,
     ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
         """
         Gets all the status objects and signature for a given subchord
@@ -141,11 +143,11 @@ class Controller:
         :return: Signature representing the task
         """
         statuses, tasks = zip(*[
-            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, params=p)
+            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, p, priority)
             for idx, p in enumerate(params)
         ])
 
-        c = chord(tasks, body=body[1], queue=queue)
+        c = chord(tasks, body=body[1], queue=queue, priority=analysis.id)
         c.link_error(signature('chord_error_callback'))
 
         return list(iterchain(*statuses, body[0])), c
@@ -201,7 +203,7 @@ class Controller:
                 'failure_status': failure_status,
             },
         ))
-        c.delay({})
+        c.delay({}, priority=analysis.pk)
         return c
 
     @classmethod
@@ -253,6 +255,7 @@ class Controller:
                 'prepare-input-generation-params',
                 queue,
                 TaskParams(**base_kwargs),
+                analysis.pk
             ),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',
@@ -278,7 +281,9 @@ class Controller:
                     'collect-keys',
                     queue,
                     TaskParams(**base_kwargs),
+                    analysis.pk
                 ),
+                analysis.pk
             ),
             cls.get_subtask_statuses_and_signature(
                 'write_input_files',
@@ -289,6 +294,7 @@ class Controller:
                 'write-input-files',
                 queue,
                 TaskParams(**files_kwargs),
+                analysis.pk
             ),
             cls.get_subtask_statuses_and_signature(
                 'record_input_files',
@@ -298,6 +304,7 @@ class Controller:
                 'Record input files',
                 'record-input-files',
                 'celery',
+                priority=0,
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_input_generation',
@@ -307,6 +314,7 @@ class Controller:
                 'Cleanup input generation',
                 'cleanup-input-generation',
                 queue,
+                priority=0,
             ),
         ])
 
@@ -328,7 +336,7 @@ class Controller:
             num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
         elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
             loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
-            loc_lines_per_chunk =  analysis.model.chunking_options.dynamic_locations_per_lookup
+            loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
             num_chunks = ceil(loc_lines / loc_lines_per_chunk)
 
         run_data_uuid = uuid.uuid4().hex
@@ -394,7 +402,8 @@ class Controller:
                 TaskParams(
                     num_chunks=num_chunks,
                     **base_kwargs,
-                )
+                ),
+                analysis.pk,
             ),
             cls.get_subtask_statuses_and_signature(
                 'prepare_losses_generation_directory',
@@ -405,6 +414,7 @@ class Controller:
                 'prepare-losses-generation-directory',
                 queue,
                 TaskParams(**base_kwargs),
+                analysis.pk,
             ),
             cls.get_subchord_statuses_and_signature(
                 'generate_losses_chunk',
@@ -424,7 +434,9 @@ class Controller:
                     'generate_losses_output',
                     queue,
                     TaskParams(**base_kwargs),
+                    analysis.pk,
                 ),
+                analysis.pk,
             ),
             cls.get_subtask_statuses_and_signature(
                 'record_losses_files',
@@ -435,6 +447,7 @@ class Controller:
                 'record-losses-files',
                 'celery',
                 TaskParams(**base_kwargs),
+                0,
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_losses_generation',
@@ -445,6 +458,7 @@ class Controller:
                 'cleanup-losses-generation',
                 queue,
                 TaskParams(**base_kwargs),
+                0,
             ),
         ])
 

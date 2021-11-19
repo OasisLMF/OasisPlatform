@@ -90,7 +90,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.keycloak_db) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.keycloak_db.name) | nindent 8}}
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}

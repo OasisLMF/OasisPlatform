@@ -196,7 +196,6 @@ Oasis server client variables
 
 {{/*
 Init container to wait for a service to become available (tcp check only) based on host:port from secret
-TODO: replace other m.initTcpAvailabilityCheck with this
 */}}
 {{- define "h.initTcpAvailabilityCheckBySecret" -}}
 {{- $root := (index . 0) -}}

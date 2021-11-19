@@ -9,33 +9,29 @@ from tempfile import TemporaryFile
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
+from botocore.exceptions import ClientError as S3_ClientError
+from celery import Task
+from celery import signals
 from celery.result import AsyncResult
 from celery.signals import before_task_publish
 from celery.utils.log import get_task_logger
-from celery import Task
-from celery import signals
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
-from django.db.models import When, Case, Value, F
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.conf import settings
+from django.db.models import When, Case, Value, F
 from django.http import HttpRequest
 from django.utils import timezone
 
 from src.conf.iniconf import settings
-from botocore.exceptions import ClientError as S3_ClientError
-from tempfile import TemporaryFile
-from urllib.request import urlopen
-from urllib.parse import urlparse
-
 from src.server.oasisapi.files.models import RelatedFile
+from src.server.oasisapi.files.views import handle_json_data
+from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
 from ..celery_app import celery_app
-from src.server.oasisapi.files.views import handle_json_data
-from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 
 logger = get_task_logger(__name__)
 
@@ -344,8 +340,6 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id))
     logger.info('results: {}'.format(result))
 
-    initiator = get_user_model().objects.get(id=initiator_id)
-
     input_location = result.get('output_location')
     lookup_error_fp = result.get('lookup_error_location')
     lookup_success_fp = result.get('lookup_success_location')
@@ -568,6 +562,7 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
         status=AnalysisTaskStatus.status_choices.QUEUED,
         queue_time=datetime.fromtimestamp(dt, tz=timezone.utc),
     )
+
 
 ### Orig worker monitor functions #############################################
 #

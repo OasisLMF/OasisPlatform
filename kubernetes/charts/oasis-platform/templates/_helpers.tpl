@@ -189,17 +189,32 @@ Oasis server API envs
 {{- end }}
 
 {{/*
-Init container to wait for a service to become available (tcp check only)
+Init container to wait for a service to become available (tcp check only) based on host:port from secret
 */}}
-{{- define "h.initTcpAvailabilityCheck" -}}
+{{- define "h.initTcpAvailabilityCheckBySecret" -}}
 {{- $root := (index . 0) -}}
-- name: init-tcp-wait
-  image: {{ $root.Values.images.init.image }}:{{ $root.Values.images.init.version }}
-  command: ['sh', '-c', "
-    {{- range $s := slice . 1 -}}
-        until nc -zw 3 {{ $s.name }} {{ $s.port }}; do echo 'waiting for service {{ $s.name }}...'; sleep 1; done;
+- name: init-tcp-wait-by-secret
+  image: {{ $root.Values.modelImages.init.image }}:{{ $root.Values.modelImages.init.version }}
+  env:
+    {{- range $index, $name := slice . 1 }}
+    - name: SERVICE_NAME_{{ $index }}
+      value: {{ $name | quote }}
+    - name: HOST_{{ $index }}
+      valueFrom:
+        configMapKeyRef:
+          name: {{ $name | quote }}
+          key: host
+    - name: PORT_{{ $index }}
+      valueFrom:
+        configMapKeyRef:
+          name: {{ $name | quote }}
+          key: port
+    {{- end }}
+  command: ['sh', '-c', 'echo "Waiting for services:{{ range $index, $name := slice . 1 }} {{ $name }} {{- end }}";
+    {{- range $index, $name := slice . 1 -}}
+        until nc -zw 3 $HOST_{{ $index }} $PORT_{{ $index }}; do echo "waiting for service $SERVICE_NAME_{{ $index }}..."; sleep 1; done;
     {{- end -}}
-    echo available"]
+    echo available']
 {{- end -}}
 
 {{- define "h.password" -}}

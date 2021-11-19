@@ -32,6 +32,9 @@ spec:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.databases.broker.name $root.Values.databases.celery_db.name) | nindent 8}}
       containers:
         - image: {{ .image }}:{{ .version }}
+          {{- if .imagePullPolicy }}
+          imagePullPolicy: {{ .imagePullPolicy }}
+          {{- end }}
           name: worker
           env:
             {{- include "h.modelEnvs" . | indent 12 }}

@@ -68,18 +68,20 @@ def get_queues_info() -> List[QueueInfo]:
     ]
 
     # increment the number of workers available for each queue
-    for worker in _get_active_queues().values():
-        for queue in worker:
-            try:
-                next(r for r in res if r['name'] == queue['routing_key'])['worker_count'] += 1
-            except StopIteration:
-                # in case there are workers around still for inactive queues add it here
-                res.append({
-                    'name': queue['routing_key'],
-                    'queued_count': 0,
-                    'running_count': 0,
-                    'worker_count': 1,
-                })
+    queues = _get_active_queues()
+    if queues:
+        for worker in queues.values():
+            for queue in worker:
+                try:
+                    next(r for r in res if r['name'] == queue['routing_key'])['worker_count'] += 1
+                except StopIteration:
+                    # in case there are workers around still for inactive queues add it here
+                    res.append({
+                        'name': queue['routing_key'],
+                        'queued_count': 0,
+                        'running_count': 0,
+                        'worker_count': 1,
+                    })
 
     # get the stats of the running and queued tasks
     pending = reduce(

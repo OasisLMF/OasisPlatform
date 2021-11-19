@@ -196,7 +196,6 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
@@ -208,7 +207,6 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_any()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
-
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)

@@ -57,7 +57,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisServer.name }}

@@ -4,6 +4,7 @@ from celery.result import AsyncResult
 from django.conf import settings
 ## imports from prev non-2020 version
 from django.core.files.base import File
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
@@ -172,13 +173,12 @@ class Analysis(TimeStampedModel):
 
     analysis_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
     lookup_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
+    priority = models.IntegerField(null=False, default=6, validators=[MinValueValidator(0), MaxValueValidator(9)], help_text='Priority of this analysis for input generation and execution. Set from 0 to 9 where 0 is the highest priority.')
 
     lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
     lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
     lookup_validation_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
     summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='summary_levels_file_analyses')
-
-
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -296,6 +296,7 @@ class Analysis(TimeStampedModel):
         self.validate_run()
 
         self.status = self.status_choices.RUN_QUEUED
+        self.save()
 
         task = self.run_analysis_signature
         task.on_error(celery_app.signature('handle_task_failure', kwargs={
@@ -304,7 +305,7 @@ class Analysis(TimeStampedModel):
             'traceback_property': 'run_traceback_file',
             'failure_status': Analysis.status_choices.RUN_ERROR,
         }))
-        task_id = task.delay(self.pk, initiator.pk).id
+        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
 
         self.run_task_id = task_id
         self.task_started = timezone.now()
@@ -346,7 +347,7 @@ class Analysis(TimeStampedModel):
         return celery_app.signature(
             'start_input_generation_task',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery'),
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
             }
         )
 
@@ -380,6 +381,7 @@ class Analysis(TimeStampedModel):
         self.lookup_validation_file = None
         self.summary_levels_file = None
         self.input_generation_traceback_file_id = None
+        self.save()
 
         task = self.generate_input_signature
         task.on_error(celery_app.signature('handle_task_failure', kwargs={
@@ -388,7 +390,7 @@ class Analysis(TimeStampedModel):
             'traceback_property': 'input_generation_traceback_file',
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
-        task_id = task.delay(self.pk, initiator.pk).id
+        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
 
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()

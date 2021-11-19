@@ -93,11 +93,48 @@ Released on 2021-10-29
     * Model, portfolios and data files now supports groups.
         * Only users of the same group can see and modify those objects.
         * Groups are managed in Keycloak and migrated to django.
-    * Analyses inherit their groups from the portfolio but a user also needs to be part of the model group to be
-      able to run/cancel the analysis.
+    * Analyses inherit their groups from the portfolio but a user also needs to be part of the model group to be able to
+      run/cancel the analysis.
 * Updated documentation.
 
 **This covers the following in the functional summary:**
 
 * Second part of Improved security and user-management (1.4):
     * Group/role isolation.
+
+## Sprint 5
+
+Released on 2021-11-26
+
+**Features included:**
+
+* Platform chart improvements:
+    * New worker controller settings:
+        * `workerController.totalWorkerLimit`: A limit for the total number of workers (for all models) the worker
+          controller are allowed to create.
+        * `workerController.priority.modelsLimit`: This is only used when there are multiple runs with different
+          priorities set. The worker controller will limit the number of models and only create workers for the models
+          for the top priority runs. For example a value of `2` creates workers for the 2 models with analyses with the
+          highest priority.
+    * Changed the default keycloak user to 'admin' (same name as default django user)
+    * Updated health checks to read secrets instead of directly from chart values.
+* Platform improvements:
+    * Analysis priority:
+        * A priority (0-9) can be set on each analysis:
+          * 0 - The highest priority
+          * 0, 1, 2 - Requires admin account
+          * 6 - Default priority
+          * 9 - The lowest priority
+        * Priority is set on Celery tasks
+        * New configuration:
+          ```
+          # Levels that require admin account to use
+          ANALYSIS_PRIORITY_ADMIN_LEVELS = [0, 1, 2]
+          ```
+        * Worker controller respects the new settings in the platform chart.
+* Updated documentation.
+
+**This covers the following in the functional summary:**
+
+* Job prioritization (1.5):
+

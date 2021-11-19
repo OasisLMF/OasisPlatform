@@ -18,13 +18,14 @@ forwards=()
 for arg in "${@}"; do
   case $arg in
   "api")
-    forwards+=("deployment/oasis-server 8000:8000")
+    forwards+=("deployment/oasis-server 8001:8000")
     ;;
   "ui")
     forwards+=("deployment/oasis-ui 8080:3838")
     ;;
   "db")
     forwards+=("deployment/server-db 5432")
+    forwards+=("deployment/celery-db 5431:5432")
     forwards+=("deployment/broker 6379")
     ;;
   "keycloak")

@@ -7,6 +7,8 @@ LOC_FILE=$2
 
 if [ -z "$LOC_FILE" ]; then
   echo "Usage: $0 <account-file> <location-file>"
+  echo
+  echo "For example: $0 ~/git/OasisPiWind/tests/inputs/SourceAccOEDPiWind.csv ~/git/OasisPiWind/tests/inputs/SourceLocOEDPiWind.csv"
   exit 0
 fi
 
@@ -27,8 +29,8 @@ cat << EOF | curlf -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/chunking_conf
   "strategy": "FIXED_CHUNKS",
   "dynamic_locations_per_lookup": 10000,
   "dynamic_events_per_analysis": 1,
-  "fixed_analysis_chunks": 1,
-  "fixed_lookup_chunks": 1
+  "fixed_analysis_chunks": 2,
+  "fixed_lookup_chunks": 2
 }
 EOF
 
@@ -62,7 +64,7 @@ echo "Uploads location file..."
 curlf -X POST "${API_URL}/v1/portfolios/${PORTFOLIO_ID}/location_file/" -H "Content-Type: multipart/form-data" -F "file=@${LOC_FILE};type=application/vnd.ms-excel"
 echo
 
-for ANAME_ID in 1 2; do
+for ANAME_ID in $(seq 1 10); do
 
   ANALYSIS_NAME="A${ANAME_ID} - ${PIWIND_VERSION}"
 
@@ -77,6 +79,16 @@ for ANAME_ID in 1 2; do
     ANALYSIS_ID=$(curlf -X POST "${API_URL}/v1/analyses/" -H "Content-Type: application/json" -d "{\"name\": \"${ANALYSIS_NAME}\", \"portfolio\": $PORTFOLIO_ID, \"model\": $PIWIND_ID}" | jq .id)
     echo "Created with id $ANALYSIS_ID"
   fi
+
+  echo "Set priority"
+  cat << EOF | curlf -X PATCH "${API_URL}/v1/analyses/${ANALYSIS_ID}/" -H "Content-Type: application/json" -d @- &> /dev/null
+{
+  "name": "${ANALYSIS_NAME}",
+  "portfolio": $PORTFOLIO_ID,
+  "model": $PIWIND_ID,
+  "priority": $(($ANAME_ID - 1))
+}
+EOF
 
   echo "Updating analysis settings"
 

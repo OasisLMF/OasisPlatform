@@ -3,7 +3,7 @@ set -o pipefail
 
 
 API_URL="https://api.oasis.local"
-#API_URL="http://localhost:8000"
+#API_URL="http://localhost:8001"
 SCRIPT_DIR=$(dirname $0)
 CURL="curl -sk"
 TMP_PATH="/tmp/"

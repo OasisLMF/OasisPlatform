@@ -53,7 +53,7 @@ spec:
       {{- include "h.affinity" . | nindent 6 }}
       serviceAccountName: {{ $workerControllerServiceAccountName }}
       initContainers:
-      {{- include "h.initTcpAvailabilityCheck" (list . .Values.oasisServer) | nindent 8}}
+      {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisServer.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.worker_controller.image }}:{{ .Values.images.oasis.worker_controller.version }}
           imagePullPolicy: {{ .Values.images.oasis.worker_controller.imagePullPolicy }}
@@ -74,4 +74,13 @@ spec:
               value: {{ .Values.oasisServer.name }}
             - name: OASIS_API_PORT
               value: {{ .Values.oasisServer.port | quote }}
----
+            {{- with .Values.workerController.totalWorkerLimit }}
+            - name: OASIS_TOTAL_WORKER_LIMIT
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.workerController.priority }}
+              {{- if .modelsLimit }}
+            - name: OASIS_PRIORITIZED_MODELS_LIMIT
+              value: {{ .modelsLimit | quote }}
+              {{- end }}
+            {{- end }}

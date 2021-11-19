@@ -136,7 +136,7 @@ keycloak:
       password: x7e+GK6Y8ac#grb&9vT4
     users:
       # A default user is created at first deployment.
-      - username: oasis
+      - username: admin
         password: password
         admin: true
 
@@ -154,6 +154,18 @@ oasisServer:
     endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
     clientName: oasis-server
     clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
+
+workerController:
+  # The maximum number of workers the worker controller will start. No matter the number of analyses and models
+  # this limit will never be exceeded by this worker controller.
+  totalWorkerLimit: 10
+
+  # Settings related to prioritized runs
+  priority:
+
+    # When multiple runs has started with different prioritise the worker controller will by using this limit
+    # focus on the 'parallelModelsLimit' models with the highest priority runs.
+    modelsLimit: 2
 
 oasisUI:
   name: oasis-ui
