@@ -159,6 +159,41 @@ class Controller:
         return tuple(zip(*joined))
 
     @classmethod
+    def _create_chain(
+            cls,
+            analysis,
+            initiator,
+            tasks: List[Signature],
+            run_data_uuid: str,
+            traceback_property: str,
+            failure_status: str,
+    ) -> chain:
+        """
+        Create a chain of all tasks
+
+        :param analysis: The analysis to run the tasks for
+        :param initiator: The user starting the task
+        :param tasks: Signatures for the subtasks to run
+        :param run_data_uuid: The suffix for the runs current data directory
+        :param traceback_property: The property to store the traceback on failure
+        :param failure_status: The Status to use when the task fails
+
+        :return: The chain representing the tasks
+        """
+        c = chain(*tasks)
+        c.link_error(signature(
+            'handle_task_failure',
+            kwargs={
+                'analysis_id': analysis.pk,
+                'initiator_id': initiator.pk,
+                'run_data_uuid': run_data_uuid,
+                'traceback_property': traceback_property,
+                'failure_status': failure_status,
+            },
+        ))
+        return c
+
+    @classmethod
     def _start(
         cls,
         analysis,
@@ -187,17 +222,14 @@ class Controller:
         analysis.sub_task_statuses.all().delete()
         AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
 
-        c = chain(*tasks)
-        c.link_error(signature(
-            'handle_task_failure',
-            kwargs={
-                'analysis_id': analysis.pk,
-                'initiator_id': initiator.pk,
-                'run_data_uuid': run_data_uuid,
-                'traceback_property': traceback_property,
-                'failure_status': failure_status,
-            },
-        ))
+        c = cls._create_chain(
+            analysis,
+            initiator,
+            tasks,
+            run_data_uuid,
+            traceback_property,
+            failure_status,
+        )
         c.delay({}, priority=analysis.priority)
         return c
 
@@ -214,7 +246,9 @@ class Controller:
         return str(analysis.model)
 
     @classmethod
-    def get_inputs_generation_tasks(cls, analysis: 'Analysis', initiator: User, run_data_uuid: str, num_chunks: int,) -> Tuple[List['AnalysisTaskStatus'], List[Signature]]:
+    def get_inputs_generation_tasks(
+            cls, analysis: 'Analysis', initiator: User, run_data_uuid: str, num_chunks: int,
+            analysis_finish_status='READY') -> Tuple[List['AnalysisTaskStatus'], List[Signature]]:
         """
         Gets the tasks to chain together for input generation
 
@@ -222,6 +256,8 @@ class Controller:
         :param initiator: The user starting the tasks
         :param run_data_uuid: The suffix for the runs current data directory
         :param num_chunks: The number of lookup chunks to split task into
+        :param analysis_finish_status: The status to set once the input generation finish, READY as default, but
+        generate_input_and_run will set it to RUN_STARTED.
 
         :return: Tuple containing the statuses to create and signatures to chain
         """
@@ -295,6 +331,7 @@ class Controller:
                 'Record input files',
                 'record-input-files',
                 'celery',
+                TaskParams(analysis_finish_status=analysis_finish_status),
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_input_generation',
@@ -321,12 +358,7 @@ class Controller:
         from src.server.oasisapi.analyses.models import Analysis
 
         # fetch the number of lookup chunks and store in analysis
-        if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
-            num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
-        elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
-            loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
-            loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
-            num_chunks = ceil(loc_lines / loc_lines_per_chunk)
+        num_chunks = cls._get_inputs_generation_chunks(analysis)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
@@ -347,6 +379,16 @@ class Controller:
         analysis.save()
 
         return task
+
+    @classmethod
+    def _get_inputs_generation_chunks(cls, analysis):
+        if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
+            num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
+        elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
+            loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
+            loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
+            num_chunks = ceil(loc_lines / loc_lines_per_chunk)
+        return num_chunks
 
     @classmethod
     def get_generate_losses_queue(cls, analysis: 'Analysis', initiator: User) -> str:
@@ -458,10 +500,7 @@ class Controller:
         from src.server.oasisapi.analyses.models import Analysis
 
         # fetch number of event chunks
-        if analysis.model.chunking_options.loss_strategy == 'FIXED_CHUNKS':
-            num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
-        elif analysis.model.chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
-            raise notimplementederror("FEATURE NOT AVALIBLE -- need event set size from worker")
+        num_chunks = cls._get_loss_generation_chunks(analysis)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
@@ -480,6 +519,89 @@ class Controller:
             Analysis.status_choices.RUN_ERROR,
         ).id or ''  # TODO: is shouldn't return None but is for some reason so for no guard against it
         analysis.save()
+        return task
+
+    @classmethod
+    def _get_loss_generation_chunks(cls, analysis):
+        if analysis.model.chunking_options.loss_strategy == 'FIXED_CHUNKS':
+            num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
+        elif analysis.model.chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
+            raise notimplementederror("FEATURE NOT AVALIBLE -- need event set size from worker")
+        return num_chunks
+
+    @classmethod
+    def generate_input_and_losses(cls, analysis: 'Analysis', initiator: User):
+        """
+        Starts the input generation chain
+
+        :param analysis: The analysis to start input generation for
+        :param initiator: The user starting the input generation
+        :param run_data_uuid: The suffix for the runs current data directory
+
+        :return: The started chain
+        """
+        """TODO
+        Starts the loss generation chain
+
+        :param analysis: The analysis to start loss generation for
+        :param initiator: The user starting the loss generation
+
+        :return: The started chain
+        """
+        from src.server.oasisapi.analyses.models import Analysis
+
+        # fetch the number of lookup chunks and store in analysis
+        input_num_chunks = cls._get_inputs_generation_chunks(analysis)
+        # fetch number of event chunks
+        loss_num_chunks = cls._get_loss_generation_chunks(analysis)
+
+        input_run_data_uuid = uuid.uuid4().hex
+        loss_run_data_uuid = uuid.uuid4().hex
+
+        input_statuses, input_tasks = cls.get_inputs_generation_tasks(
+            analysis, initiator, input_run_data_uuid, input_num_chunks, 'RUN_STARTED')
+        loss_statuses, loss_tasks = cls.get_loss_generation_tasks(
+            analysis, initiator, loss_run_data_uuid, loss_num_chunks)
+
+        statuses = input_statuses + loss_statuses
+        tasks = input_tasks + loss_tasks
+
+        # Add chunk info to analysis
+        analysis.lookup_chunks = input_num_chunks + loss_num_chunks
+        analysis.sub_task_count = len(tasks)
+        analysis.save()
+
+        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+        analysis.sub_task_statuses.all().delete()
+        AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
+
+        input_chain = cls._create_chain(
+            analysis,
+            initiator,
+            input_tasks,
+            input_run_data_uuid,
+            'input_generation_traceback_file',
+            Analysis.status_choices.INPUTS_GENERATION_ERROR)
+        loss_chain = cls._create_chain(
+            analysis,
+            initiator,
+            loss_tasks,
+            loss_run_data_uuid,
+            'run_traceback_file',
+            Analysis.status_choices.RUN_ERROR)
+
+        # task = input_chain.delay({}, priority=analysis.priority, link=[loss_chain])
+        # task = chain(input_chain, loss_chain).apply_async(priority=analysis.priority)
+        task = chain(input_chain, loss_chain).delay({}, priority=analysis.priority, ignore_result=True)
+        # task = input_chain.link(loss_chain).delay({}, priority=analysis.priority)
+        # NO
+        # task = input_chain.apply_async(link=[loss_chain()])
+        # task = input_chain.apply_async(args={}, kwargs={}, priority=analysis.pk) #, link=[loss_chain])
+
+        analysis.generate_inputs_task_id = task.id
+        analysis.run_task_id = task.id
+        analysis.save()
+
         return task
 
 

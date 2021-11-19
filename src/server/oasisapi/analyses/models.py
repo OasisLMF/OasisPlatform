@@ -312,6 +312,58 @@ class Analysis(TimeStampedModel):
         self.task_finished = None
         self.save()
 
+    @property
+    def start_input_and_loss_generation_signature(self):
+        return celery_app.signature(
+            'start_input_and_loss_generation_task',
+            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+        )
+
+    def generate_inputs_and_run(self, initiator):
+        valid_choices = [
+            self.status_choices.NEW,
+            self.status_choices.INPUTS_GENERATION_ERROR,
+            self.status_choices.INPUTS_GENERATION_CANCELLED,
+            self.status_choices.READY,
+            self.status_choices.RUN_COMPLETED,
+            self.status_choices.RUN_CANCELLED,
+            self.status_choices.RUN_ERROR,
+        ]
+
+        errors = {}
+        if self.status not in valid_choices:
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
+
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+
+        if not self.portfolio.location_file:
+            errors['portfolio'] = ['"location_file" must not be null']
+
+        if errors:
+            raise ValidationError(errors)
+
+        self.status = self.status_choices.INPUTS_GENERATION_QUEUED
+        self.lookup_errors_file = None
+        self.lookup_success_file = None
+        self.lookup_validation_file = None
+        self.summary_levels_file = None
+        self.input_generation_traceback_file_id = None
+
+        task = self.start_input_and_loss_generation_signature
+        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+            'analysis_id': self.pk,
+            'initiator_id': initiator.pk,
+            'traceback_property': 'input_generation_traceback_file',
+            'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
+        }))
+        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
+
+        self.generate_inputs_task_id = task_id
+        self.task_started = timezone.now()
+        self.task_finished = None
+        self.save()
+
     def cancel(self):
         _now = timezone.now()
 

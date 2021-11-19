@@ -15,23 +15,33 @@ from celery import signals
 from celery.result import AsyncResult
 from celery.signals import before_task_publish
 from celery.utils.log import get_task_logger
-from django.conf import settings
+from celery import Task
+from celery import signals
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.db.models import When, Case, Value, F
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db.models import When, Case, Value, F
+from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
 
 from src.conf.iniconf import settings
+from botocore.exceptions import ClientError as S3_ClientError
+from tempfile import TemporaryFile
+from urllib.request import urlopen
+from urllib.parse import urlparse
+
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
 from ..celery_app import celery_app
+from src.server.oasisapi.files.views import handle_json_data
+from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
+from .models import Analysis
 
 logger = get_task_logger(__name__)
 
@@ -332,9 +342,20 @@ def start_loss_generation_task(analysis_pk, initiator_pk):
     analysis.save()
 
 
-@celery_app.task(bind=True, name='record_input_files')
-def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None):
+@celery_app.task(name='start_input_and_loss_generation_task')
+def start_input_and_loss_generation_task(analysis_pk, initiator_pk):
     from .models import Analysis
+    analysis = Analysis.objects.get(pk=analysis_pk)
+    initiator = get_user_model().objects.get(pk=initiator_pk)
+
+    get_analysis_task_controller().generate_input_and_losses(analysis, initiator)
+
+    analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED
+    analysis.save()
+
+
+@celery_app.task(bind=True, name='record_input_files')
+def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, analysis_finish_status=Analysis.status_choices.READY):
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
     logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id))
@@ -358,7 +379,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     analysis.task_finished = timezone.now()
     initiator = get_user_model().objects.get(pk=initiator_id)
 
-    analysis.status = Analysis.status_choices.READY
+    analysis.status = analysis_finish_status
     analysis.input_file = store_file(input_location, 'application/gzip', initiator)
     analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator)
     analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator)

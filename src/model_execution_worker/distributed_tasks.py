@@ -620,7 +620,7 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
         # Delete remote copy of run data
         filestore.delete_dir(params['storage_subdir'])
 
-    return params
+    return {}
 
 
 #
