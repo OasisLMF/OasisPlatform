@@ -1,24 +1,27 @@
 from __future__ import absolute_import
 
 from django.utils.translation import gettext_lazy as _
+from django_filters import NumberFilter
+from django_filters import rest_framework as filters
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
-from drf_yasg.utils import swagger_auto_schema
-from django_filters import rest_framework as filters
-from django_filters import NumberFilter
+from rest_framework.settings import api_settings
 
 from .models import Analysis, AnalysisTaskStatus
-from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, AnalysisStorageSerializer, AnalysisListSerializer
-
+from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
+    AnalysisStorageSerializer, AnalysisListSerializer
 from ..analysis_models.models import AnalysisModel
 from ..data_files.serializers import DataFileSerializer
-from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
-from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
+from ..files.views import handle_related_file, handle_json_data
+from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
+from ..permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups
+from ..portfolios.models import Portfolio
 from ..schemas.custom_swagger import FILE_RESPONSE
 from ..schemas.serializers import AnalysisSettingsSerializer
 
@@ -81,7 +84,7 @@ class AnalysisFilter(TimeStampedFilter):
         super(AnalysisFilter, self).__init__(*args, **kwargs)
 
 
-class AnalysisViewSet(viewsets.ModelViewSet):
+class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
     Returns a list of Analysis objects.
@@ -144,11 +147,18 @@ class AnalysisViewSet(viewsets.ModelViewSet):
                          'generate_inputs',
                          'cancel_generate_inputs']
 
-    queryset = Analysis.objects.all().select_related(*file_action_types).prefetch_related('complex_model_data_files')
+    # queryset = Analysis.objects.all().select_related(*file_action_types).prefetch_related('complex_model_data_files')
     serializer_class = AnalysisSerializer
     filterset_class = AnalysisFilter
 
-    file_action_types.append('set_settings_file')
+    group_access_model = Analysis
+    group_access_sub_model = Portfolio
+    group_access_sub_attribute = 'portfolio'
+
+    file_action_types_with_settings_file = file_action_types + ['set_settings_file']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(*self.file_action_types).prefetch_related('complex_model_data_files')
 
     def get_serializer_class(self):
         if self.action in ['create', 'options', 'update', 'partial_update', 'retrieve']:
@@ -161,7 +171,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             return DataFileSerializer
         elif self.action == 'storage_links':
             return AnalysisStorageSerializer
-        elif self.action in self.file_action_types:
+        elif self.action in self.file_action_types_with_settings_file:
             return RelatedFileSerializer
         else:
             return Serializer
@@ -182,6 +192,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         `RUN_ERROR`
         """
         obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -194,6 +205,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED`, `INPUTS_GENERATION_STARTED`, `RUN_QUEUED` or `RUN_STARTED`
         """
         obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_any()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -205,6 +217,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         Cancels a running analysis execution. The analysis must have one of the following statuses, `RUN_QUEUED` or `RUN_STARTED`
         """
         obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_analysis()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -216,6 +229,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.generate_inputs(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -226,6 +240,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         Cancels a currently inputs generation. The analysis status must be `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_generate_inputs()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -408,14 +423,17 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class AnalysisSettingsView(viewsets.ModelViewSet):
+class AnalysisSettingsView(VerifyGroupAccessModelViewSet):
     """
     list:
     Return the settings of an Analysis object.
     """
-    queryset = Analysis.objects.all()
     serializer_class = AnalysisSerializer
     filterset_class = AnalysisFilter
+
+    group_access_model = Analysis
+    group_access_sub_model = Portfolio
+    group_access_sub_attribute = 'portfolio'
 
     @swagger_auto_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
     @swagger_auto_schema(methods=['post'], request_body=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
@@ -437,6 +455,7 @@ class AnalysisSettingsView(viewsets.ModelViewSet):
 class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
     queryset = AnalysisTaskStatus.objects.all()
     serializer_class = AnalysisTaskStatusSerializer
+    permission_classes = [IsAdminUser]
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)

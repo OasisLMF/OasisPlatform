@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
@@ -32,6 +33,7 @@ class DataFile(TimeStampedModel):
         default=None,
         related_name="content_data_file"
     )
+    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
 
     def __str__(self):
         return 'DataFile_{}'.format(self.file)

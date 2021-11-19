@@ -11,7 +11,7 @@
   } ],
   "disableableCredentialTypes" : [ ],
   "requiredActions" : [ ],
-  "realmRoles" : [ "default-roles-oasis" ],
+  "realmRoles" : [ ___ROLES___ ],
   "notBefore" : 0,
-  "groups" : [ ]
+  "groups" : [ ___GROUPS___ ]
 }

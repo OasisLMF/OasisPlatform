@@ -581,6 +581,10 @@ opened user.
 
 Create a new user by clicking 'Add user' to the right.
 
+### Groups
+
+Manage groups from here and then add them to each user in the `Manage / Users` page.
+
 ## Default settings
 
 The oasis-platform chart creates a default realm (keycloak security context) on the first deployment to manage all
@@ -592,11 +596,27 @@ A default REST API user is created on `helm install` and to change the username 
 keycloak:
   oasisRestApi:
     users:
+      # A default user is created at first deployment.
       - username: oasis
         password: password
+        admin: true
 ```
 
 Default username is `oasis` with password `password`.
+
+## Groups
+
+Groups are now supported by creating them in Keycloak and assign them to users. A user can then set groups on objects
+like portfolio, model and data files. A user can set all or a subset of the groups the user belongs to and if no group
+is set it will automatically get all the users groups.
+
+Users can only modify objects which have the same group.
+
+Analysis will inherit the groups from the portfolio, but for a user to run the analysis it requires the user to be
+member of at least one of the models groups.
+
+Empty groups are treated as a group. If a user for example belongs to a group it won't be able to access objects that
+belongs to a group and vice versa.
 
 # Help scripts
 

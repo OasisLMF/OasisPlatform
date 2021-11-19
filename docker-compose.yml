@@ -43,7 +43,7 @@ services:
   worker-monitor:
    restart: always
    image: coreoasis/api_server:latest
-   command: [celery, -A, src.server.oasisapi, worker, --loglevel=INFO]
+   command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO]
    links:
      - server-db
      - celery-db
@@ -54,7 +54,7 @@ services:
   task-controller:
    restart: always
    image: coreoasis/api_server:latest
-   command: [celery, -A, src.server.oasisapi, worker, --loglevel=INFO, -Q, task-controller]
+   command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO, -Q, task-controller]
    links:
      - server-db
      - celery-db
@@ -65,7 +65,7 @@ services:
   celery-beat:
    restart: always
    image: coreoasis/api_server:latest
-   command: [celery, -A, src.server.oasisapi, beat, --loglevel=INFO]
+   command: [celery, -A, src.server.oasisapi.celery_app, beat, --loglevel=INFO]
    links:
      - server-db
      - celery-db
@@ -101,7 +101,7 @@ services:
     volumes:
       - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/server-pg:/var/lib/postgresql/data:rw
     ports:
-      - 33307:3306    
+      - 33307:3306
   celery-db:
     restart: always
     image: postgres

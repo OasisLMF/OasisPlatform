@@ -33,7 +33,7 @@ from urllib.parse import urlparse
 from src.server.oasisapi.files.models import RelatedFile
 from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
-from ..celery import celery_app
+from ..celery_app import celery_app
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 

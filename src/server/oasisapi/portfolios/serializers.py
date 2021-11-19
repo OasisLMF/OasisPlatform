@@ -1,17 +1,19 @@
 from os import path
+
+from botocore.exceptions import ClientError as S3_ClientError
+from django.contrib.auth.models import Group
+from django.core.files import File
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from django.core.files.storage import default_storage
-from django.core.files import File
-from django.core.files.base import ContentFile
-from botocore.exceptions import ClientError as S3_ClientError
 
-from ..analyses.serializers import AnalysisSerializer
-from ..files.models import file_storage_link
-from ..files.models import RelatedFile
 from .models import Portfolio
-
+from ..analyses.serializers import AnalysisSerializer
+from ..files.models import RelatedFile
+from ..files.models import file_storage_link
+from ..permissions.group_auth import validate_and_update_groups, validate_user_is_owner
 from ..schemas.serializers import (
     LocFileSerializer,
     AccFileSerializer,
@@ -21,8 +23,8 @@ from ..schemas.serializers import (
 
 
 class PortfolioListSerializer(serializers.Serializer):
-    """ Read Only Portfolio Deserializer for efficiently returning a list of all 
-        Portfolios in DB 
+    """ Read Only Portfolio Deserializer for efficiently returning a list of all
+        Portfolios in DB
     """
 
     id = serializers.IntegerField(read_only=True)
@@ -34,6 +36,7 @@ class PortfolioListSerializer(serializers.Serializer):
     reinsurance_info_file = serializers.SerializerMethodField(read_only=True)
     reinsurance_scope_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
+    groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_storage_links(self, instance):
@@ -92,6 +95,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     reinsurance_info_file = serializers.SerializerMethodField()
     reinsurance_scope_file = serializers.SerializerMethodField()
     storage_links = serializers.SerializerMethodField()
+    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
 
     class Meta:
         model = Portfolio
@@ -100,6 +104,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'name',
             'created',
             'modified',
+            'groups',
             'location_file',
             'accounts_file',
             'reinsurance_info_file',
@@ -107,16 +112,29 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'storage_links',
         )
 
+    def validate(self, attrs):
+
+        # Validate and update groups parameter
+        validate_and_update_groups(self.partial, self.context.get('request').user, attrs)
+
+        return super(serializers.ModelSerializer, self).validate(attrs)
+
     def create(self, validated_data):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+                data['creator'] = self.context.get('request').user
         return super(PortfolioSerializer, self).create(data)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_storage_links(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
+
+    def get_groups(self, instance):
+        groups = []
+        for group in instance.groups.all():
+            groups.append(group.name)
+        return groups
 
     @swagger_serializer_method(serializer_or_field=LocFileSerializer)
     def get_location_file(self, instance):
@@ -211,6 +229,12 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 else:
                     raise e
 
+    def user_belongs_to_file_group(self, value):
+        file = RelatedFile.objects.filter(file=value)
+        if file:
+            return validate_user_is_owner(self.context['request'].user, file[0])
+        return True
+
     def validate(self, attrs):
         file_keys = [k for k in self.fields.keys()]
 
@@ -228,24 +252,29 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 if not isinstance(value, str):
                     errors[k] = "Value is not type string, found {}".format(type(value))
                     continue
-                # Check String is not empry
+                # Check String is not empty
                 elif len(value.strip()) < 1:
-                    errors[k] = "Value is emtpry or whitespace string."
+                    errors[k] = "Value is empty or whitespace string."
                     continue
-                # Check that the file exisits
+                # Check that the file exists
                 elif not self.is_in_storage(value):
                     errors[k] = "File '{}' not found in default storage".format(value)
+                    continue
+                elif not self.user_belongs_to_file_group(value):
+                    errors[k] = "File '{}' belongs to a different group".format(value)
                     continue
 
                 # Data is valid
                 attrs[k] = value
         if errors:
             raise serializers.ValidationError(errors)
+
         return super(PortfolioStorageSerializer, self).validate(attrs)
 
     def update(self, instance, validated_data):
         files_for_removal = list()
         content_type = 'text/csv'
+        user = self.context['request'].user
         for field in validated_data:
 
             # S3 storage - File copy needed
@@ -257,9 +286,11 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     file=new_file,
                     filename=fname,
                     content_type=content_type,
-                    creator=self.context['request'].user,
+                    creator=user,
                     store_as_filename=True,
                 )
+                new_related_file.groups.set(user.groups.all())
+                new_related_file.save()
                 bucket = default_storage.bucket
                 stored_file = default_storage.open(new_related_file.file.name)
                 stored_file.obj.copy({"Bucket": bucket.name, "Key": validated_data[field]})
@@ -273,9 +304,11 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     file=new_file,
                     filename=validated_data[field],
                     content_type=content_type,
-                    creator=self.context['request'].user,
+                    creator=user,
                     store_as_filename=True,
                 )
+                new_related_file.groups.set(user.groups.all())
+                new_related_file.save()
 
             # Mark prev ref for deleation if it exisits
             if hasattr(instance, field):
@@ -295,7 +328,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
 
 class CreateAnalysisSerializer(AnalysisSerializer):
     class Meta(AnalysisSerializer.Meta):
-        fields = ['name', 'model']
+        fields = ['name', 'model', 'groups']
 
     def __init__(self, portfolio=None, *args, **kwargs):
         self.portfolio = portfolio
@@ -305,6 +338,9 @@ class CreateAnalysisSerializer(AnalysisSerializer):
         attrs['portfolio'] = self.portfolio
         if not self.portfolio.location_file:
             raise ValidationError({'portfolio': '"location_file" must not be null'})
+
+        # Validate and update groups parameter
+        validate_and_update_groups(self.partial, self.context.get('request').user, attrs)
 
         return attrs
 

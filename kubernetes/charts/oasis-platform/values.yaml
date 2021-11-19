@@ -138,6 +138,7 @@ keycloak:
       # A default user is created at first deployment.
       - username: oasis
         password: password
+        admin: true
 
 # Oasis API host, port and credentials
 oasisServer:

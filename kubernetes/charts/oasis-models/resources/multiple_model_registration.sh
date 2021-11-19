@@ -21,6 +21,7 @@ while true; do
     export OASIS_MODEL_ID="$(sh -c "echo \$OASIS_MODEL_ID_${counter}")"
     export OASIS_MODEL_VERSION_ID="$(sh -c "echo \$OASIS_MODEL_VERSION_ID_${counter}")"
     export OASIS_MODEL_DATA_DIRECTORY="$(sh -c "echo \$OASIS_MODEL_DATA_DIRECTORY_${counter}")"
+    export OASIS_MODEL_GROUPS="$(sh -c "echo \$OASIS_MODEL_GROUPS_${counter}")"
 
     ${SCRIPT_DIR}/model_registration.sh
   else

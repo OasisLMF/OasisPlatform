@@ -128,6 +128,12 @@ To run the full test suite run::
 
     ./runtests.sh
 
+### OIDC and Keycloak
+
+Due to different settings required to enable keycloak they need to be executed with a different django configuration:
+
+    OASIS_API_AUTH_TYPE=keycloak pytest src/server/oasisapi/auth/tests/test_oidc.py
+
 ### Deploying
 
 The Oasis CI system builds and deploys the following Docker images to DockerHub:

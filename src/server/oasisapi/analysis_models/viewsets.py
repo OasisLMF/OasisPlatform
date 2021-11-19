@@ -27,6 +27,7 @@ from ..data_files.serializers import DataFileSerializer
 from ..filters import TimeStampedFilter
 from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
+from ..permissions.group_auth import VerifyGroupAccessModelViewSet
 from ..schemas.custom_swagger import FILE_RESPONSE
 from ..schemas.serializers import ModelParametersSerializer
 
@@ -78,7 +79,7 @@ class AnalysisModelFilter(TimeStampedFilter):
         ]
 
 
-class AnalysisModelViewSet(viewsets.ModelViewSet):
+class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
     Returns a list of Model objects.
@@ -114,9 +115,9 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     Partially updates the specified model (only provided fields are updated)
     """
 
-    queryset = AnalysisModel.objects.all()
     serializer_class = AnalysisModelSerializer
     filterset_class = AnalysisModelFilter
+    group_access_model = AnalysisModel
 
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:

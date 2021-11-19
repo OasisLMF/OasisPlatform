@@ -3,26 +3,27 @@ from __future__ import absolute_import
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
 
-from ..filters import TimeStampedFilter
-from ..analyses.serializers import AnalysisSerializer
-from ..files.views import handle_related_file
-from ..files.serializers import RelatedFileSerializer
 from .models import Portfolio
-from ..schemas.custom_swagger import FILE_RESPONSE
-from ..schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
     CreateAnalysisSerializer,
     PortfolioStorageSerializer,
     PortfolioListSerializer
 )
+from ..analyses.serializers import AnalysisSerializer
+from ..files.serializers import RelatedFileSerializer
+from ..files.views import handle_related_file
+from ..filters import TimeStampedFilter
+from ..permissions.group_auth import VerifyGroupAccessModelViewSet
+from ..schemas.custom_swagger import FILE_RESPONSE
+from ..schemas.serializers import StorageLinkSerializer
+
 
 class PortfolioFilter(TimeStampedFilter):
     name = filters.CharFilter(help_text=_('Filter results by case insensitive names equal to the given string'), lookup_expr='iexact')
@@ -42,7 +43,7 @@ class PortfolioFilter(TimeStampedFilter):
         ]
 
 
-class PortfolioViewSet(viewsets.ModelViewSet):
+class PortfolioViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
     Returns a list of Portfolio objects.
@@ -74,12 +75,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     Partially updates the specified portfolio (only provided fields are updated)
     """
 
-    queryset = Portfolio.objects.all().select_related(
-        'location_file',
-        'accounts_file',
-        'reinsurance_scope_file',
-        'reinsurance_info_file'
-    )
     serializer_class = PortfolioSerializer
     filterset_class = PortfolioFilter
 
@@ -91,6 +86,17 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         'application/zip',
         'application/x-bzip2',
     ]
+
+    group_access_model = Portfolio
+
+    def get_queryset(self):
+
+        return super().get_queryset().select_related(
+            'location_file',
+            'accounts_file',
+            'reinsurance_scope_file',
+            'reinsurance_info_file'
+        )
 
     def get_serializer_class(self):
         if self.action == 'create_analysis':
@@ -124,6 +130,9 @@ class PortfolioViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(data=request.data, portfolio=portfolio, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        if 'groups' in validated_data:
+            del validated_data['groups']
         analysis = serializer.create(serializer.validated_data)
         analysis.generate_inputs(request.user)
 

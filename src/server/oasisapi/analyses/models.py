@@ -14,7 +14,7 @@ from model_utils.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
-from src.server.oasisapi.celery import celery_app
+from src.server.oasisapi.celery_app import celery_app
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
     TaskStatusMessageAnalysisItem, build_task_status_message
 from ..analysis_models.models import AnalysisModel
@@ -244,6 +244,12 @@ class Analysis(TimeStampedModel):
     def get_absolute_storage_url(self, request=None):
         return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+    def get_groups(self):
+        groups = []
+        portfolio_groups = self.portfolio.groups.all()
+        for group in portfolio_groups:
+            groups.append(group.name)
+        return groups
 
     def validate_run(self):
         valid_choices = [

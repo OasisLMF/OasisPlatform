@@ -29,9 +29,25 @@ data:
   oasis: |-
     {{- $userTemplate := .Files.Get "resources/oasis-realm-user.json" }}
     {{- $userJson := list -}}
-    {{- $userJson = $userTemplate | replace "___UUID___" uuidv4 | replace "___USERNAME___" .Values.keycloak.oasisRestApi.platformServiceAccount.username | replace "___PASSWORD___" .Values.keycloak.oasisRestApi.platformServiceAccount.password | append $userJson -}}
+    {{- $userJson = $userTemplate |
+      replace "___UUID___" uuidv4 |
+      replace "___USERNAME___" .Values.keycloak.oasisRestApi.platformServiceAccount.username |
+      replace "___PASSWORD___" .Values.keycloak.oasisRestApi.platformServiceAccount.password |
+      replace "___ROLES___" (join ", " (list "\"default-roles-oasis\"" "\"admin\"")) |
+      replace "___GROUPS___" "" |
+      append $userJson -}}
     {{- range $i, $user := .Values.keycloak.oasisRestApi.users }}
-    {{- $userJson = $userTemplate | replace "___UUID___" uuidv4 | replace "___USERNAME___" $user.username | replace "___PASSWORD___" $user.password | append $userJson -}}
+      {{- $groups := list }}
+      {{- if $user.admin }}
+        {{- $groups = append $groups "\"admin\"" }}
+      {{- end }}
+      {{- $userJson = $userTemplate |
+        replace "___UUID___" uuidv4 |
+        replace "___USERNAME___" $user.username |
+        replace "___PASSWORD___" $user.password |
+        replace "___ROLES___" "\"default-roles-oasis\"" |
+        replace "___GROUPS___" (join ", " $groups ) |
+        append $userJson -}}
     {{- end }}
     {{- .Files.Get "resources/oasis-realm.json" | replace "\"___USERS___\"" (join "," $userJson) | nindent 4 }}
 ---
