@@ -155,14 +155,22 @@ class AutoScaler:
 
             for analysis_entry in analyses_list:
                 analysis = analysis_entry['analysis']
-                tasks = analysis['sub_task_count']
+                tasks = analysis.get('sub_task_count', 0)
 
                 queue_names = set()
-                sub_task_statuses = analysis['sub_task_statuses']
-                if sub_task_statuses and len(sub_task_statuses) > 0:
-                    for sub_task in sub_task_statuses:
-                        if sub_task['status'] != 'COMPLETED':
-                            queue_names.add(sub_task['queue_name'])
+                task_counts = analysis.get('status_count', {})
+                tasks_in_queue = task_counts.get('TOTAL_IN_QUEUE', 0)
+                if tasks_in_queue > 0:
+                    queue_names = analysis.get('queue_names', [])
+
+                ## REPLACED: with the code block above  ############
+                #queue_names = set()
+                #sub_task_statuses = analysis['sub_task_statuses']
+                #if sub_task_statuses and len(sub_task_statuses) > 0:
+                #    for sub_task in sub_task_statuses:
+                #        if sub_task['status'] != 'COMPLETED':
+                #            queue_names.add(sub_task['queue_name'])
+                ####################################################
 
                 if tasks and tasks > 0 and len(queue_names) > 0:
                     sa_id = analysis['id']

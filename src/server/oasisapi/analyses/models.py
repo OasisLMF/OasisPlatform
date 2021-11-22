@@ -172,7 +172,6 @@ class Analysis(TimeStampedModel):
 
     analysis_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
     lookup_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
-    sub_task_count = models.IntegerField(editable=False, default=None, blank=True, null=True)
 
     lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
     lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')

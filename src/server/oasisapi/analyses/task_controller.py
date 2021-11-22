@@ -336,7 +336,6 @@ class Controller:
 
         # Add chunk info to analysis
         analysis.lookup_chunks = num_chunks
-        analysis.sub_task_count = len(tasks)
         analysis.save()
 
         task = analysis.generate_inputs_task_id = cls._start(
@@ -472,7 +471,6 @@ class Controller:
 
         # add chunk info to analysis
         analysis.analysis_chunks = num_chunks
-        analysis.sub_task_count = len(tasks)
         analysis.save()
 
         task = analysis.run_task_id = cls._start(
