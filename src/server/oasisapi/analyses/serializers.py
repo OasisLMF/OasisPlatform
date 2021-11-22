@@ -195,6 +195,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'analysis_chunks',
             'sub_task_count',
             "groups",
+            'sub_task_list',
+            'status_ids',
+            'status_count',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
