@@ -172,7 +172,6 @@ class Analysis(TimeStampedModel):
 
     analysis_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
     lookup_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
-    sub_task_count = models.IntegerField(editable=False, default=None, blank=True, null=True)
 
     lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
     lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
@@ -243,6 +242,9 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_storage_url(self, request=None):
         return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def get_absolute_subtask_list_url(self, request=None):
+        return reverse('analysis-sub-task-list', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_groups(self):
         groups = []
@@ -517,88 +519,3 @@ def delete_connected_files(sender, instance, **kwargs):
         file_ref = getattr(instance, ref)
         if file_ref:
             file_ref.delete()
-
-
-    # ### ORIG funcs #############################################################################
-    #
-    #def run(self, initiator):
-    #    self.validate_run()
-
-    #    self.status = self.status_choices.RUN_QUEUED
-
-    #    run_analysis_signature = self.run_analysis_signature
-    #    run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
-    #    run_analysis_signature.link_error(
-    #        signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-    #    )
-    #    dispatched_task = run_analysis_signature.delay()
-    #    self.run_task_id = dispatched_task.id
-    #    self.task_started = None
-    #    self.task_finished = None
-    #    self.save()
-
-    #@property
-    #def run_analysis_signature(self):
-    #    complex_data_files = self.create_complex_model_data_file_dicts()
-    #    input_file = file_storage_link(self.input_file)
-    #    settings_file = file_storage_link(self.settings_file)
-
-    #    return signature(
-    #        'run_analysis',
-    #        args=(self.pk, input_file, settings_file, complex_data_files),
-    #        queue=self.model.queue_name,
-    #    )
-    #
-    #
-    #
-    #
-    #
-    #def generate_inputs(self, initiator):
-    #    valid_choices = [
-    #        self.status_choices.NEW,
-    #        self.status_choices.INPUTS_GENERATION_ERROR,
-    #        self.status_choices.INPUTS_GENERATION_CANCELLED,
-    #        self.status_choices.READY,
-    #        self.status_choices.RUN_COMPLETED,
-    #        self.status_choices.RUN_CANCELLED,
-    #        self.status_choices.RUN_ERROR,
-    #    ]
-
-    #    errors = {}
-    #    if self.status not in valid_choices:
-    #        errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
-
-    #    if self.model.deleted:
-    #        errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-
-    #    if not self.portfolio.location_file:
-    #        errors['portfolio'] = ['"location_file" must not be null']
-
-    #    if errors:
-    #        raise ValidationError(errors)
-
-    #    self.status = self.status_choices.INPUTS_GENERATION_QUEUED
-    #    generate_input_signature = self.generate_input_signature
-    #    generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
-    #    generate_input_signature.link_error(
-    #        signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-    #    )
-    #    self.generate_inputs_task_id = generate_input_signature.delay().id
-    #    self.task_started = None
-    #    self.task_finished = None
-    #    self.save()
-    #
-    #@property
-    #def generate_input_signature(self):
-    #    loc_file = file_storage_link(self.portfolio.location_file)
-    #    acc_file = file_storage_link(self.portfolio.accounts_file)
-    #    info_file = file_storage_link(self.portfolio.reinsurance_info_file)
-    #    scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
-    #    settings_file = file_storage_link(self.settings_file)
-    #    complex_data_files = self.create_complex_model_data_file_dicts()
-
-    #    return signature(
-    #        'generate_input',
-    #        args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
-    #        queue=self.model.queue_name
-    #    )

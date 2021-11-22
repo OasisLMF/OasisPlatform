@@ -411,8 +411,6 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)
 
-
-
     @action(methods=['get'], detail=True)
     def storage_links(self, request, pk=None, version=None):
         """
@@ -420,6 +418,15 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Gets the analyses storage backed link references, `object keys` or `file paths`
         """
         serializer = self.get_serializer(self.get_object())
+        return Response(serializer.data)
+
+    @swagger_auto_schema(responses={200: AnalysisTaskStatusSerializer(many=True)})
+    @action(methods=['get'], detail=True)
+    def sub_task_list(self, request, pk=None, version=None):
+        sub_task_queryset = self.get_object().sub_task_statuses.all()
+        context = {'request': request}
+
+        serializer = AnalysisTaskStatusSerializer(sub_task_queryset, many=True, context=context)
         return Response(serializer.data)
 
 
