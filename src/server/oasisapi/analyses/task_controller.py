@@ -443,7 +443,7 @@ class Controller:
                 run_data_uuid,
                 'Cleanup losses generation',
                 'cleanup-losses-generation',
-                'model-worker-broadcast',
+                queue,
                 TaskParams(**base_kwargs),
             ),
         ])
