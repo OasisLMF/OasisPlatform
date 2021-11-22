@@ -63,7 +63,7 @@ class AnalysisListSerializer(serializers.Serializer):
     lookup_chunks = serializers.IntegerField(read_only=True)
     sub_task_count = serializers.SerializerMethodField(read_only=True)
     sub_task_list = serializers.SerializerMethodField(read_only=True)
-    status_ids = serializers.SerializerMethodField(read_only=True)
+    sub_task_error_ids = serializers.SerializerMethodField(read_only=True)
     status_count = serializers.SerializerMethodField(read_only=True)
 
     # file fields
@@ -153,16 +153,9 @@ class AnalysisListSerializer(serializers.Serializer):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
 
-    def get_status_ids(self, instance):
+    def get_sub_task_error_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        return {
-            "PENDING":   subtask_queryset.filter(status='PENDING').values_list('pk', flat=True),
-            "QUEUED":    subtask_queryset.filter(status='QUEUED').values_list('pk', flat=True),
-            "STARTED":   subtask_queryset.filter(status='STARTED').values_list('pk', flat=True),
-            "COMPLETED": subtask_queryset.filter(status='COMPLETED').values_list('pk', flat=True),
-            "CANCELLED": subtask_queryset.filter(status='CANCELLED').values_list('pk', flat=True),
-            "ERROR":     subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
-        }
+        return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True) 
 
     def get_status_count(self, instance):
         #request = self.context.get('request')
@@ -201,7 +194,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     # sub task fields
     sub_task_count = serializers.SerializerMethodField(read_only=True)
     sub_task_list = serializers.SerializerMethodField(read_only=True)
-    status_ids = serializers.SerializerMethodField(read_only=True)
+    sub_task_error_ids = serializers.SerializerMethodField(read_only=True)
     status_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -234,7 +227,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'sub_task_count',
             "groups",
             'sub_task_list',
-            'status_ids',
+            'sub_task_error_ids',
             'status_count',
         )
 
@@ -311,16 +304,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
 
-    def get_status_ids(self, instance):
+    def get_sub_task_error_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        return {
-            "PENDING":   subtask_queryset.filter(status='PENDING').values_list('pk', flat=True),
-            "QUEUED":    subtask_queryset.filter(status='QUEUED').values_list('pk', flat=True),
-            "STARTED":   subtask_queryset.filter(status='STARTED').values_list('pk', flat=True),
-            "COMPLETED": subtask_queryset.filter(status='COMPLETED').values_list('pk', flat=True),
-            "CANCELLED": subtask_queryset.filter(status='CANCELLED').values_list('pk', flat=True),
-            "ERROR":     subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
-        }
+        return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True) 
 
     def get_status_count(self, instance):
         #request = self.context.get('request')
