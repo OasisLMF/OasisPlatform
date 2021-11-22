@@ -394,7 +394,8 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
 
     def get_queue_names(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        return list(subtask_queryset.order_by().values_list('queue_name', flat=True).distinct())
+        running_subtasks_queryset = subtask_queryset.filter(status__in=['PENDING', 'QUEUED', 'STARTED'])     
+        return list(running_subtasks_queryset.order_by().values_list('queue_name', flat=True).distinct())
 
     def get_status_count(self, instance):
         #request = self.context.get('request')
