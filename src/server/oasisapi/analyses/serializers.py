@@ -341,6 +341,7 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
     # Status / Chunks
     analysis_chunks = serializers.IntegerField(read_only=True)
     lookup_chunks = serializers.IntegerField(read_only=True)
+    sub_task_count = serializers.IntegerField(read_only=True)
     status_count = serializers.SerializerMethodField(read_only=True)
 
     def get_status_count(self, instance):
