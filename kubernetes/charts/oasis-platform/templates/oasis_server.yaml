@@ -103,7 +103,7 @@ spec:
               mountPath: /shared-fs
           readinessProbe:
             httpGet:
-              path: /
+              path: /healthcheck/
               port: {{.Values.oasisServer.port}}
               scheme: HTTP
             initialDelaySeconds: 5
@@ -111,7 +111,7 @@ spec:
             timeoutSeconds: 2
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthcheck/
               port: {{.Values.oasisServer.port}}
               scheme: HTTP
             initialDelaySeconds: 30

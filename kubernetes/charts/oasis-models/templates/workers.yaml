@@ -40,6 +40,18 @@ spec:
             {{- include "h.modelEnvs" . | indent 12 }}
             {{- include "h.brokerVars" $root | indent 12 }}
             {{- include "h.celeryDbVars" $root | indent 12}}
+          readinessProbe:
+            exec:
+              command: ["celery", "-A", "src.model_execution_worker.distributed_tasks", "inspect", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 30
+          livenessProbe:
+            exec:
+              command: ["celery", "-A", "src.model_execution_worker.distributed_tasks", "inspect", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 30
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs

@@ -118,6 +118,7 @@ Released on 2021-11-26
           highest priority.
     * Changed the default keycloak user to 'admin' (same name as default django user)
     * Updated health checks to read secrets instead of directly from chart values.
+    * All celery task deployment now has a celery ping health check.
 * Platform improvements:
     * Analysis priority:
         * A priority (0-9) can be set on each analysis:
@@ -132,6 +133,7 @@ Released on 2021-11-26
           ANALYSIS_PRIORITY_ADMIN_LEVELS = [0, 1, 2]
           ```
         * Worker controller respects the new settings in the platform chart.
+    * Oasis servers health check endpoint now checks celery and database connectivity.
 * Updated documentation.
 
 **This covers the following in the functional summary:**

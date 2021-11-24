@@ -144,10 +144,10 @@ spec:
             httpGet:
               path: /auth/realms/master
               port: 8080
-            initialDelaySeconds: 20
+            initialDelaySeconds: 10
             periodSeconds: 10
-            timeoutSeconds: 1
-            failureThreshold: 6
+            timeoutSeconds: 10
+            failureThreshold: 8
           livenessProbe:
             httpGet:
               path: /auth/
