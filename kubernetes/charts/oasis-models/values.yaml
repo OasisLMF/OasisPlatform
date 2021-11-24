@@ -67,6 +67,7 @@ databases:
   celery_db:
     name: celery-db
     port: 5432
+    type: postgres
 
 oasisServer:
   name: oasis-server

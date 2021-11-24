@@ -98,7 +98,11 @@ spec:
             - containerPort: {{ .Values.keycloak.port }}
           env:
             - name: DB_VENDOR
+              {{- if eq .Values.databases.keycloak_db.type "mysql" }}
+              value: mysql
+              {{- else }}
               value: postgres
+              {{- end }}
             - name: DB_ADDR
               valueFrom:
                 configMapKeyRef:
@@ -147,14 +151,14 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 10
-            failureThreshold: 8
+            failureThreshold: 50
           livenessProbe:
             httpGet:
               path: /auth/
               port: 8080
-            initialDelaySeconds: 45
+            initialDelaySeconds: 300
             periodSeconds: 15
-            timeoutSeconds: 2
+            timeoutSeconds: 10
             failureThreshold: 2
           volumeMounts:
             - name: realm-config

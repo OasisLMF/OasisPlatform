@@ -119,6 +119,7 @@ Released on 2021-11-26
     * Changed the default keycloak user to 'admin' (same name as default django user)
     * Updated health checks to read secrets instead of directly from chart values.
     * All celery task deployment now has a celery ping health check.
+    * Support for Mysql as an alternative to Postgres.
 * Platform improvements:
     * Analysis priority:
         * A priority (0-9) can be set on each analysis:
@@ -139,4 +140,4 @@ Released on 2021-11-26
 **This covers the following in the functional summary:**
 
 * Job prioritization (1.5):
-
+* Finished health checks and mysql support (not fully implemented in 1.1 / sprint 1)

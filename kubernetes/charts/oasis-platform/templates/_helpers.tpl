@@ -127,7 +127,11 @@ Variables for a celery DB client
 {{- define "h.celeryDbVars" }}
 {{- include "h.oasisDbVars" (list "CELERY" .Values.databases.celery_db.name) }}
 - name: OASIS_CELERY_DB_ENGINE
+{{- if eq .Values.databases.celery_db.type "mysql" }}
+  value: db+mysql+pymysql
+{{- else }}
   value: db+postgresql+psycopg2
+{{- end }}
 {{- end }}
 
 {{/*

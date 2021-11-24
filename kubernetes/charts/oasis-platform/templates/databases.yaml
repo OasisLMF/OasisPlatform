@@ -17,7 +17,7 @@ spec:
       {{- if eq $v.type "postgres" }}
       targetPort: 5432
       {{- else if eq $v.type "mysql" }}
-      targetPort: 33060
+      targetPort: 3306
       {{- else if eq $v.type "redis" }}
       targetPort: 6379
       {{- end }}
