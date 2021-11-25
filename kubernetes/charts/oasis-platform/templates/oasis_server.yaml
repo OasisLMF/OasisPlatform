@@ -103,20 +103,20 @@ spec:
               mountPath: /shared-fs
           readinessProbe:
             httpGet:
-              path: /healthcheck/
+              path: /api/healthcheck/
               port: {{.Values.oasisServer.port}}
               scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 5
-            timeoutSeconds: 2
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /healthcheck/
+              path: /api/healthcheck/
               port: {{.Values.oasisServer.port}}
               scheme: HTTP
             initialDelaySeconds: 30
-            periodSeconds: 15
-            timeoutSeconds: 2
+            periodSeconds: 30
+            timeoutSeconds: 10
             failureThreshold: 2
       volumes:
         - name: shared-fs-persistent-storage

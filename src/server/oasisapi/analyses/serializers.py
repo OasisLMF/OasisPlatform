@@ -374,6 +374,7 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
     portfolio = serializers.IntegerField(source='portfolio_id', read_only=True)
     model = serializers.IntegerField(source='model_id', read_only=True)
     status = serializers.CharField(read_only=True)
+    priority = serializers.IntegerField(read_only=True)
 
     # Status / Chunks
     analysis_chunks = serializers.IntegerField(read_only=True)
