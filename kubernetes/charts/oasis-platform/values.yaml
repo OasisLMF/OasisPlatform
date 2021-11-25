@@ -45,11 +45,8 @@ ingress:
     # Name of the secret containing your certificate
 #    providedCertificateSecret: oasis-ingress-tls
 
-  # Hostname for Oasis UI, Prometheus, Alert manager and Grafana
+  # Hostname for Oasis UI, API, Prometheus, Alert manager and Grafana
   uiHostname: ui.oasis.local
-
-  # Hostname for the Oasis API
-  apiHostname: api.oasis.local
 
 # Generate all password secrets - get them by using kubectl:
 # kubectl get secrets/oasis-server --template={{.data.password}} | base64 -d

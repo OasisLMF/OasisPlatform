@@ -22,8 +22,6 @@ class HealthcheckView(views.APIView):
     def get(self, request):
         """
         Check db and celery connectivity and return a 200 if healthy, 503 if not.
-
-        :return: 200+OK if healthy, 503+reason if not.
         """
 
         code = status.HTTP_200_OK

@@ -120,6 +120,7 @@ Released on 2021-11-26
     * Updated health checks to read secrets instead of directly from chart values.
     * All celery task deployment now has a celery ping health check.
     * Support for Mysql as an alternative to Postgres.
+    * Ingress now only use one hostname.
 * Platform improvements:
     * Analysis priority:
         * A priority (0-9) can be set on each analysis:
@@ -135,6 +136,7 @@ Released on 2021-11-26
           ```
         * Worker controller respects the new settings in the platform chart.
     * Oasis servers health check endpoint now checks celery and database connectivity.
+    * Moved server endpoints into subpath /app to be able to use the same ingress hostname for all services.
 * Updated documentation.
 
 **This covers the following in the functional summary:**
