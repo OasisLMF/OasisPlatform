@@ -198,7 +198,7 @@ Init container to wait for a service to become available (tcp check only) based 
 {{- define "h.initTcpAvailabilityCheckBySecret" -}}
 {{- $root := (index . 0) -}}
 - name: init-tcp-wait-by-secret
-  image: {{ $root.Values.modelImages.init.image }}:{{ $root.Values.modelImages.init.version }}
+  image: {{ $root.Values.images.init.image }}:{{ $root.Values.images.init.version }}
   env:
     {{- range $index, $name := slice . 1 }}
     - name: SERVICE_NAME_{{ $index }}
