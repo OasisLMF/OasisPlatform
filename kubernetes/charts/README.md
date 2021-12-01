@@ -151,10 +151,10 @@ running.
 
 Here is a short summary of two klusters:
 
-Type                      | IP
---------------------------|--------
-Docker desktop on Windows | 127.0.0.1
-Minikube                  | <ol><li>Run `minikube tunnel` to expose cluster IP</li><li>Run `kubectl get svc --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}"` to get the IP.</li></ol>
+| Type                      | IP                                                                                                                                                                                                 |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Docker desktop on Windows | 127.0.0.1                                                                                                                                                                                          |
+| Minikube                  | <ol><li>Run `minikube tunnel` to expose cluster IP</li><li>Run `kubectl get svc --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}"` to get the IP.</li></ol> |
 
 ### Add hostnames
 

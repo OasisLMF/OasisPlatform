@@ -13,6 +13,7 @@ from datetime import datetime
 import fasteners
 import filelock
 import pandas as pd
+from billiard.exceptions import WorkerLostError
 from celery import Celery, signature
 from celery.signals import worker_ready, before_task_publish
 from oasislmf import __version__ as mdk_version
@@ -398,8 +399,7 @@ def keys_generation_task(fn):
     return run
 
 
-
-@app.task(bind=True, name='prepare_input_generation_params')
+@app.task(bind=True, name='prepare_input_generation_params', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def prepare_input_generation_params(
     self,
@@ -444,7 +444,7 @@ def prepare_input_generation_params(
     return params
 
 
-@app.task(bind=True, name='prepare_keys_file_chunk')
+@app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def prepare_keys_file_chunk(
     self,
@@ -509,7 +509,7 @@ def prepare_keys_file_chunk(
     return params
 
 
-@app.task(bind=True, name='collect_keys')
+@app.task(bind=True, name='collect_keys', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def collect_keys(
     self,
@@ -590,7 +590,7 @@ def collect_keys(
     return chunk_params
 
 
-@app.task(bind=True, name='write_input_files')
+@app.task(bind=True, name='write_input_files', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     params['keys_fp'] = filestore.get(params['keys_ref'], params['target_dir'], subdir=params['storage_subdir'])
@@ -610,7 +610,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     }
 
 
-@app.task(bind=True, name='cleanup_input_generation')
+@app.task(bind=True, name='cleanup_input_generation', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None):
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
@@ -729,7 +729,7 @@ def loss_generation_task(fn):
     return run
 
 
-@app.task(bind=True, name='prepare_losses_generation_params')
+@app.task(bind=True, name='prepare_losses_generation_params', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def prepare_losses_generation_params(
     self,
@@ -774,7 +774,7 @@ def prepare_losses_generation_params(
     #)
 
 
-@app.task(bind=True, name='prepare_losses_generation_directory')
+@app.task(bind=True, name='prepare_losses_generation_directory', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def prepare_losses_generation_directory(self, params, analysis_id=None, slug=None, **kwargs):
     params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
@@ -786,7 +786,7 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
     return params
 
 
-@app.task(bind=True, name='generate_losses_chunk')
+@app.task(bind=True, name='generate_losses_chunk', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None, **kwargs):
 
@@ -820,7 +820,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     }
 
 
-@app.task(bind=True, name='generate_losses_output')
+@app.task(bind=True, name='generate_losses_output', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
@@ -857,7 +857,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     }
 
 
-@app.task(bind=True, name='cleanup_losses_generation')
+@app.task(bind=True, name='cleanup_losses_generation', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwargs):
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):

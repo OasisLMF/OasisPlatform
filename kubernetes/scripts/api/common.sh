@@ -3,7 +3,7 @@ set -o pipefail
 
 
 API_URL="https://ui.oasis.local/api"
-#API_URL="http://localhost:8001/api"
+#API_URL="http://localhost:8002"
 SCRIPT_DIR=$(dirname $0)
 CURL="curl -sk"
 TMP_PATH="/tmp/"
@@ -25,7 +25,7 @@ if [ -z "$OASIS_USERNAME" ] || [ -z "$OASIS_PASSWORD" ]; then
   exit
 fi
 
-USE_OASIS_API=1
+USE_OASIS_API=0
 
 if [ "$USE_OASIS_API" == "1" ]; then
   R="$($CURL -X POST "${API_URL}/access_token/" -H "accept: application/json" -H "Content-Type: application/json" \

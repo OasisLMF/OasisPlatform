@@ -64,8 +64,16 @@ CELERYD_PREFETCH_MULTIPLIER = 1
 
 # setup queues so that tasks aren't removed from the queue until
 # complete and reschedule if the task worker goes offline
-CELERY_TASK_ACKS_LATE = True
-CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_ACKS_LATE = True
+CELERY_REJECT_ON_WORKER_LOST = True
+
+CELERY_TASK_QUEUES = (Broadcast('model-worker-broadcast'), )
+
+# Highest priority available
+CELERY_QUEUE_MAX_PRIORITY = 10
+
+# Set to make internal and subtasks inherit priority
+CELERY_INHERIT_PARENT_PRIORITY = True
 
 
 # setup the beat schedule
@@ -80,17 +88,15 @@ def crontab_from_string(s):
     )
 
 
-CELERY_TASK_QUEUES = (Broadcast('model-worker-broadcast'), )
-
-# Highest priority available
-CELERY_QUEUE_MAX_PRIORITY = 10
-
-# Set to make internal and subtasks inherit priority
-CELERY_INHERIT_PARENT_PRIORITY = True
-
 CELERYBEAT_SCHEDULE = {
     'send_queue_status_digest': {
         'task': 'send_queue_status_digest',
         'schedule': crontab_from_string(settings.get('celery', 'queue_status_digest_schedule', fallback='* * * * *')),
     }
+}
+
+worker_task_kwargs = {
+    'autoretry_for': (Exception,),
+    'max_retries': 2,               # The task will be run max_retries + 1 times
+    'default_retry_delay': 5,       # A small delay to recover from temporary bad states
 }
