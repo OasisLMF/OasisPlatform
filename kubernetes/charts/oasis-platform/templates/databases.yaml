@@ -49,6 +49,22 @@ data:
   password: {{ include "h.password" (list .name "password" $root $v.password (printf "A valid password for %s is required" $v.name)) }}
 {{- end }}
 ---
+{{- if eq $v.type "rabbitmq" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" $v.name }}
+  labels:
+  {{- include "h.labels" $root | nindent 4 }}
+data:
+  advanced.config: |
+    [
+      {rabbit, [
+        {consumer_timeout, undefined}
+      ]}
+    ].
+{{- end }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -67,11 +83,21 @@ spec:
       annotations:
         checksum/{{ $v.name }}: {{ toJson $v | sha256sum }}
     spec:
-{{- if $v.volumeSize }}
       volumes:
+{{- if or $v.volumeSize (eq $v.type "rabbitmq") }}
+        {{- if or $v.volumeSize }}
         - name: db-persistent-storage
           persistentVolumeClaim:
             claimName: {{ $v.name }}
+        {{- end }}
+        {{- if eq $v.type "rabbitmq" }}
+        - name: rabbitmq-advanced-config
+          configMap:
+            name: {{ printf "%s-config" $v.name }}
+            items:
+            - key: advanced.config
+              path: advanced.config
+        {{- end }}
 {{- end }}
       {{- include "h.affinity" $root | nindent 6 }}
       containers:
@@ -175,18 +201,23 @@ spec:
                 secretKeyRef:
                   name: {{ .name }}
                   key: password
+            - name: RABBITMQ_ADVANCED_CONFIG_FILE
+              value: /etc/rabbitmq/advanced/advanced.config
+          volumeMounts:
+            - name: rabbitmq-advanced-config
+              mountPath: /etc/rabbitmq/advanced/
           readinessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "ping"]
             initialDelaySeconds: 20
-            periodSeconds: 60
+            periodSeconds: 20
             timeoutSeconds: 10
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "status"]
-            initialDelaySeconds: 60
-            periodSeconds: 60
-            timeoutSeconds: 15
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 10
 {{- end }}
 ---
 {{- if $v.volumeSize }}

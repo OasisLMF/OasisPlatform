@@ -74,7 +74,7 @@ spec:
             exec:
               command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 50
             timeoutSeconds: 10
           livenessProbe:
             exec:
@@ -181,7 +181,7 @@ spec:
             exec:
               command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 50
             timeoutSeconds: 10
           livenessProbe:
             exec:
@@ -225,7 +225,7 @@ spec:
             exec:
               command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 50
             timeoutSeconds: 10
           livenessProbe:
             exec:

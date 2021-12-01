@@ -12,12 +12,12 @@ Read [RELEASES.md](RELEASES.md) for an overview of what has delivered.
 A priority is set on each analysis either by the default value of 6 or by giving the `priority' attribute. Allowed
 values are from 1-10:
 
-| Priority | Comment
-|----------|--------
-| 10       | The highest priority
-| 8-10     | Can only be set by administrators
-| 4        | Default if no priority is specified
-| 1        | The lowest priority
+| Priority | Comment                             |
+|----------|-------------------------------------|
+| 10       | The highest priority                |
+| 8-10     | Can only be set by administrators   |
+| 4        | Default if no priority is specified |
+| 1        | The lowest priority                 |
 
 When an analysis is started (input gen or run) tasks put on celery queues will get the same priority as the analysis
 has.

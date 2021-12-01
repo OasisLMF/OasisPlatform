@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import json
+import logging
 import os
 import uuid
 from datetime import datetime
@@ -8,6 +9,8 @@ from shutil import rmtree
 from tempfile import TemporaryFile
 from urllib.parse import urlparse
 from urllib.request import urlopen
+
+from ....conf import celeryconf as celery_conf
 
 from botocore.exceptions import ClientError as S3_ClientError
 from celery import Task
@@ -299,21 +302,26 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
 
 
 def _traceback_from_errback_args(*args):
+
     try:
         request, exc, tb = args
     except ValueError:
-        failing_res = AsyncResult(args[0])
-        tb = failing_res.traceback
+
+        try:
+            failing_res = AsyncResult(args[0])
+            tb = failing_res.traceback
+        except ValueError:
+            logging.error('Could not extract traceback')
+            return ''
 
     return tb
 
 
-@celery_app.task(name='start_input_generation_task')
+@celery_app.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
 def start_input_generation_task(analysis_pk, initiator_pk):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
-
     get_analysis_task_controller().generate_inputs(analysis, initiator)
 
     analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED

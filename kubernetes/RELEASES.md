@@ -146,3 +146,23 @@ Released on 2021-11-26
 
 * Job prioritization (1.5):
 * Finished health checks and mysql support (not fully implemented in 1.1 / sprint 1)
+
+## Sprint 6
+
+Released on 2021-12-10
+
+**Features included:**
+
+* Platform chart improvements:
+  * RabbitMQ ack timeout disabled (introduced in 3.8.15)
+* Platform improvements:
+  * Enabled retry for worker tasks - A failed task will be run again 2 times.
+* Verified that the platform recovers from:
+  * Randomly failed worker tasks - Each task will be retried 2 times before it is marked as failed.
+  * Lost database connection - celery will reconnect and retry the task.
+  * Disk error - Each task will be retried 2 times before it is marked as failed.
+  * Lost worker - task is picked up by other worker.
+
+**This covers the following in the functional summary:**
+
+* Improved worker resilience to disconnection/failure (1.6)
