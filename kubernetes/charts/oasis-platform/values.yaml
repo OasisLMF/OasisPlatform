@@ -29,6 +29,9 @@ images:
   redis:
     image: redis
     version: 5.0.7
+  rabbitmq:
+    image: rabbitmq
+    version: 3.8-management-alpine
 
 # Hostnames for Oasis UI, API, Prometheus, Alert manager and Grafana. If you change it, make sure you also
 # update hostnames in oasis-monitoring values.yaml file. Read more about how in the README.md and how to
@@ -88,9 +91,12 @@ databases:
     name: channel-layer
     port: 6379
   broker:
-    type: redis
+    type: rabbitmq
     name: broker
-    port: 6379
+    port: 5672
+    extraPort: 15672
+    user: rabbit
+    password: rabbit
   keycloak_db:
     type: postgres
     name: keycloak-db

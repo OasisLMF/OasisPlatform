@@ -37,10 +37,7 @@ ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 app = Celery()
 app.config_from_object(celery_conf)
-app.conf.broker_transport_options = {
-    'priority_steps': list(range(9)),
-    'queue_order_strategy': 'priority',
-}
+
 logging.info("Started worker")
 filestore = StorageSelector(settings)
 
@@ -920,4 +917,4 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
     slug = body[1].get('slug')
 
     if analysis_id and slug:
-        signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
+        signature('mark_task_as_queued').apply_async(args=[analysis_id, slug, headers['id'], datetime.now().timestamp()], priority=kwargs.get('properties').get('priority'))

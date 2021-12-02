@@ -315,6 +315,7 @@ CHANNEL_LAYERS = {
         'CONFIG': {
             'hosts': [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0'],
             'symmetric_encryption_keys': [SECRET_KEY],
+            "capacity": 1500,
         },
     },
 }

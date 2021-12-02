@@ -26,7 +26,12 @@ for arg in "${@}"; do
   "db")
     forwards+=("deployment/server-db 5432")
     forwards+=("deployment/celery-db 5431:5432")
-    forwards+=("deployment/broker 6379")
+    forwards+=("deployment/broker 5672")
+    forwards+=("deployment/broker 15672") # RabbitMQ management API
+    forwards+=("deployment/channel-layer 6379")
+    ;;
+  "flower")
+    forwards+=("deployment/flower 5555")
     ;;
   "keycloak")
     forwards+=("deployment/keycloak 8081:8080")

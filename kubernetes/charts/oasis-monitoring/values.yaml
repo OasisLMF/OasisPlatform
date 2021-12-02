@@ -3,9 +3,25 @@
 # Default dashboard UID to set has home dashboard
 homeDashboardUID: kduj80V7k-oasis-overview
 
-jobImage:
-  image: alpine
-  version: 3.13.5
+monitoringImages:
+  init:
+    image: busybox
+    version: 1.28
+  jobImage:
+    image: alpine
+    version: 3.13.5
+  flower:
+    image: mher/flower
+    version: latest
+
+## Values to keep in sync with oasis-platform values ##
+
+databases:
+  broker:
+    name: broker
+
+## End of sync with oasis-platform values ##
+
 
 # Dependencies / sub charts settings
 kube-prometheus-stack:

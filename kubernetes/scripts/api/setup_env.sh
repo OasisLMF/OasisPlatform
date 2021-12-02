@@ -86,7 +86,7 @@ for ANAME_ID in $(seq 1 10); do
   "name": "${ANALYSIS_NAME}",
   "portfolio": $PORTFOLIO_ID,
   "model": $PIWIND_ID,
-  "priority": $(($ANAME_ID - 1))
+  "priority": $(($ANAME_ID - 0))
 }
 EOF
 

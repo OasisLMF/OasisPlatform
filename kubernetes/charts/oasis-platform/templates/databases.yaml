@@ -13,6 +13,7 @@ spec:
     - port: {{ $v.port }}
   ports:
     - protocol: TCP
+      name: main
       port: {{ $v.port }}
       {{- if eq $v.type "postgres" }}
       targetPort: 5432
@@ -20,6 +21,12 @@ spec:
       targetPort: 3306
       {{- else if eq $v.type "redis" }}
       targetPort: 6379
+      {{- else if eq $v.type "rabbitmq" }}
+      targetPort: 5672
+    - protocol: TCP
+      name: api
+      port: 15672
+      targetPort: 15672
       {{- end }}
   selector:
     app: {{ $v.name }}
@@ -72,6 +79,10 @@ spec:
           ports:
             - containerPort: {{ $v.port }}
               name: db
+{{- if $v.extraPort }}
+            - containerPort: {{ $v.extraPort }}
+              name: extra
+{{- end }}
 {{- if eq $v.type "postgres" }}
           image: {{ $root.Values.images.postgres.image }}:{{ $root.Values.images.postgres.version }}
           env:
@@ -151,6 +162,31 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 15
             timeoutSeconds: 5
+{{- else if eq $v.type "rabbitmq" }}
+          image: {{ $root.Values.images.rabbitmq.image }}:{{ $root.Values.images.rabbitmq.version }}
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: user
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: password
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "ping"]
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "status"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 15
 {{- end }}
 ---
 {{- if $v.volumeSize }}

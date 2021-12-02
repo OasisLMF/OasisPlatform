@@ -92,7 +92,7 @@ class Controller:
         status_slug,
         queue,
         params: Optional[TaskParams] = None,
-        priority=9
+        priority=1
     ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
         """
         Gets all teh status objects and signature for a given subtask
@@ -147,7 +147,7 @@ class Controller:
             for idx, p in enumerate(params)
         ])
 
-        c = chord(tasks, body=body[1], queue=queue, priority=analysis.id)
+        c = chord(tasks, body=body[1], queue=queue, priority=analysis.priority)
         c.link_error(signature('chord_error_callback'))
 
         return list(iterchain(*statuses, body[0])), c
@@ -203,7 +203,9 @@ class Controller:
                 'failure_status': failure_status,
             },
         ))
-        c.delay({}, priority=analysis.pk)
+        # task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
+        c.apply_async(args=[{}], **tasks[0].kwargs, priority=analysis.priority)
+        # c.delay({}, priority=analysis.priority)
         return c
 
     @classmethod
@@ -255,7 +257,7 @@ class Controller:
                 'prepare-input-generation-params',
                 queue,
                 TaskParams(**base_kwargs),
-                analysis.pk
+                analysis.priority
             ),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',
@@ -281,9 +283,9 @@ class Controller:
                     'collect-keys',
                     queue,
                     TaskParams(**base_kwargs),
-                    analysis.pk
+                    analysis.priority
                 ),
-                analysis.pk
+                analysis.priority
             ),
             cls.get_subtask_statuses_and_signature(
                 'write_input_files',
@@ -294,7 +296,7 @@ class Controller:
                 'write-input-files',
                 queue,
                 TaskParams(**files_kwargs),
-                analysis.pk
+                analysis.priority
             ),
             cls.get_subtask_statuses_and_signature(
                 'record_input_files',
@@ -304,7 +306,7 @@ class Controller:
                 'Record input files',
                 'record-input-files',
                 'celery',
-                priority=0,
+                priority=analysis.priority,
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_input_generation',
@@ -314,7 +316,7 @@ class Controller:
                 'Cleanup input generation',
                 'cleanup-input-generation',
                 queue,
-                priority=0,
+                priority=analysis.priority,
             ),
         ])
 
@@ -403,7 +405,7 @@ class Controller:
                     num_chunks=num_chunks,
                     **base_kwargs,
                 ),
-                analysis.pk,
+                analysis.priority,
             ),
             cls.get_subtask_statuses_and_signature(
                 'prepare_losses_generation_directory',
@@ -414,7 +416,7 @@ class Controller:
                 'prepare-losses-generation-directory',
                 queue,
                 TaskParams(**base_kwargs),
-                analysis.pk,
+                analysis.priority,
             ),
             cls.get_subchord_statuses_and_signature(
                 'generate_losses_chunk',
@@ -434,9 +436,9 @@ class Controller:
                     'generate_losses_output',
                     queue,
                     TaskParams(**base_kwargs),
-                    analysis.pk,
+                    analysis.priority,
                 ),
-                analysis.pk,
+                analysis.priority,
             ),
             cls.get_subtask_statuses_and_signature(
                 'record_losses_files',
@@ -447,7 +449,7 @@ class Controller:
                 'record-losses-files',
                 'celery',
                 TaskParams(**base_kwargs),
-                0,
+                analysis.priority,
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_losses_generation',
@@ -458,7 +460,7 @@ class Controller:
                 'cleanup-losses-generation',
                 queue,
                 TaskParams(**base_kwargs),
-                0,
+                analysis.priority,
             ),
         ])
 
