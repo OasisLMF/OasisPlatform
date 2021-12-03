@@ -24,7 +24,7 @@ class TaskParams:
 class Controller:
 
     @classmethod
-    def get_subtask_signature(cls, task_name, analysis, initiator, run_data_uuid, slug, queue, params: TaskParams, priority) -> Signature:
+    def get_subtask_signature(cls, task_name, analysis, initiator, run_data_uuid, slug, queue, params: TaskParams) -> Signature:
         """
         Generates a signature representing the subtask. This task will have the initiator_id, analysis_id and
         slug set along with other provided kwargs.
@@ -36,7 +36,6 @@ class Controller:
         :param slug: The slug identifier for the task, this should be unique for a given analysis
         :param queue: The name of the queue the task will be published to
         :param params: The parameters to send to the task
-        :param priority: Priority of this task
         :return: Signature representing the task
         """
         from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
@@ -44,7 +43,6 @@ class Controller:
             task_name,
             queue=queue,
             args=params.args,
-            priority=priority,
             kwargs={
                 'initiator_id': initiator.pk,
                 'analysis_id': analysis.pk,
@@ -92,7 +90,6 @@ class Controller:
         status_slug,
         queue,
         params: Optional[TaskParams] = None,
-        priority=1
     ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
         """
         Gets all teh status objects and signature for a given subtask
@@ -105,13 +102,12 @@ class Controller:
         :param status_slug: The slug identifier for the task, this should be unique for a given analysis
         :param queue: The name of the queue the task will be published to
         :param params: The parameters to send to the task
-        :param priority: Priority of this task
         :return: Signature representing the task
         """
         params = params or TaskParams()
         return (
             [cls.get_subtask_status(analysis, status_name, status_slug, queue)],
-            cls.get_subtask_signature(task_name, analysis, initiator, run_data_uuid, status_slug, queue, params, priority),
+            cls.get_subtask_signature(task_name, analysis, initiator, run_data_uuid, status_slug, queue, params),
         )
 
     @classmethod
@@ -126,7 +122,6 @@ class Controller:
         queue,
         params: List[TaskParams],
         body: Tuple[List['AnalysisTaskStatus'], Signature],
-        priority,
     ) -> Tuple[List['AnalysisTaskStatus'], Signature]:
         """
         Gets all the status objects and signature for a given subchord
@@ -143,11 +138,11 @@ class Controller:
         :return: Signature representing the task
         """
         statuses, tasks = zip(*[
-            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, p, priority)
+            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, p)
             for idx, p in enumerate(params)
         ])
 
-        c = chord(tasks, body=body[1], queue=queue, priority=analysis.priority)
+        c = chord(tasks, body=body[1], queue=queue)
         c.link_error(signature('chord_error_callback'))
 
         return list(iterchain(*statuses, body[0])), c
@@ -203,9 +198,7 @@ class Controller:
                 'failure_status': failure_status,
             },
         ))
-        # task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
-        c.apply_async(args=[{}], **tasks[0].kwargs, priority=analysis.priority)
-        # c.delay({}, priority=analysis.priority)
+        c.delay({}, priority=analysis.priority)
         return c
 
     @classmethod
@@ -257,7 +250,6 @@ class Controller:
                 'prepare-input-generation-params',
                 queue,
                 TaskParams(**base_kwargs),
-                analysis.priority
             ),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',
@@ -283,9 +275,7 @@ class Controller:
                     'collect-keys',
                     queue,
                     TaskParams(**base_kwargs),
-                    analysis.priority
                 ),
-                analysis.priority
             ),
             cls.get_subtask_statuses_and_signature(
                 'write_input_files',
@@ -296,7 +286,6 @@ class Controller:
                 'write-input-files',
                 queue,
                 TaskParams(**files_kwargs),
-                analysis.priority
             ),
             cls.get_subtask_statuses_and_signature(
                 'record_input_files',
@@ -306,7 +295,6 @@ class Controller:
                 'Record input files',
                 'record-input-files',
                 'celery',
-                priority=analysis.priority,
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_input_generation',
@@ -316,7 +304,6 @@ class Controller:
                 'Cleanup input generation',
                 'cleanup-input-generation',
                 queue,
-                priority=analysis.priority,
             ),
         ])
 
@@ -405,7 +392,6 @@ class Controller:
                     num_chunks=num_chunks,
                     **base_kwargs,
                 ),
-                analysis.priority,
             ),
             cls.get_subtask_statuses_and_signature(
                 'prepare_losses_generation_directory',
@@ -416,7 +402,6 @@ class Controller:
                 'prepare-losses-generation-directory',
                 queue,
                 TaskParams(**base_kwargs),
-                analysis.priority,
             ),
             cls.get_subchord_statuses_and_signature(
                 'generate_losses_chunk',
@@ -436,9 +421,7 @@ class Controller:
                     'generate_losses_output',
                     queue,
                     TaskParams(**base_kwargs),
-                    analysis.priority,
                 ),
-                analysis.priority,
             ),
             cls.get_subtask_statuses_and_signature(
                 'record_losses_files',
@@ -449,7 +432,6 @@ class Controller:
                 'record-losses-files',
                 'celery',
                 TaskParams(**base_kwargs),
-                analysis.priority,
             ),
             cls.get_subtask_statuses_and_signature(
                 'cleanup_losses_generation',
@@ -460,7 +442,6 @@ class Controller:
                 'cleanup-losses-generation',
                 queue,
                 TaskParams(**base_kwargs),
-                analysis.priority,
             ),
         ])
 

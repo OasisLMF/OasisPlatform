@@ -917,4 +917,5 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
     slug = body[1].get('slug')
 
     if analysis_id and slug:
-        signature('mark_task_as_queued').apply_async(args=[analysis_id, slug, headers['id'], datetime.now().timestamp()], priority=kwargs.get('properties').get('priority'))
+        signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
+

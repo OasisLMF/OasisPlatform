@@ -173,7 +173,7 @@ class Analysis(TimeStampedModel):
 
     analysis_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
     lookup_chunks = models.IntegerField(editable=False, default=None, blank=True, null=True)
-    priority = models.IntegerField(null=False, default=6, validators=[MinValueValidator(0), MaxValueValidator(9)], help_text='Priority of this analysis for input generation and execution. Set from 0 to 9 where 0 is the highest priority.')
+    priority = models.IntegerField(null=False, default=4, validators=[MinValueValidator(1), MaxValueValidator(10)], help_text='Priority of this analysis for input generation and execution. Set from 1 to 10 where 10 is the highest priority.')
 
     lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
     lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')

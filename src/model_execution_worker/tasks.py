@@ -555,7 +555,7 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
             record_task_name,
             args=(analysis_pk, initiator_pk, traceback),
             queue='celery'
-        ).delay({}, priority=analysis_pk)
+        ).delay({})
 
 
 def prepare_complex_model_file_inputs(complex_model_files, run_directory):

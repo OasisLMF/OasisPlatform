@@ -69,11 +69,11 @@ class AutoScaler:
             for queue_name in analysis['queue_names']:
                 queue_name = queue_name.lower()
                 model_state = model_states.get(queue_name, None)
-                priority = analysis.get('priority', 10)
+                priority = analysis.get('priority', 1)
                 if model_state:
                     model_state['tasks'] += analysis['tasks']
                     model_state['analyses'] += 1
-                    if priority < model_state['priority']:
+                    if priority > model_state['priority']:
                         model_state['priority'] = priority
                 else:
                     model_states[queue_name] = ModelState(tasks=analysis['tasks'], analyses=1, priority=priority)
@@ -84,7 +84,7 @@ class AutoScaler:
             id = wd.id_string()
 
             if id not in model_states:
-                model_state = ModelState(tasks=0, analyses=0, priority=10)
+                model_state = ModelState(tasks=0, analyses=0, priority=1)
                 model_states[id] = model_state
 
         return model_states
@@ -191,7 +191,7 @@ class AutoScaler:
                 if tasks and tasks > 0 and len(queue_names) > 0:
                     sa_id = analysis['id']
                     if sa_id not in running_analyses:
-                        priority = int(analysis.get('priority', 10))
+                        priority = int(analysis.get('priority', 1))
                         running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=tasks, queue_names=list(queue_names), priority=priority)
 
         return running_analyses
@@ -243,7 +243,7 @@ class AutoScaler:
         :return: The highest priority levels for these runs.
         """
         if self.prioritized_models_limit:
-            priorities = sorted(list(set(map(lambda ms: ms[1].get('priority', 10), model_states_with_wd))))
+            priorities = sorted(list(set(map(lambda ms: ms[1].get('priority', 1), model_states_with_wd))), reverse=True)
             if len(priorities) > 1:
                 priorities = priorities[0:self.prioritized_models_limit]
                 return priorities
@@ -269,7 +269,7 @@ class AutoScaler:
                 if priorities and state.get('priority') in priorities:
                     result.append((model, state, wd), )
                 else:
-                    result.append((model, ModelState(tasks=0, analyses=0, priority=10), wd))
+                    result.append((model, ModelState(tasks=0, analyses=0, priority=1), wd))
 
             return result
 

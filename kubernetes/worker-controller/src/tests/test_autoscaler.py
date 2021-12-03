@@ -63,7 +63,7 @@ class TestAutoscaler(unittest.TestCase):
         cluster_client = MagicMock()
         cluster_client.set_replicas = AsyncMock()
 
-        queue_status_json = Path(__file__).parent.parent.parent / 'data/test/queue-status.3-fake.json'
+        queue_status_json = Path(__file__).parent.parent.parent / 'data/test/queue-status-2-running-2-queues.json'
 
         with open(queue_status_json) as json_file:
             data = json.load(json_file)
@@ -116,18 +116,18 @@ class TestAutoscaler(unittest.TestCase):
 
         model_states_with_wd = [
             ('oasislmf-piwind-1', ModelState(tasks=10, analyses=2, priority=5), None),
-            ('oasislmf-piwind-2', ModelState(tasks=10, analyses=2, priority=2), None),
-            ('oasislmf-piwind-3', ModelState(tasks=0, analyses=0, priority=10), None),
+            ('oasislmf-piwind-2', ModelState(tasks=10, analyses=2, priority=7), None),
+            ('oasislmf-piwind-3', ModelState(tasks=0, analyses=0, priority=1), None),
         ]
 
         r = AutoScaler(None, None, None, 1, None)._get_highest_model_priorities(model_states_with_wd)
-        self.assertEqual([2], r)
+        self.assertEqual([7], r)
 
         r = AutoScaler(None, None, None, 2, None)._get_highest_model_priorities(model_states_with_wd)
-        self.assertEqual([2, 5], r)
+        self.assertEqual([7, 5], r)
 
         r = AutoScaler(None, None, None, 3, None)._get_highest_model_priorities(model_states_with_wd)
-        self.assertEqual([2, 5, 10], r)
+        self.assertEqual([7, 5, 1], r)
 
         r = AutoScaler(None, None, None, None, None)._get_highest_model_priorities(model_states_with_wd)
         self.assertEqual(None, r)
@@ -135,8 +135,8 @@ class TestAutoscaler(unittest.TestCase):
     def test_clear_unprioritized_models(self):
         model_states_with_wd = [
             ('oasislmf-piwind-1', ModelState(tasks=10, analyses=2, priority=5), None),
-            ('oasislmf-piwind-2', ModelState(tasks=10, analyses=2, priority=2), None),
-            ('oasislmf-piwind-3', ModelState(tasks=0, analyses=0, priority=10), None),
+            ('oasislmf-piwind-2', ModelState(tasks=10, analyses=2, priority=7), None),
+            ('oasislmf-piwind-3', ModelState(tasks=0, analyses=0, priority=1), None),
         ]
 
         r = AutoScaler(None, None, None, 1, None)._clear_unprioritized_models(model_states_with_wd)
@@ -146,19 +146,19 @@ class TestAutoscaler(unittest.TestCase):
         self.assertEqual('oasislmf-piwind-1', first[0])
         self.assertEqual(0, firstState.get('tasks'))
         self.assertEqual(0, firstState.get('analyses'))
-        self.assertEqual(10, firstState.get('priority'))
+        self.assertEqual(1, firstState.get('priority'))
         second = r[1]
         secondState = second[1]
         self.assertEqual('oasislmf-piwind-2', second[0])
         self.assertEqual(10, secondState.get('tasks'))
         self.assertEqual(2, secondState.get('analyses'))
-        self.assertEqual(2, secondState.get('priority'))
+        self.assertEqual(7, secondState.get('priority'))
         third = r[2]
         thirdState = third[1]
         self.assertEqual('oasislmf-piwind-3', third[0])
         self.assertEqual(0, thirdState.get('tasks'))
         self.assertEqual(0, thirdState.get('analyses'))
-        self.assertEqual(10, thirdState.get('priority'))
+        self.assertEqual(1, thirdState.get('priority'))
 
 if __name__ == '__main__':
     unittest.main()

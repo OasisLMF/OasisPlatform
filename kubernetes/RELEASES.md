@@ -121,18 +121,21 @@ Released on 2021-11-26
     * All celery task deployment now has a celery ping health check.
     * Support for Mysql as an alternative to Postgres.
     * Ingress now only use one hostname.
+    * Redis replaced by RabbitMQ.
+* Monitoring chart improvements:
+  * Flower is now available for monitoring celery.
 * Platform improvements:
     * Analysis priority:
-        * A priority (0-9) can be set on each analysis:
-          * 0 - The highest priority
-          * 0, 1, 2 - Requires admin account
-          * 6 - Default priority
-          * 9 - The lowest priority
+        * A priority (10-10) can be set on each analysis:
+          * 10 - The highest priority
+          * 8, 9, 10 - Requires admin account
+          * 4 - Default priority
+          * 1 - The lowest priority
         * Priority is set on Celery tasks
         * New configuration:
           ```
           # Levels that require admin account to use
-          ANALYSIS_PRIORITY_ADMIN_LEVELS = [0, 1, 2]
+          ANALYSIS_PRIORITY_ADMIN_LEVELS = [8, 9, 10]
           ```
         * Worker controller respects the new settings in the platform chart.
     * Oasis servers health check endpoint now checks celery and database connectivity.
