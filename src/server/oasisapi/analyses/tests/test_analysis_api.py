@@ -730,8 +730,8 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 json_data = {
                     "analysis_settings": {
                         "analysis_tag": "test_analysis",
-                        "module_supplier_id": "OasisIM",
-                        "model_version_id": "1",
+                        "model_supplier_id": "OasisIM",
+                        "model_name_id": "1",
                         "number_of_samples": -1,
                         "gul_threshold": 0,
                         "model_settings": {
@@ -780,8 +780,8 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                     "analysis_settings": {
                         "source_tag": "test_source",
                         "analysis_tag": "test_analysis",
-                        "module_supplier_id": "OasisIM",
-                        "model_version_id": "1",
+                        "model_supplier_id": "OasisIM",
+                        "model_name_id": "1",
                         "number_of_samples": 10,
                         "gul_threshold": 0,
                         "model_settings": {
