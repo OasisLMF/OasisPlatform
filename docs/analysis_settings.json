@@ -1,8 +1,8 @@
 {
   "analysis_settings": {
     "prog_id": 1,
-    "module_supplier_id": "OasisIM",
-    "model_version_id": "1",
+    "model_supplier_id": "OasisIM",
+    "model_name_id": "PiWind",
     "number_of_samples": 100,
     "gul_threshold": 100,
     "model_settings": {

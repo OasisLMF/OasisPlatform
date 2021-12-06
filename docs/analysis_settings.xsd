@@ -20,12 +20,12 @@
           "title": "Analysis Tag",
           "description": "Labels the analysis with an identifier e.g. Flamingo process ID.",
         },
-        "module_supplier_id": {
+        "model_supplier_id": {
           "type": "string",
           "title": "Module supplier ID",
           "description": "Identifier for the model vendor/module supplier.",
         },
-        "model_version_id": {
+        "model_name_id": {
           "type": "string",
           "title": "Model version ID",
           "description": "Identifier for the model and version.",
@@ -303,8 +303,8 @@
       "required": [
         "source_tag",
         "analysis_tag",
-        "module_supplier_id",
-        "model_version_id",
+        "model_supplier_id",
+        "model_name_id",
         "number_of_samples",
         "gul_threshold",
         "model_settings",
