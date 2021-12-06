@@ -135,7 +135,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         request_data = self.request.data
         unique_keys = ["supplier_id", "model_id", "version_id"]
 
-        # check if the model is Soft-deleted 
+        # check if the model is Soft-deleted
         if all(k in request_data for k in unique_keys):
             keys = {k: request_data[k] for k in unique_keys}
             model = AnalysisModel.all_objects.filter(**keys)
@@ -144,7 +144,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
                 if model.deleted:
                     # If yes, then 'restore' and update
                     model.activate(self.request)
-                    return Response(AnalysisModelSerializer(instance=model, 
+                    return Response(AnalysisModelSerializer(instance=model,
                                     context=self.get_serializer_context()).data)
 
         return super(AnalysisModelViewSet, self).create(self.request)
@@ -164,15 +164,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the moodels `resource_file` contents
         """
-        try:
-            return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
-        except Http404:
-            print("No resource_file set, returning default file as response")
-            with io.open(os.path.join(settings.STATIC_ROOT, 'model_resource.json')) as default_resource:
-                data = json.load(default_resource)
-            response = JsonResponse(data)
-            response['Content-Disposition'] = 'attachment; filename="{}"'.format('default_resource_file.json')
-            return response
+        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
 
     @resource_file.mapping.post
     def set_resource_file(self, request, pk=None, version=None):
