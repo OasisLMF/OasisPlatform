@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.0`_
+ ---------
+* [#568](https://github.com/OasisLMF/OasisPlatform/pull/568) - Update/requirements
+* [#536](https://github.com/OasisLMF/OasisPlatform/pull/567) - Update model settings 
+.. _`1.23.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.22.0...1.23.0
+
 * [#554](https://github.com/OasisLMF/OasisPlatform/pull/554) - Remove error check in worker -- handled in monitor
 .. _`1.22.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.21.0...1.22.0
 
