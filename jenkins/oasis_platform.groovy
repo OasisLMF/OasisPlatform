@@ -488,6 +488,8 @@ node {
                 publish_api_server: {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+
                             if (is_lts_branch) {
                                 // Publish image as LTS release
                                 sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:latest-lts"
@@ -496,8 +498,7 @@ node {
                                 sh "docker push ${image_api}:latest-lts"
                                 sh "docker push ${image_api}:${RELEASE_NUM_ONLY}"
                             } else {
-                                // Publish image as Monthly release
-                                sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+                                // Update latest tag for Monthly release
                                 if (! params.PRE_RELEASE){
                                     sh PIPELINE + " push_image ${image_api} latest"
                                 }
@@ -518,7 +519,7 @@ node {
                                 sh "docker push ${image_worker}:latest-lts"
                                 sh "docker push ${image_worker}:${RELEASE_NUM_ONLY}"
                             } else {
-                                // Publish image as Monthly release
+                                // Update latest tag for Monthly release
                                 if (! params.PRE_RELEASE){
                                     sh PIPELINE + " push_image ${image_worker} latest"
                                 }
@@ -532,11 +533,16 @@ node {
                             sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
 
                             if (is_lts_branch) {
-                                // Also push same image with LTS tags
+                                // Push LTS image tags
                                 sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:latest-lts"
                                 sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:${RELEASE_NUM_ONLY}"
                                 sh "docker push ${image_piwind}:latest-lts"
                                 sh "docker push ${image_piwind}:${RELEASE_NUM_ONLY}"
+                            } else {
+                                // Update latest tag for Monthly release
+                                if (! params.PRE_RELEASE){
+                                    sh PIPELINE + " push_image ${image_piwind} latest"
+                                }
                             }
                         }
                     }
