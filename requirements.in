@@ -1,20 +1,20 @@
 -r ./requirements-worker.in
 -r ./requirements-server.in
 
-requests
-pyopenssl
-fasteners
-coverage
-flake8
 backports.tempfile
+coverage
+django-debug-toolbar
+django-webtest
+fasteners
+flake8
 hypothesis
-mock
-tox
-pip-tools
 ipdb
+mock
+model_mommy
+pip-tools
+pyopenssl
 pytest
 pytest-cov
 pytest-django
-model_mommy
-django-webtest
-django-debug-toolbar
+requests
+tox

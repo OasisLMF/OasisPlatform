@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
+from django.conf import settings as django_settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -15,7 +16,7 @@ from ..analyses.serializers import AnalysisSerializer
 from ..files.views import handle_related_file
 from ..files.serializers import RelatedFileSerializer
 from .models import Portfolio
-from ..schemas.custom_swagger import FILE_RESPONSE
+from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
 from ..schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
@@ -23,6 +24,7 @@ from .serializers import (
     PortfolioStorageSerializer,
     PortfolioListSerializer
 )
+
 
 class PortfolioFilter(TimeStampedFilter):
     name = filters.CharFilter(help_text=_('Filter results by case insensitive names equal to the given string'), lookup_expr='iexact')
@@ -93,6 +95,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         'application/octet-stream',
     ]
 
+
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
@@ -150,7 +153,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -168,9 +172,10 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `accounts_file` contents
         """
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types)
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
@@ -188,9 +193,10 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `location_file` contents
         """
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types)
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -208,9 +214,10 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `reinsurance_info_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types)
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
@@ -228,4 +235,5 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `reinsurance_scope_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types)
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)

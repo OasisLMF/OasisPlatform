@@ -2,6 +2,7 @@ __all__ = [
     'FILE_RESPONSE',
     'HEALTHCHECK',
     'TOKEN_REFRESH_HEADER',
+    'FILE_FORMAT_PARAM',
 ]
 
 from drf_yasg import openapi
@@ -58,4 +59,12 @@ TOKEN_REFRESH_HEADER = openapi.Parameter(
     description="Refresh Token",
     type='string',
     default='Bearer <refresh_token>'
+)
+
+FILE_FORMAT_PARAM = openapi.Parameter(
+    'file_format', 
+    openapi.IN_QUERY, 
+    description="File format returned, default is `csv`", 
+    type=openapi.TYPE_STRING, 
+    enum=['csv', 'parquet']
 )

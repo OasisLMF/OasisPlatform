@@ -10,9 +10,9 @@ wait-for-it ${OASIS_RABBIT_HOST}:${OASIS_RABBIT_PORT} -t 60
 
 
 if [ "${STARTUP_RUN_MIGRATIONS}" = true ]; then
-    python manage.py migrate
+    python3 manage.py migrate
     # Create default admin if `$OASIS_ADMIN_USER` && `$OASIS_ADMIN_PASS` are set
-    python set_default_user.py
+    python3 set_default_user.py
 fi
 
 exec "$@"
