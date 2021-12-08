@@ -19,13 +19,21 @@ node {
     sh 'sudo /var/lib/jenkins/jenkins-chown'
     deleteDir() // wipe out the workspace
 
+    // Check if this is an LTS branch
+    if (BRANCH_NAME.matches("backports/(.*)")) {
+        default_branch=BRANCH_NAME
+        is_lts_branch = true
+    } else {
+        default_branch = 'develop'
+        is_lts_branch = false
+    }
 
     properties([
       parameters([
         [$class: 'StringParameterDefinition',  description: "Oasis Build scripts branch",          name: 'BUILD_BRANCH', defaultValue: 'master'],
         [$class: 'StringParameterDefinition',  description: "OasisPlatform branch",                name: 'PLATFORM_BRANCH', defaultValue: BRANCH_NAME],
-        [$class: 'StringParameterDefinition',  description: "Install OasisLMF from branch",        name: 'MDK_BRANCH', defaultValue: 'develop'],
-        [$class: 'StringParameterDefinition',  description: "Test API/Worker using PiWind branch", name: 'PIWIND_BRANCH', defaultValue: 'develop'],
+        [$class: 'StringParameterDefinition',  description: "Install OasisLMF from branch",        name: 'MDK_BRANCH', defaultValue: default_branch],
+        [$class: 'StringParameterDefinition',  description: "Test API/Worker using PiWind branch", name: 'PIWIND_BRANCH', defaultValue: default_branch],
         [$class: 'StringParameterDefinition',  description: "Release tag to publish",              name: 'RELEASE_TAG', defaultValue: BRANCH_NAME.split('/').last() + "-${BUILD_NUMBER}"],
         [$class: 'StringParameterDefinition',  description: "Last release, for changelog",         name: 'PREV_RELEASE_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "OasisLMF release notes ref",          name: 'OASISLMF_TAG', defaultValue: ""],
@@ -82,6 +90,7 @@ node {
     String model_git_url    = "git@github.com:OasisLMF/${model_name}.git"
     String model_test_dir  = "${env.WORKSPACE}/${model_workspace}/tests/"
     String model_test_ini  = "test-config.ini"
+    String RELEASE_NUM_ONLY = ""
 
     String script_dir = env.WORKSPACE + "/${build_workspace}"
     String git_creds  = "1335b248-336a-47a9-b0f6-9f7314d6f1f4"
@@ -101,6 +110,19 @@ node {
     if (params.PUBLISH && params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)rc(\\d+)$')) {
         sh "echo release candidates must be tagged {version}rc{N}, example: 1.0.0rc1"
         sh "exit 1"
+    }
+
+
+    if (is_lts_branch){
+        //Make sure releases are tagged as LTS
+        if (params.PUBLISH &&  ! params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)-lts')) {
+            sh "echo release candidates must be tagged {version}-lts, example: 1.0.0-lts"
+            sh "exit 1"
+        }
+
+        if (params.PUBLISH && params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)-lts')){
+            RELEASE_NUM_ONLY = ( params.RELEASE_TAG =~ '^(\\d+\\.)(\\d+\\.)(\\*|\\d+)' )[0][0]
+        }
     }
 
     // Set Global ENV
@@ -170,11 +192,11 @@ node {
             if (params.CHECK_COMPATIBILITY) {
                 dir(oasis_workspace) {
                     if (params.PREV_RELEASE_TAG){
-                        env.LAST_RELEASE_TAG = params.PREV_RELEASE_TAG                                                                       
-                    } else {  
+                        env.LAST_RELEASE_TAG = params.PREV_RELEASE_TAG
+                    } else {
                         sh "curl https://api.github.com/repos/OasisLMF/OasisPlatform/tags | jq -r '( first ) | .name' > last_release_tag"
                         env.LAST_RELEASE_TAG = readFile('last_release_tag').trim()
-                    }    
+                    }
                     println("LAST_RELEASE = $env.LAST_RELEASE_TAG")
                 }
             }
@@ -188,10 +210,11 @@ node {
                 }
             }
         }
-        stage('Set version file'){
+        stage('Set version'){
             dir(oasis_workspace){
                 sh "echo ${env.TAG_RELEASE} - " + '$(git rev-parse --short HEAD), $(date) > VERSION'
             }
+            println("Publishing images as: '${RELEASE_NUM_ONLY}', '${params.RELEASE_TAG}' and  'latest-lts'")
         }
         parallel(
             build_api_server: {
@@ -271,17 +294,16 @@ node {
             }
         }
 
-        if (params.CHECK_S3 || params.CHECK_COMPATIBILITY) {
-              // Build PiWind worker from new worker
-              stage('Build: PiWind worker') {
-                  dir(model_workspace) {
-                      sh "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
-                  }
-              }
+       if (params.CHECK_S3 || params.CHECK_COMPATIBILITY) {
+            // Build PiWind worker from new worker
+            stage('Build: PiWind worker') {
+                dir(model_workspace) {
+                    sh "docker build --build-arg worker_ver=${env.TAG_RELEASE} -f ${docker_piwind} -t ${image_piwind}:${env.TAG_RELEASE} ."
+                }
+            }
+       }
 
-         }
-
-         if (params.CHECK_COMPATIBILITY) {
+       if (params.CHECK_COMPATIBILITY) {
 
             // START API for base model tests
             stage('Run: API Server') {
@@ -466,9 +488,19 @@ node {
                 publish_api_server: {
                     stage ('Publish: api_server') {
                         dir(build_workspace) {
-                            sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
-                            if (! params.PRE_RELEASE){
-                                sh PIPELINE + " push_image ${image_api} latest"
+                            if (is_lts_branch) {
+                                // Publish image as LTS release
+                                sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:latest-lts"
+                                sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:${RELEASE_NUM_ONLY}"
+
+                                sh "docker push ${image_api}:latest-lts"
+                                sh "docker push ${image_api}:${RELEASE_NUM_ONLY}"
+                            } else {
+                                // Publish image as Monthly release
+                                sh PIPELINE + " push_image ${image_api} ${env.TAG_RELEASE}"
+                                if (! params.PRE_RELEASE){
+                                    sh PIPELINE + " push_image ${image_api} latest"
+                                }
                             }
                         }
                     }
@@ -478,8 +510,18 @@ node {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}-debian"
                             sh PIPELINE + " push_image ${image_worker} ${env.TAG_RELEASE}"
-                            if (! params.PRE_RELEASE){
-                                sh PIPELINE + " push_image ${image_worker} latest"
+
+                            if (is_lts_branch) {
+                                // Publish image as LTS release
+                                sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:latest-lts"
+                                sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:${RELEASE_NUM_ONLY}"
+                                sh "docker push ${image_worker}:latest-lts"
+                                sh "docker push ${image_worker}:${RELEASE_NUM_ONLY}"
+                            } else {
+                                // Publish image as Monthly release
+                                if (! params.PRE_RELEASE){
+                                    sh PIPELINE + " push_image ${image_worker} latest"
+                                }
                             }
                         }
                     }
@@ -488,6 +530,14 @@ node {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
                             sh PIPELINE + " push_image ${image_piwind} ${env.TAG_RELEASE}"
+
+                            if (is_lts_branch) {
+                                // Also push same image with LTS tags
+                                sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:latest-lts"
+                                sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:${RELEASE_NUM_ONLY}"
+                                sh "docker push ${image_piwind}:latest-lts"
+                                sh "docker push ${image_piwind}:${RELEASE_NUM_ONLY}"
+                            }
                         }
                     }
                 }
