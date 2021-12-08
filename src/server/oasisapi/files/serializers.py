@@ -1,9 +1,12 @@
 import hashlib
 import logging
+import io
+import ods_tools
 
 from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from django.core.files.uploadedfile import UploadedFile
 
 from .models import RelatedFile
 
@@ -38,11 +41,32 @@ class RelatedFileSerializer(serializers.ModelSerializer):
             # 'filehash_md5',
         )
 
-    def __init__(self, *args, content_types=None, **kwargs):
+    def __init__(self, *args, content_types=None, parquet_storage=False, **kwargs):
         self.content_types = content_types or []
+        self.parquet_storage = parquet_storage
         super(RelatedFileSerializer, self).__init__(*args, **kwargs)
 
     def validate(self, attrs):
+        # Covert to parquet if option is on and file is CSV
+        if self.parquet_storage and attrs['file'].content_type == 'text/csv':
+            try:
+                attrs['file'].seek(0)
+                temp_df = ods_tools.read_csv(io.BytesIO(attrs['file'].read()))
+
+                # Create new UploadedFile object
+                f = io.open(attrs['file'].name + '.parquet', 'wb+')
+                temp_df.to_parquet(f)
+                in_memory_file = UploadedFile(
+                    file=f,
+                    name=f.name,
+                    content_type='application/octet-stream',
+                    size=f.__sizeof__(),
+                    charset=None
+                )
+                attrs['file'] = in_memory_file
+            except Exception as e:
+                raise ValidationError('Failed to covert file to parquet [{}]'.format(e))
+
         attrs['creator'] = self.context['request'].user
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name

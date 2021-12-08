@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
+from django.conf import settings as django_settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -22,8 +23,9 @@ from ..files.serializers import RelatedFileSerializer
 from ..files.views import handle_related_file
 from ..filters import TimeStampedFilter
 from ..permissions.group_auth import VerifyGroupAccessModelViewSet
-from ..schemas.custom_swagger import FILE_RESPONSE
+from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
 from ..schemas.serializers import StorageLinkSerializer
+
 
 
 class PortfolioFilter(TimeStampedFilter):
@@ -160,7 +162,8 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -178,9 +181,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         post:
         Sets the portfolios `accounts_file` contents
         """
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types)
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
@@ -198,9 +202,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         post:
         Sets the portfolios `location_file` contents
         """
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types)
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -218,9 +223,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         post:
         Sets the portfolios `reinsurance_info_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types)
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
@@ -238,4 +244,5 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         post:
         Sets the portfolios `reinsurance_scope_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types)
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
