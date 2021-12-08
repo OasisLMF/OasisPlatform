@@ -78,7 +78,6 @@ django==3.2.9
     # via
     #   -r requirements-server.in
     #   channels
-    #   django-debug-toolbar
     #   django-filter
     #   django-model-utils
     #   django-storages
@@ -86,8 +85,6 @@ django==3.2.9
     #   djangorestframework-simplejwt
     #   drf-yasg
 django-cleanup==5.2.0
-    # via -r requirements-server.in
-django-debug-toolbar==3.2.2
     # via -r requirements-server.in
 django-filter==21.1
     # via -r requirements-server.in
@@ -139,13 +136,23 @@ markdown==3.3.6
     # via -r requirements-server.in
 markupsafe==2.0.1
     # via jinja2
+numpy==1.21.4
+    # via
+    #   pandas
+    #   pyarrow
+ods-tools==2.0.1
+    # via -r requirements-server.in
 packaging==21.3
     # via drf-yasg
+pandas==1.3.4
+    # via -r requirements-server.in
 pathlib2==2.3.6
     # via -r requirements-server.in
 prompt-toolkit==3.0.23
     # via click-repl
-psycopg2==2.9.2
+psycopg2-binary==2.9.2
+    # via -r requirements-server.in
+pyarrow==6.0.1
     # via -r requirements-server.in
 pyasn1==0.4.8
     # via
@@ -166,11 +173,14 @@ pyparsing==3.0.6
 pyrsistent==0.18.0
     # via jsonschema
 python-dateutil==2.8.2
-    # via botocore
+    # via
+    #   botocore
+    #   pandas
 pytz==2021.3
     # via
     #   celery
     #   django
+    #   pandas
 requests==2.26.0
     # via coreapi
 ruamel.yaml==0.17.17
@@ -192,9 +202,7 @@ six==1.16.0
 sqlalchemy==1.4.27
     # via -r requirements-server.in
 sqlparse==0.4.2
-    # via
-    #   django
-    #   django-debug-toolbar
+    # via django
 twisted[tls]==21.7.0
     # via daphne
 txaio==21.2.1

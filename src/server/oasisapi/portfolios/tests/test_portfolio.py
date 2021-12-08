@@ -1,6 +1,8 @@
 import json
 import mimetypes
 import string
+import io
+import pandas as pd
 
 from backports.tempfile import TemporaryDirectory
 from django.test import override_settings
@@ -8,7 +10,7 @@ from django.urls import reverse
 from django_webtest import WebTestMixin
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
-from hypothesis.strategies import text, binary, sampled_from
+from hypothesis.strategies import text, binary, sampled_from, fixed_dictionaries, integers
 from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -22,6 +24,7 @@ from .fakes import fake_portfolio
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
+
 
 
 class PortfolioApi(WebTestMixin, TestCase):
@@ -358,7 +361,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_accounts_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -382,6 +385,67 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
 
+
+    def test_accounts_file_invalid_uploaded___parquet_exception_raised(self):
+        content_type='text/csv'
+        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                    expect_errors=True
+                )
+                self.assertEqual(400, response.status_code)
+
+    def test_accounts_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
+        content_type='text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                csv_response = self.app.get(
+                    portfolio.get_absolute_accounts_file_url() + '?file_format=csv',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                parquet_response = self.app.get(
+                    portfolio.get_absolute_accounts_file_url() + '?file_format=parquet',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                csv_return_data = pd.read_csv(io.StringIO(csv_response.text))
+                pd.testing.assert_frame_equal(csv_return_data, test_data)
+
+                prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
+                pd.testing.assert_frame_equal(prq_return_data, test_data)
 
 class PortfolioLocationFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -440,7 +504,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_location_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -464,6 +528,65 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
 
+    def test_location_file_invalid_uploaded___parquet_exception_raised(self):
+        content_type='text/csv'
+        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                    expect_errors=True
+                )
+                self.assertEqual(400, response.status_code)
+
+    def test_location_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
+        content_type='text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                csv_response = self.app.get(
+                    portfolio.get_absolute_location_file_url() + '?file_format=csv',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+                parquet_response = self.app.get(
+                    portfolio.get_absolute_location_file_url() + '?file_format=parquet',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                csv_return_data = pd.read_csv(io.StringIO(csv_response.text))
+                pd.testing.assert_frame_equal(csv_return_data, test_data)
+
+                prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
+                pd.testing.assert_frame_equal(prq_return_data, test_data)
 
 class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -522,7 +645,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_reinsurance_scope_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -545,6 +668,67 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
 
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
+
+    def test_reinsurance_scope_file_invalid_uploaded___parquet_exception_raised(self):
+        content_type='text/csv'
+        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                    expect_errors=True
+                )
+                self.assertEqual(400, response.status_code)
+
+    def test_reinsurance_scope_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
+        content_type='text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                csv_response = self.app.get(
+                    portfolio.get_absolute_reinsurance_scope_file_url() + '?file_format=csv',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                parquet_response = self.app.get(
+                    portfolio.get_absolute_reinsurance_scope_file_url() + '?file_format=parquet',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                csv_return_data = pd.read_csv(io.StringIO(csv_response.text))
+                pd.testing.assert_frame_equal(csv_return_data, test_data)
+
+                prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
+                pd.testing.assert_frame_equal(prq_return_data, test_data)
 
 
 class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
@@ -604,7 +788,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_reinsurance_info_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -627,3 +811,64 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
 
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
+
+    def test_reinsurance_info_file_invalid_uploaded___parquet_exception_raised(self):
+        content_type='text/csv'
+        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                    expect_errors=True
+                )
+                self.assertEqual(400, response.status_code)
+
+    def test_reinsurance_info_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
+        content_type='text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                csv_response = self.app.get(
+                    portfolio.get_absolute_reinsurance_info_file_url() + '?file_format=csv',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                parquet_response = self.app.get(
+                    portfolio.get_absolute_reinsurance_info_file_url() + '?file_format=parquet',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                csv_return_data = pd.read_csv(io.StringIO(csv_response.text))
+                pd.testing.assert_frame_equal(csv_return_data, test_data)
+
+                prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
+                pd.testing.assert_frame_equal(prq_return_data, test_data)
