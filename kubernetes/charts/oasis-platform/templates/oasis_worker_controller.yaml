@@ -74,6 +74,8 @@ spec:
               value: {{ .Values.oasisServer.name }}
             - name: OASIS_API_PORT
               value: {{ .Values.oasisServer.port | quote }}
+            - name: OASIS_CLUSTER_NAMESPACE
+              value: {{ .Release.Namespace | quote }}
             {{- with .Values.workerController.totalWorkerLimit }}
             - name: OASIS_TOTAL_WORKER_LIMIT
               value: {{ . | quote }}

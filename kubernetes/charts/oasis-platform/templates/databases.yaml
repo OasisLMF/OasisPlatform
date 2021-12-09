@@ -40,7 +40,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ $v.name }}
-  namespace: default
+  namespace: {{ $root.Release.Namespace }}
   labels:
   {{- include "h.labels" $root | nindent 4 }}
 type: Opaque

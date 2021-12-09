@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: oasis-rest-service-account
-  namespace: default
+  namespace: {{ .Release.Namespace }}
   labels:
   {{- include "h.labels" . | nindent 4 }}
 type: Opaque
