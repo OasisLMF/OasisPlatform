@@ -2,7 +2,9 @@
 
 set -e
 
-cat << EOF | kubectl apply -f -
+OASIS_CLUSTER_NAMESPACE="${OASIS_CLUSTER_NAMESPACE:-default}"
+
+cat << EOF | kubectl apply -n "$OASIS_CLUSTER_NAMESPACE" -f -
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -47,7 +49,7 @@ spec:
 ---
 EOF
 
-while ! kubectl get pods host-volume-shell | grep Running | grep "1/1"; do
+while ! kubectl get pods -n "$OASIS_CLUSTER_NAMESPACE" host-volume-shell | grep Running | grep "1/1"; do
   sleep 1
   echo -n .
 done
@@ -56,7 +58,7 @@ echo
 echo "Host volume mount point is /mnt/host/"
 echo
 
-kubectl exec -it host-volume-shell -- bash
-kubectl delete pod --grace-period=2 host-volume-shell
-kubectl delete pvc host-pv-claim
-kubectl delete pv host-pv
+kubectl exec -it -n "$OASIS_CLUSTER_NAMESPACE" host-volume-shell -- bash
+kubectl delete pod -n "$OASIS_CLUSTER_NAMESPACE" --grace-period=2 host-volume-shell
+kubectl delete pvc -n "$OASIS_CLUSTER_NAMESPACE" host-pv-claim
+kubectl delete pv -n "$OASIS_CLUSTER_NAMESPACE" host-pv

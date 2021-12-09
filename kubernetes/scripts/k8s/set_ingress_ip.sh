@@ -2,7 +2,9 @@
 
 set -e
 
-IP="$(kubectl get svc --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}")"
+OASIS_CLUSTER_NAMESPACE="${OASIS_CLUSTER_NAMESPACE:-default}"
+
+IP="$(kubectl get svc -n "$OASIS_CLUSTER_NAMESPACE" --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}")"
 
 echo "Found IP: $IP"
 

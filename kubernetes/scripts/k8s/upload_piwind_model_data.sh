@@ -5,6 +5,7 @@ set -e
 PWP=$1
 MODEL_PATHS="meta-data/model_settings.json oasislmf.json model_data/ keys_data/ tests/"
 OPTIONAL_MODEL_FILES="meta-data/chunking_configuration.json meta-data/scaling_configuration.json"
+OASIS_CLUSTER_NAMESPACE="${OASIS_CLUSTER_NAMESPACE:-default}"
 
 if [ -z "$PWP" ] || ! [ -d "$PWP" ]; then
   echo "Usage: $0 <piwind git path>"
@@ -29,7 +30,7 @@ done
 
 echo "Creating volume and pods..."
 
-cat << EOF | kubectl apply -f -
+cat << EOF | kubectl apply -n "$OASIS_CLUSTER_NAMESPACE" -f -
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -75,7 +76,7 @@ spec:
 EOF
 
 echo -n "Waiting for pod to be created."
-while ! kubectl get pods host-data-volume-pod | grep Running | grep -q "1/1"; do
+while ! kubectl get pods -n "$OASIS_CLUSTER_NAMESPACE" host-data-volume-pod | grep Running | grep -q "1/1"; do
   sleep 1
   echo -n .
 done
@@ -83,18 +84,18 @@ done
 echo " done"
 echo -n "Uploading files..."
 
-kubectl exec host-data-volume-pod -- mkdir -p /mnt/host/model-data/piwind/
+kubectl exec -n "$OASIS_CLUSTER_NAMESPACE" host-data-volume-pod -- mkdir -p /mnt/host/model-data/piwind/
 
 for file in $MODEL_PATHS; do
   file=${PWP}/$file
-  kubectl cp "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/
+  kubectl cp -n "$OASIS_CLUSTER_NAMESPACE" "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/
   echo -n .
 done
 
 for file in $OPTIONAL_MODEL_FILES; do
   file=${PWP}/$file
   if [ -f "$file" ] && ! [ -d "$file" ]; then
-    kubectl cp "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/
+    kubectl cp -n "$OASIS_CLUSTER_NAMESPACE" "${file}" host-data-volume-pod:/mnt/host/model-data/piwind/
   fi
   echo -n .
 done
@@ -102,7 +103,7 @@ done
 echo " done"
 echo "Cleaning up..."
 
-kubectl delete pod --grace-period=2 host-data-volume-pod; kubectl delete pvc host-data-volume-claim; kubectl delete pv host-data-volume
+kubectl delete pod -n "$OASIS_CLUSTER_NAMESPACE" --grace-period=2 host-data-volume-pod; kubectl delete pvc host-data-volume-claim; kubectl delete pv host-data-volume
 
 echo "All done"
 

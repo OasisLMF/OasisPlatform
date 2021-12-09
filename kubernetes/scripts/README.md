@@ -19,3 +19,14 @@ A few helpful scripts for development
 | k8s/clean_host_volume.sh        | Mounts the host nodes volume path and erases everything within - handy to clean the environment, but make sure to uninstall it first. |
 | k8s/port-forward.sh             | Sets up port forwarding to access UI, API, Prometheus and Grafana.                                                                    |
 | k8s/set_ingress_ip.sh           | For `minikube` on linux - updates your /etc/hosts file with the ingress IP used by `minikube tunnel`                                  |
+
+### Settings
+
+Supported environment variables:
+
+| Name                    | Default  | Description                                                                             |
+|-------------------------|----------|-----------------------------------------------------------------------------------------|
+| OASIS_USERNAME          | admin    | Oasis username                                                                          |
+| OASIS_PASSWORD          | password | Oasis password                                                                          |
+| OASIS_AUTH_API          | 1        | How to authenticate. 1=directly against keycloak on ui.oasis.local, 0=through oasis API |
+| OASIS_CLUSTER_NAMESPACE | default  | Namespace to use for kubernetes operations                                              |

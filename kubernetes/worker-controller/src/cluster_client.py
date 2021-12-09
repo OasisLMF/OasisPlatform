@@ -18,8 +18,9 @@ class ClusterClient:
     A simple Kubernetes (wrapper) client to load configuration and update number of replicas.
     """
 
-    def __init__(self):
+    def __init__(self, namespace: str):
         self.apps_v1 = None
+        self.namespace = namespace
 
     async def load_config(self, cluster):
         """
@@ -56,7 +57,7 @@ class ClusterClient:
 
         async with ApiClient() as api:
             apps_v1 = client.AppsV1Api(api)
-            await apps_v1.patch_namespaced_deployment_with_http_info(name=name, namespace='default', body={
+            await apps_v1.patch_namespaced_deployment_with_http_info(name=name, namespace=self.namespace, body={
                 'spec': {
                     'replicas': replicas
                 }
@@ -69,7 +70,8 @@ class DeploymentWatcher:
     is to keep an updated cache about the state of the cluster such as available worker deployments, replicas etc.
     """
 
-    def __init__(self, deployments: WorkerDeployments):
+    def __init__(self, namespace: str, deployments: WorkerDeployments):
+        self.namespace = namespace
         self.deployments = deployments
 
     async def watch(self):
@@ -84,7 +86,7 @@ class DeploymentWatcher:
         keep_watching = True
         while keep_watching:
             try:
-                async for event in w.stream(apps_v1.list_namespaced_deployment, namespace='default',
+                async for event in w.stream(apps_v1.list_namespaced_deployment, namespace=self.namespace,
                                             label_selector='oasislmf/type=worker', timeout_seconds=60):
 
                     deployment = event['object']
@@ -135,6 +137,6 @@ class DeploymentWatcher:
         """
         async with ApiClient() as api:
             apps_v1 = client.AppsV1Api(api)
-            ret = (await apps_v1.list_namespaced_deployment('default', label_selector='oasislmf/type=worker'))
+            ret = (await apps_v1.list_namespaced_deployment(self.namespace, label_selector='oasislmf/type=worker'))
             for deployment in ret.items:
                 await self.update_deployment(deployment)

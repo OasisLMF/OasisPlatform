@@ -45,6 +45,7 @@ def parse_args():
     parser.add_argument('--secure', help='Flag if https and wss should be used', default=bool(getenv('OASIS_API_SECURE')), action='store_true')
     parser.add_argument('--username', help='The username of the worker controller user', default=getenv('OASIS_USERNAME') or 'admin')
     parser.add_argument('--password', help='The password of the worker controller user', default=getenv('OASIS_PASSWORD') or 'password')
+    parser.add_argument('--namespace', help='Namespace of cluster where oasis is deployed to', default=getenv('OASIS_CLUSTER_NAMESPACE') or 'default')
     parser.add_argument('--limit', help='Hard limit for the total number of workers created', default=getenv('OASIS_TOTAL_WORKER_LIMIT'))
     parser.add_argument('--prioritized-models-limit', help='When prioritized runs are used - create workers for the models with the highest priority', default=getenv('OASIS_PRIORITIZED_MODELS_LIMIT'))
     parser.add_argument('--cluster', help='Type of kubernetes cluster to connect to, either "local" (~/.kube/config)\
@@ -78,14 +79,14 @@ def main():
     event_loop = asyncio.get_event_loop()
 
     # Create cluster client and load configuration
-    cluster_client = ClusterClient()
+    cluster_client = ClusterClient(args.namespace)
     event_loop.run_until_complete(cluster_client.load_config(args.cluster))
 
     # Create the autoscaler to bind everything together
     autoscaler = AutoScaler(deployments, cluster_client, oasis_client, args.prioritized_models_limit, args.limit)
 
     # Create the deployment watcher and load all available deployments
-    deployments_watcher = DeploymentWatcher(deployments)
+    deployments_watcher = DeploymentWatcher(args.namespace, deployments)
     event_loop.run_until_complete(deployments_watcher.load_deployments())
     deployments.print_list()
 

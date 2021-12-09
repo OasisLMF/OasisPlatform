@@ -48,9 +48,11 @@ for arg in "${@}"; do
 
 done
 
+OASIS_CLUSTER_NAMESPACE="${OASIS_CLUSTER_NAMESPACE:-default}"
+
 for fw in "${forwards[@]}"; do
   echo $fw
-  kubectl port-forward $fw &
+  kubectl port-forward -n "$OASIS_CLUSTER_NAMESPACE" $fw &
   pids="$pids $!"
 done
 
