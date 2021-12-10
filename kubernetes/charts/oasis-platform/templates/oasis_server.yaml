@@ -101,14 +101,14 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
-          readinessProbe:
+          startupProbe:
             httpGet:
               path: /api/healthcheck/
               port: {{.Values.oasisServer.port}}
               scheme: HTTP
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /api/healthcheck/

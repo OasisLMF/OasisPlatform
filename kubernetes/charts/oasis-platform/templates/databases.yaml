@@ -127,12 +127,12 @@ spec:
           volumeMounts:
             - name: db-persistent-storage
               mountPath: /var/lib/postgresql/data
-          readinessProbe:
+          startupProbe:
             exec:
               command: ["bash", "-c", "psql -w -U $POSTGRES_USER -d $POSTGRES_DB -c 'SELECT 1'"]
-            initialDelaySeconds: 10
-            periodSeconds: 2
             timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             exec:
               command: ["bash", "-c", "psql -w -U $POSTGRES_USER -d $POSTGRES_DB -c 'SELECT 1'"]
@@ -162,12 +162,12 @@ spec:
           volumeMounts:
             - name: db-persistent-storage
               mountPath: /var/lib/mysql
-          readinessProbe:
+          startupProbe:
             exec:
               command: ["bash", "-c", "echo -en \"[client]\nuser=$MYSQL_USER\npassword=$MYSQL_PASSWORD\n\" > /tmp/file && cat /tmp/file && chmod go-rw /tmp/file && mysql --defaults-extra-file=/tmp/file -h 127.0.0.1 -e \"SELECT 1\"" ]
-            initialDelaySeconds: 3
-            periodSeconds: 2
-            timeoutSeconds: 3
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             exec:
               command: ["mysqladmin", "ping"]
@@ -176,12 +176,12 @@ spec:
             timeoutSeconds: 5
 {{- else if eq $v.type "redis" }}
           image: {{ $root.Values.images.redis.image }}:{{ $root.Values.images.redis.version }}
-          readinessProbe:
+          startupProbe:
             exec:
               command: ["/usr/local/bin/redis-cli", "ping"]
-            initialDelaySeconds: 5
-            periodSeconds: 2
             timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             exec:
               command: ["/usr/local/bin/redis-cli", "ping"]
@@ -206,12 +206,12 @@ spec:
           volumeMounts:
             - name: rabbitmq-advanced-config
               mountPath: /etc/rabbitmq/advanced/
-          readinessProbe:
+          startupProbe:
             exec:
               command: ["rabbitmq-diagnostics", "ping"]
-            initialDelaySeconds: 20
-            periodSeconds: 20
-            timeoutSeconds: 10
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "status"]
