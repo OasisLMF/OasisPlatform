@@ -6,9 +6,8 @@ import logging
 import os
 import shutil
 import subprocess
-import tarfile
 import tempfile
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from datetime import datetime
 
 import fasteners
@@ -16,13 +15,11 @@ import filelock
 import pandas as pd
 from celery import Celery, signature
 from celery.signals import worker_ready, before_task_publish
-#from celery.task import task
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
-from oasislmf.utils.log import oasis_log
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
@@ -40,6 +37,7 @@ ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 app = Celery()
 app.config_from_object(celery_conf)
+
 logging.info("Started worker")
 filestore = StorageSelector(settings)
 
@@ -469,7 +467,7 @@ def prepare_keys_file_chunk(
         #    lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']), lookup_config['keys_data_path'])
 
 
-        ## refactor this to call the manager class 
+        ## refactor this to call the manager class
         _, lookup = OasisLookupFactory.create(
             lookup_config_fp=params['lookup_config_json'],
             model_keys_data_path=params['lookup_data_dir'],
@@ -616,7 +614,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
 @keys_generation_task
 def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None):
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
-        # Delete local copy of run data 
+        # Delete local copy of run data
         shutil.rmtree(params['target_dir'], ignore_errors=True)
     if not settings.getboolean('worker', 'KEEP_CHUNK_DATA', fallback=False):
         # Delete remote copy of run data
@@ -751,10 +749,10 @@ def prepare_losses_generation_params(
             config.get('model_data_dir'))
     else:
         model_data_dir = None
-    
-    run_params = {**config, **params}       
+
+    run_params = {**config, **params}
     run_params["model_data_dir"] = model_data_dir
-        
+
     print(run_params)
 
     return OasisManager()._params_generate_losses(**run_params)
@@ -863,7 +861,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
 @loss_generation_task
 def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwargs):
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
-        # Delete local copy of run data 
+        # Delete local copy of run data
         shutil.rmtree(params['root_run_dir'], ignore_errors=True)
     if not settings.getboolean('worker', 'KEEP_CHUNK_DATA', fallback=False):
         # Delete remote copy of run data
@@ -920,3 +918,4 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
 
     if analysis_id and slug:
         signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
+

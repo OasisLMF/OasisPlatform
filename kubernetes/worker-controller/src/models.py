@@ -64,6 +64,7 @@ class RunningAnalysis(TypedDict):
     id: int
     tasks: int
     queue_names: List[str]
+    priority: int
 
 
 class ModelState(TypedDict):
@@ -73,3 +74,4 @@ class ModelState(TypedDict):
     """
     tasks: int
     analyses: int
+    priority: int

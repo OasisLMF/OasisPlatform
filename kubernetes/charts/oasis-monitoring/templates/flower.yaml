@@ -1,0 +1,44 @@
+{{ $name := "flower" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+  annotations:
+    {{- include "h.workerDeploymentAnnotations" . | indent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        {{- include "h.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.broker.name) | nindent 8}}
+      containers:
+        - name: flower
+          image: {{ .Values.monitoringImages.flower.image }}:{{- .Values.monitoringImages.flower.version }}
+          imagePullPolicy: IfNotPresent
+          command: [ "celery" ]
+          args: [ "flower", "--broker_api=http://guest:guest@broker:6379" ]
+          env:
+            {{- include "h.brokerVars" . | indent 12 }}
+            - name: FLOWER_LOGGING
+              value: INFO
+          livenessProbe:
+            failureThreshold: 2
+            httpGet:
+              path: /api/workers?refresh=true
+              port: 5555
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            successThreshold: 1
+            timeoutSeconds: 10

@@ -1,8 +1,6 @@
 import json
 import string
 
-# from tempfile import NamedTemporaryFile
-# from django.conf import settings
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
@@ -138,15 +136,25 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'run_log_file': response.request.application_url + analysis.get_absolute_run_log_file_url(),
                     'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
                     'status': Analysis.status_choices.NEW,
-                    'storage_links': response.request.application_url + analysis.get_absolute_storage_url(),
+                    'status_count': {'CANCELLED': 0,
+                                     'COMPLETED': 0,
+                                     'ERROR': 0,
+                                     'PENDING': 0,
+                                     'QUEUED': 0,
+                                     'STARTED': 0,
+                                     'TOTAL': 0,
+                                     'TOTAL_IN_QUEUE': 0},
+                    'storage_links': 'http://testserver/v1/analyses/1/storage_links/',
+                    'sub_task_count': 0,
+                    'sub_task_error_ids': [],
+                    'sub_task_list': 'http://testserver/v1/analyses/1/sub_task_list/',
                     'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(),
                     'task_started': None,
                     'task_finished': None,
                     'groups': [],
                     'analysis_chunks': None,
                     'lookup_chunks': None,
-                    'sub_task_count': None,
-                    'sub_task_statuses': [],
+                    'priority': 4,
                 }, response.json)
 
     @given(
@@ -202,7 +210,19 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'output_file': None,
                     'run_log_file': None,
                     'run_traceback_file': None,
-                    'status': Analysis.status_choices.NEW,
+                    'status': 'NEW',
+                    'status_count': {'CANCELLED': 0,
+                                     'COMPLETED': 0,
+                                     'ERROR': 0,
+                                     'PENDING': 0,
+                                     'QUEUED': 0,
+                                     'STARTED': 0,
+                                     'TOTAL': 0,
+                                     'TOTAL_IN_QUEUE': 0},
+                    'storage_links': 'http://testserver/v1/analyses/1/storage_links/',
+                    'sub_task_count': 0,
+                    'sub_task_error_ids': [],
+                    'sub_task_list': 'http://testserver/v1/analyses/1/sub_task_list/',
                     'storage_links': response.request.application_url + analysis.get_absolute_storage_url(),
                     'summary_levels_file': None,
                     'groups': [],
@@ -210,8 +230,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'task_finished': None,
                     'analysis_chunks': None,
                     'lookup_chunks': None,
-                    'sub_task_count': None,
-                    'sub_task_statuses': [],
+                    'priority': 4,
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):
@@ -578,6 +597,68 @@ class AnalysisApi(WebTestMixin, TestCase):
             expect_errors=True,
         )
         self.assertEqual(400, response.status_code)
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_create_no_priority___successfully_set_default(self, name):
+
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': fake_analysis_model().pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+        analysis = json.loads(response.body)
+        self.assertEqual(4, analysis.get('priority'))
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_create_as_admin_low_priority___successfully(self, name):
+
+        user = fake_user()
+        user.is_staff = True
+        user.save()
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': fake_analysis_model().pk, 'priority': 1}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+
+    @given(
+        name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
+    )
+    def test_create_as_no_admin_low_priority___rejected(self, name):
+
+        model = fake_analysis_model()
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        # Create an analysis
+        response = self.app.post(
+            reverse('analysis-list', kwargs={'version': 'v1'}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk, 'priority': 9}),
+            content_type='application/json',
+            expect_errors=True
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('Levels restricted to administrators: [8, 9, 10]', json.loads(response.body).get('priority')[0])
 
 
 class AnalysisRun(WebTestMixin, TestCase):

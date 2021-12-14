@@ -54,7 +54,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.oasisServer) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
@@ -70,6 +70,18 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
+          readinessProbe:
+            exec:
+              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
       volumes:
         - name: shared-fs-persistent-storage
           persistentVolumeClaim:
@@ -97,7 +109,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.oasisServer) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisServer.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.ui.image }}:{{ .Values.images.oasis.ui.version }}
           name: {{ .Values.oasisUI.name }}
@@ -154,7 +166,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.channel_layer.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
@@ -163,9 +175,20 @@ spec:
           env:
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
+            {{- include "h.brokerVars" . | indent 12 }}
             {{- include "h.channelLayerVars" . | indent 12 }}
-            - name: OASIS_DEBUG
-              value: "1"
+          readinessProbe:
+            exec:
+              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -192,12 +215,24 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db .Values.databases.channel_layer .Values.databases.broker) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.channel_layer.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: main
           command: ["celery", "-A", "src.server.oasisapi.celery_app", "worker", "--loglevel=INFO", "-Q", "task-controller"]
+          readinessProbe:
+            exec:
+              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs

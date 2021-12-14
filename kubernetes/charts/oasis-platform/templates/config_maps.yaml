@@ -18,6 +18,8 @@ data:
   {{- end }}
   {{- if eq $v.type "redis" }}
   uri: "redis://{{ $v.name }}:{{ $v.port }}"
+  {{- else if eq $v.type "rabbitmq" }}
+  uri: "amqp://{{ $v.user }}:{{ $v.password }}@{{ $v.name }}:{{ $v.port }}"
   {{- end }}
 ---
 {{- end }}

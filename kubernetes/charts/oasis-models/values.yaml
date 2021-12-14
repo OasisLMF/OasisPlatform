@@ -17,6 +17,7 @@ workers:
     modelVersionId: "1"
     image: coreoasis/model_worker
     version: dev
+    imagePullPolicy: Never
     env: # Additional worker environment variables
       - name: OASIS_DEBUG
         value: "1"
@@ -63,10 +64,11 @@ modelImages:
 databases:
   broker:
     name: broker
-    port: 6379
+    port: 5672
   celery_db:
     name: celery-db
     port: 5432
+    type: postgres
 
 oasisServer:
   name: oasis-server

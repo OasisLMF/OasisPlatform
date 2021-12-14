@@ -1,17 +1,14 @@
 import uuid
-from itertools import chain as iterchain
 from importlib import import_module
+from itertools import chain as iterchain
 from math import ceil
 from typing import List, Type, TYPE_CHECKING, Tuple, Optional
 
 from celery import signature, chord
 from celery.canvas import Signature, chain
 from django.contrib.auth.models import User
-from kombu.common import Broadcast
-#from oasislmf.utils.data import get_dataframe
 
 from src.conf.iniconf import settings
-
 from ..files.models import file_storage_link
 
 if TYPE_CHECKING:
@@ -141,7 +138,7 @@ class Controller:
         :return: Signature representing the task
         """
         statuses, tasks = zip(*[
-            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, params=p)
+            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, p)
             for idx, p in enumerate(params)
         ])
 
@@ -201,7 +198,7 @@ class Controller:
                 'failure_status': failure_status,
             },
         ))
-        c.delay({})
+        c.delay({}, priority=analysis.priority)
         return c
 
     @classmethod
@@ -328,7 +325,7 @@ class Controller:
             num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
         elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
             loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
-            loc_lines_per_chunk =  analysis.model.chunking_options.dynamic_locations_per_lookup
+            loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
             num_chunks = ceil(loc_lines / loc_lines_per_chunk)
 
         run_data_uuid = uuid.uuid4().hex
@@ -394,7 +391,7 @@ class Controller:
                 TaskParams(
                     num_chunks=num_chunks,
                     **base_kwargs,
-                )
+                ),
             ),
             cls.get_subtask_statuses_and_signature(
                 'prepare_losses_generation_directory',

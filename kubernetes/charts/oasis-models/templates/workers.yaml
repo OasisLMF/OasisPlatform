@@ -32,11 +32,26 @@ spec:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.databases.broker.name $root.Values.databases.celery_db.name) | nindent 8}}
       containers:
         - image: {{ .image }}:{{ .version }}
+          {{- if .imagePullPolicy }}
+          imagePullPolicy: {{ .imagePullPolicy }}
+          {{- end }}
           name: worker
           env:
             {{- include "h.modelEnvs" . | indent 12 }}
             {{- include "h.brokerVars" $root | indent 12 }}
             {{- include "h.celeryDbVars" $root | indent 12}}
+          readinessProbe:
+            exec:
+              command: ["celery", "-A", "src.model_execution_worker.distributed_tasks", "inspect", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 30
+          livenessProbe:
+            exec:
+              command: ["celery", "-A", "src.model_execution_worker.distributed_tasks", "inspect", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 30
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs

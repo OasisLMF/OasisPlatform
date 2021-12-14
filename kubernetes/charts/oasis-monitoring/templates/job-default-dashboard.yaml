@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: {{ $name }}
-          image: {{ .Values.jobImage.image }}:{{- .Values.jobImage.version }}
+          image: {{ .Values.monitoringImages.jobImage.image }}:{{- .Values.monitoringImages.jobImage.version }}
           env:
             - name: DASHBOARD_UID
               value: {{ .Values.homeDashboardUID }}

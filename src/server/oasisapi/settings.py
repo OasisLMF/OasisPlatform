@@ -221,12 +221,11 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
-MEDIA_URL = '/media/'
+MEDIA_URL = '/api/media/'
 MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
-STATIC_URL = '/static/'
+STATIC_URL = '/api/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -313,6 +312,7 @@ CHANNEL_LAYERS = {
         'CONFIG': {
             'hosts': [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0'],
             'symmetric_encryption_keys': [SECRET_KEY],
+            "capacity": 1500,
         },
     },
 }

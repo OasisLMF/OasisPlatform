@@ -1,8 +1,10 @@
-from drf_yasg.utils import swagger_serializer_method
+import json
+
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from ....conf import iniconf
 from .models import Analysis, AnalysisTaskStatus
 from ..files.models import file_storage_link
 from ..permissions.group_auth import verify_and_get_groups, validate_data_files
@@ -155,7 +157,7 @@ class AnalysisListSerializer(serializers.Serializer):
 
     def get_sub_task_error_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True) 
+        return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
 
     def get_status_count(self, instance):
         #request = self.context.get('request')
@@ -229,6 +231,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'sub_task_list',
             'sub_task_error_ids',
             'status_count',
+            "priority",
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
@@ -306,7 +309,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
 
     def get_sub_task_error_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True) 
+        return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
 
     def get_status_count(self, instance):
         #request = self.context.get('request')
@@ -331,6 +334,11 @@ class AnalysisSerializer(serializers.ModelSerializer):
             attrs['creator'] = user
 
         validate_data_files(user, attrs.get('complex_model_data_files'))
+        if 'priority' in attrs and not user.is_superuser and not user.is_staff:
+            priority = int(attrs['priority'])
+            admin_levels = json.loads(iniconf.settings.get('server', 'ANALYSIS_PRIORITY_ADMIN_LEVELS', fallback='[]'))
+            if priority in admin_levels:
+                raise ValidationError({'priority': 'Levels restricted to administrators: ' + str(admin_levels)})
 
         if attrs.get('model'):
             try:
@@ -366,6 +374,7 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
     portfolio = serializers.IntegerField(source='portfolio_id', read_only=True)
     model = serializers.IntegerField(source='model_id', read_only=True)
     status = serializers.CharField(read_only=True)
+    priority = serializers.IntegerField(read_only=True)
 
     # Status / Chunks
     analysis_chunks = serializers.IntegerField(read_only=True)
@@ -380,7 +389,7 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
 
     def get_queue_names(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
-        running_subtasks_queryset = subtask_queryset.filter(status__in=['PENDING', 'QUEUED', 'STARTED'])     
+        running_subtasks_queryset = subtask_queryset.filter(status__in=['PENDING', 'QUEUED', 'STARTED'])
         return list(running_subtasks_queryset.order_by().values_list('queue_name', flat=True).distinct())
 
     def get_status_count(self, instance):

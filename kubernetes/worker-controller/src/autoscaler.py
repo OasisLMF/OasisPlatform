@@ -17,15 +17,17 @@ class AutoScaler:
     2. The message is parsed and information such as number of analyses and tasks per model is saved.
     3. For each model:
     3.1. If the model is running:
-    3.1.1. Calculate de desired worker cound (desired replicas) and update the deployments replicas setting.
+    3.1.1. Calculate de desired worker count (desired replicas) and update the deployments replicas setting.
     3.2. If the model is not running:
     3.1.1. Add a delayed(20s) shutdown of all workers. It is aborted if any new analysis/tasks get submitted.
     """
 
-    def __init__(self, deployments: WorkerDeployments, cluster: ClusterClient, oasis_client: OasisClient):
+    def __init__(self, deployments: WorkerDeployments, cluster: ClusterClient, oasis_client: OasisClient, prioritized_models_limit: int, limit: int):
         self.deployments = deployments
         self.cluster = cluster
         self.oasis_client = oasis_client
+        self.prioritized_models_limit = int(prioritized_models_limit) if prioritized_models_limit else None
+        self.limit = int(limit) if limit else None
 
         # Cleanup timer used to remove all workers for a model with a delay.
         self.cleanup_timer = None
@@ -47,7 +49,10 @@ class AutoScaler:
 
         logging.debug('Model statuses: %s', model_states)
 
-        await self._scale_models(model_states)
+        model_states_with_wd = await self._filter_model_states_with_wd(model_states)
+        prioritized_models = self._clear_unprioritized_models(model_states_with_wd)
+
+        await self._scale_models(prioritized_models)
 
     def _aggregate_model_states(self, analyses: []) -> dict:
         """
@@ -64,11 +69,14 @@ class AutoScaler:
             for queue_name in analysis['queue_names']:
                 queue_name = queue_name.lower()
                 model_state = model_states.get(queue_name, None)
+                priority = analysis.get('priority', 1)
                 if model_state:
                     model_state['tasks'] += analysis['tasks']
                     model_state['analyses'] += 1
+                    if priority > model_state['priority']:
+                        model_state['priority'] = priority
                 else:
-                    model_states[queue_name] = ModelState(tasks=analysis['tasks'], analyses=1)
+                    model_states[queue_name] = ModelState(tasks=analysis['tasks'], analyses=1, priority=priority)
 
         # Add all deployments missing in Oasis API (currently not running)
         for wd in self.deployments.worker_deployments:
@@ -76,12 +84,12 @@ class AutoScaler:
             id = wd.id_string()
 
             if id not in model_states:
-                model_state = ModelState(tasks=0, analyses=0)
+                model_state = ModelState(tasks=0, analyses=0, priority=1)
                 model_states[id] = model_state
 
         return model_states
 
-    async def _scale_deployment(self, wd: WorkerDeployment, analysis_in_progress: bool, model_state: ModelState):
+    async def _scale_deployment(self, wd: WorkerDeployment, analysis_in_progress: bool, model_state: ModelState, limit: int) -> int:
         """
         Update a worker deployments number of replicas, based on what autoscaler_rules returns as desired number
         of replicas (if changed since laste time).
@@ -89,7 +97,8 @@ class AutoScaler:
         :param wd: The WorkerDeployment for this model.
         :param analysis_in_progress: Is an analysis currently running for this model?
         :param model_state: Number of taks available to be processed by the worker pool for this model.
-        :return:
+        :param limit: None or maximum value of total number of replicas/workers for this model deployment.
+        :return: Number of replicas set on deployment
         """
 
         desired_replicas = 0
@@ -100,6 +109,9 @@ class AutoScaler:
 
             try:
                 desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state)
+
+                if limit is not None and desired_replicas > limit:
+                    desired_replicas = limit
             except ValueError as e:
                 logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
 
@@ -121,6 +133,10 @@ class AutoScaler:
 
                 loop = asyncio.get_event_loop()
                 self.cleanup_timer = loop.call_later(20, self._cleanup)
+
+                return wd.replicas
+
+        return desired_replicas
 
     def _cleanup(self):
         """
@@ -175,41 +191,104 @@ class AutoScaler:
                 if tasks and tasks > 0 and len(queue_names) > 0:
                     sa_id = analysis['id']
                     if sa_id not in running_analyses:
-                        running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=tasks, queue_names=list(queue_names))
+                        priority = int(analysis.get('priority', 1))
+                        running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=tasks, queue_names=list(queue_names), priority=priority)
 
         return running_analyses
 
-    async def _scale_models(self, model_states: dict):
+    async def _scale_models(self, prioritized_models):
         """
         Iterate model_states and scale each models worker deployment based on the state and autoscaling configuration.
         The server API is queried if needed to fetch oasis model id and auto scaling settings.
 
-        :param model_states: A dict of model names and their states.
+        :param prioritized_models: A dict of model names and their states.
         """
+
+        workers_total = 0
+
+        for model, state, wd in prioritized_models:
+
+            # Load auto scaling settings everytime we scale up workers from 0
+            if not wd.auto_scaling or wd.replicas == 0:
+                if not wd.oasis_model_id:
+
+                    logging.info('Get oasis model id from API for model %s', wd.id_string())
+
+                    wd.oasis_model_id = await self.oasis_client.get_oasis_model_id(wd.supplier_id, wd.model_id, wd.model_version_id)
+                    if not wd.oasis_model_id:
+                        logging.error('No model id found for model %s', wd.id_string())
+
+                if wd.oasis_model_id:
+
+                    wd.auto_scaling = await self.oasis_client.get_auto_scaling(wd.oasis_model_id)
+
+            if wd.auto_scaling:
+                analysis_in_progress = state.get('tasks', 0) > 0
+                replicas_limit = self.limit - workers_total if self.limit else None
+
+                workers_created = await self._scale_deployment(wd, analysis_in_progress, state, replicas_limit)
+                workers_total += workers_created
+            else:
+                logging.warning('No auto scaling setting found for model %s', wd.id_string())
+
+        logging.info('Total desired number of workers: ' + str(workers_total))
+
+    def _get_highest_model_priorities(self, model_states_with_wd):
+        """
+        Return the highest priority levels if:
+         - Multiple analyses are run with different priority.
+         - OASIS_PRIORITIZED_MODELS_LIMIT is enabled.
+
+        :param model_states_with_wd: List of (model, model state, WorkerDeployment)
+        :return: The highest priority levels for these runs.
+        """
+        if self.prioritized_models_limit:
+            priorities = sorted(list(set(map(lambda ms: ms[1].get('priority', 1), model_states_with_wd))), reverse=True)
+            if len(priorities) > 1:
+                priorities = priorities[0:self.prioritized_models_limit]
+                return priorities
+        return None
+
+    def _clear_unprioritized_models(self, model_states_with_wd):
+        """
+        Reset tasks and analyses for models with less important runs if OASIS_PRIORITIZED_MODELS_LIMIT is enabled.
+        This will focus on and prioritize analyses with higher priority level than others.
+
+        :param model_states_with_wd: List of (model, model state, WorkerDeployment)
+        :return: Same models as input model_states_with_wd, but with changed values for models with less priority.
+        """
+
+        priorities = self._get_highest_model_priorities(model_states_with_wd)
+
+        if not priorities:
+            return model_states_with_wd
+        else:
+            result = []
+
+            for model, state, wd in model_states_with_wd:
+                if priorities and state.get('priority') in priorities:
+                    result.append((model, state, wd), )
+                else:
+                    result.append((model, ModelState(tasks=0, analyses=0, priority=1), wd))
+
+            return result
+
+    async def _filter_model_states_with_wd(self, model_states):
+        """
+        Filter and exclude models with no worker deployment in the cluster and return a list of
+        tuples (model, state, WorkerDeployment)
+
+        :param model_states: List of model states
+        :return: Models with an attached WorkerDeployment.
+        """
+
+        result = []
 
         for model, state in model_states.items():
 
             wd = await self.deployments.get_worker_deployment_by_name_id(model)
 
             if wd:
+                result.append((model, state, wd), )
 
-                # Load auto scaling settings everytime we scale up workers from 0
-                if not wd.auto_scaling or wd.replicas == 0:
-                    if not wd.oasis_model_id:
-
-                        logging.info('Get oasis model id from API for model %s', wd.id_string())
-
-                        wd.oasis_model_id = await self.oasis_client.get_oasis_model_id(wd.supplier_id, wd.model_id, wd.model_version_id)
-                        if not wd.oasis_model_id:
-                            logging.error('No model id found for model %s', wd.id_string())
-
-                    if wd.oasis_model_id:
-
-                        logging.info('Loading auto scaling settings from API for model %s', wd.id_string())
-                        wd.auto_scaling = await self.oasis_client.get_auto_scaling(wd.oasis_model_id)
-
-                if wd.auto_scaling:
-                    analysis_in_progress = state.get('tasks', 0) > 0
-                    await self._scale_deployment(wd, analysis_in_progress, state)
-                else:
-                    logging.warning('No auto scaling setting found for model %s', wd.id_string())
+        return result

@@ -4,16 +4,16 @@
 images:
   oasis:
     platform:
-      image: localhost:5000/coreoasis/api_server
+      image: coreoasis/api_server
       version: dev
-      imagePullPolicy: Always
+      imagePullPolicy: Never
     ui:
       image: coreoasis/oasisui_app
       version: 1.9.0
     worker_controller:
-      image: localhost:5000/coreoasis/worker_controller
+      image: coreoasis/worker_controller
       version: dev
-      imagePullPolicy: Always
+      imagePullPolicy: Never
   postgres:
     image: postgres
     version: 12.8-alpine3.14
@@ -29,6 +29,9 @@ images:
   redis:
     image: redis
     version: 5.0.7
+  rabbitmq:
+    image: rabbitmq
+    version: 3.8-management-alpine
 
 # Hostnames for Oasis UI, API, Prometheus, Alert manager and Grafana. If you change it, make sure you also
 # update hostnames in oasis-monitoring values.yaml file. Read more about how in the README.md and how to
@@ -45,11 +48,8 @@ ingress:
     # Name of the secret containing your certificate
 #    providedCertificateSecret: oasis-ingress-tls
 
-  # Hostname for Oasis UI, Prometheus, Alert manager and Grafana
+  # Hostname for Oasis UI, API, Prometheus, Alert manager and Grafana
   uiHostname: ui.oasis.local
-
-  # Hostname for the Oasis API
-  apiHostname: api.oasis.local
 
 # Generate all password secrets - get them by using kubectl:
 # kubectl get secrets/oasis-server --template={{.data.password}} | base64 -d
@@ -91,9 +91,12 @@ databases:
     name: channel-layer
     port: 6379
   broker:
-    type: redis
+    type: rabbitmq
     name: broker
-    port: 6379
+    port: 5672
+    extraPort: 15672
+    user: rabbit
+    password: rabbit
   keycloak_db:
     type: postgres
     name: keycloak-db
@@ -136,7 +139,7 @@ keycloak:
       password: x7e+GK6Y8ac#grb&9vT4
     users:
       # A default user is created at first deployment.
-      - username: oasis
+      - username: admin
         password: password
         admin: true
 
@@ -154,6 +157,18 @@ oasisServer:
     endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
     clientName: oasis-server
     clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
+
+workerController:
+  # The maximum number of workers the worker controller will start. No matter the number of analyses and models
+  # this limit will never be exceeded by this worker controller.
+  totalWorkerLimit: 10
+
+  # Settings related to prioritized runs
+  priority:
+
+    # When multiple runs has started with different prioritise the worker controller will by using this limit
+    # focus on the 'parallelModelsLimit' models with the highest priority runs.
+    modelsLimit: 2
 
 oasisUI:
   name: oasis-ui

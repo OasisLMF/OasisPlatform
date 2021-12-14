@@ -57,7 +57,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheck" (list . .Values.databases.oasis_db .Values.databases.celery_db) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisServer.name }}
@@ -103,20 +103,20 @@ spec:
               mountPath: /shared-fs
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/healthcheck/
               port: {{.Values.oasisServer.port}}
               scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 5
-            timeoutSeconds: 2
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /
+              path: /api/healthcheck/
               port: {{.Values.oasisServer.port}}
               scheme: HTTP
             initialDelaySeconds: 30
-            periodSeconds: 15
-            timeoutSeconds: 2
+            periodSeconds: 30
+            timeoutSeconds: 10
             failureThreshold: 2
       volumes:
         - name: shared-fs-persistent-storage

@@ -139,14 +139,14 @@ A kubernetes cluster is by default not accessible from the outside, but there ar
 ## Ingress
 
 The oasis-platform deploys an [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) to expose
-oasis UI, oasis API, Prometheus, Alert manager and Grafana. To enable it we need to bind the ingress to 2 fake hostnames
-and if you run this locally you can fake them and have them redirected to your kubernetes cluster.
+oasis UI, oasis API, Prometheus, Alert manager and Grafana. To enable it we need to bind the ingress to a hostnames and
+if you run this locally you can fake one (details below) and have them redirected to your kubernetes cluster.
 
-Default hostnames are `ui.oasis.local` and `api.oasis.local`. You can change them by customizing your deployments.
+Default hostname is `ui.oasis.local`. You can change it by setting a different one in your chart settings.
 
 ### Identify cluster IP
 
-Before we can add our fake hosts we need to find our cluster ip which depends on what type of kubernetes cluster you are
+Before we can add our fake host we need to find our cluster ip which depends on what type of kubernetes cluster you are
 running.
 
 Here is a short summary of two klusters:
@@ -154,15 +154,20 @@ Here is a short summary of two klusters:
 Type                      | IP
 --------------------------|--------
 Docker desktop on Windows | 127.0.0.1
-Minikube                  | <ol><li>Run `minikube tunnel` to expose cluster IP</li><li>Run `kubectl get service -l app.kubernetes.io/name=ingress-nginx` to get the IP from the `EXTERNAL-IP` column.</li></ol>
+Minikube                  | <ol><li>Run `minikube tunnel` to expose cluster IP</li><li>Run `kubectl get svc --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}"` to get the IP.</li></ol>
 
 ### Add hostnames
 
-**Add hostnames on linux:**
+**Add hostname on linux:**
+
+Add the hostname and IP to your `/etc/hosts` file:
 
 ```
-sudo sh -c 'echo "\n# Oasis Kubernetes cluster hostnames\n127.0.0.1 ui.oasis.local\n127.0.0.1 api.oasis.local\n" >> /etc/hosts'
+# Oasis Kubernetes cluster hostname
+<IP> ui.oasis.local
 ```
+
+Or run the `scripts/k8s/set_ingress_ip.sh` script to add and update the IP for you.
 
 **Add hostnames on Windows:**
 
@@ -173,9 +178,8 @@ sudo sh -c 'echo "\n# Oasis Kubernetes cluster hostnames\n127.0.0.1 ui.oasis.loc
 5. Append this at the end of the file:
 
     ```
-    # Oasis Kubernetes cluster hostnames
+    # Oasis Kubernetes cluster hostname
     127.0.0.1 ui.oasis.local
-    127.0.0.1 api.oasis.local
     ```
 
 6. Save the file and close notepad.
@@ -184,7 +188,7 @@ sudo sh -c 'echo "\n# Oasis Kubernetes cluster hostnames\n127.0.0.1 ui.oasis.loc
 
 Now you should be able to access the following pages:
 
-- Oasis API - [https://api.oasis.local](https://api.oasis.local)
+- Oasis API - [https://ui.oasis.local/api/](https://api.oasis.local/api/)
 - Oasis UI - [https://ui.oasis.local](https://ui.oasis.local)
 - Keycloak - [https://ui.oasis.local/auth/admin](https://ui.oasis.local/admin/auth/)
 - Prometheus - [https://ui.oasis.local/prometheus/](https://ui.oasis.local/prometheus/)
@@ -311,10 +315,7 @@ only.
 
 ### Example 2 - Set custom ingress hostnames
 
-Let's say we like to set custom hostnames for our ingress. The default values are `ui.oasis.local` and `api.oasis.local`
-, but let's change them to `ui.oasis` and `api.oasis`.
-
-Please note that we need two different hostnames since both oasis UI and oasis API needs to be placed in the root.
+Let's say we like to set a custom hostname for our ingress. The default hostname is `ui.oasis.local`, but let's change it to `ui.oasis`.
 
 1. First we make a copy of the default values files:
 
@@ -326,15 +327,12 @@ Please note that we need two different hostnames since both oasis UI and oasis A
    cp oasis-montoring/values.yaml monitoring-values.yaml
    ```
 2. Then we need to edit our files to change the ingress hostnames.
-    1. Edit `platform-values.yaml` and set the `ingress.uiHostname` and `ingress.apiHostname`:
+    1. Edit `platform-values.yaml` and set the `ingress.uiHostname`:
 
        ```
        ingress:
-         # Hostname for Oasis UI, Prometheus, Alert manager and Grafana
+         # Hostname for Oasis UI, API, Prometheus, Alert manager and Grafana
          uiHostname: ui.oasis
-     
-         # Hostname for the Oasis API
-         apiHostname: api.oasis
        ```
     2. Edit `monitoring-values.yaml` ingress values for Prometheus, Alert manager and Grafana:
 

@@ -114,7 +114,11 @@ Variables for a celery DB client
 {{- define "h.celeryDbVars" }}
 {{- include "h.oasisDbVars" (list "CELERY" .Values.databases.celery_db.name) }}
 - name: OASIS_CELERY_DB_ENGINE
+{{- if eq .Values.databases.celery_db.type "mysql" }}
+  value: db+mysql+pymysql
+{{- else }}
   value: db+postgresql+psycopg2
+{{- end }}
 {{- end }}
 
 {{/*
@@ -196,7 +200,6 @@ Oasis server client variables
 
 {{/*
 Init container to wait for a service to become available (tcp check only) based on host:port from secret
-TODO: replace other m.initTcpAvailabilityCheck with this
 */}}
 {{- define "h.initTcpAvailabilityCheckBySecret" -}}
 {{- $root := (index . 0) -}}

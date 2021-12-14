@@ -1,0 +1,170 @@
+{
+  "time": "2021-12-03T10:42:04.849584Z",
+  "type": "queue_status.updated",
+  "status": "SUCCESS",
+  "content": [
+    {
+      "queue": {
+        "name": "OasisLMF-PiWind-1",
+        "pending_count": 8,
+        "worker_count": 1,
+        "queued_count": 2,
+        "running_count": 1,
+        "models": [
+          {
+            "id": 1,
+            "supplier_id": "OasisLMF",
+            "model_id": "PiWind",
+            "version_id": "1",
+            "created": "2021-12-01T13:32:02.843779Z",
+            "modified": "2021-12-01T16:11:51.680172Z",
+            "data_files": [],
+            "resource_file": "/v1/models/1/resource_file/",
+            "settings": "/v1/models/1/settings/",
+            "versions": "/v1/models/1/versions/",
+            "scaling_configuration": "/v1/models/1/scaling_configuration/",
+            "chunking_configuration": "/v1/models/1/chunking_configuration/",
+            "groups": []
+          }
+        ]
+      },
+      "analyses": [
+        {
+          "analysis": {
+            "name": "A2 - 1",
+            "id": 2,
+            "portfolio": 1,
+            "model": 1,
+            "status": "INPUTS_GENERATION_STARTED",
+            "priority": 2,
+            "analysis_chunks": null,
+            "lookup_chunks": 2,
+            "sub_task_count": 7,
+            "queue_names": [
+              "OasisLMF-PiWind-1",
+              "celery"
+            ],
+            "status_count": {
+              "TOTAL_IN_QUEUE": 6,
+              "TOTAL": 7,
+              "PENDING": 4,
+              "QUEUED": 1,
+              "STARTED": 1,
+              "COMPLETED": 1,
+              "CANCELLED": 0,
+              "ERROR": 0
+            }
+          },
+          "updated_tasks": []
+        },
+        {
+          "analysis": {
+            "name": "A4 - 1",
+            "id": 4,
+            "portfolio": 1,
+            "model": 1,
+            "status": "INPUTS_GENERATION_STARTED",
+            "priority": 4,
+            "analysis_chunks": null,
+            "lookup_chunks": 2,
+            "sub_task_count": 7,
+            "queue_names": [
+              "OasisLMF-PiWind-1",
+              "celery"
+            ],
+            "status_count": {
+              "TOTAL_IN_QUEUE": 7,
+              "TOTAL": 7,
+              "PENDING": 6,
+              "QUEUED": 1,
+              "STARTED": 0,
+              "COMPLETED": 0,
+              "CANCELLED": 0,
+              "ERROR": 0
+            }
+          },
+          "updated_tasks": []
+        }
+      ]
+    },
+    {
+      "queue": {
+        "name": "celery",
+        "pending_count": 2,
+        "worker_count": 1,
+        "queued_count": 0,
+        "running_count": 0,
+        "models": []
+      },
+      "analyses": [
+        {
+          "analysis": {
+            "name": "A2 - 1",
+            "id": 2,
+            "portfolio": 1,
+            "model": 1,
+            "status": "INPUTS_GENERATION_STARTED",
+            "priority": 2,
+            "analysis_chunks": null,
+            "lookup_chunks": 2,
+            "sub_task_count": 7,
+            "queue_names": [
+              "OasisLMF-PiWind-1",
+              "celery"
+            ],
+            "status_count": {
+              "TOTAL_IN_QUEUE": 6,
+              "TOTAL": 7,
+              "PENDING": 4,
+              "QUEUED": 1,
+              "STARTED": 1,
+              "COMPLETED": 1,
+              "CANCELLED": 0,
+              "ERROR": 0
+            }
+          },
+          "updated_tasks": []
+        },
+        {
+          "analysis": {
+            "name": "A4 - 1",
+            "id": 4,
+            "portfolio": 1,
+            "model": 1,
+            "status": "INPUTS_GENERATION_STARTED",
+            "priority": 4,
+            "analysis_chunks": null,
+            "lookup_chunks": 2,
+            "sub_task_count": 7,
+            "queue_names": [
+              "OasisLMF-PiWind-1",
+              "celery"
+            ],
+            "status_count": {
+              "TOTAL_IN_QUEUE": 7,
+              "TOTAL": 7,
+              "PENDING": 6,
+              "QUEUED": 1,
+              "STARTED": 0,
+              "COMPLETED": 0,
+              "CANCELLED": 0,
+              "ERROR": 0
+            }
+          },
+          "updated_tasks": []
+        }
+      ]
+    },
+    {
+      "queue": {
+        "name": "task-controller",
+        "pending_count": 0,
+        "worker_count": 1,
+        "queued_count": 0,
+        "running_count": 0,
+        "models": []
+      },
+      "analyses": []
+    }
+  ]
+}
