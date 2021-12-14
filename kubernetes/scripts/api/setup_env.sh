@@ -29,8 +29,8 @@ cat << EOF | curlf -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/chunking_conf
   "strategy": "FIXED_CHUNKS",
   "dynamic_locations_per_lookup": 10000,
   "dynamic_events_per_analysis": 1,
-  "fixed_analysis_chunks": 2,
-  "fixed_lookup_chunks": 2
+  "fixed_analysis_chunks": 10,
+  "fixed_lookup_chunks": 10
 }
 EOF
 

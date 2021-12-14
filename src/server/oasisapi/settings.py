@@ -221,6 +221,9 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+# Place the app in a sub path (swagger still available in /)
+FORCE_SCRIPT_NAME = '/api'
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 MEDIA_URL = '/api/media/'
@@ -305,7 +308,7 @@ if IN_TEST:
 CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
 CHANNEL_LAYER_PASS = iniconf.settings.get('server', 'channel_layer_pass', fallback='')
 CHANNEL_LAYER_USER = iniconf.settings.get('server', 'channel_layer_user', fallback='')
-CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_user', fallback='6379')
+CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_port', fallback='6379')
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',

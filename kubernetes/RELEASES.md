@@ -146,3 +146,82 @@ Released on 2021-11-26
 
 * Job prioritization (1.5):
 * Finished health checks and mysql support (not fully implemented in 1.1 / sprint 1)
+
+## Sprint 6
+
+Released on 2021-12-10
+
+**Features included:**
+
+* Platform chart improvements:
+  * RabbitMQ ack timeout disabled (introduced in 3.8.15)
+* Platform improvements:
+  * Enabled retry for worker tasks - A failed task will be run again 2 times.
+
+
+**Performed tests**
+
+* Verified that the platform recovers from:
+    * Randomly failed worker tasks - Each task will be retried 2 times before it is marked as failed.
+
+      ```
+      Test #1:
+      1. Make a specific task fail all the time by throsing an exception.
+      2. Start an analysis.
+      3. Verify the task is retried 2 times before failing.
+      
+      Test #2:
+      1. Make random worker task fail randomly by using a function randmly
+         throw an exception up on call (for example every 3th call).
+      2. Start an analysis.
+      3. Verify the task that fail is retried, but the run should finish successfully
+         unless any of the tasks fails 3 times.
+      ```
+
+    * Lost database connection - celery will reconnect and retry the task.
+
+      ```
+      Test #1:
+      1. By using kubectl port-forward open a connection to celery.
+      2. Start one ore more workers locally and make it connect to celery over a
+         port-forward to the cluster.
+      3. Start an analysis and close the port-forward while the worker executes a task.
+      4. Verify the worker starts to try to reconnect.
+      5. Bring the port-forward up.
+      6. Verify the worker gets reconnected and finishes.
+      ```
+
+    * Disk error - Each task will be retried 2 times before it is marked as failed.
+
+      ```
+      Test #1:
+      1. Run a worker locally and set a breakpoint within a task.
+      2. Start an analysis.
+      3. Make sure the breakpoint is reached and pause the execution.
+      4. Delete or break files or directories necessary to complete the task.
+      5. Continue the execution, make sure it fails and verify that the task is
+         run again.
+      ```
+      
+    * Lost worker - task is picked up by other worker.
+
+      ```
+      # Test #1:
+      1. Start a worker.
+      2. Start an analysis.
+      3. Stop worker while executing task.
+      4. Start the worker again.
+      5. Verify it continues the execution of the task.
+      
+      # Test #2:
+      1. Start 2 worker.
+      2. Start an analysis.
+      3. Stop one worker while executing task.
+      5. Verify all tasks are executed by the second worker including the one currently
+         processed by the other worker that was shut down.
+      ```
+
+
+**This covers the following in the functional summary:**
+
+* Improved worker resilience to disconnection/failure (1.6)

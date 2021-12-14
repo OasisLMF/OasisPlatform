@@ -3,7 +3,7 @@ set -o pipefail
 
 
 API_URL="https://ui.oasis.local/api"
-#API_URL="http://localhost:8001/api"
+#API_URL="http://localhost:8002"
 SCRIPT_DIR=$(dirname $0)
 CURL="curl -sk"
 TMP_PATH="/tmp/"
@@ -12,22 +12,17 @@ KEYCLOAK_TOKEN_URL="https://ui.oasis.local/auth/realms/oasis/protocol/openid-con
 CLIENT_ID=oasis-server
 CLIENT_SECRET=e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
 
+
 if [ -f "/mnt/c/WINDOWS/system32/curl.exe" ]; then
   CURL="${CURL//curl/curl.exe}"
   TMP_PATH="/mnt/c/tmp/"
 fi
 
-if [ -z "$OASIS_USERNAME" ] || [ -z "$OASIS_PASSWORD" ]; then
-  echo "Set username and password as environment variables:"
-  echo ""
-  echo "export OASIS_USERNAME=admin"
-  echo "export OASIS_PASSWORD=password"
-  exit
-fi
+OASIS_USERNAME="${OASIS_USERNAME:-admin}"
+OASIS_PASSWORD="${OASIS_PASSWORD:-password}"
+OASIS_AUTH_API="${OASIS_AUTH_API:-0}"
 
-USE_OASIS_API=1
-
-if [ "$USE_OASIS_API" == "1" ]; then
+if [ "$OASIS_AUTH_API" == "1" ]; then
   R="$($CURL -X POST "${API_URL}/access_token/" -H "accept: application/json" -H "Content-Type: application/json" \
          -d "{ \"username\": \"${OASIS_USERNAME}\", \"password\": \"${OASIS_PASSWORD}\"}")"
   ACCESS_TOKEN=$(echo "$R" | jq -r '.access_token // empty')

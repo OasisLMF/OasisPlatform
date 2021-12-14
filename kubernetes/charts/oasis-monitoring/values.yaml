@@ -67,3 +67,4 @@ kube-prometheus-stack:
       hosts:
         - ui.oasis.local
       path: /grafana/
+
