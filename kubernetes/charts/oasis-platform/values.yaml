@@ -33,6 +33,13 @@ images:
     image: rabbitmq
     version: 3.8-management-alpine
 
+
+# Chart default values. Override by passing --set or -f to helm.
+modelImages:
+  init:
+    image: alpine
+    version: 3.13.5
+
 # Hostnames for Oasis UI, API, Prometheus, Alert manager and Grafana. If you change it, make sure you also
 # update hostnames in oasis-monitoring values.yaml file. Read more about how in the README.md and how to
 # reach your ingress.
