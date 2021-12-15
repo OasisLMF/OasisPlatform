@@ -33,8 +33,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
     DEBUG = True
     DEBUG_TOOLBAR = True
+    URL_SUB_PATH = False
 # SECURITY WARNING: don't run with debug turned on in production!
 else:
+    URL_SUB_PATH = iniconf.settings.getboolean('server', 'URL_SUB_PATH', fallback=True)
     DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
     DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
 
@@ -237,13 +239,6 @@ STATIC_URL = '/api/static/'
 STATIC_DEBUG_URL = '/static/'  #when running 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Try it
-#MEDIA_DEBUG_URL = '/media/'
-
-#STATICFILES_DIRS = (
-#    '/var/www/oasis/src/server/static',
-#)
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
 # Authenticate with S3
