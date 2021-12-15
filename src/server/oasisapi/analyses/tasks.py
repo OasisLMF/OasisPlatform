@@ -322,7 +322,6 @@ def start_input_generation_task(analysis_pk, initiator_pk):
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_inputs(analysis, initiator)
-    #analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED
     analysis.save()
 
 
@@ -332,7 +331,6 @@ def start_loss_generation_task(analysis_pk, initiator_pk):
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_losses(analysis, initiator)
-    #analysis.status = Analysis.status_choices.RUN_STARTED
     analysis.save()
 
 
