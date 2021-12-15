@@ -288,7 +288,6 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
                 model.ver_ktools = m_version['ktools']
                 model.ver_oasislmf = m_version['oasislmf']
                 model.ver_platform = m_version['platform']
-                model.num_analysis_chunks = num_analysis_chunks
                 model.save()
                 logger.info('Updated model versions')
             except Exception as e:
