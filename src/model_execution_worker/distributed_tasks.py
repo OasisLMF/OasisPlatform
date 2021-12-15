@@ -233,6 +233,19 @@ def register_worker(sender, **k):
         os.rmdir(tmpdir)
 
 
+# Send notification back to the API Once task is read from Queue
+def notify_api_status(analysis_pk, task_status):
+    logging.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status',
+        args=(analysis_pk, task_status),
+        queue='celery'
+    ).delay()
+
+
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
         super(InvalidInputsException, self).__init__('Inputs location not a tarfile: {}'.format(input_archive))
@@ -415,6 +428,7 @@ def prepare_input_generation_params(
     slug=None,
     **kwargs,
 ):
+    notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
@@ -737,6 +751,7 @@ def prepare_losses_generation_params(
     num_chunks=None,
     **kwargs,
 ):
+    notify_api_status(analysis_id, 'RUN_STARTED')
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)

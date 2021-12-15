@@ -322,8 +322,7 @@ def start_input_generation_task(analysis_pk, initiator_pk):
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_inputs(analysis, initiator)
-
-    analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED
+    #analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED
     analysis.save()
 
 
@@ -332,10 +331,8 @@ def start_loss_generation_task(analysis_pk, initiator_pk):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
-
     get_analysis_task_controller().generate_losses(analysis, initiator)
-
-    analysis.status = Analysis.status_choices.RUN_STARTED
+    #analysis.status = Analysis.status_choices.RUN_STARTED
     analysis.save()
 
 
@@ -571,24 +568,25 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
         queue_time=datetime.fromtimestamp(dt, tz=timezone.utc),
     )
 
+@celery_app.task(name='set_task_status')
+def set_task_status(analysis_pk, task_status):
+    try:
+        from .models import Analysis
+        analysis = Analysis.objects.get(pk=analysis_pk)
+        analysis.status = task_status
+        analysis.task_started = timezone.now()
+        analysis.save(update_fields=["status", "task_started"])
+        logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
+    except Exception as e:
+        logger.error('Task Status Update: Failed')
+        logger.exception(str(e))
+
 
 ### Orig worker monitor functions #############################################
 #
 # Update the older/ funcs with arch 2020 versions?
 # Possible have handlers for both and add two versions of the "run" endpoints ?
 
-#@celery_app.task(name='set_task_status')
-#def set_task_status(analysis_pk, task_status):
-#    try:
-#        from .models import Analysis
-#        analysis = Analysis.objects.get(pk=analysis_pk)
-#        analysis.status = task_status
-#        analysis.task_started = timezone.now()
-#        analysis.save(update_fields=["status", "task_started"])
-#        logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
-#    except Exception as e:
-#        logger.error('Task Status Update: Failed')
-#        logger.exception(str(e))
 #
 #
 #@celery_app.task(name='record_run_analysis_result', base=LogTaskError)
