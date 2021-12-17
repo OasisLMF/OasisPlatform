@@ -214,8 +214,23 @@ def register_worker(sender, **k):
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
 
-    # Log All Env variables
-    logging.info('OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+    # Log Env variables
+    if settings.getboolean('worker', 'DEBUG', fallback=False):
+        # show all env variables
+        logging.info('ALL_OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+    else: 
+        # Limit Env variables to run only variables 
+        logging.info('OASIS_ENV_VARS:' + json.dumps({
+            k: v for (k, v) in os.environ.items() if k.startswith('OASIS_') and not any(
+                substring in k for substring in [
+                    'SERVER', 
+                    'CELERY', 
+                    'RABBIT', 
+                    'USER', 
+                    'PASS',
+                    'BROKER',
+                ])}, indent=4))
+
 
     # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
