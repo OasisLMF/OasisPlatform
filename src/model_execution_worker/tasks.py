@@ -211,6 +211,7 @@ def register_worker(sender, **k):
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
     logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
+    logging.info("DEBUG: {}".format(settings.get('worker', 'DEBUG', fallback='False')))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
 
@@ -226,9 +227,11 @@ def register_worker(sender, **k):
                     'SERVER', 
                     'CELERY', 
                     'RABBIT', 
+                    'BROKER',
                     'USER', 
                     'PASS',
-                    'BROKER',
+                    'PORT',
+                    'HOST',
                 ])}, indent=4))
 
 
