@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.15.22-lts`_
+ ---------
+* [#576](https://github.com/OasisLMF/OasisPlatform/pull/577) - Remove configuration information from worker logs
+* [#574](https://github.com/OasisLMF/OasisPlatform/pull/574) - Feature/950 events in analysis settings
+.. _`1.15.22-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.21-lts...1.15.22-lts
+
 .. _`1.15.21-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.20-lts...1.15.21-lts
 
 .. _`1.15.20-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.19-lts...1.15.20-lts
