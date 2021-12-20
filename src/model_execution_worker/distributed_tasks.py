@@ -41,6 +41,7 @@ app.config_from_object(celery_conf)
 
 logging.info("Started worker")
 filestore = StorageSelector(settings)
+debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
 
 class TemporaryDir(object):
@@ -205,28 +206,47 @@ def register_worker(sender, **k):
     logging.info("STORAGE_MANAGER: {}".format(type(filestore)))
     logging.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
 
-    if selected_storage in ['local-fs', 'shared-fs']:
-        logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
+    if debug_worker:
+        logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
+        if selected_storage in ['local-fs', 'shared-fs']:
+            logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
-    elif selected_storage in ['aws-s3', 'aws', 's3']:
-        logging.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
-        logging.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
-        logging.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
-        logging.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
-        logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
-        logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
-        logging.info('AWS_LOG_LEVEL: {}'.format(settings.get('worker', 'AWS_LOG_LEVEL', fallback='None')))
+        elif selected_storage in ['aws-s3', 'aws', 's3']:
+            logging.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
+            logging.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
+            logging.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
+            logging.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
+            logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
+            logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
+            logging.info('AWS_LOG_LEVEL: {}'.format(settings.get('worker', 'AWS_LOG_LEVEL', fallback='None')))
 
     # Optional ENV
-    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
     logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
 
-    # Log All Env variables
-    logging.info('OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+    # Log Env variables
+    if debug_worker:
+        # show all env variables and  override root log level
+        logging.info('ALL_OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.sta
+    else:
+        # Limit Env variables to run only variables
+        logging.info('OASIS_ENV_VARS:' + json.dumps({
+            k: v for (k, v) in os.environ.items() if k.startswith('OASIS_') and not any(
+                substring in k for substring in [
+                    'SERVER',
+                    'CELERY',
+                    'RABBIT',
+                    'BROKER',
+                    'USER',
+                    'PASS',
+                    'PORT',
+                    'HOST',
+                    'ROOT',
+                    'DIR',
+                ])}, indent=4))
 
     # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
