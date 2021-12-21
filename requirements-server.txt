@@ -80,6 +80,7 @@ django==3.2.10
     #   channels
     #   django-filter
     #   django-model-utils
+    #   django-request-logging
     #   django-storages
     #   djangorestframework
     #   djangorestframework-simplejwt
@@ -89,6 +90,8 @@ django-cleanup==5.2.0
 django-filter==21.1
     # via -r requirements-server.in
 django-model-utils==4.2.0
+    # via -r requirements-server.in
+django-request-logging==0.7.3
     # via -r requirements-server.in
 django-storages==1.12.3
     # via -r requirements-server.in
