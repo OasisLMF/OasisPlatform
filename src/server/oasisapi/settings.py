@@ -29,16 +29,23 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
-# Always set Debug mode on when in Dev server environment 
 if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
+    # Always set Debug mode when in dev environment
+    MEDIA_ROOT = './shared-fs/'
     DEBUG = True
     DEBUG_TOOLBAR = True
     URL_SUB_PATH = False
-# SECURITY WARNING: don't run with debug turned on in production!
 else:
-    URL_SUB_PATH = iniconf.settings.getboolean('server', 'URL_SUB_PATH', fallback=True)
+    # SECURITY WARNING: don't run with debug turned on in production!
+    MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
     DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
     DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
+    URL_SUB_PATH = iniconf.settings.getboolean('server', 'URL_SUB_PATH', fallback=True)
+
+
+# Django 3.2 - the default pri-key field changed to 'BigAutoField.',
+# https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = iniconf.settings.get('server', 'secret_key', fallback='' if not DEBUG else 'supersecret')
@@ -50,6 +57,7 @@ else:
     ALLOWED_HOSTS = []
 
 # Application definition
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -87,6 +95,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
+
+if DEBUG:
+    MIDDLEWARE.append('request_logging.middleware.LoggingMiddleware')
 
 if DEBUG_TOOLBAR:
     INSTALLED_APPS.append('debug_toolbar')
@@ -236,7 +247,7 @@ FORCE_SCRIPT_NAME = '/api'
 MEDIA_URL = '/api/media/'
 MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 STATIC_URL = '/api/static/'
-STATIC_DEBUG_URL = '/static/'  #when running 
+STATIC_DEBUG_URL = '/static/'  #when running
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -285,13 +296,27 @@ elif STORAGE_TYPE in AWS_S3:
 else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
 
+# storage selector for exposure files
+PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'root': {
         'level': 'DEBUG',
         'handlers': ['console'],
+    },
+    'loggers': {
+        'drf_yasg': {
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
+        },
+        'numexpr': {
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
+        },
     },
     'formatters': {
         'verbose': {
@@ -306,6 +331,12 @@ LOGGING = {
         }
     },
 }
+if DEBUG:
+    LOGGING['loggers']['django.request'] = {
+        'handlers': ['console'],
+        'level': 'DEBUG',  # change debug level as appropiate
+        'propagate': False,
+    }
 
 
 if IN_TEST:
