@@ -35,6 +35,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
 DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
 
+# Django 3.2 - the default pri-key field changed to 'BigAutoField.',
+# https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = iniconf.settings.get('server', 'secret_key', fallback='' if not DEBUG else 'supersecret')
 
@@ -249,6 +253,11 @@ LOGGING = {
     },
     'loggers': {
         'drf_yasg': {
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
+        },
+        'numexpr': {
                 'handlers': ['console'],
                 'level': 'WARNING',
                 'propagate': False,
