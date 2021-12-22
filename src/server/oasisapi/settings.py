@@ -46,6 +46,7 @@ else:
 
 # Application definition
 
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -79,9 +80,11 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'request_logging.middleware.LoggingMiddleware',
 ]
 
+
+if DEBUG:
+    MIDDLEWARE.append('request_logging.middleware.LoggingMiddleware')
 
 if DEBUG_TOOLBAR:
     INSTALLED_APPS.append('debug_toolbar')
@@ -201,7 +204,7 @@ elif STORAGE_TYPE in AWS_S3:
     # AWS S3 Object Store via `Django-Storages`
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     set_aws_log_level(AWS_LOG_EVEL)
-    
+
 else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
 
@@ -237,7 +240,6 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSION': 'v1',
 }
 
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -246,10 +248,10 @@ LOGGING = {
         'handlers': ['console'],
     },
     'loggers': {
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'DEBUG',  # change debug level as appropiate
-            'propagate': False,
+        'drf_yasg': {
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
         },
     },
     'formatters': {
@@ -265,6 +267,12 @@ LOGGING = {
         }
     },
 }
+if DEBUG:
+    LOGGING['loggers']['django.request'] = {
+        'handlers': ['console'],
+        'level': 'DEBUG',  # change debug level as appropiate
+        'propagate': False,
+    }
 
 
 if IN_TEST:
