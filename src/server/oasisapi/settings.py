@@ -31,9 +31,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
-DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
+if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
+    # Always set Debug mode when in dev environment
+    MEDIA_ROOT = './shared-fs/'
+    DEBUG = True
+    DEBUG_TOOLBAR = True
+else:
+    # SECURITY WARNING: don't run with debug turned on in production!
+    MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
+    DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
+    DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
+
 
 # Django 3.2 - the default pri-key field changed to 'BigAutoField.',
 # https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
@@ -161,7 +169,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 MEDIA_URL = '/media/'
-MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
