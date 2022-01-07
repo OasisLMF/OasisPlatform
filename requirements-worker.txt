@@ -107,11 +107,11 @@ msgpack==1.0.3
     # via oasislmf
 munch==2.5.0
     # via fiona
-numba==0.54.1
+numba==0.54.2
     # via oasislmf
 numexpr==2.8.0
     # via oasislmf
-numpy==1.21.4
+numpy==1.20.3
     # via
     #   fastparquet
     #   numba
