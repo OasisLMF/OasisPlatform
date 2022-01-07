@@ -1,6 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`1.24.0`_
+ ---------
+* [#576](https://github.com/OasisLMF/OasisPlatform/pull/577) - Remove configuration information from worker logs
+* [#578](https://github.com/OasisLMF/OasisPlatform/pull/578) - Fix CVE-2021-44420 for Django
+* [#580](https://github.com/OasisLMF/OasisPlatform/pull/581) - Add a per-request logging when server is in debug mode
+* [#570](https://github.com/OasisLMF/OasisPlatform/pull/569) - support parquet for OED
+* [#543](https://github.com/OasisLMF/OasisPlatform/pull/571) - Switch The Oasis LTS version
+* [#574](https://github.com/OasisLMF/OasisPlatform/pull/574) - Feature/950 events in analysis settings
+.. _`1.24.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.0...1.24.0
+
 `1.23.0`_
  ---------
 * [#568](https://github.com/OasisLMF/OasisPlatform/pull/568) - Update/requirements
