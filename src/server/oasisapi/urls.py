@@ -97,6 +97,8 @@ analyses_settings = AnalysisSettingsView.as_view({
     'delete': 'analysis_settings'
 })
 
+
+
 urlpatterns = [
     url(r'^(?P<version>[^/]+)/models/(?P<pk>\d+)/settings/', model_settings, name='model-settings'),
     url(r'^(?P<version>[^/]+)/analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
@@ -111,8 +113,12 @@ urlpatterns = [
     url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if settings.URL_SUB_PATH:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+else:
+    urlpatterns += static(settings.STATIC_DEBUG_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG_TOOLBAR:
     urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))

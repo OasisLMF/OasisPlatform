@@ -29,9 +29,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
+# Always set Debug mode on when in Dev server environment 
+if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
+    DEBUG = True
+    DEBUG_TOOLBAR = True
+    URL_SUB_PATH = False
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
-DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
+else:
+    URL_SUB_PATH = iniconf.settings.getboolean('server', 'URL_SUB_PATH', fallback=True)
+    DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
+    DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = iniconf.settings.get('server', 'secret_key', fallback='' if not DEBUG else 'supersecret')
@@ -229,9 +236,9 @@ FORCE_SCRIPT_NAME = '/api'
 MEDIA_URL = '/api/media/'
 MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 STATIC_URL = '/api/static/'
+STATIC_DEBUG_URL = '/static/'  #when running 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
 # Authenticate with S3

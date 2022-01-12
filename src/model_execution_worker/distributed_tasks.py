@@ -172,7 +172,6 @@ def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
-    num_analysis_chunks = os.environ.get('OASIS_MODEL_NUM_ANALYSIS_CHUNKS')
     m_settings = get_model_settings()
     m_version = get_worker_versions()
     m_conf = get_json(get_oasislmf_config_path(m_id))
@@ -194,7 +193,6 @@ def register_worker(sender, **k):
         signature(
             'run_register_worker',
             args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
-            kwargs={'num_analysis_chunks': num_analysis_chunks},
         ).delay()
 
     # Required ENV
@@ -233,6 +231,19 @@ def register_worker(sender, **k):
     # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
         os.rmdir(tmpdir)
+
+
+# Send notification back to the API Once task is read from Queue
+def notify_api_status(analysis_pk, task_status):
+    logging.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status',
+        args=(analysis_pk, task_status),
+        queue='celery'
+    ).delay()
 
 
 class InvalidInputsException(OasisException):
@@ -417,6 +428,7 @@ def prepare_input_generation_params(
     slug=None,
     **kwargs,
 ):
+    notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
@@ -739,6 +751,7 @@ def prepare_losses_generation_params(
     num_chunks=None,
     **kwargs,
 ):
+    notify_api_status(analysis_id, 'RUN_STARTED')
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
