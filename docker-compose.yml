@@ -24,7 +24,7 @@ x-volumes: &shared-volumes
 services:
   server:
    restart: always
-   image: coreoasis/api_server:latest
+   image: coreoasis/api_server:dev
    build:
      context: .
      dockerfile: Dockerfile.api_server
@@ -43,7 +43,7 @@ services:
    volumes: *shared-volumes
   worker-monitor:
    restart: always
-   image: coreoasis/api_server:latest
+   image: coreoasis/api_server:dev
    command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO]
    links:
      - server-db
@@ -54,7 +54,7 @@ services:
    volumes: *shared-volumes
   task-controller:
    restart: always
-   image: coreoasis/api_server:latest
+   image: coreoasis/api_server:dev
    command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO, -Q, task-controller]
    links:
      - server-db
@@ -65,7 +65,7 @@ services:
    volumes: *shared-volumes
   celery-beat:
    restart: always
-   image: coreoasis/api_server:latest
+   image: coreoasis/api_server:dev
    command: [celery, -A, src.server.oasisapi.celery_app, beat, --loglevel=INFO]
    links:
      - server-db
@@ -76,7 +76,7 @@ services:
    volumes: *shared-volumes
   worker:
     restart: always
-    image: coreoasis/model_worker:latest
+    image: coreoasis/model_worker:dev
     build:
       context: .
       dockerfile: Dockerfile.model_worker
