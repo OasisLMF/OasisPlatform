@@ -15,15 +15,15 @@
             "title": "Analysis Tag",
             "description": "Labels the analysis with an identifier."
         },
-        "module_supplier_id": {
+        "model_supplier_id": {
             "type": "string",
-            "title": "Module supplier ID",
+            "title": "Model supplier ID",
             "description": "Identifier for the model vendor/module supplier."
         },
-        "model_version_id": {
+        "model_name_id": {
             "type": "string",
-            "title": "Model version ID",
-            "description": "Identifier for the model and version."
+            "title": "Model name ID",
+            "description": "Identifier for the model."
         },
         "number_of_samples": {
             "type": "integer",
@@ -48,7 +48,17 @@
                 "type": "integer",
                 "minimum": 1
             }
-        },    
+        },
+        "event_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "integer",
+                "minimum": 1
+            },
+            "title": "User set event ids",
+            "description": "List of event ids as integers '[1, 5, 123 .. etc]'"
+        },
         "model_settings": {
             "type": "object",
             "title": "Model settings",
@@ -771,8 +781,8 @@
         }
     },
     "required": [
-        "module_supplier_id",
-        "model_version_id",
+        "model_supplier_id",
+        "model_name_id",
         "number_of_samples",
         "model_settings",
         "gul_output",
