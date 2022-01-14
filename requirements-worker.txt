@@ -7,7 +7,7 @@
 
 #-e git+git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2019#egg=oasislmf[extra]
 
-oasislmf[extra]==1.19.0
+oasislmf[extra]==1.23.1
     # via -r requirements-worker.in
 amqp==5.0.6
     # via kombu
