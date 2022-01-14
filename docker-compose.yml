@@ -141,7 +141,7 @@ services:
       - --broker_api=http://rabbit:rabbit@rabbit:15672/api/
     links:
      - celery-db
-     - rabbit
+     - broker
   channel-layer:
     restart: always
     image: redis:5.0.7
