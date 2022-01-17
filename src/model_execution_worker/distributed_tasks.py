@@ -230,7 +230,7 @@ def register_worker(sender, **k):
     # Log Env variables
     if debug_worker:
         # show all env variables and  override root log level
-        logging.info('ALL_OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.sta
+        logging.info('ALL_OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
     else:
         # Limit Env variables to run only variables
         logging.info('OASIS_ENV_VARS:' + json.dumps({
