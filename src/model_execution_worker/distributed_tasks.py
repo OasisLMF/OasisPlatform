@@ -637,7 +637,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
-        'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
+        'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
         'output_location': filestore.put(params['target_dir']),
     }
 
