@@ -830,11 +830,12 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         'process_number': chunk_idx+1,
         'max_process_id' : num_chunks,
         #'script_fp': f'{params["script_fp"]}.{chunk_idx}',
-        'ktools_fifo_queue_dir': os.path.join(params['model_run_dir'], 'fifo/'),
+        #'ktools_fifo_queue_dir': os.path.join(params['model_run_dir'], 'fifo/'),
+        chunk_params['ktools_fifo_relative'] = True,
         'ktools_work_dir': os.path.join(params['model_run_dir'], 'work'),
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
-    Path(chunk_params['ktools_fifo_queue_dir']).mkdir(parents=True, exist_ok=True)
+    #Path(chunk_params['ktools_fifo_queue_dir']).mkdir(parents=True, exist_ok=True)
 
     #params['fifo_queue_dir'], params['bash_trace'] = OasisManager().run_loss_generation(**chunk_params)
     OasisManager().generate_losses_partial(**chunk_params)
@@ -847,7 +848,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             subdir=params['storage_subdir']
         ),
         #'chunk_script_path': chunk_params['script_fp'],
-        'ktools_fifo_queue_dir': chunk_params['ktools_fifo_queue_dir'],
+        #'ktools_fifo_queue_dir': chunk_params['ktools_fifo_queue_dir'],
         'ktools_work_dir': chunk_params['ktools_work_dir'],
         'process_number': chunk_idx + 1,
     }
