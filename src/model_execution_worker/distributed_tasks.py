@@ -855,11 +855,11 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
-    abs_fifo_dir = os.path.join(
-        res['model_run_dir'],
-        res['ktools_fifo_queue_dir'],
-    )
-    Path(abs_fifo_dir).mkdir(exist_ok=True, parents=True)
+    #abs_fifo_dir = os.path.join(
+    #    res['model_run_dir'],
+    #    res['ktools_fifo_queue_dir'],
+    #)
+    #Path(abs_fifo_dir).mkdir(exist_ok=True, parents=True)
 
     abs_work_dir = os.path.join(
         res['model_run_dir'],
