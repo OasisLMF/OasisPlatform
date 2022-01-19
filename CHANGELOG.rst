@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.2-lts`_
+ ---------
+* [#587](https://github.com/OasisLMF/OasisPlatform/pull/588) - OpenAPI specification contains duplicate objects
+* [#580](https://github.com/OasisLMF/OasisPlatform/pull/581) - Add a per-request logging when server is in debug mode
+* [#583](https://github.com/OasisLMF/OasisPlatform/pull/583) - Align model_settings schema
+.. _`1.23.2-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.1-lts...1.23.2-lts
+
 `1.23.1-lts`_
  ---------
 * [#576](https://github.com/OasisLMF/OasisPlatform/pull/577) - Remove configuration information from worker logs
