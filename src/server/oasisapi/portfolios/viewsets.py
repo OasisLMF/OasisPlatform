@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from django.conf import settings as django_settings
+from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -44,6 +45,7 @@ class PortfolioFilter(TimeStampedFilter):
         ]
 
 
+@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: PortfolioSerializer}))
 class PortfolioViewSet(viewsets.ModelViewSet):
     """
     list:
