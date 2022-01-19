@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from django.utils.translation import gettext_lazy as _
+from django.utils.decorators import method_decorator
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -81,6 +82,7 @@ class AnalysisFilter(TimeStampedFilter):
         super(AnalysisFilter, self).__init__(*args, **kwargs)
 
 
+@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisSerializer}))
 class AnalysisViewSet(viewsets.ModelViewSet):
     """
     list:
