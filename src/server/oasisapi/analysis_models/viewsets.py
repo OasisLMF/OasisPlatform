@@ -195,15 +195,7 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
         delete:
         Disassociates the moodels `resource_file` contents
         """
-        try:
-            return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
-        except Http404:
-            print("No resource_file set, returning default file as response")
-            with io.open(os.path.join(settings.STATIC_ROOT, 'model_resource.json')) as default_resource:
-                data = json.load(default_resource)
-            response = JsonResponse(data)
-            response['Content-Disposition'] = 'attachment; filename="{}"'.format('default_resource_file.json')
-            return response
+        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
 
     @resource_file.mapping.post
     def set_resource_file(self, request, pk=None, version=None):
