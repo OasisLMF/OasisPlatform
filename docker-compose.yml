@@ -134,7 +134,7 @@ services:
     ports:
       - 5555:5555
     environment:
-      - CELERY_BROKER_URL=amqp://rabbit:rabbit@rabbit:5672
+      - CELERY_BROKER_URL=amqp://rabbit:rabbit@broker:5672
     entrypoint:
       - flower
       - --port=5555
