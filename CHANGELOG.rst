@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.3-lts`_
+ ---------
+* [#592](https://github.com/OasisLMF/OasisPlatform/pull/592) - Add analysis_settings workaround for lts-1.15.x workers
+* [#589](https://github.com/OasisLMF/OasisPlatform/pull/591) - Missing array in api specification
+.. _`1.23.3-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.2-lts...1.23.3-lts
+
 `1.23.2-lts`_
  ---------
 * [#587](https://github.com/OasisLMF/OasisPlatform/pull/588) - OpenAPI specification contains duplicate objects
