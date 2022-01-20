@@ -159,8 +159,8 @@ class JsonSettingsSerializer(serializers.Serializer):
 
                     if field in exception_msgs:
                         exception_msgs[field].append(err.message)
-                    else:          
-                        exception_msgs[field] = [err.message]  
+                    else:
+                        exception_msgs[field] = [err.message]
                 raise serializers.ValidationError(exception_msgs)
 
         except (JSONSchemaValidationError, JSONSchemaError) as e:
@@ -173,13 +173,13 @@ class ModelParametersSerializer(JsonSettingsSerializer):
         swagger_schema_fields = load_json_schema(
             json_schema_file='model_settings.json',
             link_prefix='#/definitions/ModelSettings'
-        )        
+        )
 
     def __init__(self, *args, **kwargs):
         super(ModelParametersSerializer, self).__init__(*args, **kwargs)
         self.filenmame = 'model_settings.json'
         self.schema = load_json_schema('model_settings.json')
-    
+
     def validate(self, data):
         return super(ModelParametersSerializer, self).validate_json(data)
 
@@ -189,7 +189,7 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
         swagger_schema_fields = load_json_schema(
             json_schema_file='analysis_settings.json',
             link_prefix='#/definitions/AnalysisSettings'
-        )        
+        )
 
     def __init__(self, *args, **kwargs):
         super(AnalysisSettingsSerializer, self).__init__(*args, **kwargs)
@@ -199,4 +199,20 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
     def validate(self, data):
         if 'analysis_settings' in data:
             data = data['analysis_settings']
+
+        # Note: Workaround for to support workers 1.15.x and older. With the analysis settings schema change the workers with fail
+        # These are added into existing files as a 'fix' so older workers can run without patching the worker schema
+        # This *SHOULD* be removed at a later date once older models are not longer used
+        compatibility_field_map = {
+            "module_supplier_id":{
+                "updated_to": "model_supplier_id"
+            },
+            "model_version_id":{
+                "updated_to": "model_name_id"
+            },
+        }
+        for key in compatibility_field_map:
+            if key not in data:
+                data[key] = data[compatibility_field_map[key]['updated_to']]
+
         return super(AnalysisSettingsSerializer, self).validate_json(data)
