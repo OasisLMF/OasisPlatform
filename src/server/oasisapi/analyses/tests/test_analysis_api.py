@@ -799,7 +799,9 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                             "lec_output":False
                           }
                         ],
-                        "il_output": False
+                        "il_output": False,
+                        'model_version_id': '1',
+                        'module_supplier_id': 'OasisIM'
                       }
                 }
 
