@@ -85,7 +85,7 @@ class AnalysisFilter(TimeStampedFilter):
         super(AnalysisFilter, self).__init__(*args, **kwargs)
 
 
-@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisSerializer}))
+@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisSerializer(many=True)}))
 class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
