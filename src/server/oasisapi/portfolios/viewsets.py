@@ -45,7 +45,7 @@ class PortfolioFilter(TimeStampedFilter):
         ]
 
 
-@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: PortfolioSerializer}))
+@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: PortfolioSerializer(many=True)}))
 class PortfolioViewSet(viewsets.ModelViewSet):
     """
     list:
