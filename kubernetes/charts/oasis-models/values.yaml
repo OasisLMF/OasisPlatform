@@ -37,6 +37,10 @@ modelImages:
     image: alpine
     version: 3.13.5
 
+# Control which node to schedule model registration job
+registration_job:
+  nodeSelector: {}
+
 # Control how kubernetes deployed pods to nodes - this is applied to all pods managed by this chart
 #affinity:
 #  # Place all pods on nodes with label oasis/node-type set to either 'platform' or 'small'

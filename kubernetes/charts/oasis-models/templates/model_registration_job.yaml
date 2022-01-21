@@ -20,6 +20,10 @@ spec:
   ttlSecondsAfterFinished: 600 {{/* Kubernetes beta - will be supported in the future */}}
   template:
     spec:
+      {{- if .Values.registration_job.nodeSelector }}
+      nodeSelector:
+        {{- .Values.registration_job.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.oasisServer.name) | nindent 8}}
       containers:

@@ -3,6 +3,11 @@
 set -e
 
 OASIS_CLUSTER_NAMESPACE="${OASIS_CLUSTER_NAMESPACE:-default}"
+NODE_SELECTOR=""
+if [ -n "$1" ]
+then
+  NODE_SELECTOR="$(echo -e "  nodeSelector:\n    ${1}\n")"
+fi
 
 cat << EOF | kubectl apply -n "$OASIS_CLUSTER_NAMESPACE" -f -
 apiVersion: v1
@@ -46,6 +51,7 @@ spec:
     - name: shared-fs-persistent-storage
       persistentVolumeClaim:
         claimName: host-pv-claim
+${NODE_SELECTOR}
 ---
 EOF
 

@@ -8,10 +8,13 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "64k"
     nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+    {{- if eq .Values.ingress.tls.strategy "letsencrypt" }}
+    cert-manager.io/cluster-issuer: letsencrypt
+    {{- end }}
 spec:
-  {{- if .Values.ingress.tls.providedCertificate }}
+  {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") }}
   tls:
-    - secretName: {{ .Values.ingress.tls.providedCertificateSecret }}
+    - secretName: {{ .Values.ingress.tls.certificateSecret }}
       hosts:
         - {{ .Values.ingress.uiHostname }}
   {{- else }}
