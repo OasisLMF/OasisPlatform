@@ -20,6 +20,8 @@ from django.http import HttpRequest
 from django.utils import timezone
 
 from botocore.exceptions import ClientError as S3_ClientError
+from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError
+from azure.storage.blob import BlobLeaseClient
 from tempfile import TemporaryFile
 from urllib.request import urlopen
 from urllib.parse import urlparse
@@ -51,6 +53,17 @@ def is_in_bucket(object_key):
                 return False
             else:
                 raise e
+
+def is_in_container(object_key):
+    if not hasattr(default_storage, 'azure_container'):
+        return False
+    else:
+        try:
+            blob = default_storage.client.get_blob_client(object_key)
+            blob.get_blob_properties()
+            return True
+        except Blob_ResourceNotFoundError:
+            return False
 
 
 def store_file(reference, content_type, creator, required=True, filename=None):
@@ -112,6 +125,35 @@ def store_file(reference, content_type, creator, required=True, filename=None):
         stored_file.obj.wait_until_exists()
         return new_related_file
 
+    # Issue Azure object Copy
+    if is_in_container(reference):
+        fname = filename if filename else ref
+
+        source_blob = default_storage.client.get_blob_client(reference)
+        dest_blob = default_storage.client.get_blob_client(fname)
+
+        try:
+            lease = BlobLeaseClient(source_blob)
+            lease.acquire()
+            copy_operation = dest_blob.start_copy_from_url(source_blob.url)
+            if hasattr(copy_operation, 'wait'):
+                copy_operation.wait()
+            lease.break_lease()
+        except Exception as e:
+            # copy failed, break file lease and re-raise
+            lease.break_lease()
+            raise e
+
+        new_related_file = RelatedFile.objects.create(
+            file=File(dest_blob, name=fname),
+            filename=fname,
+            content_type=content_type,
+            creator=self.context['request'].user,
+            store_as_filename=True)
+        return new_related_file
+
+
+    # Copy via shared FS
     try:
         ref = str(os.path.basename(reference))
         fname = filename if filename else ref

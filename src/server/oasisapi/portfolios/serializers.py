@@ -7,6 +7,8 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.exceptions import ObjectDoesNotExist
 from botocore.exceptions import ClientError as S3_ClientError
+from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError
+from azure.storage.blob import BlobLeaseClient
 
 from ..analyses.serializers import AnalysisSerializer
 from ..files.models import file_storage_link
@@ -200,9 +202,8 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
         return file_storage_link(instance.reinsurance_scope_file, True)
 
     def is_in_storage(self, value):
-        if not hasattr(default_storage, 'bucket'):
-            return default_storage.exists(value)
-        else:
+        # Check AWS storage
+        if hasattr(default_storage, 'bucket'):
             try:
                 default_storage.bucket.Object(value).load()
                 return True
@@ -211,6 +212,17 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     return False
                 else:
                     raise e
+        # Check Azure Blob storage
+        elif hasattr(default_storage, 'azure_container'):
+            try:
+                blob = default_storage.client.get_blob_client(value)
+                blob.get_blob_properties()
+                return True
+            except Blob_ResourceNotFoundError:
+                return False
+        else:
+            return default_storage.exists(value)
+
 
     def validate(self, attrs):
         file_keys = [k for k in self.fields.keys()]
@@ -278,6 +290,37 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 stored_file = default_storage.open(new_related_file.file.name)
                 stored_file.obj.copy({"Bucket": bucket.name, "Key": validated_data[field]})
                 stored_file.obj.wait_until_exists()
+
+            elif hasattr(default_storage, 'azure_container'):
+                # https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-copy?tabs=python
+                fname = path.basename(validated_data[field])
+                new_file_name = default_storage.get_alternative_name(validated_data[field], '')
+                new_blobname = path.basename(new_file_name)
+
+                # Copies a blob asynchronously.
+                source_blob = default_storage.client.get_blob_client(validated_data[field])
+                dest_blob = default_storage.client.get_blob_client(new_file_name)
+
+                try:
+                    lease = BlobLeaseClient(source_blob)
+                    lease.acquire()
+                    copy_operation = dest_blob.start_copy_from_url(source_blob.url)
+                    if hasattr(copy_operation, 'wait'):
+                        copy_operation.wait()
+                    lease.break_lease()
+                except Exception as e:
+                    # copy failed, break file lease and re-raise
+                    lease.break_lease()
+                    raise e
+
+                stored_blob = default_storage.open(new_blobname)
+                new_related_file = RelatedFile.objects.create(
+                    file=File(stored_blob, name=new_blobname),
+                    filename=fname,
+                    content_type=content_type,
+                    creator=self.context['request'].user,
+                    store_as_filename=True,
+                )
 
             # Shared-fs
             else:

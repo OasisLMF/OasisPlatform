@@ -37,9 +37,9 @@ def file_storage_link(storage_obj, fullpath=False):
        if not storage_obj.file:
            return None
 
-       # S3 storage links
-       if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws']:
-           if settings.AWS_SHARED_BUCKET or fullpath:
+       # Remote storage links (Azure or AWS-S3)
+       if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws', 'azure']:
+           if settings.AWS_SHARED_BUCKET or settings.AZURE_SHARED_CONTAINER  or fullpath:
                # Return object key for shared S3 bucket
                return os.path.join(
                    storage_obj.file.storage.location,
@@ -51,11 +51,6 @@ def file_storage_link(storage_obj, fullpath=False):
 
        # Shared FS filename
        else:
-           #if fullpath:
-           #    return os.path.join(
-           #        storage_obj.file.storage.location,
-           #        storage_obj.file.name,
-           #    )    
            return storage_obj.file.name
 
 

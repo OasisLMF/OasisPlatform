@@ -9,8 +9,9 @@ django
 django-cleanup
 django-filter
 django-model-utils>=4.0.0
-django-storages
+django-storages[azure]
 django-request-logging
+django-debug-toolbar
 djangorestframework
 djangorestframework_simplejwt
 drf-yasg>=1.17.1
