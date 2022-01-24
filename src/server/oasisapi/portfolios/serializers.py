@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.files import File
 from django.core.files.base import ContentFile
+from django.core.exceptions import ObjectDoesNotExist
 from botocore.exceptions import ClientError as S3_ClientError
 
 from ..analyses.serializers import AnalysisSerializer
@@ -21,8 +22,8 @@ from ..schemas.serializers import (
 
 
 class PortfolioListSerializer(serializers.Serializer):
-    """ Read Only Portfolio Deserializer for efficiently returning a list of all 
-        Portfolios in DB 
+    """ Read Only Portfolio Deserializer for efficiently returning a list of all
+        Portfolios in DB
     """
 
     id = serializers.IntegerField(read_only=True)
@@ -244,7 +245,17 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
         return super(PortfolioStorageSerializer, self).validate(attrs)
 
     def get_content_type(self, stored_filename):
-        return RelatedFile.objects.get(file=stored_filename).content_type
+        try: # fetch content_type stored in Django's DB
+            return RelatedFile.objects.get(file=path.basename(stored_filename)).content_type
+        except ObjectDoesNotExist:
+            try: # Find content_type from S3 Object header
+                object_header = default_storage.connection.meta.client.head_object(
+                    Bucket=default_storage.bucket_name,
+                    Key=stored_filename)
+                return object_header['ContentType']
+            except ClientError:
+                # fallback to the default content_type
+                return default_storage.default_content_type
 
     def update(self, instance, validated_data):
         files_for_removal = list()
