@@ -253,7 +253,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 # Find content_type from S3 Object header
                 object_header = default_storage.connection.meta.client.head_object(
                     Bucket=default_storage.bucket_name,
-                    Key=path.basename(stored_filename)
+                    Key=stored_filename
                 )
                 return object_header['ContentType']
             except ClientError:
