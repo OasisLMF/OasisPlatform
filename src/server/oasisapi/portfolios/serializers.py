@@ -268,9 +268,6 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             if hasattr(default_storage, 'bucket'):
                 fname = path.basename(validated_data[field])
                 content_type = self.get_content_type(validated_data[field])
-
-
-
                 new_file = ContentFile(b'')
                 new_file.name = default_storage.get_alternative_name(fname, '')
                 new_related_file = RelatedFile.objects.create(
