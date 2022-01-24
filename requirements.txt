@@ -132,7 +132,7 @@ decorator==5.1.0
     #   ipython
 distlib==0.3.3
     # via virtualenv
-django==3.2.10
+django==3.2.11
     # via
     #   -r ./requirements-server.in
     #   channels
