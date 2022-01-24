@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#593](https://github.com/OasisLMF/OasisPlatform/pull/594) - Linking portfolio files on S3 does not work
+.. _`1.23.4-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.3-lts...1.23.4-lts
+
 `1.23.3-lts`_
  ---------
 * [#592](https://github.com/OasisLMF/OasisPlatform/pull/592) - Add analysis_settings workaround for lts-1.15.x workers
