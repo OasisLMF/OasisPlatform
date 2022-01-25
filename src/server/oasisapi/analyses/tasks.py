@@ -316,8 +316,59 @@ def _traceback_from_errback_args(*args):
     return tb
 
 
+
+def _find_celery_queue_reference(active_queues, queue_name):
+    for q in active_queues:
+        if active_queues[q][0].get('name', '') == queue_name:
+            return q
+    return None
+
+
+@celery_app.task(bind=True, name='cancel_subtasks')
+def cancel_subtasks(self, analysis_pk):
+    """ This is needed because AsyncResults(<task-id>).revoke() is not working correctly
+    when called from the server container. using`app.control.revoke( .. )` does work
+    so the analysis_id is passed to this task for cancellation.
+
+    Another approach to finding queued tasks is to inspect the celery queues
+    # Remote debug via telnet
+    #from celery.contrib import rdb
+    #rdb.set_trace()
+
+    active_queues = self.app.control.inspect().active_queues()
+    queue_ref =  _find_celery_queue_reference(active_queues, analysis.model.queue_name)
+    i = self.app.control.inspect([queue_ref])
+    logger.info(i.scheduled())
+    logger.info(i.active())
+    logger.info(i.reserved())
+    """
+
+    from .models import Analysis
+    analysis = Analysis.objects.get(pk=analysis_pk)
+    _now = timezone.now()
+
+
+    subtask_qs = analysis.sub_task_statuses.filter(
+            status__in=[
+                AnalysisTaskStatus.status_choices.PENDING,
+                AnalysisTaskStatus.status_choices.QUEUED,
+                AnalysisTaskStatus.status_choices.STARTED]
+        )
+
+    for subtask in subtask_qs:
+        task_id = subtask.task_id
+        status = subtask.status
+        logger.info(f'subtask revoked: analysis_id={analysis_pk}, task_id={task_id}, status={status}')
+        if task_id:
+            self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
+            self.update_state(task_id=task_id, state='REVOKED')
+    subtask_qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
+
+
 @celery_app.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
 def start_input_generation_task(analysis_pk, initiator_pk):
+    #from celery.contrib import rdb
+    #rdb.set_trace()
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
@@ -579,245 +630,11 @@ def set_task_status(analysis_pk, task_status):
         logger.error('Task Status Update: Failed')
         logger.exception(str(e))
 
-
-### Orig worker monitor functions #############################################
-#
-# Update the older/ funcs with arch 2020 versions?
-# Possible have handlers for both and add two versions of the "run" endpoints ?
-
-#
-#
-#@celery_app.task(name='record_run_analysis_result', base=LogTaskError)
-#def record_run_analysis_result(res, analysis_pk, initiator_pk):
-#    output_location, traceback_location, log_location, return_code = res
-#    logger.info('output_location: {}, log_location: {}, traceback_location: {}, status: {}, analysis_pk: {}, initiator_pk: {}'.format(
-#        output_location, traceback_location, log_location, return_code, analysis_pk, initiator_pk))
-#
-#    from .models import Analysis
-#    initiator = get_user_model().objects.get(pk=initiator_pk)
-#    analysis = Analysis.objects.get(pk=analysis_pk)
-#    analysis.status = Analysis.status_choices.RUN_COMPLETED if return_code == 0 else Analysis.status_choices.RUN_ERROR
-#    analysis.task_finished = timezone.now()
-#
-#    delete_prev_output(analysis, ['output_file', 'run_log_file', 'run_traceback_file'])
-#
-#    # Store results
-#    if return_code == 0:
-#        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_output.tar.gz')
-#    # Store Ktools logs
-#    if log_location:
-#        analysis.run_log_file = store_file(log_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_logs.tar.gz')
-#    # record the error file
-#    if traceback_location:
-#        analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator, filename=f'analysis_{analysis_pk}_run_traceback.txt')
-#    analysis.save()
-#
-#
-#@celery_app.task(name='record_generate_input_result', base=LogTaskError)
-#def record_generate_input_result(result, analysis_pk, initiator_pk):
-#    logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
-#        result, analysis_pk, initiator_pk))
-#
-#    from .models import Analysis
-#    (
-#        input_location,
-#        lookup_error_fp,
-#        lookup_success_fp,
-#        lookup_validation_fp,
-#        summary_levels_fp,
-#        traceback_fp,
-#        return_code,
-#    ) = result
-#
-#    analysis = Analysis.objects.get(pk=analysis_pk)
-#    initiator = get_user_model().objects.get(pk=initiator_pk)
-#
-#    # Remove previous output
-#    delete_prev_output(analysis, [
-#        'output_file',
-#        'input_file',
-#        'lookup_errors_file',
-#        'lookup_success_file',
-#        'lookup_validation_file',
-#        'summary_levels_file',
-#        'input_generation_traceback_file',
-#        'run_traceback_file',
-#        'run_log_file',
-#    ])
-#
-#    # SUCCESS
-#    if return_code == 0:
-#        analysis.status = Analysis.status_choices.READY
-#    # FAILED
-#    else:
-#        analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
-#
-#    # Add current Output
-#    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_inputs.tar.gz') if input_location else None
-#    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_pk}_gul_summary_map.csv') if lookup_success_fp else None
-#    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False, filename=f'analysis_{analysis_pk}_keys-errors.csv') if lookup_error_fp else None
-#    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False, filename=f'analysis_{analysis_pk}_exposure_summary_report.json') if lookup_validation_fp else None
-#    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False, filename=f'analysis_{analysis_pk}_exposure_summary_levels.json') if summary_levels_fp else None
-#    analysis.task_finished = timezone.now()
-#
-#    # always store traceback
-#    if traceback_fp:
-#        analysis.input_generation_traceback_file = store_file(traceback_fp, 'text/plain', initiator, filename=f'analysis_{analysis_pk}_generation_traceback.txt')
-#        logger.info(analysis.input_generation_traceback_file)
-#    analysis.save()
-#
-#@celery_app.task(name='record_run_analysis_failure')
-#def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
-#    logger.warning('"run_analysis_success" is deprecated and should only be used to process tasks already on the queue.')
-#    logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
-#        analysis_pk, initiator_pk, traceback))
-#
-#    try:
-#        from .models import Analysis
-#
-#        analysis = Analysis.objects.get(pk=analysis_pk)
-#        analysis.status = Analysis.status_choices.RUN_ERROR
-#        analysis.task_finished = timezone.now()
-#        analysis.save()
-#
-#        random_filename = '{}.txt'.format(uuid.uuid4().hex)
-#        with TemporaryFile() as tmp_file:
-#            tmp_file.write(traceback.encode('utf-8'))
-#            analysis.run_traceback_file = RelatedFile.objects.create(
-#                file=File(tmp_file, name=random_filename),
-#                filename=f'analysis_{analysis_pk}_run_traceback.txt',
-#                content_type='text/plain',
-#                creator=get_user_model().objects.get(pk=initiator_pk),
-#            )
-#
-#        # remove the current command log file
-#        if analysis.run_log_file:
-#            analysis.run_log_file.delete()
-#            analysis.run_log_file = None
-#
-#        analysis.save()
-#    except Exception as e:
-#        logger.exception(str(e))
-#
-#
-#@celery_app.task(name='record_generate_input_failure')
-#def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
-#    logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
-#        analysis_pk, initiator_pk, traceback))
-#    try:
-#        from .models import Analysis
-#
-#        analysis = Analysis.objects.get(pk=analysis_pk)
-#        analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
-#        analysis.task_finished = timezone.now()
-#        analysis.save()
-#
-#        random_filename = '{}.txt'.format(uuid.uuid4().hex)
-#        with TemporaryFile() as tmp_file:
-#            tmp_file.write(traceback.encode('utf-8'))
-#            analysis.input_generation_traceback_file = RelatedFile.objects.create(
-#                file=File(tmp_file, name=random_filename),
-#                filename=f'analysis_{analysis_pk}_generation_traceback.txt',
-#                content_type='text/plain',
-#                creator=get_user_model().objects.get(pk=initiator_pk),
-#            )
-#
-#        analysis.save()
-#    except Exception as e:
-#        logger.exception(str(e))
-#
-### --- Deprecated tasks ---------------------------------------------------- ##
-#
-#@celery_app.task(name='run_analysis_success')
-#def run_analysis_success(output_location, analysis_pk, initiator_pk):
-#    logger.warning('"run_analysis_success" is deprecated and should only be used to process tasks already on the queue.')
-#
-#    logger.info('output_location: {}, analysis_pk: {}, initiator_pk: {}'.format(
-#        output_location, analysis_pk, initiator_pk))
-#
-#    try:
-#        from .models import Analysis
-#        analysis = Analysis.objects.get(pk=analysis_pk)
-#        analysis.status = Analysis.status_choices.RUN_COMPLETED
-#        analysis.task_finished = timezone.now()
-#
-#        analysis.output_file = RelatedFile.objects.create(
-#            file=str(output_location),
-#            filename=str(output_location),
-#            content_type='application/gzip',
-#            creator=get_user_model().objects.get(pk=initiator_pk),
-#        )
-#
-#        # Delete previous error trace
-#        if analysis.run_traceback_file:
-#            traceback = analysis.run_traceback_file
-#            analysis.run_traceback_file = None
-#            traceback.delete()
-#
-#        analysis.save()
-#    except Exception as e:
-#        logger.exception(str(e))
-#
-#
-#
-#@celery_app.task(name='generate_input_success')
-#def generate_input_success(result, analysis_pk, initiator_pk):
-#    logger.warning('"generate_input_success" is deprecated and should only be used to process tasks already on the queue.')
-#
-#    logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
-#        result, analysis_pk, initiator_pk))
-#    try:
-#        from .models import Analysis
-#        (
-#            input_location,
-#            lookup_error_fp,
-#            lookup_success_fp,
-#            lookup_validation_fp,
-#            summary_levels_fp,
-#        ) = result
-#
-#        analysis = Analysis.objects.get(pk=analysis_pk)
-#        analysis.status = Analysis.status_choices.READY
-#        analysis.task_finished = timezone.now()
-#
-#        analysis.input_file = RelatedFile.objects.create(
-#            file=str(input_location),
-#            filename=str(input_location),
-#            content_type='application/gzip',
-#            creator=get_user_model().objects.get(pk=initiator_pk),
-#        )
-#        analysis.lookup_errors_file = RelatedFile.objects.create(
-#            file=str(lookup_error_fp),
-#            filename=str('keys-errors.csv'),
-#            content_type='text/csv',
-#            creator=get_user_model().objects.get(pk=initiator_pk),
-#        )
-#        analysis.lookup_success_file = RelatedFile.objects.create(
-#            file=str(lookup_success_fp),
-#            filename=str('gul_summary_map.csv'),
-#            content_type='text/csv',
-#            creator=get_user_model().objects.get(pk=initiator_pk),
-#        )
-#        analysis.lookup_validation_file = RelatedFile.objects.create(
-#            file=str(lookup_validation_fp),
-#            filename=str('exposure_summary_report.json'),
-#            content_type='application/json',
-#            creator=get_user_model().objects.get(pk=initiator_pk),
-#        )
-#
-#        analysis.summary_levels_file = RelatedFile.objects.create(
-#            file=str(summary_levels_fp),
-#            filename=str('exposure_summary_levels.json'),
-#            content_type='application/json',
-#            creator=get_user_model().objects.get(pk=initiator_pk),
-#        )
-#
-#        # Delete previous error trace
-#        if analysis.input_generation_traceback_file:
-#            traceback = analysis.input_generation_traceback_file
-#            analysis.input_generation_traceback_file = None
-#            traceback.delete()
-#
-#        analysis.save()
-#    except Exception as e:
-#        logger.exception(str(e))
+@celery_app.task(name='update_task_id')
+def update_task_id(task_update_list):
+    for task in task_update_list:
+        task_id, analysis_id, slug = task
+        AnalysisTaskStatus.objects.filter(
+            analysis_id=analysis_id,
+            slug=slug,
+        ).update(task_id=task_id)

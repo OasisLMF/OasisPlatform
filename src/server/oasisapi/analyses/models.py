@@ -27,6 +27,7 @@ from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
 
+
 # from .tasks import record_generate_input_result, record_run_analysis_result
 ###############
 
@@ -322,6 +323,16 @@ class Analysis(TimeStampedModel):
             }
         )
 
+    @property
+    def cancel_subtasks_signature(self):
+        return celery_app.signature(
+            'cancel_subtasks',
+            options={
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+            }
+        )
+
+
     def generate_inputs(self, initiator):
         valid_choices = [
             self.status_choices.NEW,
@@ -362,29 +373,10 @@ class Analysis(TimeStampedModel):
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
         task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
-
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
-
-
-    def cancel_subtasks(self):
-        # cleanup the the sub tasks
-        _now = timezone.now()
-
-        qs = self.sub_task_statuses.filter(
-            status__in=[
-                AnalysisTaskStatus.status_choices.PENDING,
-                AnalysisTaskStatus.status_choices.QUEUED,
-                AnalysisTaskStatus.status_choices.STARTED]
-        )
-
-        for task_id in qs.values_list('task_id', flat=True):
-            if task_id:
-                AsyncResult(task_id).revoke(signal='SIGTERM', terminate=True)
-
-        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
 
 
     def cancel_any(self):
@@ -415,13 +407,17 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
+        # Kill the task controller job incase its still on queue
         AsyncResult(self.run_task_id).revoke(
-            signal='SIGTERM',
+            signal='SIGKILL',
             terminate=True,
         )
 
+        # Send Kill chain call to worker-controller
+        cancel_tasks = self.cancel_subtasks_signature
+        task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
+
         self.status = self.status_choices.RUN_CANCELLED
-        self.cancel_subtasks()
         self.task_finished = timezone.now()
         self.save()
 
@@ -433,12 +429,18 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
+
+        # Kill the task controller job incase its still on queue
         AsyncResult(self.generate_inputs_task_id).revoke(
-            signal='SIGTERM',
+            signal='SIGKILL',
             terminate=True,
         )
+
+        # Send Kill chain call to worker-controller
+        cancel_tasks = self.cancel_subtasks_signature
+        task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
+
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
-        self.cancel_subtasks()
         self.task_finished = timezone.now()
         self.save()
 
