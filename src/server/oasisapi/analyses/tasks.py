@@ -317,23 +317,33 @@ def _traceback_from_errback_args(*args):
 
 
 
-@celery_app.task(bind=True, name='abort_subtasks')
-def abort_subtasks_tasks(self, analysis_pk):
+@celery_app.task(bind=True, name='cancel_subtasks')
+def cancel_subtasks(self, analysis_pk):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
-    subtask_qs = analysis.sub_task_statuses.all()
-    
+    _now = timezone.now()
+
+    #subtask_qs = analysis.sub_task_statuses.all()
+    subtask_qs = analysis.sub_task_statuses.filter(
+            status__in=[
+                AnalysisTaskStatus.status_choices.PENDING,
+                AnalysisTaskStatus.status_choices.QUEUED,
+                AnalysisTaskStatus.status_choices.STARTED]
+        )
+
+    subtask_qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
+
     for subtask in subtask_qs:
         task_id = subtask.task_id
-        #state = AsyncResult(task_id).state
         if task_id:
+            self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
+            logger.info(f'subtask revoked: analysis_id={analysis_pk}, task_id={task_id}')
 
-            self.update_state(task_id=task_id, state='REVOKED')
-            self.app.control.revoke(task_id, terminate=True)
+''' ---  DELETE THIS ----
+            #self.update_state(task_id=task_id, state='REVOKED')
             #t = AsyncResult(task_id)
             ##t.update_state('REVOKED')
             #self.update_state()
-            logger.info(f'Sub-Task: {task_id}')
             #logger.info(t.args)
             #logger.info(t.kwargs)
 
@@ -351,6 +361,29 @@ def abort_subtasks_tasks(self, analysis_pk):
     #get_analysis_task_controller().generate_losses(analysis, initiator)
     #analysis.save()
 
+        #qs = self.sub_task_statuses.filter(
+        #    status__in=[
+        #        AnalysisTaskStatus.status_choices.PENDING,
+        #        AnalysisTaskStatus.status_choices.QUEUED,
+        #        AnalysisTaskStatus.status_choices.STARTED]
+        #)
+
+        qs = self.sub_task_statuses.all()
+        num_tasks = len(qs)
+        logger.info(f'REVOKING: {num_tasks} tasks')
+        logger.info(qs)
+
+        for subtask in qs:
+            task_id = subtask.task_id
+            state = AsyncResult(task_id).state
+            logger.info(f'REVOKED: {task_id}, {state}')
+
+
+            if task_id:
+                AsyncResult(task_id).revoke(signal='SIGTERM', terminate=True)
+
+        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
+'''
 
 
 @celery_app.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
@@ -361,8 +394,6 @@ def start_input_generation_task(analysis_pk, initiator_pk):
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_inputs(analysis, initiator)
-
-
     analysis.save()
 
 

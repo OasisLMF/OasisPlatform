@@ -15,7 +15,7 @@ import filelock
 import pandas as pd
 from billiard.exceptions import WorkerLostError
 from celery import Celery, signature
-from celery.signals import worker_ready, before_task_publish
+from celery.signals import worker_ready, before_task_publish, task_revoked
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
@@ -178,6 +178,22 @@ def check_worker_lost(task, analysis_pk):
             'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
         )
     task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
+
+
+
+
+
+
+#https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
+@task_revoked.connect
+def revoked_handler(*args, **kwargs):
+    # get the task that was revoked
+    taskObj = kwargs.get('request').task
+
+    #Break the chain 
+    # https://stackoverflow.com/questions/17461374/celery-stop-execution-of-a-chain
+    #self.request.chain = None
+    #self.request.callbacks = None
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
