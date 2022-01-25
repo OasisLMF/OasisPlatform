@@ -288,7 +288,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
         files_for_removal = list()
         user = self.context['request'].user
         for field in validated_data:
-            content_type = self.get_content_type(validated_data[field]):w
+            content_type = self.get_content_type(validated_data[field])
 
             # S3 storage - File copy needed
             if hasattr(default_storage, 'bucket'):
