@@ -27,6 +27,7 @@ from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
 
+
 # from .tasks import record_generate_input_result, record_run_analysis_result
 ###############
 
@@ -322,6 +323,18 @@ class Analysis(TimeStampedModel):
             }
         )
 
+
+    @property
+    def cancel_subtasks_signature(self):
+        return celery_app.signature(    
+            'abort_subtasks',
+            options={
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+            }
+        )
+        task_id = task.apply_async(args=[self.pk]).id
+
+
     def generate_inputs(self, initiator):
         valid_choices = [
             self.status_choices.NEW,
@@ -362,7 +375,6 @@ class Analysis(TimeStampedModel):
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
         task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
-
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
         self.task_finished = None
@@ -371,16 +383,29 @@ class Analysis(TimeStampedModel):
 
     def cancel_subtasks(self):
         # cleanup the the sub tasks
+
+        import logging
+        logger = logging.getLogger('root')
         _now = timezone.now()
 
-        qs = self.sub_task_statuses.filter(
-            status__in=[
-                AnalysisTaskStatus.status_choices.PENDING,
-                AnalysisTaskStatus.status_choices.QUEUED,
-                AnalysisTaskStatus.status_choices.STARTED]
-        )
+        #qs = self.sub_task_statuses.filter(
+        #    status__in=[
+        #        AnalysisTaskStatus.status_choices.PENDING,
+        #        AnalysisTaskStatus.status_choices.QUEUED,
+        #        AnalysisTaskStatus.status_choices.STARTED]
+        #)
 
-        for task_id in qs.values_list('task_id', flat=True):
+        qs = self.sub_task_statuses.all()
+        num_tasks = len(qs)
+        logger.info(f'REVOKING: {num_tasks} tasks')
+        logger.info(qs)
+
+        for subtask in qs:
+            task_id = subtask.task_id
+            state = AsyncResult(task_id).state
+            logger.info(f'REVOKED: {task_id}, {state}')
+
+
             if task_id:
                 AsyncResult(task_id).revoke(signal='SIGTERM', terminate=True)
 
@@ -416,12 +441,12 @@ class Analysis(TimeStampedModel):
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
         AsyncResult(self.run_task_id).revoke(
-            signal='SIGTERM',
+            signal='SIGKILL',
             terminate=True,
         )
 
         self.status = self.status_choices.RUN_CANCELLED
-        self.cancel_subtasks()
+        #self.cancel_subtasks()
         self.task_finished = timezone.now()
         self.save()
 
@@ -433,12 +458,21 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
+
+        cancel_tasks = self.cancel_subtasks_signature
+        task_id = cancel_tasks.apply_async(args=[self.pk], priority=self.priority).id
+        
+        import logging
+        logger = logging.getLogger('root')
+        #self.generate_inputs_task_id
+        logger.info(f'MAIN TASK ID {self.generate_inputs_task_id}')
+        
         AsyncResult(self.generate_inputs_task_id).revoke(
-            signal='SIGTERM',
+            signal='SIGKILL',
             terminate=True,
         )
-        self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         self.cancel_subtasks()
+        self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         self.task_finished = timezone.now()
         self.save()
 

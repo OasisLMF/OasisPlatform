@@ -44,6 +44,19 @@ filestore = StorageSelector(settings)
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
 
+
+def findkeys(node, kv):
+    if isinstance(node, list):
+        for i in node:
+            for x in findkeys(i, kv):
+               yield x
+    elif isinstance(node, dict):
+        if kv in node:
+            yield node[kv]
+        for j in node.values():
+            for x in findkeys(j, kv):
+                yield x
+
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
 
@@ -418,7 +431,48 @@ def keys_generation_task(fn):
         log_params(params, kwargs)
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
+
+        from celery.contrib import rdb
+        rdb.set_trace()
+        my_chain = self.request.chain[0]
+        all_tasks = set([v for v in findkeys(my_chain, 'task_id')])
+
+
+
+
+        #from celery import states
+        #self.update_state(state=states.REVOKED)
+        # celery.app.control
+        #self.update_state(task_id='6127e672-5477-42f3-8b03-74f4375e658b', state=states.REVOKED)
+        #from celery.exceptions import Ignore
+        #raise Ignore('Task aborted')
+
+        #self.AsyncResult(self.request.root_id).revoke(terminate=True, signal='SIGKILL')
+        #self.AsyncResult(self.request.reply_to).revoke(terminate=True, signal='SIGKILL')
+
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+
+        TASK_STATE = self.AsyncResult(self.request.id).state
+
+        logging.info(TASK_STATE)
+        #logging.info(dir(self.AsyncResult(self.request.id)))
+
+
+        #for task_id in all_tasks:
+        #    if task_id != self.request.id:
+        #        logging.info(f'Revoking {task_id}')
+        #        app.control.revoke(task_id, terminate=True)
+        #app.control.revoke(self.request.id, terminate=True)        
+        #app.control.revoke(self.request.root_id, terminate=True)
+        #app.control.revoke(self.request.reply_to, terminate=True)
+
+        """
+        my_chain = self.request.chain[0]
+        all_tasks = set([v for v in findkeys(my_chain, 'task_id')])
+
+        '9cdaf105-8f3c-4760-8e9c-647ed5815d7d
+        """
+
         if isinstance(params, list):
             for p in params:
                 _prepare_directories(p, analysis_id, run_data_uuid, kwargs)

@@ -335,7 +335,9 @@ class Controller:
         analysis.lookup_chunks = num_chunks
         analysis.save()
 
-        task = analysis.generate_inputs_task_id = cls._start(
+        #from celery.contrib import rdb
+        #rdb.set_trace()
+        return cls._start(
             analysis,
             initiator,
             tasks,
@@ -343,10 +345,11 @@ class Controller:
             run_data_uuid,
             'input_generation_traceback_file',
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
-        ).id or ''  # TODO: is shouldn't return None but is for some reason so for no guard against it
-        analysis.save()
-
-        return task
+        )
+        # TODO: is shouldn't return None but is for some reason so for no guard against it:w
+        #task = analysis.generate_inputs_task_id = start_reutrn.id or '' 
+        #analysis.save()
+        #return task
 
     @classmethod
     def get_generate_losses_queue(cls, analysis: 'Analysis', initiator: User) -> str:
