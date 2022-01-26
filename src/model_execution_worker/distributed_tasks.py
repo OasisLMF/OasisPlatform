@@ -45,17 +45,17 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
 
 
-def findkeys(node, kv):
-    if isinstance(node, list):
-        for i in node:
-            for x in findkeys(i, kv):
-               yield x
-    elif isinstance(node, dict):
-        if kv in node:
-            yield node[kv]
-        for j in node.values():
-            for x in findkeys(j, kv):
-                yield x
+#def findkeys(node, kv):
+#    if isinstance(node, list):
+#        for i in node:
+#            for x in findkeys(i, kv):
+#               yield x
+#    elif isinstance(node, dict):
+#        if kv in node:
+#            yield node[kv]
+#        for j in node.values():
+#            for x in findkeys(j, kv):
+#                yield x
 
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
@@ -187,12 +187,16 @@ def check_worker_lost(task, analysis_pk):
 #https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
 @task_revoked.connect
 def revoked_handler(*args, **kwargs):
+    # Break the chain 
+    request = kwargs.get('request')
+    request.chain[:] = []
+
+    # revoke callbacks tasks? 
+
     # get the task that was revoked
     #from celery.contrib import rdb
     #rdb.set_trace()
-    request = kwargs.get('request')
 
-    # Method 1: Break the chain 
     # https://stackoverflow.com/questions/17461374/celery-stop-execution-of-a-chain
     #request.chain = None
     #request.callbacks = None
@@ -200,15 +204,16 @@ def revoked_handler(*args, **kwargs):
     # Method 2: find all tasks from chain header and revoke from here 
     #request.chain.sort()
 
-    logging.info('revoked_handler')
+    #logging.info('revoked_handler')
 
-    chain_tasks = request.chain[0]
-    all_tasks = set([v for v in findkeys(request.chain, 'task_id')])
+    #chain_tasks = request.chain[0]
+    #all_tasks = set([v for v in findkeys(request.chain, 'task_id')])
 
-    for task_id in all_tasks:
-        if task_id != request.id:
-            logging.info(f'revoking: {task_id}')
-            app.control.revoke(task_id, terminate=True)
+    #for task_id in all_tasks:
+    #    if task_id != request.id:
+    #        logging.info(f'revoking: {task_id}')
+    #        app.control.revoke(task_id, terminate=True)
+
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -578,6 +583,7 @@ def prepare_input_generation_params(
     slug=None,
     **kwargs,
 ):
+    notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request) # updates all the assigned task_ids 
     #from celery.contrib import rdb
     #rdb.set_trace()
@@ -905,6 +911,8 @@ def prepare_losses_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'RUN_STARTED')
+    update_all_tasks_ids(self.request) # updates all the assigned task_ids 
+
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)

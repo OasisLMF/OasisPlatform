@@ -413,6 +413,10 @@ class Analysis(TimeStampedModel):
             terminate=True,
         )
 
+        # Send Kill chain call to worker-controller 
+        cancel_tasks = self.cancel_subtasks_signature
+        task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
+
         self.status = self.status_choices.RUN_CANCELLED
         self.task_finished = timezone.now()
         self.save()
@@ -434,7 +438,7 @@ class Analysis(TimeStampedModel):
 
         # Send Kill chain call to worker-controller 
         cancel_tasks = self.cancel_subtasks_signature
-        task_id = cancel_tasks.apply_async(args=[self.pk], priority=self.priority).id
+        task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
         
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         self.task_finished = timezone.now()
