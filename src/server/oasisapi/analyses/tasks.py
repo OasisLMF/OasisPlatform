@@ -326,35 +326,34 @@ def _find_celery_queue_reference(active_queues, queue_name):
 
 @celery_app.task(bind=True, name='cancel_subtasks')
 def cancel_subtasks(self, analysis_pk):
+    """ This is needed because AsyncResults(<task-id>).revoke() is not working correctly
+    when called from the server container. using`app.control.revoke( .. )` does work
+    so the analysis_id is passed to this task for cancellation.
+
+    Another approach to finding queued tasks is to inspect the celery queues
+    # Remote debug via telnet
+    #from celery.contrib import rdb
+    #rdb.set_trace()
+
+    active_queues = self.app.control.inspect().active_queues()
+    queue_ref =  _find_celery_queue_reference(active_queues, analysis.model.queue_name)
+    i = self.app.control.inspect([queue_ref])
+    logger.info(i.scheduled())
+    logger.info(i.active())
+    logger.info(i.reserved())
+    """
+
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     _now = timezone.now()
 
-    #active_queues = self.app.control.inspect().active_queues()
-    #queue_ref =  _find_celery_queue_reference(active_queues, analysis.model.queue_name)
 
-
-    ##i = self.app.control.inspect([queue_name])
-    #i = self.app.control.inspect([queue_ref])
-
-    #logger.info(i.scheduled())
-    #logger.info(i.active())
-    #logger.info(i.reserved())
-
-
-
-    #from celery.contrib import rdb
-    #rdb.set_trace()
-
-
-    #subtask_qs = analysis.sub_task_statuses.all()
     subtask_qs = analysis.sub_task_statuses.filter(
             status__in=[
                 AnalysisTaskStatus.status_choices.PENDING,
                 AnalysisTaskStatus.status_choices.QUEUED,
                 AnalysisTaskStatus.status_choices.STARTED]
         )
-
 
     for subtask in subtask_qs:
         task_id = subtask.task_id
@@ -363,53 +362,7 @@ def cancel_subtasks(self, analysis_pk):
         if task_id:
             self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
             self.update_state(task_id=task_id, state='REVOKED')
-
     subtask_qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
-''' ---  DELETE THIS ----
-            #self.update_state(task_id=task_id, state='REVOKED')
-            #t = AsyncResult(task_id)
-            ##t.update_state('REVOKED')
-            #self.update_state()
-            #logger.info(t.args)
-            #logger.info(t.kwargs)
-
-# 930dbe07-dfab-494f-8db3-ad55a2871fd9
-
-
-    #from celery.contrib import rdb
-    #rdb.set_trace()
-
-    #i = self.app.control.inspect()
-
-
-
-    #initiator = get_user_model().objects.get(pk=initiator_pk)
-    #get_analysis_task_controller().generate_losses(analysis, initiator)
-    #analysis.save()
-
-        #qs = self.sub_task_statuses.filter(
-        #    status__in=[
-        #        AnalysisTaskStatus.status_choices.PENDING,
-        #        AnalysisTaskStatus.status_choices.QUEUED,
-        #        AnalysisTaskStatus.status_choices.STARTED]
-        #)
-
-        qs = self.sub_task_statuses.all()
-        num_tasks = len(qs)
-        logger.info(f'REVOKING: {num_tasks} tasks')
-        logger.info(qs)
-
-        for subtask in qs:
-            task_id = subtask.task_id
-            state = AsyncResult(task_id).state
-            logger.info(f'REVOKED: {task_id}, {state}')
-
-
-            if task_id:
-                AsyncResult(task_id).revoke(signal='SIGTERM', terminate=True)
-
-        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
-'''
 
 
 @celery_app.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
@@ -679,17 +632,9 @@ def set_task_status(analysis_pk, task_status):
 
 @celery_app.task(name='update_task_id')
 def update_task_id(task_update_list):
-    #from celery.contrib import rdb
-    #rdb.set_trace() 
-    for task in task_update_list: 
+    for task in task_update_list:
         task_id, analysis_id, slug = task
         AnalysisTaskStatus.objects.filter(
             analysis_id=analysis_id,
             slug=slug,
         ).update(task_id=task_id)
-
-#def update_task_id(analysis_id, slug, task_id):
-#    AnalysisTaskStatus.objects.filter(
-#        analysis_id=analysis_id,
-#        slug=slug,
-#    ).update(task_id=task_id)

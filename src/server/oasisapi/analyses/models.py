@@ -325,7 +325,7 @@ class Analysis(TimeStampedModel):
 
     @property
     def cancel_subtasks_signature(self):
-        return celery_app.signature(    
+        return celery_app.signature(
             'cancel_subtasks',
             options={
                 'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
@@ -407,13 +407,13 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
-        # Kill the task controller job incase its still on queue 
+        # Kill the task controller job incase its still on queue
         AsyncResult(self.run_task_id).revoke(
             signal='SIGKILL',
             terminate=True,
         )
 
-        # Send Kill chain call to worker-controller 
+        # Send Kill chain call to worker-controller
         cancel_tasks = self.cancel_subtasks_signature
         task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
 
@@ -430,16 +430,16 @@ class Analysis(TimeStampedModel):
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
 
-        # Kill the task controller job incase its still on queue 
+        # Kill the task controller job incase its still on queue
         AsyncResult(self.generate_inputs_task_id).revoke(
             signal='SIGKILL',
             terminate=True,
         )
 
-        # Send Kill chain call to worker-controller 
+        # Send Kill chain call to worker-controller
         cancel_tasks = self.cancel_subtasks_signature
         task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
-        
+
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         self.task_finished = timezone.now()
         self.save()

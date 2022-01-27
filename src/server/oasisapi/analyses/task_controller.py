@@ -335,8 +335,6 @@ class Controller:
         analysis.lookup_chunks = num_chunks
         analysis.save()
 
-        #from celery.contrib import rdb
-        #rdb.set_trace()
         chain = cls._start(
             analysis,
             initiator,

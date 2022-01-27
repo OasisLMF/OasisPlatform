@@ -45,18 +45,6 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
 
 
-#def findkeys(node, kv):
-#    if isinstance(node, list):
-#        for i in node:
-#            for x in findkeys(i, kv):
-#               yield x
-#    elif isinstance(node, dict):
-#        if kv in node:
-#            yield node[kv]
-#        for j in node.values():
-#            for x in findkeys(j, kv):
-#                yield x
-
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
 
@@ -180,40 +168,25 @@ def check_worker_lost(task, analysis_pk):
     task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
 
 
-
+def notify_api_status(analysis_pk, task_status):
+    logging.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status',
+        args=(analysis_pk, task_status),
+        queue='celery'
+    ).delay()
 
 
 
 #https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
 @task_revoked.connect
 def revoked_handler(*args, **kwargs):
-    # Break the chain 
+    # Break the chain
     request = kwargs.get('request')
     request.chain[:] = []
-
-    # revoke callbacks tasks? 
-
-    # get the task that was revoked
-    #from celery.contrib import rdb
-    #rdb.set_trace()
-
-    # https://stackoverflow.com/questions/17461374/celery-stop-execution-of-a-chain
-    #request.chain = None
-    #request.callbacks = None
-
-    # Method 2: find all tasks from chain header and revoke from here 
-    #request.chain.sort()
-
-    #logging.info('revoked_handler')
-
-    #chain_tasks = request.chain[0]
-    #all_tasks = set([v for v in findkeys(request.chain, 'task_id')])
-
-    #for task_id in all_tasks:
-    #    if task_id != request.id:
-    #        logging.info(f'revoking: {task_id}')
-    #        app.control.revoke(task_id, terminate=True)
-
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -302,17 +275,6 @@ def register_worker(sender, **k):
         os.rmdir(tmpdir)
 
 
-# Send notification back to the API Once task is read from Queue
-def notify_api_status(analysis_pk, task_status):
-    logging.info("Notify API: analysis_id={}, status={}".format(
-        analysis_pk,
-        task_status
-    ))
-    signature(
-        'set_task_status',
-        args=(analysis_pk, task_status),
-        queue='celery'
-    ).delay()
 
 
 class InvalidInputsException(OasisException):
@@ -368,11 +330,36 @@ def notify_api_task_started(analysis_id, task_id, task_slug):
         },
     ).delay()
 
+def update_all_tasks_ids(task_request):
+    """ Extract other task_id's from the celery request chain.
+        These are sent back to the `worker-monitor` container
+        and used to update the AnalysisTaskStatus Objects in the
+        Django DB.
 
-#
-# input generation tasks
-#
+        This is so that when a cancellation request is send there are
+        stored sub-task id's to revoke
+    """
+    try:
+        task_request.chain.sort()
+    except TypeError:
+        logging.debug('Task chain header is already sorted')
+    chain_tasks = task_request.chain[0]
+    task_update_list = list()
 
+    # Sequential tasks - in the celery task chain, important for stopping stalls on a cancellation request
+    seq = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
+    for task_id in seq:
+        task_update_list.append((task_id, seq[task_id]['analysis_id'], seq[task_id]['slug']))
+
+    # Chunked tasks - This call might get heavy as the chunk load increases (possibly remove later)
+    chunks = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
+    for task_id in chunks:
+        task_update_list.append((task_id, chunks[task_id]['analysis_id'], chunks[task_id]['slug']))
+    signature('update_task_id').delay(task_update_list)
+
+
+
+# --- input generation tasks ------------------------------------------------ #
 
 def keys_generation_task(fn):
     def maybe_prepare_complex_data_files(complex_data_files, user_data_dir):
@@ -467,52 +454,13 @@ def keys_generation_task(fn):
         log_params(params, kwargs)
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
-
-        #from celery.contrib import rdb
-        #rdb.set_trace()
-        #my_chain = self.request.chain[0]
-        #all_tasks = set([v for v in findkeys(my_chain, 'task_id')])
-
-
-
-
-        #from celery import states
-        #self.update_state(state=states.REVOKED)
-        # celery.app.control
-        #self.update_state(task_id='6127e672-5477-42f3-8b03-74f4375e658b', state=states.REVOKED)
-        #from celery.exceptions import Ignore
-        #raise Ignore('Task aborted')
-
-        #self.AsyncResult(self.request.root_id).revoke(terminate=True, signal='SIGKILL')
-        #self.AsyncResult(self.request.reply_to).revoke(terminate=True, signal='SIGKILL')
-
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
 
-        TASK_STATE = self.AsyncResult(self.request.id).state
+        ## add check for work-lost function here
+        # check_worker_lost(task, analysis_pk)
+        #from celery.contrib import rdb
+        #rdb.set_trace()
 
-        logging.info('=================================================')
-        logging.info(TASK_STATE)
-        logging.info(self.AsyncResult(self.request.id))
-        logging.info('=================================================')
-        #my_chain = self.request.chain[0]
-        #all_tasks = set([v for v in findkeys(my_chain, 'task_id')])
-        #logging.info(all_tasks)
-        
-
-        #for task_id in all_tasks:
-        #    if task_id != self.request.id:
-        #        logging.info(f'Revoking {task_id}')
-        #        app.control.revoke(task_id, terminate=True)
-        #app.control.revoke(self.request.id, terminate=True)        
-        #app.control.revoke(self.request.root_id, terminate=True)
-        #app.control.revoke(self.request.reply_to, terminate=True)
-
-        """
-        my_chain = self.request.chain[0]
-        all_tasks = set([v for v in findkeys(my_chain, 'task_id')])
-
-        '9cdaf105-8f3c-4760-8e9c-647ed5815d7d
-        """
 
         if isinstance(params, list):
             for p in params:
@@ -523,46 +471,6 @@ def keys_generation_task(fn):
         return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
-
-
-""" Extract other tasks from chain and send back to API
-    
-
-"""
-def update_all_tasks_ids(task_request):
-    task_request.chain.sort()
-    chain_tasks = task_request.chain[0]
-
-    # sequential tasks 
-#    seq = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
-#    logging.info('SEQ_TASKS:')
-#    logging.info(seq)
-#    for task_id in seq:
-#        analysis_id = seq[task_id]['analysis_id']
-#        slug = seq[task_id]['slug']
-#        signature('update_task_id').delay(analysis_id, slug, task_id)
-#
-#    # chunked tasks 
-#    chunks = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
-#    logging.info('CHUNKED_TASKS:')
-#    logging.info(chunks)
-#    for task_id in chunks:
-#        analysis_id = chunks[task_id]['analysis_id']
-#        slug = chunks[task_id]['slug']
-#        signature('update_task_id').delay(analysis_id, slug, task_id)
-
-
-    task_update_list = list()
-    seq = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
-    for task_id in seq:
-        task_update_list.append((task_id, seq[task_id]['analysis_id'], seq[task_id]['slug']))
-
-    # chunked tasks 
-    chunks = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
-    for task_id in chunks:
-        task_update_list.append((task_id, chunks[task_id]['analysis_id'], chunks[task_id]['slug']))
-
-    signature('update_task_id').delay(task_update_list)
 
 
 @app.task(bind=True, name='prepare_input_generation_params', **celery_conf.worker_task_kwargs)
@@ -584,9 +492,7 @@ def prepare_input_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
-    update_all_tasks_ids(self.request) # updates all the assigned task_ids 
-    #from celery.contrib import rdb
-    #rdb.set_trace()
+    update_all_tasks_ids(self.request) # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
@@ -794,9 +700,8 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
     return params
 
 
-#
-# loss generation tasks
-#
+
+# --- loss generation tasks ------------------------------------------------ #
 
 
 def loss_generation_task(fn):
@@ -890,6 +795,9 @@ def loss_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+        ## add check for work-lost function here
+        # check_worker_lost(task, analysis_pk)
+
         if isinstance(params, list):
             for p in params:
                 _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
@@ -911,7 +819,7 @@ def prepare_losses_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'RUN_STARTED')
-    update_all_tasks_ids(self.request) # updates all the assigned task_ids 
+    update_all_tasks_ids(self.request) # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
@@ -1082,6 +990,3 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
 
     if analysis_id and slug:
         signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
-
-
-
