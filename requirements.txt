@@ -142,7 +142,7 @@ decorator==5.0.9
     #   ipython
 distlib==0.3.2
     # via virtualenv
-django==3.2.5
+django==3.2.10
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -282,7 +282,7 @@ numpy==1.21.1
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.19.0
+oasislmf[extra]==1.23.1
     # via -r ./requirements-worker.in
 packaging==21.0
     # via

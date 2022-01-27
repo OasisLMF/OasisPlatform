@@ -43,6 +43,7 @@ app = Celery()
 app.config_from_object(celery_conf)
 logging.info("Started worker")
 filestore = StorageSelector(settings)
+debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
 
 class TemporaryDir(object):
@@ -196,28 +197,48 @@ def register_worker(sender, **k):
     logging.info("STORAGE_MANAGER: {}".format(type(filestore)))
     logging.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
 
-    if selected_storage in ['local-fs', 'shared-fs']:
-        logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
+    if debug_worker:
+        logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
+        if selected_storage in ['local-fs', 'shared-fs']:
+            logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
-    elif selected_storage in ['aws-s3', 'aws', 's3']:
-        logging.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
-        logging.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
-        logging.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
-        logging.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
-        logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
-        logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
-        logging.info('AWS_LOG_LEVEL: {}'.format(settings.get('worker', 'AWS_LOG_LEVEL', fallback='None')))
+        elif selected_storage in ['aws-s3', 'aws', 's3']:
+            logging.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
+            logging.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
+            logging.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
+            logging.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
+            logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
+            logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
+            logging.info('AWS_LOG_LEVEL: {}'.format(settings.get('worker', 'AWS_LOG_LEVEL', fallback='None')))
 
     # Optional ENV
-    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
     logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
+    logging.info("DEBUG: {}".format(settings.get('worker', 'DEBUG', fallback='False')))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
 
-    # Log All Env variables
-    logging.info('OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+    # Log Env variables
+    if debug_worker:
+        # show all env variables and  override root log level
+        logging.info('ALL_OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+    else:
+        # Limit Env variables to run only variables
+        logging.info('OASIS_ENV_VARS:' + json.dumps({
+            k: v for (k, v) in os.environ.items() if k.startswith('OASIS_') and not any(
+                substring in k for substring in [
+                    'SERVER',
+                    'CELERY',
+                    'RABBIT',
+                    'BROKER',
+                    'USER',
+                    'PASS',
+                    'PORT',
+                    'HOST',
+                    'ROOT',
+                    'DIR',
+                ])}, indent=4))
 
     # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
@@ -373,23 +394,27 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
         mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
         logging.info('run_directory: {}'.format(oasis_files_dir))
-        logging.info('args_list: {}'.format(str(run_args)))
-        logging.info("\nRUNNING: \noasislmf model generate-losses {}".format(
-            " ".join([str(arg) for arg in mdk_args])
-        ))
-        logging.info(run_args)
+        #logging.info('args_list: {}'.format(str(run_args)))
+        logging.info("\nExecuting: generate-losses")
+        if debug_worker:
+            logging.info("\nCLI command: \noasislmf model generate-losses {}".format(
+                " ".join([str(arg) for arg in mdk_args])
+            ))
+            logging.info(run_args)
 
         # Subprocess Execution
         worker_env = os.environ.copy()
+
         proc = subprocess.Popen(
             ['oasislmf', 'model', 'generate-losses'] + run_args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
             preexec_fn=os.setsid,   # run the program in a new session, assigning a new process group to it and its children.
         )
-
-        # Log output and close
         stdout, stderr = proc.communicate()
-        logging.info('stdout: {}'.format(stdout.decode()))
+
+        if debug_worker:
+            logging.info('stdout: {}'.format(stdout.decode()))
+
         logging.info('stderr: {}'.format(stderr.decode()))
         proc.terminate()
 
@@ -500,14 +525,20 @@ def generate_input(self,
         if model_settings_fp and os.path.isfile(model_settings_fp):
             run_args += ['--model-settings-json', model_settings_fp]
 
+        if debug_worker:
+            run_args += ['--verbose']
+
+
         # Log MDK generate command
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
         mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
         logging.info('run_directory: {}'.format(oasis_files_dir))
-        logging.info('args_list: {}'.format(str(run_args)))
-        logging.info("\nRUNNING: \noasislmf model generate-oasis-files {}".format(
-            " ".join([str(arg) for arg in mdk_args])
-        ))
+        #logging.info('args_list: {}'.format(str(run_args)))
+        logging.info("\nExecuting: generate-oasis-files")
+        if debug_worker:
+            logging.info("\nCLI command: \noasislmf model generate-oasis-files {}".format(
+                " ".join([str(arg) for arg in mdk_args])
+            ))
 
         # Subprocess Execution
         worker_env = os.environ.copy()
@@ -516,10 +547,11 @@ def generate_input(self,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
             preexec_fn=os.setsid, # run in a new session, assigning a new process group to it and its children.
         )
+        stdout, stderr = proc.communicate()
 
         # Log output and close
-        stdout, stderr = proc.communicate()
-        logging.info('stdout: {}'.format(stdout.decode()))
+        if debug_worker:
+            logging.info('stdout: {}'.format(stdout.decode()))
         logging.info('stderr: {}'.format(stderr.decode()))
         proc.terminate()
 
