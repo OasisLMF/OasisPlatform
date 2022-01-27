@@ -15,7 +15,7 @@ import filelock
 import pandas as pd
 from billiard.exceptions import WorkerLostError
 from celery import Celery, signature
-from celery.signals import worker_ready, before_task_publish
+from celery.signals import worker_ready, before_task_publish, task_revoked
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
@@ -42,6 +42,7 @@ app.config_from_object(celery_conf)
 logging.info("Started worker")
 filestore = StorageSelector(settings)
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
+
 
 
 class TemporaryDir(object):
@@ -167,6 +168,27 @@ def check_worker_lost(task, analysis_pk):
     task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
 
 
+def notify_api_status(analysis_pk, task_status):
+    logging.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status',
+        args=(analysis_pk, task_status),
+        queue='celery'
+    ).delay()
+
+
+
+#https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
+@task_revoked.connect
+def revoked_handler(*args, **kwargs):
+    # Break the chain
+    request = kwargs.get('request')
+    request.chain[:] = []
+
+
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
@@ -253,17 +275,6 @@ def register_worker(sender, **k):
         os.rmdir(tmpdir)
 
 
-# Send notification back to the API Once task is read from Queue
-def notify_api_status(analysis_pk, task_status):
-    logging.info("Notify API: analysis_id={}, status={}".format(
-        analysis_pk,
-        task_status
-    ))
-    signature(
-        'set_task_status',
-        args=(analysis_pk, task_status),
-        queue='celery'
-    ).delay()
 
 
 class InvalidInputsException(OasisException):
@@ -319,11 +330,36 @@ def notify_api_task_started(analysis_id, task_id, task_slug):
         },
     ).delay()
 
+def update_all_tasks_ids(task_request):
+    """ Extract other task_id's from the celery request chain.
+        These are sent back to the `worker-monitor` container
+        and used to update the AnalysisTaskStatus Objects in the
+        Django DB.
 
-#
-# input generation tasks
-#
+        This is so that when a cancellation request is send there are
+        stored sub-task id's to revoke
+    """
+    try:
+        task_request.chain.sort()
+    except TypeError:
+        logging.debug('Task chain header is already sorted')
+    chain_tasks = task_request.chain[0]
+    task_update_list = list()
 
+    # Sequential tasks - in the celery task chain, important for stopping stalls on a cancellation request
+    seq = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
+    for task_id in seq:
+        task_update_list.append((task_id, seq[task_id]['analysis_id'], seq[task_id]['slug']))
+
+    # Chunked tasks - This call might get heavy as the chunk load increases (possibly remove later)
+    chunks = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
+    for task_id in chunks:
+        task_update_list.append((task_id, chunks[task_id]['analysis_id'], chunks[task_id]['slug']))
+    signature('update_task_id').delay(task_update_list)
+
+
+
+# --- input generation tasks ------------------------------------------------ #
 
 def keys_generation_task(fn):
     def maybe_prepare_complex_data_files(complex_data_files, user_data_dir):
@@ -419,6 +455,13 @@ def keys_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+
+        ## add check for work-lost function here
+        # check_worker_lost(task, analysis_pk)
+        #from celery.contrib import rdb
+        #rdb.set_trace()
+
+
         if isinstance(params, list):
             for p in params:
                 _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
@@ -449,6 +492,8 @@ def prepare_input_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
+    update_all_tasks_ids(self.request) # updates all the assigned task_ids
+
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
@@ -655,9 +700,8 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
     return params
 
 
-#
-# loss generation tasks
-#
+
+# --- loss generation tasks ------------------------------------------------ #
 
 
 def loss_generation_task(fn):
@@ -751,6 +795,9 @@ def loss_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+        ## add check for work-lost function here
+        # check_worker_lost(task, analysis_pk)
+
         if isinstance(params, list):
             for p in params:
                 _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
@@ -772,6 +819,8 @@ def prepare_losses_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'RUN_STARTED')
+    update_all_tasks_ids(self.request) # updates all the assigned task_ids
+
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
@@ -941,4 +990,3 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
 
     if analysis_id and slug:
         signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
-
