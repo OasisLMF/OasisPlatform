@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export OASIS_MODEL_DATA_DIR=/home/sam/repos/models/piwind
+export OASIS_MODEL_DATA_DIR=<..path to piwind ..>
 
 docker rmi coreoasis/api_server:dev
 docker rmi coreoasis/model_worker:dev
