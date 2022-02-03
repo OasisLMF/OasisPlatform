@@ -47,6 +47,12 @@ else:
 # https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# Remove the memory size limit
+# This is to prevent 'Exception Value: Request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE.'
+# when uploading large Exposure files to the API
+# https://docs.djangoproject.com/en/4.0/ref/settings/#data-upload-max-memory-size
+DATA_UPLOAD_MAX_MEMORY_SIZE = None
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = iniconf.settings.get('server', 'secret_key', fallback='' if not DEBUG else 'supersecret')
 
