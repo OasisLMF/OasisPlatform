@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.15.23-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.22-lts...1.15.23-lts
+
 `1.15.22-lts`_
  ---------
 * [#576](https://github.com/OasisLMF/OasisPlatform/pull/577) - Remove configuration information from worker logs
