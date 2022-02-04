@@ -99,7 +99,7 @@ jsonschema==4.2.1
     # via oasislmf
 kombu==5.2.2
     # via celery
-llvmlite==0.37.0
+llvmlite==0.38.0
     # via numba
 markupsafe==2.0.1
     # via jinja2
@@ -107,11 +107,11 @@ msgpack==1.0.3
     # via oasislmf
 munch==2.5.0
     # via fiona
-numba==0.54.1
+numba==0.55.1
     # via oasislmf
 numexpr==2.8.0
     # via oasislmf
-numpy==1.20.3
+numpy==1.21.5
     # via
     #   fastparquet
     #   numba
