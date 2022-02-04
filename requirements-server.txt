@@ -143,7 +143,7 @@ numpy==1.21.4
     # via
     #   pandas
     #   pyarrow
-ods-tools==2.0.1
+ods-tools==2.1.0
     # via -r requirements-server.in
 packaging==21.3
     # via drf-yasg
