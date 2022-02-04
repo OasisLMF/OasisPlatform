@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.5-lts`_
+ ---------
+* [#600](https://github.com/OasisLMF/OasisPlatform/pull/600) - Update schema to match with oasislmf==1.25.0
+* [#601](https://github.com/OasisLMF/OasisPlatform/pull/601) - Update/security fixes
+* [#598](https://github.com/OasisLMF/OasisPlatform/pull/599) - set `DATA_UPLOAD_MAX_MEMORY_SIZE` 
+.. _`1.23.5-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.4-lts...1.23.5-lts
+
 * [#593](https://github.com/OasisLMF/OasisPlatform/pull/594) - Linking portfolio files on S3 does not work
 .. _`1.23.4-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.3-lts...1.23.4-lts
 
