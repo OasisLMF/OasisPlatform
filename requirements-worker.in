@@ -8,4 +8,4 @@ pymysql
 psycopg2-binary
 sqlalchemy
 pytest
-numba>=0.55.1
+numba

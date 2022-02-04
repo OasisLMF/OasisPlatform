@@ -8,7 +8,6 @@ django-webtest
 fasteners
 flake8
 hypothesis
-ipdb
 mock
 model_mommy
 pip-tools
