@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.23.6-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.5-lts...1.23.6-lts
+
 `1.23.5-lts`_
  ---------
 * [#600](https://github.com/OasisLMF/OasisPlatform/pull/600) - Update schema to match with oasislmf==1.25.0
