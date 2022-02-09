@@ -1,6 +1,18 @@
 OasisPlatform Changelog
 =======================
 
+`1.25.0`_
+ ---------
+* [#583](https://github.com/OasisLMF/OasisPlatform/pull/583) - Align model_settings schema
+* [#587](https://github.com/OasisLMF/OasisPlatform/pull/588) - OpenAPI specification contains duplicate objects
+* [#589](https://github.com/OasisLMF/OasisPlatform/pull/591) - Missing array in api specification
+* [#592](https://github.com/OasisLMF/OasisPlatform/pull/592) - Add analysis_settings workaround for lts-1.15.x workers
+* [#593](https://github.com/OasisLMF/OasisPlatform/pull/594) - Linking portfolio files on S3 does not work
+* [#598](https://github.com/OasisLMF/OasisPlatform/pull/599) - set `DATA_UPLOAD_MAX_MEMORY_SIZE` 
+* [#600](https://github.com/OasisLMF/OasisPlatform/pull/600) - Update schema to match with oasislmf==1.25.0
+* [#601](https://github.com/OasisLMF/OasisPlatform/pull/601) - Update/security fixes
+.. _`1.25.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.24.0...1.25.0
+
 `1.24.0`_
  ---------
 * [#576](https://github.com/OasisLMF/OasisPlatform/pull/577) - Remove configuration information from worker logs
