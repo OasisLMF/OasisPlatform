@@ -1,3 +1,7 @@
+import logging
+import os
+import tempfile
+
 
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import (
@@ -6,6 +10,8 @@ from azure.storage.blob import (
 )
 
 from ..storage_manager import BaseStorageConnector
+
+# https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python
 
 class AzureObjectStore(BaseStorageConnector):
 
@@ -69,19 +75,49 @@ class AzureObjectStore(BaseStorageConnector):
             )
         return self._client
 
-
-
     def _fetch_file(self, reference, output_dir=""):
-        pass
+        blob_client = self.client.get_blob_client(reference)
+        fpath = os.path.join(
+            output_dir,
+            os.path.basename(reference)
+        )
+        logging.info('Get Azure Blob: {}'.format(reference))
+        with open(fpath, "wb") as download_file:
+            download_file.write(blob_client.download_blob().readall())
 
     def _store_file(self, file_path, suffix=None):
-        pass
+        ext = file_path.split('.')[-1] if not suffix else suffix
+        object_name = self._get_unique_filename(ext)
+        self.upload(object_name, file_path)
+        self.logger.info('Stored Azure Blob: {} -> {}'.format(file_path, object_name))
+
+        if self.shared_container:
+            return os.path.join(self.location, object_name)
+        else:
+            return self.url(object_name)
 
     def _store_dir(self, directory_path, suffix=None, arcname=None):
-        pass
+        ext = 'tar.gz' if not suffix else suffix
+        object_name = self._get_unique_filename(ext)
 
-    def upload(self, object_name, filepath, ExtraArgs=None):
-        pass
+        with tempfile.TemporaryDirectory() as tmpdir:
+            archive_path = os.path.join(tmpdir, object_name)
+            self.compress(archive_path, directory_path, arcname)
+            self.upload(object_name, archive_path)
+        self.logger.info('Stored Azure Blob: {} -> {}'.format(directory_path, object_name))
+
+        if self.shared_container:
+            return os.path.join(self.location, object_name)
+        else:
+            return self.url(object_name)
+
+    def upload(self, object_name, filepath):
+        blob_key = os.path.join(self.location, object_name)
+        blob_client = self.client.get_blob_client(blob_key)
+        with open(filepath, "rb") as data:
+            blob_client.upload_blob(data)
 
     def url(self, object_name, parameters=None, expire=None):
-        pass
+        blob_key = os.path.join(self.location, object_name)
+        blob_client = self.client.get_blob_client(blob_key)
+        return blob_client.url
