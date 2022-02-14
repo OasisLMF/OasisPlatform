@@ -9,35 +9,37 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 
 from oasislmf.utils.exceptions import OasisException
-from .backends.aws_storage import AwsObjectStore
-from .backends.azure_storage import AzureObjectStore
-
 
 LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 
-
-def StorageSelector(settings_conf):
-    """ Returns a `StorageConnector` class based on conf.ini
-
-    Call this method from model_execution_worker.task
-
-    :param settings_conf: Settings object for worker
-    :type settings_conf: src.conf.iniconf.Settings
-
-    :return: Storeage connector class
-    :rtype BaseStorageConnector
-    """
-    selected_storage = settings_conf.get('worker', 'STORAGE_TYPE', fallback="").lower()
-
-    if selected_storage in ['local-fs', 'shared-fs']:
-        return BaseStorageConnector(settings_conf)
-    elif selected_storage in ['aws-s3', 'aws', 's3']:
-        return AwsObjectStore(settings_conf)
-    elif selected_storage in ['azure']:
-        return AzureStore(settings_conf)
-    else:
-        raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
+#from .backends.aws_storage import AwsObjectStore
+#from .backends.azure_storage import AzureObjectStore
+#
+#
+#
+#
+#def StorageSelector(settings_conf):
+#    """ Returns a `StorageConnector` class based on conf.ini
+#
+#    Call this method from model_execution_worker.task
+#
+#    :param settings_conf: Settings object for worker
+#    :type settings_conf: src.conf.iniconf.Settings
+#
+#    :return: Storeage connector class
+#    :rtype BaseStorageConnector
+#    """
+#    selected_storage = settings_conf.get('worker', 'STORAGE_TYPE', fallback="").lower()
+#
+#    if selected_storage in ['local-fs', 'shared-fs']:
+#        return BaseStorageConnector(settings_conf)
+#    elif selected_storage in ['aws-s3', 'aws', 's3']:
+#        return AwsObjectStore(settings_conf)
+#    elif selected_storage in ['azure']:
+#        return AzureStore(settings_conf)
+#    else:
+#        raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
 
 
 class MissingInputsException(OasisException):

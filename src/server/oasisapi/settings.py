@@ -18,7 +18,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 from ...conf import iniconf  # noqa
 from ...conf.celeryconf import *  # noqa
-from ...common.shared import set_aws_log_level
+from ...common.shared import set_aws_log_level, set_azure_log_level
 
 
 
@@ -192,7 +192,7 @@ AWS_S3_CUSTOM_DOMAIN = iniconf.settings.get('server', 'AWS_S3_CUSTOM_DOMAIN', fa
 AWS_S3_ENDPOINT_URL = iniconf.settings.get('server', 'AWS_S3_ENDPOINT_URL', fallback=None)
 AWS_LOCATION = iniconf.settings.get('server', 'AWS_LOCATION', fallback='')
 AWS_S3_REGION_NAME = iniconf.settings.get('server', 'AWS_S3_REGION_NAME', fallback=None)
-AWS_LOG_EVEL = iniconf.settings.get('server', 'aws_log_level', fallback="")
+AWS_LOG_LEVEL = iniconf.settings.get('server', 'aws_log_level', fallback="")
 
 # Presigned generated URLs for private buckets
 AWS_QUERYSTRING_AUTH = iniconf.settings.getboolean('server', 'AWS_QUERYSTRING_AUTH', fallback=False)
@@ -225,8 +225,10 @@ AZURE_SHARED_CONTAINER = iniconf.settings.get('server', 'AZURE_SHARED_CONTAINER'
 AZURE_OVERWRITE_FILES = iniconf.settings.get('server', 'AZURE_OVERWRITE_FILES', fallback=True)
 
 ## Optional Blob storage settings
-# WARNING, adding default settings with 'None' casues storage adapter to break 
-#AZURE_SSL = iniconf.settings.get('server', 'AZURE_SSL', fallback=True)
+AZURE_LOG_LEVEL = iniconf.settings.get('server', 'AZURE_LOG_LEVEL', fallback="")
+AZURE_SSL = iniconf.settings.get('server', 'AZURE_SSL', fallback=True)
+
+# WARNING, adding default settings with 'None' casues storage adapter to break
 #AZURE_UPLOAD_MAX_CONN = iniconf.settings.get('server', 'AZURE_UPLOAD_MAX_CONN', fallback=2)
 #AZURE_CONNECTION_TIMEOUT_SECS = iniconf.settings.get('server', 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20)
 #AZURE_BLOB_MAX_MEMORY_SIZE = iniconf.settings.get('server', 'AZURE_BLOB_MAX_MEMORY_SIZE', fallback='2MB')
@@ -251,10 +253,11 @@ if STORAGE_TYPE in LOCAL_FS:
 elif STORAGE_TYPE in AWS_S3:
     # AWS S3 Object Store via `Django-Storages`
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    set_aws_log_level(AWS_LOG_EVEL)
+    set_aws_log_level(AWS_LOG_LEVEL)
 
 elif STORAGE_TYPE in AZURE:
     DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+    set_azure_log_level(AZURE_LOG_LEVEL)
 
 else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))

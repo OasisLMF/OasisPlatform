@@ -29,6 +29,7 @@ from urllib.parse import urlparse
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
+from src.server.oasisapi.files.upload import wait_for_blob_copy
 
 from ..celery import celery_app
 logger = get_task_logger(__name__)
@@ -127,28 +128,33 @@ def store_file(reference, content_type, creator, required=True, filename=None):
 
     # Issue Azure object Copy
     if is_in_container(reference):
-        fname = filename if filename else ref
+        new_filename = filename if filename else ref
+        fname = default_storage._get_valid_path(new_filename)
 
         source_blob = default_storage.client.get_blob_client(reference)
         dest_blob = default_storage.client.get_blob_client(fname)
 
+        logger.info(f'reference: {reference}')
+        logger.info(f'fname: {fname}')
+        #from celery.contrib import rdb
+        #rdb.set_trace()
         try:
             lease = BlobLeaseClient(source_blob)
             lease.acquire()
-            copy_operation = dest_blob.start_copy_from_url(source_blob.url)
-            if hasattr(copy_operation, 'wait'):
-                copy_operation.wait()
+            dest_blob.start_copy_from_url(source_blob.url)
+            wait_for_blob_copy(dest_blob)
             lease.break_lease()
         except Exception as e:
             # copy failed, break file lease and re-raise
             lease.break_lease()
             raise e
 
+        stored_blob = default_storage.open(os.path.basename(fname))
         new_related_file = RelatedFile.objects.create(
-            file=File(dest_blob, name=fname),
+            file=File(stored_blob, name=fname),
             filename=fname,
             content_type=content_type,
-            creator=self.context['request'].user,
+            creator=creator,
             store_as_filename=True)
         return new_related_file
 

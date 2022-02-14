@@ -13,6 +13,7 @@ from azure.storage.blob import BlobLeaseClient
 from ..analyses.serializers import AnalysisSerializer
 from ..files.models import file_storage_link
 from ..files.models import RelatedFile
+from ..files.upload import wait_for_blob_copy
 from .models import Portfolio
 
 from ..schemas.serializers import (
@@ -304,9 +305,8 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 try:
                     lease = BlobLeaseClient(source_blob)
                     lease.acquire()
-                    copy_operation = dest_blob.start_copy_from_url(source_blob.url)
-                    if hasattr(copy_operation, 'wait'):
-                        copy_operation.wait()
+                    dest_blob.start_copy_from_url(source_blob.url)
+                    wait_for_blob_copy(dest_blob)
                     lease.break_lease()
                 except Exception as e:
                     # copy failed, break file lease and re-raise
