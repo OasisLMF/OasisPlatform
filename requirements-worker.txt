@@ -17,6 +17,10 @@ attrs==21.2.0
     #   fiona
     #   jsonschema
     #   pytest
+azure-core==1.21.1
+    # via azure-storage-blob
+azure-storage-blob==12.9.0
+    # via django-storages
 billiard==3.6.4.0
     # via celery
 binaryornot==0.4.4

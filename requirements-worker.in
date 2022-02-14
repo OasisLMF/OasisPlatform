@@ -1,4 +1,6 @@
-oasislmf[extra]>=1.23.5
+oasislmf[extra]>=1.25.0
+azure-core
+azure-storage-blob
 celery
 boto3
 configparser
