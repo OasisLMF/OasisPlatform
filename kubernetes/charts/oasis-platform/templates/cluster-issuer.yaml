@@ -17,5 +17,5 @@ spec:
             podTemplate:
               spec:
                 nodeSelector:
-                  "oasis/node-type": platform
+                  "oasislmf/node-type": platform
 {{- end }}

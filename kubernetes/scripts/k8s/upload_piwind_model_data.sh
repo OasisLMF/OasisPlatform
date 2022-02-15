@@ -10,7 +10,7 @@ OASIS_CLUSTER_NAMESPACE="${OASIS_CLUSTER_NAMESPACE:-default}"
 if [ -z "$PWP" ] || ! [ -d "$PWP" ]; then
   echo "Usage: $0 <piwind git path> [<node-selector>]"
   echo
-  echo "Example: $0 ~/git/OasisPiWind 'oasis/node-type: worker'"
+  echo "Example: $0 ~/git/OasisPiWind 'oasislmf/node-type: worker'"
   exit
 fi
 

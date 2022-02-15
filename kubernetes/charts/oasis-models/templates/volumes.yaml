@@ -1,6 +1,8 @@
 {{- range .Values.modelVolumes -}}
+  {{- if eq .source "host" }}
 {{ include "h.createPersistentVolume" . }}
 ---
 {{ include "h.createPersistentVolumeClaim" . }}
 ---
+  {{- end }}
 {{- end }}

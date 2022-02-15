@@ -17,7 +17,7 @@ metadata:
   labels:
     oasislmf/type: model-registration-job
 spec:
-  ttlSecondsAfterFinished: 600 {{/* Kubernetes beta - will be supported in the future */}}
+  ttlSecondsAfterFinished: 600
   template:
     spec:
       {{- if .Values.registration_job.nodeSelector }}
@@ -56,6 +56,9 @@ spec:
                 {{- if eq .type "model-data" }}
             - name: {{ .name }}
               mountPath: /mnt/model_data_{{ $index }}
+                  {{- if eq .source "azureFiles" }}
+              subPath: {{ printf "%s/%s/%s" $worker.supplierId $worker.modelId $worker.modelVersionId }}
+                  {{- end }}
                 {{- end }}
               {{- end }}
             {{- end }}
@@ -66,8 +69,13 @@ spec:
             defaultMode: 0777
         {{- range $root.Values.modelVolumes }}
         - name: {{ .name }}
+          {{- if eq .source "host" }}
           persistentVolumeClaim:
             claimName: {{ .name }}
+          {{- else if eq .source "azureFiles" }}
+          csi:
+            {{- toYaml .csi | nindent 12 }}
+          {{- end }}
         {{- end }}
       restartPolicy: Never
   backoffLimit: 4

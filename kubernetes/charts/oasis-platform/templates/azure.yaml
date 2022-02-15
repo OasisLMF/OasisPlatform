@@ -1,0 +1,13 @@
+{{- if (.Values.azure) }}
+{{- range $k, $v := .Values.azure.storageAccounts }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $v.secretName }}
+type: Opaque
+data:
+  azurestorageaccountname: {{ $v.accountName | b64enc }}
+  azurestorageaccountkey: {{ $v.accountKey | b64enc }}
+---
+{{- end }}
+{{- end }}
