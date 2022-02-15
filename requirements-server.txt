@@ -210,8 +210,10 @@ requests==2.26.0
     #   requests-oauthlib
 requests-oauthlib==1.3.1
     # via msrest
-ruamel.yaml==0.17.17
+ruamel-yaml==0.17.17
     # via drf-yasg
+ruamel-yaml-clib==0.2.6
+    # via ruamel-yaml
 s3transfer==0.5.0
     # via boto3
 service-identity==21.1.0
@@ -232,8 +234,10 @@ sqlparse==0.4.2
     # via
     #   django
     #   django-debug-toolbar
-twisted[tls]==21.7.0
-    # via daphne
+twisted[tls]==22.1.0
+    # via
+    #   -r requirements-server.in
+    #   daphne
 txaio==21.2.1
     # via autobahn
 typing-extensions==4.0.1
