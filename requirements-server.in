@@ -9,7 +9,7 @@ django-debug-toolbar
 django-filter
 django-model-utils>=4.0.0
 django-request-logging
-django-storages
+django-storages[azure]
 django_celery_results
 djangorestframework
 djangorestframework_simplejwt

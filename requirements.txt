@@ -35,6 +35,18 @@ autobahn==21.3.1
     # via daphne
 automat==20.2.0
     # via twisted
+azure-common==1.1.28
+    # via
+    #   azure-storage-blob
+    #   azure-storage-common
+azure-core==1.22.1
+    # via -r ./requirements-worker.in
+azure-storage-blob==2.1.0
+    # via
+    #   -r ./requirements-worker.in
+    #   django-storages
+azure-storage-common==2.1.0
+    # via azure-storage-blob
 backcall==0.2.0
     # via ipython
 backports-entry-points-selectable==1.1.0
@@ -130,6 +142,7 @@ cramjam==2.5.0
 cryptography==3.4.7
     # via
     #   autobahn
+    #   azure-storage-common
     #   josepy
     #   mozilla-django-oidc
     #   pyopenssl
@@ -169,7 +182,7 @@ django-model-utils==4.1.1
     # via -r ./requirements-server.in
 django-request-logging==0.7.4
     # via -r ./requirements-server.in
-django-storages==1.11.1
+django-storages[azure]==1.11.1
     # via -r ./requirements-server.in
 django-webtest==1.9.7
     # via -r requirements.in
@@ -290,12 +303,11 @@ numpy==1.20.3
     #   fastparquet
     #   numba
     #   numexpr
-    #   oasislmf
     #   pandas
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.23.1
+oasislmf[extra]==1.25.1
     # via -r ./requirements-worker.in
 ods-tools==2.1.2
     # via -r ./requirements-server.in
@@ -394,6 +406,7 @@ pytest-django==4.4.0
 python-dateutil==2.8.2
     # via
     #   arrow
+    #   azure-storage-common
     #   botocore
     #   freezegun
     #   pandas
@@ -412,6 +425,8 @@ redis==3.5.3
 requests==2.26.0
     # via
     #   -r requirements.in
+    #   azure-core
+    #   azure-storage-common
     #   cookiecutter
     #   coreapi
     #   mozilla-django-oidc
@@ -443,6 +458,7 @@ six==1.16.0
     # via
     #   anytree
     #   automat
+    #   azure-core
     #   click-repl
     #   cookiecutter
     #   fasteners

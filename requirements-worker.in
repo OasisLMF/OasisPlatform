@@ -1,4 +1,4 @@
-oasislmf[extra]>=1.19.0
+oasislmf[extra]>=1.25.0
 #-e git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf[extra]
 celery
 boto3
@@ -9,6 +9,9 @@ pymysql
 psycopg2-binary
 sqlalchemy
 pytest
+azure-core
+azure-storage-blob
+
 
 # new requ
 billiard

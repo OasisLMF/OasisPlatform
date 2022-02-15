@@ -26,6 +26,10 @@ autobahn==21.3.1
     # via daphne
 automat==20.2.0
     # via twisted
+azure-core==1.22.1
+    # via azure-storage-blob
+azure-storage-blob==12.9.0
+    # via django-storages
 billiard==3.6.4.0
     # via celery
 boto3==1.18.48
@@ -39,7 +43,9 @@ celery==5.1.2
     #   -r requirements-server.in
     #   django-celery-results
 certifi==2021.5.30
-    # via requests
+    # via
+    #   msrest
+    #   requests
 cffi==1.14.6
     # via cryptography
 chainmap==1.0.3
@@ -77,6 +83,7 @@ coreschema==0.0.4
 cryptography==3.4.8
     # via
     #   autobahn
+    #   azure-storage-blob
     #   josepy
     #   mozilla-django-oidc
     #   pyopenssl
@@ -107,7 +114,7 @@ django-model-utils==4.1.1
     # via -r requirements-server.in
 django-request-logging==0.7.3
     # via -r requirements-server.in
-django-storages==1.12.3
+django-storages[azure]==1.12.3
     # via -r requirements-server.in
 djangorestframework==3.12.4
     # via
@@ -135,6 +142,8 @@ incremental==21.3.0
     # via twisted
 inflection==0.5.1
     # via drf-yasg
+isodate==0.6.1
+    # via msrest
 itypes==1.2.0
     # via coreapi
 jinja2==3.0.1
@@ -159,10 +168,14 @@ mozilla-django-oidc==2.0.0
     # via -r requirements-server.in
 msgpack==0.6.2
     # via channels-redis
+msrest==0.6.21
+    # via azure-storage-blob
 numpy==1.22.2
     # via
     #   pandas
     #   pyarrow
+oauthlib==3.2.0
+    # via requests-oauthlib
 ods-tools==2.1.2
     # via -r requirements-server.in
 packaging==21.0
@@ -210,8 +223,13 @@ redis==3.5.3
     # via -r requirements-server.in
 requests==2.26.0
     # via
+    #   azure-core
     #   coreapi
     #   mozilla-django-oidc
+    #   msrest
+    #   requests-oauthlib
+requests-oauthlib==1.3.1
+    # via msrest
 ruamel-yaml==0.17.16
     # via drf-yasg
 ruamel-yaml-clib==0.2.6
@@ -223,7 +241,9 @@ service-identity==21.1.0
 six==1.16.0
     # via
     #   automat
+    #   azure-core
     #   click-repl
+    #   isodate
     #   jsonschema
     #   pyopenssl
     #   python-dateutil
