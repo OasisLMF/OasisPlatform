@@ -2,7 +2,6 @@ import logging
 import os
 import tempfile
 
-
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import (
     BlobClient, BlobSasPermissions, BlobServiceClient, ContentSettings,
@@ -12,9 +11,9 @@ from azure.storage.blob import (
 from ...common.shared import set_azure_log_level
 from ..storage_manager import BaseStorageConnector
 
-# https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python
 
 class AzureObjectStore(BaseStorageConnector):
+# https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python
 
     def __init__(self, settings):
         self._service_client = None
@@ -40,19 +39,16 @@ class AzureObjectStore(BaseStorageConnector):
         self.sas_token            = settings.get('worker', 'AZURE_SAS_TOKEN', fallback=None)
         self.custom_domain        = settings.get('worker', 'AZURE_CUSTOM_DOMAIN', fallback=None)
         self.token_credential     = settings.get('worker', 'AZURE_TOKEN_CREDENTIAL', fallback=None)
-        self.azure_log_level = settings.get('worker', 'AWS_LOG_LEVEL', fallback=logging.ERROR)
+        self.azure_log_level      = settings.get('worker', 'AWS_LOG_LEVEL', fallback=logging.ERROR)
         self.azure_protocol       = 'https' if self.azure_ssl else 'http'
-
         set_azure_log_level(self.azure_log_level)
-
 
     def _get_service_client(self):
         if self.connection_string is not None:
             return BlobServiceClient.from_connection_string(self.connection_string)
 
         account_domain = self.custom_domain or "{}.blob.core.windows.net".format(
-            self.account_name
-        )
+            self.account_name)
         account_url = "{}://{}".format(self.azure_protocol, account_domain)
 
         credential = None

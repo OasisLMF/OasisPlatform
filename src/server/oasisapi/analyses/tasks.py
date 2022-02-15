@@ -130,14 +130,9 @@ def store_file(reference, content_type, creator, required=True, filename=None):
     if is_in_container(reference):
         new_filename = filename if filename else ref
         fname = default_storage._get_valid_path(new_filename)
-
         source_blob = default_storage.client.get_blob_client(reference)
         dest_blob = default_storage.client.get_blob_client(fname)
 
-        logger.info(f'reference: {reference}')
-        logger.info(f'fname: {fname}')
-        #from celery.contrib import rdb
-        #rdb.set_trace()
         try:
             lease = BlobLeaseClient(source_blob)
             lease.acquire()
@@ -158,9 +153,8 @@ def store_file(reference, content_type, creator, required=True, filename=None):
             store_as_filename=True)
         return new_related_file
 
-
-    # Copy via shared FS
     try:
+        # Copy via shared FS
         ref = str(os.path.basename(reference))
         fname = filename if filename else ref
         return RelatedFile.objects.create(
