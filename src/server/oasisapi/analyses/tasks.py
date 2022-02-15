@@ -20,6 +20,8 @@ from django.http import HttpRequest
 from django.utils import timezone
 
 from botocore.exceptions import ClientError as S3_ClientError
+from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError
+from azure.storage.blob import BlobLeaseClient
 from tempfile import TemporaryFile
 from urllib.request import urlopen
 from urllib.parse import urlparse
@@ -27,6 +29,7 @@ from urllib.parse import urlparse
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
+from src.server.oasisapi.files.upload import wait_for_blob_copy
 
 from ..celery import celery_app
 logger = get_task_logger(__name__)
@@ -51,6 +54,17 @@ def is_in_bucket(object_key):
                 return False
             else:
                 raise e
+
+def is_in_container(object_key):
+    if not hasattr(default_storage, 'azure_container'):
+        return False
+    else:
+        try:
+            blob = default_storage.client.get_blob_client(object_key)
+            blob.get_blob_properties()
+            return True
+        except Blob_ResourceNotFoundError:
+            return False
 
 
 def store_file(reference, content_type, creator, required=True, filename=None):
@@ -112,7 +126,35 @@ def store_file(reference, content_type, creator, required=True, filename=None):
         stored_file.obj.wait_until_exists()
         return new_related_file
 
+    # Issue Azure object Copy
+    if is_in_container(reference):
+        new_filename = filename if filename else ref
+        fname = default_storage._get_valid_path(new_filename)
+        source_blob = default_storage.client.get_blob_client(reference)
+        dest_blob = default_storage.client.get_blob_client(fname)
+
+        try:
+            lease = BlobLeaseClient(source_blob)
+            lease.acquire()
+            dest_blob.start_copy_from_url(source_blob.url)
+            wait_for_blob_copy(dest_blob)
+            lease.break_lease()
+        except Exception as e:
+            # copy failed, break file lease and re-raise
+            lease.break_lease()
+            raise e
+
+        stored_blob = default_storage.open(os.path.basename(fname))
+        new_related_file = RelatedFile.objects.create(
+            file=File(stored_blob, name=fname),
+            filename=fname,
+            content_type=content_type,
+            creator=creator,
+            store_as_filename=True)
+        return new_related_file
+
     try:
+        # Copy via shared FS
         ref = str(os.path.basename(reference))
         fname = filename if filename else ref
         return RelatedFile.objects.create(
