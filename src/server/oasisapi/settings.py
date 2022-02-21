@@ -334,8 +334,6 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSION': 'v1',
 }
 
->>>>>>> 0369902 (Complete Parquet platoform storage (#569))
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
