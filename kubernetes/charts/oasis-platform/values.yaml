@@ -62,6 +62,8 @@ ingress:
 #    strategy: 'letsencrypt'
 #    certificateSecret: oasis-ingress-tls
 #    email: <email>
+#    server: https://acme-v02.api.letsencrypt.org/directory
+#    server: https://acme-staging-v02.api.letsencrypt.org/directory # Stage server
 
   # Hostname for Oasis UI, API, Prometheus, Alert manager and Grafana
   uiHostname: ui.oasis.local

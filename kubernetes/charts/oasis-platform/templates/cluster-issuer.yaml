@@ -5,8 +5,7 @@ metadata:
   name: letsencrypt
 spec:
   acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-{{- /*    server: https://acme-staging-v02.api.letsencrypt.org/directory*/}}
+    server: {{ .Values.ingress.tls.server }}
     email: {{ .Values.ingress.tls.email }}
     privateKeySecretRef:
       name: letsencrypt
