@@ -9,7 +9,7 @@ django-debug-toolbar
 django-filter
 django-model-utils>=4.0.0
 django-request-logging
-django-storages[azure]
+django-storages[azure]>=1.12.3
 django_celery_results
 djangorestframework
 djangorestframework_simplejwt
@@ -18,11 +18,13 @@ jsonpickle
 jsonschema
 markdown
 mozilla_django_oidc
+ods_tools
+pandas
+pathlib2
+psycopg2-binary
+pyarrow
 pymysql
 pyrabbit
 redis
+sqlalchemy
 whitenoise
-
-ods_tools
-pandas
-pyarrow

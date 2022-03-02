@@ -125,6 +125,8 @@ djangorestframework-simplejwt==4.8.0
     # via -r requirements-server.in
 drf-yasg==1.20.0
     # via -r requirements-server.in
+greenlet==1.1.2
+    # via sqlalchemy
 hiredis==2.0.0
     # via aioredis
 httplib2==0.19.1
@@ -182,8 +184,12 @@ packaging==21.0
     # via drf-yasg
 pandas==1.4.1
     # via -r requirements-server.in
+pathlib2==2.3.7.post1
+    # via -r requirements-server.in
 prompt-toolkit==3.0.20
     # via click-repl
+psycopg2-binary==2.9.3
+    # via -r requirements-server.in
 pyarrow==7.0.0
     # via -r requirements-server.in
 pyasn1==0.4.8
@@ -245,9 +251,12 @@ six==1.16.0
     #   click-repl
     #   isodate
     #   jsonschema
+    #   pathlib2
     #   pyopenssl
     #   python-dateutil
     #   service-identity
+sqlalchemy==1.4.31
+    # via -r requirements-server.in
 sqlparse==0.4.2
     # via
     #   django

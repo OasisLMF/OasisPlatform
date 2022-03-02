@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import tempfile
 
 from azure.core.exceptions import ResourceNotFoundError
@@ -42,6 +43,7 @@ class AzureObjectStore(BaseStorageConnector):
         self.azure_log_level      = settings.get('worker', 'AWS_LOG_LEVEL', fallback=logging.ERROR)
         self.azure_protocol       = 'https' if self.azure_ssl else 'http'
         set_azure_log_level(self.azure_log_level)
+        super(AzureObjectStore, self).__init__(settings)
 
     def _get_service_client(self):
         if self.connection_string is not None:
@@ -98,9 +100,16 @@ class AzureObjectStore(BaseStorageConnector):
             download_file.write(blob_client.download_blob().readall())
         return os.path.abspath(fpath)
 
-    def _store_file(self, file_path, suffix=None):
+    def _store_file(self, file_path, storage_fname=None, storage_subdir='', suffix=None, **kwargs):
         ext = file_path.split('.')[-1] if not suffix else suffix
-        object_name = self._get_unique_filename(ext)
+        filename = storage_fname if storage_fname else self._get_unique_filename(ext)
+        object_name = os.path.join(storage_subdir, filename)
+
+        if self.cache_root:
+            os.makedirs(self.cache_root, exist_ok=True)
+            cached_fp = os.path.join(self.cache_root, filename)
+            shutil.copy(file_path, cached_fp)
+
         self.upload(object_name, file_path)
         logging.info('Stored Azure Blob: {} -> {}'.format(file_path, object_name))
 
@@ -109,9 +118,15 @@ class AzureObjectStore(BaseStorageConnector):
         else:
             return self.url(object_name)
 
-    def _store_dir(self, directory_path, suffix=None, arcname=None):
+    def _store_dir(self, directory_path, storage_fname=None, storage_subdir='', suffix=None, arcname=None):
         ext = 'tar.gz' if not suffix else suffix
-        object_name = self._get_unique_filename(ext)
+        filename = storage_fname if storage_fname else self._get_unique_filename(ext)
+        object_name = os.path.join(storage_subdir, filename)
+
+        if self.cache_root:
+            os.makedirs(self.cache_root, exist_ok=True)
+            cached_fp = os.path.join(self.cache_root, filename)
+            shutil.copy(archive_path, cached_fp)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             archive_path = os.path.join(tmpdir, object_name)
@@ -134,3 +149,23 @@ class AzureObjectStore(BaseStorageConnector):
         blob_key = os.path.join(self.location, object_name)
         blob_client = self.client.get_blob_client(blob_key)
         return blob_client.url
+
+
+    def delete_file(self, reference):
+        """ Marks blob for deletion, will also remove snapshots
+        """
+        blob_client = self.client.get_blob_client(reference)
+        blob_client.delete_blob()
+        logging.info(f'Deleted Azure Blob: {reference}')
+
+
+    def delete_dir(self, reference):
+        """ Delete multiple Objects
+        """
+        if not (reference and reference.strip()):
+            raise ValueError('reference must be a non-emtpry string holding the dir name')
+
+        key_prefix = os.path.join(self.location, reference)
+        matching_objs = self.client.list_blobs(name_starts_with=key_prefix)
+        for blob in matching_objs:
+            self.delete_file(blob.name)

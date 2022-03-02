@@ -32,7 +32,7 @@ from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 #from .storage_manager import StorageSelector
-from .orig_storage_manager import BaseStorageConnector
+from .storage_manager import BaseStorageConnector
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 

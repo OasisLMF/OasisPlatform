@@ -9,8 +9,8 @@ pymysql
 psycopg2-binary
 sqlalchemy
 pytest
-azure-core
-azure-storage-blob
+azure-core>=1.21.1
+azure-storage-blob>=12.9.0
 
 
 # new requ

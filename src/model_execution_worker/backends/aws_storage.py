@@ -146,7 +146,7 @@ class AwsObjectStore(BaseStorageConnector):
         logging.info('Get S3: {}'.format(reference))
         return os.path.abspath(fpath)
 
-    def _store_file(self, file_path, suffix=None):
+    def _store_file(self, file_path, storage_fname=None, storage_subdir='', suffix=None, **kwargs):
         """ Overloaded function for AWS file storage
 
         Uploads the Object pointed to by `file_path`
@@ -157,6 +157,9 @@ class AwsObjectStore(BaseStorageConnector):
         :param file_path: Path to a file object for upload
         :type file_path: str
 
+        :param storage_fname: Set the name of stored file, instead of uuid
+        :type  storage_fname: str
+
         :param suffix: Set the filename extension
         :type suffix: str
 
@@ -166,7 +169,13 @@ class AwsObjectStore(BaseStorageConnector):
         :rtype str
         """
         ext = file_path.split('.')[-1] if not suffix else suffix
-        object_name = self._get_unique_filename(ext)
+        filename = storage_fname if storage_fname else self._get_unique_filename(ext)
+        object_name = os.path.join(storage_subdir, filename)
+
+        if self.cache_root:
+            os.makedirs(self.cache_root, exist_ok=True)
+            cached_fp = os.path.join(self.cache_root, filename)
+            shutil.copy(file_path, cached_fp)
 
         self.upload(object_name, file_path)
         self.logger.info('Stored S3: {} -> {}'.format(file_path, object_name))
@@ -178,7 +187,8 @@ class AwsObjectStore(BaseStorageConnector):
             # Return URL
             return self.url(object_name)
 
-    def _store_dir(self, directory_path, suffix=None, arcname=None):
+    #def _store_dir(self, directory_path, suffix=None, arcname=None):
+    def _store_dir(self, directory_path, storage_fname=None, storage_subdir='', suffix=None, arcname=None):
         """ Overloaded function for AWS Directory storage
 
         Creates a compressed .tar.gz of all files under `directory_path`
@@ -188,6 +198,9 @@ class AwsObjectStore(BaseStorageConnector):
         ----------
         :param directory_path: Path to a directory for upload
         :type directory_path: str
+
+        :param storage_fname: Set the name of stored file, instead of uuid
+        :type  storage_fname: str
 
         :param suffix: Set the filename extension
                        defaults to `tar.gz`
@@ -203,16 +216,22 @@ class AwsObjectStore(BaseStorageConnector):
                  `AWS_QUERYSTRING_EXPIRE`
         """
         ext = 'tar.gz' if not suffix else suffix
-        object_name = self._get_unique_filename(ext)
+        filename = storage_fname if storage_fname else self._get_unique_filename(ext)
+        object_name = os.path.join(storage_subdir, filename)
         object_args = {
             'ContentType': 'application/x-gzip',
             'ContentEncoding': 'gzip'
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            archive_path = os.path.join(tmpdir, object_name)
+            archive_path = os.path.join(tmpdir, filename)
             self.compress(archive_path, directory_path, arcname)
             self.upload(object_name, archive_path, ExtraArgs=object_args)
+
+            if self.cache_root:
+                os.makedirs(self.cache_root, exist_ok=True)
+                cached_fp = os.path.join(self.cache_root, filename)
+                shutil.copy(archive_path, cached_fp)
 
         self.logger.info('Stored S3: {} -> {}'.format(directory_path, object_name))
         if self.shared_bucket:
@@ -292,6 +311,45 @@ class AwsObjectStore(BaseStorageConnector):
             return url
         else:
             return self._strip_signing_parameters(url)
+
+    def delete_file(self, reference):
+        """ Delete single Onject from S3 where
+            reference = object key
+        """
+
+        del_request = {
+            'Objects': [{'Key': os.path.join(self.location, reference)}],
+            'Quiet': False
+        }
+        rsp = self.bucket.delete_objects(Delete=del_request)
+        errors = rsp.get('Errors')
+        deleted = rsp.get('Delete')
+
+        if errors:
+            self.logger.info(errors)
+        if deleted and not errors:
+            self.logger.info('Delete S3: {}'.format([obj['Key'] for obj in deleted]))
+
+    def delete_dir(self, reference):
+        """ Delete multiple Objects from S3 where
+            'reference' is used to match keys of multiple stored Objects
+        """
+
+        key_prefix = os.path.join(self.location, reference)
+        matching_obj = [{'Key':o.key} for o in self.bucket.objects.filter(Prefix=key_prefix)]
+        del_request = {
+            'Objects': matching_obj,
+            'Quiet': False
+        }
+        rsp = self.bucket.delete_objects(Delete=del_request)
+        self.logger.info(rsp)
+        errors = rsp.get('Errors')
+        deleted = rsp.get('Delete')
+
+        if errors:
+            self.logger.info(errors)
+        if deleted and not errors:
+            self.logger.info('Delete S3: {}'.format([obj['Key'] for obj in deleted]))
 
     def upload(self, object_name, filepath, ExtraArgs=None):
         """ Wrapper for BOTO3 bucket upload
