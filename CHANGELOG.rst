@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.15.24-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.23-lts...1.15.24-lts
+
 .. _`1.15.23-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.22-lts...1.15.23-lts
 
 `1.15.22-lts`_
