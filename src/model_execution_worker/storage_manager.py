@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import tarfile
+import tempfile
 import uuid
 
 from urllib.parse import urlparse
@@ -178,7 +179,7 @@ class BaseStorageConnector(object):
         try:
             temp_dir_path = temp_dir.__enter__()
             local_archive_path = self.get(
-                archive_fp, 
+                archive_fp,
                 os.path.join(temp_dir_path, os.path.basename(archive_fp)),
                 subdir=storage_subdir
             )
@@ -230,7 +231,7 @@ class BaseStorageConnector(object):
         :rtype str
         """
 
-        # Download if URL ref 
+        # Download if URL ref
         if self._is_valid_url(reference):
             response = urlopen(reference)
             fdata = response.read()
@@ -255,15 +256,19 @@ class BaseStorageConnector(object):
             with io.open(fpath, 'w+b') as f:
                 f.write(fdata)
                 logging.info('Get from URL: {}'.format(fname))
-            
-            # Store in cache if enabled 
+
+            # Store in cache if enabled
             if self.cache_root:
                 os.makedirs(self.cache_root, exist_ok=True)
                 shutil.copy(fpath, cached_file)
             return os.path.abspath(fpath)
 
         elif self._is_stored(reference):
-            return self._fetch_file(reference, output_path)
+            if os.path.isdir(output_path):
+                fpath = os.path.join(output_path, os.path.basename(reference))
+            else:
+                fpath = output_path
+            return self._fetch_file(reference, fpath)
         else:
             if required:
                 raise MissingInputsException(reference)

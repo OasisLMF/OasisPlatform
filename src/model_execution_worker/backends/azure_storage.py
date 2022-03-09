@@ -89,12 +89,15 @@ class AzureObjectStore(BaseStorageConnector):
         except ResourceNotFoundError:
             return False
 
-    def _fetch_file(self, reference, output_dir=""):
+    def _fetch_file(self, reference, output_path=""):
         blob_client = self.client.get_blob_client(reference)
-        fpath = os.path.join(
-            output_dir,
-            os.path.basename(reference)
-        )
+
+        if output_path:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            fpath = output_path
+        else:
+            fpath = os.path.basename(reference)
+
         logging.info('Get Azure Blob: {}'.format(reference))
         with open(fpath, "wb") as download_file:
             download_file.write(blob_client.download_blob().readall())
@@ -123,15 +126,16 @@ class AzureObjectStore(BaseStorageConnector):
         filename = storage_fname if storage_fname else self._get_unique_filename(ext)
         object_name = os.path.join(storage_subdir, filename)
 
-        if self.cache_root:
-            os.makedirs(self.cache_root, exist_ok=True)
-            cached_fp = os.path.join(self.cache_root, filename)
-            shutil.copy(archive_path, cached_fp)
-
         with tempfile.TemporaryDirectory() as tmpdir:
-            archive_path = os.path.join(tmpdir, object_name)
+            archive_path = os.path.join(tmpdir, filename)
             self.compress(archive_path, directory_path, arcname)
             self.upload(object_name, archive_path)
+
+            if self.cache_root:
+                os.makedirs(self.cache_root, exist_ok=True)
+                cached_fp = os.path.join(self.cache_root, filename)
+                shutil.copy(archive_path, cached_fp)
+
         logging.info('Stored Azure Blob: {} -> {}'.format(directory_path, object_name))
 
         if self.shared_container:
