@@ -94,7 +94,10 @@ case $CMD in
         "df")
           curlf -X DELETE -s -o /dev/null -w "%{http_code}" "${API_URL}/v1/data_files/${id}/"
         ;;
-        "a")
+        "portfolio"|"p")
+          curlf -X DELETE -s -o /dev/null -w "%{http_code}" "${API_URL}/v1/portfolios/${id}/"
+        ;;
+        "analysis"|"a")
           curlf -X DELETE -s -o /dev/null -w "%{http_code}" "${API_URL}/v1/analyses/${id}/"
         ;;
       esac

@@ -62,6 +62,8 @@ ingress:
 #    strategy: 'letsencrypt'
 #    certificateSecret: oasis-ingress-tls
 #    email: <email>
+#    server: https://acme-v02.api.letsencrypt.org/directory
+#    server: https://acme-staging-v02.api.letsencrypt.org/directory # Stage server
 
   # Hostname for Oasis UI, API, Prometheus, Alert manager and Grafana
   uiHostname: ui.oasis.local
@@ -75,22 +77,22 @@ fullnameOverride: ""
 
 # Control how kubernetes deployed pods to nodes - this is applied to all pods managed by this chart
 #affinity:
-#  # Place all pods on nodes with label oasis/node-type set to either 'platform' or 'small'
+#  # Place all pods on nodes with label oasislmf/node-type set to either 'platform' or 'small'
 #  nodeAffinity:
 #    requiredDuringSchedulingIgnoredDuringExecution:
 #      nodeSelectorTerms:
 #        - matchExpressions:
-#            - key: oasis/node-type
+#            - key: oasislmf/node-type
 #              operator: In
 #              values:
 #                - platform
 #                - small
-#  # Do not schedule any pod on a node with a pod with label oasis/pod-type set to 'worker'
+#  # Do not schedule any pod on a node with a pod with label oasislmf/type set to 'worker'
 #  podAntiAffinity:
 #    requiredDuringSchedulingIgnoredDuringExecution:
 #      - labelSelector:
 #          matchExpressions:
-#            - key: oasis/pod-type
+#            - key: oasislmf/type
 #              operator: In
 #              values:
 #                - worker
@@ -189,10 +191,28 @@ oasisUI:
   name: oasis-ui
   port: 8080
 
+# Enable if Azure Files are used to store the storage account name and key for access.
+#azure:
+#  storageAccounts:
+#    oasisfs:
+#      secretName: azure-oasisfs
+#      accountName: account
+#      accountKey: key
+
 # Volumes to mount and use within the platform
+# Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount
 volumes:
   # Placement of the shared filesystem on the kubernetes host node
-  sharedFs:
-    name: shared-fs
-    storageCapacity: 2Gi
-    hostPath: /data/shared-fs/
+  host:
+    sharedFs:
+      name: shared-fs
+      storageCapacity: 2Gi
+      hostPath: /data/shared-fs/
+#  azureFiles:
+#    sharedFs:
+#      csi:
+#        driver: file.csi.azure.com
+#        volumeAttributes:
+#          secretName: azure-secret
+#          shareName: oasisfs
+

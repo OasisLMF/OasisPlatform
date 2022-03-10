@@ -1,15 +1,25 @@
 # Chart default values. Override by passing --set or -f to helm.
 
 # Volumes made accessible for workers for model data or any other worker specific data.
-# Mount them in a worker by adding them to workers.volumes.
+# Mount them in a worker by adding them to workers.volumes with identical name.
 modelVolumes:
 #  - name: A unique volume name
-#    storageCapacity: The size limit of this volume
+#    source: Either 'host' for host mounting path, or 'azureFiles' to mount an Azure files share
 #    hostPath: Path on the data on the kubernetes host node.
+#    storageCapacity: The size limit of this volume. Only requires if sources is 'host'
+#    csi: The Azure csi drive setup. Only required if sources is 'azureFiles'
   # Piwind model data - hostPath must exist on the nodes fs
   - name: piwind-model-data-pv
-    storageCapacity: 1Gi
+    source: host
     hostPath: /data/model-data/piwind/
+    storageCapacity: 1Gi
+#  - name: oasis-models-azure-file
+#    source: azureFiles
+#    csi:
+#      driver: file.csi.azure.com
+#      volumeAttributes:
+#        secretName: azure-secret
+#        shareName: oasisfs
 
 workers:
   - supplierId: OasisLMF
@@ -24,9 +34,25 @@ workers:
       - name: OASIS_MODEL_DATA_DIRECTORY
         value: /home/worker/model
     volumes: # Volume defined in modelVolumes
+#      - name: name of volume defined in modelVolumes.
+#        type: Type of volume, set 'model-data' for model data mounts. Any other value for additional mounts
+#        mountPath: Path to mount this volume on
+#        source: Can either be 'host' or 'azureFiles':
+#                host       - Host path on kubernetes node
+#                azureFiles - Azure files on account storage
       - name: piwind-model-data-pv
-        mountPath: /home/worker/model
         type: model-data
+        mountPath: /home/worker/model
+        source: host         # Can either be 'host' or 'azureFiles':
+                             #  host       - Host path on kubernetes node
+                             #  azureFiles - Azure files on account storage
+#        source: azureFiles
+#      - name: oasis-models-azure-file
+#        type: model-data
+#        mountPath: /home/worker/model
+#        source: azureFiles         # Can either be 'host' or 'azureFiles':
+#                             #  host       - Host path on kubernetes node
+#                             #  azureFiles - Azure files on account storage
 #    groups:
 #      - wind
 #      - flood
@@ -43,22 +69,22 @@ registration_job:
 
 # Control how kubernetes deployed pods to nodes - this is applied to all pods managed by this chart
 #affinity:
-#  # Place all pods on nodes with label oasis/node-type set to either 'platform' or 'small'
+#  # Place all pods on nodes with label oasislmf/node-type set to either 'platform' or 'small'
 #  nodeAffinity:
 #    requiredDuringSchedulingIgnoredDuringExecution:
 #      nodeSelectorTerms:
 #        - matchExpressions:
-#            - key: oasis/node-type
+#            - key: oasislmf/node-type
 #              operator: In
 #              values:
 #                - platform
 #                - small
-#  # Do not schedule any pod on a node with a pod with label oasis/pod-type set to 'worker'
+#  # Do not schedule any pod on a node with a pod with label oasislmf/type set to 'worker'
 #  podAntiAffinity:
 #    requiredDuringSchedulingIgnoredDuringExecution:
 #      - labelSelector:
 #          matchExpressions:
-#            - key: oasis/pod-type
+#            - key: oasislmf/type
 #              operator: In
 #              values:
 #                - worker
@@ -78,6 +104,7 @@ oasisServer:
   name: oasis-server
 
 volumes:
-  sharedFs:
-    name: shared-fs
+  host:
+    sharedFs:
+      name: shared-fs
 ## End of sync with oasis-platform values ##

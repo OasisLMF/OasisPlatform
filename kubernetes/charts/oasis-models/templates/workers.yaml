@@ -1,5 +1,6 @@
 {{- $root := . -}}
 {{- range .Values.workers }}
+{{- $worker := . -}}
 {{- $name := printf "worker-%s-%s-%s" .supplierId .modelId .modelVersionId | lower }}
 apiVersion: apps/v1
 kind: Deployment
@@ -57,16 +58,33 @@ spec:
               mountPath: /shared-fs
             {{- range .volumes }}
             - name: {{ .name }}
+              {{- if eq .source "azureFiles" }}
+              subPath: {{ printf "%s/%s/%s" $worker.supplierId $worker.modelId $worker.modelVersionId }}
+              {{- end }}
               mountPath: {{ .mountPath }}
             {{- end }}
       volumes:
         - name: shared-fs-persistent-storage
+{{- if (($root.Values.volumes.host).sharedFs) }}
           persistentVolumeClaim:
-            claimName: {{ $root.Values.volumes.sharedFs.name }}
+            claimName: {{ $root.Values.volumes.host.sharedFs.name }}
+{{- else if (($root.Values.volumes.azureFiles).sharedFs) }}
+{{- toYaml $root.Values.volumes.azureFiles.sharedFs | nindent 10 }}
+{{- end }}
         {{- range .volumes }}
         - name: {{ .name }}
+          {{- if eq .source "host" }}
           persistentVolumeClaim:
             claimName: {{ .name }}
+          {{- else if eq .source "azureFiles" }}
+            {{- $workerVolumeName := .name }}
+            {{- range $root.Values.modelVolumes }}
+              {{- if eq .name $workerVolumeName }}
+          csi:
+            {{- toYaml .csi | nindent 12 }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
         {{- end }}
 ---
 {{- end }}
