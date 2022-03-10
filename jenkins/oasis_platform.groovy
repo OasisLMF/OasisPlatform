@@ -170,11 +170,11 @@ node {
             if (params.CHECK_COMPATIBILITY) {
                 dir(oasis_workspace) {
                     if (params.PREV_RELEASE_TAG){
-                        env.LAST_RELEASE_TAG = params.PREV_RELEASE_TAG                                                                       
-                    } else {  
-                        sh "curl https://api.github.com/repos/OasisLMF/OasisPlatform/tags | jq -r '( first ) | .name' > last_release_tag"
+                        env.LAST_RELEASE_TAG = params.PREV_RELEASE_TAG
+                    } else {
+                        sh "curl https://api.github.com/repos/OasisLMF/OasisPlatform/releases | jq -r '( first ) | .name' > last_release_tag"
                         env.LAST_RELEASE_TAG = readFile('last_release_tag').trim()
-                    }    
+                    
                     println("LAST_RELEASE = $env.LAST_RELEASE_TAG")
                 }
             }

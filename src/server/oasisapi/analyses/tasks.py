@@ -11,8 +11,11 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 
 from ....conf import celeryconf as celery_conf
+from ....conf.iniconf import settings as  worker_settings
 
 from botocore.exceptions import ClientError as S3_ClientError
+from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError
+from azure.storage.blob import BlobLeaseClient
 from celery import Task
 from celery import signals
 from celery.result import AsyncResult
@@ -28,13 +31,15 @@ from django.db.models import When, Case, Value, F
 from django.http import HttpRequest
 from django.utils import timezone
 
-from src.conf.iniconf import settings
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
+from src.server.oasisapi.files.upload import wait_for_blob_copy
+
 from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
 from ..celery_app import celery_app
+
 
 logger = get_task_logger(__name__)
 
@@ -61,6 +66,17 @@ def is_in_bucket(object_key):
                 return False
             else:
                 raise e
+
+def is_in_container(object_key):
+    if not hasattr(default_storage, 'azure_container'):
+        return False
+    else:
+        try:
+            blob = default_storage.client.get_blob_client(object_key)
+            blob.get_blob_properties()
+            return True
+        except Blob_ResourceNotFoundError:
+            return False
 
 
 def store_file(reference, content_type, creator, required=True, filename=None):
@@ -107,7 +123,7 @@ def store_file(reference, content_type, creator, required=True, filename=None):
 
     # Issue S3 object Copy
     if is_in_bucket(reference):
-        fname = filename if filename else ref
+        fname = filename if filename else os.path.basename(reference)
         new_file = ContentFile(b'')
         new_file.name = fname
         new_related_file = RelatedFile.objects.create(
@@ -122,7 +138,35 @@ def store_file(reference, content_type, creator, required=True, filename=None):
         stored_file.obj.wait_until_exists()
         return new_related_file
 
+    # Issue Azure object Copy
+    if is_in_container(reference):
+        new_filename = filename if filename else os.path.basename(reference)
+        fname = default_storage._get_valid_path(new_filename)
+        source_blob = default_storage.client.get_blob_client(reference)
+        dest_blob = default_storage.client.get_blob_client(fname)
+
+        try:
+            lease = BlobLeaseClient(source_blob)
+            lease.acquire()
+            dest_blob.start_copy_from_url(source_blob.url)
+            wait_for_blob_copy(dest_blob)
+            lease.break_lease()
+        except Exception as e:
+            # copy failed, break file lease and re-raise
+            lease.break_lease()
+            raise e
+
+        stored_blob = default_storage.open(os.path.basename(fname))
+        new_related_file = RelatedFile.objects.create(
+            file=File(stored_blob, name=fname),
+            filename=fname,
+            content_type=content_type,
+            creator=creator,
+            store_as_filename=True)
+        return new_related_file
+
     try:
+        # Copy via shared FS
         ref = str(os.path.basename(reference))
         fname = filename if filename else ref
         return RelatedFile.objects.create(
@@ -200,7 +244,7 @@ class LogTaskError(Task):
                         tmp_file.write(traceback_msg.encode('utf-8'))
                         analysis.input_generation_traceback_file = RelatedFile.objects.create(
                             file=File(tmp_file, name=random_filename),
-                            filename=random_filename,
+                            filename=f'analysis_{analysis_pk}_generation_traceback.txt',
                             content_type='text/plain',
                             creator=initiator,
                         )
@@ -210,7 +254,7 @@ class LogTaskError(Task):
                         tmp_file.write(traceback_msg.encode('utf-8'))
                         analysis.run_traceback_file = RelatedFile.objects.create(
                             file=File(tmp_file, name=random_filename),
-                            filename=random_filename,
+                            filename=f'analysis_{analysis_pk}_run_traceback.txt',
                             content_type='text/plain',
                             creator=initiator,
                         )
@@ -367,8 +411,6 @@ def cancel_subtasks(self, analysis_pk):
 
 @celery_app.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
 def start_input_generation_task(analysis_pk, initiator_pk):
-    #from celery.contrib import rdb
-    #rdb.set_trace()
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
@@ -412,11 +454,11 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     initiator = get_user_model().objects.get(pk=initiator_id)
 
     analysis.status = Analysis.status_choices.READY
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator)
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator)
-    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator)
-    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator)
-    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator)
+    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
+    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_gul_summary_map.csv')
+    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, filename=f'analysis_{analysis_id}_exposure_summary_report.json')
+    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, filename=f'analysis_{analysis_id}_exposure_summary_levels.json')
 
     #if log_location:
     #    analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
@@ -446,8 +488,8 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
     )
 
     # Store logs and output
-    analysis.run_log_file = store_file(result['log_location'], 'application/gzip', initiator)
-    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator)
+    analysis.run_log_file = store_file(result['log_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
 
     analysis.save()
     return result
@@ -558,6 +600,9 @@ def handle_task_failure(
     traceback_property=None,
     failure_status=None,
 ):
+    #from celery.contrib import rdb
+    #rdb.set_trace()
+
     tb = _traceback_from_errback_args(*args)
 
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, run_data_uuid: {}, failure_status: {}'.format(
@@ -574,7 +619,7 @@ def handle_task_failure(
             tmp_file.write(tb.encode('utf-8'))
             setattr(analysis, traceback_property, RelatedFile.objects.create(
                 file=File(tmp_file, name=random_filename),
-                filename=random_filename,
+                filename=f'analysis_{analysis_id}_worker_traceback.txt',
                 content_type='text/plain',
                 creator=get_user_model().objects.get(pk=initiator_id),
             ))
@@ -584,15 +629,14 @@ def handle_task_failure(
             analysis.run_log_file.delete()
             analysis.run_log_file = None
 
-        analysis.cancel()
         analysis.save()
     except Exception as e:
         logger.exception(str(e))
 
     # cleanup the temporary run files
-    if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False) and run_data_uuid:
+    if not worker_settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False) and run_data_uuid:
         rmtree(
-            os.path.join(settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{run_data_uuid}'),
+            os.path.join(worker_settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{run_data_uuid}'),
             ignore_errors=True
         )
 

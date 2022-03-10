@@ -1,57 +1,55 @@
 # ---- STAGE 1 -----
-FROM python:3-alpine AS build-packages
+FROM python:3.9.7-alpine3.14 AS build-packages
 
-# Install build packages 
-RUN apk update && apk add curl gcc bash build-base musl-dev linux-headers git geos
+RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers libressl-dev libffi-dev postgresql-dev libpq
 
-# build libspatialindex (Rtree dep)
-RUN curl -L http://download.osgeo.org/libspatialindex/spatialindex-src-1.8.5.tar.gz | tar xz
-WORKDIR spatialindex-src-1.8.5
-#RUN ./configure --prefix=/root/.local/ 
-RUN ./configure
-RUN make 
-RUN make install 
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
+COPY ./requirements-server.txt ./requirements-server.txt
+RUN pip install --user --no-warn-script-location -r ./requirements-server.txt && pip install --no-warn-script-location --user mysqlclient
 
-# Build python packages 
-#RUN apk add py3-pandas --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing
-COPY ./requirements-worker.txt ./requirements.txt
-RUN pip install --user --no-warn-script-location -r ./requirements.txt
 
-# ---- STAGE 2 ---- ALPINE (WIP glibc problems)
-FROM python:3-alpine
+# ---- STAGE 2 ----
+FROM python:3.9.7-alpine3.14
 RUN apk update \
-    && apk add bash curl procps
+ && apk add --no-cache mariadb-dev libpq bash curl \
+ && apk upgrade --available
+
+# Note general package upgrade can be problematic for consistent builds, but safer in terms of security
+
 
 COPY --from=build-packages /root/.local /root/.local
-COPY --from=build-packages /usr/local/include/ /usr/local/include
-COPY --from=build-packages /usr/local/lib /usr/local/lib
 ENV PATH=/root/.local/bin:$PATH
-ENV OASIS_ENV_OVERRIDE=true
 
-#ENV OASIS_MEDIA_ROOT=/shared-fs
-#RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
-#WORKDIR /home/worker
-#
-#COPY ./src/startup_worker.sh ./startup.sh
-#COPY ./src/startup_tester.sh ./runtest
-#COPY ./conf.ini ./
-#COPY ./src/__init__.py ./src/
-#COPY ./src/common ./src/common/
-#COPY ./src/conf ./src/conf/
-#COPY ./src/model_execution_worker/ ./src/model_execution_worker/
-#COPY ./src/utils/ ./src/utils/
-#COPY ./src/utils/worker_bashrc /root/.bashrc
-#COPY ./tests/integration /home/worker/tests/integration
-#COPY ./VERSION ./
-#
-#RUN mkdir -p /var/oasis && \
-#    mkdir -p /var/log/oasis && \
-#    touch /var/log/oasis/worker.log && \
-#    chmod 777 /var/log/oasis/worker.log
-#
-#RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
-#    chown -R worker /home/worker && \
-#    chown -R worker /var/oasis && \
-#	chown -R worker /var/log
-#
-#ENTRYPOINT ./startup.sh
+WORKDIR /var/www/oasis
+ENV OASIS_MEDIA_ROOT=/shared-fs
+ENV OASIS_DEBUG=false
+RUN mkdir -p /var/log/oasis
+
+# Copy startup script + server config
+COPY ./src/startup_server.sh /usr/local/bin/startup
+COPY ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
+COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
+RUN chmod +x /usr/local/bin/startup /usr/local/bin/wait-for-it
+
+COPY ./asgi ./asgi
+RUN chmod +x ./asgi/run-asgi.sh
+
+COPY ./conf.ini ./
+COPY manage.py .
+COPY ./src/utils/set_default_user.py .
+COPY ./src/utils/server_bashrc /root/.bashrc
+
+COPY ./src/ ./src
+COPY ./src/server /var/www/oasis/src/server
+COPY ./src/common /var/www/oasis/src/common
+COPY ./src/conf /var/www/oasis/src/conf
+COPY ./VERSION /var/www/oasis/VERSION
+
+COPY ./model_resource.json /var/www/oasis/src/server/static/model_resource.json
+RUN OASIS_API_SECRET_KEY=supersecret python manage.py collectstatic --noinput
+ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
+
+EXPOSE 8000
+
+ENTRYPOINT ["startup"]
+CMD ["./asgi/run-asgi.sh"]
