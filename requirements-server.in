@@ -16,6 +16,8 @@ markdown
 django-filter
 django-storages
 django-cleanup
+django-request-logging
+djangorestframework
 djangorestframework_simplejwt
 django-model-utils>=4.0.0
 django-debug-toolbar

@@ -87,13 +87,14 @@ daphne==2.5.0
     # via
     #   -r requirements-server.in
     #   channels
-django==3.2.7
+django==3.2.10
     # via
     #   -r requirements-server.in
     #   channels
     #   django-debug-toolbar
     #   django-filter
     #   django-model-utils
+    #   django-request-logging
     #   django-storages
     #   djangorestframework
     #   djangorestframework-simplejwt
@@ -109,7 +110,9 @@ django-filter==21.1
     # via -r requirements-server.in
 django-model-utils==4.1.1
     # via -r requirements-server.in
-django-storages==1.11.1
+django-request-logging==0.7.3
+    # via -r requirements-server.in
+django-storages==1.12.3
     # via -r requirements-server.in
 djangorestframework==3.12.4
     # via

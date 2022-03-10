@@ -15,7 +15,7 @@ import filelock
 import pandas as pd
 from billiard.exceptions import WorkerLostError
 from celery import Celery, signature
-from celery.signals import worker_ready, before_task_publish
+from celery.signals import worker_ready, before_task_publish, task_revoked
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
@@ -41,6 +41,8 @@ app.config_from_object(celery_conf)
 
 logging.info("Started worker")
 filestore = StorageSelector(settings)
+debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
+
 
 
 class TemporaryDir(object):
@@ -166,6 +168,27 @@ def check_worker_lost(task, analysis_pk):
     task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
 
 
+def notify_api_status(analysis_pk, task_status):
+    logging.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status',
+        args=(analysis_pk, task_status),
+        queue='celery'
+    ).delay()
+
+
+
+#https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
+@task_revoked.connect
+def revoked_handler(*args, **kwargs):
+    # Break the chain
+    request = kwargs.get('request')
+    request.chain[:] = []
+
+
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
@@ -205,45 +228,53 @@ def register_worker(sender, **k):
     logging.info("STORAGE_MANAGER: {}".format(type(filestore)))
     logging.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
 
-    if selected_storage in ['local-fs', 'shared-fs']:
-        logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
+    if debug_worker:
+        logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
+        if selected_storage in ['local-fs', 'shared-fs']:
+            logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
-    elif selected_storage in ['aws-s3', 'aws', 's3']:
-        logging.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
-        logging.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
-        logging.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
-        logging.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
-        logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
-        logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
-        logging.info('AWS_LOG_LEVEL: {}'.format(settings.get('worker', 'AWS_LOG_LEVEL', fallback='None')))
+        elif selected_storage in ['aws-s3', 'aws', 's3']:
+            logging.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
+            logging.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
+            logging.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
+            logging.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
+            logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
+            logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
+            logging.info('AWS_LOG_LEVEL: {}'.format(settings.get('worker', 'AWS_LOG_LEVEL', fallback='None')))
 
     # Optional ENV
-    logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
     logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
     logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
 
-    # Log All Env variables
-    logging.info('OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+    # Log Env variables
+    if debug_worker:
+        # show all env variables and  override root log level
+        logging.info('ALL_OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+    else:
+        # Limit Env variables to run only variables
+        logging.info('OASIS_ENV_VARS:' + json.dumps({
+            k: v for (k, v) in os.environ.items() if k.startswith('OASIS_') and not any(
+                substring in k for substring in [
+                    'SERVER',
+                    'CELERY',
+                    'RABBIT',
+                    'BROKER',
+                    'USER',
+                    'PASS',
+                    'PORT',
+                    'HOST',
+                    'ROOT',
+                    'DIR',
+                ])}, indent=4))
 
     # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
         os.rmdir(tmpdir)
 
 
-# Send notification back to the API Once task is read from Queue
-def notify_api_status(analysis_pk, task_status):
-    logging.info("Notify API: analysis_id={}, status={}".format(
-        analysis_pk,
-        task_status
-    ))
-    signature(
-        'set_task_status',
-        args=(analysis_pk, task_status),
-        queue='celery'
-    ).delay()
 
 
 class InvalidInputsException(OasisException):
@@ -299,11 +330,36 @@ def notify_api_task_started(analysis_id, task_id, task_slug):
         },
     ).delay()
 
+def update_all_tasks_ids(task_request):
+    """ Extract other task_id's from the celery request chain.
+        These are sent back to the `worker-monitor` container
+        and used to update the AnalysisTaskStatus Objects in the
+        Django DB.
 
-#
-# input generation tasks
-#
+        This is so that when a cancellation request is send there are
+        stored sub-task id's to revoke
+    """
+    try:
+        task_request.chain.sort()
+    except TypeError:
+        logging.debug('Task chain header is already sorted')
+    chain_tasks = task_request.chain[0]
+    task_update_list = list()
 
+    # Sequential tasks - in the celery task chain, important for stopping stalls on a cancellation request
+    seq = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
+    for task_id in seq:
+        task_update_list.append((task_id, seq[task_id]['analysis_id'], seq[task_id]['slug']))
+
+    # Chunked tasks - This call might get heavy as the chunk load increases (possibly remove later)
+    chunks = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
+    for task_id in chunks:
+        task_update_list.append((task_id, chunks[task_id]['analysis_id'], chunks[task_id]['slug']))
+    signature('update_task_id').delay(task_update_list)
+
+
+
+# --- input generation tasks ------------------------------------------------ #
 
 def keys_generation_task(fn):
     def maybe_prepare_complex_data_files(complex_data_files, user_data_dir):
@@ -399,6 +455,13 @@ def keys_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+
+        ## add check for work-lost function here
+        # check_worker_lost(task, analysis_pk)
+        #from celery.contrib import rdb
+        #rdb.set_trace()
+
+
         if isinstance(params, list):
             for p in params:
                 _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
@@ -429,6 +492,8 @@ def prepare_input_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
+    update_all_tasks_ids(self.request) # updates all the assigned task_ids
+
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
@@ -617,7 +682,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
-        'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
+        'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
         'output_location': filestore.put(params['target_dir']),
     }
 
@@ -635,9 +700,8 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
     return params
 
 
-#
-# loss generation tasks
-#
+
+# --- loss generation tasks ------------------------------------------------ #
 
 
 def loss_generation_task(fn):
@@ -731,6 +795,9 @@ def loss_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+        ## add check for work-lost function here
+        # check_worker_lost(task, analysis_pk)
+
         if isinstance(params, list):
             for p in params:
                 _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
@@ -752,6 +819,8 @@ def prepare_losses_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'RUN_STARTED')
+    update_all_tasks_ids(self.request) # updates all the assigned task_ids
+
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
@@ -809,14 +878,10 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         **params,
         'process_number': chunk_idx+1,
         'max_process_id' : num_chunks,
-        #'script_fp': f'{params["script_fp"]}.{chunk_idx}',
-        'ktools_fifo_queue_dir': os.path.join(params['model_run_dir'], 'fifo'),
+        'ktools_fifo_relative': True,
         'ktools_work_dir': os.path.join(params['model_run_dir'], 'work'),
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
-    Path(chunk_params['ktools_fifo_queue_dir']).mkdir(parents=True, exist_ok=True)
-
-    #params['fifo_queue_dir'], params['bash_trace'] = OasisManager().run_loss_generation(**chunk_params)
     OasisManager().generate_losses_partial(**chunk_params)
 
     return {
@@ -827,7 +892,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             subdir=params['storage_subdir']
         ),
         #'chunk_script_path': chunk_params['script_fp'],
-        'ktools_fifo_queue_dir': chunk_params['ktools_fifo_queue_dir'],
+        #'ktools_fifo_queue_dir': chunk_params['ktools_fifo_queue_dir'],
         'ktools_work_dir': chunk_params['ktools_work_dir'],
         'process_number': chunk_idx + 1,
     }
@@ -837,12 +902,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
-    abs_fifo_dir = os.path.join(
-        res['model_run_dir'],
-        res['ktools_fifo_queue_dir'],
-    )
-    Path(abs_fifo_dir).mkdir(exist_ok=True, parents=True)
-
     abs_work_dir = os.path.join(
         res['model_run_dir'],
         res['ktools_work_dir'],
@@ -931,4 +990,3 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
 
     if analysis_id and slug:
         signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
-

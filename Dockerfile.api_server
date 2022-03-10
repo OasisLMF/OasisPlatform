@@ -45,15 +45,13 @@ COPY manage.py .
 COPY ./src/utils/set_default_user.py .
 COPY ./src/utils/server_bashrc /root/.bashrc
 
-COPY ./src/ ./src
 COPY ./src/server /var/www/oasis/src/server
 COPY ./src/common /var/www/oasis/src/common
 COPY ./src/conf /var/www/oasis/src/conf
-COPY ./VERSION /var/www/oasis/VERSION
 
-COPY ./model_resource.json /var/www/oasis/src/server/static/model_resource.json
 RUN OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
 ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
+COPY ./VERSION /var/www/oasis/VERSION
 
 EXPOSE 8000
 EXPOSE 51970

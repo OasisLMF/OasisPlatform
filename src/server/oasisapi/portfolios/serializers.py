@@ -2,6 +2,7 @@ from os import path
 
 from botocore.exceptions import ClientError as S3_ClientError
 from django.contrib.auth.models import Group
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -268,14 +269,26 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 attrs[k] = value
         if errors:
             raise serializers.ValidationError(errors)
-
         return super(PortfolioStorageSerializer, self).validate(attrs)
+
+    def get_content_type(self, stored_filename):
+        try: # fetch content_type stored in Django's DB
+            return RelatedFile.objects.get(file=path.basename(stored_filename)).content_type
+        except ObjectDoesNotExist:
+            try: # Find content_type from S3 Object header
+                object_header = default_storage.connection.meta.client.head_object(
+                    Bucket=default_storage.bucket_name,
+                    Key=stored_filename)
+                return object_header['ContentType']
+            except ClientError:
+                # fallback to the default content_type
+                return default_storage.default_content_type
 
     def update(self, instance, validated_data):
         files_for_removal = list()
-        content_type = 'text/csv'
         user = self.context['request'].user
         for field in validated_data:
+            content_type = self.get_content_type(validated_data[field])
 
             # S3 storage - File copy needed
             if hasattr(default_storage, 'bucket'):
