@@ -8,7 +8,9 @@ OPTIONAL_MODEL_FILES="meta-data/chunking_configuration.json meta-data/scaling_co
 OASIS_CLUSTER_NAMESPACE="${OASIS_CLUSTER_NAMESPACE:-default}"
 
 if [ -z "$PWP" ] || ! [ -d "$PWP" ]; then
-  echo "Usage: $0 <piwind git path>"
+  echo "Usage: $0 <piwind git path> [<node-selector>]"
+  echo
+  echo "Example: $0 ~/git/OasisPiWind 'oasis/node-type: worker'"
   exit
 fi
 
@@ -29,6 +31,12 @@ for file in $OPTIONAL_MODEL_FILES; do
 done
 
 echo "Creating volume and pods..."
+
+NODE_SELECTOR=""
+if [ -n "$2" ]
+then
+  NODE_SELECTOR="$(echo -e "  nodeSelector:\n    ${2}\n")"
+fi
 
 cat << EOF | kubectl apply -n "$OASIS_CLUSTER_NAMESPACE" -f -
 apiVersion: v1
@@ -72,6 +80,7 @@ spec:
     - name: shared-fs-persistent-storage
       persistentVolumeClaim:
         claimName: host-data-volume-claim
+${NODE_SELECTOR}
 ---
 EOF
 

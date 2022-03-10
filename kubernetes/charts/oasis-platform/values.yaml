@@ -50,10 +50,18 @@ ingress:
 
   # Certificate for TLS
   tls:
-    # Set to true to use your certificate from the tls secret
-    providedCertificate: false
-    # Name of the secret containing your certificate
-#    providedCertificateSecret: oasis-ingress-tls
+    # Strategies:
+    # - default: A self-signed certificate will be generated
+    # - provided: Use provided certificate stored in secret - requires secret name to be set
+    # - letsencrypt: Use letsencrypt to retrieve a valid free certificate - requires email to be set
+    strategy: 'default'
+
+#    strategy: 'provided'
+#    certificateSecret: oasis-ingress-tls
+
+#    strategy: 'letsencrypt'
+#    certificateSecret: oasis-ingress-tls
+#    email: <email>
 
   # Hostname for Oasis UI, API, Prometheus, Alert manager and Grafana
   uiHostname: ui.oasis.local
