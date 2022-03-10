@@ -2,6 +2,7 @@ import boto3
 import logging
 import os
 import tempfile
+import shutil
 
 from urllib.parse import urlsplit, parse_qsl
 from botocore.exceptions import ClientError as S3_ClientError
@@ -128,7 +129,7 @@ class AwsObjectStore(BaseStorageConnector):
                 logging.info(e.response)
                 raise e
 
-    def _fetch_file(self, reference, output_dir=""):
+    def _fetch_file(self, reference, output_path=""):
         """
         Download an S3 object to a file
 
@@ -138,10 +139,12 @@ class AwsObjectStore(BaseStorageConnector):
         :type  file_path: str
 
         """
-        fpath = os.path.join(
-            output_dir,
-            os.path.basename(reference)
-        )
+        if output_path:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            fpath = output_path
+        else:
+            fpath = os.path.basename(reference)
+
         self.bucket.download_file(reference, fpath)
         logging.info('Get S3: {}'.format(reference))
         return os.path.abspath(fpath)

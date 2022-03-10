@@ -411,8 +411,6 @@ def cancel_subtasks(self, analysis_pk):
 
 @celery_app.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
 def start_input_generation_task(analysis_pk, initiator_pk):
-    #from celery.contrib import rdb
-    #rdb.set_trace()
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
@@ -456,11 +454,11 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     initiator = get_user_model().objects.get(pk=initiator_id)
 
     analysis.status = Analysis.status_choices.READY
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_inputs.tar.gz')
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, filename=f'analysis_{analysis_pk}_keys-errors.csv')
-    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_pk}_gul_summary_map.csv')
-    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, filename=f'analysis_{analysis_pk}_exposure_summary_report.json')
-    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, filename=f'analysis_{analysis_pk}_exposure_summary_levels.json')
+    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
+    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_gul_summary_map.csv')
+    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, filename=f'analysis_{analysis_id}_exposure_summary_report.json')
+    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, filename=f'analysis_{analysis_id}_exposure_summary_levels.json')
 
     #if log_location:
     #    analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
@@ -490,8 +488,8 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
     )
 
     # Store logs and output
-    analysis.run_log_file = store_file(result['log_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_logs.tar.gz')
-    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_output.tar.gz')
+    analysis.run_log_file = store_file(result['log_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
 
     analysis.save()
     return result
@@ -602,6 +600,9 @@ def handle_task_failure(
     traceback_property=None,
     failure_status=None,
 ):
+    #from celery.contrib import rdb
+    #rdb.set_trace()
+
     tb = _traceback_from_errback_args(*args)
 
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, run_data_uuid: {}, failure_status: {}'.format(
@@ -618,7 +619,7 @@ def handle_task_failure(
             tmp_file.write(tb.encode('utf-8'))
             setattr(analysis, traceback_property, RelatedFile.objects.create(
                 file=File(tmp_file, name=random_filename),
-                filename=f'analysis_{analysis_pk}_worker_traceback.txt',
+                filename=f'analysis_{analysis_id}_worker_traceback.txt',
                 content_type='text/plain',
                 creator=get_user_model().objects.get(pk=initiator_id),
             ))
