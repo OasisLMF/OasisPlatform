@@ -176,9 +176,10 @@ node {
                         env.LAST_RELEASE_TAG = readFile('last_release_tag').trim()
                     
                     println("LAST_RELEASE = $env.LAST_RELEASE_TAG")
+                    }
                 }
             }
-        }
+        }    
         if (mdk_branch && ! params.PUBLISH){
             stage('Git install MDK'){
                 dir(oasis_workspace) {
@@ -438,10 +439,7 @@ node {
                     }
                 }
             )
-        }
 
-        if(params.PUBLISH){
-            // Tag OasisPlatform / PiWind
             stage("Tag release") {
                 sshagent (credentials: [git_creds]) {
                     dir(model_workspace) {
