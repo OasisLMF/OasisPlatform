@@ -455,10 +455,6 @@ class Controller:
         """
         from src.server.oasisapi.analyses.models import Analysis
 
-        # DEBUG
-        from celery.contrib import rdb
-        rdb.set_trace()
-
         # fetch number of event chunks
         if analysis.model.chunking_options.loss_strategy == 'FIXED_CHUNKS':
             num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
