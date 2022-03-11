@@ -847,26 +847,8 @@ def prepare_losses_generation_params(
 
     run_params = {**config, **params}
     run_params["model_data_dir"] = model_data_dir
-
-    print(run_params)
-
+    #print(params)
     return OasisManager()._params_generate_losses(**run_params)
-
-
-    #return OasisManager().prepare_loss_generation_params(
-    #    model_data_fp=config.get('model_data_dir'),
-    #    model_package_fp=config.get('model_package_dir'),
-    #    model_custom_gulcalc=config.get('model_custom_gulcalc'),
-    #    ktools_error_guard=settings.getboolean('worker', 'KTOOLS_ERROR_GUARD', fallback=True),
-    #    ktools_debug=settings.getboolean('worker', 'DEBUG_MODE', fallback=False),
-    #    ktools_fifo_queue_dir=os.path.join(params['model_run_dir'], 'fifo'),
-    #    ktools_work_dir=os.path.join(params['model_run_dir'], 'work'),
-    #    ktools_alloc_rule_gul=settings.get('worker', 'KTOOLS_ALLOC_RULE_GUL', fallback=None),
-    #    ktools_alloc_rule_il=settings.get('worker', 'KTOOLS_ALLOC_RULE_IL', fallback=None),
-    #    ktools_alloc_rule_ri=settings.get('worker', 'KTOOLS_ALLOC_RULE_RI', fallback=None),
-    #    ktools_num_processes=num_chunks,
-    #    **params,
-    #)
 
 
 @app.task(bind=True, name='prepare_losses_generation_directory', **celery_conf.worker_task_kwargs)
@@ -884,13 +866,21 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
 @app.task(bind=True, name='generate_losses_chunk', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None, **kwargs):
+    #print(params)
 
-    print(params)
+    if num_chunks == 1:
+        # Run multiple ktools pipes (based on cpu cores) 
+        current_chunk_id = None
+        max_chunk_id = -1 
+    else:
+        # Run a single ktools pipe 
+        current_chunk_id = chunk_idx + 1
+        max_chunk_id = num_chunks
 
     chunk_params = {
         **params,
-        'process_number': chunk_idx+1,
-        'max_process_id' : num_chunks,
+        'process_number': current_chunk_id,
+        'max_process_id' : max_chunk_id,
         'ktools_fifo_relative': True,
         'ktools_work_dir': os.path.join(params['model_run_dir'], 'work'),
     }
@@ -904,8 +894,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             filename=f'work-{chunk_idx}.tar.gz',
             subdir=params['storage_subdir']
         ),
-        #'chunk_script_path': chunk_params['script_fp'],
-        #'ktools_fifo_queue_dir': chunk_params['ktools_fifo_queue_dir'],
         'ktools_work_dir': chunk_params['ktools_work_dir'],
         'process_number': chunk_idx + 1,
     }
