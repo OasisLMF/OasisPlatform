@@ -4,7 +4,7 @@ import string
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
-from django.urls import reverse
+from django.urls import reverse, set_script_prefix
 from django_webtest import WebTestMixin
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
@@ -24,6 +24,9 @@ from .fakes import fake_analysis
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
 
+#from django.conf import settings as django_settings
+#django_settings.FORCE_SCRIPT_NAME = ''
+##set_script_prefix('')
 
 class AnalysisApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -1224,8 +1227,9 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 json_data = {
                     "analysis_settings": {
                         "analysis_tag": "test_analysis",
-                        "module_supplier_id": "OasisIM",
+                        "model_supplier_id": "OasisLMF",
                         "model_version_id": "1",
+                        "model_name_id": "PiWind",
                         "number_of_samples": -1,
                         "gul_threshold": 0,
                         "model_settings": {
@@ -1274,8 +1278,9 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                     "analysis_settings": {
                         "source_tag": "test_source",
                         "analysis_tag": "test_analysis",
-                        "module_supplier_id": "OasisIM",
+                        "model_supplier_id": "OasisLMF",
                         "model_version_id": "1",
+                        "model_name_id": "PiWind",
                         "number_of_samples": 10,
                         "gul_threshold": 0,
                         "model_settings": {
