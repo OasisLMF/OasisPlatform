@@ -4,7 +4,7 @@ import string
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
-from django.urls import reverse, set_script_prefix
+from django.urls import reverse
 from django_webtest import WebTestMixin
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
@@ -23,10 +23,6 @@ from .fakes import fake_analysis
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
-
-#from django.conf import settings as django_settings
-#django_settings.FORCE_SCRIPT_NAME = ''
-##set_script_prefix('')
 
 class AnalysisApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
