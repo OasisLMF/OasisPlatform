@@ -90,7 +90,7 @@ cryptography==3.4.8
     #   service-identity
 daphne==2.5.0
     # via channels
-django==3.2.11
+django==3.2.12
     # via
     #   channels
     #   django-debug-toolbar
