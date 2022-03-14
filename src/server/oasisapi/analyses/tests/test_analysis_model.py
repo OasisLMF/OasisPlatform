@@ -1,5 +1,6 @@
 import string
 
+from .fakes import fake_analysis, FakeAsyncResultFactory, fake_analysis_task_status
 from backports.tempfile import TemporaryDirectory
 from django.test import override_settings
 from django.utils.timezone import now, utc
@@ -10,17 +11,19 @@ from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, sampled_from, datetimes, just
 from mock import patch, PropertyMock, Mock
 from rest_framework.exceptions import ValidationError
+from unittest.mock import ANY, MagicMock
 
 from src.conf import iniconf
 from ...portfolios.tests.fakes import fake_portfolio
 from ...files.tests.fakes import fake_related_file
 from ...auth.tests.fakes import fake_user
 from ..models import Analysis, AnalysisTaskStatus
-from .fakes import fake_analysis, FakeAsyncResultFactory, fake_analysis_task_status
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
+
+
 
 
 class CancelAnalysisTask(WebTestMixin, TestCase):
@@ -162,17 +165,18 @@ class AnalysisRun(WebTestMixin, TestCase):
     def test_state_is_ready___run_is_started(self, status, task_id):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
-                res_factory = FakeAsyncResultFactory(target_task_id=task_id)
+                #res_factory = FakeAsyncResultFactory(target_task_id=task_id)
                 analysis = fake_analysis(status=status, run_task_id=task_id, input_file=fake_related_file(), settings_file=fake_related_file())
                 initiator = fake_user()
 
-                sig_res = Mock()
-                sig_res.delay.return_value = res_factory(task_id)
+                task_obj = type('', (), {})()
+                task_obj.id = task_id
+                mock_task = MagicMock(return_value=task_obj) 
 
-                with patch('src.server.oasisapi.analyses.models.Analysis.run_analysis_signature', PropertyMock(return_value=sig_res)):
+                with patch('src.server.oasisapi.analyses.models.celery_app.send_task', new=mock_task):
                     analysis.run(initiator)
+                    mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk), {}, queue='celery', link_error=ANY, priority=4)
 
-                    sig_res.delay.assert_called_once_with(analysis.pk, initiator.pk)
 
     @given(
         status=sampled_from([
@@ -226,17 +230,15 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
     def test_state_is_not_running___run_is_started(self, status, task_id):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
-                res_factory = FakeAsyncResultFactory(target_task_id=task_id)
                 analysis = fake_analysis(status=status, run_task_id=task_id, portfolio=fake_portfolio(location_file=fake_related_file()))
                 initiator = fake_user()
 
-                sig_res = Mock()
-                sig_res.delay.return_value = res_factory(task_id)
-
-                with patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=sig_res)):
+                task_obj = type('', (), {})()
+                task_obj.id = task_id
+                mock_task = MagicMock(return_value=task_obj) 
+                with patch('src.server.oasisapi.analyses.models.celery_app.send_task', new=mock_task):
                     analysis.generate_inputs(initiator)
-
-                    sig_res.delay.assert_called_once_with(analysis.pk, initiator.pk)
+                    mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk), {}, queue='celery', link_error=ANY, priority=4)
 
     @given(
         status=sampled_from([
