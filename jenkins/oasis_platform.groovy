@@ -56,10 +56,12 @@ node {
     String docker_worker = "Dockerfile.model_worker"
     String docker_worker_debian = "Dockerfile.model_worker_debian"
     String docker_piwind = "docker/Dockerfile.piwind_worker"
+    String docker_controller = 'Dockerfile'
 
     String image_api     = "coreoasis/api_server"
     String image_worker  = "coreoasis/model_worker"
     String image_piwind  = "coreoasis/piwind_worker"
+    String image_controller = 'coreoasis/worker_controller'
 
     // docker vars (slim)
     //String docker_api_slim    = "docker/Dockerfile.api_server_alpine"
@@ -203,6 +205,15 @@ node {
                     }
                 }
             },
+            build_worker_controller: {
+                stage('Build: Worker controller') {
+                    dir(oasis_workspace) {
+                        dir('kubernetes/worker-controller'){
+                            sh PIPELINE + " build_image ${docker_controller} ${image_controller} ${env.TAG_RELEASE}"
+                        }    
+                    }
+                }
+            },
             build_model_worker_ubuntu: {
                 stage('Build: Model worker - Ubuntu') {
                     dir(oasis_workspace) {
@@ -234,6 +245,20 @@ node {
                         dir(oasis_workspace) {
                             // Scan for Image Efficient
                             sh " ./imagesize.sh  ${image_api}:${env.TAG_RELEASE} image_reports/size_api-server.txt"
+
+                            // Scan for CVE
+                            withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+                            }
+                        }
+                    }
+                },
+                scan_controller: {
+                    stage('Scan: worker controller'){
+                        dir(oasis_workspace) {
+                            // Scan for Image Efficient
+                            sh " ./imagesize.sh  ${image_controller}:${env.TAG_RELEASE} image_reports/size_api-server.txt"
 
                             // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
@@ -420,6 +445,16 @@ node {
                         }
                     }
                 },
+                publish_worker_controller: {
+                    stage ('Publish: worker_controller') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_controller} ${env.TAG_RELEASE}"
+                            if (! params.PRE_RELEASE){
+                                sh PIPELINE + " push_image ${image_controller} latest"
+                            }
+                        }
+                    }
+                },
                 publish_model_worker: {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
@@ -508,6 +543,7 @@ node {
             sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
             if(params.PURGE){
                 sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_controller} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-debian"
                 sh PIPELINE + " purge_image ${image_piwind} ${env.TAG_RELEASE}"
