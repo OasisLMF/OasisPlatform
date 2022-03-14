@@ -12,7 +12,6 @@ class Healthcheck(WebTest):
             self.assertEqual(200, response.status_code)
 
     def test_user_is_authenticated___response_is_ok(self):
-        user = fake_user()
         with patch.object(HealthcheckView, 'celery_is_ok', return_value=True) as mock_method:
             response = self.app.get(reverse('healthcheck'), user=fake_user())
             self.assertEqual(200, response.status_code)
