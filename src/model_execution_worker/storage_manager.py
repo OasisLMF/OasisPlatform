@@ -361,13 +361,12 @@ class BaseStorageConnector(object):
         else:
             logging.info('Delete Error - Unknwon reference {}'.format(reference))
 
-
-    def create_traceback(self, subprocess_run, output_dir=""):
+    def create_traceback(self, stdout, stderr, output_dir=""): 
         traceback_file = self._get_unique_filename(LOG_FILE_SUFFIX)
         fpath = os.path.join(output_dir, traceback_file)
-        with open(fpath, 'w') as f:
-            if subprocess_run.stdout:
-                f.write(subprocess_run.stdout.decode())
-            if subprocess_run.stderr:
-                f.write(subprocess_run.stderr.decode())
+        with open(fpath, 'w') as f:     
+            if stdout:
+                f.write(stdout)
+            if stderr:
+                f.write(stderr)
         return os.path.abspath(fpath)

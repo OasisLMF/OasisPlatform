@@ -34,8 +34,8 @@ node {
         [$class: 'StringParameterDefinition',  description: "Ktools prev release notes ref",       name: 'KTOOLS_PREV_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
         [$class: 'TextParameterDefinition',    description: "List of models for Regression tests", name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
-        [$class: 'BooleanParameterDefinition', description: "Test previous API and Worker",        name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
-        [$class: 'BooleanParameterDefinition', description: "Test S3 storage using LocalStack",    name: 'CHECK_S3', defaultValue: Boolean.valueOf(true)],
+        [$class: 'BooleanParameterDefinition', description: "Test previous API and Worker",        name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(false)],
+        [$class: 'BooleanParameterDefinition', description: "Test S3 storage using LocalStack",    name: 'CHECK_S3', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', description: "Run API unittests",                   name: 'UNITTEST', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', description: "Run Regression checks",               name: 'RUN_REGRESSION', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', description: "Purge docker images on completion",   name: 'PURGE', defaultValue: Boolean.valueOf(true)],
@@ -56,10 +56,12 @@ node {
     String docker_worker = "Dockerfile.model_worker"
     String docker_worker_debian = "Dockerfile.model_worker_debian"
     String docker_piwind = "docker/Dockerfile.piwind_worker"
+    String docker_controller = 'Dockerfile'
 
     String image_api     = "coreoasis/api_server"
     String image_worker  = "coreoasis/model_worker"
     String image_piwind  = "coreoasis/piwind_worker"
+    String image_controller = 'coreoasis/worker_controller'
 
     // docker vars (slim)
     //String docker_api_slim    = "docker/Dockerfile.api_server_alpine"
@@ -176,9 +178,10 @@ node {
                         env.LAST_RELEASE_TAG = readFile('last_release_tag').trim()
                     
                     println("LAST_RELEASE = $env.LAST_RELEASE_TAG")
+                    }
                 }
             }
-        }
+        }    
         if (mdk_branch && ! params.PUBLISH){
             stage('Git install MDK'){
                 dir(oasis_workspace) {
@@ -199,6 +202,15 @@ node {
                     dir(oasis_workspace) {
                         sh PIPELINE + " build_image ${docker_api} ${image_api} ${env.TAG_RELEASE}"
 
+                    }
+                }
+            },
+            build_worker_controller: {
+                stage('Build: Worker controller') {
+                    dir(oasis_workspace) {
+                        dir('kubernetes/worker-controller'){
+                            sh PIPELINE + " build_image ${docker_controller} ${image_controller} ${env.TAG_RELEASE}"
+                        }    
                     }
                 }
             },
@@ -238,6 +250,20 @@ node {
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+                            }
+                        }
+                    }
+                },
+                scan_controller: {
+                    stage('Scan: worker controller'){
+                        dir(oasis_workspace) {
+                            // Scan for Image Efficient
+                            sh " ./imagesize.sh  ${image_controller}:${env.TAG_RELEASE} image_reports/size_controller.txt"
+
+                            // Scan for CVE
+                            withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_controller.txt ${image_controller}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_controller}:${env.TAG_RELEASE}"
                             }
                         }
                     }
@@ -419,6 +445,16 @@ node {
                         }
                     }
                 },
+                publish_worker_controller: {
+                    stage ('Publish: worker_controller') {
+                        dir(build_workspace) {
+                            sh PIPELINE + " push_image ${image_controller} ${env.TAG_RELEASE}"
+                            if (! params.PRE_RELEASE){
+                                sh PIPELINE + " push_image ${image_controller} latest"
+                            }
+                        }
+                    }
+                },
                 publish_model_worker: {
                     stage('Publish: model_worker') {
                         dir(build_workspace) {
@@ -438,10 +474,7 @@ node {
                     }
                 }
             )
-        }
 
-        if(params.PUBLISH){
-            // Tag OasisPlatform / PiWind
             stage("Tag release") {
                 sshagent (credentials: [git_creds]) {
                     dir(model_workspace) {
@@ -510,6 +543,7 @@ node {
             sh PIPELINE + " stop_docker ${env.COMPOSE_PROJECT_NAME}"
             if(params.PURGE){
                 sh PIPELINE + " purge_image ${image_api} ${env.TAG_RELEASE}"
+                sh PIPELINE + " purge_image ${image_controller} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}"
                 sh PIPELINE + " purge_image ${image_worker} ${env.TAG_RELEASE}-debian"
                 sh PIPELINE + " purge_image ${image_piwind} ${env.TAG_RELEASE}"

@@ -453,4 +453,10 @@ if DEBUG_TOOLBAR:
 ASGI_APPLICATION = "src.server.oasisapi.routing.application"
 WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 
-
+# worker around for fixing unittesting 
+# in testing django.urls.resolve ignores 'FORCE_SCRIPT_NAME' but reverse returns the prefix
+# causing tests url test to fail
+# https://code.djangoproject.com/ticket/31724
+if 'pytest' in sys.argv[0]:
+    FORCE_SCRIPT_NAME = ''
+    MEDIA_ROOT = './shared-fs/'

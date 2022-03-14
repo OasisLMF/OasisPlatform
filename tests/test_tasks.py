@@ -122,7 +122,7 @@ class StartAnalysis(TestCase):
                         '--ktools-fifo-relative',
                         '--verbose',
                     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
-                    tarfile.assert_called_once_with(output_location, os.path.join(run_dir, 'output'), 'output')
+                    tarfile.assert_called_once_with(os.path.join(media_root, output_location), os.path.join(run_dir, 'output'), 'output')
 
 
 class StartAnalysisTask(TestCase):
