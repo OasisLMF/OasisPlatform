@@ -102,10 +102,14 @@ class AutoScaler:
         """
 
         desired_replicas = 0
+        is_fixed_strategy = wd.get('scaling_strategy') == 'FIXED_WORKERS'
 
-        if analysis_in_progress:
+        if analysis_in_progress or is_fixed_strategy:
 
-            logging.info('Analysis for model %s is running', wd.name)
+            if analysis_in_progress:
+                logging.info('Analysis for model %s is running', wd.name)
+            if is_fixed_strategy:
+                logging.info('Model %s is set to "FIXED_WORKERS"', wd.name)
 
             try:
                 desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state)
@@ -114,6 +118,7 @@ class AutoScaler:
                     desired_replicas = limit
             except ValueError as e:
                 logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
+
 
         if desired_replicas > 0 and wd.name in self.cleanup_deployments:
 

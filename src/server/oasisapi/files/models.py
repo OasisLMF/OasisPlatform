@@ -1,4 +1,5 @@
 import os
+import json
 from io import BytesIO
 from uuid import uuid4
 
@@ -81,4 +82,9 @@ class RelatedFile(TimeStampedModel):
         return 'File_{}'.format(self.file)
 
     def read(self, *args, **kwargs):
+        self.file.seek(0)
         return self.file.read(*args, **kwargs)
+
+    def read_json(self, *args, **kwargs):
+        self.file.seek(0)
+        return json.loads(self.file.read(*args, **kwargs).decode("utf-8"))
