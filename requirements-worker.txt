@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements-worker.in
 #
-amqp==5.0.6
+amqp==5.1.0
     # via kombu
 anytree==2.8.0
     # via oasislmf
@@ -35,7 +35,7 @@ botocore==1.21.7
     # via
     #   boto3
     #   s3transfer
-celery==5.1.2
+celery==5.2.2
     # via -r requirements-worker.in
 certifi==2021.5.30
     # via
@@ -53,7 +53,7 @@ chardet==4.0.0
     #   oasislmf
 charset-normalizer==2.0.3
     # via requests
-click==7.1.2
+click==8.0.4
     # via
     #   celery
     #   click-didyoumean
@@ -114,7 +114,7 @@ joblib==1.0.1
     # via scikit-learn
 jsonschema==3.2.0
     # via oasislmf
-kombu==5.1.0
+kombu==5.2.4
     # via celery
 llvmlite==0.36.0
     # via numba
