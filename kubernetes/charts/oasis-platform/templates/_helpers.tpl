@@ -164,7 +164,17 @@ Variables for a channel layer client
 */}}
 {{- define "h.channelLayerVars" }}
 - name: OASIS_SERVER_CHANNEL_LAYER_HOST
-  value: channel-layer
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.databases.channel_layer.name }}
+      key: host
+{{- if eq (.Values.databases.channel_layer.type) "azure_redis" }}
+- name: OASIS_SERVER_CHANNEL_LAYER_PASS
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.databases.channel_layer.name }}
+      key: password
+{{- end }}
 - name: OASIS_INPUT_GENERATION_CONTROLLER_QUEUE
   value: task-controller
 - name: OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE
@@ -214,6 +224,12 @@ Init container to wait for a service to become available (tcp check only) based 
           name: {{ $name | quote }}
           key: port
     {{- end }}
+{{- if ($root.Values.azure).secretProvider }}
+  volumeMounts:
+    - name: azure-secret-provider
+      mountPath: "/mnt/azure-secrets-store"
+      readOnly: true
+{{- end }}
   command: ['sh', '-c', 'echo "Waiting for services:{{ range $index, $name := slice . 1 }} {{ $name }} {{- end }}";
     {{- range $index, $name := slice . 1 -}}
         until nc -zw 3 $HOST_{{ $index }} $PORT_{{ $index }}; do echo "waiting for service $SERVICE_NAME_{{ $index }}..."; sleep 1; done;

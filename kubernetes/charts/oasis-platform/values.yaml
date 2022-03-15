@@ -198,6 +198,7 @@ oasisUI:
 #      secretName: azure-oasisfs
 #      accountName: account
 #      accountKey: key
+#  tenantId: "812eb12f-c995-45ef-bfea-eac7aeca0755"
 
 # Volumes to mount and use within the platform
 # Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount

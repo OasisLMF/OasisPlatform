@@ -70,6 +70,11 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
+{{- if (.Values.azure).secretProvider }}
+            - name: azure-secret-provider
+              mountPath: "/mnt/azure-secrets-store"
+              readOnly: true
+{{- end }}
           startupProbe:
             exec:
               command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
@@ -90,6 +95,14 @@ spec:
 {{- else if ((.Values.volumes.azureFiles).sharedFs) }}
         - name: shared-fs-persistent-storage
 {{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
+{{- if (.Values.azure).secretProvider }}
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}
 {{- end }}
 ---
 apiVersion: apps/v1
@@ -129,6 +142,12 @@ spec:
           ports:
             - containerPort: 3838
               name: {{ .Values.oasisUI.name }}
+          volumeMounts:
+{{- if (.Values.azure).secretProvider }}
+            - name: azure-secret-provider
+              mountPath: "/mnt/azure-secrets-store"
+              readOnly: true
+{{- end }}
           startupProbe:
             httpGet:
               path: /
@@ -146,6 +165,15 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 2
             failureThreshold: 2
+{{- if (.Values.azure).secretProvider }}
+      volumes:
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -182,6 +210,12 @@ spec:
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
             {{- include "h.channelLayerVars" . | indent 12 }}
+          volumeMounts:
+{{- if (.Values.azure).secretProvider }}
+            - name: azure-secret-provider
+              mountPath: "/mnt/azure-secrets-store"
+              readOnly: true
+{{- end }}
           startupProbe:
             exec:
               command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
@@ -194,6 +228,15 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
+{{- if (.Values.azure).secretProvider }}
+      volumes:
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -226,6 +269,19 @@ spec:
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: main
           command: ["celery", "-A", "src.server.oasisapi.celery_app", "worker", "--loglevel=INFO", "-Q", "task-controller"]
+          env:
+            {{- include "h.serverDbVars" . | indent 12}}
+            {{- include "h.celeryDbVars" . | indent 12}}
+            {{- include "h.brokerVars" . | indent 12 }}
+            {{- include "h.channelLayerVars" . | indent 12 }}
+            - name: OASIS_DEBUG
+              value: "1"
+          volumeMounts:
+{{- if (.Values.azure).secretProvider }}
+            - name: azure-secret-provider
+              mountPath: "/mnt/azure-secrets-store"
+              readOnly: true
+{{- end }}
           startupProbe:
             exec:
               command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
@@ -238,10 +294,12 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
-          env:
-            {{- include "h.serverDbVars" . | indent 12}}
-            {{- include "h.celeryDbVars" . | indent 12}}
-            {{- include "h.brokerVars" . | indent 12 }}
-            {{- include "h.channelLayerVars" . | indent 12 }}
-            - name: OASIS_DEBUG
-              value: "1"
+{{- if (.Values.azure).secretProvider }}
+      volumes:
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}

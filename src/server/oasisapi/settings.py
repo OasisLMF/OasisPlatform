@@ -15,6 +15,7 @@ import os
 import sys
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
+import urllib
 
 from ...common.shared import set_aws_log_level
 from ...conf import iniconf  # noqa
@@ -29,7 +30,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
-# Always set Debug mode on when in Dev server environment 
+# Always set Debug mode on when in Dev server environment
 if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
     DEBUG = True
     DEBUG_TOOLBAR = True
@@ -236,7 +237,7 @@ FORCE_SCRIPT_NAME = '/api'
 MEDIA_URL = '/api/media/'
 MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 STATIC_URL = '/api/static/'
-STATIC_DEBUG_URL = '/static/'  #when running 
+STATIC_DEBUG_URL = '/static/'  #when running
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 

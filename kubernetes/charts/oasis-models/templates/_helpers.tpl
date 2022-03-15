@@ -126,8 +126,13 @@ Variables for a server DB client
 */}}
 {{- define "h.serverDbVars" }}
 {{- include "h.oasisDbVars" (list "SERVER" .Values.databases.oasis_db.name) }}
+{{- if eq .Values.databases.oasis_db.type "mysql" }}
+- name: OASIS_SERVER_DB_ENGINE
+  value: django.db.backends.mysql
+{{- else }}
 - name: OASIS_SERVER_DB_ENGINE
   value: django.db.backends.postgresql_psycopg2
+{{- end }}
 {{- end }}
 
 {{/*
@@ -146,7 +151,17 @@ Variables for a channel layer client
 */}}
 {{- define "h.channelLayerVars" }}
 - name: OASIS_SERVER_CHANNEL_LAYER_HOST
-  value: channel-layer
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.databases.channel_layer.name }}
+      key: host
+{{- if eq (.Values.databases.channel_layer.type) "azure_redis" }}
+- name: OASIS_SERVER_CHANNEL_LAYER_PASS
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.databases.channel_layer.name }}
+      key: password
+{{- end }}
 - name: OASIS_INPUT_GENERATION_CONTROLLER_QUEUE
   value: task-controller
 - name: OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE

@@ -86,3 +86,12 @@ spec:
               value: {{ .modelsLimit | quote }}
               {{- end }}
             {{- end }}
+{{- if (.Values.azure).secretProvider }}
+      volumes:
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}
