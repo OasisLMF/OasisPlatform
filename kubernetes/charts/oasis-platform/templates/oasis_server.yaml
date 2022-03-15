@@ -101,6 +101,11 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
+{{- if (.Values.azure).secretProvider }}
+            - name: azure-secret-provider
+              mountPath: "/mnt/azure-secrets-store"
+              readOnly: true
+{{- end }}
           startupProbe:
             httpGet:
               path: /api/healthcheck/
@@ -126,4 +131,12 @@ spec:
 {{- else if ((.Values.volumes.azureFiles).sharedFs) }}
         - name: shared-fs-persistent-storage
 {{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
+{{- end }}
+{{- if (.Values.azure).secretProvider }}
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
 {{- end }}

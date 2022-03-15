@@ -11,7 +11,7 @@ metadata:
   labels:
     {{- include "h.labels" $root | nindent 4 }}
 data:
-  host: {{ $v.name }}
+  host: {{ if ($v.host) }}{{ $v.host }}{{ else }}{{ $v.name }}{{ end }}
   port: {{ $v.port | quote }}
   {{- if $v.dbName }}
   dbName: {{ $v.dbName}}

@@ -15,6 +15,7 @@ import os
 import sys
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
+import urllib
 
 from ...common.shared import set_aws_log_level
 from ...conf import iniconf  # noqa
@@ -418,9 +419,9 @@ if IN_TEST:
     BROKER_URL = 'memory://'
     LOGGING['root'] = {}
 
-CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
-CHANNEL_LAYER_PASS = iniconf.settings.get('server', 'channel_layer_pass', fallback='')
-CHANNEL_LAYER_USER = iniconf.settings.get('server', 'channel_layer_user', fallback='')
+CHANNEL_LAYER_HOST = urllib.parse.quote(iniconf.settings.get('server', 'channel_layer_host', fallback='localhost'))
+CHANNEL_LAYER_PASS = urllib.parse.quote(iniconf.settings.get('server', 'channel_layer_pass', fallback=''))
+CHANNEL_LAYER_USER = urllib.parse.quote(iniconf.settings.get('server', 'channel_layer_user', fallback=''))
 CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_port', fallback='6379')
 CHANNEL_LAYERS = {
     'default': {
@@ -453,7 +454,7 @@ if DEBUG_TOOLBAR:
 ASGI_APPLICATION = "src.server.oasisapi.routing.application"
 WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 
-# worker around for fixing unittesting 
+# worker around for fixing unittesting
 # in testing django.urls.resolve ignores 'FORCE_SCRIPT_NAME' but reverse returns the prefix
 # causing tests url test to fail
 # https://code.djangoproject.com/ticket/31724

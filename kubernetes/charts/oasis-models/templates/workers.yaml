@@ -63,6 +63,11 @@ spec:
               {{- end }}
               mountPath: {{ .mountPath }}
             {{- end }}
+{{- if ($root.Values.azure).secretProvider }}
+            - name: azure-secret-provider
+              mountPath: "/mnt/azure-secrets-store"
+              readOnly: true
+{{- end }}
       volumes:
         - name: shared-fs-persistent-storage
 {{- if (($root.Values.volumes.host).sharedFs) }}
@@ -86,5 +91,13 @@ spec:
             {{- end }}
           {{- end }}
         {{- end }}
+{{- if ($root.Values.azure).secretProvider }}
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}
 ---
 {{- end }}
