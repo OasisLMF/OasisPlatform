@@ -38,7 +38,7 @@ botocore==1.21.48
     # via
     #   boto3
     #   s3transfer
-celery==5.2.2
+celery==5.1.2
     # via
     #   -r requirements-server.in
     #   django-celery-results
@@ -58,7 +58,7 @@ channels-redis==2.4.2
     # via -r requirements-server.in
 charset-normalizer==2.0.6
     # via requests
-click==8.0.4
+click==7.1.2
     # via
     #   celery
     #   click-didyoumean
