@@ -144,8 +144,10 @@ EOF
     "event_occurrence_id": "lt",
     "event_set": "p"
   },
-  "model_version_id": "piwind",
   "module_supplier_id": "oasislmf",
+  "model_supplier_id": "oasislmf",
+  "model_name_id": "piwind",
+  "model_version_id": "1",
   "number_of_samples": 8,
   "ri_output": false
 }
