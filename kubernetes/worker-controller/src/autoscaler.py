@@ -102,7 +102,7 @@ class AutoScaler:
         """
 
         desired_replicas = 0
-        is_fixed_strategy = wd.get('scaling_strategy') == 'FIXED_WORKERS'
+        is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS'
 
         if analysis_in_progress or is_fixed_strategy:
 

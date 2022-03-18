@@ -346,35 +346,6 @@ else:
 # storage selector for exposure files
 PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
 
-
-# https://github.com/davesque/django-rest-framework-simplejwt
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
-    'REFRESH_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_REFRESH_LIFETIME', fallback='days=2'),
-    'ROTATE_REFRESH_TOKENS': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
-    'BLACKLIST_AFTER_ROTATION': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
-    'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
-}
-
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'src.server.oasisapi.filters.Backend',
-    ),
-    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
-    'DEFAULT_VERSION': 'v1',
-}
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -419,9 +390,9 @@ if IN_TEST:
     BROKER_URL = 'memory://'
     LOGGING['root'] = {}
 
-CHANNEL_LAYER_HOST = urllib.parse.quote(iniconf.settings.get('server', 'channel_layer_host', fallback='localhost'))
-CHANNEL_LAYER_PASS = urllib.parse.quote(iniconf.settings.get('server', 'channel_layer_pass', fallback=''))
-CHANNEL_LAYER_USER = urllib.parse.quote(iniconf.settings.get('server', 'channel_layer_user', fallback=''))
+CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
+CHANNEL_LAYER_PASS = iniconf.settings.get('server', 'channel_layer_pass', fallback='')
+CHANNEL_LAYER_USER = iniconf.settings.get('server', 'channel_layer_user', fallback='')
 CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_port', fallback='6379')
 CHANNEL_LAYERS = {
     'default': {
