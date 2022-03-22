@@ -1,6 +1,8 @@
 {{- $root := . -}}
 {{- $fullname := include "h.fullname" . -}}
 {{- range $k, $v := .Values.databases }}
+{{- $pvHostPath := printf "/data/%s/%s/" $fullname $v.name }}
+{{- if not (regexMatch "^azure_.*" $v.type) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -31,10 +33,6 @@ spec:
   selector:
     app: {{ $v.name }}
 ---
-{{- end -}}
----
-{{- range $k, $v := .Values.databases }}
-{{- $pvHostPath := printf "/data/%s/%s/" $fullname $v.name }}
 {{- if $v.user }}
 apiVersion: v1
 kind: Secret
@@ -68,7 +66,7 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $v.name }}
+  name: {{ $v.name }}-{{ $v.type }}
   labels:
     {{- include "h.labels" $root | nindent 4 }}
 spec:
@@ -109,7 +107,7 @@ spec:
             - containerPort: {{ $v.extraPort }}
               name: extra
 {{- end }}
-{{- if eq $v.type "postgres" }}
+{{- if or (eq $v.type "postgres") (eq $v.type "azure_postgres") }}
           image: {{ $root.Values.images.postgres.image }}:{{ $root.Values.images.postgres.version }}
           env:
             - name: POSTGRES_PASSWORD
@@ -227,3 +225,5 @@ spec:
 ---
 {{- end }}
 {{- end }}
+{{- end }}
+

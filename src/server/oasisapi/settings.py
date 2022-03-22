@@ -15,6 +15,7 @@ import os
 import sys
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
+import urllib
 
 from ...common.shared import set_aws_log_level
 from ...conf import iniconf  # noqa
@@ -345,35 +346,6 @@ else:
 # storage selector for exposure files
 PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
 
-
-# https://github.com/davesque/django-rest-framework-simplejwt
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
-    'REFRESH_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_REFRESH_LIFETIME', fallback='days=2'),
-    'ROTATE_REFRESH_TOKENS': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
-    'BLACKLIST_AFTER_ROTATION': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
-    'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
-}
-
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'src.server.oasisapi.filters.Backend',
-    ),
-    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
-    'DEFAULT_VERSION': 'v1',
-}
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -453,7 +425,7 @@ if DEBUG_TOOLBAR:
 ASGI_APPLICATION = "src.server.oasisapi.routing.application"
 WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 
-# worker around for fixing unittesting 
+# worker around for fixing unittesting
 # in testing django.urls.resolve ignores 'FORCE_SCRIPT_NAME' but reverse returns the prefix
 # causing tests url test to fail
 # https://code.djangoproject.com/ticket/31724

@@ -1,5 +1,5 @@
 {{- if (.Values.azure) }}
-{{- range $k, $v := .Values.azure.storageAccounts }}
+{{- range $k, $v := (.Values.azure).storageAccounts }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,6 +8,40 @@ type: Opaque
 data:
   azurestorageaccountname: {{ $v.accountName | b64enc }}
   azurestorageaccountkey: {{ $v.accountKey | b64enc }}
+---
+{{- end }}
+{{- if (.Values.azure).secretProvider }}
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-secret-provider
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: {{ .Values.azure.secretProvider.userAssignedIdentityClientID }}
+    keyvaultName: {{ .Values.azure.secretProvider.keyvaultName }}
+    tenantId: {{ .Values.azure.tenantId }}
+    objects:  |
+      array:
+{{- range .Values.azure.secretProvider.secrets }}
+{{- range . }}
+        - |
+          objectName: {{ .objectName }}
+          objectType: secret
+{{- end }}
+{{- end }}
+  secretObjects:
+{{- range $k, $v := (.Values.azure.secretProvider.secrets) }}
+    - data:
+{{- range $v }}
+        - key: {{ .key }}
+          objectName: {{ .objectName }}
+{{- end }}
+      secretName: {{ $k }}
+      type: Opaque
+{{- end }}
 ---
 {{- end }}
 {{- end }}

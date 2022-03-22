@@ -167,3 +167,11 @@ spec:
         - name: realm-config
           configMap:
             name: {{ $realmSecretName }}
+{{- if (.Values.azure).secretProvider }}
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}
