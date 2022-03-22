@@ -60,7 +60,7 @@ class BaseStorageConnector(object):
             return False
         return os.path.isfile(os.path.join(
             self.media_root,
-            os.path.basename(fname)
+            fname
         ))
 
     def _is_stored(self, fname):
@@ -108,6 +108,7 @@ class BaseStorageConnector(object):
         ext = file_path.split('.')[-1] if not suffix else suffix
         storage_dir = os.path.join(self.media_root, storage_subdir)
         store_reference = storage_fname if storage_fname else self._get_unique_filename(ext)
+
         os.makedirs(storage_dir, exist_ok=True)
         stored_fp = os.path.join(storage_dir, store_reference)
 
@@ -153,13 +154,27 @@ class BaseStorageConnector(object):
         self.logger.info('Store dir: {} -> {}'.format(directory_path, stored_fp))
         return os.path.join(storage_subdir, store_reference)
 
-    def _fetch_file(self, reference, output_dir):
+    def _fetch_file(self, reference, output_path, subdir):
         fpath = os.path.join(
             self.media_root,
+            subdir,
             os.path.basename(reference)
         )
-        logging.info('Get shared file: {}'.format(reference))
-        return os.path.abspath(fpath)
+        if os.path.isfile(fpath):
+            logging.info('Get shared file: {}'.format(fpath))
+            if output_path:
+                shutil.copy(fpath, output_path)
+            return os.path.abspath(fpath)
+
+        else:
+            raise MissingInputsException(fpath)
+
+        #fpath = os.path.join(
+        #    self.media_root,
+        #    os.path.basename(reference)
+        #)
+        #logging.info('Get shared file: {}'.format(reference))
+        #return os.path.abspath(fpath)
 
     def extract(self, archive_fp, directory, storage_subdir=''):
         """ Extract tar file
@@ -230,6 +245,12 @@ class BaseStorageConnector(object):
         :return: Absolute filepath to stored Object
         :rtype str
         """
+        # null ref given
+        if not reference:
+            if required:
+                raise MissingInputsException(reference)
+            else:
+                return None
 
         # Download if URL ref
         if self._is_valid_url(reference):
@@ -263,17 +284,17 @@ class BaseStorageConnector(object):
                 shutil.copy(fpath, cached_file)
             return os.path.abspath(fpath)
 
-        elif self._is_stored(reference):
+        # return local file
+        if self._is_locally_stored(reference):
+            return self._fetch_file(reference, output_path, subdir)
+
+        # current
+        if self._is_stored(reference):
             if os.path.isdir(output_path):
                 fpath = os.path.join(output_path, os.path.basename(reference))
             else:
                 fpath = output_path
             return self._fetch_file(reference, fpath)
-        else:
-            if required:
-                raise MissingInputsException(reference)
-            else:
-                return None
 
 
     def put(self, reference, filename=None, subdir='', suffix=None, arcname=None):
@@ -361,10 +382,10 @@ class BaseStorageConnector(object):
         else:
             logging.info('Delete Error - Unknwon reference {}'.format(reference))
 
-    def create_traceback(self, stdout, stderr, output_dir=""): 
+    def create_traceback(self, stdout, stderr, output_dir=""):
         traceback_file = self._get_unique_filename(LOG_FILE_SUFFIX)
         fpath = os.path.join(output_dir, traceback_file)
-        with open(fpath, 'w') as f:     
+        with open(fpath, 'w') as f:
             if stdout:
                 f.write(stdout)
             if stderr:

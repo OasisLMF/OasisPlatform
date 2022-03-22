@@ -28,7 +28,7 @@ from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 
-from .orig_storage_manager import BaseStorageConnector
+from .storage_manager import BaseStorageConnector
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 
