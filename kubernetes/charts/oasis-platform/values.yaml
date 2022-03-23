@@ -9,7 +9,7 @@ images:
       imagePullPolicy: Never
     ui:
       image: coreoasis/oasisui_app
-      version: 1.9.0
+      version: 1.11.3
     worker_controller:
       image: coreoasis/worker_controller
       version: dev
