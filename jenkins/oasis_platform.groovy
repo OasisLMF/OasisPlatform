@@ -40,7 +40,7 @@ node {
         [$class: 'StringParameterDefinition',  description: "OasisLMF prev release notes ref",     name: 'OASISLMF_PREV_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "Ktools release notes ref",            name: 'KTOOLS_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "Ktools prev release notes ref",       name: 'KTOOLS_PREV_TAG', defaultValue: ""],
-        [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
+        [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "CRITICAL"],
         [$class: 'TextParameterDefinition',    description: "List of models for Regression tests", name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', description: "Test previous API and Worker",        name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', description: "Test S3 storage using LocalStack",    name: 'CHECK_S3', defaultValue: Boolean.valueOf(true)],
@@ -205,8 +205,8 @@ node {
             stage('Git install MDK'){
                 dir(oasis_workspace) {
                     // update worker and server install lists
-                    sh "sed -i 's|^oasislmf.*| git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf[extra]|g' requirements-worker.txt"
-                    sh "sed -i 's|^oasislmf.*| git+git://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf[extra]|g' requirements.txt"
+                    sh "sed -i 's|^oasislmf.*| git+https://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf[extra]|g' requirements-worker.txt"
+                    sh "sed -i 's|^oasislmf.*| git+https://github.com/OasisLMF/OasisLMF.git@${mdk_branch}#egg=oasislmf[extra]|g' requirements.txt"
                 }
             }
         }
