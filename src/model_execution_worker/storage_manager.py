@@ -6,6 +6,7 @@ import tarfile
 import tempfile
 import uuid
 
+from pathlib2 import Path
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
