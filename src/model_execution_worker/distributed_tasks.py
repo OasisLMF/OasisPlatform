@@ -469,12 +469,6 @@ def keys_generation_task(fn):
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
 
-        ## add check for work-lost function here
-        # check_worker_lost(task, analysis_pk)
-        #from celery.contrib import rdb
-        #rdb.set_trace()
-
-
         if isinstance(params, list):
             for p in params:
                 _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
@@ -523,7 +517,7 @@ def prepare_input_generation_params(
         oasis_files_dir=params['target_dir'],
         oed_location_csv=params['exposure_fp'],
         model_version_csv=config.get('model_version_csv', None),
-        lookup_module_path=config.get('lookup_package_dir', None),
+        lookup_module_path=config.get('lookup_module_path', None),
         lookup_config_json=lookup_config_json,
         disable_summarise_exposure=settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False),
         lookup_multiprocessing=multiprocessing,
@@ -548,16 +542,6 @@ def prepare_keys_file_chunk(
     **kwargs
 ):
     with TemporaryDir() as chunk_target_dir:
-        #lookup_config = params['lookup_config_json']
-        #print("LOOKUP CONFIG")
-        #print(lookup_config)
-        #if lookup_config and lookup_config['keys_data_path'] in ['.', './']:
-        #    lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']))
-        #elif lookup_config and not os.path.isabs(lookup_config['keys_data_path']):
-        #    lookup_config['keys_data_path'] = os.path.join(os.path.dirname(params['lookup_config_fp']), lookup_config['keys_data_path'])
-
-
-        ## refactor this to call the manager class
         _, lookup = OasisLookupFactory.create(
             lookup_config_fp=params['lookup_config_json'],
             model_keys_data_path=params['lookup_data_dir'],
@@ -568,19 +552,20 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        location_df = lookup.get_locations(location_fp=params['exposure_fp'],
-        )
-
+        location_df = lookup.get_locations(location_fp=params['exposure_fp'])
         location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
         chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
         chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
-
-        lookup.generate_key_files_singleproc(
-            loc_df=location_df,
+        lookup.generate_key_files(
+            location_fp=None,
+            location_df=location_df,
             successes_fp=chunk_keys_fp,
             errors_fp=chunk_keys_errors_fp,
             output_format='oasis',
             keys_success_msg=False,
+            multiproc_enabled=params.get('lookup_multiprocessing', False),
+            multiproc_num_cores=params.get('lookup_num_processes', -1),
+            multiproc_num_partitions=params.get('lookup_num_chunks', -1),
         )
 
         # Store chunks
@@ -683,14 +668,9 @@ def collect_keys(
 @app.task(bind=True, name='write_input_files', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
-    params['keys_fp'] = filestore.get(params['keys_ref'], params['target_dir'], subdir=params['storage_subdir'])
-    params['keys_errors_fp'] = filestore.get(params['keys_error_ref'], params['target_dir'], subdir=params['storage_subdir'])
-    #params['fm_aggregation_profile'] = {int(k): v for k, v in params['fm_aggregation_profile'].items()}
-    #OasisManager().prepare_input_generation_params(**params)
-    #OasisManager().prepare_input_directory(**params)
-    #OasisManager().write_input_files(**params)
+    params['keys_data_csv'] = filestore.get(params['keys_ref'], params['target_dir'], subdir=params['storage_subdir'])
+    params['keys_errors_csv'] = filestore.get(params['keys_error_ref'], params['target_dir'], subdir=params['storage_subdir'])
     OasisManager().generate_files(**params)
-
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
@@ -869,11 +849,11 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     #print(params)
 
     if num_chunks == 1:
-        # Run multiple ktools pipes (based on cpu cores) 
+        # Run multiple ktools pipes (based on cpu cores)
         current_chunk_id = None
-        max_chunk_id = -1 
+        max_chunk_id = -1
     else:
-        # Run a single ktools pipe 
+        # Run a single ktools pipe
         current_chunk_id = chunk_idx + 1
         max_chunk_id = num_chunks
 
