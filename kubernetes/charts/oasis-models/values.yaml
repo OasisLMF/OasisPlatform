@@ -22,7 +22,8 @@ modelVolumes:
 #        shareName: oasisfs
 
 workers:
-  - supplierId: OasisLMF
+  piwind_demo: # A name that is unique among all workers
+    supplierId: OasisLMF
     modelId: PiWind
     modelVersionId: "1"
     image: coreoasis/model_worker

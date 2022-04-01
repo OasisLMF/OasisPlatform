@@ -1,7 +1,6 @@
 {{- $root := . -}}
-{{- range .Values.workers }}
-{{- $worker := . -}}
-{{- $name := printf "worker-%s-%s-%s" .supplierId .modelId .modelVersionId | lower }}
+{{- range $k, $worker := .Values.workers }}
+{{- $name := printf "worker-%s-%s-%s" $worker.supplierId $worker.modelId $worker.modelVersionId | lower }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,7 +22,7 @@ spec:
       labels:
         app: {{ $name }}
         {{- include "h.labels" $root | nindent 8 }}
-        {{- include "h.workerLabels" . | nindent 8 }}
+        {{- include "h.workerLabels" $worker | nindent 8 }}
       annotations:
         checksum/oasis-server: {{ toJson $root.Values.oasisServer | sha256sum }}
         checksum/model_registration: {{ $root.Files.Get "resources/model_registration.sh" | sha256sum }}
