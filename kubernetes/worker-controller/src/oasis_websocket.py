@@ -5,11 +5,10 @@ from urllib.parse import urljoin
 
 import websockets
 from aiohttp import ClientError
-from websockets import ConnectionClosedError
+from websockets import ConnectionClosedError, WebSocketException
 
 from autoscaler import AutoScaler
 from oasis_client import OasisClient
-from worker_deployments import WorkerDeployments
 
 
 class WebSocketConnection:
@@ -91,8 +90,11 @@ class OasisWebSocket:
             except ConnectionClosedError as e:
                 logging.exception(f'Connection to {self.oasis_client.host}:{self.oasis_client.port} was closed')
                 running = False
-            except ClientError as e:
+            except (WebSocketException, ClientError) as e:
                 logging.exception(f'Connection to {self.oasis_client.host}:{self.oasis_client.port} failed', e)
+                running = False
+            except Exception as e:
+                logging.exception(f'Unexpected web socket exception thrown', e)
                 running = False
 
         asyncio.get_event_loop().stop()
