@@ -1,5 +1,6 @@
 {{- $root := . -}}
 {{- $initConfigMap := "init-model-registration" -}}
+{{- $index := 0 -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -31,7 +32,8 @@ spec:
           image: {{ .Values.modelImages.init.image }}:{{- .Values.modelImages.init.version }}
           env:
             {{- include "h.oasisServerEnvs" $root | indent 12 }}
-            {{- range $index, $worker := .Values.workers }}
+            {{- $index = 0 -}}
+            {{- range $name, $worker := .Values.workers }}
             - name: OASIS_MODEL_SUPPLIER_ID_{{ $index }}
               value: {{ .supplierId | quote}}
             - name: OASIS_MODEL_ID_{{ $index }}
@@ -42,6 +44,7 @@ spec:
               value: /mnt/model_data_{{ $index }}
             - name: OASIS_MODEL_GROUPS_{{ $index }}
               value: {{ join "," $worker.groups | quote }}
+              {{- $index = add1 $index -}}
             {{- end }}
           command: ["sh", "-c", "/tmp/multiple_model_registration.sh"]
           volumeMounts:
@@ -51,7 +54,8 @@ spec:
             - name: init-model-registration
               mountPath: /tmp/multiple_model_registration.sh
               subPath: multiple_model_registration.sh
-            {{- range $index, $worker := .Values.workers }}
+            {{- $index = 0 -}}
+            {{- range $name, $worker := .Values.workers }}
               {{- range $worker.volumes }}
                 {{- if eq .type "model-data" }}
             - name: {{ .name }}
@@ -61,6 +65,7 @@ spec:
                   {{- end }}
                 {{- end }}
               {{- end }}
+              {{- $index = add1 $index -}}
             {{- end }}
       volumes:
         - name: init-model-registration
