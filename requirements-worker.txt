@@ -124,7 +124,7 @@ numpy==1.21.5
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.23.8
+oasislmf[extra]==1.23.9
     # via -r requirements-worker.in
 packaging==21.3
     # via pytest
