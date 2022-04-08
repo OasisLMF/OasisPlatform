@@ -434,7 +434,7 @@ tox==3.24.4
     # via -r requirements.in
 tqdm==4.62.3
     # via oasislmf
-twisted[tls]==21.7.0
+twisted[tls]==22.2.0
     # via daphne
 txaio==21.2.1
     # via autobahn

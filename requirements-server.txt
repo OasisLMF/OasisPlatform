@@ -208,7 +208,7 @@ sqlalchemy==1.4.27
     # via -r requirements-server.in
 sqlparse==0.4.2
     # via django
-twisted[tls]==22.1.0
+twisted[tls]==22.2.0
     # via daphne
 txaio==21.2.1
     # via autobahn
