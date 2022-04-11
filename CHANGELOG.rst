@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#365](https://github.com/OasisLMF/OasisPlatform/pull/603) - Add Azure Storage Blobs to storage manager
+.. _`1.26.0rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.25.0...1.26.0rc1
+
 `1.25.0`_
  ---------
 * [#583](https://github.com/OasisLMF/OasisPlatform/pull/583) - Align model_settings schema
