@@ -161,7 +161,7 @@ numpy==1.21.4
     #   pyarrow
 oauthlib==3.2.0
     # via requests-oauthlib
-ods-tools==2.1.0.post1
+ods-tools==2.2.0
     # via -r requirements-server.in
 packaging==21.3
     # via drf-yasg
