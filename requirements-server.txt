@@ -234,7 +234,7 @@ sqlparse==0.4.2
     # via
     #   django
     #   django-debug-toolbar
-twisted[tls]==22.1.0
+twisted[tls]==22.2.0
     # via
     #   -r requirements-server.in
     #   daphne
