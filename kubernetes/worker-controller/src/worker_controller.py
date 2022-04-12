@@ -48,8 +48,9 @@ def parse_args():
     parser.add_argument('--namespace', help='Namespace of cluster where oasis is deployed to', default=getenv('OASIS_CLUSTER_NAMESPACE') or 'default')
     parser.add_argument('--limit', help='Hard limit for the total number of workers created', default=getenv('OASIS_TOTAL_WORKER_LIMIT'))
     parser.add_argument('--prioritized-models-limit', help='When prioritized runs are used - create workers for the models with the highest priority', default=getenv('OASIS_PRIORITIZED_MODELS_LIMIT'))
-    parser.add_argument('--cluster', help='Type of kubernetes cluster to connect to, either "local" (~/.kube/config)\
-     or "in" to connect to the cluster the pod exists in', default=getenv('CLUSTER') or 'in')
+    parser.add_argument('--cluster', help='Type of kubernetes cluster to connect to, either "local" (~/.kube/config) or "in" to connect to the cluster the pod exists in', default=getenv('CLUSTER') or 'in')
+    parser.add_argument('--continue-update-scaling', help='Auto scaling - read the scaling settings from the API for a model on every update. (for testing)', default=getenv('OASIS_CONTINUE_UPDATE_SCALING') or False)
+    parser.add_argument('--never-shutdown-fixed-workers', help='Auto scaling - never scale to 0 for strategy FIXED_WORKERS.', default=getenv('OASIS_NEVER_SHUTDOWN_FIXED_WORKERS') or False)
 
     args = parser.parse_args()
 
@@ -83,7 +84,8 @@ def main():
     event_loop.run_until_complete(cluster_client.load_config(args.cluster))
 
     # Create the autoscaler to bind everything together
-    autoscaler = AutoScaler(deployments, cluster_client, oasis_client, args.prioritized_models_limit, args.limit)
+    autoscaler = AutoScaler(deployments, cluster_client, oasis_client, args.prioritized_models_limit, args.limit,
+                            args.continue_update_scaling, args.never_shutdown_fixed_workers)
 
     # Create the deployment watcher and load all available deployments
     deployments_watcher = DeploymentWatcher(args.namespace, deployments)

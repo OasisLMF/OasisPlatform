@@ -22,12 +22,17 @@ class AutoScaler:
     3.1.1. Add a delayed(20s) shutdown of all workers. It is aborted if any new analysis/tasks get submitted.
     """
 
-    def __init__(self, deployments: WorkerDeployments, cluster: ClusterClient, oasis_client: OasisClient, prioritized_models_limit: int, limit: int):
+    def __init__(self, deployments: WorkerDeployments, cluster: ClusterClient, oasis_client: OasisClient,
+                 prioritized_models_limit: int, limit: int, continue_update_scaling: bool,
+                 never_shutdown_fixed_workers: bool):
+
         self.deployments = deployments
         self.cluster = cluster
         self.oasis_client = oasis_client
         self.prioritized_models_limit = int(prioritized_models_limit) if prioritized_models_limit else None
         self.limit = int(limit) if limit else None
+        self.continue_update_scaling = continue_update_scaling
+        self.never_shutdown_fixed_workers = never_shutdown_fixed_workers
 
         # Cleanup timer used to remove all workers for a model with a delay.
         self.cleanup_timer = None
@@ -102,7 +107,7 @@ class AutoScaler:
         """
 
         desired_replicas = 0
-        is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS'
+        is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS' and self.never_shutdown_fixed_workers
 
         if analysis_in_progress or is_fixed_strategy:
 
@@ -214,7 +219,7 @@ class AutoScaler:
         for model, state, wd in prioritized_models:
 
             # Load auto scaling settings everytime we scale up workers from 0
-            if not wd.auto_scaling or wd.replicas == 0:
+            if not wd.auto_scaling or wd.replicas == 0 or self.continue_update_scaling:
                 if not wd.oasis_model_id:
 
                     logging.info('Get oasis model id from API for model %s', wd.id_string())
