@@ -17,7 +17,6 @@ COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/startup_tester.sh ./runtest
 COPY ./src/startup_tester_S3.sh ./runtest_S3
 COPY ./conf.ini ./
-
 COPY ./src/__init__.py ./src/
 COPY ./src/common ./src/common/
 COPY ./src/conf ./src/conf/
@@ -28,6 +27,7 @@ COPY ./tests/integration /home/worker/tests/integration
 COPY ./VERSION ./
 
 RUN mkdir -p /var/oasis && \
+    mkdir -p /home/worker/model && \
     mkdir -p /var/log/oasis && \
     touch /var/log/oasis/worker.log && \
     chmod 777 /var/log/oasis/worker.log
