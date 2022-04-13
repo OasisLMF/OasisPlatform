@@ -68,7 +68,7 @@ class TestAutoscaler(unittest.TestCase):
         with open(queue_status_json) as json_file:
             data = json.load(json_file)
 
-            autoscaler = AutoScaler(deployments, cluster_client, client, None, None)
+            autoscaler = AutoScaler(deployments, cluster_client, client, None, None, False, False)
             asyncio.run(autoscaler.process_queue_status_message(data))
 
         calls = [call(wd1.name, 2), call(wd2.name, 1)]
@@ -91,7 +91,7 @@ class TestAutoscaler(unittest.TestCase):
         deployments.get_worker_deployment_by_name_id = MagicMock(side_effect=get_worker_deployment_by_name_id)
         deployments.worker_deployments = [wd1, wd2]
 
-        autoscaler = AutoScaler(deployments, None, None, 1, None)
+        autoscaler = AutoScaler(deployments, None, None, 1, None, False, False)
 
         model_states = {
             'celery': {'tasks': 10, 'analyses': 2, 'priority': 1},
@@ -120,16 +120,16 @@ class TestAutoscaler(unittest.TestCase):
             ('oasislmf-piwind-3', ModelState(tasks=0, analyses=0, priority=1), None),
         ]
 
-        r = AutoScaler(None, None, None, 1, None)._get_highest_model_priorities(model_states_with_wd)
+        r = AutoScaler(None, None, None, 1, None, False, False)._get_highest_model_priorities(model_states_with_wd)
         self.assertEqual([7], r)
 
-        r = AutoScaler(None, None, None, 2, None)._get_highest_model_priorities(model_states_with_wd)
+        r = AutoScaler(None, None, None, 2, None, False, False)._get_highest_model_priorities(model_states_with_wd)
         self.assertEqual([7, 5], r)
 
-        r = AutoScaler(None, None, None, 3, None)._get_highest_model_priorities(model_states_with_wd)
+        r = AutoScaler(None, None, None, 3, None, False, False)._get_highest_model_priorities(model_states_with_wd)
         self.assertEqual([7, 5, 1], r)
 
-        r = AutoScaler(None, None, None, None, None)._get_highest_model_priorities(model_states_with_wd)
+        r = AutoScaler(None, None, None, None, None, False, False)._get_highest_model_priorities(model_states_with_wd)
         self.assertEqual(None, r)
 
     def test_clear_unprioritized_models(self):
@@ -139,7 +139,7 @@ class TestAutoscaler(unittest.TestCase):
             ('oasislmf-piwind-3', ModelState(tasks=0, analyses=0, priority=1), None),
         ]
 
-        r = AutoScaler(None, None, None, 1, None)._clear_unprioritized_models(model_states_with_wd)
+        r = AutoScaler(None, None, None, 1, None, False, False)._clear_unprioritized_models(model_states_with_wd)
         self.assertEqual(len(model_states_with_wd), len(r))
         first = r[0]
         firstState = first[1]
@@ -159,6 +159,55 @@ class TestAutoscaler(unittest.TestCase):
         self.assertEqual(0, thirdState.get('tasks'))
         self.assertEqual(0, thirdState.get('analyses'))
         self.assertEqual(1, thirdState.get('priority'))
+
+    def test_continue_update_scaling(self):
+
+        async def get_auto_scaling(oasis_model_id):
+            return {
+                'scaling_strategy': 'FIXED_WORKERS',
+                'worker_count_fixed': 2
+            }
+
+        oasis_client = MagicMock()
+        oasis_client.get_auto_scaling = AsyncMock(side_effect=get_auto_scaling)
+
+        autoscaler = AutoScaler(None, None, oasis_client, None, None, True, False)
+        autoscaler._scale_deployment = AsyncMock()
+
+        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1')
+        wd1.auto_scaling = {
+            'scaling_strategy': 'FIXED_WORKERS',
+            'worker_count_fixed': 2
+        }
+        wd1.replicas = 2
+        wd1.oasis_model_id = 10
+        model_state = ModelState(tasks=10, analyses=2, priority=5)
+
+        prioritized_models = [(wd1.name, model_state, wd1)]
+
+        asyncio.run(autoscaler._scale_models(prioritized_models))
+        self.assertEqual(1, oasis_client.get_auto_scaling.call_count)
+
+        asyncio.run(autoscaler._scale_models(prioritized_models))
+        self.assertEqual(2, oasis_client.get_auto_scaling.call_count)
+
+    def test_never_shutdown_fixed_workers(self):
+
+        autoscaler = AutoScaler(None, None, None, None, None, False, True)
+
+        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1')
+        wd1.auto_scaling = {
+            'scaling_strategy': 'FIXED_WORKERS',
+            'worker_count_fixed': 2
+        }
+        wd1.replicas = 2
+        model_state = ModelState(tasks=10, analyses=2, priority=5)
+
+        desired_replicas = asyncio.run(autoscaler._scale_deployment(wd1, True, model_state, 10))
+        self.assertEqual(2, desired_replicas)
+
+        desired_replicas = asyncio.run(autoscaler._scale_deployment(wd1, False, model_state, 10))
+        self.assertEqual(2, desired_replicas)
 
 if __name__ == '__main__':
     unittest.main()

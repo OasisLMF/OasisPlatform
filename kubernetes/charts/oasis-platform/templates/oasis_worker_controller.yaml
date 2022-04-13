@@ -70,6 +70,10 @@ spec:
                 secretKeyRef:
                   name: oasis-rest-service-account
                   key: password
+            - name: OASIS_CONTINUE_UPDATE_SCALING
+              value: "{{ .Values.workerController.continueUpdateScaling }}"
+            - name: OASIS_NEVER_SHUTDOWN_FIXED_WORKERS
+              value: "{{ .Values.workerController.neverShutdownFixedWorkers }}"
             - name: OASIS_API_HOST
               value: {{ .Values.oasisServer.name }}
             - name: OASIS_API_PORT
