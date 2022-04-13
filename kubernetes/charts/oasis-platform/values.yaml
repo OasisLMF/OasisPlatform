@@ -180,6 +180,13 @@ workerController:
   # this limit will never be exceeded by this worker controller.
   totalWorkerLimit: 10
 
+  # Debug option - Read the auto scaling configuration from the API on every update 
+  # default is only to read it on for each model each time replicas is changed from 0 (first analysis running)) 
+  continueUpdateScaling: false
+
+  # Debug option - This prevents workers for a model set to FIXED_WORKERS to be scaled to 0. They will always be started. 
+  neverShutdownFixedWorkers: false 
+
   # Settings related to prioritized runs
   priority:
 
