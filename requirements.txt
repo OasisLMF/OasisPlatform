@@ -308,7 +308,7 @@ numpy==1.20.3
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.25.1
+oasislmf[extra]==1.23.9
     # via -r ./requirements-worker.in
 oauthlib==3.2.0
     # via requests-oauthlib
