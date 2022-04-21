@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.15.26-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.25-lts...1.15.26-lts
+
 * [#592](https://github.com/OasisLMF/OasisPlatform/pull/592) - Add analysis_settings workaround for lts-1.15.x workers
 .. _`1.15.25-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.24-lts...1.15.25-lts
 
