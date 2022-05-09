@@ -4,9 +4,10 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
-from rest_framework import routers, permissions
+from rest_framework import permissions
+from rest_framework_nested import routers
 
-from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView
+from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView, SettingsTemplateViewSet
 from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView
 from .portfolios.viewsets import PortfolioViewSet
 from .healthcheck.views import HealthcheckView
@@ -28,6 +29,9 @@ api_router.register('models', AnalysisModelViewSet, basename='analysis-model')
 api_router.register('data_files', DataFileViewset, basename='data-file')
 # api_router.register('files', FilesViewSet, basename='file')
 
+# nested urls
+templates_router = routers.NestedSimpleRouter(api_router, r'models', lookup='models')
+templates_router.register('setting_templates', SettingsTemplateViewSet, basename='models-setting_templates')
 
 api_info = openapi.Info(
     title="Oasis Platform",
@@ -87,6 +91,7 @@ urlpatterns = [
     url(r'^auth/', include('rest_framework.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
+    url(r'^(?P<version>[^/]+)/', include(templates_router.urls)),
 ]
 
 if settings.DEBUG:
