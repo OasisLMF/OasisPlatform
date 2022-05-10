@@ -36,6 +36,6 @@ class CatModelAdmin(admin.ModelAdmin):
 
 @admin.register(SettingsTemplate)
 class SettingsTemplateAdmin(admin.ModelAdmin):
-    list_display = ['file', 'filename', 'creator']
+    list_display = ['file', 'name', 'creator']
 
 

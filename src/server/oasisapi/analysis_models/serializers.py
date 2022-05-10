@@ -60,7 +60,7 @@ class TemplateSerializer(serializers.ModelSerializer):
         model = SettingsTemplate
         fields = (
             'id',
-            'filename',
+            'name',
             'description',
             'file_url',
         )
@@ -86,7 +86,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
         model = SettingsTemplate
         fields = (
             'id',
-            'filename',
+            'name',
             'description',
             'analysis_id',
         )
@@ -102,7 +102,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
                  raise ValidationError({"Detail": f"analysis_id = {analysis_id} has no attached settings file"})
 
             new_settings = analysis.copy_file(analysis.settings_file)
-            new_settings.filename = attrs.get('filename')
+            new_settings.name = attrs.get('name')
             new_settings.save()
             attrs['file'] = new_settings
 

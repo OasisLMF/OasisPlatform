@@ -40,7 +40,7 @@ class SoftDeleteQuerySet(models.query.QuerySet):
 
 
 class SettingsTemplate(TimeStampedModel):
-    filename = models.CharField(
+    name = models.CharField(
         max_length=255,
         help_text=_('Name for analysis settings template')
     )
@@ -66,7 +66,7 @@ class SettingsTemplate(TimeStampedModel):
     )
 
     def __str__(self):
-        return 'SettingsTemplate_{}'.format(self.file)
+        return 'SettingsTemplate_{}'.format(self.name)
 
     def get_filename(self):
         if self.settings_template:
