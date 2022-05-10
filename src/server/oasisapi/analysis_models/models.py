@@ -44,6 +44,13 @@ class SettingsTemplate(TimeStampedModel):
         max_length=255,
         help_text=_('Name for analysis settings template')
     )
+    description = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        default=None,
+        help_text=_('Description for type of analysis run settings.')
+    )
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -73,8 +80,8 @@ class SettingsTemplate(TimeStampedModel):
         else:
             return None
 
-    def get_absolute_settings_template_url(self, model_id, request=None):
-        return reverse('models-setting_templates-content', kwargs={'version': 'v1', 'pk': self.pk, 'models_id': model_id}, request=request)
+    def get_absolute_settings_template_url(self, model_pk, request=None):
+        return reverse('models-setting_templates-content', kwargs={'version': 'v1', 'pk': self.pk, 'models_pk': model_pk}, request=request)
 
 
 

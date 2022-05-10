@@ -61,16 +61,17 @@ class TemplateSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'filename',
+            'description',
             'file_url',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_file_url(self, instance):
         request = self.context.get('request')
-        model_id = request.parser_context.get('kwargs', {}).get('models_id')
+        model_pk = request.parser_context.get('kwargs', {}).get('models_pk')
 
-        if model_id and instance.file:
-            return instance.get_absolute_settings_template_url(model_id, request=request)
+        if model_pk and instance.file:
+            return instance.get_absolute_settings_template_url(model_pk, request=request)
         else:
             return None
 
@@ -86,6 +87,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'filename',
+            'description',
             'analysis_id',
         )
 
