@@ -147,6 +147,7 @@ django==3.2.11
     #   django-storages
     #   djangorestframework
     #   djangorestframework-simplejwt
+    #   drf-nested-routers
     #   drf-yasg
     #   model-mommy
 django-cleanup==5.2.0
@@ -169,8 +170,11 @@ djangorestframework==3.12.4
     # via
     #   -r ./requirements-server.in
     #   djangorestframework-simplejwt
+    #   drf-nested-routers
     #   drf-yasg
 djangorestframework-simplejwt==5.0.0
+    # via -r ./requirements-server.in
+drf-nested-routers==0.93.4
     # via -r ./requirements-server.in
 drf-yasg==1.20.0
     # via -r ./requirements-server.in
@@ -278,7 +282,9 @@ oasislmf[extra]==1.26.0rc1
 oauthlib==3.2.0
     # via requests-oauthlib
 ods-tools==2.2.0
-    # via -r ./requirements-server.in
+    # via
+    #   -r ./requirements-server.in
+    #   oasislmf
 packaging==21.3
     # via
     #   drf-yasg
