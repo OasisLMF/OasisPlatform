@@ -74,7 +74,7 @@ daphne==3.0.2
     # via
     #   -r requirements-server.in
     #   channels
-django==3.2.12
+django==3.2.13
     # via
     #   -r requirements-server.in
     #   channels
