@@ -4,6 +4,9 @@
 #
 #    pip-compile requirements-worker.in
 #
+
+git+https://github.com/OasisLMF/OasisLMF.git@fix/parallel-chunk-script-error#egg=oasislmf[extra]
+
 amqp==5.1.0
     # via kombu
 anytree==2.8.0
@@ -139,8 +142,8 @@ numpy==1.20.3
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.23.9
-    # via -r requirements-worker.in
+#oasislmf[extra]==1.23.9
+#    # via -r requirements-worker.in
 oauthlib==3.2.0
     # via requests-oauthlib
 packaging==21.0
