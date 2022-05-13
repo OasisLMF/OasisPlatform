@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#622](https://github.com/OasisLMF/OasisPlatform/pull/622) - Fix CVE-2022-28346, CVE-2022-28347
+.. _`1.23.10-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.9-lts...1.23.10-lts
+
 .. _`1.23.9-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.8-lts...1.23.9-lts
 
 .. _`1.23.9-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.8-lts...1.23.9-lts
