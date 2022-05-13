@@ -14,6 +14,7 @@ import tempfile
 import tarfile
 
 from contextlib import contextmanager, suppress
+from packaging import version
 
 from celery import Celery, signature
 from celery.signals import worker_ready
@@ -401,6 +402,12 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
+
+        # check version and load model_settings for default samples if given
+        if version.parse(mdk_version) > version.parse("1.26.0"):
+            model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
+            if model_settings_fp and os.path.isfile(model_settings_fp):
+                run_args += ['--model-settings-json', model_settings_fp]
 
         # Log MDK run command
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
