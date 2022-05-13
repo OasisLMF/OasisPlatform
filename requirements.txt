@@ -257,7 +257,7 @@ numpy==1.20.3
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.23.9
+oasislmf[extra]==1.23.10
     # via -r ./requirements-worker.in
 ods-tools==2.0.1
     # via -r ./requirements-server.in
