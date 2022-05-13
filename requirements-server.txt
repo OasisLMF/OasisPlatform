@@ -92,6 +92,7 @@ django==3.2.13
     #   django-storages
     #   djangorestframework
     #   djangorestframework-simplejwt
+    #   drf-nested-routers
     #   drf-yasg
 django-cleanup==5.2.0
     # via -r requirements-server.in
@@ -109,8 +110,11 @@ djangorestframework==3.12.4
     # via
     #   -r requirements-server.in
     #   djangorestframework-simplejwt
+    #   drf-nested-routers
     #   drf-yasg
 djangorestframework-simplejwt==5.0.0
+    # via -r requirements-server.in
+drf-nested-routers==0.93.4
     # via -r requirements-server.in
 drf-yasg==1.20.0
     # via -r requirements-server.in

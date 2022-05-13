@@ -14,6 +14,7 @@ django-request-logging
 django-debug-toolbar
 djangorestframework
 djangorestframework_simplejwt
+drf-nested-routers
 drf-yasg>=1.17.1
 jsonpickle
 jsonschema
