@@ -154,33 +154,6 @@ def get_worker_versions():
     }
 
 
-def check_worker_lost(task, analysis_pk):
-    """
-    SAFE GUARD: - Fail any tasks received from dead workers
-    -------------------------------------------------------
-    Setting the option `acks_late` means tasks will remain on the Queue until after
-    a tasks has completed. If the worker goes down during the execution of `generate_input`
-    or `start_analysis_task` then if another work is available the task will be picked up
-    on an active worker.
-
-    When the task is picked up for a 2nd time, the new worker will reject it will
-    'WorkerLostError' and mark the execution as failed.
-
-    Note that this is not the ideal approach, since at least one alive worker is required to
-    fail as crash workers task.
-
-    A better method is to use either tasks signals or celery events to fail the task immediately,
-    so this should be viewed as a fallback option.
-    """
-    current_state = task.AsyncResult(task.request.id).state
-    logging.info(current_state)
-    if current_state == RUNNING_TASK_STATUS:
-        raise WorkerLostError(
-            'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
-        )
-    task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
-
-
 def notify_api_status(analysis_pk, task_status):
     logging.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
@@ -406,6 +379,12 @@ def keys_generation_task(fn):
 
     def log_params(params, kwargs):
         exclude_keys = [
+            'profile_loc',
+            'profile_loc_json',
+            'profile_acc',
+            'profile_fm_agg',
+            'profile_fm_agg_json',
+
             'fm_aggregation_profile',
             'accounts_profile',
             'oed_hierarchy',
@@ -413,7 +392,7 @@ def keys_generation_task(fn):
             'lookup_config',
         ]
         print_params = {k: params[k] for k in set(list(params.keys())) - set(exclude_keys)}
-        if settings.get('worker', 'DEBUG_MODE', fallback=False):
+        if debug_worker:
             logging.info('keys_generation_task: \nparams={}, \nkwargs={}'.format(
                 json.dumps(print_params, indent=2),
                 json.dumps(kwargs, indent=2),
@@ -426,7 +405,7 @@ def keys_generation_task(fn):
 
         # Set `oasis-file-generation` input files
         params.setdefault('target_dir', params['root_run_dir'])
-        params.setdefault('exposure_fp', os.path.join(params['root_run_dir'], 'location.csv'))
+        params.setdefault('oed_location_csv', os.path.join(params['root_run_dir'], 'location.csv'))
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], f'user-data'))
         params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
@@ -444,19 +423,19 @@ def keys_generation_task(fn):
 
         # Prepare 'generate-oasis-files' input files
         if loc_file:
-            maybe_fetch_file(loc_file, params['exposure_fp'])
+            maybe_fetch_file(loc_file, params['oed_location_csv'])
 
         if acc_file:
-            params['accounts_fp'] = os.path.join(params['root_run_dir'], 'account.csv')
-            maybe_fetch_file(acc_file, params['accounts_fp'])
+            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], 'account.csv')
+            maybe_fetch_file(acc_file, params['oed_accounts_csv'])
 
         if info_file:
-            params['ri_info_fp'] = os.path.join(params['root_run_dir'], 'reinsinfo.csv')
-            maybe_fetch_file(info_file, params['ri_info_fp'])
+            params['oed_info_csv'] = os.path.join(params['root_run_dir'], 'reinsinfo.csv')
+            maybe_fetch_file(info_file, params['oed_info_csv'])
 
         if scope_file:
-            params['ri_scope_fp'] = os.path.join(params['root_run_dir'], 'reinsscope.csv')
-            maybe_fetch_file(scope_file, params['ri_scope_fp'])
+            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], 'reinsscope.csv')
+            maybe_fetch_file(scope_file, params['oed_scope_csv'])
 
         if settings_file:
             maybe_fetch_file(settings_file, params['analysis_settings_json'])
@@ -512,19 +491,15 @@ def prepare_input_generation_params(
     else:
         lookup_config_json = None
 
-    # Remove pos arg for 'target_dir' and 'location_file'
     params = OasisManager()._params_generate_files(
         oasis_files_dir=params['target_dir'],
-        oed_location_csv=params['exposure_fp'],
+        oed_location_csv=params['oed_location_csv'],
         model_version_csv=config.get('model_version_csv', None),
         lookup_module_path=config.get('lookup_module_path', None),
         lookup_config_json=lookup_config_json,
         disable_summarise_exposure=settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False),
         lookup_multiprocessing=multiprocessing,
     )
-    # debug print
-    #print(json.dumps(params, indent=4))
-
     return params
 
 
@@ -552,7 +527,7 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        location_df = lookup.get_locations(location_fp=params['exposure_fp'])
+        location_df = lookup.get_locations(location_fp=params['oed_location_csv'])
         location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
         chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
         chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
@@ -668,8 +643,11 @@ def collect_keys(
 @app.task(bind=True, name='write_input_files', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
+    # Load Collected keys data
     params['keys_data_csv'] = filestore.get(params['keys_ref'], params['target_dir'], subdir=params['storage_subdir'])
     params['keys_errors_csv'] = filestore.get(params['keys_error_ref'], params['target_dir'], subdir=params['storage_subdir'])
+
+    #from celery.contrib import rdb; rdb.set_trace()
     OasisManager().generate_files(**params)
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
@@ -737,7 +715,7 @@ def loss_generation_task(fn):
     def log_params(params, kwargs):
         exclude_keys = []
         print_params = {k: params[k] for k in set(list(params.keys())) - set(exclude_keys)}
-        if settings.get('worker', 'DEBUG_MODE', fallback=True):
+        if debug_worker:
             logging.info('loss_generation_task: \nparams={}, \nkwargs={}'.format(
                 json.dumps(print_params, indent=4),
                 json.dumps(kwargs, indent=4),
@@ -788,8 +766,6 @@ def loss_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
-        ## add check for work-lost function here
-        # check_worker_lost(task, analysis_pk)
 
         if isinstance(params, list):
             for p in params:
