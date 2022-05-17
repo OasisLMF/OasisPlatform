@@ -407,7 +407,7 @@ def keys_generation_task(fn):
         params.setdefault('target_dir', params['root_run_dir'])
         params.setdefault('oed_location_csv', os.path.join(params['root_run_dir'], 'location.csv'))
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], f'user-data'))
-        params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
+        params.setdefault('lookup_complex_config_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
         # Generate keys files
         params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
@@ -438,7 +438,7 @@ def keys_generation_task(fn):
             maybe_fetch_file(scope_file, params['oed_scope_csv'])
 
         if settings_file:
-            maybe_fetch_file(settings_file, params['analysis_settings_json'])
+            maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
 
         if complex_data_files:
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
@@ -483,24 +483,25 @@ def prepare_input_generation_params(
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
+    lookup_params = {**{k:v for k,v in config.items() if not k.startswith('oed_')}, **params}
 
-    if config.get('lookup_config_json'):
-        lookup_config_json = os.path.join(
-            os.path.dirname(config_path),
-            config.get('lookup_config_json'))
-    else:
-        lookup_config_json = None
-
-    params = OasisManager()._params_generate_files(
-        oasis_files_dir=params['target_dir'],
-        oed_location_csv=params['oed_location_csv'],
-        model_version_csv=config.get('model_version_csv', None),
-        lookup_module_path=config.get('lookup_module_path', None),
-        lookup_config_json=lookup_config_json,
-        disable_summarise_exposure=settings.getboolean('worker', 'DISABLE_EXPOSURE_SUMMARY', fallback=False),
-        lookup_multiprocessing=multiprocessing,
-    )
-    return params
+    # convert relative paths to Aboslute
+    lookup_path_vars = [
+        'lookup_data_dir',
+        'lookup_config_json',
+        'model_version_csv',
+        'lookup_module_path',
+        'model_settings_json'
+    ]
+    for path_val in lookup_path_vars:
+        if lookup_params.get(path_val, False):
+            if not os.path.isabs(lookup_params[path_val]):
+                abs_path_val = os.path.join(
+                    os.path.dirname(config_path),
+                    lookup_params[path_val]
+                )
+                lookup_params[path_val] = abs_path_val
+    return OasisManager()._params_generate_files(**lookup_params)
 
 
 @app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
@@ -646,8 +647,8 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     # Load Collected keys data
     params['keys_data_csv'] = filestore.get(params['keys_ref'], params['target_dir'], subdir=params['storage_subdir'])
     params['keys_errors_csv'] = filestore.get(params['keys_error_ref'], params['target_dir'], subdir=params['storage_subdir'])
+    params['oasis_files_dir'] = params['target_dir']
 
-    #from celery.contrib import rdb; rdb.set_trace()
     OasisManager().generate_files(**params)
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
@@ -803,7 +804,6 @@ def prepare_losses_generation_params(
 
     run_params = {**config, **params}
     run_params["model_data_dir"] = model_data_dir
-    #print(params)
     return OasisManager()._params_generate_losses(**run_params)
 
 
