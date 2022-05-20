@@ -828,17 +828,20 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         # Run multiple ktools pipes (based on cpu cores)
         current_chunk_id = None
         max_chunk_id = -1
+        work_dir = 'work'
+
     else:
         # Run a single ktools pipe
         current_chunk_id = chunk_idx + 1
         max_chunk_id = num_chunks
+        work_dir = f'{current_chunk_id}-work'
 
     chunk_params = {
         **params,
         'process_number': current_chunk_id,
         'max_process_id' : max_chunk_id,
         'ktools_fifo_relative': True,
-        'ktools_work_dir': os.path.join(params['model_run_dir'], 'work'),
+        'ktools_work_dir': os.path.join(params['model_run_dir'], work_dir),
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
     OasisManager().generate_losses_partial(**chunk_params)
@@ -847,7 +850,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         **params,
         'chunk_work_location': filestore.put(
             chunk_params['ktools_work_dir'],
-            filename=f'work-{chunk_idx}.tar.gz',
+            filename=f'work-{chunk_idx+1}.tar.gz',
             subdir=params['storage_subdir']
         ),
         'ktools_work_dir': chunk_params['ktools_work_dir'],
