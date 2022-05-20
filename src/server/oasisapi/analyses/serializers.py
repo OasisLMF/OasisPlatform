@@ -17,6 +17,7 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnalysisTaskStatus
         fields = (
+            'id',
             'task_id',
             'status',
             'queue_name',

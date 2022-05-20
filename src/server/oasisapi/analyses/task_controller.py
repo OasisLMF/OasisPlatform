@@ -228,7 +228,7 @@ class Controller:
         queue = cls.get_generate_inputs_queue(analysis, initiator)
         base_kwargs = {
             'loc_file': file_storage_link(analysis.portfolio.location_file),
-            'settings_file': file_storage_link(analysis.settings_file),
+            'analysis_settings_file': file_storage_link(analysis.settings_file),
             'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
         }
         files_kwargs = {
