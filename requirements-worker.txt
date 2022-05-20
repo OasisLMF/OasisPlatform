@@ -5,7 +5,7 @@
 #    pip-compile requirements-worker.in
 #
 
-git+https://github.com/OasisLMF/OasisLMF.git@fix/parallel-chunk-script-error#egg=oasislmf[extra]
+git+https://github.com/OasisLMF/OasisLMF.git@develop#egg=oasislmf[extra]
 
 amqp==5.1.0
     # via kombu
