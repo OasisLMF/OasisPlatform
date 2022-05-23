@@ -442,6 +442,8 @@ def keys_generation_task(fn):
 
         if complex_data_files:
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
+        else: 
+            params['user_data_dir'] = None
 
         log_params(params, kwargs)
 
