@@ -343,7 +343,7 @@ else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
 
 # storage selector for exposure files
-PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
+PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=True)
 
 LOGGING = {
     'version': 1,

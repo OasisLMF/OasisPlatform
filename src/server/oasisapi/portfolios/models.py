@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import io
+import pathlib
 import ods_tools
 
 from django.contrib.auth.models import Group
@@ -56,14 +57,24 @@ class Portfolio(TimeStampedModel):
             'application/x-bzip2': 'bz2',
             'application/zip': 'zip'
         }
+
         if not self.location_file:
             return None
-        if self.location_file.content_type in csv_compression_types:
-            df = ods_tools.read_csv(io.BytesIO(self.location_file.file.read()), compression=csv_compression_types[self.location_file.content_type])
-            return len(df.index)
-        if self.location_file.content_type == 'application/octet-stream':
+
+        file_ext = pathlib.Path(self.location_file.filename).suffix[1:]
+        if file_ext in ['pq', 'parquet'] or settings.PORTFOLIO_PARQUET_STORAGE:
+            # load length as parquet
             df = ods_tools.read_parquet(io.BytesIO(self.location_file.file.read()))
             return len(df.index)
+
+        # Load as csv / compressed csv
+        if file_ext in ['gzip', 'bz2', 'zip']:
+            compression = file_ext
+        else:
+            compression = csv_compression_types[self.location_file.content_type]
+
+        df = ods_tools.read_csv(io.BytesIO(self.location_file.file.read()), compression=csv_compression_types[self.location_file.content_type])
+        return len(df.index)
 
 
 class PortfolioStatus(TimeStampedModel):
