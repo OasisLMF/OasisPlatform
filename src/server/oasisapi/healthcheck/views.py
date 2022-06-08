@@ -1,6 +1,8 @@
 import logging
 
 from django.db import connection
+from django.conf import settings as django_settings
+
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import views, status
 from rest_framework.response import Response
@@ -23,17 +25,16 @@ class HealthcheckView(views.APIView):
         """
         Check db and celery connectivity and return a 200 if healthy, 503 if not.
         """
-
         code = status.HTTP_200_OK
+        status_text = 'OK'
 
-        if not self.celery_is_ok():
-            status_text = 'ERROR - celery down'
-            code = status.HTTP_503_SERVICE_UNAVAILABLE
-        elif not self.db_is_ok():
-            status_text = 'ERROR - db down'
-            code = status.HTTP_503_SERVICE_UNAVAILABLE
-        else:
-            status_text = 'OK'
+        if not django_settings.CONSOLE_DEBUG:
+            if not self.celery_is_ok():
+                status_text = 'ERROR - celery down'
+                code = status.HTTP_503_SERVICE_UNAVAILABLE
+            elif not self.db_is_ok():
+                status_text = 'ERROR - db down'
+                code = status.HTTP_503_SERVICE_UNAVAILABLE
 
         return Response({'status': status_text}, code)
 

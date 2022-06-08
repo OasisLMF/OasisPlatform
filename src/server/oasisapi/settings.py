@@ -39,13 +39,14 @@ if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
     DEBUG = True
     DEBUG_TOOLBAR = True
     URL_SUB_PATH = False
+    CONSOLE_DEBUG = True # disable celery / db checks in health check 
 else:
     # SECURITY WARNING: don't run with debug turned on in production!
     MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
     DEBUG = iniconf.settings.getboolean('server', 'debug', fallback=False)
     DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
     URL_SUB_PATH = iniconf.settings.getboolean('server', 'URL_SUB_PATH', fallback=True)
-
+    CONSOLE_DEBUG = False
 
 # Django 3.2 - the default pri-key field changed to 'BigAutoField.',
 # https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
