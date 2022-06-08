@@ -4,6 +4,7 @@ import glob
 import json
 import logging
 import os
+import pathlib
 import shutil
 import subprocess
 import tempfile
@@ -405,7 +406,6 @@ def keys_generation_task(fn):
 
         # Set `oasis-file-generation` input files
         params.setdefault('target_dir', params['root_run_dir'])
-        params.setdefault('oed_location_csv', os.path.join(params['root_run_dir'], 'location.csv'))
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], f'user-data'))
         params.setdefault('lookup_complex_config_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
@@ -423,18 +423,23 @@ def keys_generation_task(fn):
 
         # Prepare 'generate-oasis-files' input files
         if loc_file:
+            loc_extention = "".join(pathlib.Path(loc_file).suffixes)
+            params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'location{loc_extention}')
             maybe_fetch_file(loc_file, params['oed_location_csv'])
 
         if acc_file:
-            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], 'account.csv')
+            acc_extention = "".join(pathlib.Path(acc_file).suffixes)
+            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'account{acc_extention}')
             maybe_fetch_file(acc_file, params['oed_accounts_csv'])
 
         if info_file:
-            params['oed_info_csv'] = os.path.join(params['root_run_dir'], 'reinsinfo.csv')
+            info_extention = "".join(pathlib.Path(info_file).suffixes)
+            params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'reinsinfo{info_extention}')
             maybe_fetch_file(info_file, params['oed_info_csv'])
 
         if scope_file:
-            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], 'reinsscope.csv')
+            scope_extention = "".join(pathlib.Path(scope_file).suffixes)
+            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
             maybe_fetch_file(scope_file, params['oed_scope_csv'])
 
         if settings_file:
@@ -442,7 +447,7 @@ def keys_generation_task(fn):
 
         if complex_data_files:
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
-        else: 
+        else:
             params['user_data_dir'] = None
 
         log_params(params, kwargs)
