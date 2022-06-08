@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import io
+from pathlib import Path
 import ods_tools
 
 from django.contrib.auth.models import Group
@@ -76,6 +77,25 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
     def validate_file(self, value):
         mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)
+        file_extention = Path(value.name).suffix[1:]
+
+        # check content_types is valid
         if self.content_types and mapped_content_type not in self.content_types:
             raise ValidationError('File should be one of [{}]'.format(', '.join(self.content_types)))
+
+        # check content type matches file extention
+        extention_mapping = {
+            'parquet': 'application/octet-stream',
+            'pq': 'application/octet-stream',
+            'csv': 'text/csv',
+            'gz': 'application/gzip',
+            'zip': 'application/zip',
+            'bz2': 'application/x-bzip2',
+        }
+
+        if file_extention in extention_mapping:
+            if extention_mapping.get(file_extention) != mapped_content_type:
+                raise ValidationError(
+                    f"File extention '{file_extention}' mismatched with request header 'Content-Type': '{mapped_content_type}', should be set to '{extention_mapping.get(file_extention)}'")
+
         return value
