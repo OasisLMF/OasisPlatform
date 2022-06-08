@@ -255,7 +255,6 @@ FORCE_SCRIPT_NAME = '/api'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 MEDIA_URL = '/api/media/'
-MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 STATIC_URL = '/api/static/'
 STATIC_DEBUG_URL = '/static/'  #when running
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')

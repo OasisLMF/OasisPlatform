@@ -308,7 +308,7 @@ class Controller:
         ])
 
     @classmethod
-    def generate_inputs(cls, analysis: 'Analysis', initiator: User) -> chain:
+    def generate_inputs(cls, analysis: 'Analysis', initiator: User, loc_lines: int) -> chain:
         """
         Starts the input generation chain
 
@@ -324,7 +324,6 @@ class Controller:
         if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
             num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
         elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
-            loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
             loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
             num_chunks = ceil(loc_lines / loc_lines_per_chunk)
 

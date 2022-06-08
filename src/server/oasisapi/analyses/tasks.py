@@ -414,7 +414,8 @@ def start_input_generation_task(analysis_pk, initiator_pk):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
-    get_analysis_task_controller().generate_inputs(analysis, initiator)
+    loc_lines = analysis.portfolio.location_file_len()
+    get_analysis_task_controller().generate_inputs(analysis, initiator, loc_lines)
     analysis.save()
 
 

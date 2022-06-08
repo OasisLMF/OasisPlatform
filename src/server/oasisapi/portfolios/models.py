@@ -1,5 +1,8 @@
 from __future__ import absolute_import, print_function
 
+import io
+import ods_tools
+
 from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
@@ -45,6 +48,22 @@ class Portfolio(TimeStampedModel):
 
     def get_absolute_storage_url(self, request=None):
         return reverse('portfolio-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def location_file_len(self):
+        csv_compression_types = {
+            'text/csv': 'infer',
+            'application/gzip': 'gzip',
+            'application/x-bzip2': 'bz2',
+            'application/zip': 'zip'
+        }
+        if not self.location_file:
+            return None
+        if self.location_file.content_type in csv_compression_types:
+            df = ods_tools.read_csv(io.BytesIO(self.location_file.file.read()), compression=csv_compression_types[self.location_file.content_type])
+            return len(df.index)
+        if self.location_file.content_type == 'application/octet-stream':
+            df = ods_tools.read_parquet(io.BytesIO(self.location_file.file.read()))
+            return len(df.index)
 
 
 class PortfolioStatus(TimeStampedModel):
