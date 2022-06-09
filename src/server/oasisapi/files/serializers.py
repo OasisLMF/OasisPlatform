@@ -77,7 +77,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
     def validate_file(self, value):
         mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)
-        file_extention = Path(value.name).suffix[1:]
+        file_extention = Path(value.name).suffix[1:].lower()
 
         # check content_types is valid
         if self.content_types and mapped_content_type not in self.content_types:
