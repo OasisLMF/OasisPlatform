@@ -2,7 +2,6 @@ from __future__ import absolute_import, print_function
 
 from celery.result import AsyncResult
 from django.conf import settings
-## imports from prev non-2020 version
 from django.core.files.base import File
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -26,10 +25,6 @@ from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
-
-
-# from .tasks import record_generate_input_result, record_run_analysis_result
-###############
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -356,6 +351,10 @@ class Analysis(TimeStampedModel):
 
         if errors:
             raise ValidationError(errors)
+        try:
+            loc_lines = self.portfolio.location_file_len()
+        except Exception as e:
+            raise ValidationError(f"Failed to read location file size for chunking: {e}")
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
@@ -372,7 +371,7 @@ class Analysis(TimeStampedModel):
             'traceback_property': 'input_generation_traceback_file',
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
-        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
+        task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
         self.task_finished = None
