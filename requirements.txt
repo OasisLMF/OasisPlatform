@@ -268,7 +268,7 @@ numba==0.54.1
     #   oasislmf
 numexpr==2.8.0
     # via oasislmf
-numpy==1.20.3
+numpy==1.21.5
     # via
     #   fastparquet
     #   numba

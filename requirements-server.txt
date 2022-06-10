@@ -159,7 +159,7 @@ markupsafe==2.0.1
     # via jinja2
 msrest==0.6.21
     # via azure-storage-blob
-numpy==1.21.4
+numpy==1.21.5
     # via
     #   pandas
     #   pyarrow
