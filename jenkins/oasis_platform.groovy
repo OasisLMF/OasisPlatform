@@ -99,6 +99,9 @@ node {
     // Docker image scanning
     String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
     String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/image_reports:/tmp"
+    String mnt_repo = "-v ${env.WORKSPACE}/${oasis_workspace}:/mnt"
+    String mnt_server_deps = "-v ${env.WORKSPACE}/${oasis_workspace}/requirments-server.txt:/tmp/requirments.txt"
+    String mnt_worker_deps = "-v ${env.WORKSPACE}/${oasis_workspace}/requirments-worker.txt:/mnt/requirments.txt"
 
     // Update MDK branch based on model branch
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
@@ -195,8 +198,8 @@ node {
                     dir(oasis_workspace) {
                         //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_output_report}  -v $PWD:/mnt aquasec/trivy fs --security-checks vuln,config,secret /mnt"
                         withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                            sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD:/mnt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} --security-checks vuln,config,secret /mnt"
-                        }    
+                            sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} --security-checks vuln,config,secret /mnt"
+                        }
                     }
                 }
             },
@@ -204,8 +207,8 @@ node {
                 stage('Scan: requirments-server.txt') {
                     dir(oasis_workspace) {
                         withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                            sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD/requirements-server.txt:/mnt/requirements.txt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt"
-                        }    
+                            sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt"
+                        }
                     }
                 }
             },
@@ -213,8 +216,8 @@ node {
                 stage('Scan: requirments-worker.txt') {
                     dir(oasis_workspace) {
                         withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                            sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD/requirements-worker.txt:/mnt/requirements.txt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt"
-                        }    
+                            sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt"
+                        }
                     }
                 }
             }
