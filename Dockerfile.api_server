@@ -2,9 +2,9 @@
 FROM ubuntu:22.04 AS build-packages
 
 ENV DEBIAN_FRONTEND noninteractive
-COPY ./requirements-server.txt ./requirements.txt
+COPY ./requirements-server.txt ./requirements-server.txt
 RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential python3 python3-pip python3-dev libmariadbclient-dev-compat && rm -rf /var/lib/apt/lists/*
-RUN pip install --user --no-warn-script-location -r ./requirements.txt && pip install --no-warn-script-location --user mysqlclient
+RUN pip install --user --no-warn-script-location -r ./requirements-server.txt && pip install --no-warn-script-location --user mysqlclient
 
 
 # ---- STAGE 2 ----

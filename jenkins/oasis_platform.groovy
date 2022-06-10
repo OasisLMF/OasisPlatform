@@ -187,6 +187,33 @@ node {
                 }
             }
         )
+
+
+        parallel(
+            scan_platform_repo: {
+                stage('Scan: repo config') {
+                    dir(oasis_workspace) {
+                        //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_output_report}  -v $PWD:/mnt aquasec/trivy fs --security-checks vuln,config,secret /mnt"
+                        sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD:/mnt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} --security-checks vuln,config,secret /mnt"
+                    }
+                }
+            },
+            scan_server_deps: {
+                stage('Scan: requirments-server.txt') {
+                    dir(oasis_workspace) {
+                        sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD/requirements-server.txt:/mnt/requirements.txt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt
+                    }
+                }
+            },
+            scan_worker_deps: {
+                stage('Scan: requirments-worker.txt') {
+                    dir(oasis_workspace) {
+                        sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD/requirements-worker.txt:/mnt/requirements.txt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt
+                    }
+                }
+            }
+        )
+
         stage('Shell Env'){
             sh  PIPELINE + ' print_model_vars'
             if (params.CHECK_COMPATIBILITY) {
