@@ -41,7 +41,7 @@ node {
         [$class: 'StringParameterDefinition',  description: "Ktools release notes ref",            name: 'KTOOLS_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "Ktools prev release notes ref",       name: 'KTOOLS_PREV_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
-        [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_REPO_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
+        [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_REPO_VULNERABILITIES', defaultValue: "CRITICAL"],
         [$class: 'TextParameterDefinition',    description: "List of models for Regression tests", name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', description: "Test previous API and Worker",        name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(true)],
         [$class: 'BooleanParameterDefinition', description: "Test S3 storage using LocalStack",    name: 'CHECK_S3', defaultValue: Boolean.valueOf(true)],
