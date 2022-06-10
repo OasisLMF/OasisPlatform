@@ -1,9 +1,9 @@
 FROM centos:7
 
 RUN yum update -y
-RUN yum install -y libspatialindex-dev git curl gcc-c++ libtool autoconf automake 
-RUN yum install -y openssl-devel bzip2-devel libffi-devel zlib-devel wget xz-devel
-RUN yum groupinstall -y 'Development Tools'
+RUN yum install -y libspatialindex-dev git curl gcc-c++ libtool autoconf automake && yum clean all
+RUN yum install -y openssl-devel bzip2-devel libffi-devel zlib-devel wget xz-devel && yum clean all
+RUN yum groupinstall -y 'Development Tools' && yum clean all
 
 RUN wget https://www.python.org/ftp/python/3.8.10/Python-3.8.10.tgz 
 RUN tar xzf Python-3.8.10.tgz
@@ -12,7 +12,7 @@ WORKDIR /Python-3.8.10
 RUN ./configure --enable-optimizations
 RUN make install 
 
-RUN yum install -y python3-pip procps
+RUN yum install -y python3-pip procps && yum clean all
 
 WORKDIR /tmp
 COPY ./requirements-worker.txt ./requirements-worker.txt

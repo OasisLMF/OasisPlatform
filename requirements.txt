@@ -58,7 +58,7 @@ botocore==1.23.20
     # via
     #   boto3
     #   s3transfer
-celery==5.2.1
+celery==5.2.2
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -108,7 +108,7 @@ configparser==5.2.0
     #   -r ./requirements-worker.in
 constantly==15.1.0
     # via twisted
-cookiecutter==1.7.3
+cookiecutter==2.1.1
     # via oasislmf
 coreapi==2.3.3
     # via
@@ -136,7 +136,7 @@ daphne==3.0.2
     #   channels
 distlib==0.3.3
     # via virtualenv
-django==3.2.11
+django==3.2.13
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -268,11 +268,12 @@ numba==0.54.1
     #   oasislmf
 numexpr==2.8.0
     # via oasislmf
-numpy==1.20.3
+numpy==1.21.5
     # via
     #   fastparquet
     #   numba
     #   numexpr
+    #   oasislmf
     #   pandas
     #   pyarrow
     #   scikit-learn
@@ -310,8 +311,6 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-poyo==0.5.0
-    # via cookiecutter
 prompt-toolkit==3.0.23
     # via click-repl
 psycopg2-binary==2.9.2
@@ -338,7 +337,7 @@ pycparser==2.21
     # via cffi
 pyflakes==2.4.0
     # via flake8
-pyjwt==2.3.0
+pyjwt==2.4.0
     # via djangorestframework-simplejwt
 pymysql==1.0.2
     # via
@@ -377,6 +376,8 @@ pytz==2021.3
     #   django
     #   oasislmf
     #   pandas
+pyyaml==6.0
+    # via cookiecutter
 requests==2.26.0
     # via
     #   -r requirements.in
@@ -417,7 +418,6 @@ six==1.16.0
     #   automat
     #   azure-core
     #   click-repl
-    #   cookiecutter
     #   fasteners
     #   fiona
     #   isodate
@@ -465,7 +465,7 @@ tox==3.24.4
     # via -r requirements.in
 tqdm==4.62.3
     # via oasislmf
-twisted[tls]==22.1.0
+twisted[tls]==22.4.0
     # via
     #   -r ./requirements-server.in
     #   daphne
@@ -488,7 +488,7 @@ vine==5.0.0
     #   kombu
 virtualenv==20.10.0
     # via tox
-waitress==2.0.0
+waitress==2.1.2
     # via webtest
 wcwidth==0.2.5
     # via prompt-toolkit

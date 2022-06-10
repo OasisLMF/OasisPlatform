@@ -159,7 +159,7 @@ markupsafe==2.0.1
     # via jinja2
 msrest==0.6.21
     # via azure-storage-blob
-numpy==1.21.4
+numpy==1.21.5
     # via
     #   pandas
     #   pyarrow
@@ -187,7 +187,7 @@ pyasn1-modules==0.2.8
     # via service-identity
 pycparser==2.21
     # via cffi
-pyjwt==2.3.0
+pyjwt==2.4.0
     # via djangorestframework-simplejwt
 pymysql==1.0.2
     # via -r requirements-server.in
@@ -238,7 +238,7 @@ sqlparse==0.4.2
     # via
     #   django
     #   django-debug-toolbar
-twisted[tls]==22.2.0
+twisted[tls]==22.4.0
     # via
     #   -r requirements-server.in
     #   daphne
