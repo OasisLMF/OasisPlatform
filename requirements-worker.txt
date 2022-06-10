@@ -135,6 +135,7 @@ numpy==1.21.5
     #   fastparquet
     #   numba
     #   numexpr
+    #   oasislmf
     #   pandas
     #   pyarrow
     #   scikit-learn
@@ -156,8 +157,6 @@ pathlib2==2.3.6
     # via -r requirements-worker.in
 pluggy==1.0.0
     # via pytest
-poyo==0.5.0
-    # via cookiecutter
 prompt-toolkit==3.0.23
     # via click-repl
 psycopg2-binary==2.9.2
@@ -190,6 +189,8 @@ pytz==2021.3
     #   celery
     #   oasislmf
     #   pandas
+pyyaml==6.0
+    # via cookiecutter
 requests==2.26.0
     # via
     #   azure-core
@@ -221,7 +222,6 @@ six==1.16.0
     #   anytree
     #   azure-core
     #   click-repl
-    #   cookiecutter
     #   fasteners
     #   fiona
     #   isodate
