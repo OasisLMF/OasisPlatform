@@ -465,7 +465,7 @@ tox==3.24.4
     # via -r requirements.in
 tqdm==4.62.3
     # via oasislmf
-twisted[tls]==22.1.0
+twisted[tls]==22.4.0
     # via
     #   -r ./requirements-server.in
     #   daphne
