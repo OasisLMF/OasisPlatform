@@ -191,7 +191,7 @@ requests==2.26.0
 ruamel-yaml==0.17.17
     # via drf-yasg
 ruamel-yaml-clib==0.2.6
-    # via ruamel.yaml
+    # via ruamel-yaml
 s3transfer==0.5.0
     # via boto3
 service-identity==21.1.0
