@@ -167,7 +167,7 @@ pyasn1-modules==0.2.8
     # via service-identity
 pycparser==2.21
     # via cffi
-pyjwt==2.3.0
+pyjwt==2.4.0
     # via djangorestframework-simplejwt
 pymysql==1.0.2
     # via -r requirements-server.in
@@ -191,7 +191,7 @@ requests==2.26.0
 ruamel-yaml==0.17.17
     # via drf-yasg
 ruamel-yaml-clib==0.2.6
-    # via ruamel.yaml
+    # via ruamel-yaml
 s3transfer==0.5.0
     # via boto3
 service-identity==21.1.0
@@ -208,7 +208,7 @@ sqlalchemy==1.4.27
     # via -r requirements-server.in
 sqlparse==0.4.2
     # via django
-twisted[tls]==22.2.0
+twisted[tls]==22.4.0
     # via daphne
 txaio==21.2.1
     # via autobahn

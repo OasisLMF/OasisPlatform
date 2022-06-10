@@ -63,7 +63,7 @@ cligj==0.7.2
     # via fiona
 configparser==5.2.0
     # via -r requirements-worker.in
-cookiecutter==1.7.3
+cookiecutter==2.1.1
     # via oasislmf
 cramjam==2.5.0
     # via fastparquet
@@ -71,7 +71,7 @@ fasteners==0.16.3
     # via -r requirements-worker.in
 fastparquet==0.7.2
     # via oasislmf
-fiona==1.8.20
+fiona==1.8.21
     # via geopandas
 fsspec==2021.11.1
     # via fastparquet
@@ -128,7 +128,7 @@ oasislmf[extra]==1.23.11
     # via -r requirements-worker.in
 packaging==21.3
     # via pytest
-pandas==1.3.4
+pandas==1.4.2
     # via
     #   fastparquet
     #   geopandas
@@ -137,8 +137,6 @@ pathlib2==2.3.6
     # via -r requirements-worker.in
 pluggy==1.0.0
     # via pytest
-poyo==0.5.0
-    # via cookiecutter
 prompt-toolkit==3.0.23
     # via click-repl
 psycopg2-binary==2.9.2
@@ -169,6 +167,8 @@ pytz==2021.3
     #   celery
     #   oasislmf
     #   pandas
+pyyaml==6.0
+    # via cookiecutter
 requests==2.26.0
     # via
     #   cookiecutter
@@ -184,7 +184,7 @@ scikit-learn==1.0.1
     # via sklearn
 scipy==1.7.3
     # via scikit-learn
-shapely==1.8.0
+shapely==1.8.2
     # via
     #   geopandas
     #   oasislmf
@@ -194,7 +194,6 @@ six==1.16.0
     # via
     #   anytree
     #   click-repl
-    #   cookiecutter
     #   fasteners
     #   fiona
     #   munch
