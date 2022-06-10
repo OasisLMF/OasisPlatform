@@ -71,7 +71,7 @@ fasteners==0.16.3
     # via -r requirements-worker.in
 fastparquet==0.7.2
     # via oasislmf
-fiona==1.8.20
+fiona==1.8.21
     # via geopandas
 fsspec==2021.11.1
     # via fastparquet
@@ -128,7 +128,7 @@ oasislmf[extra]==1.23.11
     # via -r requirements-worker.in
 packaging==21.3
     # via pytest
-pandas==1.3.4
+pandas==1.4.2
     # via
     #   fastparquet
     #   geopandas
@@ -184,7 +184,7 @@ scikit-learn==1.0.1
     # via sklearn
 scipy==1.7.3
     # via scikit-learn
-shapely==1.8.0
+shapely==1.8.2
     # via
     #   geopandas
     #   oasislmf
