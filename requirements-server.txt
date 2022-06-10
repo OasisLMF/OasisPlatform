@@ -187,7 +187,7 @@ pyasn1-modules==0.2.8
     # via service-identity
 pycparser==2.21
     # via cffi
-pyjwt==2.3.0
+pyjwt==2.4.0
     # via djangorestframework-simplejwt
 pymysql==1.0.2
     # via -r requirements-server.in
