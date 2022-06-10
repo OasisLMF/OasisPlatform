@@ -311,8 +311,6 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-poyo==0.5.0
-    # via cookiecutter
 prompt-toolkit==3.0.23
     # via click-repl
 psycopg2-binary==2.9.2
@@ -378,6 +376,8 @@ pytz==2021.3
     #   django
     #   oasislmf
     #   pandas
+pyyaml==6.0
+    # via cookiecutter
 requests==2.26.0
     # via
     #   -r requirements.in
@@ -418,7 +418,6 @@ six==1.16.0
     #   automat
     #   azure-core
     #   click-repl
-    #   cookiecutter
     #   fasteners
     #   fiona
     #   isodate
