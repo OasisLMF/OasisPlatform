@@ -278,6 +278,20 @@ node {
                             }
                         }
                     }
+                },
+                scan_model_worker_dev: {
+                    stage('Scan: Debian Model worker'){
+                        dir(oasis_workspace) {
+                            // Scan for Image Efficient
+                            sh " ./imagesize.sh  ${image_worker}:${env.TAG_RELEASE} image_reports/size_model-worker-deb.txt"
+
+                            // Scan for CVE
+                            withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_model-worker-deb.txt ${image_worker}:${env.TAG_RELEASE}-debian"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}-debian"
+                            }
+                        }
+                    }
                 }
             )
         }
