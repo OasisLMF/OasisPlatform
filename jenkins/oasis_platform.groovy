@@ -100,6 +100,7 @@ node {
     // Docker image scanning
     String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
     String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/image_reports:/tmp"
+    String mnt_scan_report = "-v ${env.WORKSPACE}/${oasis_workspace}/scan_reports:/tmp"
     String mnt_repo = "-v ${env.WORKSPACE}/${oasis_workspace}:/mnt"
     String mnt_server_deps = "-v ${env.WORKSPACE}/${oasis_workspace}/requirements-server.txt:/mnt/requirements.txt"
     String mnt_worker_deps = "-v ${env.WORKSPACE}/${oasis_workspace}/requirements-worker.txt:/mnt/requirements.txt"
@@ -199,7 +200,7 @@ node {
                         dir(oasis_workspace) {
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
                                 //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_repo_general.txt  --security-checks vuln,config,secret /mnt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} ${mnt_output_report} aquasec/trivy fs --output /tmp/cve_repo_general.txt  --security-checks vuln,config,secret /mnt"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} ${mnt_scan_report} aquasec/trivy fs --output /tmp/cve_repo_general.txt  --security-checks vuln,config,secret /mnt"
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --security-checks vuln,config,secret /mnt"
                             }
                         }
@@ -210,7 +211,7 @@ node {
                         dir(oasis_workspace) {
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
                                 //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_python_server.txt /mnt/requirements.txt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --output /tmp/cve_python_server.txt /mnt/requirements.txt"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} ${mnt_scan_report} aquasec/trivy fs --exit-code 1 --output /tmp/cve_python_server.txt /mnt/requirements.txt"
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} /mnt/requirements.txt"
                             }
                         }
@@ -221,7 +222,7 @@ node {
                         dir(oasis_workspace) {
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
                                 //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_python_worker.txt /mnt/requirements.txt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} ${mnt_output_report} aquasec/trivy fs --output /tmp/cve_python_worker.txt /mnt/requirements.txt"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} ${mnt_scan_report} aquasec/trivy fs --output /tmp/cve_python_worker.txt /mnt/requirements.txt"
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} /mnt/requirements.txt"
                             }
                         }
@@ -640,6 +641,13 @@ node {
         dir(build_workspace) {
             archiveArtifacts artifacts: "stage/log/**/*.*", excludes: '*stage/log/**/*.gitkeep'
             archiveArtifacts artifacts: "stage/output/**/*.*"
+        }
+        //Store repo scan reports
+        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+            dir(oasis_workspace){
+                archiveArtifacts artifacts: 'scan_reports/**/*.*'
+            }
+
         }
         //Store Docker image reports
         if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
