@@ -58,7 +58,7 @@ botocore==1.23.20
     # via
     #   boto3
     #   s3transfer
-celery==5.2.1
+celery==5.2.2
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -108,7 +108,7 @@ configparser==5.2.0
     #   -r ./requirements-worker.in
 constantly==15.1.0
     # via twisted
-cookiecutter==1.7.3
+cookiecutter==2.1.1
     # via oasislmf
 coreapi==2.3.3
     # via
@@ -339,7 +339,7 @@ pycparser==2.21
     # via cffi
 pyflakes==2.4.0
     # via flake8
-pyjwt==2.3.0
+pyjwt==2.4.0
     # via djangorestframework-simplejwt
 pymysql==1.0.2
     # via
@@ -489,7 +489,7 @@ vine==5.0.0
     #   kombu
 virtualenv==20.10.0
     # via tox
-waitress==2.0.0
+waitress==2.1.2
     # via webtest
 wcwidth==0.2.5
     # via prompt-toolkit
