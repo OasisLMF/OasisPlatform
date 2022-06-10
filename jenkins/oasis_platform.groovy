@@ -100,8 +100,8 @@ node {
     String mnt_docker_socket = "-v /var/run/docker.sock:/var/run/docker.sock"
     String mnt_output_report = "-v ${env.WORKSPACE}/${oasis_workspace}/image_reports:/tmp"
     String mnt_repo = "-v ${env.WORKSPACE}/${oasis_workspace}:/mnt"
-    String mnt_server_deps = "-v ${env.WORKSPACE}/${oasis_workspace}/requirments-server.txt:/tmp/requirments.txt"
-    String mnt_worker_deps = "-v ${env.WORKSPACE}/${oasis_workspace}/requirments-worker.txt:/mnt/requirments.txt"
+    String mnt_server_deps = "-v ${env.WORKSPACE}/${oasis_workspace}/requirements-server.txt:/mnt/requirements.txt"
+    String mnt_worker_deps = "-v ${env.WORKSPACE}/${oasis_workspace}/requirements-worker.txt:/mnt/requirements.txt"
 
     // Update MDK branch based on model branch
     if (BRANCH_NAME.matches("master") || BRANCH_NAME.matches("hotfix/(.*)")){
