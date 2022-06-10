@@ -201,14 +201,14 @@ node {
             scan_server_deps: {
                 stage('Scan: requirments-server.txt') {
                     dir(oasis_workspace) {
-                        sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD/requirements-server.txt:/mnt/requirements.txt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt
+                        sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD/requirements-server.txt:/mnt/requirements.txt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt"
                     }
                 }
             },
             scan_worker_deps: {
                 stage('Scan: requirments-worker.txt') {
                     dir(oasis_workspace) {
-                        sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD/requirements-worker.txt:/mnt/requirements.txt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt
+                        sh "docker run -e GITHUB_TOKEN=${gh_token} -v $PWD/requirements-worker.txt:/mnt/requirements.txt aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} /mnt/requirements.txt"
                     }
                 }
             }
