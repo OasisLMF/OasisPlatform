@@ -63,7 +63,7 @@ cligj==0.7.2
     # via fiona
 configparser==5.2.0
     # via -r requirements-worker.in
-cookiecutter==1.7.3
+cookiecutter==2.1.1
     # via oasislmf
 cramjam==2.5.0
     # via fastparquet
