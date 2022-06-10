@@ -199,9 +199,7 @@ node {
                     stage('Scan: repo config') {
                         dir(oasis_workspace) {
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_repo_general.txt  --security-checks vuln,config,secret /mnt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} ${mnt_scan_report} aquasec/trivy fs --output /tmp/cve_repo_general.txt  --security-checks vuln,config,secret /mnt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --security-checks vuln,config,secret /mnt"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_repo_general.txt  --security-checks vuln,config,secret /mnt"
                             }
                         }
                     }
@@ -210,9 +208,7 @@ node {
                     stage('Scan: requirments-server.txt') {
                         dir(oasis_workspace) {
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_python_server.txt /mnt/requirements.txt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} ${mnt_scan_report} aquasec/trivy fs --exit-code 1 --output /tmp/cve_python_server.txt /mnt/requirements.txt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} /mnt/requirements.txt"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_server_deps} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_python_server.txt /mnt/requirements.txt"
                             }
                         }
                     }
@@ -221,9 +217,7 @@ node {
                     stage('Scan: requirments-worker.txt') {
                         dir(oasis_workspace) {
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_python_worker.txt /mnt/requirements.txt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} ${mnt_scan_report} aquasec/trivy fs --output /tmp/cve_python_worker.txt /mnt/requirements.txt"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} /mnt/requirements.txt"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_worker_deps} ${mnt_output_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_python_worker.txt /mnt/requirements.txt"
                             }
                         }
                     }
@@ -303,8 +297,7 @@ node {
 
                             // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
                             }
                         }
                     }
@@ -317,13 +310,12 @@ node {
 
                             // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} --output /tmp/cve_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
                             }
                         }
                     }
                 },
-                scan_model_worker_dev: {
+                scan_model_worker_deb: {
                     stage('Scan: Debian Model worker'){
                         dir(oasis_workspace) {
                             // Scan for Image Efficient
@@ -332,7 +324,7 @@ node {
                             // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
                                 sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_model-worker-deb.txt ${image_worker}:${env.TAG_RELEASE}-debian"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}-debian"
+                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}-debian"
                             }
                         }
                     }
