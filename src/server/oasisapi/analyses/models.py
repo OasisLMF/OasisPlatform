@@ -256,6 +256,7 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_ERROR,
             self.status_choices.RUN_CANCELLED,
         ]
+
         if self.status not in valid_choices:
             raise ValidationError(
                 {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
@@ -266,15 +267,36 @@ class Analysis(TimeStampedModel):
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
 
         if not self.settings_file:
-            errors['settings_file'] = ['Must not be null']
+            errors['analysis_settings_file'] = ['Must not be null']
 
         if not self.input_file:
             errors['input_file'] = ['Must not be null']
 
+        # Valadation for dyanmic loss chunks
+        if self.model.chunking_options.loss_strategy == self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS:
+            if not self.model.resource_file:
+                errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
+            elif self.settings_file:
+                # cross check model and analysis settings if not given a set of events
+                model_settings = self.model.resource_file.read_json()
+                analysis_settings = self.settings_file.read_json()
+                if not analysis_settings.get('event_ids'):
+                    events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
+                    events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
+                    events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
+
+                    if not events_selected:
+                        errors['analysis_settings_file'] = ['event_set, Must not be null for Dynamic chunking']
+                    if not events_options :
+                        errors['model_settings_file'] = ['event_set, No options given in Model settings']
+                    if not events_matched:
+                        errors['settings_files'] = [f"selected event_set '{events_selected}' from analysis_settings not found in model_settings"]
+                    elif not events_matched[0].get('number_of_events'):
+                        errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
+
         if errors:
             self.status = self.status_choices.RUN_ERROR
             self.save()
-
             raise ValidationError(detail=errors)
 
     def run_callback(self, body):
