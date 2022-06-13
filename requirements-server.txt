@@ -129,9 +129,9 @@ idna==3.3
     #   hyperlink
     #   requests
     #   twisted
-importlib-metadata==4.8.2
+importlib-metadata==4.11.4
     # via markdown
-importlib-resources==5.4.0
+importlib-resources==5.7.1
     # via jsonschema
 incremental==21.3.0
     # via twisted
@@ -263,7 +263,7 @@ wcwidth==0.2.5
     # via prompt-toolkit
 whitenoise==5.3.0
     # via -r requirements-server.in
-zipp==3.6.0
+zipp==3.8.0
     # via
     #   importlib-metadata
     #   importlib-resources

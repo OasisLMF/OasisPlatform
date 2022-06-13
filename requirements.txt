@@ -244,7 +244,7 @@ jsonschema==4.2.1
     #   oasislmf
 kombu==5.2.2
     # via celery
-llvmlite==0.37.0
+llvmlite==0.38.1
     # via numba
 markdown==3.3.6
     # via -r ./requirements-server.in
@@ -262,7 +262,7 @@ msrest==0.6.21
     # via azure-storage-blob
 munch==2.5.0
     # via fiona
-numba==0.54.1
+numba==0.55.2
     # via
     #   -r ./requirements-worker.in
     #   oasislmf

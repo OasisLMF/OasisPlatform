@@ -92,7 +92,7 @@ greenlet==1.1.2
     # via sqlalchemy
 idna==3.3
     # via requests
-importlib-resources==5.4.0
+importlib-resources==5.7.1
     # via jsonschema
 iniconfig==1.1.1
     # via pytest
@@ -124,7 +124,7 @@ msrest==0.6.21
     # via azure-storage-blob
 munch==2.5.0
     # via fiona
-numba==0.55.1
+numba==0.55.2
     # via
     #   -r requirements-worker.in
     #   oasislmf
@@ -258,7 +258,7 @@ vine==5.0.0
     #   kombu
 wcwidth==0.2.5
     # via prompt-toolkit
-zipp==3.7.0
+zipp==3.8.0
     # via importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
