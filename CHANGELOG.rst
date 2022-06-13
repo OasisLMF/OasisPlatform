@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.12-lts`_
+ ---------
+* [#639](https://github.com/OasisLMF/OasisPlatform/pull/640) - CVE security cleanup 
+* [#639](https://github.com/OasisLMF/OasisPlatform/pull/642) - CVE security cleanup 
+* [#638](https://github.com/OasisLMF/OasisPlatform/pull/638) - Update schema for parquet output files
+.. _`1.23.12-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.11-lts...1.23.12-lts
+
 .. _`1.23.11-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.10-lts...1.23.11-lts
 
 * [#622](https://github.com/OasisLMF/OasisPlatform/pull/622) - Fix CVE-2022-28346, CVE-2022-28347
