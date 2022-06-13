@@ -308,7 +308,7 @@ class Controller:
         ])
 
     @classmethod
-    def generate_inputs(cls, analysis: 'Analysis', initiator: User) -> chain:
+    def generate_inputs(cls, analysis: 'Analysis', initiator: User, loc_lines: int) -> chain:
         """
         Starts the input generation chain
 
@@ -324,7 +324,6 @@ class Controller:
         if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
             num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
         elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
-            loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
             loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
             num_chunks = ceil(loc_lines / loc_lines_per_chunk)
 
@@ -444,7 +443,7 @@ class Controller:
         ])
 
     @classmethod
-    def generate_losses(cls, analysis: 'Analysis', initiator: User):
+    def generate_losses(cls, analysis: 'Analysis', initiator: User, events_total: int):
         """
         Starts the loss generation chain
 
@@ -460,24 +459,7 @@ class Controller:
             num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
         elif analysis.model.chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
             events_per_chunk = analysis.model.chunking_options.dynamic_events_per_analysis
-            analysis_settings = analysis.settings_file.read_json()
-            model_settings = analysis.model.resource_file.read_json()
-
-            # User options
-            user_selected_events = analysis_settings.get('event_ids', [])
-            selected_event_set = analysis_settings.get('model_settings', {}).get('event_set', "")
-            # model metadata
-            event_set_options = model_settings.get('model_settings', {}).get('event_set').get('options', [])
-            event_set_sizes = {e['id']: e['number_of_events'] for e in event_set_options if 'number_of_events' in e}
-
-            if len(user_selected_events) > 1:
-                total_events = len(user_selected_events)
-            else:
-                if selected_event_set not in event_set_sizes:
-                    raise ValueError(f'ERROR: model_settings missing "number_of_events" for Selected event_set "{selected_event_set}"')
-                total_events = event_set_sizes.get(selected_event_set)
-
-            num_chunks = ceil(total_events / events_per_chunk)
+            num_chunks = ceil(events_total / events_per_chunk)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)

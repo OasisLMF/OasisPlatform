@@ -83,10 +83,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
     filterset_class = PortfolioFilter
 
     supported_mime_types = [
+        'application/octet-stream',
         'application/json',
         'text/csv',
         'application/gzip',
-        'application/x-bzip2',
         'application/zip',
         'application/x-bzip2',
     ]

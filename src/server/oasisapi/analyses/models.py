@@ -2,7 +2,6 @@ from __future__ import absolute_import, print_function
 
 from celery.result import AsyncResult
 from django.conf import settings
-## imports from prev non-2020 version
 from django.core.files.base import File
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -26,10 +25,6 @@ from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
-
-
-# from .tasks import record_generate_input_result, record_run_analysis_result
-###############
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -254,6 +249,25 @@ class Analysis(TimeStampedModel):
             groups.append(group.name)
         return groups
 
+    def get_num_events(self):
+        selected_strat = self.model.chunking_options.loss_strategy
+        dynamic_strat = self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
+        if selected_strat != dynamic_strat:
+            return 1
+
+        analysis_settings = self.settings_file.read_json()
+        model_settings = self.model.resource_file.read_json()
+        user_selected_events = analysis_settings.get('event_ids', [])
+        selected_event_set = analysis_settings.get('model_settings', {}).get('event_set', "")
+        if len(user_selected_events) > 1:
+            return len(user_selected_events)
+
+        event_set_options = model_settings.get('model_settings', {}).get('event_set').get('options', [])
+        event_set_sizes = {e['id']: e['number_of_events'] for e in event_set_options if 'number_of_events' in e}
+        if selected_event_set not in event_set_sizes:
+            raise ValidationError(f"Failed to read event set size for chunking: selected event_id: {selected_event_set}, options: {event_set_options}")
+        return event_set_sizes.get(selected_event_set)
+
     def validate_run(self):
         valid_choices = [
             self.status_choices.READY,
@@ -261,6 +275,7 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_ERROR,
             self.status_choices.RUN_CANCELLED,
         ]
+
         if self.status not in valid_choices:
             raise ValidationError(
                 {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
@@ -271,15 +286,36 @@ class Analysis(TimeStampedModel):
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
 
         if not self.settings_file:
-            errors['settings_file'] = ['Must not be null']
+            errors['analysis_settings_file'] = ['Must not be null']
 
         if not self.input_file:
             errors['input_file'] = ['Must not be null']
 
+        # Valadation for dyanmic loss chunks
+        if self.model.chunking_options.loss_strategy == self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS:
+            if not self.model.resource_file:
+                errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
+            elif self.settings_file:
+                # cross check model and analysis settings if not given a set of events
+                model_settings = self.model.resource_file.read_json()
+                analysis_settings = self.settings_file.read_json()
+                if not analysis_settings.get('event_ids'):
+                    events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
+                    events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
+                    events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
+
+                    if not events_selected:
+                        errors['analysis_settings_file'] = ['event_set, Must not be null for Dynamic chunking']
+                    if not events_options :
+                        errors['model_settings_file'] = ['event_set, No options given in Model settings']
+                    if not events_matched:
+                        errors['settings_files'] = [f"selected event_set '{events_selected}' from analysis_settings not found in model_settings"]
+                    elif not events_matched[0].get('number_of_events'):
+                        errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
+
         if errors:
             self.status = self.status_choices.RUN_ERROR
             self.save()
-
             raise ValidationError(detail=errors)
 
     def run_callback(self, body):
@@ -295,7 +331,7 @@ class Analysis(TimeStampedModel):
 
     def run(self, initiator):
         self.validate_run()
-
+        events_total = self.get_num_events()
         self.status = self.status_choices.RUN_QUEUED
         self.save()
 
@@ -306,7 +342,7 @@ class Analysis(TimeStampedModel):
             'traceback_property': 'run_traceback_file',
             'failure_status': Analysis.status_choices.RUN_ERROR,
         }))
-        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
+        task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
 
         self.run_task_id = task_id
         self.task_started = timezone.now()
@@ -356,6 +392,10 @@ class Analysis(TimeStampedModel):
 
         if errors:
             raise ValidationError(errors)
+        try:
+            loc_lines = self.portfolio.location_file_len()
+        except Exception as e:
+            raise ValidationError(f"Failed to read location file size for chunking: {e}")
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
@@ -372,7 +412,7 @@ class Analysis(TimeStampedModel):
             'traceback_property': 'input_generation_traceback_file',
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
-        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
+        task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
         self.task_finished = None
