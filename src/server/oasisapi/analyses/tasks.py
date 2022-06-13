@@ -419,11 +419,11 @@ def start_input_generation_task(analysis_pk, initiator_pk, loc_lines):
 
 
 @celery_app.task(name='start_loss_generation_task')
-def start_loss_generation_task(analysis_pk, initiator_pk):
+def start_loss_generation_task(analysis_pk, initiator_pk, events_total):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
-    get_analysis_task_controller().generate_losses(analysis, initiator)
+    get_analysis_task_controller().generate_losses(analysis, initiator, events_total)
     analysis.save()
 
 

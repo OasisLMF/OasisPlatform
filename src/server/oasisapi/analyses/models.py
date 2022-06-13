@@ -249,6 +249,21 @@ class Analysis(TimeStampedModel):
             groups.append(group.name)
         return groups
 
+    def get_num_events(self):
+        analysis_settings = self.settings_file.read_json()
+        model_settings = self.model.resource_file.read_json()
+
+        user_selected_events = analysis_settings.get('event_ids', [])
+        selected_event_set = analysis_settings.get('model_settings', {}).get('event_set', "")
+        if len(user_selected_events) > 1:
+            return len(user_selected_events)
+
+        event_set_options = model_settings.get('model_settings', {}).get('event_set').get('options', [])
+        event_set_sizes = {e['id']: e['number_of_events'] for e in event_set_options if 'number_of_events' in e}
+        if selected_event_set not in event_set_sizes:
+            raise ValidationError(f"Failed to read event set size for chunking: selected event_id: {selected_event_set}, options: {event_set_options}")
+        return event_set_sizes.get(selected_event_set)
+
     def validate_run(self):
         valid_choices = [
             self.status_choices.READY,
@@ -312,7 +327,7 @@ class Analysis(TimeStampedModel):
 
     def run(self, initiator):
         self.validate_run()
-
+        events_total = self.get_num_events()
         self.status = self.status_choices.RUN_QUEUED
         self.save()
 
@@ -323,7 +338,7 @@ class Analysis(TimeStampedModel):
             'traceback_property': 'run_traceback_file',
             'failure_status': Analysis.status_choices.RUN_ERROR,
         }))
-        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
+        task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
 
         self.run_task_id = task_id
         self.task_started = timezone.now()
