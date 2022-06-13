@@ -113,8 +113,8 @@ class ModelChunkingConfigSerializer(serializers.ModelSerializer):
                     errors[k] = "Value is not type int, found {}".format(type(value))
                     continue
                 # Check value is greater than 0
-                elif value < 0:
-                    errors[k] = "Value is less than zero."
+                elif value < 1:
+                    errors[k] = "Value is less than one."
                     continue
                 # Data is valid
                 attrs[k] = value
