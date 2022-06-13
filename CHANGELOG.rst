@@ -1,6 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`1.26.0`_
+ ---------
+* [#639](https://github.com/OasisLMF/OasisPlatform/pull/640) - CVE security cleanup 
+* [#643](https://github.com/OasisLMF/OasisPlatform/pull/643) - Fix/CVE issues
+* [#620](https://github.com/OasisLMF/OasisPlatform/pull/620) - Feature/1018 default samples
+* [#608](https://github.com/OasisLMF/OasisPlatform/pull/621) - Store templates for analysis settings 
+* [#622](https://github.com/OasisLMF/OasisPlatform/pull/622) - Fix CVE-2022-28346, CVE-2022-28347
+* [#365](https://github.com/OasisLMF/OasisPlatform/pull/603) - Add Azure Storage Blobs to storage manager
+.. _`1.26.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.25.0...1.26.0
+
 `1.26.0rc2`_
  ---------
 * [#620](https://github.com/OasisLMF/OasisPlatform/pull/620) - Feature/1018 default samples
