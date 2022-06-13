@@ -253,7 +253,7 @@ class Analysis(TimeStampedModel):
         selected_strat = self.model.chunking_options.loss_strategy
         dynamic_strat = self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
         if selected_strat != dynamic_strat:
-            return 0
+            return 1
 
         analysis_settings = self.settings_file.read_json()
         model_settings = self.model.resource_file.read_json()
