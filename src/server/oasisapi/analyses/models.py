@@ -250,9 +250,13 @@ class Analysis(TimeStampedModel):
         return groups
 
     def get_num_events(self):
+        selected_strat = self.model.chunking_options.loss_strategy
+        dynamic_strat = self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
+        if selected_strat != dynamic_strat:
+            return 0
+
         analysis_settings = self.settings_file.read_json()
         model_settings = self.model.resource_file.read_json()
-
         user_selected_events = analysis_settings.get('event_ids', [])
         selected_event_set = analysis_settings.get('model_settings', {}).get('event_set', "")
         if len(user_selected_events) > 1:
