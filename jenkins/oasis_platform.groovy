@@ -202,7 +202,7 @@ node {
                             }
                         }
                     }
-                }
+                },
                 scan_controller_deps: {
                     stage('Scan: requirments.txt (ctrl)') {
                         dir(oasis_workspace) {
