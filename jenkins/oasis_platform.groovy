@@ -296,8 +296,9 @@ node {
 
                             // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
+                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_api-server.txt ${image_api}:${env.TAG_RELEASE}"
+                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_api}:${env.TAG_RELEASE}"
                             }
                         }
                     }
@@ -310,8 +311,9 @@ node {
 
                             // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_controller.txt ${image_controller}:${env.TAG_RELEASE}"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_controller}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} --output /tmp/cve_controller.txt ${image_controller}:${env.TAG_RELEASE}"
+                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_controller.txt ${image_controller}:${env.TAG_RELEASE}"
+                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_controller}:${env.TAG_RELEASE}"
                             }
                         }
                     }
@@ -324,8 +326,9 @@ node {
 
                             // Scan for CVE
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} --output /tmp/cve_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
+                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} ${mnt_output_report} aquasec/trivy image --output /tmp/cve_model-worker.txt ${image_worker}:${env.TAG_RELEASE}"
+                                //sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_docker_socket} aquasec/trivy image --exit-code 1 --severity ${params.SCAN_IMAGE_VULNERABILITIES} ${image_worker}:${env.TAG_RELEASE}"
                             }
                         }
                     }
