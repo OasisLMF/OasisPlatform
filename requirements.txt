@@ -120,7 +120,7 @@ configparser==5.0.2
     # via -r ./requirements-worker.in
 constantly==15.1.0
     # via twisted
-cookiecutter==1.7.3
+cookiecutter==2.1.1
     # via oasislmf
 coreapi==2.3.3
     # via
@@ -379,7 +379,7 @@ pyflakes==2.3.1
     # via flake8
 pygments==2.9.0
     # via ipython
-pyjwt==2.1.0
+pyjwt==2.4.0
     # via djangorestframework-simplejwt
 pymysql==1.0.2
     # via
