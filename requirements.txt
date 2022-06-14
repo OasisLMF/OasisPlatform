@@ -238,7 +238,7 @@ iniconfig==1.1.1
     # via pytest
 ipdb==0.13.9
     # via -r requirements.in
-ipython==7.25.0
+ipython==7.31.1
     # via ipdb
 ipython-genutils==0.2.0
     # via traitlets
@@ -492,7 +492,7 @@ sqlalchemy==1.4.22
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-sqlparse==0.4.1
+sqlparse==0.4.2
     # via
     #   django
     #   django-debug-toolbar
@@ -541,7 +541,7 @@ vine==5.0.0
     #   kombu
 virtualenv==20.6.0
     # via tox
-waitress==2.0.0
+waitress==2.1.1
     # via webtest
 wcwidth==0.2.5
     # via prompt-toolkit
