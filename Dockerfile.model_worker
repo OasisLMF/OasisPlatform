@@ -26,6 +26,7 @@ ENV OASIS_ENV_OVERRIDE=true
 
 # Setup worker dir and user
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
+USER worker
 WORKDIR /home/worker
 
 # Copy in worker files

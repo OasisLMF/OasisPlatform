@@ -17,7 +17,10 @@ RUN apt-get update \
 COPY --from=build-packages /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
 
+RUN adduser --shell /bin/bash --disabled-password --gecos "" oasis
+USER oasis
 WORKDIR /var/www/oasis
+
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_DEBUG=false
 RUN mkdir -p /var/log/oasis
