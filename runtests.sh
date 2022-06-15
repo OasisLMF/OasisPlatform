@@ -12,5 +12,5 @@ else
     DOCKER_TAG=$1
 fi
 
-docker build -f docker/Dockerfile.oasisplatform_tester -t oasisplatform-tester .
-docker run -v $LOG_OUTPUT:/var/log/oasis -v $TAR_OUTPUT:/tmp/output oasisplatform-tester:$DOCKER_TAG
+docker build --build-arg DOCKER_USER=$(whoami) -f docker/Dockerfile.oasisplatform_tester -t oasisplatform-tester .
+docker run --user $UID:$GID -v $LOG_OUTPUT:/var/log/oasis -v $TAR_OUTPUT:/tmp/output oasisplatform-tester:$DOCKER_TAG

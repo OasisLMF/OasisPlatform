@@ -1,13 +1,16 @@
-FROM python:3.8
+FROM python:3.10
 
 RUN  mkdir /tmp/output && \
      mkdir /var/log/oasis
 
 RUN apt-get update && apt-get install -y --no-install-recommends \ 
             vim libspatialindex-dev python-dev && rm -rf /var/lib/apt/lists/* 
-
 RUN pip install tox flake8 coverage
 
+ARG DOCKER_USER=default_user
+RUN addgroup $DOCKER_USER && useradd -m -g $DOCKER_USER $DOCKER_USER
+USER $DOCKER_USER
 WORKDIR /home
+
 COPY . .
 CMD ./docker/entrypoint_unittest.sh
