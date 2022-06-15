@@ -182,7 +182,7 @@ ods-tools==2.1.2
     # via -r requirements-server.in
 packaging==21.0
     # via drf-yasg
-pandas==1.4.1
+pandas==1.4.2
     # via -r requirements-server.in
 pathlib2==2.3.7.post1
     # via -r requirements-server.in
