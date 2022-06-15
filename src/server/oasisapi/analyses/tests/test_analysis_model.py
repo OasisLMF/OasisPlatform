@@ -175,7 +175,7 @@ class AnalysisRun(WebTestMixin, TestCase):
 
                 with patch('src.server.oasisapi.analyses.models.celery_app.send_task', new=mock_task):
                     analysis.run(initiator)
-                    mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, None), {}, queue='celery', link_error=ANY, priority=4)
+                    mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, 1), {}, queue='celery', link_error=ANY, priority=4)
 
 
     @given(
