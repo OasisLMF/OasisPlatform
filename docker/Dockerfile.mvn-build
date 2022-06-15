@@ -1,6 +1,10 @@
 FROM maven:latest
 
+ARG DOCKER_USER=build
+RUN addgroup $DOCKER_USER && useradd -m -g $DOCKER_USER $DOCKER_USER
+USER $DOCKER_USER
 WORKDIR /home/build
+
 COPY ./docker/entrypoint_mvn-build.sh /usr/local/bin/mvm-build.sh
 COPY ./docker/pom.xml /tmp/
 ENTRYPOINT ["/bin/bash", "-c", "mvm-build.sh \"$@\"", "--"]
