@@ -4,8 +4,8 @@ RUN  mkdir /tmp/output && \
      mkdir /var/log/oasis
 
 RUN apt-get update && apt-get install -y --no-install-recommends \ 
-            vim libspatialindex-dev python-dev && rm -rf /var/lib/apt/lists/* 
-RUN pip install tox flake8 coverage
+            vim libspatialindex-dev python-dev tox flake8 && rm -rf /var/lib/apt/lists/* 
+RUN pip install coverage
 
 ARG DOCKER_USER=default_user
 RUN addgroup $DOCKER_USER && useradd -m -g $DOCKER_USER $DOCKER_USER
