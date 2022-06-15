@@ -46,7 +46,7 @@ certifi==2021.5.30
     # via
     #   msrest
     #   requests
-cffi==1.14.6
+cffi==1.15.0
     # via cryptography
 chainmap==1.0.3
     # via -r requirements-server.in
@@ -198,7 +198,7 @@ pyasn1==0.4.8
     #   service-identity
 pyasn1-modules==0.2.8
     # via service-identity
-pycparser==2.20
+pycparser==2.21
     # via cffi
 pyjwt==2.4.0
     # via djangorestframework-simplejwt
