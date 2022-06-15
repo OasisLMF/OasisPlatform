@@ -87,11 +87,11 @@ fastparquet==0.8.0
     # via oasislmf
 filelock==3.0.12
     # via -r requirements-worker.in
-fiona==1.8.20
+fiona==1.8.21
     # via geopandas
 fsspec==2022.1.0
     # via fastparquet
-geopandas==0.9.0
+geopandas==0.10.2
     # via oasislmf
 greenlet==1.1.0
     # via sqlalchemy
@@ -131,7 +131,7 @@ numba==0.55.2
     # via oasislmf
 numexpr==2.7.3
     # via oasislmf
-numpy==1.20.3
+numpy==1.21.5
     # via
     #   fastparquet
     #   numba

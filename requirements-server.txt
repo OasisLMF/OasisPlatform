@@ -172,7 +172,7 @@ msgpack==0.6.2
     # via channels-redis
 msrest==0.6.21
     # via azure-storage-blob
-numpy==1.22.2
+numpy==1.21.5
     # via
     #   pandas
     #   pyarrow

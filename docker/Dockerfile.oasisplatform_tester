@@ -10,7 +10,7 @@ RUN pip install tox flake8 coverage
 ARG DOCKER_USER=default_user
 RUN addgroup $DOCKER_USER && useradd -m -g $DOCKER_USER $DOCKER_USER
 USER $DOCKER_USER
-WORKDIR /home
+WORKDIR /home/$DOCKER_USER
 
 COPY . .
 CMD ./docker/entrypoint_unittest.sh
