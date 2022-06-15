@@ -14,24 +14,24 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends python3 python3-pip curl libmariadbclient-dev-compat \
  && rm -rf /var/lib/apt/lists/
 
-COPY --from=build-packages /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
-
-RUN adduser --shell /bin/bash --disabled-password --gecos "" oasis
-USER oasis
-WORKDIR /var/www/oasis
+COPY --from=build-packages /root/.local /home/oasis/.local
+ENV PATH=/home/oasis/.local:$PATH
 
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_DEBUG=false
-RUN mkdir -p /var/log/oasis
+RUN mkdir -p /var/log/oasis && chmod 777 -R /var/log/oasis 
 
 COPY ./src/startup_server.sh /usr/local/bin/startup
 COPY ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
 COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
 RUN chmod +x /usr/local/bin/startup /usr/local/bin/wait-for-it
 
+WORKDIR /var/www/oasis
 COPY ./asgi ./asgi
 RUN chmod +x ./asgi/run-asgi.sh
+
+RUN addgroup oasis && useradd -d /home/oasis -g oasis oasis && chown -R oasis:oasis /var/www/oasis
+USER oasis
 
 COPY ./conf.ini ./
 COPY manage.py .

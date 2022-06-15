@@ -24,11 +24,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_ENV_OVERRIDE=true
 
-# Setup worker dir and user
-RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
-USER worker
-WORKDIR /home/worker
-
 # Copy in worker files
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/startup_tester.sh ./runtest
@@ -53,5 +48,10 @@ RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
     chown -R worker /home/worker && \
     chown -R worker /var/oasis && \
     chown -R worker /var/log
+
+# Setup worker dir and user
+RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
+USER worker
+WORKDIR /home/worker
 
 ENTRYPOINT ./startup.sh
