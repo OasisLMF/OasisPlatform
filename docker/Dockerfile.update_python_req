@@ -3,3 +3,8 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential python3 python3-pip python3-dev libmariadbclient-dev-compat && rm -rf /var/lib/apt/lists/*
 RUN pip install pip-tools
+
+# build time user mapping 
+ARG DOCKER_USER=default_user
+RUN addgroup $DOCKER_USER && useradd -m -g $DOCKER_USER $DOCKER_USER
+USER $DOCKER_USER
