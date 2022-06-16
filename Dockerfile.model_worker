@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y libspatialindex-dev git curl g++ build-
 COPY ./requirements-worker.txt ./requirements-worker.txt
 RUN pip3 install --user --no-warn-script-location -r ./requirements-worker.txt
 
-
 # ---- STAGE 2 ----
 FROM ubuntu:22.04
 RUN apt-get update \
@@ -40,14 +39,10 @@ RUN mkdir -p /var/oasis && \
     mkdir -p /shared-fs && \
     touch /var/log/oasis/worker.log && \
     chmod 777 /var/log/oasis/worker.log
-RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis \
- && chown -R worker:worker /home/worker \
+RUN chown -R worker:worker /home/worker \
         /var/oasis \
         /var/log \
         /shared-fs
-
-
-#RUN chown -R worker /home/worker/.local   # uncomment to remove pip install access
 
 # Enviroment setup
 COPY ./VERSION ./
