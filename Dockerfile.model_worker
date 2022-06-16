@@ -16,15 +16,11 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy built python packages
-COPY --from=build-packages /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
-
-# Enviroment setup
-ENV DEBIAN_FRONTEND=noninteractive
-ENV OASIS_MEDIA_ROOT=/shared-fs
-ENV OASIS_ENV_OVERRIDE=true
+RUN adduser  --home /home/worker --shell /bin/bash --disabled-password --gecos "" worker
+COPY --from=build-packages /root/.local /home/worker/.local
 
 # Copy in worker files
+WORKDIR /home/worker
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/startup_tester.sh ./runtest
 COPY ./src/startup_tester_S3.sh ./runtest_S3
@@ -34,9 +30,8 @@ COPY ./src/common ./src/common/
 COPY ./src/conf ./src/conf/
 COPY ./src/model_execution_worker/ ./src/model_execution_worker/
 COPY ./src/utils/ ./src/utils/
-COPY ./src/utils/worker_bashrc /root/.bashrc
+COPY ./src/utils/worker_bashrc /home/worker/.bashrc
 COPY ./tests/integration /home/worker/tests/integration
-COPY ./VERSION ./
 
 # Add required directories
 RUN mkdir -p /var/oasis && \
@@ -49,9 +44,15 @@ RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
     chown -R worker /var/oasis && \
     chown -R worker /var/log
 
-# Setup worker dir and user
-RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
+
+#RUN chown -R worker /home/worker/.local   # uncomment to remove pip install access
+
+# Enviroment setup
+COPY ./VERSION ./
 USER worker
-WORKDIR /home/worker
+ENV PATH=/root/.local/bin:$PATH
+ENV DEBIAN_FRONTEND=noninteractive
+ENV OASIS_MEDIA_ROOT=/shared-fs
+ENV OASIS_ENV_OVERRIDE=true
 
 ENTRYPOINT ./startup.sh

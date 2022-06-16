@@ -297,7 +297,7 @@ munch==2.5.0
     # via fiona
 numba==0.55.2
     # via oasislmf
-numexpr==2.7.3
+numexpr==2.8.1
     # via oasislmf
 numpy==1.21.5
     # via
@@ -320,6 +320,7 @@ ods-tools==2.1.2
 packaging==21.0
     # via
     #   drf-yasg
+    #   numexpr
     #   pytest
     #   tox
 pandas==1.4.2
@@ -395,7 +396,7 @@ pyparsing==2.4.7
     # via
     #   httplib2
     #   packaging
-pyproj==3.1.0
+pyproj==3.3.1
     # via geopandas
 pyrabbit==1.1.0
     # via -r ./requirements-server.in
@@ -454,7 +455,7 @@ ruamel-yaml-clib==0.2.6
     # via ruamel-yaml
 s3transfer==0.5.0
     # via boto3
-scikit-learn==0.24.2
+scikit-learn==1.1.1
     # via sklearn
 scipy==1.7.0
     # via scikit-learn

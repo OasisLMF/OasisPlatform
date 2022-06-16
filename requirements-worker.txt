@@ -128,7 +128,7 @@ munch==2.5.0
     # via fiona
 numba==0.55.2
     # via oasislmf
-numexpr==2.7.3
+numexpr==2.8.1
     # via oasislmf
 numpy==1.21.5
     # via
@@ -147,7 +147,9 @@ oauthlib==3.2.0
 ods-tools==2.2.0
     # via oasislmf
 packaging==21.0
-    # via pytest
+    # via
+    #   numexpr
+    #   pytest
 pandas==1.4.2
     # via
     #   fastparquet
@@ -171,7 +173,7 @@ pymysql==1.0.2
     # via -r requirements-worker.in
 pyparsing==2.4.7
     # via packaging
-pyproj==3.1.0
+pyproj==3.3.1
     # via geopandas
 pyrsistent==0.18.0
     # via jsonschema
@@ -209,11 +211,11 @@ rtree==0.9.7
     # via oasislmf
 s3transfer==0.5.0
     # via boto3
-scikit-learn==0.24.2
+scikit-learn==1.1.1
     # via sklearn
-scipy==1.7.0
+scipy==1.8.1
     # via scikit-learn
-shapely==1.7.1
+shapely==1.8.2
     # via
     #   geopandas
     #   oasislmf
