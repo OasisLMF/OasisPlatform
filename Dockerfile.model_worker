@@ -37,13 +37,14 @@ COPY ./tests/integration /home/worker/tests/integration
 RUN mkdir -p /var/oasis && \
     mkdir -p /home/worker/model && \
     mkdir -p /var/log/oasis && \
+    mkdir -p /shared-fs && \
     touch /var/log/oasis/worker.log && \
     chmod 777 /var/log/oasis/worker.log
 RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis \
  && chown -R worker:worker /home/worker \
         /var/oasis \
         /var/log \
-        /shared-fs 
+        /shared-fs
 
 
 #RUN chown -R worker /home/worker/.local   # uncomment to remove pip install access
