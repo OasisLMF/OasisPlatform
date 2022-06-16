@@ -11,14 +11,17 @@ RUN pip install --user --no-warn-script-location -r ./requirements-server.txt &&
 FROM ubuntu:22.04
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends python3 python3-pip curl libmariadbclient-dev-compat \
+ && apt-get install -y --no-install-recommends sudo python3 python3-pip curl libmariadbclient-dev-compat \
  && rm -rf /var/lib/apt/lists/
 
 RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos "" server
 COPY --from=build-packages /root/.local /home/server/.local
 RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
 
+RUN echo 'server ALL=(ALL) NOPASSWD:/usr/local/bin/update_hosts' >> /etc/sudoers
+
 WORKDIR /var/www/oasis
+COPY ./src/update_server_hosts.sh /usr/local/bin/update_hosts
 COPY ./src/startup_server.sh /usr/local/bin/startup
 COPY ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
 COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
@@ -33,11 +36,11 @@ COPY ./src/common /var/www/oasis/src/common
 COPY ./src/conf /var/www/oasis/src/conf
 COPY ./VERSION /var/www/oasis/VERSION
 
+
+
 RUN chown -R server:server /var/www/oasis \
     /shared-fs \
     /home/server \
-    /usr/local/bin \
-    /etc/hosts \ 
     && chmod +x ./asgi/run-asgi.sh \
     /usr/local/bin/startup \
     /usr/local/bin/wait-for-it
