@@ -97,7 +97,7 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         try:
-            template_queryset = AnalysisModel.objects.get(id=self.kwargs['models_pk']).template_files.all()
+            template_queryset = AnalysisModel.objects.get(id=self.kwargs.get('models_pk')).template_files.all()
         except AnalysisModel.DoesNotExist:
             raise Http404
         return template_queryset
