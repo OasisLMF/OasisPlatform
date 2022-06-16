@@ -50,7 +50,7 @@ RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
 # Enviroment setup
 COPY ./VERSION ./
 USER worker
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH=/home/worker/.local/bin:$PATH
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_ENV_OVERRIDE=true
