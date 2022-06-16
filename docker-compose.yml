@@ -1,4 +1,8 @@
 version: '3.4'
+volumes:
+  server-db-OasisData:
+  celery-db-OasisData:
+  filestore-OasisData:
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
   OASIS_URL_SUB PATH: "false"
@@ -20,7 +24,7 @@ x-shared-env: &shared-env
   OASIS_INPUT_GENERATION_CONTROLLER_QUEUE: task-controller
   OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE: task-controller
 x-volumes: &shared-volumes
-  - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
+  - filestore-OasisData:/shared-fs:rw
 services:
   server:
    restart: always
@@ -62,7 +66,6 @@ services:
      - broker
    environment:
      <<: *shared-env
-   volumes: *shared-volumes
   celery-beat:
    restart: always
    image: coreoasis/api_server:dev
@@ -91,7 +94,7 @@ services:
      OASIS_MODEL_NUM_ANALYSIS_CHUNKS: 8
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
-     - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
+     - filestore-OasisData:/shared-fs:rw
   server-db:
     restart: always
     image: postgres
@@ -100,7 +103,7 @@ services:
       - POSTGRES_USER=oasis
       - POSTGRES_PASSWORD=oasis
     volumes:
-      - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/server-pg:/var/lib/postgresql/data:rw
+      - server-db-OasisData:/var/lib/postgresql/data:rw
     ports:
       - 33307:3306
   celery-db:
@@ -111,7 +114,7 @@ services:
       - POSTGRES_USER=celery
       - POSTGRES_PASSWORD=password
     volumes:
-      - ${OASIS_DOCKER_DB_DATA_DIR:-./db-data}/celery-pg:/var/lib/postgresql/data:rw
+      - celery-db-OasisData:/var/lib/postgresql/data:rw
     ports:
       - 33306:5432
 #  broker:
