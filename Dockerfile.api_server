@@ -37,6 +37,7 @@ RUN chown -R server:server /var/www/oasis \
     /shared-fs \
     /home/server \
     /usr/local/bin \
+    /etc/hosts \ 
     && chmod +x ./asgi/run-asgi.sh \
     /usr/local/bin/startup \
     /usr/local/bin/wait-for-it
