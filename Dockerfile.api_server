@@ -43,7 +43,7 @@ RUN OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
 ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_DEBUG=false
-ENV PATH=/home/server/.local:$PATH
+ENV PATH=/home/server/.local/bin:$PATH
 
 EXPOSE 8000
 EXPOSE 51970
