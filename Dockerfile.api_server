@@ -16,7 +16,7 @@ RUN apt-get update \
 
 RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos "" server
 COPY --from=build-packages /root/.local /home/server/.local
-RUN mkdir -p /var/log/oasis && chmod 777 -R /var/log/oasis
+RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
 
 WORKDIR /var/www/oasis
 COPY ./src/startup_server.sh /usr/local/bin/startup
@@ -34,7 +34,8 @@ COPY ./src/conf /var/www/oasis/src/conf
 COPY ./VERSION /var/www/oasis/VERSION
 
 RUN chown -R server:server /var/www/oasis \
-    && chown -R server:server /home/server \
+    /shared-fs \
+    /home/server \
     && chmod +x ./asgi/run-asgi.sh \
     /usr/local/bin/startup \
     /usr/local/bin/wait-for-it
