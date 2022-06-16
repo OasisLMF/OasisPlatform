@@ -362,7 +362,7 @@ py==1.10.0
     # via
     #   pytest
     #   tox
-pyarrow==4.0.1
+pyarrow==8.0.0
     # via
     #   -r ./requirements-server.in
     #   oasislmf

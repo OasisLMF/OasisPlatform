@@ -190,7 +190,7 @@ prompt-toolkit==3.0.20
     # via click-repl
 psycopg2-binary==2.9.3
     # via -r requirements-server.in
-pyarrow==7.0.0
+pyarrow==8.0.0
     # via -r requirements-server.in
 pyasn1==0.4.8
     # via
