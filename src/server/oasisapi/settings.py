@@ -432,3 +432,27 @@ WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 if 'pytest' in sys.argv[0]:
     FORCE_SCRIPT_NAME = ''
     MEDIA_ROOT = './shared-fs/'
+
+
+# https://github.com/django/django/blob/main/django/core/files/storage.py#L337-L338
+"""
+  File "/home/server/.local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1359, in <listcomp>
+    [self.prepare_value(field, self.pre_save_val(field, obj)) for field in fields]
+  File "/home/server/.local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1310, in pre_save_val
+    return field.pre_save(obj, add=True)
+  File "/home/server/.local/lib/python3.10/site-packages/django/db/models/fields/files.py", line 302, in pre_save
+    file.save(file.name, file.file, save=False)
+  File "/home/server/.local/lib/python3.10/site-packages/django/db/models/fields/files.py", line 89, in save
+    self.name = self.storage.save(name, content, max_length=self.field.max_length)
+  File "/home/server/.local/lib/python3.10/site-packages/django/core/files/storage.py", line 54, in save
+    name = self._save(name, content)
+  File "/home/server/.local/lib/python3.10/site-packages/django/core/files/storage.py", line 303, in _save
+    os.chmod(full_path, self.file_permissions_mode)
+
+Exception Type: PermissionError at /V1/portfolios/3/location_file/
+Exception Value: [Errno 1] Operation not permitted: '/shared-fs/81987e7e62244184ba80a61dda2c194e.parquet'
+Request information:
+
+"""
+FILE_UPLOAD_PERMISSIONS = ""
+
