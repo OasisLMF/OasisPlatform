@@ -39,7 +39,7 @@ if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
     DEBUG = True
     DEBUG_TOOLBAR = True
     URL_SUB_PATH = False
-    CONSOLE_DEBUG = True # disable celery / db checks in health check 
+    CONSOLE_DEBUG = True # disable celery / db checks in health check
 else:
     # SECURITY WARNING: don't run with debug turned on in production!
     MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
@@ -432,3 +432,17 @@ WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 if 'pytest' in sys.argv[0]:
     FORCE_SCRIPT_NAME = ''
     MEDIA_ROOT = './shared-fs/'
+
+"""
+Workaround, By default Django will try a chmod at file store to match its permistions, for disks
+mounted as root, world writable. `drwxrwxrwx   2 root root    0 Jun  6 13:19 shared-fs`
+
+The write content part works, but fails at chmod with:
+    Exception Type: PermissionError at /V1/portfolios/3/location_file/
+    Exception Value: [Errno 1] Operation not permitted: '/shared-fs/81987e7e62244184ba80a61dda2c194e.parquet'
+    Request information:
+
+To override this, that step will be skipped if 'FILE_UPLOAD_PERMISSIONS' is set as none
+https://github.com/django/django/blob/main/django/core/files/storage.py#L337-L338
+"""
+FILE_UPLOAD_PERMISSIONS = None
