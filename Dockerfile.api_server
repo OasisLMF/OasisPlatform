@@ -36,8 +36,6 @@ COPY ./src/common /var/www/oasis/src/common
 COPY ./src/conf /var/www/oasis/src/conf
 COPY ./VERSION /var/www/oasis/VERSION
 
-
-
 RUN chown -R server:server /shared-fs \
     /var/www/oasis \
     && chmod +x ./asgi/run-asgi.sh \
