@@ -7,8 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
             vim libspatialindex-dev python-dev tox flake8 && rm -rf /var/lib/apt/lists/*
 RUN pip install coverage
 
-ARG DOCKER_USER=default_user
-RUN addgroup $DOCKER_USER && useradd -m -g $DOCKER_USER $DOCKER_USER
+ARG DOCKER_USER=default_user 
+ARG DOCKER_UID=1000
+ARG DOCKER_GID=1001
+RUN addgroup --gid $DOCKER_GID $DOCKER_USER
+RUN useradd -m -g $DOCKER_USER $DOCKER_USER --uid $DOCKER_UID
 USER $DOCKER_USER
 WORKDIR /home/$DOCKER_USER
 
