@@ -135,6 +135,8 @@ class AnalysisModel(TimeStampedModel):
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')
+        ordering = ['id'] # https://docs.djangoproject.com/en/4.0/ref/models/options/
+
 
     def __str__(self):
         return '{}-{}-{}'.format(self.supplier_id, self.model_id, self.version_id)

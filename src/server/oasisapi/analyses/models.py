@@ -118,6 +118,7 @@ class AnalysisTaskStatus(models.Model):
     objects = AnalysisTaskStatusQuerySet.as_manager()
 
     class Meta:
+        ordering = ['id'] # https://docs.djangoproject.com/en/4.0/ref/models/options/
         constraints = (
             models.UniqueConstraint(fields=['task_id'], condition=~models.Q(task_id=''), name='unique_task_id'),
         )
@@ -177,6 +178,7 @@ class Analysis(TimeStampedModel):
     summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='summary_levels_file_analyses')
 
     class Meta:
+        ordering = ['id'] # https://docs.djangoproject.com/en/4.0/ref/models/options/
         verbose_name_plural = 'analyses'
 
     def __str__(self):

@@ -26,6 +26,9 @@ class Portfolio(TimeStampedModel):
     reinsurance_info_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='reinsurance_info_file_portfolios')
     reinsurance_scope_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='reinsurance_scope_file_portfolios')
 
+    class Meta:
+        ordering = ['id'] # https://docs.djangoproject.com/en/4.0/ref/models/options/
+
     def __str__(self):
         return self.name
 
