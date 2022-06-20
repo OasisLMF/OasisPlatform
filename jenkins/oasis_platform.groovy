@@ -617,7 +617,7 @@ node {
             archiveArtifacts artifacts: "stage/output/**/*.*"
         }
         //Store repo scan reports
-        if (params.SCAN_IMAGE_VULNERABILITIES.replaceAll(" \\s","")){
+        if (params.SCAN_REPO_VULNERABILITIES.replaceAll(" \\s","")){
             dir(oasis_workspace){
                 archiveArtifacts artifacts: 'scan_reports/**/*.*'
             }
