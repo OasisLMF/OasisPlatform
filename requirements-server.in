@@ -13,6 +13,7 @@ django-storages[azure]>=1.12.3
 django_celery_results
 djangorestframework
 djangorestframework_simplejwt
+drf-nested-routers
 drf-yasg>=1.17.1
 jsonpickle
 jsonschema

@@ -66,6 +66,51 @@ class ModelChunkingOptions(models.Model):
     fixed_lookup_chunks = models.PositiveSmallIntegerField(default=1, null=True)
 
 
+class SettingsTemplate(TimeStampedModel):
+    name = models.CharField(
+        max_length=255,
+        help_text=_('Name for analysis settings template')
+    )
+    description = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        default=None,
+        help_text=_('Description for type of analysis run settings.')
+    )
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='settings_template'
+    )
+    file = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        default=None,
+        related_name="analysis_settings_template"
+    )
+
+    def __str__(self):
+        return 'SettingsTemplate_{}'.format(self.name)
+
+    def get_filename(self):
+        if self.settings_template:
+            return self.file.filename
+        else:
+            return None
+
+    def get_filestore(self):
+        if self.settings_template:
+            return self.settings_template.file.name
+        else:
+            return None
+
+    def get_absolute_settings_template_url(self, model_pk, request=None):
+        return reverse('models-setting_templates-content', kwargs={'version': 'v1', 'pk': self.pk, 'models_pk': model_pk}, request=request)
+
+
 class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
@@ -74,6 +119,7 @@ class AnalysisModel(TimeStampedModel):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
     data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
+    template_files = models.ManyToManyField(SettingsTemplate, blank=True, related_name='analyses_model_settings_template')
     ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
     ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))

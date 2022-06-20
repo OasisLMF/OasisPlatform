@@ -131,7 +131,6 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         Creates an analysis object from the portfolio.
         """
         portfolio = self.get_object()
-
         serializer = self.get_serializer(data=request.data, portfolio=portfolio, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
