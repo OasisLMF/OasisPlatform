@@ -39,7 +39,7 @@ COPY ./VERSION /var/www/oasis/VERSION
 
 
 RUN chown -R server:server /shared-fs \
-    /home/server \
+    /var/www/oasis \
     && chmod +x ./asgi/run-asgi.sh \
     /usr/local/bin/startup \
     /usr/local/bin/wait-for-it
