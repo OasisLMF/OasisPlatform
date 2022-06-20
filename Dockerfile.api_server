@@ -15,7 +15,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/
 
 RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos "" server
-COPY --from=build-packages /root/.local /home/server/.local
+COPY --chown=server:server --from=build-packages /root/.local /home/server/.local
 RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
 
 RUN echo 'server ALL=(ALL) NOPASSWD:/usr/local/bin/update_hosts' >> /etc/sudoers
@@ -38,8 +38,7 @@ COPY ./VERSION /var/www/oasis/VERSION
 
 
 
-RUN chown -R server:server /var/www/oasis \
-    /shared-fs \
+RUN chown -R server:server /shared-fs \
     /home/server \
     && chmod +x ./asgi/run-asgi.sh \
     /usr/local/bin/startup \
