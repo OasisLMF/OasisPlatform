@@ -496,9 +496,20 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     @swagger_auto_schema(methods=['get'], responses={200: AnalysisTaskStatusSerializer(many=True)}, manual_parameters=[SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM])
     @action(methods=['get'], detail=True)
     def sub_task_list(self, request, pk=None, version=None):
-        sub_task_queryset = self.get_object().sub_task_statuses.all()
-        context = {'request': request}
 
+        import ipdb; ipdb.set_trace()
+        # Populate filter with query params
+        filters = {}
+        status = request.get("status")
+        slug = request.get("slug")
+
+        if status:
+            filters['status'] = status
+        if slug:
+            filters['slug'] = slug
+
+        sub_task_queryset = self.get_object().sub_task_statuses.filter(**filters)
+        context = {'request': request}
         serializer = AnalysisTaskStatusSerializer(sub_task_queryset, many=True, context=context)
         return Response(serializer.data)
 
