@@ -23,7 +23,7 @@ from ..files.views import handle_related_file, handle_json_data
 from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ..permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups
 from ..portfolios.models import Portfolio
-from ..schemas.custom_swagger import FILE_RESPONSE
+from ..schemas.custom_swagger import FILE_RESPONSE, SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM
 from ..schemas.serializers import AnalysisSettingsSerializer
 
 
@@ -81,8 +81,81 @@ class AnalysisFilter(TimeStampedFilter):
             'user',
         ]
 
-    def __init__(self, *args, **kwargs):
-        super(AnalysisFilter, self).__init__(*args, **kwargs)
+
+class AnalysisTaskFilter(TimeStampedFilter):
+    name = filters.CharFilter(
+        help_text=_('Filter results by case insensitive names equal to the given string'),
+        lookup_expr='iexact'
+    )
+    name__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive name containing the given string'),
+        lookup_expr='icontains',
+        field_name='name'
+    )
+    slug = filters.CharFilter(
+        help_text=_('Filter results by case insensitive slugs equal to the given string'),
+        lookup_expr='iexact'
+    )
+    slug__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive slug containing the given string'),
+        lookup_expr='icontains',
+        field_name='slug'
+    )
+    task_id = filters.CharFilter(
+        help_text=_('Filter results by case insensitive task_ids equal to the given string'),
+        lookup_expr='iexact'
+    )
+    task_id__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive task_id containing the given string'),
+        lookup_expr='icontains',
+        field_name='task_id'
+    )
+    queue_name = filters.CharFilter(
+        help_text=_('Filter results by case insensitive queue_names equal to the given string'),
+        lookup_expr='iexact'
+    )
+    queue_name__contains = filters.CharFilter(
+        help_text=_('Filter results by case insensitive queue_name containing the given string'),
+        lookup_expr='icontains',
+        field_name='queue_name'
+    )
+    status = filters.ChoiceFilter(
+        help_text=_('Filter results by results in the current analysis status, one of [{}]'.format(
+            ', '.join(Analysis.status_choices._db_values))
+        ),
+        choices=AnalysisTaskStatus.status_choices,
+    )
+    status__in = CsvMultipleChoiceFilter(
+        help_text=_(
+            'Filter results by results where the current analysis status '
+            'is one of a given set (provide multiple parameters or comma separated list), '
+            'from [{}]'.format(', '.join(AnalysisTaskStatus.status_choices._db_values))
+        ),
+        choices=Analysis.status_choices,
+        field_name='status',
+        label=_('Status in')
+    )
+    user = filters.CharFilter(
+        help_text=_('Filter results by case insensitive `user` equal to the given string'),
+        lookup_expr='iexact',
+        field_name='creator__username'
+    )
+
+    class Meta:
+        model = AnalysisTaskStatus
+        fields = [
+            'name',
+            'name__contains',
+            'slug',
+            'slug__contains',
+            'task_id',
+            'task_id__contains',
+            'queue_name',
+            'queue_name__contains',
+            'status',
+            'status__in',
+            'user',
+        ]
 
 
 @method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisSerializer(many=True)}))
@@ -420,7 +493,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(self.get_object())
         return Response(serializer.data)
 
-    @swagger_auto_schema(responses={200: AnalysisTaskStatusSerializer(many=True)})
+    @swagger_auto_schema(methods=['get'], responses={200: AnalysisTaskStatusSerializer(many=True)}, manual_parameters=[SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM])
     @action(methods=['get'], detail=True)
     def sub_task_list(self, request, pk=None, version=None):
         sub_task_queryset = self.get_object().sub_task_statuses.all()
@@ -463,6 +536,7 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
     queryset = AnalysisTaskStatus.objects.all()
     serializer_class = AnalysisTaskStatusSerializer
     permission_classes = [IsAdminUser]
+    filterset_class = AnalysisTaskFilter
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
