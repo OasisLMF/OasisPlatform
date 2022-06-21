@@ -121,7 +121,7 @@ class AnalysisTaskFilter(TimeStampedFilter):
     )
     status = filters.ChoiceFilter(
         help_text=_('Filter results by results in the current analysis status, one of [{}]'.format(
-            ', '.join(Analysis.status_choices._db_values))
+            ', '.join(AnalysisTaskStatus.status_choices._db_values))
         ),
         choices=AnalysisTaskStatus.status_choices,
     )
@@ -131,7 +131,7 @@ class AnalysisTaskFilter(TimeStampedFilter):
             'is one of a given set (provide multiple parameters or comma separated list), '
             'from [{}]'.format(', '.join(AnalysisTaskStatus.status_choices._db_values))
         ),
-        choices=Analysis.status_choices,
+        choices=AnalysisTaskStatus.status_choices,
         field_name='status',
         label=_('Status in')
     )
