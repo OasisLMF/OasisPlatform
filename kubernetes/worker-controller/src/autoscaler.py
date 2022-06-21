@@ -109,15 +109,6 @@ class AutoScaler:
         desired_replicas = 0
         is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS' and self.never_shutdown_fixed_workers
 
-        ## DEBUG LOGGING 
-        strat = wd.auto_scaling.get('scaling_strategy')
-        logging.info(f'strat = {strat}')
-        logging.info(f'self.never_shutdown_fixed_workers = {self.never_shutdown_fixed_workers}')
-        logging.info(f'type(self.never_shutdown_fixed_workers) = {type(self.never_shutdown_fixed_workers)}')
-        logging.info(f'is_fixed_strategy = {is_fixed_strategy}')
-        logging.info(f'analysis_in_progress = {analysis_in_progress}')
-
-
         if analysis_in_progress or is_fixed_strategy:
 
             if analysis_in_progress:
