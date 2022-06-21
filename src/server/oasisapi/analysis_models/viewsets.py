@@ -93,14 +93,19 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
     """
     queryset = SettingsTemplate.objects.all()
     serializer_class = TemplateSerializer
-    #filterset_class = AnalysisModelFilter
 
     def get_queryset(self):
-        try:
-            template_queryset = AnalysisModel.objects.get(id=self.kwargs['models_pk']).template_files.all()
-        except AnalysisModel.DoesNotExist:
-            raise Http404
-        return template_queryset
+        models_pk = self.kwargs.get('models_pk')
+        if models_pk:
+            if not models_pk.isnumeric():
+                raise Http404
+            try:
+                template_queryset = AnalysisModel.objects.get(id=models_pk).template_files.all()
+            except AnalysisModel.DoesNotExist:
+                raise Http404
+            return template_queryset
+        else:
+            return AnalysisModel.objects.none()
 
     def get_serializer_class(self):
         if self.action in ['create']:
