@@ -135,6 +135,8 @@ class AnalysisModel(TimeStampedModel):
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')
+        ordering = ['id']
+
 
     def __str__(self):
         return '{}-{}-{}'.format(self.supplier_id, self.model_id, self.version_id)

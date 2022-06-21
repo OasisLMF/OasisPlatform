@@ -35,6 +35,9 @@ class DataFile(TimeStampedModel):
     )
     groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
 
+    class Meta:
+        ordering = ['id']
+
     def __str__(self):
         return 'DataFile_{}'.format(self.file)
 
