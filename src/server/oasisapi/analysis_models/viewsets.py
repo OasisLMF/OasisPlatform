@@ -192,6 +192,7 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     filterset_class = AnalysisModelFilter
     group_access_model = AnalysisModel
 
+
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:
             return RelatedFileSerializer
