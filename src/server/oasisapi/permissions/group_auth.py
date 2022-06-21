@@ -193,7 +193,7 @@ class VerifyGroupAccessModelViewSet(viewsets.ModelViewSet):
             user = self.request.user
 
             if user.is_superuser:
-                return self.group_access_model.objects.all().order_by('id')
+                return self.group_access_model.objects.all()
 
             user_groups = self.request.user.groups.all()
             if self.group_access_sub_model:
@@ -213,7 +213,7 @@ class VerifyGroupAccessModelViewSet(viewsets.ModelViewSet):
                 else:
                     query = reduce(lambda q, value: q | Q(groups=value), user_groups, Q())
 
-            return self.group_access_model.objects.filter(query).distinct().order_by('id')
+            return self.group_access_model.objects.filter(query).distinct()
         else:
             raise ValueError('Group access enabled without any specified group_access_sub_model')
 
