@@ -10,8 +10,6 @@ __all__ = [
 from drf_yasg import openapi
 from drf_yasg.openapi import Schema
 
-
-
 FILE_RESPONSE = openapi.Response(
     'File Download',
     schema=Schema(type=openapi.TYPE_FILE),
@@ -72,22 +70,22 @@ FILE_FORMAT_PARAM = openapi.Parameter(
 )
 
 SUBTASK_STATUS_PARAM = openapi.Parameter(
-    'status',
+    'subtask_status',
     openapi.IN_QUERY,
     description="Filter response by status.",
     type=openapi.TYPE_STRING,
-    enum=['PENDING',
+    enum=('PENDING',
           'QUEUED',
           'STARTED',
           'COMPLETED',
           'CANCELLED',
           'ERROR'
-         ]
+         )
 )
 
 SUBTASK_SLUG_PARAM = openapi.Parameter(
-    'slug',
+    'subtask_slug',
     openapi.IN_QUERY,
-    description="Filter response by slug name",
+    description="Filter response by slug name containing string.",
     type=openapi.TYPE_STRING
 )

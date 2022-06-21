@@ -497,16 +497,14 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     @action(methods=['get'], detail=True)
     def sub_task_list(self, request, pk=None, version=None):
 
-        import ipdb; ipdb.set_trace()
-        # Populate filter with query params
+        ## Populate filter with query params
         filters = {}
-        status = request.get("status")
-        slug = request.get("slug")
-
+        status = request.query_params.get("subtask_status")
+        slug = request.query_params.get("subtask_slug")
         if status:
             filters['status'] = status
         if slug:
-            filters['slug'] = slug
+            filters['slug__contains'] = slug.lower()
 
         sub_task_queryset = self.get_object().sub_task_statuses.filter(**filters)
         context = {'request': request}
