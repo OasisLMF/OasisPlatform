@@ -33,6 +33,34 @@ from .storage_manager import BaseStorageConnector
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 
+from celery.utils.log import get_task_logger
+from celery import signals
+
+
+
+# https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
+class LoggingContext:
+    def __init__(self, logger, level=None, handler=None, close=True):
+        self.logger = logger
+        self.level = level
+        self.handler = handler
+        self.close = close
+
+    def __enter__(self):
+        if self.level is not None:
+            self.old_level = self.logger.level
+            self.logger.setLevel(self.level)
+        if self.handler:
+            self.logger.addHandler(self.handler)
+
+    def __exit__(self, et, ev, tb):
+        if self.level is not None:
+            self.logger.setLevel(self.old_level)
+        if self.handler:
+            self.logger.removeHandler(self.handler)
+        if self.handler and self.close:
+            self.handler.close()
+
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -174,6 +202,7 @@ def revoked_handler(*args, **kwargs):
     # Break the chain
     request = kwargs.get('request')
     request.chain[:] = []
+
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -453,15 +482,21 @@ def keys_generation_task(fn):
         log_params(params, kwargs)
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
-        log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
 
-        if isinstance(params, list):
-            for p in params:
-                _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
-        else:
-            _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
+        log_filename = f"/var/log/oasis/tasks/{run_data_uuid}_{kwargs.get('slug')}.log"
+        task_file_logger = logging.FileHandler(log_filename)
+        #task_file_logger.setLevel(logging.ERROR)
 
-        return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+        with LoggingContext(logging.getLogger(), handler=task_file_logger):
+            log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+
+            if isinstance(params, list):
+                for p in params:
+                    _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
+            else:
+                _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
+
+            return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
 
@@ -773,14 +808,19 @@ def loss_generation_task(fn):
         log_params(params, kwargs)
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
-        log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+        log_filename = f"/var/log/oasis/tasks/{run_data_uuid}_{kwargs.get('slug')}.log"
+        task_file_logger = logging.FileHandler(log_filename)
+        #task_file_logger.setLevel(logging.ERROR)
 
-        if isinstance(params, list):
-            for p in params:
-                _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
-        else:
-            _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
-        return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+        with LoggingContext(logging.getLogger(), handler=task_file_logger):
+            log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+
+            if isinstance(params, list):
+                for p in params:
+                    _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
+            else:
+                _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
+            return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
 
     return run
 
