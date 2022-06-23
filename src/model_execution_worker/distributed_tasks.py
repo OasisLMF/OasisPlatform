@@ -190,7 +190,7 @@ def notify_api_status(analysis_pk, task_status):
     ))
     signature(
         'set_task_status',
-        args=(analysis_pk, task_status),
+        args=(analysis_pk, task_status, datetime.now().timestamp()),
         queue='celery'
     ).delay()
 
@@ -345,6 +345,7 @@ def notify_api_task_started(analysis_id, task_id, task_slug):
             'analysis_id': analysis_id,
             'task_slug': task_slug,
             'task_id': task_id,
+            'dt': datetime.now().timestamp(),
         },
     ).delay()
 

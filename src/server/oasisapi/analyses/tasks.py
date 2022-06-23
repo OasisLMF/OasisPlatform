@@ -431,7 +431,7 @@ def start_loss_generation_task(analysis_pk, initiator_pk, events_total):
 def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None):
     from .models import Analysis
 
-    record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
+    record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id, dt=datetime.now().timestamp())
     logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id))
     logger.info('results: {}'.format(result))
 
@@ -472,7 +472,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
 def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     from .models import Analysis
 
-    record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id)
+    record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id, dt=datetime.now().timestamp())
 
     initiator = get_user_model().objects.get(pk=initiator_id)
     analysis = Analysis.objects.get(pk=analysis_id)
@@ -496,8 +496,8 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
 
 @celery_app.task(bind=True, name='record_sub_task_start')
-def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None):
-    _now = timezone.now()
+def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None, dt=None):
+    _now = timezone.now() if not dt else datetime.fromtimestamp(dt, tz=timezone.utc)
 
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
@@ -662,12 +662,12 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
     )
 
 @celery_app.task(name='set_task_status')
-def set_task_status(analysis_pk, task_status):
+def set_task_status(analysis_pk, task_status, dt):
     try:
         from .models import Analysis
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = task_status
-        analysis.task_started = timezone.now()
+        analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
         analysis.save(update_fields=["status", "task_started"])
         logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
     except Exception as e:
