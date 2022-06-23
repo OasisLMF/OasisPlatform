@@ -544,6 +544,7 @@ def prepare_input_generation_params(
 
     params = OasisManager()._params_generate_files(**lookup_params)
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['verbose'] = debug_worker
     return params
 
 
@@ -861,6 +862,7 @@ def prepare_losses_generation_params(
 
     params = OasisManager()._params_generate_losses(**run_params)
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['verbose'] = debug_worker
     return params
 
 
@@ -902,8 +904,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
     OasisManager().generate_losses_partial(**chunk_params)
-    task_logs = kwargs.get('log_filename', '')
-    log_location = filestore.put(task_logs) if os.path.isfile(task_logs) else None
 
     return {
         **params,
@@ -932,9 +932,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
             merge_dirs(d, abs_work_dir)
 
     OasisManager().generate_losses_output(**res)
-
-    task_logs = kwargs.get('log_filename', '')
-    log_location = filestore.put(task_logs) if os.path.isfile(task_logs) else None
+    res['bash_trace'] = ""
 
     return {
         **res,
