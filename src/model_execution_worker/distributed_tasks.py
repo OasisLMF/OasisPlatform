@@ -841,16 +841,24 @@ def prepare_losses_generation_params(
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
-
-    if config.get('model_data_dir'):
-        model_data_dir = os.path.join(
-            os.path.dirname(config_path),
-            config.get('model_data_dir'))
-    else:
-        model_data_dir = None
-
     run_params = {**config, **params}
-    run_params["model_data_dir"] = model_data_dir
+
+    loss_path_vars = [
+        'model_data_dir',
+        'model_settings_json',
+    ]
+
+    for path_val in loss_path_vars:
+        if run_params.get(path_val, False):
+            if not os.path.isabs(run_params[path_val]):
+                abs_path_val = os.path.join(
+                    os.path.dirname(config_path),
+                    run_params[path_val]
+                )
+                run_params[path_val] = abs_path_val
+        else:
+            run_params[path_val] = None
+
     params = OasisManager()._params_generate_losses(**run_params)
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return params
