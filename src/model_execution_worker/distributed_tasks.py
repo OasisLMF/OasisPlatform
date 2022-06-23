@@ -33,34 +33,62 @@ from .storage_manager import BaseStorageConnector
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 
-from celery.utils.log import get_task_logger
-from celery import signals
-
-
 
 # https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
-class LoggingContext:
-    def __init__(self, logger, level=None, handler=None, close=True):
+#class LoggingContext:
+#    def __init__(self, logger, level=None, handler=None, close=True):
+#        self.logger = logger
+#        self.level = level
+#        self.handler = handler
+#        self.close = close
+#
+#    def __enter__(self):
+#        if self.level is not None:
+#            self.old_level = self.logger.level
+#            self.logger.setLevel(self.level)
+#        if self.handler:
+#            self.logger.addHandler(self.handler)
+#
+#    def __exit__(self, et, ev, tb):
+#        if self.level is not None:
+#            self.logger.setLevel(self.old_level)
+#        if self.handler:
+#            self.logger.removeHandler(self.handler)
+#        if self.handler and self.close:
+#            self.handler.close()
+
+class LoggingTaskContext:
+    """ Adds a file log handler to the root logger and pushes all logs to
+        storage on exit
+
+            log_filename = f"/var/log/oasis/tasks/{run_data_uuid}_{kwargs.get('slug')}.log"
+
+            with LoggingContext(logging.getLogger(), handler=logging.FileHandler(log_filename)):
+                log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+    """
+    def __init__(self, logger, log_filename, level=None, close=True):
         self.logger = logger
         self.level = level
-        self.handler = handler
+        self.log_filename = log_filename
         self.close = close
+        self.handler = logging.FileHandler(log_filename)
 
     def __enter__(self):
-        if self.level is not None:
-            self.old_level = self.logger.level
-            self.logger.setLevel(self.level)
+        if self.level:
+            self.handler.setLevel(self.level)
         if self.handler:
             self.logger.addHandler(self.handler)
 
     def __exit__(self, et, ev, tb):
-        if self.level is not None:
-            self.logger.setLevel(self.old_level)
         if self.handler:
             self.logger.removeHandler(self.handler)
         if self.handler and self.close:
             self.handler.close()
-        
+
+
+
+TASK_LOG_DIR = '/var/log/oasis'
+
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -219,7 +247,8 @@ def register_worker(sender, **k):
     logging.info('settings: {}'.format(m_settings))
     logging.info('oasislmf config: {}'.format(m_conf))
 
-    # Check for 'DISABLE_WORKER_REG' before sending task to API
+    # Check for 'DISABLE_WORKER_REG' before se:NERDTreeToggle
+    # unding task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
         logging.info(('Worker auto-registration DISABLED: to enable:\n'
                       '  set DISABLE_WORKER_REG=False in conf.ini or\n'
@@ -482,9 +511,8 @@ def keys_generation_task(fn):
         log_params(params, kwargs)
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
-
-        log_filename = f"/var/log/oasis/tasks/{run_data_uuid}_{kwargs.get('slug')}.log"
-        with LoggingContext(logging.getLogger(), handler=logging.FileHandler(log_filename)):
+        kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
+        with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename']):
             log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
 
             if isinstance(params, list):
@@ -492,7 +520,6 @@ def keys_generation_task(fn):
                     _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
             else:
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
-
             return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
@@ -540,7 +567,12 @@ def prepare_input_generation_params(
                     lookup_params[path_val]
                 )
                 lookup_params[path_val] = abs_path_val
-    return OasisManager()._params_generate_files(**lookup_params)
+    params = OasisManager()._params_generate_files(**lookup_params)
+
+    task_logs = kwargs.get('log_filename', '')
+    if os.path.isfile(task_logs):
+        params['log_location'] = filestore.put(task_logs)
+    return params
 
 
 @app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
@@ -596,6 +628,9 @@ def prepare_keys_file_chunk(
             subdir=params['storage_subdir']
         )
 
+    task_logs = kwargs.get('log_filename', '')
+    if os.path.isfile(task_logs):
+        params['log_location'] = filestore.put(task_logs)
     return params
 
 
@@ -677,6 +712,9 @@ def collect_keys(
         else:
             chunk_params['keys_errors_ref'] = None
 
+    task_logs = kwargs.get('log_filename', '')
+    if os.path.isfile(task_logs):
+        chunk_params['log_location'] = filestore.put(task_logs)
     return chunk_params
 
 
@@ -689,18 +727,22 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     params['oasis_files_dir'] = params['target_dir']
 
     OasisManager().generate_files(**params)
+
+    task_logs = kwargs.get('log_filename', '')
+    log_location = filestore.put(task_logs) if os.path.isfile(task_logs) else None
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
         'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
         'output_location': filestore.put(params['target_dir']),
+        'log_location': log_location,
     }
 
 
 @app.task(bind=True, name='cleanup_input_generation', **celery_conf.worker_task_kwargs)
 @keys_generation_task
-def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None):
+def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, **kwargs):
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
         # Delete local copy of run data
         shutil.rmtree(params['target_dir'], ignore_errors=True)
@@ -708,6 +750,8 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
         # Delete remote copy of run data
         filestore.delete_dir(params['storage_subdir'])
 
+    task_logs = kwargs.get('log_filename', '')
+    params['log_location'] = filestore.put(task_logs) if os.path.isfile(task_logs) else None
     return params
 
 
@@ -805,11 +849,8 @@ def loss_generation_task(fn):
         log_params(params, kwargs)
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
-        log_filename = f"/var/log/oasis/tasks/{run_data_uuid}_{kwargs.get('slug')}.log"
-        task_file_logger = logging.FileHandler(log_filename)
-        #task_file_logger.setLevel(logging.ERROR)
-
-        with LoggingContext(logging.getLogger(), handler=task_file_logger):
+        kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
+        with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename']):
             log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
 
             if isinstance(params, list):
@@ -848,7 +889,11 @@ def prepare_losses_generation_params(
 
     run_params = {**config, **params}
     run_params["model_data_dir"] = model_data_dir
-    return OasisManager()._params_generate_losses(**run_params)
+    params = OasisManager()._params_generate_losses(**run_params)
+
+    task_logs = kwargs.get('log_filename', '')
+    params['log_location'] = filestore.put(task_logs) if os.path.isfile(task_logs) else None
+    return params
 
 
 @app.task(bind=True, name='prepare_losses_generation_directory', **celery_conf.worker_task_kwargs)
@@ -860,6 +905,8 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
         filename='run_directory.tar.gz',
         subdir=params['storage_subdir']
     )
+    task_logs = kwargs.get('log_filename', '')
+    params['log_location'] = filestore.put(task_logs) if os.path.isfile(task_logs) else None
     return params
 
 
@@ -888,6 +935,8 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
     OasisManager().generate_losses_partial(**chunk_params)
+    task_logs = kwargs.get('log_filename', '')
+    log_location = filestore.put(task_logs) if os.path.isfile(task_logs) else None
 
     return {
         **params,
@@ -898,6 +947,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         ),
         'ktools_work_dir': chunk_params['ktools_work_dir'],
         'process_number': chunk_idx + 1,
+        'log_location': log_location,
     }
 
 
@@ -916,16 +966,13 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
 
     OasisManager().generate_losses_output(**res)
 
-    # OASISLMF update - output the bash trace of each run to combine for logging
-    #res['bash_trace'] = '\n\n'.join(
-    #    f'Analysis Chunk {idx}:\n{chunk["bash_trace"]}' for idx, chunk in enumerate(params)
-    #)
-    res['bash_trace'] = ""
+    task_logs = kwargs.get('log_filename', '')
+    log_location = filestore.put(task_logs) if os.path.isfile(task_logs) else None
 
     return {
         **res,
         'output_location': filestore.put(os.path.join(res['model_run_dir'], 'output'), arcname='output'),
-        'log_location': filestore.put(os.path.join(res['model_run_dir'], 'log')),
+        'log_location': log_location,
     }
 
 
@@ -939,6 +986,8 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
         # Delete remote copy of run data
         filestore.delete_dir(params['storage_subdir'])
 
+    task_logs = kwargs.get('log_filename', '')
+    params['log_location'] = filestore.put(task_logs) if os.path.isfile(task_logs) else None
     return params
 
 
