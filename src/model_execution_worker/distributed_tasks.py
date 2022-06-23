@@ -60,7 +60,7 @@ class LoggingContext:
             self.logger.removeHandler(self.handler)
         if self.handler and self.close:
             self.handler.close()
-
+        
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -484,10 +484,7 @@ def keys_generation_task(fn):
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
 
         log_filename = f"/var/log/oasis/tasks/{run_data_uuid}_{kwargs.get('slug')}.log"
-        task_file_logger = logging.FileHandler(log_filename)
-        #task_file_logger.setLevel(logging.ERROR)
-
-        with LoggingContext(logging.getLogger(), handler=task_file_logger):
+        with LoggingContext(logging.getLogger(), handler=logging.FileHandler(log_filename)):
             log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
 
             if isinstance(params, list):

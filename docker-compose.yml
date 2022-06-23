@@ -44,7 +44,9 @@ services:
      STARTUP_RUN_MIGRATIONS: "true"
      OASIS_ADMIN_USER: admin
      OASIS_ADMIN_PASS: password
-   volumes: *shared-volumes
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+     - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
@@ -55,7 +57,9 @@ services:
      - broker
    environment:
      <<: *shared-env
-   volumes: *shared-volumes
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+     - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   task-controller:
    restart: always
    image: coreoasis/api_server:dev
@@ -66,6 +70,9 @@ services:
      - broker
    environment:
      <<: *shared-env
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+     - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   celery-beat:
    restart: always
    image: coreoasis/api_server:dev
@@ -94,6 +101,7 @@ services:
      OASIS_MODEL_NUM_ANALYSIS_CHUNKS: 8
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - ./src/model_execution_worker:/home/worker/src/model_execution_worker 
      - filestore-OasisData:/shared-fs:rw
   server-db:
     restart: always
