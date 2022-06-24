@@ -33,7 +33,7 @@ node {
         [$class: 'StringParameterDefinition',  description: "Ktools release notes ref",            name: 'KTOOLS_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "Ktools prev release notes ref",       name: 'KTOOLS_PREV_TAG', defaultValue: ""],
         [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_IMAGE_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
-        [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_REPO_VULNERABILITIES', defaultValue: "CRITICAL"],
+        [$class: 'StringParameterDefinition',  description: "CVE Rating that fails a build",       name: 'SCAN_REPO_VULNERABILITIES', defaultValue: "HIGH,CRITICAL"],
         [$class: 'TextParameterDefinition',    description: "List of models for Regression tests", name: 'MODEL_REGRESSION', defaultValue: model_regression_list],
         [$class: 'BooleanParameterDefinition', description: "Test previous API and Worker",        name: 'CHECK_COMPATIBILITY', defaultValue: Boolean.valueOf(false)],
         [$class: 'BooleanParameterDefinition', description: "Test S3 storage using LocalStack",    name: 'CHECK_S3', defaultValue: Boolean.valueOf(false)],
@@ -180,7 +180,7 @@ node {
                     stage('Scan: repo config') {
                         dir(oasis_workspace) {
                             withCredentials([string(credentialsId: 'github-tkn-read', variable: 'gh_token')]) {
-                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} ${mnt_scan_report} aquasec/trivy fs --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_repo_general.txt  --security-checks vuln,config,secret /mnt"
+                                sh "docker run -e GITHUB_TOKEN=${gh_token} ${mnt_repo} ${mnt_scan_report} aquasec/trivy fs --skip-dirs /mnt/kubernetes --exit-code 1 --severity ${params.SCAN_REPO_VULNERABILITIES} --output /tmp/cve_repo_general.txt  --security-checks vuln,config,secret /mnt"
                             }
                         }
                     }
