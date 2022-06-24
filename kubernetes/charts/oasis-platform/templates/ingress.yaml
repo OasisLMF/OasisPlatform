@@ -8,7 +8,11 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "64k"
     nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
-    {{- if eq .Values.ingress.tls.strategy "letsencrypt" }}
+    nginx.org/server-snippets: |
+      location / {
+        proxy_set_header X-Forwarded-For $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
     cert-manager.io/cluster-issuer: letsencrypt
     {{- end }}
 spec:
