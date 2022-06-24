@@ -97,6 +97,8 @@ spec:
           ports:
             - containerPort: {{ .Values.keycloak.port }}
           env:
+            - name: KEYCLOAK_PROXY_ADDRESS_FORWARDING
+              value: "true"
             - name: DB_VENDOR
               {{- if eq .Values.databases.keycloak_db.type "mysql" }}
               value: mysql
