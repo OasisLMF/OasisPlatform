@@ -385,19 +385,20 @@ class Analysis(TimeStampedModel):
         errors = {}
         if self.status not in valid_choices:
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
-
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
 
-        if errors:
-            raise ValidationError(errors)
         try:
             loc_lines = self.portfolio.location_file_len()
         except Exception as e:
             raise ValidationError(f"Failed to read location file size for chunking: {e}")
+        if isinstance(loc_lines, int):
+            if loc_lines < 1:
+                errors['portfolio'] = ['"location_file" must at least one row']
+        if errors:
+            raise ValidationError(errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None

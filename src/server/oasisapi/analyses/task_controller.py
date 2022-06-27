@@ -322,7 +322,7 @@ class Controller:
 
         # fetch the number of lookup chunks and store in analysis
         if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
-            num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
+            num_chunks = min(analysis.model.chunking_options.fixed_lookup_chunks, loc_lines)
         elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
             loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
             num_chunks = ceil(loc_lines / loc_lines_per_chunk)
