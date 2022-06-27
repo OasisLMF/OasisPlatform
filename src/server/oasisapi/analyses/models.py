@@ -395,7 +395,7 @@ class Analysis(TimeStampedModel):
         except Exception as e:
             raise ValidationError(f"Failed to read location file size for chunking: {e}")
         if loc_lines < 1:
-            errors['portfolio'] = ['"location_file" must at lease one row']
+            errors['portfolio'] = ['"location_file" must at least one row']
         if errors:
             raise ValidationError(errors)
 
