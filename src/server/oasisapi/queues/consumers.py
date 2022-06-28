@@ -12,6 +12,25 @@ if TYPE_CHECKING:
     from src.server.oasisapi.queues.utils import QueueInfo
 
 
+class GuardedAsyncJsonWebsocketConsumer(AsyncJsonWebsocketConsumer):
+    async def receive(self, text_data=None, bytes_data=None, **kwargs):
+        error_code = 4011
+        try:
+            await super().receive(text_data=text_data, bytes_data=bytes_data, **kwargs)
+        except Exception:
+            await self.disconnect({'code': error_code})
+            # # Or, if you need websocket_disconnect (eg. for autogroups), try this:
+            #
+            # try:
+            #     await self.websocket_disconnect({'code': error_code})
+            # except StopConsumer:
+            #     pass
+
+            # Try and close cleanly
+            await self.close(error_code)
+            raise
+
+
 class ContentStatus(Enum):
     ERROR = 'ERROR'
     SUCCESS = 'SUCCESS'
@@ -95,7 +114,7 @@ def build_all_queue_status_message(analysis_filter=None, message_type='queue_sta
     return build_task_status_message(status_message, message_type=message_type)
 
 
-class QueueStatusConsumer(AsyncJsonWebsocketConsumer):
+class QueueStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
     groups = ['queue_status']
 
     async def connect(self):
