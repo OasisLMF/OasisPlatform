@@ -4,6 +4,10 @@
 #
 #    pip-compile requirements-worker.in
 #
+
+# Pin Oasislmf for elt & summarycalc output fix - https://github.com/OasisLMF/OasisLMF/pull/1060
+git+https://github.com/OasisLMF/OasisLMF.git@49cfa3cece068a2de5027827a0e32274fb61fe9f#egg=oasislmf[extra]
+
 amqp==5.1.0
     # via kombu
 anytree==2.8.0
@@ -140,7 +144,7 @@ numpy==1.21.5
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.26.0
+#oasislmf[extra]==1.26.0
     # via -r requirements-worker.in
 oauthlib==3.2.0
     # via requests-oauthlib

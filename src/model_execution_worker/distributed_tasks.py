@@ -424,6 +424,8 @@ def keys_generation_task(fn):
             'exposure_profile',
             'lookup_config',
         ]
+        if isinstance(params, list):
+            params = params[0]
         print_params = {k: params[k] for k in set(list(params.keys())) - set(exclude_keys)}
         if debug_worker:
             logging.info('keys_generation_task: \nparams={}, \nkwargs={}'.format(
@@ -482,7 +484,6 @@ def keys_generation_task(fn):
         else:
             params['user_data_dir'] = None
 
-        log_params(params, kwargs)
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
@@ -494,6 +495,8 @@ def keys_generation_task(fn):
                     _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
             else:
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
+
+            #log_params(params, kwargs)
             return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
@@ -762,6 +765,9 @@ def loss_generation_task(fn):
 
     def log_params(params, kwargs):
         exclude_keys = []
+
+        if isinstance(params, list):
+            params = params[0]
         print_params = {k: params[k] for k in set(list(params.keys())) - set(exclude_keys)}
         if debug_worker:
             logging.info('loss_generation_task: \nparams={}, \nkwargs={}'.format(
@@ -810,7 +816,6 @@ def loss_generation_task(fn):
                 analysis_settings_file,
                 params['analysis_settings_json']
             )
-        log_params(params, kwargs)
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
@@ -821,6 +826,8 @@ def loss_generation_task(fn):
                     _prepare_directories(p, analysis_id, run_data_uuid, kwargs)
             else:
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
+
+            #log_params(params, kwargs)
             return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
 
     return run
