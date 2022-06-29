@@ -447,30 +447,21 @@ def keys_generation_task(fn):
         params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
         params.setdefault('keys_errors_fp', os.path.join(params['root_run_dir'], 'keys-errors.csv'))
 
-        # DEBUG
+        # DEBUG log loads of pre-analysis files
         if debug_worker:
             for oed_file in ['loc_file', 'acc_file', 'info_file', 'scope_file']:
                 file = params.get(f'pre_{oed_file}')
                 if file:
                     logging.info(f'Load from pre-analysis-hook: {file}')
 
-        ## Load OED files
+        # Load OED files
         loc_file = params.get('pre_loc_file') if params.get('pre_loc_file') else kwargs.get('loc_file')
         acc_file = params.get('pre_acc_file') if params.get('pre_acc_file') else kwargs.get('acc_file')
         info_file = params.get('pre_info_file') if params.get('pre_info_file') else kwargs.get('info_file')
         scope_file = params.get('pre_scope_file') if params.get('pre_scope_file') else kwargs.get('scope_file')
 
-        #loc_file = kwargs.get('loc_file')
-        #acc_file = kwargs.get('acc_file')
-        #info_file = kwargs.get('info_file')
-        #scope_file = kwargs.get('scope_file')
-
         settings_file = kwargs.get('analysis_settings_file')
         complex_data_files = kwargs.get('complex_data_files')
-
-
-        ## Add override file loading for pre-analysis editted files
-
 
         # Prepare 'generate-oasis-files' input files
         if loc_file:
@@ -563,7 +554,6 @@ def prepare_input_generation_params(
 
     gen_files_params = OasisManager()._params_generate_files(**lookup_params)
     pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
-    #pre_hook_params = {k:v for k,v in pre_hook_params.items() if not k.startswith('oed_')}
     params = {**gen_files_params, **pre_hook_params}
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -571,28 +561,6 @@ def prepare_input_generation_params(
     return params
 
 
-
-
-'''
-OasisManager.exposure_pre_analysis
-
-Signature:
-OasisManager.exposure_pre_analysis(
-    exposure_pre_analysis_module=None,
-    exposure_pre_analysis_setting_json=None,
-    oed_location_csv=None,
-    oed_accounts_csv=None,
-    oed_info_csv=None,
-    oed_scope_csv=None,
-    oasis_files_dir=None,
-    exposure_pre_analysis_class_name='ExposurePreAnalysis',
-)
-Docstring:
-Computation step that will be call before the gulcalc.
-Add the ability to specify a model specific pre-analysis hook for exposure modification,
-Allows OED to be processed by some custom code.
-Example of usage include geo-coding, exposure enhancement, or dis-aggregation...
-'''
 @app.task(bind=True, name='pre_analysis_hook', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def pre_analysis_hook(self,
@@ -603,10 +571,7 @@ def pre_analysis_hook(self,
     slug=None,
     **kwargs
 ):
-
     if params.get('exposure_pre_analysis_module'):
-        logging.info('pre_analysis_hook: RUNNING')
-
         with TemporaryDir() as hook_target_dir:
             params['oasis_files_dir'] = hook_target_dir
             pre_hook_output = OasisManager().exposure_pre_analysis(**params)
@@ -713,7 +678,6 @@ def collect_keys(
             try:
                 df = pd.read_csv(p)
                 yield df
-            #except OasisException:
             except Exception:
                 logging.info('Failed to load chunk: {}'.format(p))
                 pass
