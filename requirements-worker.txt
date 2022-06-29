@@ -6,7 +6,7 @@
 #
 
 # Pin Oasislmf for elt & summarycalc output fix - https://github.com/OasisLMF/OasisLMF/pull/1060
-git+https://github.com/OasisLMF/OasisLMF.git@49cfa3cece068a2de5027827a0e32274fb61fe9f#egg=oasislmf[extra]
+git+https://github.com/OasisLMF/OasisLMF.git@fix/pre-analysis-hook#egg=oasislmf[extra]
 
 amqp==5.1.0
     # via kombu

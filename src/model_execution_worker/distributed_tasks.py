@@ -447,38 +447,52 @@ def keys_generation_task(fn):
         params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
         params.setdefault('keys_errors_fp', os.path.join(params['root_run_dir'], 'keys-errors.csv'))
 
-        # Fetch keyword args
-        loc_file = kwargs.get('loc_file')
-        acc_file = kwargs.get('acc_file')
-        info_file = kwargs.get('info_file')
-        scope_file = kwargs.get('scope_file')
+        # DEBUG
+        if debug_worker:
+            for oed_file in ['loc_file', 'acc_file', 'info_file', 'scope_file']:
+                file = params.get(f'pre_{oed_file}')
+                if file:
+                    logging.info(f'Load from pre-analysis-hook: {file}')
+
+        ## Load OED files
+        loc_file = params.get('pre_loc_file') if params.get('pre_loc_file') else kwargs.get('loc_file')
+        acc_file = params.get('pre_acc_file') if params.get('pre_acc_file') else kwargs.get('acc_file')
+        info_file = params.get('pre_info_file') if params.get('pre_info_file') else kwargs.get('info_file')
+        scope_file = params.get('pre_scope_file') if params.get('pre_scope_file') else kwargs.get('scope_file')
+
+        #loc_file = kwargs.get('loc_file')
+        #acc_file = kwargs.get('acc_file')
+        #info_file = kwargs.get('info_file')
+        #scope_file = kwargs.get('scope_file')
+
         settings_file = kwargs.get('analysis_settings_file')
         complex_data_files = kwargs.get('complex_data_files')
+
+
+        ## Add override file loading for pre-analysis editted files
+
 
         # Prepare 'generate-oasis-files' input files
         if loc_file:
             loc_extention = "".join(pathlib.Path(loc_file).suffixes)
             params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'location{loc_extention}')
             maybe_fetch_file(loc_file, params['oed_location_csv'])
-
         if acc_file:
             acc_extention = "".join(pathlib.Path(acc_file).suffixes)
             params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'account{acc_extention}')
             maybe_fetch_file(acc_file, params['oed_accounts_csv'])
-
         if info_file:
             info_extention = "".join(pathlib.Path(info_file).suffixes)
             params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'reinsinfo{info_extention}')
             maybe_fetch_file(info_file, params['oed_info_csv'])
-
         if scope_file:
             scope_extention = "".join(pathlib.Path(scope_file).suffixes)
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
             maybe_fetch_file(scope_file, params['oed_scope_csv'])
 
+
         if settings_file:
             maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
-
         if complex_data_files:
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
         else:
@@ -496,7 +510,7 @@ def keys_generation_task(fn):
             else:
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
-            #log_params(params, kwargs)
+            log_params(params, kwargs)
             return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
@@ -534,7 +548,9 @@ def prepare_input_generation_params(
         'lookup_config_json',
         'model_version_csv',
         'lookup_module_path',
-        'model_settings_json'
+        'model_settings_json',
+        'exposure_pre_analysis_module',
+        'exposure_pre_analysis_setting_json',
     ]
     for path_val in lookup_path_vars:
         if lookup_params.get(path_val, False):
@@ -545,9 +561,71 @@ def prepare_input_generation_params(
                 )
                 lookup_params[path_val] = abs_path_val
 
-    params = OasisManager()._params_generate_files(**lookup_params)
+    gen_files_params = OasisManager()._params_generate_files(**lookup_params)
+    pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
+    #pre_hook_params = {k:v for k,v in pre_hook_params.items() if not k.startswith('oed_')}
+    params = {**gen_files_params, **pre_hook_params}
+
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
+    return params
+
+
+
+
+'''
+OasisManager.exposure_pre_analysis
+
+Signature:
+OasisManager.exposure_pre_analysis(
+    exposure_pre_analysis_module=None,
+    exposure_pre_analysis_setting_json=None,
+    oed_location_csv=None,
+    oed_accounts_csv=None,
+    oed_info_csv=None,
+    oed_scope_csv=None,
+    oasis_files_dir=None,
+    exposure_pre_analysis_class_name='ExposurePreAnalysis',
+)
+Docstring:
+Computation step that will be call before the gulcalc.
+Add the ability to specify a model specific pre-analysis hook for exposure modification,
+Allows OED to be processed by some custom code.
+Example of usage include geo-coding, exposure enhancement, or dis-aggregation...
+'''
+@app.task(bind=True, name='pre_analysis_hook', **celery_conf.worker_task_kwargs)
+@keys_generation_task
+def pre_analysis_hook(self,
+    params,
+    run_data_uuid=None,
+    analysis_id=None,
+    initiator_id=None,
+    slug=None,
+    **kwargs
+):
+
+    if params.get('exposure_pre_analysis_module'):
+        logging.info('pre_analysis_hook: RUNNING')
+
+        with TemporaryDir() as hook_target_dir:
+            params['oasis_files_dir'] = hook_target_dir
+            pre_hook_output = OasisManager().exposure_pre_analysis(**params)
+            files_modified = pre_hook_output.get('modified', {})
+
+            # store updated files
+            params['pre_loc_file']   = filestore.put(files_modified.get('oed_location_csv'))
+            params['pre_acc_file']   = filestore.put(files_modified.get('oed_accounts_csv'))
+            params['pre_info_file']  = filestore.put(files_modified.get('oed_info_csv'))
+            params['pre_scope_file'] = filestore.put(files_modified.get('oed_scope_csv'))
+
+        # remove any pre-loaded files (only affects this worker)
+        oed_files = {v for k,v in params.items() if k.startswith('oed_')}
+        for filepath in oed_files:
+            if Path(filepath).exists():
+                os.remove(filepath)
+    else:
+        logging.info('pre_analysis_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
+    params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return params
 
 
@@ -712,12 +790,25 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
 @app.task(bind=True, name='cleanup_input_generation', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, **kwargs):
+
+    # check for pre-analysis files and remove
+
     if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
         # Delete local copy of run data
         shutil.rmtree(params['target_dir'], ignore_errors=True)
     if not settings.getboolean('worker', 'KEEP_CHUNK_DATA', fallback=False):
         # Delete remote copy of run data
         filestore.delete_dir(params['storage_subdir'])
+        # Delete pre-analysis files
+        if params.get('pre_loc_file'):
+            filestore.delete_file(params.get('pre_loc_file'))
+        if params.get('pre_acc_file'):
+            filestore.delete_file(params.get('pre_acc_file'))
+        if params.get('pre_info_file'):
+            filestore.delete_file(params.get('pre_info_file'))
+        if params.get('pre_scope_file'):
+            filestore.delete_file(params.get('pre_scope_file'))
+
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return params
 
@@ -827,7 +918,7 @@ def loss_generation_task(fn):
             else:
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
-            #log_params(params, kwargs)
+            log_params(params, kwargs)
             return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
 
     return run

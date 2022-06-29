@@ -251,6 +251,16 @@ class Controller:
                 queue,
                 TaskParams(**base_kwargs),
             ),
+            cls.get_subtask_statuses_and_signature(
+                'pre_analysis_hook',
+                analysis,
+                initiator,
+                run_data_uuid,
+                'Pre analysis hook',
+                'pre-analysis-hook',
+                queue,
+                TaskParams(**files_kwargs),
+            ),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',
                 analysis,
