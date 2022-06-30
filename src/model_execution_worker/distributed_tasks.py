@@ -404,6 +404,22 @@ def keys_generation_task(fn):
         except OSError:
             logging.info(f'Failed to remove {filepath}.lock')
 
+
+    def get_file_ref(kwargs, params, arg_name):
+        """ Either fetch file ref from Kwargs or override from pre-analysis hook
+        """
+        file_from_server = kwargs.get(arg_name)
+        file_from_hook = params.get(f'pre_{arg_name}')
+        if not file_from_server:
+            logging.info(f'{arg_name}: (Not loaded)')
+            return None
+        elif file_from_hook:
+            logging.info(f'{arg_name}: {file_from_hook} (pre-analysis-hook)')
+            return file_from_hook
+        logging.info(f'{arg_name}: {file_from_server} (portfolio)')
+        return file_from_server
+
+
     def log_task_entry(slug, request_id, analysis_id):
         if slug:
             logging.info('\n')
@@ -447,21 +463,15 @@ def keys_generation_task(fn):
         params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
         params.setdefault('keys_errors_fp', os.path.join(params['root_run_dir'], 'keys-errors.csv'))
 
-        # DEBUG log loads of pre-analysis files
-        if debug_worker:
-            for oed_file in ['loc_file', 'acc_file', 'info_file', 'scope_file']:
-                file = params.get(f'pre_{oed_file}')
-                if file:
-                    logging.info(f'Load from pre-analysis-hook: {file}')
-
-        # Load OED files
-        loc_file = params.get('pre_loc_file') if params.get('pre_loc_file') else kwargs.get('loc_file')
-        acc_file = params.get('pre_acc_file') if params.get('pre_acc_file') else kwargs.get('acc_file')
-        info_file = params.get('pre_info_file') if params.get('pre_info_file') else kwargs.get('info_file')
-        scope_file = params.get('pre_scope_file') if params.get('pre_scope_file') else kwargs.get('scope_file')
-
+        # user settings and data 
         settings_file = kwargs.get('analysis_settings_file')
         complex_data_files = kwargs.get('complex_data_files')
+
+        # Load OED file references (filenames or object keys)
+        loc_file = get_file_ref(kwargs, params, 'loc_file')
+        acc_file = get_file_ref(kwargs, params, 'acc_file')
+        info_file = get_file_ref(kwargs, params, 'info_file')
+        scope_file = get_file_ref(kwargs, params, 'scope_file')
 
         # Prepare 'generate-oasis-files' input files
         if loc_file:
@@ -480,8 +490,6 @@ def keys_generation_task(fn):
             scope_extention = "".join(pathlib.Path(scope_file).suffixes)
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
             maybe_fetch_file(scope_file, params['oed_scope_csv'])
-
-
         if settings_file:
             maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
         if complex_data_files:
