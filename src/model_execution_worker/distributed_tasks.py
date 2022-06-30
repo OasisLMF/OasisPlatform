@@ -463,7 +463,7 @@ def keys_generation_task(fn):
         params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
         params.setdefault('keys_errors_fp', os.path.join(params['root_run_dir'], 'keys-errors.csv'))
 
-        # user settings and data 
+        # user settings and data
         settings_file = kwargs.get('analysis_settings_file')
         complex_data_files = kwargs.get('complex_data_files')
 
@@ -592,7 +592,7 @@ def pre_analysis_hook(self,
             params['pre_scope_file'] = filestore.put(files_modified.get('oed_scope_csv'))
 
         # remove any pre-loaded files (only affects this worker)
-        oed_files = {v for k,v in params.items() if k.startswith('oed_')}
+        oed_files = {v for k,v in params.items() if k.startswith('oed_') and isinstance(v, str)}
         for filepath in oed_files:
             if Path(filepath).exists():
                 os.remove(filepath)
