@@ -16,7 +16,7 @@ import filelock
 import pandas as pd
 from billiard.exceptions import WorkerLostError
 from celery import Celery, signature
-from celery.signals import worker_ready, before_task_publish, task_revoked
+from celery.signals import worker_ready, before_task_publish, task_revoked, task_failure
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
@@ -262,7 +262,8 @@ def register_worker(sender, **k):
     # Optional ENV
     logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
     logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
-    logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
+    logging.info("KEEP_LOCAL_DATA: {}".format(settings.get('worker', 'KEEP_LOCAL_DATA', fallback='False')))
+    logging.info("KEEP_REMOTE_DATA: {}".format(settings.get('worker', 'KEEP_REMOTE_DATA', fallback='False')))
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
     logging.info("TASK_LOG_DIR: {}".format(settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')))
@@ -393,12 +394,12 @@ def keys_generation_task(fn):
         except OSError:
             logging.info(f'Failed to remove {user_data_dir}.lock')
 
-    def maybe_fetch_file(datafile, filepath):
+    def maybe_fetch_file(datafile, filepath, subdir=''):
         with filelock.FileLock(f'{filepath}.lock'):
             if not Path(filepath).exists():
                 logging.info(f'file: {datafile}')
                 logging.info(f'filepath: {filepath}')
-                filestore.get(datafile, filepath)
+                filestore.get(datafile, filepath, subdir)
         try:
             os.remove(f'{filepath}.lock')
         except OSError:
@@ -476,20 +477,25 @@ def keys_generation_task(fn):
         # Prepare 'generate-oasis-files' input files
         if loc_file:
             loc_extention = "".join(pathlib.Path(loc_file).suffixes)
+            loc_subdir = params.get('storage_subdir','') if params.get('pre_loc_file') else ''
             params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'location{loc_extention}')
-            maybe_fetch_file(loc_file, params['oed_location_csv'])
+            maybe_fetch_file(loc_file, params['oed_location_csv'], loc_subdir)
         if acc_file:
             acc_extention = "".join(pathlib.Path(acc_file).suffixes)
+            acc_subdir = params.get('storage_subdir','') if params.get('pre_acc_file') else ''
             params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'account{acc_extention}')
-            maybe_fetch_file(acc_file, params['oed_accounts_csv'])
+            maybe_fetch_file(acc_file, params['oed_accounts_csv'], acc_subdir)
         if info_file:
             info_extention = "".join(pathlib.Path(info_file).suffixes)
+            info_subdir = params.get('storage_subdir','') if params.get('pre_info_file') else ''
             params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'reinsinfo{info_extention}')
-            maybe_fetch_file(info_file, params['oed_info_csv'])
+            maybe_fetch_file(info_file, params['oed_info_csv'], info_subdir)
         if scope_file:
             scope_extention = "".join(pathlib.Path(scope_file).suffixes)
+            scope_subdir = params.get('storage_subdir','') if params.get('pre_scope_file') else ''
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
-            maybe_fetch_file(scope_file, params['oed_scope_csv'])
+            maybe_fetch_file(scope_file, params['oed_scope_csv'], scope_subdir)
+
         if settings_file:
             maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
         if complex_data_files:
@@ -586,10 +592,10 @@ def pre_analysis_hook(self,
             files_modified = pre_hook_output.get('modified', {})
 
             # store updated files
-            params['pre_loc_file']   = filestore.put(files_modified.get('oed_location_csv'))
-            params['pre_acc_file']   = filestore.put(files_modified.get('oed_accounts_csv'))
-            params['pre_info_file']  = filestore.put(files_modified.get('oed_info_csv'))
-            params['pre_scope_file'] = filestore.put(files_modified.get('oed_scope_csv'))
+            params['pre_loc_file']   = filestore.put(files_modified.get('oed_location_csv'), subdir=params['storage_subdir'])
+            params['pre_acc_file']   = filestore.put(files_modified.get('oed_accounts_csv'), subdir=params['storage_subdir'])
+            params['pre_info_file']  = filestore.put(files_modified.get('oed_info_csv'), subdir=params['storage_subdir'])
+            params['pre_scope_file'] = filestore.put(files_modified.get('oed_scope_csv'), subdir=params['storage_subdir'])
 
         # remove any pre-loaded files (only affects this worker)
         oed_files = {v for k,v in params.items() if k.startswith('oed_') and isinstance(v, str)}
@@ -765,10 +771,10 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
 
     # check for pre-analysis files and remove
 
-    if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
+    if not settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False):
         # Delete local copy of run data
         shutil.rmtree(params['target_dir'], ignore_errors=True)
-    if not settings.getboolean('worker', 'KEEP_CHUNK_DATA', fallback=False):
+    if not settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False):
         # Delete remote copy of run data
         filestore.delete_dir(params['storage_subdir'])
         # Delete pre-analysis files
@@ -1014,10 +1020,10 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
 @app.task(bind=True, name='cleanup_losses_generation', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwargs):
-    if not settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False):
+    if not settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False):
         # Delete local copy of run data
         shutil.rmtree(params['root_run_dir'], ignore_errors=True)
-    if not settings.getboolean('worker', 'KEEP_CHUNK_DATA', fallback=False):
+    if not settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False):
         # Delete remote copy of run data
         filestore.delete_dir(params['storage_subdir'])
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -1059,6 +1065,23 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
                 os.symlink(from_path, to_path)
         else:
             os.symlink(from_path, to_path)
+
+@task_failure.connect
+def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
+    logging.info("Task error handler")
+    task_args = kwargs.get('args')[0]
+
+    keep_local_data = settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False)
+    dir_local_data = task_args.get('root_run_dir')
+    keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
+    dir_remote_data = task_args.get('storage_subdir')
+
+    if not keep_local_data:
+        logging.info(f"deleting local data, {dir_local_data}")
+        shutil.rmtree(dir_local_data, ignore_errors=True)
+    if not keep_remote_data:
+        logging.info(f"deleting remote data, {dir_remote_data}")
+        filestore.delete_dir(dir_remote_data)
 
 
 @before_task_publish.connect
