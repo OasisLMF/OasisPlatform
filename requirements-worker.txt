@@ -5,8 +5,8 @@
 #    pip-compile requirements-worker.in
 #
 
-# Pin Oasislmf for elt & summarycalc output fix - https://github.com/OasisLMF/OasisLMF/pull/1060
-git+https://github.com/OasisLMF/OasisLMF.git@fix/pre-analysis-hook#egg=oasislmf[extra]
+# Pin Oasislmf to 'develop' for pre-analysis-hook fix
+git+https://github.com/OasisLMF/OasisLMF.git@9256ab0be4b0cef06ea895094f06fbeeae2b22db#egg=oasislmf[extra]
 
 amqp==5.1.0
     # via kombu
