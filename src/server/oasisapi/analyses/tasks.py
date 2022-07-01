@@ -634,7 +634,7 @@ def handle_task_failure(
         logger.exception(str(e))
 
     # cleanup the temporary run files
-    if not worker_settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False) and run_data_uuid:
+    if not worker_settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False) and run_data_uuid:
         rmtree(
             os.path.join(worker_settings.get('worker', 'run_data_dir', fallback='/data'), f'analysis-{analysis_id}-{run_data_uuid}'),
             ignore_errors=True
