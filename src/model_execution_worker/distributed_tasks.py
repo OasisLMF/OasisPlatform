@@ -49,6 +49,12 @@ app.config_from_object(celery_conf)
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
+# Quiet sub-loggers
+logging.getLogger('billiard').setLevel('INFO')
+#logging.getLogger('importlib').setLevel('INFO')
+#logging.getLogger('pandas').setLevel('INFO')
+
+
 # Set storage manager
 selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
 if selected_storage in ['local-fs', 'shared-fs']:
@@ -234,6 +240,7 @@ def register_worker(sender, **k):
             'run_register_worker',
             args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
         ).delay()
+
 
     # Required ENV
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
@@ -990,6 +997,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         ),
         'ktools_work_dir': chunk_params['ktools_work_dir'],
         'process_number': chunk_idx + 1,
+        'max_process_id': max_chunk_id,
         'log_location': filestore.put(kwargs.get('log_filename')),
     }
 
@@ -998,6 +1006,8 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
+    res['max_process_id'] = len(params)
+
     abs_work_dir = os.path.join(res['model_run_dir'], 'work')
     Path(abs_work_dir).mkdir(exist_ok=True, parents=True)
 
@@ -1069,19 +1079,29 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
 @task_failure.connect
 def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     logging.info("Task error handler")
-    task_args = kwargs.get('args')[0]
+    task_params = kwargs.get('args')[0]
+    task_args = sender.request.kwargs
+    #{'initiator_id': 1, 'analysis_id': 2, 'slug': 'generate-losses-chunk-14', 'run_data_uuid': '37002fd5a1314bfbabded1a3908282cf', 'input_location': 'af2ddf4f149b45af82d49c84e75b3402.tar.gz', 'analysis_settings_file': '04ac192678434f909c0aa79862a95468.json', 'complex_data_files': None} 
+    task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
 
-    keep_local_data = settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False)
-    dir_local_data = task_args.get('root_run_dir')
+    if os.path.isfile(task_log_file): 
+        signature('subtask_error_log').delay(
+            task_args.get('analysis_id'), 
+            task_args.get('initiator_id'),
+            task_args.get('slug'), 
+            task_id,
+            filestore.put(task_log_file)
+        )
+
+    
+
     keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
-    dir_remote_data = task_args.get('storage_subdir')
-
-    if not keep_local_data:
-        logging.info(f"deleting local data, {dir_local_data}")
-        shutil.rmtree(dir_local_data, ignore_errors=True)
+    dir_remote_data = task_params.get('storage_subdir')
     if not keep_remote_data:
         logging.info(f"deleting remote data, {dir_remote_data}")
         filestore.delete_dir(dir_remote_data)
+
+    
 
 
 @before_task_publish.connect

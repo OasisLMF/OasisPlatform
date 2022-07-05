@@ -661,6 +661,21 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
         queue_time=datetime.fromtimestamp(dt, tz=timezone.utc),
     )
 
+
+@celery_app.task(name='subtask_error_log')
+def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
+    AnalysisTaskStatus.objects.filter(
+        analysis_id=analysis_id,
+        slug=slug,
+    ).update(
+        output_log=RelatedFile.objects.create(
+            file=str(log_file),
+            filename='{}-output.log'.format(task_id),
+            content_type='text/plain',
+            creator_id=initiator_id,
+        )
+    )
+
 @celery_app.task(name='set_task_status')
 def set_task_status(analysis_pk, task_status, dt):
     try:
