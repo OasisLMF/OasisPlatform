@@ -330,7 +330,6 @@ class Controller:
         """
         from src.server.oasisapi.analyses.models import Analysis
 
-        from celery.contrib import rdb; rdb.set_trace()
         # fetch the number of lookup chunks and store in analysis
         if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
             num_chunks = min(analysis.model.chunking_options.fixed_lookup_chunks, loc_lines)
