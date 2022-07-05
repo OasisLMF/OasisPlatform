@@ -6,7 +6,7 @@
 #
 
 # Pin Oasislmf to 'develop' for pre-analysis-hook fix
-git+https://github.com/OasisLMF/OasisLMF.git@9256ab0be4b0cef06ea895094f06fbeeae2b22db#egg=oasislmf[extra]
+git+https://github.com/OasisLMF/OasisLMF.git@aeba02fb219d38124e6cf1961588122dea132e14#egg=oasislmf[extra]
 
 amqp==5.1.0
     # via kombu
