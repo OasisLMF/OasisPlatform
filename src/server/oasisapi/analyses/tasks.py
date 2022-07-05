@@ -600,11 +600,7 @@ def handle_task_failure(
     traceback_property=None,
     failure_status=None,
 ):
-    #from celery.contrib import rdb
-    #rdb.set_trace()
-
     tb = _traceback_from_errback_args(*args)
-
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, run_data_uuid: {}, failure_status: {}'.format(
         analysis_id, initiator_id, tb, run_data_uuid, failure_status))
     try:
@@ -676,6 +672,7 @@ def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
         )
     )
 
+
 @celery_app.task(name='set_task_status')
 def set_task_status(analysis_pk, task_status, dt):
     try:
@@ -688,6 +685,7 @@ def set_task_status(analysis_pk, task_status, dt):
     except Exception as e:
         logger.error('Task Status Update: Failed')
         logger.exception(str(e))
+
 
 @celery_app.task(name='update_task_id')
 def update_task_id(task_update_list):

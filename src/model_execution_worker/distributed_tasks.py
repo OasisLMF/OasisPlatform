@@ -1081,27 +1081,24 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     logging.info("Task error handler")
     task_params = kwargs.get('args')[0]
     task_args = sender.request.kwargs
-    #{'initiator_id': 1, 'analysis_id': 2, 'slug': 'generate-losses-chunk-14', 'run_data_uuid': '37002fd5a1314bfbabded1a3908282cf', 'input_location': 'af2ddf4f149b45af82d49c84e75b3402.tar.gz', 'analysis_settings_file': '04ac192678434f909c0aa79862a95468.json', 'complex_data_files': None} 
+    
+    # Store output log 
     task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
-
-    if os.path.isfile(task_log_file): 
+    if os.path.isfile(task_log_file):
         signature('subtask_error_log').delay(
-            task_args.get('analysis_id'), 
+            task_args.get('analysis_id'),
             task_args.get('initiator_id'),
-            task_args.get('slug'), 
+            task_args.get('slug'),
             task_id,
             filestore.put(task_log_file)
         )
 
-    
-
+    # Wipe worker's remote data storage  
     keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
     dir_remote_data = task_params.get('storage_subdir')
     if not keep_remote_data:
         logging.info(f"deleting remote data, {dir_remote_data}")
         filestore.delete_dir(dir_remote_data)
-
-    
 
 
 @before_task_publish.connect
