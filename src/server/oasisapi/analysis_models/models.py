@@ -62,6 +62,7 @@ class ModelChunkingOptions(models.Model):
     loss_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values), choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
     dynamic_locations_per_lookup = models.PositiveIntegerField(default=10000, null=False)
     dynamic_events_per_analysis = models.PositiveIntegerField(default=1, null=False)
+    dynamic_chunks_max = models.PositiveIntegerField(default=200, null=False)
     fixed_analysis_chunks = models.PositiveSmallIntegerField(default=1, null=True)
     fixed_lookup_chunks = models.PositiveSmallIntegerField(default=1, null=True)
 

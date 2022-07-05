@@ -335,7 +335,7 @@ class Controller:
             num_chunks = min(analysis.model.chunking_options.fixed_lookup_chunks, loc_lines)
         elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
             loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
-            num_chunks = ceil(loc_lines / loc_lines_per_chunk)
+            num_chunks = min(ceil(loc_lines / loc_lines_per_chunk), analysis.model.chunking_options.dynamic_chunks_max)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
@@ -469,7 +469,7 @@ class Controller:
             num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
         elif analysis.model.chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
             events_per_chunk = analysis.model.chunking_options.dynamic_events_per_analysis
-            num_chunks = ceil(events_total / events_per_chunk)
+            num_chunks = min(ceil(events_total / events_per_chunk), analysis.model.chunking_options.dynamic_chunks_max)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)

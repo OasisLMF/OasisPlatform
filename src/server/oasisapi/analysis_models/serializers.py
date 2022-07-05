@@ -164,6 +164,7 @@ class ModelChunkingConfigSerializer(serializers.ModelSerializer):
             'loss_strategy',
             'dynamic_locations_per_lookup',
             'dynamic_events_per_analysis',
+            'dynamic_chunks_max',
             'fixed_analysis_chunks',
             'fixed_lookup_chunks',
         )
@@ -172,6 +173,7 @@ class ModelChunkingConfigSerializer(serializers.ModelSerializer):
         non_neg_fields = [
             'dynamic_locations_per_lookup',
             'dynamic_events_per_analysis',
+            'dynamic_chunks_max',
             'fixed_analysis_chunks',
             'fixed_lookup_chunks',
         ]
