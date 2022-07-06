@@ -8,7 +8,7 @@ import tarfile
 import pandas as pd
 
 from pandas.util.testing import assert_frame_equal
-from oasislmf.platform_api.client import APIClient
+from oasislmf.platform.client import APIClient
 from oasislmf.utils.data import print_dataframe, get_dataframe
 
 
