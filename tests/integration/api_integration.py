@@ -264,9 +264,10 @@ def test_analysis_output(case_fixture):
     assert r.ok
 
     tar_object = tarfile.open(download_to)
-    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name]
+    csv_files = [f for f in tar_object.getmembers() if '.csv' in f.name]
+    parquet_files = [f for f in tar_object.getmembers() if '.parquet' in f.name]
 
-    tar_object.extractall(path=extract_to, members=csv_only)
+    tar_object.extractall(path=extract_to, members==csv_files + parquet_files)
     tar_object.close()
 
     if cli_test_output:
