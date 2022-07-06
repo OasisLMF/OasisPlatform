@@ -39,10 +39,10 @@ def check_expected(result_path, expected_path):
 
     print(comparison_list)
     os.chdir(cwd)
-    for file_path in comparison_list:
-        print(f'Checking {file}')
-        df_found = get_dataframe(os.path.join(result_path, csv))
-        df_expect = get_dataframe(os.path.join(expected_path, csv))
+    for filename in comparison_list:
+        print(f'Checking {filename}')
+        df_found = get_dataframe(os.path.join(result_path, filename))
+        df_expect = get_dataframe(os.path.join(expected_path, filename))
         try:
             assert_frame_equal(df_expect, df_found)
         except:
@@ -51,7 +51,7 @@ def check_expected(result_path, expected_path):
                 print_dataframe(df_found)
                 print('\n -- df_expect --')
                 print_dataframe(df_expect)
-            raise 
+            raise
 
 
 def check_non_empty(result_path):
