@@ -9,7 +9,7 @@ import pandas as pd
 
 from pandas.util.testing import assert_frame_equal
 from oasislmf.platform_api.client import APIClient
-from oasislmf.utils.data import print_dataframe
+from oasislmf.utils.data import print_dataframe, get_dataframe
 
 
 # ------------ load command line optios -------------------- #
@@ -41,12 +41,8 @@ def check_expected(result_path, expected_path):
     os.chdir(cwd)
     for file_path in comparison_list:
         print(f'Checking {file}')
-        file_ext = pathlib.Path(file_path).suffix[1:].lower()                                                
-        file_type = 'parquet' if file_ext in ['parquet', 'pq'] else 'csv'
-
-        pd_read_func = getattr(pd, f"read_{file_type}")
-        df_found = pd_read_func(os.path.join(result_path, csv))
-        df_expect = pd_read_func(os.path.join(expected_path, csv))
+        df_found = get_dataframe(os.path.join(result_path, csv))
+        df_expect = get_dataframe(os.path.join(expected_path, csv))
         try:
             assert_frame_equal(df_expect, df_found)
         except:
