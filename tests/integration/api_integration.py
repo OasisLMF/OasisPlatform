@@ -1,14 +1,15 @@
+import configparser
+import os
+import pathlib
 import pytest
 import socket
-import os
 import tarfile
-import configparser
 
 import pandas as pd
 
 from pandas.util.testing import assert_frame_equal
-
-from oasislmf.api.client import APIClient
+from oasislmf.platform_api.client import APIClient
+from oasislmf.utils.data import print_dataframe
 
 
 # ------------ load command line optios -------------------- #
@@ -38,11 +39,23 @@ def check_expected(result_path, expected_path):
 
     print(comparison_list)
     os.chdir(cwd)
-    for csv in comparison_list:
-        print(csv)
-        df_expect = pd.read_csv(os.path.join(expected_path, csv))
-        df_found = pd.read_csv(os.path.join(result_path, csv))
-        assert_frame_equal(df_expect, df_found)
+    for file_path in comparison_list:
+        print(f'Checking {file}')
+        file_ext = pathlib.Path(file_path).suffix[1:].lower()                                                
+        file_type = 'parquet' if file_ext in ['parquet', 'pq'] else 'csv'
+
+        pd_read_func = getattr(pd, f"read_{file_type}")
+        df_found = pd_read_func(os.path.join(result_path, csv))
+        df_expect = pd_read_func(os.path.join(expected_path, csv))
+        try:
+            assert_frame_equal(df_expect, df_found)
+        except:
+            if len(df_found) < 1000:
+                print('\n -- df_found --')
+                print_dataframe(df_found)
+                print('\n -- df_expect --')
+                print_dataframe(df_expect)
+            raise 
 
 
 def check_non_empty(result_path):
