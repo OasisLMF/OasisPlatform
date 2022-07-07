@@ -4,6 +4,7 @@ import pathlib
 import pytest
 import socket
 import tarfile
+import json
 
 import pandas as pd
 
@@ -28,8 +29,16 @@ def get_path(section, var, config=config):
     except configparser.NoOptionError:
         return None
 
+def get_different_rows(source_df, new_df):
+    """Returns just the rows from the new dataframe that differ from the source dataframe"""
+    merged_df = source_df.merge(new_df, indicator=True, how='outer')
+    changed_rows_df = merged_df[merged_df['_merge'] == 'right_only']
+    return changed_rows_df.drop('_merge', axis=1)
+
 
 def check_expected(result_path, expected_path):
+    test_failed = False
+    test_results = {}
     comparison_list = []
     cwd = os.getcwd()
     os.chdir(expected_path)
@@ -39,19 +48,31 @@ def check_expected(result_path, expected_path):
 
     print(comparison_list)
     os.chdir(cwd)
+
     for filename in comparison_list:
         print(f'Checking {filename}')
         df_found = get_dataframe(os.path.join(result_path, filename))
         df_expect = get_dataframe(os.path.join(expected_path, filename))
-        try:
-            assert_frame_equal(df_expect, df_found)
-        except:
-            if len(df_found) < 1000:
-                print('\n -- df_found --')
-                print_dataframe(df_found)
-                print('\n -- df_expect --')
-                print_dataframe(df_expect)
-            raise
+
+        if not df_expect.equals(df_found):
+            test_failed = True
+            test_results[filename] = 'FAILED'
+            print(get_different_rows(df_expect, df_found))
+        else:
+            test_results[filename] = 'PASSED'
+
+    print(json.dumps(test_results, indent=2))
+    assert(test_failed == False)
+
+        #try:
+        #    assert_frame_equal(df_expect, df_found)
+        #except:
+        #    if len(df_found) < 1000:
+        #        print('\n -- df_found --')
+        #        print_dataframe(df_found)
+        #        print('\n -- df_expect --')
+        #        print_dataframe(df_expect)
+        #    raise
 
 
 def check_non_empty(result_path):
@@ -69,6 +90,7 @@ def check_non_empty(result_path):
         file_size = os.path.getsize(file_path)
         print(f'{file_size} Bytes: -> {csv}')
         assert(file_size > 0)
+
 
 
 # --- Test Paramatization --------------------------------------------------- #
