@@ -61,18 +61,9 @@ def check_expected(result_path, expected_path):
         else:
             test_results[filename] = 'PASSED'
 
+    print('\n -- Results --')
     print(json.dumps(test_results, indent=2))
     assert(test_failed == False)
-
-        #try:
-        #    assert_frame_equal(df_expect, df_found)
-        #except:
-        #    if len(df_found) < 1000:
-        #        print('\n -- df_found --')
-        #        print_dataframe(df_found)
-        #        print('\n -- df_expect --')
-        #        print_dataframe(df_expect)
-        #    raise
 
 
 def check_non_empty(result_path):
