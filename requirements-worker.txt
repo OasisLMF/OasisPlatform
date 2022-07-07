@@ -126,7 +126,7 @@ numba==0.55.2
     # via
     #   -r requirements-worker.in
     #   oasislmf
-numexpr==2.8.0
+numexpr==2.8.1
     # via oasislmf
 numpy==1.22
     # via
