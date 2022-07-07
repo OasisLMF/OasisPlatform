@@ -136,7 +136,7 @@ daphne==3.0.2
     #   channels
 distlib==0.3.3
     # via virtualenv
-django==3.2.13
+django==3.2.14
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -268,7 +268,7 @@ numba==0.55.2
     #   oasislmf
 numexpr==2.8.0
     # via oasislmf
-numpy==1.21.5
+numpy==1.22
     # via
     #   fastparquet
     #   numba

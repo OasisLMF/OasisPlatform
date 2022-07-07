@@ -81,7 +81,7 @@ daphne==3.0.2
     # via
     #   -r requirements-server.in
     #   channels
-django==3.2.13
+django==3.2.14
     # via
     #   -r requirements-server.in
     #   channels
@@ -159,7 +159,7 @@ markupsafe==2.0.1
     # via jinja2
 msrest==0.6.21
     # via azure-storage-blob
-numpy==1.21.5
+numpy==1.22
     # via
     #   pandas
     #   pyarrow
