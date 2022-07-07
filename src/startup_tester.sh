@@ -20,4 +20,4 @@ if [ -z "${TEST_TIMEOUT}" ]; then
     TEST_TIMEOUT=180
 fi     
 
-timeout $TEST_TIMEOUT pytest -v -p no:django /home/worker/tests/integration/api_integration.py "$@"
+timeout $TEST_TIMEOUT pytest -s -v -p no:django /home/worker/tests/integration/api_integration.py "$@"
