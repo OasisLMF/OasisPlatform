@@ -1,14 +1,16 @@
+import configparser
+import os
+import pathlib
 import pytest
 import socket
-import os
 import tarfile
-import configparser
+import json
 
 import pandas as pd
 
 from pandas.util.testing import assert_frame_equal
-
-from oasislmf.api.client import APIClient
+from oasislmf.platform.client import APIClient
+from oasislmf.utils.data import print_dataframe, get_dataframe
 
 
 # ------------ load command line optios -------------------- #
@@ -27,8 +29,16 @@ def get_path(section, var, config=config):
     except configparser.NoOptionError:
         return None
 
+def get_different_rows(source_df, new_df):
+    """Returns just the rows from the new dataframe that differ from the source dataframe"""
+    merged_df = source_df.merge(new_df, indicator=True, how='outer')
+    changed_rows_df = merged_df[merged_df['_merge'] == 'right_only']
+    return changed_rows_df.drop('_merge', axis=1)
+
 
 def check_expected(result_path, expected_path):
+    test_failed = False
+    test_results = {}
     comparison_list = []
     cwd = os.getcwd()
     os.chdir(expected_path)
@@ -38,11 +48,22 @@ def check_expected(result_path, expected_path):
 
     print(comparison_list)
     os.chdir(cwd)
-    for csv in comparison_list:
-        print(csv)
-        df_expect = pd.read_csv(os.path.join(expected_path, csv))
-        df_found = pd.read_csv(os.path.join(result_path, csv))
-        assert_frame_equal(df_expect, df_found)
+
+    for filename in comparison_list:
+        print(f'Checking {filename}')
+        df_found = get_dataframe(os.path.join(result_path, filename))
+        df_expect = get_dataframe(os.path.join(expected_path, filename))
+
+        if not df_expect.equals(df_found):
+            test_failed = True
+            test_results[filename] = 'FAILED'
+            print(get_different_rows(df_expect, df_found))
+        else:
+            test_results[filename] = 'PASSED'
+
+    print('\n -- Results --')
+    print(json.dumps(test_results, indent=2))
+    assert(test_failed == False)
 
 
 def check_non_empty(result_path):
@@ -60,6 +81,7 @@ def check_non_empty(result_path):
         file_size = os.path.getsize(file_path)
         print(f'{file_size} Bytes: -> {csv}')
         assert(file_size > 0)
+
 
 
 # --- Test Paramatization --------------------------------------------------- #
@@ -210,8 +232,9 @@ def test_generated_files(case_fixture):
     assert r.ok
 
     tar_object = tarfile.open(download_to)
-    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name]
-    tar_object.extractall(path=extract_to, members=csv_only)
+    csv_files = [f for f in tar_object.getmembers() if '.csv' in f.name]
+    parquet_files = [f for f in tar_object.getmembers() if '.parquet' in f.name]
+    tar_object.extractall(path=extract_to, members=csv_files + parquet_files)
     tar_object.close()
     if os.path.isfile(download_to):
         os.remove(download_to)
@@ -254,9 +277,10 @@ def test_analysis_output(case_fixture):
     assert r.ok
 
     tar_object = tarfile.open(download_to)
-    csv_only = [f for f in tar_object.getmembers() if '.csv' in f.name]
+    csv_files = [f for f in tar_object.getmembers() if '.csv' in f.name]
+    parquet_files = [f for f in tar_object.getmembers() if '.parquet' in f.name]
 
-    tar_object.extractall(path=extract_to, members=csv_only)
+    tar_object.extractall(path=extract_to, members=csv_files + parquet_files)
     tar_object.close()
 
     if cli_test_output:
