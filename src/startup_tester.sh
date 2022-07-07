@@ -17,7 +17,7 @@ echo "Server is available - exit"
 set -e
 
 if [ -z "${TEST_TIMEOUT}" ]; then
-    TEST_TIMEOUT=180
+    TEST_TIMEOUT=300
 fi     
 
 timeout $TEST_TIMEOUT pytest -s -v -p no:django /home/worker/tests/integration/api_integration.py "$@"
