@@ -142,7 +142,7 @@ node {
 
     env.IMAGE_WORKER   = image_piwind
     // Should read these values from test/conf.ini
-    env.TEST_MAX_RUNTIME = '190'
+    env.TEST_MAX_RUNTIME = '300'
     env.TEST_DATA_DIR = model_test_dir
     env.MDK_CONFIG = '/home/worker/model/oasislmf.json'
     env.MODEL_SUPPLIER = 'OasisLMF'
