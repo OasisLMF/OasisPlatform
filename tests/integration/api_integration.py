@@ -54,12 +54,20 @@ def check_expected(result_path, expected_path):
         df_found = get_dataframe(os.path.join(result_path, filename))
         df_expect = get_dataframe(os.path.join(expected_path, filename))
 
-        if not df_expect.equals(df_found):
+        try:
+            assert_frame_equal(df_expect, df_found)
+            test_results[filename] = 'PASSED'
+        except AssertionError as e:
+            print(e)
             test_failed = True
             test_results[filename] = 'FAILED'
-            print(get_different_rows(df_expect, df_found))
-        else:
-            test_results[filename] = 'PASSED'
+
+        #if not df_expect.equals(df_found):
+        #    test_failed = True
+        #    test_results[filename] = 'FAILED'
+        #    print(get_different_rows(df_expect, df_found))
+        #else:
+        #    test_results[filename] = 'PASSED'
 
     print('\n -- Results --')
     print(json.dumps(test_results, indent=2))
