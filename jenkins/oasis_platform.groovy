@@ -120,8 +120,8 @@ node {
 
     if (is_lts_branch){
         //Make sure releases are tagged as LTS
-        if (params.PUBLISH &&  ! params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)-lts')) {
-            sh "echo release candidates must be tagged {version}-lts, example: 1.0.0-lts"
+        if (params.PUBLISH &&  ! params.PRE_RELEASE && ! params.RELEASE_TAG.matches('^(\\d+\\.)(\\d+\\.)(\\*|\\d+)')) {
+            sh "echo release candidates must be tagged {version}, example: 1.0.0"
             sh "exit 1"
         }
 
@@ -543,10 +543,12 @@ node {
                             if (is_lts_branch) {
                                 // Publish image as LTS release
                                 sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:latest-lts"
-                                sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:${RELEASE_NUM_ONLY}"
-
                                 sh "docker push ${image_api}:latest-lts"
-                                sh "docker push ${image_api}:${RELEASE_NUM_ONLY}"
+
+                                if (RELEASE_NUM_ONLY?.trim()){
+                                    sh "docker tag ${image_api}:${env.TAG_RELEASE} ${image_api}:${RELEASE_NUM_ONLY}"
+                                    sh "docker push ${image_api}:${RELEASE_NUM_ONLY}"
+                                }    
                             } else {
                                 // Update latest tag for Monthly release
                                 if (! params.PRE_RELEASE){
@@ -565,9 +567,12 @@ node {
                             if (is_lts_branch) {
                                 // Publish image as LTS release
                                 sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:latest-lts"
-                                sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:${RELEASE_NUM_ONLY}"
                                 sh "docker push ${image_worker}:latest-lts"
-                                sh "docker push ${image_worker}:${RELEASE_NUM_ONLY}"
+
+                                if (RELEASE_NUM_ONLY?.trim()){
+                                    sh "docker tag ${image_worker}:${env.TAG_RELEASE} ${image_worker}:${RELEASE_NUM_ONLY}"
+                                    sh "docker push ${image_worker}:${RELEASE_NUM_ONLY}"
+                                }    
                             } else {
                                 // Update latest tag for Monthly release
                                 if (! params.PRE_RELEASE){
@@ -585,9 +590,12 @@ node {
                             if (is_lts_branch) {
                                 // Push LTS image tags
                                 sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:latest-lts"
-                                sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:${RELEASE_NUM_ONLY}"
                                 sh "docker push ${image_piwind}:latest-lts"
-                                sh "docker push ${image_piwind}:${RELEASE_NUM_ONLY}"
+
+                                if (RELEASE_NUM_ONLY?.trim()){
+                                    sh "docker tag ${image_piwind}:${env.TAG_RELEASE} ${image_piwind}:${RELEASE_NUM_ONLY}"
+                                    sh "docker push ${image_piwind}:${RELEASE_NUM_ONLY}"
+                                }
                             } else {
                                 // Update latest tag for Monthly release
                                 if (! params.PRE_RELEASE){
