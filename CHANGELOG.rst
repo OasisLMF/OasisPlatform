@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.26.2`_
+ ---------
+* [#645](https://github.com/OasisLMF/OasisPlatform/pull/666) - Add parquet support for piwind testing 
+* [#667](https://github.com/OasisLMF/OasisPlatform/pull/667) - Fix/CVE issues 1.26.1
+* [#647](https://github.com/OasisLMF/OasisPlatform/pull/654) - SettingsTemplateViewSet - Warning when starting server 
+.. _`1.26.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.26.0...1.26.2
+
 `1.26.0`_
  ---------
 * [#639](https://github.com/OasisLMF/OasisPlatform/pull/640) - CVE security cleanup 
