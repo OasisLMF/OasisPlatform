@@ -20,10 +20,10 @@ COPY --chown=worker:worker --from=build-packages /root/.local /home/worker/.loca
 
 # Copy in worker files
 WORKDIR /home/worker
+COPY --chown=worker:worker ./conf.ini ./
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/startup_tester.sh ./runtest
 COPY ./src/startup_tester_S3.sh ./runtest_S3
-COPY ./conf.ini ./
 COPY ./src/__init__.py ./src/
 COPY ./src/common ./src/common/
 COPY ./src/conf ./src/conf/
