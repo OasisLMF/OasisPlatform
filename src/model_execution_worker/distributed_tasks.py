@@ -503,8 +503,11 @@ def keys_generation_task(fn):
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
             maybe_fetch_file(scope_file, params['oed_scope_csv'], scope_subdir)
 
+        # Complex model lookup files
         if settings_file:
             maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
+        else:
+            params['lookup_complex_config_json'] = None
         if complex_data_files:
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
         else:
@@ -1081,8 +1084,8 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     logging.info("Task error handler")
     task_params = kwargs.get('args')[0]
     task_args = sender.request.kwargs
-    
-    # Store output log 
+
+    # Store output log
     task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
     if os.path.isfile(task_log_file):
         signature('subtask_error_log').delay(
@@ -1093,7 +1096,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
             filestore.put(task_log_file)
         )
 
-    # Wipe worker's remote data storage  
+    # Wipe worker's remote data storage
     keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
     dir_remote_data = task_params.get('storage_subdir')
     if not keep_remote_data:
