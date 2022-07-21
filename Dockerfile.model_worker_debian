@@ -13,7 +13,7 @@ RUN mkdir -p /var/oasis && \
     chmod 777 /var/log/oasis/worker.log
 RUN chown -R worker:worker /home/worker \
         /var/oasis \
-        /var/log \
+        /var \
         /shared-fs
 
 # User enviroment setup
