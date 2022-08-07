@@ -8,6 +8,7 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
+from natsort import natsorted
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -629,6 +630,9 @@ def prepare_keys_file_chunk(
     **kwargs
 ):
     with TemporaryDir() as chunk_target_dir:
+        chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx+1}')
+        Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
+
         _, lookup = OasisLookupFactory.create(
             lookup_config_fp=params['lookup_config_json'],
             model_keys_data_path=params['lookup_data_dir'],
@@ -658,17 +662,12 @@ def prepare_keys_file_chunk(
         # Store chunks
         storage_subdir = f'{run_data_uuid}/oasis-files'
         params['chunk_keys'] = filestore.put(
-            chunk_keys_fp,
-            filename=f'{chunk_idx}-keys-chunk.csv',
+            chunk_target_dir,
+            filename=f'lookup-{chunk_idx+1}.tar.gz',
             subdir=params['storage_subdir']
         )
-        params['chunk_keys_errors'] = filestore.put(
-            chunk_keys_errors_fp,
-            filename=f'{chunk_idx}-keys-error-chunk.csv',
-            subdir=params['storage_subdir']
-        )
-        params['log_location'] = filestore.put(kwargs.get('log_filename'))
 
+    params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return params
 
 
@@ -687,67 +686,55 @@ def collect_keys(
     chunk_params = {**params[0]}
     storage_subdir = chunk_params['storage_subdir']
     del chunk_params['chunk_keys']
-    del chunk_params['chunk_keys_errors']
 
-    chunk_keys = [d['chunk_keys'] for d in params]
-    chunk_errors = [d['chunk_keys_errors'] for d in params]
-    logging.info('chunk_keys: {}'.format(chunk_keys))
-    logging.info('chunk_errors: {}'.format(chunk_errors))
+    def merge_dataframes(paths, output_file, file_type, unique=False):
+        pd_read_func = getattr(pd, f"read_{file_type}")
+        df_chunks = [pd_read_func(p) for p in paths]
 
-    def load_dataframes(paths):
-        for p in paths:
-            try:
-                df = pd.read_csv(p)
-                yield df
-            except Exception:
-                logging.info('Failed to load chunk: {}'.format(p))
-                pass
+        # add opt for Select merge strat
+        df = pd.concat(df_chunks)
 
-    with TemporaryDir() as working_dir:
-        # Collect Keys
-        filelist_keys = [filestore.get(
-            chunk_idx,
-            working_dir,
-            subdir=storage_subdir,
-        ) for chunk_idx in chunk_keys]
+        if unique:
+            df.drop_duplicates(inplace=True, ignore_index=True)
+        pd_write_func = getattr(df, f"to_{file_type}")
+        pd_write_func(output_file, index=False)
 
-        # Collect keys-errors
-        filelist_errors = [filestore.get(
-            chunk_idx,
-            working_dir,
-            subdir=storage_subdir,
-        ) for chunk_idx in chunk_errors]
 
-        logging.info('filelist_keys: {}'.format(filelist_keys))
-        logging.info('filelist_errors: {}'.format(filelist_errors))
+    # Collect files and tar here from chunk_params['target_dir']
+    with TemporaryDir() as chunks_dir:
+        # extract chunks
+        chunk_tars = [d['chunk_keys'] for d in params]
+        for tar in chunk_tars:
+            extract_to = os.path.join(chunks_dir, os.path.basename(tar).split('.')[0])
+            filestore.extract(tar, extract_to, storage_subdir)
 
-        keys_frames = list(load_dataframes(filelist_keys))
-        if keys_frames:
-            keys = pd.concat(keys_frames)
-            keys_file = os.path.join(working_dir, 'keys.csv')
-            keys.to_csv(keys_file, index=False, encoding='utf-8')
 
-            chunk_params['keys_ref'] = filestore.put(
-                keys_file,
-                filename=f'keys.csv',
-                subdir=storage_subdir
+        file_paths = glob.glob(chunks_dir + '/lookup-[0-9]*/*') # paths for every file to merge  (inputs for merge)
+        file_names = set([ os.path.basename(f) for f in file_paths])            # unqiue filenames (output merged results)
+
+        with TemporaryDir() as merge_dir:
+            for file in file_names:
+                logging.info(f'Merging into file: "{file}"')
+
+                file_type = Path(file).suffix[1:]
+                file_chunks = [f for f in file_paths if f.endswith(file)]
+                file_merged = os.path.join(merge_dir, file)
+                file_chunks = natsorted(file_chunks)
+                file_unique_rows = True if file == 'ensemble_mapping.csv' else False
+
+                if file_type == 'csv':
+                    merge_dataframes(file_chunks, file_merged, file_type, file_unique_rows)
+                elif file_type == 'parquet':
+                    merge_dataframes(file_chunks, file_merged, file_type, file_unique_rows)
+                else:
+                    logging.info(f'No merge method for file: "{file}" --skipped--')
+
+            # store keys data
+            chunk_params['keys_data'] = filestore.put(
+                merge_dir,
+                filename=f'keys-data.tar.gz',
+                subdir=chunk_params['storage_subdir']
             )
-        else:
-            chunk_params['keys_ref'] = None
-
-        errors_frames = list(load_dataframes(filelist_errors))
-        if errors_frames:
-            keys_errors = pd.concat(errors_frames)
-            keys_errors_file = os.path.join(working_dir, 'keys-errors.csv')
-            keys_errors.to_csv(keys_errors_file, index=False, encoding='utf-8')
-
-            chunk_params['keys_error_ref'] = filestore.put(
-                keys_errors_file,
-                filename='keys-errors.csv',
-                subdir=storage_subdir
-            )
-        else:
-            chunk_params['keys_errors_ref'] = None
 
     chunk_params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return chunk_params
@@ -757,8 +744,9 @@ def collect_keys(
 @keys_generation_task
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     # Load Collected keys data
-    params['keys_data_csv'] = filestore.get(params['keys_ref'], params['target_dir'], subdir=params['storage_subdir'])
-    params['keys_errors_csv'] = filestore.get(params['keys_error_ref'], params['target_dir'], subdir=params['storage_subdir'])
+    filestore.extract(params['keys_data'], params['target_dir'], params['storage_subdir'])
+    params['keys_data_csv'] = os.path.join(params['target_dir'], 'keys.csv')
+    params['keys_errors_csv'] = os.path.join(params['target_dir'], 'keys-errors.csv')
     params['oasis_files_dir'] = params['target_dir']
     OasisManager().generate_files(**params)
 
@@ -1081,8 +1069,8 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     logging.info("Task error handler")
     task_params = kwargs.get('args')[0]
     task_args = sender.request.kwargs
-    
-    # Store output log 
+
+    # Store output log
     task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
     if os.path.isfile(task_log_file):
         signature('subtask_error_log').delay(
@@ -1093,7 +1081,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
             filestore.put(task_log_file)
         )
 
-    # Wipe worker's remote data storage  
+    # Wipe worker's remote data storage
     keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
     dir_remote_data = task_params.get('storage_subdir')
     if not keep_remote_data:

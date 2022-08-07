@@ -6,7 +6,10 @@
 #
 
 # Pin Oasislmf to 'develop' for pre-analysis-hook fix
-git+https://github.com/OasisLMF/OasisLMF.git@cdac665e103e0dd593f3063205b838993314c82a#egg=oasislmf[extra]
+#git+https://github.com/OasisLMF/OasisLMF.git@cdac665e103e0dd593f3063205b838993314c82a#egg=oasislmf[extra]
+git+https://github.com/OasisLMF/OasisLMF.git@testing/jba-debug#egg=oasislmf[extra]
+
+natsort==8.1.0
 
 amqp==5.1.0
     # via kombu
