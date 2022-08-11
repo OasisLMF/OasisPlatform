@@ -687,7 +687,7 @@ def collect_keys(
     storage_subdir = chunk_params['storage_subdir']
     del chunk_params['chunk_keys']
 
-    def merge_dataframes(paths, output_file, file_type, unique=False):
+    def merge_dataframes(paths, output_file, file_type, unique=True):
         pd_read_func = getattr(pd, f"read_{file_type}")
         df_chunks = [pd_read_func(p) for p in paths]
 
@@ -697,7 +697,7 @@ def collect_keys(
         if unique:
             df.drop_duplicates(inplace=True, ignore_index=True)
         pd_write_func = getattr(df, f"to_{file_type}")
-        pd_write_func(output_file, index=False)
+        pd_write_func(output_file, index=True)
 
 
     # Collect files and tar here from chunk_params['target_dir']
@@ -720,12 +720,12 @@ def collect_keys(
                 file_chunks = [f for f in file_paths if f.endswith(file)]
                 file_merged = os.path.join(merge_dir, file)
                 file_chunks = natsorted(file_chunks)
-                file_unique_rows = True if file == 'ensemble_mapping.csv' else False
+                #file_unique_rows = True if file == 'ensemble_mapping.csv' else False
 
                 if file_type == 'csv':
-                    merge_dataframes(file_chunks, file_merged, file_type, file_unique_rows)
+                    merge_dataframes(file_chunks, file_merged, file_type)
                 elif file_type == 'parquet':
-                    merge_dataframes(file_chunks, file_merged, file_type, file_unique_rows)
+                    merge_dataframes(file_chunks, file_merged, file_type)
                 else:
                     logging.info(f'No merge method for file: "{file}" --skipped--')
 
