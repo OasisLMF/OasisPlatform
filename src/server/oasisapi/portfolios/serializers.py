@@ -285,23 +285,35 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
         return super(PortfolioStorageSerializer, self).validate(attrs)
 
+    def inferr_content_type(self, stored_filename):
+        inferred_type = mimetypes.MimeTypes().guess_type(stored_filename)[0]
+        if not inferred_type and stored_filename.lower().endswith('parquet'):
+            # mimetypes dosn't work for parquet so handle that here
+            inferred_type = 'application/octet-stream'
+        if not inferred_type:
+            inferred_type = default_storage.default_content_type
+        return inferred_type
+
     def get_content_type(self, stored_filename):
         try: # fetch content_type stored in Django's DB
             return RelatedFile.objects.get(file=path.basename(stored_filename)).content_type
         except ObjectDoesNotExist:
-            try: # Find content_type from S3 Object header
-                object_header = default_storage.connection.meta.client.head_object(
-                    Bucket=default_storage.bucket_name,
-                    Key=stored_filename)
-                return object_header['ContentType']
-            except S3_ClientError:
-                inferred_type = mimetypes.MimeTypes().guess_type(stored_filename)[0]
-                if not inferred_type and stored_filename.lower().endswith('parquet'):
-                    # mimetypes dosn't work for parquet so handle that here
-                    inferred_type = 'application/octet-stream'
-                if not inferred_type:
-                    inferred_type = default_storage.default_content_type
-                return inferred_type
+            # Find content_type from S3 Object header
+            if hasattr(default_storage, 'bucket'):
+                try:
+                    object_header = default_storage.connection.meta.client.head_object(
+                        Bucket=default_storage.bucket_name,
+                        Key=stored_filename)
+                    return object_header['ContentType']
+                except S3_ClientError:
+                    return self.inferr_content_type(stored_filename)
+
+            #  Find content_type from Blob Storage
+            #elif hasattr(default_storage, 'azure_container'):
+            #     --- Add option to read content_type from blob store ---
+
+            else:
+                return self.inferr_content_type(stored_filename)
 
     def update(self, instance, validated_data):
         files_for_removal = list()
