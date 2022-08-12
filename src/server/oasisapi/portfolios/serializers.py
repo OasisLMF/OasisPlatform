@@ -1,4 +1,5 @@
 from os import path
+import mimetypes
 
 from botocore.exceptions import ClientError as S3_ClientError
 from django.contrib.auth.models import Group
@@ -293,9 +294,14 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     Bucket=default_storage.bucket_name,
                     Key=stored_filename)
                 return object_header['ContentType']
-            except ClientError:
-                # fallback to the default content_type
-                return default_storage.default_content_type
+            except S3_ClientError:
+                inferred_type = mimetypes.MimeTypes().guess_type(stored_filename)[0]
+                if not inferred_type and stored_filename.lower().endswith('parquet'):
+                    # mimetypes dosn't work for parquet so handle that here
+                    inferred_type = 'application/octet-stream'
+                if not inferred_type:
+                    inferred_type = default_storage.default_content_type
+                return inferred_type
 
     def update(self, instance, validated_data):
         files_for_removal = list()
