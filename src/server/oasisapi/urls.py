@@ -120,8 +120,10 @@ urlpatterns = [
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+
 if settings.URL_SUB_PATH:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns = [url(r'^api/', include(urlpatterns))]
 else:
     urlpatterns += static(settings.STATIC_DEBUG_URL, document_root=settings.STATIC_ROOT)
 

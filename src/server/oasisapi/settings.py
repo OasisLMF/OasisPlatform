@@ -251,7 +251,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Place the app in a sub path (swagger still available in /)
-FORCE_SCRIPT_NAME = '/api'
+#FORCE_SCRIPT_NAME = '/api/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/

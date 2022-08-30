@@ -5,7 +5,7 @@ volumes:
   filestore-OasisData:
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
-  OASIS_URL_SUB PATH: "false"
+  OASIS_URL_SUB_PATH: 0
   OASIS_CELERY_BROKER_URL: "amqp://rabbit:rabbit@broker:5672"
   #OASIS_CELERY_BROKER_URL: "redis://broker:6379"
   OASIS_SERVER_DB_HOST: server-db
@@ -26,9 +26,10 @@ x-shared-env: &shared-env
 x-volumes: &shared-volumes
   - filestore-OasisData:/shared-fs:rw
 services:
-  server:
+  server_http:
    restart: always
    image: coreoasis/api_server:dev
+   command: ["./wsgi/run-wsgi.sh"]
    build:
      context: .
      dockerfile: Dockerfile.api_server
@@ -44,6 +45,21 @@ services:
      STARTUP_RUN_MIGRATIONS: "true"
      OASIS_ADMIN_USER: admin
      OASIS_ADMIN_PASS: password
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+     - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
+  server_websocket:
+   restart: always
+   image: coreoasis/api_server:dev
+   command: ["./asgi/run-asgi.sh"]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   ports:
+     - 8001:8001
+   environment:
+     <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
