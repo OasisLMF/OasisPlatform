@@ -13,6 +13,9 @@ metadata:
 data:
   host: {{ if ($v.host) }}{{ $v.host }}{{ else }}{{ $v.name }}{{ end }}
   port: {{ $v.port | quote }}
+  {{- if $v.ssl }}  
+  ssl: {{ $v.ssl}}
+  {{- end }}
   {{- if $v.dbName }}
   dbName: {{ $v.dbName}}
   {{- end }}
