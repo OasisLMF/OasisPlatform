@@ -14,7 +14,7 @@ data:
   host: {{ if ($v.host) }}{{ $v.host }}{{ else }}{{ $v.name }}{{ end }}
   port: {{ $v.port | quote }}
   {{- if $v.ssl }}  
-  ssl: {{ $v.ssl}}
+  ssl: {{ $v.ssl | quote }}
   {{- end }}
   {{- if $v.dbName }}
   dbName: {{ $v.dbName}}
