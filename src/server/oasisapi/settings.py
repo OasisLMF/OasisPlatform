@@ -405,7 +405,7 @@ if CHANNEL_LAYER_SSL:
     channel_host = [{
         'address': f'rediss://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0',
         'ssl': ssl_context,
-    [{
+    }]
 else:
     channel_host = [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0']
 
