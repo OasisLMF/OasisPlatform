@@ -11,8 +11,9 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
-
 import sys
+import ssl
+
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
 import urllib
@@ -390,15 +391,31 @@ if IN_TEST:
     BROKER_URL = 'memory://'
     LOGGING['root'] = {}
 
+
+CHANNEL_LAYER_SSL  = iniconf.settings.getboolean('server', 'channel_layer_ssl', fallback=False)
 CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
 CHANNEL_LAYER_PASS = iniconf.settings.get('server', 'channel_layer_pass', fallback='')
 CHANNEL_LAYER_USER = iniconf.settings.get('server', 'channel_layer_user', fallback='')
 CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_port', fallback='6379')
+#CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_port', fallback='6379' if not CHANNEL_LAYER_SSL else '6380')
+
+if CHANNEL_LAYER_SSL:
+    ssl_context = ssl.SSLContext()
+    ssl_context.check_hostname = False
+    channel_host = [{
+        'address': f'rediss://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0',
+        'ssl': ssl_context,
+    [{
+else:
+    channel_host = [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0']
+
+
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0'],
+            'hosts': channel_host,
             'symmetric_encryption_keys': [SECRET_KEY],
             "capacity": 1500,
         },
