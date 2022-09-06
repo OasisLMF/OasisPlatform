@@ -107,6 +107,7 @@ databases:
     type: redis
     name: channel-layer
     port: 6379
+    ssl: false
   broker:
     type: rabbitmq
     name: broker
