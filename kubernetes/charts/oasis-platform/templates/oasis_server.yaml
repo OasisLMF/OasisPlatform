@@ -11,6 +11,18 @@ data:
   password: {{ include "h.password" (list .Values.oasisServer.name "password" . .Values.oasisServer.password (printf "A valid password for %s is required" .Values.oasisServer.name)) }}
 ---
 apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.oasisWebsocket.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+type: Opaque
+data:
+  user: {{ required (printf "A valid user for oasis api is required") .Values.oasisWebsocket.user | b64enc }}
+  password: {{ include "h.password" (list .Values.oasisWebsocket.name "password" . .Values.oasisWebsocket.password (printf "A valid password for %s is required" .Values.oasisWebsocket.name)) }}
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.oasisServer.name }}
@@ -19,6 +31,140 @@ metadata:
 data:
   host: {{ .Values.oasisServer.name }}
   port: "{{ .Values.oasisServer.port }}"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.oasisWebsocket.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+data:
+  host: {{ .Values.oasisWebsocket.name }}
+  port: "{{ .Values.oasisWebsocket.port }}"
+---  
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.oasisWebsocket.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.oasisWebsocket.port }}
+  selector:
+    app: {{ .Values.oasisWebsocket.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.oasisWebsocket.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.oasisWebsocket.name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "h.labels" . | nindent 8}}
+        app: {{ .Values.oasisWebsocket.name }}
+      annotations:
+        checksum/oasis-server: {{ toJson .Values.oasisWebsocket | sha256sum }}
+        checksum/{{ .Values.databases.oasis_db.name }}: {{ toJson .Values.databases.oasis_db | sha256sum }}
+        checksum/{{ .Values.databases.celery_db.name }}: {{ toJson .Values.databases.celery_db | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
+      containers:
+        - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          name: {{ .Values.oasisWebsocket.name }}
+          imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
+          env:
+            - name: OASIS_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisWebsocket.name }}
+                  key: user
+            - name: OASIS_ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisWebsocket.name }}
+                  key: password
+            {{- include "h.serverDbVars" . | indent 12}}
+            {{- include "h.celeryDbVars" . | indent 12}}
+            {{- include "h.brokerVars" . | indent 12 }}
+            {{- include "h.channelLayerVars" . | indent 12 }}
+            - name: STARTUP_RUN_MIGRATIONS
+              value: "true"
+            - name: OASIS_DEBUG
+              value: "1"
+            - name: OASIS_URL_SUB_PATH
+              value: "0"
+            - name: INGRESS_EXTERNAL_HOST
+              value: {{ .Values.ingress.uiHostname }}
+            - name: INGRESS_INTERNAL_HOST
+              value: {{ .Release.Name | lower }}-ingress-nginx-controller
+            {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
+            - name: OASIS_SERVER_API_AUTH_TYPE
+              value: keycloak
+            - name: OASIS_SERVER_OIDC_CLIENT_NAME
+              value: {{ .Values.oasisServer.oidc.clientName }}
+            - name: OASIS_SERVER_OIDC_CLIENT_SECRET
+              value: {{ .Values.oasisServer.oidc.clientSecret }}
+            - name: OASIS_SERVER_OIDC_ENDPOINT
+              value: {{ .Values.oasisServer.oidc.endpoint }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.oasisWebsocket.port }}
+              name: {{ .Values.oasisWebsocket.name }}
+          command: [ "./asgi/run-asgi.sh" ]    
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+{{- if (.Values.azure).secretProvider }}
+            - name: azure-secret-provider
+              mountPath: "/mnt/azure-secrets-store"
+              readOnly: true
+{{- end }}
+          startupProbe:
+            httpGet:
+              path: /healthcheck/
+              port: {{.Values.oasisWebsocket.port}}
+              scheme: HTTP
+            timeoutSeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthcheck/
+              port: {{.Values.oasisWebsocket.port}}
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 2
+      volumes:
+{{- if ((.Values.volumes.host).sharedFs) }}
+        - name: shared-fs-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.host.sharedFs.name }}
+{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
+        - name: shared-fs-persistent-storage
+{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
+{{- end }}
+{{- if (.Values.azure).secretProvider }}
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
