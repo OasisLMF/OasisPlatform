@@ -42,7 +42,6 @@ class check_log_permission(permissions.BasePermission):
         'run_log_file'
     ]
     def has_permission(self, request, view):
-        import ipdb; ipdb.set_trace()
         if not settings.RESTRICT_SYSTEM_LOGS: # are analyses log restricted?
             return True
         if request.user.has_perm('applications.admin_access'): # user is admin?
