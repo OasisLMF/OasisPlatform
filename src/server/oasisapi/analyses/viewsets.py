@@ -32,7 +32,7 @@ from ..schemas.serializers import AnalysisSettingsSerializer
 
 class LogAcessDenied(APIException):
     status_code = 403
-    default_detail = 'Only accounts with admin access are alowed to view system logs.'
+    default_detail = 'Only accounts with staff access are alowed to view system logs.'
     default_code = 'system logs disabled by admin'
 
 class check_log_permission(permissions.BasePermission):
@@ -44,7 +44,7 @@ class check_log_permission(permissions.BasePermission):
     def has_permission(self, request, view):
         if not settings.RESTRICT_SYSTEM_LOGS: # are analyses log restricted?
             return True
-        if request.user.has_perm('applications.admin_access'): # user is admin?
+        if request.user.is_staff: # user is admin?
             return True 
         # was it a system log message?    
         if view.action not in self.RESTRICTED_ACTIONS: # request for a log file?
