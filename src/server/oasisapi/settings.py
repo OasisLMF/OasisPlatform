@@ -130,6 +130,7 @@ TEMPLATES = [
 ]
 
 ASGI_APPLICATION = "src.server.oasisapi.asgi.application"
+WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 
 
 # Database
