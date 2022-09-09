@@ -23,6 +23,7 @@ ENV PATH=/root/.local/bin:$PATH
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_ENV_OVERRIDE=true
+ENV OASIS_CHECK_MISSING_INPUTS=true
 
 # Setup worker dir and user
 RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
