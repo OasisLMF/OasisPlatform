@@ -2,12 +2,17 @@ from __future__ import absolute_import
 
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
+from django.conf import settings
+
 from rest_framework import viewsets
+from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
+from rest_framework.exceptions import APIException
+
 from drf_yasg.utils import swagger_auto_schema
 from django_filters import rest_framework as filters
 from django_filters import NumberFilter
@@ -22,6 +27,30 @@ from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
 from ..schemas.custom_swagger import FILE_RESPONSE
 from ..schemas.serializers import AnalysisSettingsSerializer
+
+
+
+class LogAcessDenied(APIException):
+    status_code = 403
+    default_detail = 'Only accounts with staff access are alowed to view system logs.'
+    default_code = 'system logs disabled by admin'
+
+class check_log_permission(permissions.BasePermission):
+    RESTRICTED_ACTIONS = [
+        'input_generation_traceback_file',
+        'run_traceback_file',
+        'run_log_file'
+    ]
+    def has_permission(self, request, view):
+        if not settings.RESTRICT_SYSTEM_LOGS: # are analyses log restricted?
+            return True
+        if request.user.is_staff: # user is admin?
+            return True 
+        # was it a system log message?    
+        if view.action not in self.RESTRICTED_ACTIONS: # request for a log file?
+            return True
+        else:
+            raise LogAcessDenied
 
 
 class AnalysisFilter(TimeStampedFilter):
@@ -149,6 +178,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     queryset = Analysis.objects.all().select_related(*file_action_types).prefetch_related('complex_model_data_files')
     serializer_class = AnalysisSerializer
     filterset_class = AnalysisFilter
+    permission_classes = (permissions.IsAuthenticated, check_log_permission)
 
     file_action_types.append('set_settings_file')
 
