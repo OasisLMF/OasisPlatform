@@ -2,6 +2,7 @@ FROM python:3.8
 
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_ENV_OVERRIDE=true
+ENV OASIS_CHECK_MISSING_INPUTS=true
 
 RUN apt-get update && apt-get install -y --no-install-recommends git vim libspatialindex-dev && rm -rf /var/lib/apt/lists/*
 
