@@ -28,7 +28,9 @@ COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
 RUN chmod +x /usr/local/bin/startup /usr/local/bin/wait-for-it
 
 COPY ./asgi ./asgi
+COPY ./wsgi ./wsgi
 RUN chmod +x ./asgi/run-asgi.sh
+RUN chmod +x ./wsgi/run-wsgi.sh
 
 COPY ./conf.ini ./
 COPY manage.py .
@@ -46,4 +48,4 @@ COPY ./VERSION /var/www/oasis/VERSION
 EXPOSE 8000
 
 ENTRYPOINT ["startup"]
-CMD ["./asgi/run-asgi.sh"]
+CMD ["./wsgi/run-wsgi.sh"]
