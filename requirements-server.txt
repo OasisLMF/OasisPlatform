@@ -106,6 +106,8 @@ drf-yasg==1.20.0
     # via -r requirements-server.in
 greenlet==1.1.2
     # via sqlalchemy
+gunicorn==20.1.0
+    # via -r requirements-server.in
 hyperlink==21.0.0
     # via
     #   autobahn
