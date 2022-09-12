@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.13-lts`_
+ ---------
+* [#673, #684](https://github.com/OasisLMF/OasisPlatform/pull/691) - Added option to block log access for non-admin accounts
+* [#677](https://github.com/OasisLMF/OasisPlatform/pull/692) - Investigate - large file downloads failing from the azure hosted platform  
+* [#693](https://github.com/OasisLMF/OasisPlatform/pull/693) - Enable the check-missing-inputs in workers by default
+* [#694](https://github.com/OasisLMF/OasisPlatform/pull/694) - Update Django for CVE-2022-36359
+.. _`1.23.13-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.12-lts...1.23.13-lts
+
 `1.23.12-lts`_
  ---------
 * [#639](https://github.com/OasisLMF/OasisPlatform/pull/640) - CVE security cleanup 
