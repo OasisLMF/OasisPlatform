@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`1.26.3`_
+ ---------
+* [#673, #684](https://github.com/OasisLMF/OasisPlatform/pull/691) - Added option to block log access for non-admin accounts
+* [#677](https://github.com/OasisLMF/OasisPlatform/pull/692) - Investigate - large file downloads failing from the azure hosted platform  
+* [#693](https://github.com/OasisLMF/OasisPlatform/pull/693) - Enable the check-missing-inputs in workers by default
+* [#695](https://github.com/OasisLMF/OasisPlatform/pull/695) - Update Django for CVE-2022-36359
+.. _`1.26.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.26.2...1.26.3
+
 `1.26.2`_
  ---------
 * [#645](https://github.com/OasisLMF/OasisPlatform/pull/666) - Add parquet support for piwind testing 
