@@ -140,12 +140,14 @@ numpy==1.22
     #   scipy
 oasislmf[extra]==1.26.2
     # via -r requirements-worker.in
-oauthlib==3.2.0
+oauthlib==3.2.1
     # via requests-oauthlib
 ods-tools==2.3.1
     # via oasislmf
 packaging==21.3
-    # via pytest
+    # via
+    #   numexpr
+    #   pytest
 pandas==1.4.2
     # via
     #   fastparquet

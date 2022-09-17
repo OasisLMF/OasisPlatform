@@ -159,7 +159,7 @@ numpy==1.22
     # via
     #   pandas
     #   pyarrow
-oauthlib==3.2.0
+oauthlib==3.2.1
     # via requests-oauthlib
 ods-tools==2.3.1
     # via -r requirements-server.in
