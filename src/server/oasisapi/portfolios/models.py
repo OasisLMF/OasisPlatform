@@ -56,9 +56,10 @@ class Portfolio(TimeStampedModel):
     def location_file_len(self):
         csv_compression_types = {
             'text/csv': 'infer',
+            'application/vnd.ms-excel': 'infer',
             'application/gzip': 'gzip',
             'application/x-bzip2': 'bz2',
-            'application/zip': 'zip'
+            'application/zip': 'zip',
         }
         if not self.location_file:
             return None
