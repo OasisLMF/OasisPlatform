@@ -175,7 +175,7 @@ djangorestframework-simplejwt==5.0.0
     # via -r ./requirements-server.in
 drf-nested-routers==0.93.4
     # via -r ./requirements-server.in
-drf-yasg==1.20.0
+drf-yasg==1.21.4
     # via -r ./requirements-server.in
 fasteners==0.16.3
     # via
@@ -371,6 +371,7 @@ pytz==2021.3
     # via
     #   celery
     #   django
+    #   drf-yasg
     #   oasislmf
     #   pandas
 pyyaml==6.0

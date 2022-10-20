@@ -118,7 +118,7 @@ djangorestframework-simplejwt==5.0.0
     # via -r requirements-server.in
 drf-nested-routers==0.93.4
     # via -r requirements-server.in
-drf-yasg==1.20.0
+drf-yasg==1.21.4
     # via -r requirements-server.in
 greenlet==1.1.2
     # via sqlalchemy
@@ -205,6 +205,7 @@ pytz==2021.3
     # via
     #   celery
     #   django
+    #   drf-yasg
     #   pandas
 requests==2.26.0
     # via
