@@ -149,7 +149,7 @@ packaging==21.3
     # via
     #   numexpr
     #   pytest
-pandas==1.4.2
+pandas==1.5.1
     # via
     #   fastparquet
     #   geopandas

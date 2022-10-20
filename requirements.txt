@@ -288,7 +288,7 @@ packaging==21.3
     #   drf-yasg
     #   pytest
     #   tox
-pandas==1.4.2
+pandas==1.5.1
     # via
     #   -r ./requirements-server.in
     #   fastparquet
