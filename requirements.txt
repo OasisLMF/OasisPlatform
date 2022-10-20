@@ -38,8 +38,6 @@ azure-storage-blob==12.9.0
     # via
     #   -r ./requirements-worker.in
     #   django-storages
-backports-entry-points-selectable==1.1.1
-    # via virtualenv
 backports-tempfile==1.0
     # via -r requirements.in
 backports-weakref==1.0.post1
@@ -134,7 +132,7 @@ daphne==3.0.2
     # via
     #   -r ./requirements-server.in
     #   channels
-distlib==0.3.3
+distlib==0.3.6
     # via virtualenv
 django==3.2.16
     # via
@@ -184,7 +182,7 @@ fasteners==0.16.3
     #   -r requirements.in
 fastparquet==0.8.0
     # via oasislmf
-filelock==3.4.0
+filelock==3.8.0
     # via
     #   tox
     #   virtualenv
@@ -423,7 +421,6 @@ six==1.16.0
     #   python-dateutil
     #   service-identity
     #   tox
-    #   virtualenv
 sklearn==0.0
     # via oasislmf
 sortedcontainers==2.4.0
@@ -479,7 +476,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.10.0
+virtualenv==20.16.5
     # via tox
 waitress==2.1.2
     # via webtest
