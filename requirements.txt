@@ -117,7 +117,7 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-coverage[toml]==6.2
+coverage[toml]==6.5.0
     # via
     #   -r requirements.in
     #   pytest-cov
