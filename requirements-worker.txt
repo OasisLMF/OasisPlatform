@@ -17,11 +17,12 @@ attrs==21.2.0
     #   fiona
     #   jsonschema
     #   pytest
-azure-core==1.21.1
+azure-core==1.26.0
     # via
     #   -r requirements-worker.in
     #   azure-storage-blob
-azure-storage-blob==12.9.0
+    #   msrest
+azure-storage-blob==12.14.1
     # via -r requirements-worker.in
 billiard==3.6.4.0
     # via celery
@@ -118,7 +119,7 @@ markupsafe==2.0.1
     # via jinja2
 msgpack==1.0.3
     # via oasislmf
-msrest==0.6.21
+msrest==0.7.1
     # via azure-storage-blob
 munch==2.5.0
     # via fiona
@@ -244,6 +245,8 @@ toml==0.10.2
     # via pytest
 tqdm==4.62.3
     # via oasislmf
+typing-extensions==4.4.0
+    # via azure-core
 urllib3==1.26.7
     # via
     #   botocore

@@ -30,11 +30,12 @@ autobahn==21.11.1
     # via daphne
 automat==20.2.0
     # via twisted
-azure-core==1.21.1
+azure-core==1.26.0
     # via
     #   -r ./requirements-worker.in
     #   azure-storage-blob
-azure-storage-blob==12.9.0
+    #   msrest
+azure-storage-blob==12.14.1
     # via
     #   -r ./requirements-worker.in
     #   django-storages
@@ -254,7 +255,7 @@ model-mommy==2.0.0
     # via -r requirements.in
 msgpack==1.0.3
     # via oasislmf
-msrest==0.6.21
+msrest==0.7.1
     # via azure-storage-blob
 munch==2.5.0
     # via fiona
@@ -462,7 +463,9 @@ twisted[tls]==22.4.0
 txaio==21.2.1
     # via autobahn
 typing-extensions==4.0.1
-    # via twisted
+    # via
+    #   azure-core
+    #   twisted
 uritemplate==4.1.1
     # via
     #   coreapi

@@ -21,9 +21,11 @@ autobahn==21.11.1
     # via daphne
 automat==20.2.0
     # via twisted
-azure-core==1.21.1
-    # via azure-storage-blob
-azure-storage-blob==12.9.0
+azure-core==1.26.0
+    # via
+    #   azure-storage-blob
+    #   msrest
+azure-storage-blob==12.14.1
     # via django-storages
 billiard==3.6.4.0
     # via celery
@@ -155,7 +157,7 @@ markdown==3.3.6
     # via -r requirements-server.in
 markupsafe==2.0.1
     # via jinja2
-msrest==0.6.21
+msrest==0.7.1
     # via azure-storage-blob
 numpy==1.22
     # via
@@ -241,7 +243,9 @@ twisted[tls]==22.4.0
 txaio==21.2.1
     # via autobahn
 typing-extensions==4.0.1
-    # via twisted
+    # via
+    #   azure-core
+    #   twisted
 uritemplate==4.1.1
     # via
     #   coreapi
