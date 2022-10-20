@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements.in
 #
-amqp==5.0.6
+amqp==5.1.1
     # via kombu
 anytree==2.8.0
     # via oasislmf
@@ -58,7 +58,7 @@ botocore==1.23.20
     # via
     #   boto3
     #   s3transfer
-celery==5.2.2
+celery==5.2.7
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -240,7 +240,7 @@ jsonschema==4.2.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
-kombu==5.2.2
+kombu==5.2.4
     # via celery
 llvmlite==0.38.1
     # via numba
