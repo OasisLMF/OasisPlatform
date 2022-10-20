@@ -1,4 +1,8 @@
 pkg_list=(
+    joblib
+    oauthlib
+    parso
+    distlib
     ods-tools
     oasislmf
     'django==3.*'
