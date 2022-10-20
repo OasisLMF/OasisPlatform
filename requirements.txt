@@ -198,6 +198,8 @@ geopandas==0.10.2
     # via oasislmf
 greenlet==1.1.2
     # via sqlalchemy
+gunicorn==20.1.0
+    # via -r ./requirements-server.in
 hyperlink==21.0.0
     # via
     #   autobahn
@@ -278,7 +280,7 @@ oasislmf[extra]==1.26.2
     # via -r ./requirements-worker.in
 oauthlib==3.2.0
     # via requests-oauthlib
-ods-tools==2.3.1
+ods-tools==2.3.2
     # via
     #   -r ./requirements-server.in
     #   oasislmf
