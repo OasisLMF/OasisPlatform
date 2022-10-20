@@ -3,10 +3,13 @@ pkg_list=(
     joblib
     oauthlib
     parso
+    pandas
+    ruamel.yaml
     distlib
     ods-tools
     oasislmf
     'django==3.*'
+    django-celery-results
     'celery==5.*'
     virtualenv
     filelock
