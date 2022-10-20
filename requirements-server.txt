@@ -104,7 +104,7 @@ django-filter==21.1
     # via -r requirements-server.in
 django-model-utils==4.2.0
     # via -r requirements-server.in
-django-request-logging==0.7.3
+django-request-logging==0.7.5
     # via -r requirements-server.in
 django-storages[azure]==1.12.3
     # via -r requirements-server.in
