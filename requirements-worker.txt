@@ -208,7 +208,7 @@ rtree==0.9.7
     # via oasislmf
 s3transfer==0.5.0
     # via boto3
-scikit-learn==1.1.1
+scikit-learn==1.1.2
     # via sklearn
 scipy==1.9.3
     # via scikit-learn
