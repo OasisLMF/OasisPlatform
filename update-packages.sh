@@ -1,4 +1,5 @@
 pkg_list=(
+    sqlalchemy
     joblib
     oauthlib
     parso

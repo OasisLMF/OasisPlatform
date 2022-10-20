@@ -231,7 +231,7 @@ six==1.16.0
     #   python-dateutil
 sklearn==0.0
     # via oasislmf
-sqlalchemy==1.4.27
+sqlalchemy==1.4.42
     # via -r requirements-worker.in
 tabulate==0.8.9
     # via oasislmf

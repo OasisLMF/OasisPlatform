@@ -231,7 +231,7 @@ six==1.16.0
     #   pyopenssl
     #   python-dateutil
     #   service-identity
-sqlalchemy==1.4.27
+sqlalchemy==1.4.42
     # via -r requirements-server.in
 sqlparse==0.4.2
     # via
