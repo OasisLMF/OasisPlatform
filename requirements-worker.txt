@@ -160,7 +160,7 @@ pluggy==1.0.0
     # via pytest
 prompt-toolkit==3.0.23
     # via click-repl
-psycopg2-binary==2.9.2
+psycopg2-binary==2.9.4
     # via -r requirements-worker.in
 py==1.11.0
     # via pytest

@@ -175,7 +175,7 @@ pathlib2==2.3.6
     # via -r requirements-server.in
 prompt-toolkit==3.0.23
     # via click-repl
-psycopg2-binary==2.9.2
+psycopg2-binary==2.9.4
     # via -r requirements-server.in
 pyarrow==6.0.1
     # via -r requirements-server.in
