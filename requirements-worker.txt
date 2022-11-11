@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements-worker.in
 #
-amqp==5.0.6
+amqp==5.1.1
     # via kombu
 anytree==2.8.0
     # via oasislmf
@@ -17,11 +17,12 @@ attrs==21.2.0
     #   fiona
     #   jsonschema
     #   pytest
-azure-core==1.21.1
+azure-core==1.26.0
     # via
     #   -r requirements-worker.in
     #   azure-storage-blob
-azure-storage-blob==12.9.0
+    #   msrest
+azure-storage-blob==12.14.1
     # via -r requirements-worker.in
 billiard==3.6.4.0
     # via celery
@@ -33,7 +34,7 @@ botocore==1.23.20
     # via
     #   boto3
     #   s3transfer
-celery==5.2.2
+celery==5.2.7
     # via -r requirements-worker.in
 certifi==2021.10.8
     # via
@@ -106,11 +107,11 @@ jmespath==0.10.0
     # via
     #   boto3
     #   botocore
-joblib==1.1.0
+joblib==1.2.0
     # via scikit-learn
 jsonschema==4.2.1
     # via oasislmf
-kombu==5.2.2
+kombu==5.2.4
     # via celery
 llvmlite==0.38.1
     # via numba
@@ -118,7 +119,7 @@ markupsafe==2.0.1
     # via jinja2
 msgpack==1.0.3
     # via oasislmf
-msrest==0.6.21
+msrest==0.7.1
     # via azure-storage-blob
 munch==2.5.0
     # via fiona
@@ -128,7 +129,7 @@ numba==0.55.2
     #   oasislmf
 numexpr==2.8.1
     # via oasislmf
-numpy==1.22
+numpy==1.22.4
     # via
     #   fastparquet
     #   numba
@@ -138,15 +139,17 @@ numpy==1.22
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.26.2
+oasislmf[extra]==1.26.3
     # via -r requirements-worker.in
-oauthlib==3.2.0
+oauthlib==3.2.2
     # via requests-oauthlib
-ods-tools==2.3.1
+ods-tools==2.3.2
     # via oasislmf
 packaging==21.3
-    # via pytest
-pandas==1.4.2
+    # via
+    #   numexpr
+    #   pytest
+pandas==1.5.1
     # via
     #   fastparquet
     #   geopandas
@@ -157,7 +160,7 @@ pluggy==1.0.0
     # via pytest
 prompt-toolkit==3.0.23
     # via click-repl
-psycopg2-binary==2.9.2
+psycopg2-binary==2.9.4
     # via -r requirements-worker.in
 py==1.11.0
     # via pytest
@@ -205,9 +208,9 @@ rtree==0.9.7
     # via oasislmf
 s3transfer==0.5.0
     # via boto3
-scikit-learn==1.1.1
+scikit-learn==1.1.2
     # via sklearn
-scipy==1.8.1
+scipy==1.9.3
     # via scikit-learn
 shapely==1.8.2
     # via
@@ -228,7 +231,7 @@ six==1.16.0
     #   python-dateutil
 sklearn==0.0
     # via oasislmf
-sqlalchemy==1.4.27
+sqlalchemy==1.4.42
     # via -r requirements-worker.in
 tabulate==0.8.9
     # via oasislmf
@@ -242,6 +245,8 @@ toml==0.10.2
     # via pytest
 tqdm==4.62.3
     # via oasislmf
+typing-extensions==4.4.0
+    # via azure-core
 urllib3==1.26.7
     # via
     #   botocore
