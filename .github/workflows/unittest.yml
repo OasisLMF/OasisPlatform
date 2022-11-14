@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python ${{ matrix.cfg.python-version }}
+    - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
         python-version: 3.8
@@ -29,8 +29,8 @@ jobs:
    # - name: Install dev requirments
    #   run: pip install -r ./requirements.txt
 
-   # - name: Run Tox
-   #   run: tox -e py
+    - name: Run Tox
+      run: tox -e py
 
     - name: Generate Report
       uses: dorny/test-reporter@v1
