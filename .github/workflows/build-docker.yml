@@ -36,9 +36,15 @@ on:
         type: string
 
     outputs:
+      server_image:
+        description:
+        value:  ${{ jobs.server.outputs.image }}
       worker_image:
         description:
         value:  ${{ jobs.worker.outputs.image }}
+      worker_deb_image:
+        description:
+        value:  ${{ jobs.worker_deb.outputs.image }}
         # https://purple.telstra.com/blog/github-action-test-matrices-part2
         # https://docs.github.com/en/actions/learn-github-actions/contexts
 
@@ -54,7 +60,6 @@ jobs:
     strategy:
       matrix:
         image: [worker, worker_deb, server]
-        #image: [worker, worker_deb, server, piwind]
         include:
 
         - image: worker
@@ -73,12 +78,6 @@ jobs:
           tag: 'api_server-${{ github.sha }}'
           file: 'Dockerfile.api_server'
           report: 'server-scan.sarif'
-          severity: 'CRITICAL,HIGH'
-
-        - image: piwind
-          tag: 'oasisui_proxy-${{ github.sha }}'
-          file: 'docker/Dockerfile.piwind_worker'
-          report: 'piwind-scan.sarif'
           severity: 'CRITICAL,HIGH'
 
     outputs:
