@@ -1,0 +1,35 @@
+name: Platform PyTest
+
+on:
+  push:
+
+jobs:
+  unittest:
+    env:
+      JUNIT_REPORT: pytest_report.xml
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+
+    #Fail JOB if runner dosn't match dockerfiles ?
+    #- name: 
+
+    # mimic python version from dockerfile
+    - name: Set up Python ${{ matrix.cfg.python-version }}
+      run: |
+        apt-get update  && apt-get upgrade -y
+        apt-get install -y --no-install-recommends python3 python3-pip
+
+    - name: Install dev requirments
+      run: pip install -r ./requirements.txt
+
+    - name: Run Tox
+      run: tox -e py
+
+    - name: Generate Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()    # run this step even if previous step failed
+      with:
+        name: JEST Tests                      # Name of the check run which will be created
+        path: ${{ env.pytest_report.xml }}    # Path to test results
+        reporter: jest-junit                  # Format of test results
