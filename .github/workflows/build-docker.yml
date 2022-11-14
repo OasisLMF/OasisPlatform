@@ -51,7 +51,7 @@ on:
 jobs:
   build:
     env:
-      REPO: 'coreoasis/github-actions'
+      IMAGE_REPO: 'coreoasis/github-actions'
       DOCKER_PUSH: 'false'
       IGNORE_UNFIXED: 'true'
       SEVERITY: 'CRITICAL,HIGH'
@@ -79,8 +79,7 @@ jobs:
           tag: 'model_worker-deb-${{ github.sha }}'
           file: 'Dockerfile.model_worker_debian'
           report: 'worker-deb-scan.sarif'
-          exit-code: '0' # scan but don't fail 
-
+          exit-code: '0' # scan but don't fail
 
     outputs:
       image: ${{ steps.docker_push.outputs.image }}
