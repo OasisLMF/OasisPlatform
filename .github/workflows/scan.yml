@@ -34,6 +34,9 @@ jobs:
       IGNORE_UNFIXED: 'true'
     runs-on: ubuntu-latest
     steps:
+    - name: Adding code-scanning URL
+      run: echo ‘### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }})’ >> $GITHUB_STEP_SUMMARY
+
     - name: Set inputs
       if: github.event_name != 'push'
       run: |
@@ -69,6 +72,7 @@ jobs:
         name: ${{ env.REPORT }}
         path: ${{ env.REPORT }}
         retention-days: 3
+
 
   scan_worker:
     name: Scan worker
@@ -176,9 +180,3 @@ jobs:
         path: ${{ env.REPORT }}
         retention-days: 3
 
-  run_summary:
-    name: Code scanning result URL
-    runs-on: ubuntu-latest
-    steps:
-    - name: Adding code-scanning URL
-      run: echo ‘### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }}’ >> $GITHUB_STEP_SUMMARY
