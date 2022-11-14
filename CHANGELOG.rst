@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#713](https://github.com/OasisLMF/OasisPlatform/pull/713) -  CVE fixes 1.26.x
+.. _`1.26.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.26.3...1.26.4
+
 `1.26.3`_
  ---------
 * [#673, #684](https://github.com/OasisLMF/OasisPlatform/pull/691) - Added option to block log access for non-admin accounts
