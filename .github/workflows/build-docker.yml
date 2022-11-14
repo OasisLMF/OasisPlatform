@@ -105,7 +105,7 @@ jobs:
     - name: Docker Build ${{ matrix.image }}
       run: |
         echo "Build from Branch ${{ github.ref_name }}"
-        docker build -f ${{ matrix.file }} --pull -t ${{ env.REPO }}:${{ matrix.tag }} .
+        docker build -f ${{ matrix.file }} --pull -t ${{ env.IMAGE_REPO }}:${{ matrix.tag }} .
 
     - name: Vulnerability scanner
       if: env.SEVERITY != ''
