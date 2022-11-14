@@ -53,7 +53,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image: [worker, worker_deb, server, piwind]
+        image: [worker, worker_deb, server]
+        #image: [worker, worker_deb, server, piwind]
         include:
 
         - image: worker
