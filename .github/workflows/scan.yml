@@ -15,7 +15,8 @@ on:
 #    inputs:
 
 jobs:
-  Scan Repo:
+  scan_repo:
+    name: Scan Repo
     env:
       SEVERITY: 'CRITICAL,HIGH'
     runs-on: ubuntu-latest
