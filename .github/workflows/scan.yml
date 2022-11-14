@@ -1,27 +1,46 @@
 name:  Platform Scan Repo
 
-
 on:
   push:
-#  workflow_dispatch:
-#    inputs:
-#      docker_push:
-#        description: 'Push the docker image to dockerhub and outout reference'
-#        required: false
-#        default: 'false'
+  workflow_dispatch:
+    inputs:
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+        required: false
+        default: 'CRITICAL,HIGH,MEDIUM'
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: false
+        default: 'true'
 
-
-#  workflow_call:
-#    inputs:
+  workflow_call:
+    inputs:
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+        required: false
+        default: 'CRITICAL,HIGH,MEDIUM'
+        type: string
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: false
+        default: 'true'
+        type: string
 
 jobs:
   scan_repo:
     name: Scan Repo
     env:
-      SEVERITY: 'CRITICAL,HIGH'
+      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
       REPORT: 'repo-results.sarif'
+      IGNORE_UNFIXED: 'true'
     runs-on: ubuntu-latest
     steps:
+    - name: Set inputs
+      if: github.event_name != 'push'
+      run: |
+        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
+        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
+
     - name: Checkout code
       uses: actions/checkout@v3
 
@@ -33,18 +52,19 @@ jobs:
         output:  ${{ env.REPORT }}
         scan-type: 'fs'
         exit-code: '1'
-        ignore-unfixed: true
-        #severity: ${{ env.SEVERITY }}
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
 
     - name: Upload Trivy scan results to GitHub Security tab
-      if: always()
+      if: success() || failure()
+
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file:  ${{ env.REPORT }}
 
     - name: Store CVE report
-      if: always()
+      if: success() || failure()
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.REPORT }}
@@ -54,11 +74,18 @@ jobs:
   scan_worker:
     name: Scan worker
     env:
-      SEVERITY: 'CRITICAL,HIGH'
+      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
       REPORT: 'worker-results.sarif'
       REQU_FILE: 'requirements-worker.txt'
+      IGNORE_UNFIXED: 'true'
     runs-on: ubuntu-latest
     steps:
+    - name: Set inputs
+      if: github.event_name != 'push'
+      run: |
+        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
+        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
+
     - name: Checkout code
       uses: actions/checkout@v3
 
@@ -75,22 +102,22 @@ jobs:
         output: ${{ env.REPORT }}
         scan-type: 'fs'
         exit-code: '1'
-        ignore-unfixed: true
-        #severity: ${{ env.SEVERITY }}
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
 
     - name: Rename requirments file in report
-      if: always()
+      if: success() || failure()
       run: sed -i "s|requirements.txt|${{ env.REQU_FILE }}|g" ${{ env.REPORT }}
 
     - name: Upload Trivy scan results to GitHub Security tab
-      if: always()
+      if: success() || failure()
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: ${{ env.REPORT }}
 
     - name: Store report
-      if: always()
+      if: success() || failure()
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.REPORT }}
@@ -100,11 +127,18 @@ jobs:
   scan_server:
     name: Scan Server
     env:
-      SEVERITY: 'CRITICAL,HIGH'
+      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
       REPORT: 'server-results.sarif'
       REQU_FILE: 'requirements-server.txt'
+      IGNORE_UNFIXED: 'true'
     runs-on: ubuntu-latest
     steps:
+    - name: Set inputs
+      if: github.event_name != 'push'
+      run: |
+        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
+        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
+
     - name: Checkout code
       uses: actions/checkout@v3
 
@@ -121,28 +155,31 @@ jobs:
         output: ${{ env.REPORT }}
         scan-type: 'fs'
         exit-code: '1'
-        ignore-unfixed: true
-        #severity: ${{ env.SEVERITY }}
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
 
     - name: Rename requirments file in report
-      if: always()
+      if: success() || failure()
       run: sed -i "s|requirements.txt|${{ env.REQU_FILE }}|g" ${{ env.REPORT }}
 
     - name: Upload Trivy scan results to GitHub Security tab
-      if: always()
+      if: success() || failure()
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: ${{ env.REPORT }}
 
     - name: Store report
-      if: always()
+      if: success() || failure()
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.REPORT }}
         path: ${{ env.REPORT }}
         retention-days: 3
 
-#    - name: Attach link to job summary
-
-# https://github.com/OasisLMF/OasisPlatform/security/code-scanning?query=branch%3A{ -- branch name --}
+  run_summary:
+    name: Code scanning result URL
+    runs-on: ubuntu-latest
+    steps:
+   - name: Adding code-scanning URL
+     run: echo ‘### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }}’ >> $GITHUB_STEP_SUMMARY
