@@ -19,28 +19,128 @@ jobs:
     name: Scan Repo
     env:
       SEVERITY: 'CRITICAL,HIGH'
+      REPORT: 'trivy-repo-results.sarif'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Trivy vulnerability scanner
+    - name: Trivy vulnerability scanner (Repo)
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
         format: 'sarif'
-        output: 'trivy-repo-results.sarif'
+        output:  ${{ env.REPORT }}
         scan-type: 'fs'
         exit-code: '1'
         ignore-unfixed: true
-        severity: ${{ env.SEVERITY }}
+        #severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
 
     - name: Upload Trivy scan results to GitHub Security tab
       if: always()
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: 'trivy-repo-results.sarif'
+        sarif_file:  ${{ env.REPORT }}
 
+    - name: Store CVE report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.REPORT }}
+        path: ${{ env.REPORT }}
+        retention-days: 3
 
+  scan_worker:
+    name: Scan worker
+    env:
+      SEVERITY: 'CRITICAL,HIGH'
+      REPORT: 'worker-results.sarif'
+      REQU_FILE: 'requirements-worker.txt'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
+    - name: Switch requirments file
+      run: |
+        rm requirements.txt
+        cp ${{ env.REQU_FILE }} requirements.txt
+
+    - name: Trivy vulnerability scanner (Repo)
+      if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        format: 'sarif'
+        output: ${{ env.REPORT }}
+        scan-type: 'fs'
+        exit-code: '1'
+        ignore-unfixed: true
+        #severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+
+    - name: Rename requirments file in report
+      run: sed -i "s|requirements.txt|${{ env.REPORT }}|g" results.sarif
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      if: always()
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ${{ env.REPORT }}
+
+    - name: Store CVE report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.REPORT }}
+        path: ${{ env.REPORT }}
+        retention-days: 3
+
+  scan_server:
+    name: Scan worker
+    env:
+      SEVERITY: 'CRITICAL,HIGH'
+      REPORT: 'server-results.sarif'
+      REQU_FILE: 'requirements-server.txt'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Switch requirments file
+      run: |
+        rm requirements.txt
+        cp ${{ env.REQU_FILE }} requirements.txt
+
+    - name: Trivy vulnerability scanner (Repo)
+      if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        format: 'sarif'
+        output: ${{ env.REPORT }}
+        scan-type: 'fs'
+        exit-code: '1'
+        ignore-unfixed: true
+        #severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+
+    - name: Rename requirments file in report
+      run: sed -i "s|requirements.txt|${{ env.REPORT }}|g" results.sarif
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      if: always()
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ${{ env.REPORT }}
+
+    - name: Store CVE report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.REPORT }}
+        path: ${{ env.REPORT }}
+        retention-days: 3
+
+#    - name: Attach link to job summary
+
+# https://github.com/OasisLMF/OasisPlatform/security/code-scanning?query=branch%3A{ -- branch name --}
