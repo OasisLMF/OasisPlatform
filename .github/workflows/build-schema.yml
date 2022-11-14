@@ -28,7 +28,7 @@ jobs:
     - name: Store OpenAPI schema 
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ env.SCHEMA }}
+        name: openapi-schema
         path: ${{ env.SCHEMA }}
         retention-days: 3
 
