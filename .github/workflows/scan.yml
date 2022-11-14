@@ -81,7 +81,7 @@ jobs:
 
     - name: Rename requirments file in report
       if: always()
-      run: sed -i "s|requirements.txt|${{ env.REPORT }}|g" results.sarif
+      run: sed -i "s|requirements.txt|${{ env.REQU_FILE }}|g" ${{ env.REPORT }}
 
     - name: Upload Trivy scan results to GitHub Security tab
       if: always()
@@ -127,7 +127,7 @@ jobs:
 
     - name: Rename requirments file in report
       if: always()
-      run: sed -i "s|requirements.txt|${{ env.REPORT }}|g" results.sarif
+      run: sed -i "s|requirements.txt|${{ env.REQU_FILE }}|g" ${{ env.REPORT }}
 
     - name: Upload Trivy scan results to GitHub Security tab
       if: always()
