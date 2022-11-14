@@ -1,0 +1,153 @@
+name: Platform Build
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      docker_push:
+        description: 'Push the docker image to dockerhub and outout reference'
+        required: true
+        default: 'false'
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: true
+        default: 'true'
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+        required: false
+        default: 'CRITICAL,HIGH'
+
+  workflow_call:
+    inputs:
+      docker_push:
+        description: 'Push the docker image to dockerhub and outout reference'
+        required: true
+        default: 'false'
+        type: string
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: true
+        default: 'true'
+        type: string
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, fails build if any found'
+        required: false
+        default: 'CRITICAL,HIGH'
+        type: string
+
+    outputs:
+      image:
+        description:
+        value:  ${{ steps.docker_push.outputs.image }}
+        # https://purple.telstra.com/blog/github-action-test-matrices-part2
+        # https://docs.github.com/en/actions/learn-github-actions/contexts
+
+jobs:
+  build:
+    env:
+      REPO: 'coreoasis/github-actions'
+      DOCKER_PUSH: 'false'
+      IGNORE_UNFIXED: 'true'
+
+    name: Docker build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: [worker, worker_deb, server, piwind]
+        include:
+
+        - image: worker
+          tag: 'model_worker-${{ github.sha }}'
+          file: 'Dockerfile.model_worker'
+          report: 'worker-scan.sarif'
+          severity: 'CRITICAL,HIGH'
+
+        - image: worker_deb
+          tag: 'model_worker-deb-${{ github.sha }}'
+          file: 'Dockerfile.model_worker_debian'
+          report: 'worker-deb-scan.sarif'
+          severity: ''
+
+        - image: server
+          tag: 'api_server-${{ github.sha }}'
+          file: 'Dockerfile.api_server'
+          report: 'server-scan.sarif'
+          severity: 'CRITICAL,HIGH'
+
+        - image: piwind
+          tag: 'oasisui_proxy-${{ github.sha }}'
+          file: 'docker/Dockerfile.piwind_worker'
+          report: 'piwind-scan.sarif'
+          severity: 'CRITICAL,HIGH'
+
+    steps:
+
+    - name: Set inputs ${{ github.event_name }}
+      if: github.event_name != 'push'
+      run: |
+        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
+        echo "DOCKER_PUSH=${{ inputs.docker_push }}" >> $GITHUB_ENV
+        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
+
+    - name: Set inputs ${{ github.event_name }}
+      if: github.event_name == 'push'
+      run: |
+        echo "SEVERITY=${{ matrix.severity }}" >> $GITHUB_ENV
+
+    - name: Github context
+      run:   echo "$GITHUB_CONTEXT"
+      shell: bash
+      env:
+       GITHUB_CONTEXT: ${{ toJson(github) }}
+
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref_name }}
+
+    - name: Docker Build ${{ matrix.image }}
+      run: |
+        echo "Build from Branch ${{ github.ref_name }}"
+        docker build -f ${{ matrix.file }} --pull -t ${{ env.REPO }}:${{ matrix.tag }} .
+
+    - name: Vulnerability scanner
+      if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+        format: 'sarif'
+        output: ${{ matrix.report }}
+        scan-type: 'image'
+        exit-code: '1'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln'
+
+    - name: Upload scan results to Security tab
+      if: success() || failure()
+
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file:  ${{ matrix.report }}
+
+    - name: Store CVE report
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.report }}
+        path: ${{ matrix.report }}
+        retention-days: 3
+
+
+    - name: Login to Docker Hub
+      if: inputs.docker_push == 'true'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Docker push
+      id: docker_push
+      if: env.DOCKER_PUSH == 'true'
+      run: |
+        docker push ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+        echo "image=${{ env.IMAGE_REPO }}:${{ matrix.tag }}" >> $GITHUB_OUTPUT
