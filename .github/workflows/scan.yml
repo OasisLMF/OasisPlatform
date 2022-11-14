@@ -19,7 +19,7 @@ jobs:
     name: Scan Repo
     env:
       SEVERITY: 'CRITICAL,HIGH'
-      REPORT: 'trivy-repo-results.sarif'
+      REPORT: 'repo-results.sarif'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -67,7 +67,7 @@ jobs:
         rm requirements.txt
         cp ${{ env.REQU_FILE }} requirements.txt
 
-    - name: Trivy vulnerability scanner (Repo)
+    - name: Vulnerability scanner
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
@@ -80,6 +80,7 @@ jobs:
         security-checks: 'vuln,config,secret'
 
     - name: Rename requirments file in report
+      if: always()
       run: sed -i "s|requirements.txt|${{ env.REPORT }}|g" results.sarif
 
     - name: Upload Trivy scan results to GitHub Security tab
@@ -88,7 +89,7 @@ jobs:
       with:
         sarif_file: ${{ env.REPORT }}
 
-    - name: Store CVE report
+    - name: Store report
       if: always()
       uses: actions/upload-artifact@v3
       with:
@@ -97,7 +98,7 @@ jobs:
         retention-days: 3
 
   scan_server:
-    name: Scan worker
+    name: Scan Server
     env:
       SEVERITY: 'CRITICAL,HIGH'
       REPORT: 'server-results.sarif'
@@ -112,7 +113,7 @@ jobs:
         rm requirements.txt
         cp ${{ env.REQU_FILE }} requirements.txt
 
-    - name: Trivy vulnerability scanner (Repo)
+    - name: Vulnerability scanner
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
@@ -125,6 +126,7 @@ jobs:
         security-checks: 'vuln,config,secret'
 
     - name: Rename requirments file in report
+      if: always()
       run: sed -i "s|requirements.txt|${{ env.REPORT }}|g" results.sarif
 
     - name: Upload Trivy scan results to GitHub Security tab
@@ -133,7 +135,7 @@ jobs:
       with:
         sarif_file: ${{ env.REPORT }}
 
-    - name: Store CVE report
+    - name: Store report
       if: always()
       uses: actions/upload-artifact@v3
       with:
