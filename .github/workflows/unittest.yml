@@ -17,8 +17,8 @@ jobs:
     # mimic python version from dockerfile
     - name: Set up Python ${{ matrix.cfg.python-version }}
       run: |
-        apt-get update  && apt-get upgrade -y
-        apt-get install -y --no-install-recommends python3 python3-pip
+        sudo apt-get update  && sudo apt-get upgrade -y
+        sudo apt-get install -y --no-install-recommends python3 python3-pip
 
     - name: Install dev requirments
       run: pip install -r ./requirements.txt
