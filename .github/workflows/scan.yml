@@ -1,0 +1,42 @@
+name:  Platform Scan Repo 
+
+
+on:
+  push:
+#  workflow_dispatch:
+#    inputs:
+#      docker_push:
+#        description: 'Push the docker image to dockerhub and outout reference'
+#        required: false
+#        default: 'false'
+
+
+#  workflow_call:
+#    inputs:
+
+jobs:
+  scan_repo:
+    env:
+      SEVERITY: 'CRITICAL,HIGH'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Trivy vulnerability scanner
+      if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        format: 'sarif'
+        output: 'trivy-repo-results.sarif'
+        scan-type: 'fs'
+        exit-code: '1'
+        ignore-unfixed: true
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-repo-results.sarif'
+
+
+
