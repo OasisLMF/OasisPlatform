@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#712](https://github.com/OasisLMF/OasisPlatform/pull/712) - Update pinned packages
+.. _`1.23.14-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.13-lts...1.23.14-lts
+
 `1.23.13-lts`_
  ---------
 * [#673, #684](https://github.com/OasisLMF/OasisPlatform/pull/691) - Added option to block log access for non-admin accounts
