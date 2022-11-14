@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Adding code-scanning URL
-      run: echo ‘### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }})’ >> $GITHUB_STEP_SUMMARY
+      run: echo "### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
 
     - name: Set inputs
       if: github.event_name != 'push'
