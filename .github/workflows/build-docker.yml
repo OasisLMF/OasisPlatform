@@ -36,9 +36,9 @@ on:
         type: string
 
     outputs:
-      image:
+      worker_image:
         description:
-        value:  ${{ steps.docker_push.outputs.image }}
+        value:  ${{ jobs.worker.outputs.image }}
         # https://purple.telstra.com/blog/github-action-test-matrices-part2
         # https://docs.github.com/en/actions/learn-github-actions/contexts
 
@@ -80,8 +80,10 @@ jobs:
           report: 'piwind-scan.sarif'
           severity: 'CRITICAL,HIGH'
 
-    steps:
+    outputs:
+      image: ${{ steps.docker_push.outputs.image }}
 
+    steps:
     - name: Set inputs ${{ github.event_name }}
       if: github.event_name != 'push'
       run: |
