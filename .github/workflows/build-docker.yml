@@ -107,6 +107,16 @@ jobs:
         echo "Build from Branch ${{ github.ref_name }}"
         docker build -f ${{ matrix.file }} --pull -t ${{ env.IMAGE_REPO }}:${{ matrix.tag }} .
 
+    - name: set Dive rules
+      run: echo "rules:\n  lowestEfficiency: 0.95\n  highestWastedBytes: 20MB\n  highestUserWastedPercent: 0.20" > dive-ci.yml
+
+    - name: Dive
+        uses: yuichielectric/dive-action@0.0.4
+        with:
+          image: "${{ env.IMAGE_REPO }}:${{ matrix.tag }}"
+          config-file: ${{ github.workspace }}/.dive-ci.yml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Vulnerability scanner
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
