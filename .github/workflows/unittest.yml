@@ -11,20 +11,26 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    #Fail JOB if runner dosn't match dockerfiles ?
-    #- name: 
-
-    # mimic python version from dockerfile
     - name: Set up Python ${{ matrix.cfg.python-version }}
-      run: |
-        sudo apt-get update  && sudo apt-get upgrade -y
-        sudo apt-get install -y --no-install-recommends python3 python3-pip
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
 
-    - name: Install dev requirments
-      run: pip install -r ./requirements.txt
 
-    - name: Run Tox
-      run: tox -e py
+    #Fail JOB if runner dosn't match dockerfiles ?
+    #- name:
+
+   # # mimic python version from dockerfile
+   # - name: Set up Python ${{ matrix.cfg.python-version }}
+   #   run: |
+   #     sudo apt-get update  && sudo apt-get upgrade -y
+   #     sudo apt-get install -y --no-install-recommends python3 python3-pip
+
+   # - name: Install dev requirments
+   #   run: pip install -r ./requirements.txt
+
+   # - name: Run Tox
+   #   run: tox -e py
 
     - name: Generate Report
       uses: dorny/test-reporter@v1
