@@ -15,11 +15,14 @@ on:
 #    inputs:
 
 jobs:
-  scan_repo:
+  Scan Repo:
     env:
       SEVERITY: 'CRITICAL,HIGH'
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - name: Trivy vulnerability scanner
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
