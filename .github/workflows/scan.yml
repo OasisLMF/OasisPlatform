@@ -1,4 +1,4 @@
-name:  Platform Scan Repo 
+name:  Platform Scan Repo
 
 
 on:
@@ -32,11 +32,11 @@ jobs:
         severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        if: always()
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-repo-results.sarif'
+    - name: Upload Trivy scan results to GitHub Security tab
+      if: always()
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-repo-results.sarif'
 
 
 
