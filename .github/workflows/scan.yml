@@ -12,7 +12,6 @@ on:
         description: 'Include unfixed vulnerabilities in scan [true,false]'
         required: false
         default: 'true'
-
   workflow_call:
     inputs:
       cve_severity:
@@ -181,5 +180,5 @@ jobs:
     name: Code scanning result URL
     runs-on: ubuntu-latest
     steps:
-   - name: Adding code-scanning URL
-     run: echo ‘### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }}’ >> $GITHUB_STEP_SUMMARY
+    - name: Adding code-scanning URL
+      run: echo ‘### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }}’ >> $GITHUB_STEP_SUMMARY
