@@ -54,6 +54,7 @@ jobs:
       REPO: 'coreoasis/github-actions'
       DOCKER_PUSH: 'false'
       IGNORE_UNFIXED: 'true'
+      SEVERITY: 'CRITICAL,HIGH'
 
     name: Docker build
     runs-on: ubuntu-latest
@@ -62,23 +63,24 @@ jobs:
         image: [worker, worker_deb, server]
         include:
 
+        - image: server
+          tag: 'api_server-${{ github.sha }}'
+          file: 'Dockerfile.api_server'
+          report: 'server-scan.sarif'
+          exit-code: '1'
+
         - image: worker
           tag: 'model_worker-${{ github.sha }}'
           file: 'Dockerfile.model_worker'
           report: 'worker-scan.sarif'
-          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
 
         - image: worker_deb
           tag: 'model_worker-deb-${{ github.sha }}'
           file: 'Dockerfile.model_worker_debian'
           report: 'worker-deb-scan.sarif'
-          severity: ''
+          exit-code: '0' # scan but don't fail 
 
-        - image: server
-          tag: 'api_server-${{ github.sha }}'
-          file: 'Dockerfile.api_server'
-          report: 'server-scan.sarif'
-          severity: 'CRITICAL,HIGH'
 
     outputs:
       image: ${{ steps.docker_push.outputs.image }}
@@ -90,11 +92,6 @@ jobs:
         echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
         echo "DOCKER_PUSH=${{ inputs.docker_push }}" >> $GITHUB_ENV
         echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
-
-    - name: Set inputs ${{ github.event_name }}
-      if: github.event_name == 'push'
-      run: |
-        echo "SEVERITY=${{ matrix.severity }}" >> $GITHUB_ENV
 
     - name: Github context
       run:   echo "$GITHUB_CONTEXT"
@@ -119,14 +116,13 @@ jobs:
         format: 'sarif'
         output: ${{ matrix.report }}
         scan-type: 'image'
-        exit-code: '1'
+        exit-code: ${{ matrix.exit-code }}
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
         security-checks: 'vuln'
 
     - name: Upload scan results to Security tab
-      if: success() || failure()
-
+      if: ( success() || failure() ) && matrix.exit-code == '1'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file:  ${{ matrix.report }}
