@@ -67,13 +67,15 @@ jobs:
           tag: 'api_server-${{ github.sha }}'
           file: 'Dockerfile.api_server'
           report: 'server-scan.sarif'
-          #exit-code: '1' 
+          dive: 'server-layers.txt'
+          #exit-code: '1'
           exit-code: '0' #TESTING
 
         - image: worker
           tag: 'model_worker-${{ github.sha }}'
           file: 'Dockerfile.model_worker'
           report: 'worker-scan.sarif'
+          dive: 'worker-layers.txt'
           #exit-code: '1'
           exit-code: '0' #TESTING
 
@@ -81,6 +83,7 @@ jobs:
           tag: 'model_worker-deb-${{ github.sha }}'
           file: 'Dockerfile.model_worker_debian'
           report: 'worker-deb-scan.sarif'
+          dive: 'worker-deb--layers.txt'
           exit-code: '0' # scan but don't fail
 
     outputs:
@@ -109,15 +112,21 @@ jobs:
         echo "Build from Branch ${{ github.ref_name }}"
         docker build -f ${{ matrix.file }} --pull -t ${{ env.IMAGE_REPO }}:${{ matrix.tag }} .
 
-    - name: set Dive rules
+    - name: Test image efficiency
       run: |
-        echo 'rules:\n  lowestEfficiency: 0.95\n  highestWastedBytes: 20MB\n  highestUserWastedPercent: 0.20' > dive-ci.yml
+        ./scripts/imagesize.sh ${{ env.IMAGE_REPO }}:${{ matrix.tag }} ${{ matrix.dive }}
+      env:
+        DIVE_HIGHEST_USER_WASTED: '0.20'
+        DIVE_HIGHEST_WASTED_BYTES: '50mb'
+        DIVE_LOWSET_EFFICIENCY: '0.95'
 
-    - name: Dive
-      uses: yuichielectric/dive-action@0.0.4
+    - name: Store image size report
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
       with:
-        image: "${{ env.IMAGE_REPO }}:${{ matrix.tag }}"
-        config-file: ${{ github.workspace }}/dive-ci.yml
+        name: ${{ matrix.dive }}
+        path: ${{ matrix.dive }}
+        retention-days: 3
 
     - name: Vulnerability scanner
       if: env.SEVERITY != ''
@@ -145,7 +154,6 @@ jobs:
         name: ${{ matrix.report }}
         path: ${{ matrix.report }}
         retention-days: 3
-
 
     - name: Login to Docker Hub
       if: inputs.docker_push == 'true'
