@@ -82,18 +82,15 @@ jobs:
     - name: Update Oasislmf Version
       if: inputs.oasislmf_version != ''
       run: |
-        requ_list=(
-          requirements-server.in
-          requirements-worker.in
-          requirements.in
-        )
+        requ_list=( 'requirements-server.in' 'requirements-worker.in' 'requirements.in')
         for fl in "${requ_list[@]}"; do
           pip-compile --upgrade-package oasislmf==${{ inputs.oasislmf_version }} $fl
           git add $fl
         done
 
     - name: Git Commit
-      run: [[ -z $(git status -s) ]] || git commit -m "Set version ${{ inputs.platform_version }}"
+      run: |
+        [[ -z $(git status -s) ]] || git commit -m "Set version ${{ inputs.platform_version }}"
 
     - name: Push
       run: git commit -m '' git push
