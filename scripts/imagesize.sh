@@ -14,7 +14,7 @@ env | grep DIVE_
 
 set -e 
 docker run -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive $IMAGE_NAME \
-  --highestUserWastedPercent '0.20' \
-  --highestWastedBytes '50mb' \
-  --lowestEfficiency '0.95' \
+  --highestUserWastedPercent $DIVE_HIGHEST_USER_WASTED \
+  --highestWastedBytes $DIVE_HIGHEST_WASTED_BYTES \
+  --lowestEfficiency $DIVE_LOWSET_EFFICIENCY \
   --ci | tee $CWD/$REPORT_NAME
