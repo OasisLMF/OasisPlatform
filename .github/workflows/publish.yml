@@ -1,0 +1,24 @@
+name: Platform Release  
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag, for release: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
+        required: true
+
+      prev_release_tag:
+        description: 'The previous oasislmf release version, for changelog: ["{n}.{n}.{n}", "{n}.{n}.{n}rc{n}"]'
+        required: true
+
+      pre_release:
+        description: 'Mark GitHub release as pre-release: [true, false]'
+        required: true
+        default: 'false'
+
+      oasislmf_version: 
+        description: '(Optional) Pin a new "oasislmf" version: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
+        required: false
+
+
+
