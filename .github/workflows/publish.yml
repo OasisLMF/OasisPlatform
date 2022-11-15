@@ -1,24 +1,115 @@
-name: Platform Release  
+name: Platform Release
+
+
+# GET prev tag 'git describe --tags --abbrev=0' when on matching branch
+# master_tags=( $(git tag --merged master --sort=creatordate) )
+# echo ${master_tags[-1]}     --->   1.23.14-lts (most recent tag on branch)
+# echo ${master_tags[-2]}     --->   1.23.13-lts (prev release)
+
+# With GREP filter for non-RC
+# git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$"
 
 on:
   workflow_dispatch:
     inputs:
+      pre_release:
+        description: 'Mark GitHub release as pre-release: [true, false]'
+        required: true
+        type: boolean
+
       release_tag:
         description: 'Release tag, for release: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
         required: true
 
       prev_release_tag:
-        description: 'The previous oasislmf release version, for changelog: ["{n}.{n}.{n}", "{n}.{n}.{n}rc{n}"]'
+        description: '(OVERRIDE) The previous release version for changelog: ["{n}.{n}.{n}", "{n}.{n}.{n}rc{n}"]'
+        required: false
+
+      oasislmf_release:
+        description: '(OVERRIDE) Pin a new "oasislmf" version: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
         required: true
 
-      pre_release:
-        description: 'Mark GitHub release as pre-release: [true, false]'
-        required: true
-        default: 'false'
+      oasislmf_release_prev:
+        description: '(OVERRIDE)'
+        required: false
 
-      oasislmf_version: 
-        description: '(Optional) Pin a new "oasislmf" version: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
+      ktools_release:
+        description: '(OVERRIDE)'
+        required: false
+
+      ktools_release_prev:
+        description: '(OVERRIDE)'
         required: false
 
 
 
+env:
+  dir_ktools:
+  dir_oasislmf:
+  dir_platform:
+
+
+jobs:
+  update:
+    uses: ./.github/workflows/version.yml
+    secrets: inherit
+    with:
+        ...
+
+  build_images:
+    uses: <>
+    secrets: inherit
+    needs: update
+    with:
+        ...
+
+  build_schema:
+    uses: <>
+    secrets: inherit
+    needs: update
+    with:
+        ...
+
+  build_piwind:
+    uses: <>
+    secrets: inherit
+    needs: update
+    with:
+        ...
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [build_images, build_schema, build_piwind]
+    outputs:
+      heading: ${{ steps.slack_vars.outputs.heading }}
+      title: ${{ steps.slack_vars.outputs.title }}
+      build_branch: ${{ steps.slack_vars.outputs.branch }}
+      run_url: ${{ steps.slack_vars.outputs.run_url }}
+      run_id: ${{ steps.slack_vars.outputs.run_id }}
+      run_status: ${{ steps.slack_vars.outputs.run_status }}
+      run_date: ${{ steps.slack_vars.outputs.run_date }}
+
+    steps:
+
+     ## RELEASE CHECKS
+
+
+     ## CLONE REPOS (plat / oasislmf / ktools / UI)
+
+         # If overrides not set, auto-load the current / prev release for each repo
+
+
+     ## TAG & assests
+
+
+     ## setup github / login dockerhub
+
+     ## pull a rename build images
+
+     ## Create Changelog / notes
+
+        # Append markdown release notes to Action run
+
+     # --- Push Images --- #
+     # --- Create Release --- #
+     # --- Slack notify --- #
