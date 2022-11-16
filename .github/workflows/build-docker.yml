@@ -170,3 +170,14 @@ jobs:
       run: |
         docker push ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
         echo "image=${{ env.IMAGE_REPO }}:${{ matrix.tag }}" >> $GITHUB_OUTPUT
+
+
+  test:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+    - name: dump NEEDS context
+      run:   echo "$NEEDS_CONTEXT"
+      shell: bash
+      env:
+       NEEDS_CONTEXT: ${{ toJson(needs) }}
