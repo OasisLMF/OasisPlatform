@@ -9,6 +9,9 @@ name: Platform Release
 # With GREP filter for non-RC
 # git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$"
 
+# ISSUE with boolean inputs, see https://github.com/orgs/community/discussions/29796
+
+
 on:
   push:
   workflow_dispatch:
@@ -71,15 +74,15 @@ jobs:
     secrets: inherit
     needs: update
     with:
-      docker_push: true
-      ignore_unfixed: true
+      docker_push: ${{ true }}
+      ignore_unfixed: ${{ true }}
 
   build_piwind:
     uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@dockerbuild/github-actions
     secrets: inherit
     needs: build_images
     with:
-      docker_push: true
+      docker_push: ${{ true }}
       from_image: ${{ needs.build_images.outputs.worker_image }}
       piwind_branch: 'develop'  # should change if backports
 
