@@ -57,6 +57,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
       with:
+        ref: ${{ github.ref_name }}
         fetch-depth: 0 # fetch the whole repo for complete history
 
     - name: Setup github user

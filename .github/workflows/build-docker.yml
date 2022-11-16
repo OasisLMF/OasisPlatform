@@ -7,11 +7,13 @@ on:
       docker_push:
         description: 'Push the docker image to dockerhub and outout reference'
         required: true
-        default: 'false'
+        default: false
+        type: boolean
       ignore_unfixed:
         description: 'Include unfixed vulnerabilities in scan [true,false]'
         required: true
-        default: 'true'
+        default: true
+        type: boolean
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
         required: false
@@ -23,12 +25,12 @@ on:
         description: 'Push the docker image to dockerhub and outout reference'
         required: true
         default: 'false'
-        type: string
+        type: boolean
       ignore_unfixed:
         description: 'Include unfixed vulnerabilities in scan [true,false]'
         required: true
         default: 'true'
-        type: string
+        type: boolean
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for, fails build if any found'
         required: false

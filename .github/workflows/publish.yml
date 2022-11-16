@@ -10,6 +10,7 @@ name: Platform Release
 # git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$"
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       pre_release:
@@ -42,11 +43,10 @@ on:
         required: false
 
 
-
+# TESTING
 env:
-  dir_ktools:
-  dir_oasislmf:
-  dir_platform:
+  platform_version: '1.27.0rc21'
+  oasislmf_version: '1.27.0rc3'
 
 
 jobs:
@@ -54,62 +54,76 @@ jobs:
     uses: ./.github/workflows/version.yml
     secrets: inherit
     with:
-        ...
+      #platform_version: ${{ inputs.release_tag }}
+      #oasislmf_version: ${{ inputs.oasislmf_release }}
+      platform_version: '1.27.0rc21'
+      oasislmf_version: '1.27.0rc3'
+
+
+# download artifact ref 'openapi-schema' to attach
+  build_schema:
+    uses: ./.github/workflows/build-schema.yml
+    secrets: inherit
+    needs: update
 
   build_images:
-    uses: <>
+    uses: ./.github/workflows/build-docker.yml
     secrets: inherit
     needs: update
     with:
-        ...
-
-  build_schema:
-    uses: <>
-    secrets: inherit
-    needs: update
-    with:
-        ...
+      docker_push: true
+      ignore_unfixed: true
 
   build_piwind:
-    uses: <>
+    uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@dockerbuild/github-actions
     secrets: inherit
-    needs: update
+    needs: build_images
     with:
-        ...
+      docker_push: true
+      from_image: ${{ needs.build_images.outputs.worker_image }}
+      piwind_branch: 'develop'  # should change if backports
 
-  release:
-    runs-on: ubuntu-latest
-    needs: [build_images, build_schema, build_piwind]
-    outputs:
-      heading: ${{ steps.slack_vars.outputs.heading }}
-      title: ${{ steps.slack_vars.outputs.title }}
-      build_branch: ${{ steps.slack_vars.outputs.branch }}
-      run_url: ${{ steps.slack_vars.outputs.run_url }}
-      run_id: ${{ steps.slack_vars.outputs.run_id }}
-      run_status: ${{ steps.slack_vars.outputs.run_status }}
-      run_date: ${{ steps.slack_vars.outputs.run_date }}
-
-    steps:
-
-     ## RELEASE CHECKS
-
-
-     ## CLONE REPOS (plat / oasislmf / ktools / UI)
-
-         # If overrides not set, auto-load the current / prev release for each repo
-
-
-     ## TAG & assests
-
-
-     ## setup github / login dockerhub
-
-     ## pull a rename build images
-
-     ## Create Changelog / notes
-
-        # Append markdown release notes to Action run
-
-     # --- Push Images --- #
-     # --- Create Release --- #
-     # --- Slack notify --- #
+#  release:
+#    runs-on: ubuntu-latest
+#    needs: [build_images, build_schema, build_piwind]
+#    outputs:
+#      heading: ${{ steps.slack_vars.outputs.heading }}
+#      title: ${{ steps.slack_vars.outputs.title }}
+#      build_branch: ${{ steps.slack_vars.outputs.branch }}
+#      run_url: ${{ steps.slack_vars.outputs.run_url }}
+#      run_id: ${{ steps.slack_vars.outputs.run_id }}
+#      run_status: ${{ steps.slack_vars.outputs.run_status }}
+#      run_date: ${{ steps.slack_vars.outputs.run_date }}
+#
+#    # working-directory: ${{ env.dir_ktools }}
+#    env:
+#      # Cloned repo paths
+#      dir_ktools: ${{ github.workspace }}/ktools
+#      dir_oasislmf: ${{ github.workspace }}/oasislmf
+#      dir_platform: ${{ github.workspace }}/platform
+#      dir_oasisui:  ${{ github.workspace }}/oasisui
+#
+#    steps:
+#
+#     ## RELEASE CHECKS
+#
+#
+#     ## CLONE REPOS (plat / oasislmf / ktools / UI)
+#
+#         # If overrides not set, auto-load the current / prev release for each repo
+#
+#
+#     ## TAG & assests
+#
+#
+#     ## setup github / login dockerhub
+#
+#     ## pull a rename build images
+#
+#     ## Create Changelog / notes
+#
+#        # Append markdown release notes to Action run
+#
+#     # --- Push Images --- #
+#     # --- Create Release --- #
+#     # --- Slack notify --- #
