@@ -1,7 +1,7 @@
 name: Platform Schema (OpenAPI)
 
 on:
-  push:
+  #push:
   workflow_dispatch:
   workflow_call:
 

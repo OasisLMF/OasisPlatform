@@ -1,7 +1,7 @@
 name:  Platform Scan Repo
 
 on:
-  push:
+  #push:
   workflow_dispatch:
     inputs:
       cve_severity:

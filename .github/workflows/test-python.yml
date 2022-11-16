@@ -1,7 +1,7 @@
 name: Platform PyTest
 
 on:
-  push:
+  #push:
 
 jobs:
   unittest:
