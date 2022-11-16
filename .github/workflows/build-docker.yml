@@ -40,23 +40,31 @@ on:
     outputs:
       server_image:
         description:
-        value:  ${{ jobs.server.outputs.image }}
+        value:  ${{ jobs.image_ref.outputs.server }}
       worker_image:
         description:
-        value:  ${{ jobs.worker.outputs.image }}
+        value:  ${{ jobs.image_ref.outputs.worker }}
       worker_deb_image:
         description:
-        value:  ${{ jobs.worker_deb.outputs.image }}
+        value:  ${{ jobs.image_ref.outputs.worker_deb }}
         # https://purple.telstra.com/blog/github-action-test-matrices-part2
         # https://docs.github.com/en/actions/learn-github-actions/contexts
 
+
+env:
+  # inputs
+  DOCKER_PUSH: 'false'
+  IGNORE_UNFIXED: 'true'
+  SEVERITY: 'CRITICAL,HIGH'
+
+  # image name vars
+  IMAGE_REPO: 'coreoasis/github-actions'
+  IMAGE_TAG_SERVER: 'api_server-${{ github.sha }}'
+  IMAGE_TAG_WORKER: 'model_worker-${{ github.sha }}'
+  IMAGE_TAG_WORKER_DEB: 'model_worker-deb-${{ github.sha }}'
+
 jobs:
   build:
-    env:
-      IMAGE_REPO: 'coreoasis/github-actions'
-      DOCKER_PUSH: 'false'
-      IGNORE_UNFIXED: 'true'
-      SEVERITY: 'CRITICAL,HIGH'
 
     name: Docker build
     runs-on: ubuntu-latest
@@ -66,7 +74,7 @@ jobs:
         include:
 
         - image: server
-          tag: 'api_server-${{ github.sha }}'
+          tag: ${{ env.IMAGE_TAG_SERVER }}
           file: 'Dockerfile.api_server'
           report: 'server-scan.sarif'
           dive: 'server-layers.txt'
@@ -74,7 +82,7 @@ jobs:
           exit-code: '0' #TESTING
 
         - image: worker
-          tag: 'model_worker-${{ github.sha }}'
+          tag: ${{ env.IMAGE_TAG_WORKER }}
           file: 'Dockerfile.model_worker'
           report: 'worker-scan.sarif'
           dive: 'worker-layers.txt'
@@ -82,7 +90,7 @@ jobs:
           exit-code: '0' #TESTING
 
         - image: worker_deb
-          tag: 'model_worker-deb-${{ github.sha }}'
+          tag: ${{ env.IMAGE_TAG_WORKER_DEB }}
           file: 'Dockerfile.model_worker_debian'
           report: 'worker-deb-scan.sarif'
           dive: 'worker-deb--layers.txt'
@@ -165,19 +173,18 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Docker push
-      id: docker_push
       if: env.DOCKER_PUSH == 'true'
       run: |
         docker push ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
-        echo "image=${{ env.IMAGE_REPO }}:${{ matrix.tag }}" >> $GITHUB_OUTPUT
 
 
-  test:
+  image_ref:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-    - name: dump NEEDS context
-      run:   echo "$NEEDS_CONTEXT"
-      shell: bash
-      env:
-       NEEDS_CONTEXT: ${{ toJson(needs) }}
+    - name: Image names
+      id: image_builds
+      run: |
+        echo "server=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_SERVER }}" >> $GITHUB_OUTPUT
+        echo "worker=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER }}" >> $GITHUB_OUTPUT
+        echo "worker_deb=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER_DEB }}" >> $GITHUB_OUTPUT
