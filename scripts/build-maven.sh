@@ -11,5 +11,10 @@ if [ ! -z "$1" ]; then
     VERSION_TAG=$1
 fi 
 
+
+
 echo "Testing version: $VERSION_TAG"
-docker run -v $(PWD):/home/build mvn-tester:$DOCKER_TAG $VERSION_TAG
+MNT=$(dirname $SCRIPT_DIR)
+echo $MNT 
+
+docker run -v $MNT:/home/build mvn-tester:$DOCKER_TAG $VERSION_TAG
