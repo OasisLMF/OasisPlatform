@@ -39,16 +39,22 @@ on:
 
     outputs:
       server_image:
-        description:
-        value:  ${{ jobs.image_ref.outputs.server }}
+        value: "${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_SERVER }}"
       worker_image:
-        description:
-        value:  ${{ jobs.image_ref.outputs.worker }}
+        value:  "${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER }}"
       worker_deb_image:
-        description:
-        value:  ${{ jobs.image_ref.outputs.worker_deb }}
-        # https://purple.telstra.com/blog/github-action-test-matrices-part2
-        # https://docs.github.com/en/actions/learn-github-actions/contexts
+        value:  "${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER_DEB }}"
+      #server_image:
+      #  description:
+      #  value:  ${{ jobs.image_ref.outputs.server }}
+      #worker_image:
+      #  description:
+      #  value:  ${{ jobs.image_ref.outputs.worker }}
+      #worker_deb_image:
+      #  description:
+      #  value:  ${{ jobs.image_ref.outputs.worker_deb }}
+      #  # https://purple.telstra.com/blog/github-action-test-matrices-part2
+      #  # https://docs.github.com/en/actions/learn-github-actions/contexts
 
 
 env:
@@ -95,9 +101,6 @@ jobs:
           report: 'worker-deb-scan.sarif'
           dive: 'worker-deb--layers.txt'
           exit-code: '0' # scan but don't fail
-
-    outputs:
-      image: ${{ steps.docker_push.outputs.image }}
 
     steps:
     - name: Set inputs ${{ github.event_name }}
@@ -178,13 +181,16 @@ jobs:
         docker push ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
 
 
-  image_ref:
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Image names
-      id: image_builds
-      run: |
-        echo "server=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_SERVER }}" >> $GITHUB_OUTPUT
-        echo "worker=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER }}" >> $GITHUB_OUTPUT
-        echo "worker_deb=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER_DEB }}" >> $GITHUB_OUTPUT
+#  image_ref:
+#    needs: [build]
+#    runs-on: ubuntu-latest
+#    outputs:
+#      worker: ${{ steps..outputs.image }}
+#
+#    steps:
+#    - name: Image names
+#      id: image_builds
+#      run: |
+#        echo "server=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_SERVER }}" >> $GITHUB_OUTPUT
+#        echo "worker=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER }}" >> $GITHUB_OUTPUT
+#        echo "worker_deb=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER_DEB }}" >> $GITHUB_OUTPUT
