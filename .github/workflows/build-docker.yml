@@ -56,12 +56,7 @@ env:
   DOCKER_PUSH: 'false'
   IGNORE_UNFIXED: 'true'
   SEVERITY: 'CRITICAL,HIGH'
-
-  # image name vars
   IMAGE_REPO: 'coreoasis/github-actions'
-  IMAGE_TAG_SERVER: 'api_server-${{ github.sha }}'
-  IMAGE_TAG_WORKER: 'model_worker-${{ github.sha }}'
-  IMAGE_TAG_WORKER_DEB: 'model_worker-deb-${{ github.sha }}'
 
 jobs:
   build:
@@ -74,7 +69,7 @@ jobs:
         include:
 
         - image: server
-          tag: ${{ env.IMAGE_TAG_SERVER }}
+          tag: 'api_server-${{ github.sha }}'
           file: 'Dockerfile.api_server'
           report: 'server-scan.sarif'
           dive: 'server-layers.txt'
@@ -82,7 +77,7 @@ jobs:
           exit-code: '0' #TESTING
 
         - image: worker
-          tag: ${{ env.IMAGE_TAG_WORKER }}
+          tag: 'model_worker-${{ github.sha }}'
           file: 'Dockerfile.model_worker'
           report: 'worker-scan.sarif'
           dive: 'worker-layers.txt'
@@ -90,7 +85,7 @@ jobs:
           exit-code: '0' #TESTING
 
         - image: worker_deb
-          tag: ${{ env.IMAGE_TAG_WORKER_DEB }}
+          tag:  'model_worker-deb-${{ github.sha }}'
           file: 'Dockerfile.model_worker_debian'
           report: 'worker-deb-scan.sarif'
           dive: 'worker-deb--layers.txt'
@@ -174,7 +169,6 @@ jobs:
       run: |
         docker push ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
 
-
   images:
     needs: [build]
     runs-on: ubuntu-latest
@@ -182,7 +176,10 @@ jobs:
       server: ${{ steps.image_names.server }}
       worker: ${{ steps.image_names.worker }}
       worker_deb: ${{ steps.image_names.worker_deb }}
-
+    env:
+      IMAGE_TAG_SERVER: 'api_server-${{ github.sha }}'
+      IMAGE_TAG_WORKER: 'model_worker-${{ github.sha }}'
+      IMAGE_TAG_WORKER_DEB: 'model_worker-deb-${{ github.sha }}'
     steps:
     - name: Image names
       id: image_names
