@@ -40,13 +40,22 @@ on:
     outputs:
       server_image:
         description:
-        value:  ${{ jobs.images.outputs.server }}
+        value:  'coreoasis/github-actions:api_server-${{ github.sha }}'
       worker_image:
         description:
         value:  ${{ jobs.images.outputs.worker }}
       worker_deb_image:
         description:
         value:  ${{ jobs.images.outputs.worker_deb }}
+  #    server_image:
+  #      description:
+  #      value:  ${{ jobs.images.outputs.server }}
+  #    worker_image:
+  #      description:
+  #      value:  ${{ jobs.images.outputs.worker }}
+  #    worker_deb_image:
+  #      description:
+  #      value:  ${{ jobs.images.outputs.worker_deb }}
       #  # https://purple.telstra.com/blog/github-action-test-matrices-part2
       #  # https://docs.github.com/en/actions/learn-github-actions/contexts
 
@@ -76,7 +85,6 @@ jobs:
         echo "server=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_SERVER }}" >> $GITHUB_OUTPUT
         echo "worker=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER }}" >> $GITHUB_OUTPUT
         echo "worker_deb=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER_DEB }}" >> $GITHUB_OUTPUT
-
   build:
     name: Docker build
     runs-on: ubuntu-latest
