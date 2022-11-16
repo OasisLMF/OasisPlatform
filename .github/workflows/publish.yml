@@ -78,27 +78,27 @@ jobs:
       ignore_unfixed: true
 
 
-  test: 
-    needs: build_images
-    runs-on: ubuntu-latest
-    steps:
-    - name: Github context
-      run:   echo "$CONTEXT"
-      shell: bash
-      env:
-       CONTEXT: ${{ toJson(github) }}
-
-    - name: needs context
-      run:   echo "$CONTEXT"
-      shell: bash
-      env:
-       CONTEXT: ${{ toJson(needs) }}
-
-    - name: prev job context
-      run:   echo "$CONTEXT"
-      shell: bash
-      env:
-       CONTEXT: ${{ toJson(needs.build_images) }}
+#  test: 
+#    needs: build_images
+#    runs-on: ubuntu-latest
+#    steps:
+#    - name: Github context
+#      run:   echo "$CONTEXT"
+#      shell: bash
+#      env:
+#       CONTEXT: ${{ toJson(github) }}
+#
+#    - name: needs context
+#      run:   echo "$CONTEXT"
+#      shell: bash
+#      env:
+#       CONTEXT: ${{ toJson(needs) }}
+#
+#    - name: prev job context
+#      run:   echo "$CONTEXT"
+#      shell: bash
+#      env:
+#       CONTEXT: ${{ toJson(needs.build_images) }}
 
 
   build_piwind:
