@@ -25,12 +25,12 @@ jobs:
     - name: Install requirments
       run: pip install -r requirements-server.txt
 
-    - name: Generate OpenAPI 
+    - name: Generate OpenAPI
       run: |
         python ./manage.py migrate
         python ./manage.py generate_swagger ${{ env.SCHEMA }}
 
-    - name: Store OpenAPI schema 
+    - name: Store OpenAPI schema
       uses: actions/upload-artifact@v3
       with:
         name: openapi-schema
@@ -38,5 +38,5 @@ jobs:
         retention-days: 3
 
     - name: Test Schema
-      run: ./build-maven.sh $(cat VERSION)
+      run: .scripts/build-maven.sh $(cat VERSION)
 
