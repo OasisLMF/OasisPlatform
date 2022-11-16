@@ -74,15 +74,15 @@ jobs:
     secrets: inherit
     needs: update
     with:
-      docker_push: ${{ true }}
-      ignore_unfixed: ${{ true }}
+      docker_push: ${{ fromJson(true) }}
+      ignore_unfixed: ${{ fromJson(true) }}
 
   build_piwind:
     uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@dockerbuild/github-actions
     secrets: inherit
     needs: build_images
     with:
-      docker_push: ${{ true }}
+      docker_push: ${{ fromJson(true) }}
       from_image: ${{ needs.build_images.outputs.worker_image }}
       piwind_branch: 'develop'  # should change if backports
 
