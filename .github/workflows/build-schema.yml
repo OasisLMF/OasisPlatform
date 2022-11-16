@@ -38,5 +38,5 @@ jobs:
         retention-days: 3
 
     - name: Test Schema
-      run: .scripts/build-maven.sh $(cat VERSION)
+      run: ./scripts/build-maven.sh $(cat VERSION)
 
