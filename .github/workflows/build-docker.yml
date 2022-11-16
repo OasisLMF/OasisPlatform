@@ -59,8 +59,25 @@ env:
   IMAGE_REPO: 'coreoasis/github-actions'
 
 jobs:
-  build:
+  images:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.image_names.server }}
+      worker: ${{ steps.image_names.worker }}
+      worker_deb: ${{ steps.image_names.worker_deb }}
+    env:
+      IMAGE_TAG_SERVER: 'api_server-${{ github.sha }}'
+      IMAGE_TAG_WORKER: 'model_worker-${{ github.sha }}'
+      IMAGE_TAG_WORKER_DEB: 'model_worker-deb-${{ github.sha }}'
+    steps:
+    - name: Image names
+      id: image_names
+      run: |
+        echo "server=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_SERVER }}" >> $GITHUB_OUTPUT
+        echo "worker=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER }}" >> $GITHUB_OUTPUT
+        echo "worker_deb=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER_DEB }}" >> $GITHUB_OUTPUT
 
+  build:
     name: Docker build
     runs-on: ubuntu-latest
     strategy:
@@ -169,21 +186,3 @@ jobs:
       run: |
         docker push ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
 
-  images:
-    needs: [build]
-    runs-on: ubuntu-latest
-    outputs:
-      server: ${{ steps.image_names.server }}
-      worker: ${{ steps.image_names.worker }}
-      worker_deb: ${{ steps.image_names.worker_deb }}
-    env:
-      IMAGE_TAG_SERVER: 'api_server-${{ github.sha }}'
-      IMAGE_TAG_WORKER: 'model_worker-${{ github.sha }}'
-      IMAGE_TAG_WORKER_DEB: 'model_worker-deb-${{ github.sha }}'
-    steps:
-    - name: Image names
-      id: image_names
-      run: |
-        echo "server=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_SERVER }}" >> $GITHUB_OUTPUT
-        echo "worker=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER }}" >> $GITHUB_OUTPUT
-        echo "worker_deb=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG_WORKER_DEB }}" >> $GITHUB_OUTPUT
