@@ -12,4 +12,4 @@ if [ ! -z "$1" ]; then
 fi 
 
 echo "Testing version: $VERSION_TAG"
-docker run -v $SCRIPT_DIR:/home/build mvn-tester:$DOCKER_TAG $VERSION_TAG
+docker run -v $(PWD):/home/build mvn-tester:$DOCKER_TAG $VERSION_TAG
