@@ -24,6 +24,11 @@ on:
         required: false
         default: 'true'
         type: string
+      exit_code:  
+        description: 'Exit code if vulnerabilities found [0,1]'
+        required: false
+        default: '1'
+        type: string
 
 jobs:
   scan_repo:
@@ -32,6 +37,7 @@ jobs:
       SEVERITY: 'MEDIUM,HIGH,CRITICAL'
       REPORT: 'repo-results.sarif'
       IGNORE_UNFIXED: 'true'
+      EXIT_CODE: '1'
     runs-on: ubuntu-latest
     steps:
     - name: Adding code-scanning URL
