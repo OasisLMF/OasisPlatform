@@ -25,7 +25,7 @@ while getopts 'b:p:t:v:' flag; do
     b) branch_name=${OPTARG} ;;
     p) pre_release=${OPTARG} ;;
     t) tag_select=${OPTARG} ;;
-    t) version_prefix=${OPTARG} ;;
+    v) version_prefix=${OPTARG} ;;
     *) print_usage
        exit 1 ;;
   esac
