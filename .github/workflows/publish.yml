@@ -191,8 +191,8 @@ jobs:
     - name: DEBUG - where the hell is my script?? 
       run: |
         ls -la  ${{ github.workspace }}
-        ls -la  ${{ github.workspace }}/${{ env.dir_platform }}
-        ls -la ${{ github.workspace }}/${{ env.dir_platform }}/scripts
+        ls -la  ${{ env.dir_platform }}
+        ls -la  ${{ env.dir_platform }}/scripts
 
 
     # If overrides not set, auto-load the current / prev release for each repo
