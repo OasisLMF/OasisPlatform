@@ -103,8 +103,6 @@ jobs:
     env:
       # TESTING
       pre_release: 'true'
-      release_tag: ${{ env.release_tag }}
-      oasislmf_release: ${{ env.oasislmf_version }}
 
       #pre_release: ${{ inputs.pre_release }}
       #release_tag: ${{ inputs.release_tag }}
