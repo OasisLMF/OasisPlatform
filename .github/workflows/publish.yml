@@ -444,6 +444,7 @@ jobs:
         echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
         echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
 
+
   # --- Notify Slack --- #
   slack:
     uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@master
