@@ -391,7 +391,6 @@ jobs:
         git commit -m 'Update changelog'
 
     - name: Create Release notes
-      working-directory: ${{ env.WORKSPACE }}
       run: |
         ${{ github.workspace }}/auto_changelog.py build-release-platform \
           --platform-from-tag ${{ env.prev_release_tag }} \
@@ -412,7 +411,6 @@ jobs:
         git push
 
     - name: Create Release
-      working-directory: ${{ env.WORKSPACE }}
       id: create_release
       uses: actions/create-release@v1
       env:
