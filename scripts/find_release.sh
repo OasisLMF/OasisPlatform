@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-branch_name='master'
+branch_name=$(git rev-parse --abbrev-ref HEAD)
 pre_release='false'
 tag_select='1'
 
@@ -30,10 +30,6 @@ done
 
 
 
-#echo "path: "pwd
-#echo "branch_name: "$branch_name
-#echo "pre_release: "$pre_release
-#echo "tag_select: "$tag_select
 
 
 if [[ "$pre_release" = "false" ]]; then
@@ -42,6 +38,12 @@ else
     release_tags=( $(git tag --merged $branch_name --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
 fi
 
+
+# --  DEBUG inputs ----------
 #echo "${release_tags[*]}"
+#echo "path: "pwd
+#echo "branch_name: "$branch_name
+#echo "pre_release: "$pre_release
+#echo "tag_select: "$tag_select
 
 echo "${release_tags[-$tag_select]}"
