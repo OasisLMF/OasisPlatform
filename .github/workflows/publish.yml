@@ -96,10 +96,9 @@ jobs:
       #pre_release: ${{ inputs.pre_release }}
       #release_tag: ${{ inputs.release_tag }}
       #oasislmf_release: ${{ inputs.oasislmf_release }}
-
-
       prev_release_tag: ${{ inputs.prev_release_tag }}
       oasislmf_release_prev: ${{ inputs.oasislmf_release_prev }}
+
       ktools_release: ${{ inputs.ktools_release }}
       ktools_release_prev: ${{ inputs.ktools_release_prev }}
 
@@ -108,7 +107,8 @@ jobs:
       dir_ktools: ${{ github.workspace }}/ktools
 
       branch_platform: ${{ github.ref_name }}
-      branch_oasislmf: 'master'
+      #branch_oasislmf: 'master'
+      branch_oasislmf: 'backports/1.26.x'   # TESTING
       branch_ktools: 'master'
       build_scripts: 'master'
 
@@ -290,16 +290,16 @@ jobs:
         docker run --entrypoint "/root/.local/bin/eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
 
 
-    - name: Check Oasislmf version matches
+    - name: Check for Oasislmf version match
       run: |
         test "$(cat OASISLMF_VERSION)" != '${{ env.oasislmf_release }}' && \
-        echo "$(cat OASISLMF_VERSION) != ${{ env.oasislmf_release }}"
+        echo "$(cat OASISLMF_VERSION) != ${{ env.oasislmf_release }}" && exit 1
 
-    - name: Check ktools version matches
+    - name: Check for ktools version match
       run: |
         KTOOL_VER=$(head -1 KTOOLS_VERSION | grep -oP "(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)")
         test "$KTOOL_VER" != ${{ env.ktools_release }} && \
-        echo "$KTOOL_VER != ${{ env.ktools_release }}"
+        echo "$KTOOL_VER != ${{ env.ktools_release }}" && exit 1
 
 
     - name: Download API schema
@@ -312,7 +312,7 @@ jobs:
       id: api_schema
       run: |
         schema_filename="openapi-schema-${{ env.release_tag }}.json"
-        mv reports/openapi-schema.json  $schema_filename
+        mv openapi-schema.json  $schema_filename
         echo "filename=$schema_filename" >> $GITHUB_OUTPUT
 
 
