@@ -296,16 +296,12 @@ jobs:
         retention-days: 5
 
     - name: Check for Oasislmf version match
-      run: |
-        test "$(cat OASISLMF_VERSION)" != '${{ env.oasislmf_release }}' && \
-        echo "$(cat OASISLMF_VERSION) != ${{ env.oasislmf_release }}" && exit 1
+      run: test "$(cat OASISLMF_VERSION)" = '1.27.0rc2' || exit 1
 
     - name: Check for ktools version match
       run: |
         KTOOL_VER=$(head -1 KTOOLS_VERSION | grep -oP "(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)")
-        test "$KTOOL_VER" != ${{ env.ktools_release }} && \
-        echo "$KTOOL_VER != ${{ env.ktools_release }}" && exit 1
-
+        test "$KTOOL_VER" = ${{ env.ktools_release }} || exit 1
 
     - name: Download API schema
       uses: actions/download-artifact@v3
