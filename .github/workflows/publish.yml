@@ -1,18 +1,5 @@
 name: Platform Release
 
-
-# GET prev tag 'git describe --tags --abbrev=0' when on matching branch
-# master_tags=( $(git tag --merged master --sort=creatordate) )
-# echo ${master_tags[-1]}     --->   1.23.14-lts (most recent tag on branch)
-# echo ${master_tags[-2]}     --->   1.23.13-lts (prev release)
-
-# With GREP filter for non-RC
-# git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$"
-
-# ISSUE with boolean inputs, see https://github.com/orgs/community/discussions/29796
-
-
-
 on:
   push:
   workflow_dispatch:
