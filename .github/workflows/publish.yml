@@ -198,9 +198,9 @@ jobs:
       working-directory: ${{ env.dir_platform }}
       run: |
         if [[ "${{ env.pre_release }}" = "false" ]]; then
-            release_tags=( $(git tag --merged ${{ env.branch_platform }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
+            release_tags=( $(git tag --merged "${{ env.branch_platform }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
-            release_tags=( $(git tag --merged ${{ env.branch_platform }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
+            release_tags=( $(git tag --merged "${{ env.branch_platform }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
         fi
         echo "prev_release_tag=${release_tags[-1]}" >> $GITHUB_ENV
 
@@ -209,9 +209,9 @@ jobs:
       working-directory: ${{ env.dir_oasislmf }}
       run: |
         if [[ "${{ env.pre_release }}" = "false" ]]; then
-            release_tags=( $(git tag --merged ${{ env.branch_oasislmf }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
+            release_tags=( $(git tag --merged "${{ env.branch_oasislmf }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
-            release_tags=( $(git tag --merged ${{ env.branch_oasislmf }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
+            release_tags=( $(git tag --merged "${{ env.branch_oasislmf }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
         fi
         echo "oasislmf_release=${release_tags[-1]}" >> $GITHUB_ENV
 
@@ -220,9 +220,9 @@ jobs:
       working-directory: ${{ env.dir_oasislmf }}
       run: |
         if [[ "${{ env.pre_release }}" = "false" ]]; then
-            release_tags=( $(git tag --merged ${{ env.branch_oasislmf }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
+            release_tags=( $(git tag --merged "${{ env.branch_oasislmf }}"  --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
-            release_tags=( $(git tag --merged ${{ env.branch_oasislmf }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
+            release_tags=( $(git tag --merged "${{ env.branch_oasislmf }}"  --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
         fi
         echo "oasislmf_release_prev=${release_tags[-2]}" >> $GITHUB_ENV
 
@@ -232,9 +232,9 @@ jobs:
       working-directory: ${{ env.dir_ktools }}
       run: |
         if [[ "${{ env.pre_release }}" = "false" ]]; then
-            release_tags=( $(git tag --merged ${{ env.branch_ktools }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
+            release_tags=( $(git tag --merged "${{ env.branch_ktools }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
-            release_tags=( $(git tag --merged ${{ env.branch_ktools }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
+            release_tags=( $(git tag --merged "${{ env.branch_ktools }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
         fi
         echo "ktools_release=${release_tags[-1]}" >> $GITHUB_ENV
 
@@ -243,9 +243,9 @@ jobs:
       working-directory: ${{ env.dir_ktools }}
       run: |
         if [[ "${{ env.pre_release }}" = "false" ]]; then
-            release_tags=( $(git tag --merged ${{ env.branch_ktools }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
+            release_tags=( $(git tag --merged "${{ env.branch_ktools }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
-            release_tags=( $(git tag --merged ${{ env.branch_ktools }} --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
+            release_tags=( $(git tag --merged "${{ env.branch_ktools }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
         fi
         echo "ktools_release_prev=${release_tags[-2]}" >> $GITHUB_ENV
 
