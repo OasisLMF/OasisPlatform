@@ -430,7 +430,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/${{ step.api_schema.outputs.filename }}
+        asset_path: ${{ github.workspace }}/${{ steps.api_schema.outputs.filename }}
         asset_name: ${{ steps.api_schema.outputs.filename }}
         asset_content_type: application/octet-stream
 
