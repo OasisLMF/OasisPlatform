@@ -176,14 +176,6 @@ jobs:
         ref: ${{ env.branch_ktools }}
         fetch-depth: 0
 
-
-    - name: DEBUG - where the hell is my script??
-      run: |
-        ls -la  ${{ github.workspace }}
-        ls -la  ${{ env.dir_platform }}
-        ls -la  ${{ env.dir_platform }}/scripts
-
-
     # If overrides not set, auto-load the current / prev release for each repo
     - name: Find 'prev_release_tag'
       if: inputs.prev_release_tag == ''
@@ -289,6 +281,19 @@ jobs:
         docker run --entrypoint "/root/.local/bin/oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
         docker run --entrypoint "/root/.local/bin/eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
 
+    - name: 'store OASISLMF_VERSION'
+      uses: actions/upload-artifact@v3
+      with:
+        name: OASISLMF_VERSION
+        path: OASISLMF_VERSION
+        retention-days: 5
+
+    - name: 'store KTOOLS_VERSION'
+      uses: actions/upload-artifact@v3
+      with:
+        name: KTOOLS_VERSION
+        path: KTOOLS_VERSION
+        retention-days: 5
 
     - name: Check for Oasislmf version match
       run: |
