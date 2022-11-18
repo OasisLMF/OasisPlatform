@@ -154,7 +154,7 @@ jobs:
 
     - name: set Oasislmf to backports
       if: startsWith(github.ref_name, 'backports/')
-      run: echo "branch_oasislmf=${{ github.ref_name }}" >> $GITHUB_ENV
+      run: echo "branch_oasislmf=${{ env.branch_platform }}" >> $GITHUB_ENV
 
     ## CLONE REPOS (plat / oasislmf / ktools / UI)
     - name: Setup github user
@@ -171,7 +171,7 @@ jobs:
       with:
         path: ${{ env.dir_platform }}
         repository: Oasislmf/OasisPlatform
-        ref: ${{ github.ref_name }}
+        ref: ${{ env.branch_platform }}
         fetch-depth: 0
 
     - name: Checkout Oasislmf
@@ -179,23 +179,15 @@ jobs:
       with:
         path: ${{ env.dir_oasislmf }}
         repository: Oasislmf/Oasislmf
-        ref: ${{ github.ref_name }}
+        ref: ${{ env.branch_oasislmf }}
         fetch-depth: 0
-
-    #- name: Checkout UI
-    #  uses: actions/checkout@v3
-    #  with:
-    #    path: ${{ env.dir_platform }}
-    #    repository: Oasislmf/OasisUI
-    #    ref: master
-    #    fetch-depth: 0
 
     - name: Checkout Ktools
       uses: actions/checkout@v3
       with:
         path: ${{ env.dir_platform }}
         repository: Oasislmf/ktools
-        ref: master
+        ref: ${{ env.branch_ktools }}
         fetch-depth: 0
 
 
