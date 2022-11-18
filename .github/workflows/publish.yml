@@ -114,16 +114,13 @@ jobs:
       ktools_release: ${{ inputs.ktools_release }}
       ktools_release_prev: ${{ inputs.ktools_release_prev }}
 
-      dir_platform: ${{ github.workspace }}/platform
-      dir_oasislmf: ${{ github.workspace }}/oasislmf
-      dir_ktools: ${{ github.workspace }}/ktools
-      #dir_oasisui:  ${{ github.workspace }}/oasisui
+      dir_platform: platform
+      dir_oasislmf: oasislmf
+      dir_ktools: ktools
 
       branch_platform: ${{ github.ref_name }}
       branch_oasislmf: 'master'
       branch_ktools: 'master'
-      #branch_oasisui: 'master'
-
       build_scripts: 'master'
 
     steps:
@@ -191,73 +188,48 @@ jobs:
         fetch-depth: 0
 
 
+    - name: DEBUG - where the hell is my script?? 
+      run: |
+        ls -la  ${{ github.workspace }}
+        ls -la  ${{ github.workspace }}/${{ env.dir_platform }}
+        ls -la ${{ github.workspace }}/${{ env.dir_platform }}/scripts
+
 
     # If overrides not set, auto-load the current / prev release for each repo
     - name: Find 'prev_release_tag'
       if: inputs.prev_release_tag == ''
       working-directory: ${{ env.dir_platform }}
       run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
+        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "prev_release_tag=$tag" >> $GITHUB_ENV
-        #if [[ "${{ env.pre_release }}" = "false" ]]; then
-        #    release_tags=( $(git tag --merged "${{ env.branch_platform }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
-        #else
-        #    release_tags=( $(git tag --merged "${{ env.branch_platform }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
-        #fi
-        #echo "prev_release_tag=${release_tags[-1]}" >> $GITHUB_ENV
 
     - name: Find 'oasislmf_release'
       if: inputs.oasislmf_release == ''
       working-directory: ${{ env.dir_oasislmf }}
       run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
+        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "oasislmf_release=$tag" >> $GITHUB_ENV
-        #if [[ "${{ env.pre_release }}" = "false" ]]; then
-        #    release_tags=( $(git tag --merged "${{ env.branch_oasislmf }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
-        #else
-        #    release_tags=( $(git tag --merged "${{ env.branch_oasislmf }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
-        #fi
-        #echo "oasislmf_release=${release_tags[-1]}" >> $GITHUB_ENV
 
     - name: Find 'oasislmf_release_prev'
       if: inputs.oasislmf_release_prev == ''
       working-directory: ${{ env.dir_oasislmf }}
       run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
+        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
         echo "oasislmf_release_prev=$tag" >> $GITHUB_ENV
-        #if [[ "${{ env.pre_release }}" = "false" ]]; then
-        #    release_tags=( $(git tag --merged "${{ env.branch_oasislmf }}"  --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
-        #else
-        #    release_tags=( $(git tag --merged "${{ env.branch_oasislmf }}"  --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
-        #fi
-        #echo "oasislmf_release_prev=${release_tags[-2]}" >> $GITHUB_ENV
-
 
     - name: Find 'ktools_release'
       if: inputs.ktools_release == ''
       working-directory: ${{ env.dir_ktools }}
       run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
+        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "ktools_release=$tag" >> $GITHUB_ENV
-        #if [[ "${{ env.pre_release }}" = "false" ]]; then
-        #    release_tags=( $(git tag --merged "${{ env.branch_ktools }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
-        #else
-        #    release_tags=( $(git tag --merged "${{ env.branch_ktools }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
-        #fi
-        #echo "ktools_release=${release_tags[-1]}" >> $GITHUB_ENV
 
     - name: Find 'ktools_release_prev'
       if: inputs.ktools_release_prev == ''
       working-directory: ${{ env.dir_ktools }}
       run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
+        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
         echo "ktools_release_prev=$tag" >> $GITHUB_ENV
-        #if [[ "${{ env.pre_release }}" = "false" ]]; then
-        #    release_tags=( $(git tag --merged "${{ env.branch_ktools }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
-        #else
-        #    release_tags=( $(git tag --merged "${{ env.branch_ktools }}" --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
-        #fi
-        #echo "ktools_release_prev=${release_tags[-2]}" >> $GITHUB_ENV
 
     ## TAG & assests
 
