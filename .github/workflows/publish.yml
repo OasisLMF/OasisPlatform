@@ -114,9 +114,9 @@ jobs:
       ktools_release: ${{ inputs.ktools_release }}
       ktools_release_prev: ${{ inputs.ktools_release_prev }}
 
-      dir_platform: platform
-      dir_oasislmf: oasislmf
-      dir_ktools: ktools
+      dir_platform: ${{ github.workspace }}/platform
+      dir_oasislmf: ${{ github.workspace }}/oasislmf
+      dir_ktools: ${{ github.workspace }}/ktools
 
       branch_platform: ${{ github.ref_name }}
       branch_oasislmf: 'master'
@@ -182,7 +182,7 @@ jobs:
     - name: Checkout Ktools
       uses: actions/checkout@v3
       with:
-        path: ${{ env.dir_platform }}
+        path: ${{ env.dir_ktools }}
         repository: Oasislmf/ktools
         ref: ${{ env.branch_ktools }}
         fetch-depth: 0
@@ -200,35 +200,35 @@ jobs:
       if: inputs.prev_release_tag == ''
       working-directory: ${{ env.dir_platform }}
       run: |
-        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
+        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "prev_release_tag=$tag" >> $GITHUB_ENV
 
     - name: Find 'oasislmf_release'
       if: inputs.oasislmf_release == ''
       working-directory: ${{ env.dir_oasislmf }}
       run: |
-        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
+        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "oasislmf_release=$tag" >> $GITHUB_ENV
 
     - name: Find 'oasislmf_release_prev'
       if: inputs.oasislmf_release_prev == ''
       working-directory: ${{ env.dir_oasislmf }}
       run: |
-        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
+        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
         echo "oasislmf_release_prev=$tag" >> $GITHUB_ENV
 
     - name: Find 'ktools_release'
       if: inputs.ktools_release == ''
       working-directory: ${{ env.dir_ktools }}
       run: |
-        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
+        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "ktools_release=$tag" >> $GITHUB_ENV
 
     - name: Find 'ktools_release_prev'
       if: inputs.ktools_release_prev == ''
       working-directory: ${{ env.dir_ktools }}
       run: |
-        tag=$( ${{ github.workspace }}/${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
+        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
         echo "ktools_release_prev=$tag" >> $GITHUB_ENV
 
     ## TAG & assests
