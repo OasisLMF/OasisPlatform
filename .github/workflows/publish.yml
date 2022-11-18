@@ -108,7 +108,7 @@ jobs:
 
       branch_platform: ${{ github.ref_name }}
       #branch_oasislmf: 'master'
-      branch_oasislmf: 'backports/1.26.x'   # TESTING
+      branch_oasislmf: 'release/1.27.0'   # TESTING
       branch_ktools: 'master'
       build_scripts: 'master'
 
@@ -414,7 +414,7 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ${{ github.workspace }}/${{ steps.api_schema.outputs.filename }}
         asset_name: ${{ steps.api_schema.outputs.filename }}
-        asset_content_type: application/octet-stream
+        asset_content_type: application/json
 
 
     # --- Slack notify --- #
