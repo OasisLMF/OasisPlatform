@@ -441,7 +441,7 @@ jobs:
       run: |
         HEAD=$(echo "*${{ github.event.repository.name}} Release* (${{ env.RELEASE_TAG }})")
         DATE=$(date)
-        TITLE=$(echo "• TESTING <https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}|${{ github.event.repository.name }} ${{ env.RELEASE_T
+        TITLE=$(echo "• TESTING <https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}|${{ github.event.repository.name }} ${{ env.RELEASE_TAG }} - Release Notes>")
         JOB_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         echo "heading=$HEAD" >> $GITHUB_OUTPUT
         echo "run_date=$DATE" >> $GITHUB_OUTPUT
