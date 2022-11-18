@@ -188,7 +188,7 @@ jobs:
         fetch-depth: 0
 
 
-    - name: DEBUG - where the hell is my script?? 
+    - name: DEBUG - where the hell is my script??
       run: |
         ls -la  ${{ github.workspace }}
         ls -la  ${{ env.dir_platform }}
@@ -379,6 +379,22 @@ jobs:
           --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
           --output-path ./RELEASE.md"
         cat ./RELEASE.md >> $GITHUB_STEP_SUMMARY
+
+
+    # --- Push Images --- #
+    - name: Push images
+      run: |
+        docker push coreoasis/api_server:${{ env.release_tag }}
+        docker push coreoasis/model_worker:${{ env.release_tag }}
+        docker push coreoasis/model_worker:${{ env.release_tag }}-debian
+        docker push coreoasis/piwind_worker:${{ env.release_tag }}
+
+    - name: Push images (Production)
+      if: env.pre_release == 'false'
+      run: |
+        docker push coreoasis/api_server:latest
+        docker push coreoasis/model_worker:latest
+        docker push coreoasis/piwind_worker:latest
 
     # --- Create Release --- #
     - name: Push changes
