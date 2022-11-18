@@ -46,9 +46,9 @@ on:
         required: false
 
 
-# TESTING
+# TESTING -- Remove before merge
 env:
-  platform_version: '1.27.0rc21'
+  release_tag: '1.27.0rc21'
   oasislmf_version: '1.27.0rc3'
 
 jobs:
@@ -101,12 +101,17 @@ jobs:
 
     # e.g.  working-directory: ${{ env.dir_ktools }}
     env:
-      #pre_release: ${{ inputs.pre_release }}
+      # TESTING
       pre_release: 'true'
+      release_tag: ${{ env.release_tag }}
+      oasislmf_release: ${{ env.oasislmf_version }}
 
-      RELEASE_TAG: ${{ inputs.release_tag }}
+      #pre_release: ${{ inputs.pre_release }}
+      #release_tag: ${{ inputs.release_tag }}
+      #oasislmf_release: ${{ inputs.oasislmf_release }}
+
+
       prev_release_tag: ${{ inputs.prev_release_tag }}
-      oasislmf_release: ${{ inputs.oasislmf_release }}
       oasislmf_release_prev: ${{ inputs.oasislmf_release_prev }}
       ktools_release: ${{ inputs.ktools_release }}
       ktools_release_prev: ${{ inputs.ktools_release_prev }}
@@ -134,18 +139,18 @@ jobs:
     - name: Check tag is valid for release
       if: env.pre_release == 'false'
       run: |
-        VALID=$(echo ${{ env.RELEASE_TAG }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)$")
+        VALID=$(echo ${{ env.release_tag }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)$")
         if [[ ! "$VALID" == 1 ]]; then
-            echo "Release Tag ${{ env.RELEASE_TAG }} is not valid"
+            echo "Release Tag ${{ env.release_tag }} is not valid"
             exit 1
         fi
 
     - name: Check tag is valid for pre-release
       if: env.pre_release == 'true'
       run: |
-        VALID=$(echo ${{ env.RELEASE_TAG }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)rc(\d+)$")
+        VALID=$(echo ${{ env.release_tag }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)rc(\d+)$")
         if [[ ! "$VALID" == 1 ]]; then
-            echo "Release Tag ${{ env.RELEASE_TAG }} is not valid"
+            echo "Release Tag ${{ env.release_tag }} is not valid"
             exit 1
         fi
 
@@ -267,18 +272,18 @@ jobs:
       run: |
         # Server
         docker pull ${{ needs.build_images.outputs.server_image }}
-        docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.RELEASE_TAG }}
+        docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.release_tag }}
         docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:latest
         # Worker
         docker pull ${{ needs.build_images.outputs.worker_image }}
-        docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.RELEASE_TAG }}
+        docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.release_tag }}
         docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:latest
         # Worker-dev
         docker pull ${{ needs.build_images.outputs.worker_deb_image }}
-        docker tag  ${{ needs.build_images.outputs.worker_deb_image }} coreoasis/model_worker:${{ env.RELEASE_TAG }}-debian
+        docker tag  ${{ needs.build_images.outputs.worker_deb_image }} coreoasis/model_worker:${{ env.release_tag }}-debian
         # Worker-PiWind
         docker pull ${{ needs.build_piwind.outputs.piwind_image }}
-        docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.RELEASE_TAG }}
+        docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.release_tag }}
         docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:latest
 
 
@@ -286,7 +291,7 @@ jobs:
       working-directory: ${{ env.dir_platform }}
       run: |
         BUILD_VER=$(cat VERSION)
-        [[ "${{ env.RELEASE_TAG }}" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
+        [[ "${{ env.release_tag }}" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
         if [[ "$ERROR_CODE" == 1 ]]; then
             echo "BUILD_VER: $BUILD_VER stored in Repo 'VERSION' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
         fi
@@ -298,7 +303,7 @@ jobs:
         docker rm "$container_id"
 
         BUILD_VER=$(cat ./IMAGE_WORKER_VERSION)
-        RELEASE_VER=${{ env.RELEASE_TAG }}
+        RELEASE_VER=${{ env.release_tag }}
         [[ "$RELEASE_VER" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
         if [[ "$ERROR_CODE" == 1 ]]; then
             echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_images.outputs.worker_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
@@ -311,7 +316,7 @@ jobs:
         docker rm "$container_id"
 
         BUILD_VER=$(cat ./IMAGE_PIWIND_VERSION)
-        RELEASE_VER=${{ env.RELEASE_TAG }}
+        RELEASE_VER=${{ env.release_tag }}
         [[ "$RELEASE_VER" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
         if [[ "$ERROR_CODE" == 1 ]]; then
             echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_piwind.outputs.piwind_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
@@ -345,7 +350,7 @@ jobs:
     - name: Name API schema
       id: api_schema
       run: |
-        schema_filename="openapi-schema-${{ env.RELEASE_TAG }}.json"
+        schema_filename="openapi-schema-${{ env.release_tag }}.json"
         mv reports/openapi-schema.json  $schema_filename
         echo "filename=$schema_filename" >> $GITHUB_OUTPUT
 
@@ -358,7 +363,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
       run: |
         git checkout ${{ github.ref_name }}
-        git tag ${{ env.RELEASE_TAG }}
+        git tag ${{ env.release_tag }}
 
     - name: Setup python
       uses: actions/setup-python@v4
@@ -381,7 +386,7 @@ jobs:
         ${{ github.workspace }}/auto_changelog.py build-changelog \
           --repo OasisPlatform \
           --from-tag ${{ env.prev_release_tag }} \
-          --to-tag ${{ env.RELEASE_TAG }} \
+          --to-tag ${{ env.release_tag }} \
           --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
           --local-repo-path ./ \
           --output-path ./CHANGELOG.rst
@@ -394,7 +399,7 @@ jobs:
       run: |
         ${{ github.workspace }}/auto_changelog.py build-release-platform \
           --platform-from-tag ${{ env.prev_release_tag }} \
-          --platform-to-tag ${{ env.RELEASE_TAG }} \
+          --platform-to-tag ${{ env.release_tag }} \
           --lmf-from-tag ${{ env.oasislmf_release_prev }} \
           --lmf-to-tag ${{ env.oasislmf_release }} \
           --ktools-from-tag ${{ env.ktools_release_prev }} \
@@ -407,7 +412,7 @@ jobs:
     - name: Push changes
       working-directory: ${{ env.dir_platfor }}
       run: |
-        git push origin ${{ env.RELEASE_TAG  }}
+        git push origin ${{ env.release_tag  }}
         git push
 
     - name: Create Release
@@ -416,8 +421,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
       with:
-        tag_name: ${{ env.RELEASE_TAG }}
-        release_name: Release ${{ env.RELEASE_TAG }}
+        tag_name: ${{ env.release_tag }}
+        release_name: Release ${{ env.release_tag }}
         body_path: ${{ env.WORKSPACE }}/RELEASE.md
         draft: false
         prerelease: ${{ env.pre_release }}
@@ -439,9 +444,9 @@ jobs:
     - name: slack message vars
       id: slack_vars
       run: |
-        HEAD=$(echo "*${{ github.event.repository.name}} Release* (${{ env.RELEASE_TAG }})")
+        HEAD=$(echo "*${{ github.event.repository.name}} Release* (${{ env.release_tag }})")
         DATE=$(date)
-        TITLE=$(echo "• TESTING <https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}|${{ github.event.repository.name }} ${{ env.RELEASE_TAG }} - Release Notes>")
+        TITLE=$(echo "• TESTING <https://github.com/${{ github.repository }}/releases/tag/${{ env.release_tag }}|${{ github.event.repository.name }} ${{ env.release_tag }} - Release Notes>")
         JOB_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         echo "heading=$HEAD" >> $GITHUB_OUTPUT
         echo "run_date=$DATE" >> $GITHUB_OUTPUT
