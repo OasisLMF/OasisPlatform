@@ -101,6 +101,9 @@ jobs:
 
     # e.g.  working-directory: ${{ env.dir_ktools }}
     env:
+      #pre_release: ${{ inputs.pre_release }}
+      pre_release: 'true'
+
       RELEASE_TAG: ${{ inputs.release_tag }}
       prev_release_tag: ${{ inputs.prev_release_tag }}
       oasislmf_release: ${{ inputs.oasislmf_release }}
@@ -118,18 +121,18 @@ jobs:
       branch_ktools: 'master'
       #branch_oasisui: 'master'
 
-
+      build_scripts: 'master'
 
     steps:
      ## RELEASE CHECKS
-    - name: check branchname is valid for release
-      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'backports/') }}
-      run: |
-        echo "Releases must be trigged on branchs 'release/x.x.x' or 'backports/x.x.x' "
-        exit 1
+#    - name: check branchname is valid for release
+#      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'backports/') }}
+#      run: |
+#        echo "Releases must be trigged on branchs 'release/x.x.x' or 'backports/x.x.x' "
+#        exit 1
 
     - name: Check tag is valid for release
-      if: env.PRE_RELEASE == 'false'
+      if: env.pre_release == 'false'
       run: |
         VALID=$(echo ${{ env.RELEASE_TAG }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)$")
         if [[ ! "$VALID" == 1 ]]; then
@@ -138,7 +141,7 @@ jobs:
         fi
 
     - name: Check tag is valid for pre-release
-      if: env.PRE_RELEASE == 'true'
+      if: env.pre_release == 'true'
       run: |
         VALID=$(echo ${{ env.RELEASE_TAG }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)rc(\d+)$")
         if [[ ! "$VALID" == 1 ]]; then
@@ -199,7 +202,7 @@ jobs:
       if: inputs.prev_release_tag == ''
       working-directory: ${{ env.dir_platform }}
       run: |
-        if [[ "${{ env.PRE_RELEASE }}" = "false" ]]; then
+        if [[ "${{ env.pre_release }}" = "false" ]]; then
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
@@ -210,7 +213,7 @@ jobs:
       if: inputs.oasislmf_release == ''
       working-directory: ${{ env.dir_oasislmf }}
       run: |
-        if [[ "${{ env.PRE_RELEASE }}" = "false" ]]; then
+        if [[ "${{ env.pre_release }}" = "false" ]]; then
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
@@ -221,7 +224,7 @@ jobs:
       if: inputs.oasislmf_release_prev == ''
       working-directory: ${{ env.dir_oasislmf }}
       run: |
-        if [[ "${{ env.PRE_RELEASE }}" = "false" ]]; then
+        if [[ "${{ env.pre_release }}" = "false" ]]; then
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
@@ -233,7 +236,7 @@ jobs:
       if: inputs.ktools_release == ''
       working-directory: ${{ env.dir_ktools }}
       run: |
-        if [[ "${{ env.PRE_RELEASE }}" = "false" ]]; then
+        if [[ "${{ env.pre_release }}" = "false" ]]; then
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
@@ -244,7 +247,7 @@ jobs:
       if: inputs.ktools_release_prev == ''
       working-directory: ${{ env.dir_ktools }}
       run: |
-        if [[ "${{ env.PRE_RELEASE }}" = "false" ]]; then
+        if [[ "${{ env.pre_release }}" = "false" ]]; then
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$") )
         else
             release_tags=( $(git tag --merged backports/1.26.x --sort=creatordate | grep -oP "^(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
@@ -259,6 +262,7 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+    ## pull a rename build images
     - name: Pull and re-tag images
       run: |
         # Server
@@ -276,7 +280,6 @@ jobs:
         docker pull ${{ needs.build_piwind.outputs.piwind_image }}
         docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.RELEASE_TAG }}
         docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:latest
-
 
 
     - name: Check tag matches (Repo)
@@ -317,8 +320,8 @@ jobs:
     - name: Get ktools & oasislmf versions
       continue-on-error: true
       run: |
-        docker run --entrypoint "/root/.local/bin/eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
         docker run --entrypoint "/root/.local/bin/oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
+        docker run --entrypoint "/root/.local/bin/eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
 
 
     - name: Check Oasislmf version matches
@@ -332,14 +335,134 @@ jobs:
         test "$KTOOL_VER" != ${{ env.ktools_release }} && \
         echo "$KTOOL_VER != ${{ env.ktools_release }}"
 
-    ## setup github / login dockerhub
 
-    ## pull a rename build images
+    - name: Download API schema
+      uses: actions/download-artifact@v3
+      with:
+        name: openapi-schema
+        path: ${{ github.workspace }}/
 
-    ## Create Changelog / notes
+    - name: Name API schema
+      id: api_schema
+      run: |
+        schema_filename="openapi-schema-${{ env.RELEASE_TAG }}.json"
+        mv reports/openapi-schema.json  $schema_filename
+        echo "filename=$schema_filename" >> $GITHUB_OUTPUT
 
-       # Append markdown release notes to Action run
 
-    # --- Push Images --- #
+
+    # --- Create Changelog --- #
+    - name: Tag Release
+      working-directory: ${{ env.dir_platform }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
+      run: |
+        git checkout ${{ github.ref_name }}
+        git tag ${{ env.RELEASE_TAG }}
+
+    - name: Setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Setup Changelog builder
+      working-directory: ${{ github.workspace }}
+      run: |
+        BASE_URL="https://raw.githubusercontent.com/OasisLMF/build/${{ env.build_scripts }}/buildscript"
+        pip install -r $BASE_URL/requirments_changelog.txt
+        wget $BASE_URL/auto_changelog.py
+        chmod +x auto_changelog.py
+
+    - name: Create changelog
+      working-directory: ${{ env.dir_platform }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
+      run: |
+        ${{ github.workspace }}/auto_changelog.py build-changelog \
+          --repo OasisPlatform \
+          --from-tag ${{ env.prev_release_tag }} \
+          --to-tag ${{ env.RELEASE_TAG }} \
+          --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
+          --local-repo-path ./ \
+          --output-path ./CHANGELOG.rst
+          #--apply-milestone
+
+        git add ./CHANGELOG.rst
+        git commit -m 'Update changelog'
+
+    - name: Create Release notes
+      working-directory: ${{ env.WORKSPACE }}
+      run: |
+        ${{ github.workspace }}/auto_changelog.py build-release-platform \
+          --platform-from-tag ${{ env.prev_release_tag }} \
+          --platform-to-tag ${{ env.RELEASE_TAG }} \
+          --lmf-from-tag ${{ env.oasislmf_release_prev }} \
+          --lmf-to-tag ${{ env.oasislmf_release }} \
+          --ktools-from-tag ${{ env.ktools_release_prev }} \
+          --ktools-to-tag ${{ env.ktools_release }} \
+          --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
+          --output-path ./RELEASE.md"
+        cat ./RELEASE.md >> $GITHUB_STEP_SUMMARY
+
     # --- Create Release --- #
+    - name: Push changes
+      working-directory: ${{ env.dir_platfor }}
+      run: |
+        git push origin ${{ env.RELEASE_TAG  }}
+        git push
+
+    - name: Create Release
+      working-directory: ${{ env.WORKSPACE }}
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
+      with:
+        tag_name: ${{ env.RELEASE_TAG }}
+        release_name: Release ${{ env.RELEASE_TAG }}
+        body_path: ${{ env.WORKSPACE }}/RELEASE.md
+        draft: false
+        prerelease: ${{ env.pre_release }}
+
+    # --- Attach build assest --- #
+    - name: Upload Schema
+      id: upload-source-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/${{ step.api_schema.outputs.filename }}
+        asset_name: ${{ steps.api_schema.outputs.filename }}
+        asset_content_type: application/octet-stream
+
+
     # --- Slack notify --- #
+    - name: slack message vars
+      id: slack_vars
+      run: |
+        HEAD=$(echo "*${{ github.event.repository.name}} Release* (${{ env.RELEASE_TAG }})")
+        DATE=$(date)
+        TITLE=$(echo "• TESTING <https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}|${{ github.event.repository.name }} ${{ env.RELEASE_T
+        JOB_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        echo "heading=$HEAD" >> $GITHUB_OUTPUT
+        echo "run_date=$DATE" >> $GITHUB_OUTPUT
+        echo "title=$TITLE" >> $GITHUB_OUTPUT
+        echo "run_url=$JOB_URL" >> $GITHUB_OUTPUT
+        echo "run_id=${{ github.run_id }}"  >> $GITHUB_OUTPUT
+        echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+  # --- Notify Slack --- #
+  slack:
+    uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@master
+    secrets: inherit
+    needs: release
+    with:
+      heading: ${{ needs.release.outputs.heading }}
+      title: ${{ needs.release.outputs.title }}
+      build_branch: ${{ needs.release.outputs.build_branch }}
+      run_url: ${{ needs.release.outputs.run_url }}
+      run_id: ${{ needs.release.outputs.run_id }}
+      run_status: ${{ needs.release.outputs.run_status }}
+      run_date: ${{ needs.release.outputs.run_date }}
