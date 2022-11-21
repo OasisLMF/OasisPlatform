@@ -357,19 +357,13 @@ jobs:
 
     - name: Setup Changelog builder
       working-directory: ${{ env.dir_platform  }}
-      run: |
-        pip install -r scripts/requirments-changelog.txt
-        #BASE_URL="https://raw.githubusercontent.com/OasisLMF/build/${{ env.build_scripts }}/buildscript"
-        #pip install -r $BASE_URL/requirments_changelog.txt
-        #wget $BASE_URL/auto_changelog.py
-        #chmod +x auto_changelog.py
+      run: pip install -r scripts/requirments-changelog.txt
 
     - name: Create changelog
       working-directory: ${{ env.dir_platform }}
       env:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
       run: |
-        #${{ github.workspace }}/auto_changelog.py build-changelog \
         ${{ env.dir_platform }}/scripts/update-changelog.py build-changelog \
           --repo OasisPlatform \
           --from-tag ${{ env.prev_release_tag }} \
@@ -384,7 +378,6 @@ jobs:
 
     - name: Create Release notes
       run: |
-        #${{ github.workspace }}/auto_changelog.py build-release-platform \
         ${{ env.dir_platform }}/scripts/update-changelog.py build-release-platform \
           --platform-repo-path ${{ env.dir_platform }}  \
           --platform-from-tag ${{ env.prev_release_tag }} \
