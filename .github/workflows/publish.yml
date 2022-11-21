@@ -38,7 +38,7 @@ on:
 # TESTING -- Remove before merge
 env:
   release_tag: '1.27.0rc21'
-  oasislmf_version: '1.27.0rc3'
+  oasislmf_release: '1.27.0rc3'
 
 jobs:
   update:
@@ -296,7 +296,7 @@ jobs:
         retention-days: 5
 
     - name: Check for Oasislmf version match
-      run: test "$(cat OASISLMF_VERSION)" = '1.27.0rc2' || exit 1
+      run: test "$(cat OASISLMF_VERSION)" = ${{ env.oasislmf_release }} || exit 1
 
     - name: Check for ktools version match
       run: |
