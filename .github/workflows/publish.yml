@@ -430,7 +430,7 @@ jobs:
       with:
         tag_name: ${{ env.release_tag }}
         release_name: Release ${{ env.release_tag }}
-        body_path: ${{ env.WORKSPACE }}/RELEASE.md
+        body_path: ./RELEASE.md
         draft: false
         prerelease: ${{ env.pre_release }}
 
