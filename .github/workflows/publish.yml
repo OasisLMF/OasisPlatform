@@ -192,7 +192,7 @@ jobs:
       if: env.oasislmf_release != ''   # TESTING
       run: |
         git checkout ${{ env.branch_oasislmf }}
-        git reset  --hard $(git rev-list -n 1 v${{ env.oasislmf_release }} )
+        git reset  --hard $(git rev-list -n 1 ${{ env.oasislmf_release }} )
 
     - name: Find 'oasislmf_release'
       if: inputs.oasislmf_release == ''
