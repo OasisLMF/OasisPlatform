@@ -370,7 +370,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
       run: |
         #${{ github.workspace }}/auto_changelog.py build-changelog \
-        ./scripts/update-changelog.py build-changelog \
+        ${{ env.dir_platform }}/scripts/update-changelog.py build-changelog \
           --repo OasisPlatform \
           --from-tag ${{ env.prev_release_tag }} \
           --to-tag ${{ env.release_tag }} \
@@ -385,7 +385,7 @@ jobs:
     - name: Create Release notes
       run: |
         #${{ github.workspace }}/auto_changelog.py build-release-platform \
-        ./scripts/update-changelog.py build-release-platform \
+        ${{ env.dir_platform }}/scripts/update-changelog.py build-release-platform \
           --platform-repo-path ${{ env.dir_platform }}  \
           --platform-from-tag ${{ env.prev_release_tag }} \
           --platform-to-tag ${{ env.release_tag }} \
