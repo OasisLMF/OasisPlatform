@@ -389,7 +389,7 @@ jobs:
           --ktools-from-tag ${{ env.ktools_release_prev }} \
           --ktools-to-tag ${{ env.ktools_release }} \
           --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
-          --output-path ./RELEASE.md"
+          --output-path ./RELEASE.md
         cat ./RELEASE.md >> $GITHUB_STEP_SUMMARY
 
 
