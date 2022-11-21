@@ -189,7 +189,7 @@ jobs:
     - name: oasislmf tag (OVERRIDE)
       working-directory: ${{ env.dir_oasislmf }}
       #if: ! inputs.oasislmf_release == ''
-      if: ! env.oasislmf_release == ''   # TESTING
+      if: env.oasislmf_release != ''   # TESTING
       run: |
         git checkout ${{ env.branch_oasislmf }}
         git reset  --hard $(git rev-list -n 1 v${{ env.oasislmf_release }} )
@@ -212,7 +212,7 @@ jobs:
     - name: Ktools tag (OVERRIDE)
       working-directory: ${{ env.dir_ktools }}
       #if: ! inputs.ktools_release == ''
-      if: ! env.ktools_release == ''   # TESTING
+      if: env.ktools_release != ''   # TESTING
       run: |
         git checkout ${{ env.branch_ktools }}
         git reset  --hard $(git rev-list -n 1 v${{ env.ktools_release }} )
