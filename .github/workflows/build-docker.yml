@@ -173,7 +173,5 @@ jobs:
     - name: Docker summary
       if: env.DOCKER_PUSH == 'true'
       run: |
-        echo "#### Docker Images: " >> $GITHUB_STEP_SUMMARY 
-        echo "* [coreoasis/github-actions:api_server-${{ github.sha }}](https://hub.docker.com/r/coreoasis/github-actions/tags?name=api_server-${{ github.sha }})" >> $GITHUB_STEP_SUMMARY 
-        echo "* [coreoasis/github-actions:model_worker-${{ github.sha }}](https://hub.docker.com/r/coreoasis/github-actions/tags?name=model_worker-${{ github.sha }})" >> $GITHUB_STEP_SUMMARY 
-        echo "* [coreoasis/github-actions:model_worker_deb-${{ github.sha }}](https://hub.docker.com/r/coreoasis/github-actions/tags?name=model_worker_deb-${{ github.sha }})" >> $GITHUB_STEP_SUMMARY 
+        echo "#### Docker Image: " >> $GITHUB_STEP_SUMMARY 
+        echo "* [${{ env.IMAGE_REPO }}:${{ matrix.tag }}](https://hub.docker.com/r/${{ env.IMAGE_REPO }}/tags?name=${{ matrix.tag }})" >> $GITHUB_STEP_SUMMARY 
