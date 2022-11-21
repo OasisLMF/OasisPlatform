@@ -110,7 +110,8 @@ jobs:
       #branch_oasislmf: 'master'
       branch_oasislmf: 'release/1.27.0'   # TESTING
       branch_ktools: 'master'
-      build_scripts: 'master'
+      #build_scripts: 'master'
+     # build_scripts: 'platform-notes-local-repos' #TESTING ... or move to this repo?
 
     steps:
      ## RELEASE CHECKS
@@ -355,19 +356,21 @@ jobs:
         python-version: '3.9'
 
     - name: Setup Changelog builder
-      working-directory: ${{ github.workspace }}
+      working-directory: ${{ env.dir_platform  }}
       run: |
-        BASE_URL="https://raw.githubusercontent.com/OasisLMF/build/${{ env.build_scripts }}/buildscript"
-        pip install -r $BASE_URL/requirments_changelog.txt
-        wget $BASE_URL/auto_changelog.py
-        chmod +x auto_changelog.py
+        pip install -r scripts/requirments-changelog.txt
+        #BASE_URL="https://raw.githubusercontent.com/OasisLMF/build/${{ env.build_scripts }}/buildscript"
+        #pip install -r $BASE_URL/requirments_changelog.txt
+        #wget $BASE_URL/auto_changelog.py
+        #chmod +x auto_changelog.py
 
     - name: Create changelog
       working-directory: ${{ env.dir_platform }}
       env:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
       run: |
-        ${{ github.workspace }}/auto_changelog.py build-changelog \
+        #${{ github.workspace }}/auto_changelog.py build-changelog \
+        ./scripts/auto_changelog.py build-changelog \
           --repo OasisPlatform \
           --from-tag ${{ env.prev_release_tag }} \
           --to-tag ${{ env.release_tag }} \
@@ -381,11 +384,15 @@ jobs:
 
     - name: Create Release notes
       run: |
-        ${{ github.workspace }}/auto_changelog.py build-release-platform \
+        #${{ github.workspace }}/auto_changelog.py build-release-platform \
+        ./scripts/auto_changelog.py build-release-platform \
+          --platform-repo-path ${{ env.dir_platform }}  \
           --platform-from-tag ${{ env.prev_release_tag }} \
           --platform-to-tag ${{ env.release_tag }} \
+          --lmf-repo-path ${{ env.dir_oasislmf }} \
           --lmf-from-tag ${{ env.oasislmf_release_prev }} \
           --lmf-to-tag ${{ env.oasislmf_release }} \
+          --ktools-repo-path ${{ env.dir_ktools }} \
           --ktools-from-tag ${{ env.ktools_release_prev }} \
           --ktools-to-tag ${{ env.ktools_release }} \
           --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
