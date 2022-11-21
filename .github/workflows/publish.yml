@@ -417,7 +417,7 @@ jobs:
 
     # --- Create Release --- #
     - name: Push changes
-      working-directory: ${{ env.dir_platfor }}
+      working-directory: ${{ env.dir_platform }}
       run: |
         git push origin ${{ env.release_tag  }}
         git push
