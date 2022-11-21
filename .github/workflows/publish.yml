@@ -51,7 +51,6 @@ jobs:
       oasislmf_version: '1.27.0rc3'
 
 
-
 # download artifact ref 'openapi-schema' to attach
   build_schema:
     uses: ./.github/workflows/build-schema.yml
@@ -99,7 +98,8 @@ jobs:
       prev_release_tag: ${{ inputs.prev_release_tag }}
       oasislmf_release_prev: ${{ inputs.oasislmf_release_prev }}
 
-      ktools_release: ${{ inputs.ktools_release }}
+      ktools_release: '3.9.4'  # TESTING
+      #ktools_release: ${{ inputs.ktools_release }}
       ktools_release_prev: ${{ inputs.ktools_release_prev }}
 
       dir_platform: ${{ github.workspace }}/platform
@@ -184,6 +184,16 @@ jobs:
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "prev_release_tag=$tag" >> $GITHUB_ENV
 
+
+
+    - name: oasislmf tag (OVERRIDE)
+      working-directory: ${{ env.dir_oasislmf }}
+      #if: ! inputs.oasislmf_release == ''
+      if: ! env.oasislmf_release == ''   # TESTING
+      run: |
+        git checkout ${{ env.branch_oasislmf }}
+        git reset  --hard $(git rev-list -n 1 v${{ env.oasislmf_release }} )
+
     - name: Find 'oasislmf_release'
       if: inputs.oasislmf_release == ''
       working-directory: ${{ env.dir_oasislmf }}
@@ -198,12 +208,24 @@ jobs:
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
         echo "oasislmf_release_prev=$tag" >> $GITHUB_ENV
 
+
+    - name: Ktools tag (OVERRIDE)
+      working-directory: ${{ env.dir_ktools }}
+      #if: ! inputs.ktools_release == ''
+      if: ! env.ktools_release == ''   # TESTING
+      run: |
+        git checkout ${{ env.branch_ktools }}
+        git reset  --hard $(git rev-list -n 1 v${{ env.ktools_release }} )
+
+
+
     - name: Find 'ktools_release'
       if: inputs.ktools_release == ''
       working-directory: ${{ env.dir_ktools }}
       run: |
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1 -v 'v')
         echo "ktools_release=$tag" >> $GITHUB_ENV
+
 
     - name: Find 'ktools_release_prev'
       if: inputs.ktools_release_prev == ''
@@ -301,7 +323,7 @@ jobs:
     - name: Check for ktools version match
       run: |
         KTOOL_VER=$(head -1 KTOOLS_VERSION | grep -oP "(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)")
-        test "$KTOOL_VER" = ${{ env.ktools_release }} || exit 1
+        test "v$KTOOL_VER" = ${{ env.ktools_release }} || exit 1
 
     - name: Download API schema
       uses: actions/download-artifact@v3
