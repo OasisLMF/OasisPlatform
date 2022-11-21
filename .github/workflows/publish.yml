@@ -1,61 +1,57 @@
 name: Platform Release
 
 on:
-  push:
   workflow_dispatch:
     inputs:
       pre_release:
         description: 'Mark GitHub release as pre-release: [true, false]'
         required: true
-        type: boolean
+        type: string
 
       release_tag:
         description: 'Release tag, for release: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
         required: true
 
+      piwind_branch:
+        description: 'Branch to build piwind from'
+        default: 'develop'
+        required: true
+
       prev_release_tag:
-        description: '(OVERRIDE) The previous release version for changelog: ["{n}.{n}.{n}", "{n}.{n}.{n}rc{n}"]'
+        description: '(OVERRIDE) The previous release version for changelog [semvar]'
         required: false
 
       oasislmf_release:
-        description: '(OVERRIDE) Pin a new "oasislmf" version: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
+        description: '(OVERRIDE) The oasislmf version in this release [semvar]'
         required: true
 
       oasislmf_release_prev:
-        description: '(OVERRIDE)'
+        description: '(OVERRIDE) The previous oasislmf version for changelog [semvar]'
         required: false
 
       ktools_release:
-        description: '(OVERRIDE)'
+        description: '(OVERRIDE)  The ktools version in this release [semvar]'
         required: false
 
       ktools_release_prev:
-        description: '(OVERRIDE)'
+        description: '(OVERRIDE)  The previous ktools version for changelog [semvar]'
         required: false
 
 
-
-# TESTING -- Remove before merge
-env:
-  release_tag: '1.27.0rc21'
-  oasislmf_release: '1.27.0rc3'
 
 jobs:
   update:
     uses: ./.github/workflows/version.yml
     secrets: inherit
     with:
-      #platform_version: ${{ inputs.release_tag }}
-      #oasislmf_version: ${{ inputs.oasislmf_release }}
-      platform_version: '1.27.0rc21'
-      oasislmf_version: '1.27.0rc3'
+      platform_version: ${{ inputs.release_tag }}
+      oasislmf_version: ${{ inputs.oasislmf_release }}
 
-
-# download artifact ref 'openapi-schema' to attach
   build_schema:
     uses: ./.github/workflows/build-schema.yml
     secrets: inherit
     needs: update
+
 
   build_images:
     uses: ./.github/workflows/build-docker.yml
@@ -65,6 +61,7 @@ jobs:
       docker_push: true
       ignore_unfixed: true
 
+
   build_piwind:
     uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@dockerbuild/github-actions
     secrets: inherit
@@ -72,7 +69,7 @@ jobs:
     with:
       docker_push: true
       from_image: ${{ needs.build_images.outputs.worker_image }}
-      piwind_branch: 'develop'  # should change if backports
+      piwind_branch: ${{ inputs.piwind_branch }}
 
 
   release:
@@ -87,19 +84,15 @@ jobs:
       run_status: ${{ steps.slack_vars.outputs.run_status }}
       run_date: ${{ steps.slack_vars.outputs.run_date }}
 
-    # e.g.  working-directory: ${{ env.dir_ktools }}
-    env:
-      # TESTING
-      pre_release: 'true'
 
-      #pre_release: ${{ inputs.pre_release }}
-      #release_tag: ${{ inputs.release_tag }}
-      #oasislmf_release: ${{ inputs.oasislmf_release }}
+    env:
+      pre_release: ${{ inputs.pre_release }}
+      release_tag: ${{ inputs.release_tag }}
+      oasislmf_release: ${{ inputs.oasislmf_release }}
       prev_release_tag: ${{ inputs.prev_release_tag }}
       oasislmf_release_prev: ${{ inputs.oasislmf_release_prev }}
 
-      ktools_release: '3.9.4'  # TESTING
-      #ktools_release: ${{ inputs.ktools_release }}
+      ktools_release: ${{ inputs.ktools_release }}
       ktools_release_prev: ${{ inputs.ktools_release_prev }}
 
       dir_platform: ${{ github.workspace }}/platform
@@ -107,19 +100,16 @@ jobs:
       dir_ktools: ${{ github.workspace }}/ktools
 
       branch_platform: ${{ github.ref_name }}
-      #branch_oasislmf: 'master'
-      branch_oasislmf: 'release/1.27.0'   # TESTING
+      branch_oasislmf: 'master'
       branch_ktools: 'master'
-      #build_scripts: 'master'
-     # build_scripts: 'platform-notes-local-repos' #TESTING ... or move to this repo?
 
     steps:
      ## RELEASE CHECKS
-#    - name: check branchname is valid for release
-#      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'backports/') }}
-#      run: |
-#        echo "Releases must be trigged on branchs 'release/x.x.x' or 'backports/x.x.x' "
-#        exit 1
+    - name: check branchname is valid for release
+      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'backports/') }}
+      run: |
+        echo "Releases must be trigged on branchs 'release/x.x.x' or 'backports/x.x.x' "
+        exit 1
 
     - name: Check tag is valid for release
       if: env.pre_release == 'false'
@@ -185,8 +175,6 @@ jobs:
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "prev_release_tag=$tag" >> $GITHUB_ENV
 
-
-
     - name: oasislmf tag (OVERRIDE)
       working-directory: ${{ env.dir_oasislmf }}
       #if: ! inputs.oasislmf_release == ''
@@ -209,7 +197,6 @@ jobs:
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
         echo "oasislmf_release_prev=$tag" >> $GITHUB_ENV
 
-
     - name: Ktools tag (OVERRIDE)
       working-directory: ${{ env.dir_ktools }}
       #if: ! inputs.ktools_release == ''
@@ -218,15 +205,12 @@ jobs:
         git checkout ${{ env.branch_ktools }}
         git reset  --hard $(git rev-list -n 1 v${{ env.ktools_release }} )
 
-
-
     - name: Find 'ktools_release'
       if: inputs.ktools_release == ''
       working-directory: ${{ env.dir_ktools }}
       run: |
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1 -v 'v')
         echo "ktools_release=$tag" >> $GITHUB_ENV
-
 
     - name: Find 'ktools_release_prev'
       if: inputs.ktools_release_prev == ''
@@ -236,7 +220,6 @@ jobs:
         echo "ktools_release_prev=$tag" >> $GITHUB_ENV
 
     ## TAG & assests
-
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
@@ -339,8 +322,6 @@ jobs:
         mv openapi-schema.json  $schema_filename
         echo "filename=$schema_filename" >> $GITHUB_OUTPUT
 
-
-
     # --- Create Changelog --- #
     - name: Tag Release
       working-directory: ${{ env.dir_platform }}
@@ -370,9 +351,8 @@ jobs:
           --to-tag ${{ env.release_tag }} \
           --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
           --local-repo-path ./ \
-          --output-path ./CHANGELOG.rst
-          #--apply-milestone
-
+          --output-path ./CHANGELOG.rst \
+          --apply-milestone
         git add ./CHANGELOG.rst
         git commit -m 'Update changelog'
 
@@ -391,7 +371,6 @@ jobs:
           --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
           --output-path ./RELEASE.md
         cat ./RELEASE.md >> $GITHUB_STEP_SUMMARY
-
 
     # --- Push Images --- #
     - name: Push images
@@ -439,14 +418,13 @@ jobs:
         asset_name: ${{ steps.api_schema.outputs.filename }}
         asset_content_type: application/json
 
-
     # --- Slack notify --- #
     - name: slack message vars
       id: slack_vars
       run: |
         HEAD=$(echo "*${{ github.event.repository.name}} Release* (${{ env.release_tag }})")
         DATE=$(date)
-        TITLE=$(echo "• TESTING <https://github.com/${{ github.repository }}/releases/tag/${{ env.release_tag }}|${{ github.event.repository.name }} ${{ env.release_tag }} - Release Notes>")
+        TITLE=$(echo "• <https://github.com/${{ github.repository }}/releases/tag/${{ env.release_tag }}|${{ github.event.repository.name }} ${{ env.release_tag }} - Release Notes>")
         JOB_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         echo "heading=$HEAD" >> $GITHUB_OUTPUT
         echo "run_date=$DATE" >> $GITHUB_OUTPUT
@@ -455,7 +433,6 @@ jobs:
         echo "run_id=${{ github.run_id }}"  >> $GITHUB_OUTPUT
         echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
         echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
-
 
   # --- Notify Slack --- #
   slack:
