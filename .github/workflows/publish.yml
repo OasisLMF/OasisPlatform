@@ -381,7 +381,7 @@ jobs:
         docker push coreoasis/piwind_worker:${{ env.release_tag }}
 
     - name: Push images (Production)
-      if: env.pre_release == 'false'
+      if: ${{ env.pre_release == 'false' && !startsWith(github.ref_name, 'backports/') }}
       run: |
         docker push coreoasis/api_server:latest
         docker push coreoasis/model_worker:latest
