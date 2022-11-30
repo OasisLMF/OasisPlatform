@@ -46,7 +46,7 @@ jobs:
       - name: Load released image tag
         id: released_images
         run: |
-          tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}")
+          tag=$( ./scripts/find_release.sh -p "${{ env.pre_release }}")
           echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
 
       # Split ouput strings from build job
