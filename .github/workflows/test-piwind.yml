@@ -87,7 +87,7 @@ jobs:
           server_tag: ${{ needs.setup_matix.outputs.build_server_tag }}
           worker_img: ${{ needs.setup_matix.outputs.build_worker_img }}
           worker_tag: ${{ needs.setup_matix.outputs.build_worker_tag }}
-          pytest_opts: '--docker-compose=docker/s3.docker-compose.yml -k ControlSet'
+          pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k ControlSet'
           debug: 1
 
 
