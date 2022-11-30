@@ -67,7 +67,8 @@ jobs:
     needs: [setup_matix]
     strategy:
       matrix:
-        compose_test: [storage_fs, storage_s3, worker_compat, server_compat]
+        #compose_test: [storage_fs, storage_s3, worker_compat, server_compat]
+        compose_test: [storage_s3]
         include:
         - compose_test: storage_s3
           server_img: ${{ needs.setup_matix.outputs.build_server_img }}
