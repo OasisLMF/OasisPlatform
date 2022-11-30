@@ -110,7 +110,8 @@ jobs:
     #uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
-      piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
+      #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
+      piwind_branch: 'hotfix/add-local-stack-compose'
       server_image: ${{ matrix.server_img }}
       server_tag:   ${{ matrix.server_tag }}
       worker_image: ${{ matrix.worker_img }}
