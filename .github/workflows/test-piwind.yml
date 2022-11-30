@@ -1,0 +1,66 @@
+name: PiWind Integration
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - backports**                                                                                                                                            
+  pull_request:
+    branches:
+      - master
+      - develop
+      - backports**
+
+
+jobs:
+  build_images:
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    needs: update
+    with:
+      docker_push: true
+      ignore_unfixed: true
+
+  # https://docs.github.com/en/actions/learn-github-actions/expressions#example-returning-a-json-object
+  setup_matix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+      - name: Load current release 
+        id: current_images 
+        run: |
+
+      - name: Load built images   
+        id: built_images 
+        run: |
+
+      #- name: Set Matrix
+      #  id: set-matrix
+      #  run: |
+      #    echo "matrix={\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}" >> $GITHUB_OUTPUT
+
+    #
+    # fetch the current platform branch and find the last released version 
+    # build a test matrix to call piwind testing with 
+    #
+    #  new_worker vs new_server (shared fs)
+    #  new_worker vs new_server (local stack s3)
+    #  new_worker vs pre_server
+    #  prev_worker vs new_server
+
+
+#  piwind:
+#    if: ${{ ! failure() || ! cancelled() }}
+#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+#    secrets: inherit
+#    needs: [build_images]
+#    with:
+#      piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
+#      server_image:
+#      server_tag:
+#      worker_image:
+#      worker_tag: 
+#      debug_mode: 1
