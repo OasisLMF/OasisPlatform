@@ -24,6 +24,7 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
+      cve_severity: 'SKIP'
 
   # https://docs.github.com/en/actions/learn-github-actions/expressions#example-returning-a-json-object
   setup_matix:

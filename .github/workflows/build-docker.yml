@@ -15,7 +15,7 @@ on:
         default: true
         type: boolean
       cve_severity:
-        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL, SKIP]'
         required: false
         default: 'CRITICAL,HIGH'
 
@@ -144,7 +144,7 @@ jobs:
         retention-days: 3
 
     - name: Vulnerability scanner
-      if: env.SEVERITY != ''
+      if: env.SEVERITY != 'SKIP'
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
