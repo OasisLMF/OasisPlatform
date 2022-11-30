@@ -128,6 +128,7 @@ jobs:
         tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
 
     - name: Test image efficiency
+      if: env.SEVERITY != 'SKIP'
       run: |
         ./scripts/imagesize.sh ${{ env.IMAGE_REPO }}:${{ matrix.tag }} ${{ matrix.dive }}
       env:
