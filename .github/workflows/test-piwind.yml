@@ -65,22 +65,6 @@ jobs:
           echo "worker_tag=$worker_tag" >> $GITHUB_OUTPUT
 
 
-      #- name: Set Matrix
-      #  id: set-matrix
-      #  run: |
-      #    echo "matrix={\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}" >> $GITHUB_OUTPUT
-
-    #
-    # fetch the current platform branch and find the last released version
-    # build a test matrix to call piwind testing with
-    #
-
-
-
-    #  new_worker vs new_server (shared fs)
-    #  new_worker vs new_server (local stack s3)
-    #  new_worker vs pre_server
-    #  prev_worker vs new_server
   piwind_integration:
     if: ${{ ! failure() || ! cancelled() }}
     secrets: inherit
@@ -95,20 +79,24 @@ jobs:
           server_tag: ${{ needs.setup_matix.outputs.build_server_tag }}
           worker_img: ${{ needs.setup_matix.outputs.build_worker_img }}
           worker_tag: ${{ needs.setup_matix.outputs.build_worker_tag }}
+          pytest_opts: '-k ControlSet'
           debug: 1
 
-       # - compose_test: storage_s3
-       #   server_img:
-       #   server_tag:
-       #   worker_img:
-       #   worker_tag:
-       #   debug: 1
+        - compose_test: storage_s3
+          server_img: ${{ needs.setup_matix.outputs.build_server_img }}
+          server_tag: ${{ needs.setup_matix.outputs.build_server_tag }}
+          worker_img: ${{ needs.setup_matix.outputs.build_worker_img }}
+          worker_tag: ${{ needs.setup_matix.outputs.build_worker_tag }}
+          pytest_opts: '--docker-compose=docker/s3.docker-compose.yml -k ControlSet'
+          debug: 1
+
 
         - compose_test: worker_compat # new_worker vs released_server
           server_img: 'coreoasis/api_server'
           server_tag: ${{ needs.setup_matix.outputs.release_tag }}
           worker_img: ${{ needs.setup_matix.outputs.build_worker_img }}
           worker_tag: ${{ needs.setup_matix.outputs.build_worker_tag }}
+          pytest_opts: '-k ControlSet'
           debug: 1
 
         - compose_test: server_compat # release_worker vs new_server
@@ -116,9 +104,11 @@ jobs:
           server_tag: ${{ needs.setup_matix.outputs.build_server_tag }}
           worker_img: 'coreoasis/model_worker'
           worker_tag: ${{ needs.setup_matix.outputs.release_tag }}
+          pytest_opts: '-k ControlSet'
           debug: 1
 
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    #uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
       piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
       server_image: ${{ matrix.server_img }}
@@ -126,3 +116,4 @@ jobs:
       worker_image: ${{ matrix.worker_img }}
       worker_tag:   ${{ matrix.worker_tag }}
       debug_mode:   ${{ matrix.debug }}
+      pytest_opts: ${{ matrix.pytest_opts }}
