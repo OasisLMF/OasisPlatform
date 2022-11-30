@@ -21,7 +21,6 @@ jobs:
   build_images:
     uses: ./.github/workflows/build-docker.yml
     secrets: inherit
-    needs: update
     with:
       docker_push: true
       ignore_unfixed: true
