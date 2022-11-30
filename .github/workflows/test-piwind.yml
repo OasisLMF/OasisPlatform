@@ -5,12 +5,16 @@ on:
     branches:
       - master
       - develop
-      - backports**                                                                                                                                            
+      - backports**
   pull_request:
     branches:
       - master
       - develop
       - backports**
+
+
+env:
+  pre_release: 'false'  # look for pre-release when testing last released platform version
 
 
 jobs:
@@ -25,17 +29,41 @@ jobs:
   # https://docs.github.com/en/actions/learn-github-actions/expressions#example-returning-a-json-object
   setup_matix:
     runs-on: ubuntu-latest
+    needs: [build_images]
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      #matrix: ${{ steps.set-matrix.outputs.matrix }}
+      release_tag: ${{ steps.released_images.outputs.prev_release_tag }}
+      build_server_img: ${{ steps.built_images.outputs.server_img }}
+      build_server_tag: ${{ steps.built_images.outputs.server_tag }}
+      build_worker_img: ${{ steps.built_images.outputs.worker_img }}
+      build_worker_tag: ${{ steps.built_images.outputs.worker_tag }}
 
     steps:
-      - name: Load current release 
-        id: current_images 
-        run: |
+      - name: Checkout Platform
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Load built images   
-        id: built_images 
+      - name: Load released image tag
+        id: released_images
         run: |
+          tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}")
+          echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
+
+      # Split ouput strings from build job
+      - name: Load built images
+        id: built_images
+        run: |
+          server_img=$(echo ${{ needs.build_images.outputs.server_image }} | awk '{split($0,a,":"); print a[1];}')
+          server_tag=$(echo ${{ needs.build_images.outputs.server_image }} | awk '{split($0,a,":"); print a[2];}')
+          echo "server_img=$server_img" >> $GITHUB_OUTPUT
+          echo "server_tag=$server_tag" >> $GITHUB_OUTPUT
+
+          worker_img=$(echo ${{ needs.build_images.outputs.worker_image }} | awk '{split($0,a,":"); print a[1];}')
+          worker_tag=$(echo ${{ needs.build_images.outputs.worker_image }} | awk '{split($0,a,":"); print a[2];}')
+          echo "worker_img=$worker_img" >> $GITHUB_OUTPUT
+          echo "worker_tag=$worker_tag" >> $GITHUB_OUTPUT
+
 
       #- name: Set Matrix
       #  id: set-matrix
@@ -43,24 +71,58 @@ jobs:
       #    echo "matrix={\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}" >> $GITHUB_OUTPUT
 
     #
-    # fetch the current platform branch and find the last released version 
-    # build a test matrix to call piwind testing with 
+    # fetch the current platform branch and find the last released version
+    # build a test matrix to call piwind testing with
     #
+
+
+
     #  new_worker vs new_server (shared fs)
     #  new_worker vs new_server (local stack s3)
     #  new_worker vs pre_server
     #  prev_worker vs new_server
+  piwind_integration:
+    if: ${{ ! failure() || ! cancelled() }}
+    secrets: inherit
+    needs: [setup_matix]
+    strategy:
+      matrix:
+        #compose_test: [storage_fs, storage_s3, worker_compat, server_compat]
+        compose_test: [storage_fs, worker_compat, server_compat]
+        include:
+        - compose_test: storage_fs
+          server_img: ${{ needs.setup_matix.outputs.build_server_img }}
+          server_tag: ${{ needs.setup_matix.outputs.build_server_tag }}
+          worker_img: ${{ needs.setup_matix.outputs.build_worker_img }}
+          worker_tag: ${{ needs.setup_matix.outputs.build_worker_tag }}
+          debug: 1
 
+       # - compose_test: storage_s3
+       #   server_img:
+       #   server_tag:
+       #   worker_img:
+       #   worker_tag:
+       #   debug: 1
 
-#  piwind:
-#    if: ${{ ! failure() || ! cancelled() }}
-#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
-#    secrets: inherit
-#    needs: [build_images]
-#    with:
-#      piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
-#      server_image:
-#      server_tag:
-#      worker_image:
-#      worker_tag: 
-#      debug_mode: 1
+        - compose_test: worker_compat # new_worker vs released_server
+          server_img: 'coreoasis/api_server'
+          server_tag: ${{ needs.setup_matix.outputs.release_tag }}
+          worker_img: ${{ needs.setup_matix.outputs.build_worker_img }}
+          worker_tag: ${{ needs.setup_matix.outputs.build_worker_tag }}
+          debug: 1
+
+        - compose_test: server_compat # release_worker vs new_server
+          server_img: ${{ needs.setup_matix.outputs.build_server_img }}
+          server_tag: ${{ needs.setup_matix.outputs.build_server_tag }}
+          worker_img: 'coreoasis/model_worker'
+          worker_tag: ${{ needs.setup_matix.outputs.release_tag }}
+          debug: 1
+
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    with:
+      piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
+      server_image: ${{ matrix.server_img }}
+      server_tag:   ${{ matrix.server_tag }}
+      worker_image: ${{ matrix.worker_img }}
+      worker_tag:   ${{ matrix.worker_tag }}
+      debug_mode:   ${{ matrix.debug }}
