@@ -1,4 +1,4 @@
-name: PiWind Integration
+name: Platform Test Images
 
 on:
   push:
