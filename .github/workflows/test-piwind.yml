@@ -74,12 +74,12 @@ jobs:
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
       debug_mode: 0
-      pytest_opts: '-k case_1 -s'
+      pytest_opts: '-k case_1'
       storage_suffix: '-server-compatibility'
 
   worker_compatibility:
     secrets: inherit
-    needs: [server_compatibility]
+    needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
       #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
@@ -89,12 +89,12 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 0
-      pytest_opts: '-k case_1 -s'
+      pytest_opts: '-k case_1'
       storage_suffix: '-worker-compatibility'
 
   storage_s3:
     secrets: inherit
-    needs: [worker_compatibility]
+    needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
       #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
@@ -104,59 +104,5 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 0
-      pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k case_1 -s'
+      pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k case_1'
       storage_suffix: '-s3'
-
-
-#  integration:
-#    if: ${{ ! failure() || ! cancelled() }}
-#    secrets: inherit
-#    needs: [setup_matix]
-#    strategy:
-#      matrix:
-#        #compose_test: [storage_fs, storage_s3, worker_compat, server_compat]
-#        compose_test: [storage_s3]
-#        include:
-#        - compose_test: storage_s3
-#          server_img: ${{ needs.setup.outputs.build_server_img }}
-#          server_tag: ${{ needs.setup.outputs.build_server_tag }}
-#          worker_img: ${{ needs.setup.outputs.build_worker_img }}
-#          worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-#          pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k ControlSet'
-#          debug: 1
-#
-#        #- compose_test: storage_fs
-#        #  server_img: ${{ needs.setup.outputs.build_server_img }}
-#        #  server_tag: ${{ needs.setup.outputs.build_server_tag }}
-#        #  worker_img: ${{ needs.setup.outputs.build_worker_img }}
-#        #  worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-#        #  pytest_opts: '-k ControlSet'
-#        #  debug: 1
-#
-#        #- compose_test: worker_compat # new_worker vs released_server
-#        #  server_img: 'coreoasis/api_server'
-#        #  server_tag: ${{ needs.setup.outputs.release_tag }}
-#        #  worker_img: ${{ needs.setup.outputs.build_worker_img }}
-#        #  worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-#        #  pytest_opts: '-k ControlSet'
-#        #  debug: 1
-#
-#        #- compose_test: server_compat # release_worker vs new_server
-#        #  server_img: ${{ needs.setup.outputs.build_server_img }}
-#        #  server_tag: ${{ needs.setup.outputs.build_server_tag }}
-#        #  worker_img: 'coreoasis/model_worker'
-#        #  worker_tag: ${{ needs.setup.outputs.release_tag }}
-#        #  pytest_opts: '-k ControlSet'
-#        #  debug: 1
-#
-#    #uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
-#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
-#    with:
-#      #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
-#      piwind_branch: 'hotfix/add-local-stack-compose'
-#      server_image: ${{ matrix.server_img }}
-#      server_tag:   ${{ matrix.server_tag }}
-#      worker_image: ${{ matrix.worker_img }}
-#      worker_tag:   ${{ matrix.worker_tag }}
-#      debug_mode:   ${{ matrix.debug }}
-#      pytest_opts: ${{ matrix.pytest_opts }}
