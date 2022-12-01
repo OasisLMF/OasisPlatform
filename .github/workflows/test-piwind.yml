@@ -74,7 +74,7 @@ jobs:
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
-      debug_mode: 1
+      debug_mode: 0
       pytest_opts: '-k case_1 -s'
       storage_suffix: '-server-compatibility'
 
@@ -90,7 +90,7 @@ jobs:
       server_tag: ${{ needs.setup.outputs.release_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      debug_mode: 1
+      debug_mode: 0
       pytest_opts: '-k case_1 -s'
       storage_suffix: '-worker-compatibility'
 
@@ -106,7 +106,7 @@ jobs:
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      debug_mode: 1
+      debug_mode: 0
       pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k case_1 -s'
       storage_suffix: '-s3'
 
