@@ -22,6 +22,7 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
+      #cve_severity: 'CRITICAL,HIGH'
       cve_severity: 'SKIP'
 
   setup:
@@ -46,6 +47,18 @@ jobs:
           tag=$( ./scripts/find_release.sh -p "${{ env.pre_release }}")
           echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
 
+      - name: Select PiWind branch
+        id: piwind
+        run: |
+          if [[ "${{ github.event_name }}" = "pull_request" ]]; then
+            BRANCH=${{ github.base_ref }}
+          elif [[ "${{ github.event_name }}" = "push" ]]; then
+            BRANCH=${{ github.ref_name }}
+          else
+            BRANCH=${{ inputs.piwind_branch }}
+          fi
+          echo "piwind_branch=$BRANCH" >> $GITHUB_OUTPUT
+
       # Split ouput strings from build job
       - name: Load built images
         id: built_images
@@ -63,12 +76,12 @@ jobs:
 
 
   server_compatibility:
+    name: Server Compatibility (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
-      #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
-      piwind_branch: 'hotfix/add-local-stack-compose'
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
@@ -78,12 +91,12 @@ jobs:
       storage_suffix: '-server-compatibility'
 
   worker_compatibility:
+    name: Worker Compatibility (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
-      #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
-      piwind_branch: 'hotfix/add-local-stack-compose'
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: 'coreoasis/api_server'
       server_tag: ${{ needs.setup.outputs.release_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
@@ -93,12 +106,12 @@ jobs:
       storage_suffix: '-worker-compatibility'
 
   storage_s3:
+    name: Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
-      #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
-      piwind_branch: 'hotfix/add-local-stack-compose'
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
