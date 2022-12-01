@@ -75,7 +75,7 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 1
-      pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k ControlSet'
+      pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k case_1 -s'
       storage_suffix: '-s3'
 
   server_compatibility:
@@ -91,7 +91,7 @@ jobs:
       worker_image: 'coreoasis/api_server'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
       debug_mode: 1
-      pytest_opts: '-k ControlSet'
+      pytest_opts: '-k case_1 -s'
       storage_suffix: '-server-compatibility'
 
   worker_compatibility:
@@ -107,7 +107,7 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 1
-      pytest_opts: '-k ControlSet'
+      pytest_opts: '-k case_1 -s'
       storage_suffix: '-worker-compatibility'
 
 #  integration:
