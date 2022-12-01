@@ -111,11 +111,6 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    #- name: Docker Build ${{ matrix.image }}
-    #  run: |
-    #    echo "Build from Branch ${{ github.ref_name }}"
-    #    docker build -f ${{ matrix.file }} --pull -t ${{ env.IMAGE_REPO }}:${{ matrix.tag }} .
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -158,13 +153,13 @@ jobs:
         security-checks: 'vuln'
 
     - name: Upload scan results to Security tab
-      if: ( success() || failure() ) && matrix.exit-code == '1'
+      if: ( success() || failure() ) && matrix.exit-code == '1' && env.SEVERITY != 'SKIP'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file:  ${{ matrix.report }}
 
     - name: Store CVE report
-      if: success() || failure()
+      if: success() || failure() && env.SEVERITY != 'SKIP'
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.report }}

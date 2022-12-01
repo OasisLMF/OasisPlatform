@@ -54,7 +54,7 @@ jobs:
 
 
   build_images:
-    uses: ./.github/workflows/build-docker.yml
+    uses: ./.github/workflows/build-images.yml
     secrets: inherit
     needs: update
     with:
