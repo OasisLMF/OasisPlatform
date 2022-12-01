@@ -62,26 +62,27 @@ jobs:
 
 
 
-#  storage_s3:
-#    if: ${{ ! failure() || ! cancelled() }}
-#    secrets: inherit
-#    needs: [setup]
-#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
-#    with:
-#      #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
-#      piwind_branch: 'hotfix/add-local-stack-compose'
-#      server_image: ${{ needs.setup.outputs.build_server_img }}
-#      server_tag: ${{ needs.setup.outputs.build_server_tag }}
-#      worker_image: ${{ needs.setup.outputs.build_worker_img }}
-#      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-#      debug_mode: 1
-#      pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k case_1 -s'
-#      storage_suffix: '-s3'
+  storage_s3:
+    if: ${{ ! failure() || ! cancelled() }}
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
+    with:
+      #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
+      piwind_branch: 'hotfix/add-local-stack-compose'
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: ${{ needs.setup.outputs.build_worker_img }}
+      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      debug_mode: 1
+      pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k case_1 -s'
+      storage_suffix: '-s3'
 
   server_compatibility:
     if: ${{ ! failure() || ! cancelled() }}
     secrets: inherit
-    needs: [setup]
+    #needs: [setup]
+    needs: [storage_s3]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
       #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
