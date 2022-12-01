@@ -81,7 +81,7 @@ jobs:
   server_compatibility:
     if: ${{ ! failure() || ! cancelled() }}
     secrets: inherit
-    needs: [storage_s3]
+    needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@hotfix/add-local-stack-compose
     with:
       #piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.piwind_branch }}
