@@ -4,8 +4,9 @@ import tempfile
 
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import (
-    BlobClient, BlobSasPermissions, BlobServiceClient, ContentSettings,
-    generate_blob_sas,
+    BlobServiceClient,
+    # BlobClient, BlobSasPermissions, BlobServiceClient, ContentSettings,
+    # generate_blob_sas,
 )
 
 from ...common.shared import set_azure_log_level

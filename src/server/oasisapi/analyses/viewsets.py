@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer

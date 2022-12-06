@@ -9,7 +9,7 @@ from celery.exceptions import Retry
 from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis.strategies import text, integers
-from mock import patch, Mock, ANY
+from mock import patch, Mock
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
