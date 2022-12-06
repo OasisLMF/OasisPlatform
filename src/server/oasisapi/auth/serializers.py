@@ -23,7 +23,6 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
         data['expires_in'] = jwt_settings.api_settings.ACCESS_TOKEN_LIFETIME.total_seconds()
         #data['expires_in'] = jwt_settings.api_settings.REFRESH_TOKEN_LIFETIME.total_seconds()
 
-
         del data['refresh']
         del data['access']
 

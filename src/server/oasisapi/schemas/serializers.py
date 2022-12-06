@@ -18,6 +18,7 @@ import jsonschema
 from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
 from jsonschema.exceptions import SchemaError as JSONSchemaError
 
+
 class TokenObtainPairResponseSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(read_only=True)
     access_token = serializers.CharField(read_only=True)
@@ -54,6 +55,7 @@ class StorageLinkSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise NotImplementedError()
+
 
 class LocFileSerializer(serializers.Serializer):
     url = serializers.URLField()
@@ -102,6 +104,7 @@ class ReinsScopeFileSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         raise NotImplementedError()
 
+
 def update_links(link_prefix, d):
     """
         Linking in pre-defined scheams with path links will be nested
@@ -111,7 +114,7 @@ def update_links(link_prefix, d):
             '#definitions/option' -> #definitions/SWAGGER_OBJECT/definitions/option
 
     """
-    for k,v in d.items():
+    for k, v in d.items():
         if isinstance(v, dict):
             update_links(link_prefix, v)
         elif isinstance(v, list):
@@ -122,6 +125,7 @@ def update_links(link_prefix, d):
             if k in '$ref':
                 link = v.split('#')[-1]
                 d[k] = "{}{}".format(link_prefix, link)
+
 
 def load_json_schema(json_schema_file, link_prefix=None):
     """
@@ -204,10 +208,10 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
         # These are added into existing files as a 'fix' so older workers can run without patching the worker schema
         # This *SHOULD* be removed at a later date once older models are not longer used
         compatibility_field_map = {
-            "module_supplier_id":{
+            "module_supplier_id": {
                 "updated_to": "model_supplier_id"
             },
-            "model_version_id":{
+            "model_version_id": {
                 "updated_to": "model_name_id"
             },
         }

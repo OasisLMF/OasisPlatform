@@ -359,8 +359,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
-
     # Setup Job cancellation handler
+
     def analysis_cancel_handler(signum, frame):
         logging.info('TASK CANCELLATION')
         if proc is not None:
@@ -512,10 +512,10 @@ def generate_input(self,
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
 
         # Fetch input files
-        location_file        = filestore.get(loc_file, oasis_files_dir, required=True)
-        accounts_file        = filestore.get(acc_file, oasis_files_dir)
-        ri_info_file         = filestore.get(info_file, oasis_files_dir)
-        ri_scope_file        = filestore.get(scope_file, oasis_files_dir)
+        location_file = filestore.get(loc_file, oasis_files_dir, required=True)
+        accounts_file = filestore.get(acc_file, oasis_files_dir)
+        ri_info_file = filestore.get(info_file, oasis_files_dir)
+        ri_scope_file = filestore.get(scope_file, oasis_files_dir)
         lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
 
         run_args = [
@@ -547,7 +547,6 @@ def generate_input(self,
         if debug_worker:
             run_args += ['--verbose']
 
-
         # Log MDK generate command
         args_list = run_args + [''] if (len(run_args) % 2) else run_args
         mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if None not in t for x in t]
@@ -564,7 +563,7 @@ def generate_input(self,
         proc = subprocess.Popen(
             ['oasislmf', 'model', 'generate-oasis-files'] + run_args,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
-            preexec_fn=os.setsid, # run in a new session, assigning a new process group to it and its children.
+            preexec_fn=os.setsid,  # run in a new session, assigning a new process group to it and its children.
         )
         stdout, stderr = proc.communicate()
 
@@ -581,13 +580,13 @@ def generate_input(self,
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
         # Store result files
-        traceback_file    = filestore.create_traceback(stdout.decode(), stderr.decode(), oasis_files_dir)
-        traceback         = filestore.put(traceback_file)
-        lookup_error      = filestore.put(lookup_error_fp)
-        lookup_success    = filestore.put(lookup_success_fp)
+        traceback_file = filestore.create_traceback(stdout.decode(), stderr.decode(), oasis_files_dir)
+        traceback = filestore.put(traceback_file)
+        lookup_error = filestore.put(lookup_error_fp)
+        lookup_success = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
-        summary_levels    = filestore.put(summary_levels_fp)
-        output_tar_path   = filestore.put(oasis_files_dir)
+        summary_levels = filestore.put(summary_levels_fp)
+        output_tar_path = filestore.put(oasis_files_dir)
         return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, proc.returncode
 
 

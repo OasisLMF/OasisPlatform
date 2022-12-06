@@ -22,4 +22,4 @@ def wait_for_blob_copy(blob):
             raise TimeoutError('Timed out waiting for async copy to complete.')
         time.sleep(5)
         props = blob.get_blob_properties()
-    return props    
+    return props

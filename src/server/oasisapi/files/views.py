@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from .serializers import RelatedFileSerializer
 
 
-
 def _delete_related_file(parent, field):
     """ Delete an attached RelatedFile model
         without triggering a cascade delete
@@ -19,6 +18,7 @@ def _delete_related_file(parent, field):
         setattr(parent, field, None)
         parent.save(update_fields=[field])
         current.delete()
+
 
 def _get_chunked_content(f, chunk_size=1024):
     content = f.read(chunk_size)
@@ -127,12 +127,14 @@ def _json_write_to_file(parent, field, request, serializer):
     response.data['file'] = instance.file.name
     return response
 
+
 def _json_read_from_file(parent, field):
     f = getattr(parent, field)
     if not f:
         raise Http404()
     else:
         return Response(json.load(f))
+
 
 def handle_related_file(parent, field, request, content_types, parquet_storage=False):
     method = request.method.lower()
