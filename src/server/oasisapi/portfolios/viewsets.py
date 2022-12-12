@@ -29,7 +29,8 @@ from .serializers import (
 
 class PortfolioFilter(TimeStampedFilter):
     name = filters.CharFilter(help_text=_('Filter results by case insensitive names equal to the given string'), lookup_expr='iexact')
-    name__contains = filters.CharFilter(help_text=_('Filter results by case insensitive name containing the given string'), lookup_expr='icontains', field_name='name')
+    name__contains = filters.CharFilter(help_text=_(
+        'Filter results by case insensitive name containing the given string'), lookup_expr='icontains', field_name='name')
     user = filters.CharFilter(
         help_text=_('Filter results by case insensitive `user` equal to the given string'),
         lookup_expr='iexact',
@@ -97,7 +98,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         'application/octet-stream',
     ]
 
-
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
@@ -112,7 +112,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             return RelatedFileSerializer
         else:
             return super(PortfolioViewSet, self).get_serializer_class()
-
 
     @property
     def parser_classes(self):
@@ -154,7 +153,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
@@ -173,7 +171,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `accounts_file` contents
         """
-        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
@@ -194,7 +192,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `location_file` contents
         """
-        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
@@ -215,7 +213,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `reinsurance_info_file` contents
         """
-        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
@@ -236,5 +234,5 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Sets the portfolios `reinsurance_scope_file` contents
         """
-        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)

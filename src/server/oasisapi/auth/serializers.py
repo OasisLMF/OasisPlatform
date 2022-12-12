@@ -1,10 +1,8 @@
 from django.utils.translation import gettext_lazy as _
-from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt import settings as jwt_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer as BaseTokenRefreshSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
@@ -22,7 +20,6 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
         data['token_type'] = 'Bearer'
         data['expires_in'] = jwt_settings.api_settings.ACCESS_TOKEN_LIFETIME.total_seconds()
         #data['expires_in'] = jwt_settings.api_settings.REFRESH_TOKEN_LIFETIME.total_seconds()
-
 
         del data['refresh']
         del data['access']

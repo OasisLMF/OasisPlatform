@@ -106,7 +106,8 @@ class AnalysisRun(WebTestMixin, TestCase):
             with self.assertRaises(ValidationError) as ex:
                 analysis.run(initiator)
 
-            self.assertEqual({'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
+            self.assertEqual(
+                {'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 

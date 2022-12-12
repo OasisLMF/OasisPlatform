@@ -9,7 +9,7 @@ from celery.exceptions import Retry
 from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis.strategies import text, integers
-from mock import patch, Mock, ANY
+from mock import patch, Mock
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
@@ -71,9 +71,9 @@ class StartAnalysis(TestCase):
                 Path(media_root, 'not-tar-file.tar').touch()
                 Path(media_root, 'analysis_settings.json').touch()
                 self.assertRaises(InvalidInputsException, start_analysis,
-                    os.path.join(media_root, 'analysis_settings.json'),
-                    os.path.join(media_root, 'not-tar-file.tar')
-                )
+                                  os.path.join(media_root, 'analysis_settings.json'),
+                                  os.path.join(media_root, 'not-tar-file.tar')
+                                  )
 
     def test_custom_model_runner_does_not_exist___generate_losses_is_called_output_files_are_tared_up(self):
         with TemporaryDirectory() as media_root, \
@@ -113,13 +113,13 @@ class StartAnalysis(TestCase):
                     )
                     test_env = os.environ.copy()
                     cmd_mock.assert_called_once_with(['oasislmf', 'model', 'generate-losses',
-                        '--oasis-files-dir', os.path.join(run_dir, 'input'),
-                        '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
-                        '--model-run-dir', run_dir,
-                        '--analysis-settings-json', os.path.join(media_root, 'analysis_settings.json'),
-                        '--ktools-fifo-relative',
-                        '--verbose',
-                    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
+                                                      '--oasis-files-dir', os.path.join(run_dir, 'input'),
+                                                      '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
+                                                      '--model-run-dir', run_dir,
+                                                      '--analysis-settings-json', os.path.join(media_root, 'analysis_settings.json'),
+                                                      '--ktools-fifo-relative',
+                                                      '--verbose',
+                                                      ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
                     tarfile.assert_called_once_with(output_location, os.path.join(run_dir, 'output'), 'output')
 
 
@@ -127,8 +127,8 @@ class StartAnalysisTask(TestCase):
     @given(pk=integers(), location=text(), analysis_settings_path=text())
     def test_lock_is_not_acquireable___retry_esception_is_raised(self, pk, location, analysis_settings_path):
         with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)), \
-             patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
-             patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
+                patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
+                patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
 
             with self.assertRaises(Retry):
                 start_analysis_task(pk, location, analysis_settings_path)
@@ -136,8 +136,8 @@ class StartAnalysisTask(TestCase):
     @given(pk=integers(), location=text(), analysis_settings_path=text())
     def test_lock_is_acquireable___start_analysis_is_ran(self, pk, location, analysis_settings_path):
         with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
-             patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
-             patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
+                patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
+                patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
 
             start_analysis_task.update_state = Mock()
             start_analysis_task(pk, location, analysis_settings_path)

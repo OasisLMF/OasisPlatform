@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
@@ -187,7 +187,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj.run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
@@ -198,7 +197,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         obj.cancel_any()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
-
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
@@ -397,8 +395,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)
-
-
 
     @action(methods=['get'], detail=True)
     def storage_links(self, request, pk=None, version=None):
