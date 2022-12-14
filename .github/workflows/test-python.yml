@@ -1,4 +1,4 @@
-name: Platform PyTest
+name: Platform Python Tests
 
 on:
   #push:

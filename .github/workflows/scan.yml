@@ -1,4 +1,4 @@
-name:  Platform Scan Repo
+name: Platform Vulnerability Scanning
 
 on:
   #push:

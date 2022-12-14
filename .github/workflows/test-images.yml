@@ -1,4 +1,4 @@
-name: Platform Test Images
+name: Platform Image Tests 
 
 on:
   push:

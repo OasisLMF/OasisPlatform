@@ -5,7 +5,7 @@
 
 [![Platform Image tests](https://github.com/OasisLMF/OasisPlatform/actions/workflows/test-images.yml/badge.svg?branch=master)](https://github.com/OasisLMF/OasisPlatform/actions/workflows/test-images.yml)
 [![Platform Python tests](https://github.com/OasisLMF/OasisPlatform/actions/workflows/test-python.yml/badge.svg?branch=master)](https://github.com/OasisLMF/OasisPlatform/actions/workflows/test-python.yml)
-[![Platform Security Scan](https://github.com/OasisLMF/OasisPlatform/actions/workflows/scan.yml/badge.svg?branch=master)](https://github.com/OasisLMF/OasisPlatform/actions/workflows/scan.yml)
+[![Platform Vulnerability Scanning](https://github.com/OasisLMF/OasisPlatform/actions/workflows/scan.yml/badge.svg?branch=master)](https://github.com/OasisLMF/OasisPlatform/actions/workflows/scan.yml)
 
 # Oasis Platform
 Provides core components of the Oasis platform, specifically:
