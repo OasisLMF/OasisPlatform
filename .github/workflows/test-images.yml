@@ -33,7 +33,7 @@ on:
         required: false
 
 env:
-  pre_release: 'false'  # look for pre-release when testing last released platform version
+  pre_release: 'true'  # look for pre-release when testing last released platform version
 
 jobs:
   build_images:
