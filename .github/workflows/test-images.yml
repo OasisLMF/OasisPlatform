@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build_images]
     outputs:
-      pytest_opts: : ${{ steps.pytest.outputs.opts }}
+      pytest_opts: ${{ steps.pytest.outputs.opts }}
       piwind_branch: ${{ steps.piwind.outputs.branch }}
       release_tag: ${{ steps.released_images.outputs.prev_release_tag }}
       build_server_img: ${{ steps.built_images.outputs.server_img }}
