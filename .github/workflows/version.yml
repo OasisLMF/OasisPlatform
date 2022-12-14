@@ -1,0 +1,102 @@
+name: OasisPlatform Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform_version:
+        description: 'Update version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
+        required: true
+        default: ""
+      oasislmf_version:
+        description: 'Update the package version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
+        required: false
+        default: ""
+
+  workflow_call:
+    inputs:
+      platform_version:
+        description: 'Update version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
+        required: true
+        default: ""
+        type: string
+      oasislmf_version:
+        description: 'Update the package version'
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check valid semvar
+      run: |
+        VALID=$(echo ${{ inputs.platform_version }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)$")
+        [[ "$VALID" -eq "1" ]] || exit 1
+
+    - name: Check backport branch matches version (Platform)
+      if: startsWith(github.ref_name, 'backports/')
+      run: |
+        BRANCH_VER=$(echo ${{ github.ref_name }} | grep -oP "(\d+)\.(\d+)")
+        VALID=$(echo ${{ inputs.platform_version }} | grep $BRANCH_VER -c)
+        if [[ ! "$VALID" == 1 ]]; then
+            echo "Release Tag ${{ inputs.platform_version }} doesn't match branch ${{ github.ref_name }}"
+            exit 1
+        fi
+
+    - name: Check backport branch matches version (Oasislmf)
+      if: startsWith(github.ref_name, 'backports/') && inputs.oasislmf_version != ''
+      run: |
+        BRANCH_VER=$(echo ${{ github.ref_name }} | grep -oP "(\d+)\.(\d+)")
+        VALID=$(echo ${{ inputs.oasislmf_version }} | grep $BRANCH_VER -c)
+        if [[ ! "$VALID" == 1 ]]; then
+            echo "Release Tag ${{ inputs.oasislmf_version }} doesn't match branch ${{ github.ref_name }}"
+            exit 1
+        fi
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref_name }}
+        fetch-depth: 0 # fetch the whole repo for complete history
+
+    - name: Setup github user
+      run: |
+        git config --global user.email ${{ env.GIT_EMAIL }}
+        git config --global user.name ${{ env.GIT_USERNAME }}
+        git config --global pull.ff only
+      env:
+        GIT_EMAIL: ${{ secrets.BUILD_GIT_EMAIL }}
+        GIT_USERNAME: ${{ secrets.BUILD_GIT_USERNAME }}
+
+    - name: Update Platform Version
+      run: |
+        echo ${{ inputs.platform_version }} > VERSION
+        git add VERSION
+
+    - name: Set up Python 3.10
+      if: inputs.oasislmf_version != ''
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install piptools
+      run: pip install pip-tools
+
+    - name: Update Oasislmf Version
+      if: inputs.oasislmf_version != ''
+      run: |
+        requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
+        for fl in "${requ_list[@]}"; do
+          pip-compile --upgrade-package oasislmf==${{ inputs.oasislmf_version }} $fl.in
+          git add $fl.txt
+        done
+
+    - name: Git Commit
+      run: |
+        [[ -z $(git status -s) ]] || git commit -m "Set version ${{ inputs.platform_version }}"
+
+    - name: Push
+      run: git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
