@@ -1,0 +1,41 @@
+name: Platform Schema (OpenAPI)
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+
+jobs:
+  schema:
+    env:
+      SCHEMA: 'reports/openapi-schema.json'
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref_name }}
+
+    - name: Set up Python
+      run: |
+        mkdir -p $(dirname ${{ env.SCHEMA }})
+        sudo apt-get update  && sudo apt-get upgrade -y
+        sudo apt-get install -y --no-install-recommends python3 python3-pip
+
+    - name: Install requirments
+      run: pip install -r requirements-server.txt
+
+    - name: Generate OpenAPI
+      run: |
+        python ./manage.py migrate
+        python ./manage.py generate_swagger ${{ env.SCHEMA }}
+
+    - name: Store OpenAPI schema
+      uses: actions/upload-artifact@v3
+      with:
+        name: openapi-schema
+        path: ${{ env.SCHEMA }}
+        retention-days: 3
+
+    - name: Test Schema
+      run: ./scripts/build-maven.sh $(cat VERSION)
+
