@@ -68,16 +68,14 @@ jobs:
           file: 'Dockerfile.api_server'
           report: 'server-scan.sarif'
           dive: 'server-layers.txt'
-          #exit-code: '1'
-          exit-code: '0' #TESTING
+          exit-code: '1'
 
         - image: worker
           tag: 'model_worker-${{ github.sha }}'
           file: 'Dockerfile.model_worker'
           report: 'worker-scan.sarif'
           dive: 'worker-layers.txt'
-          #exit-code: '1'
-          exit-code: '0' #TESTING
+          exit-code: '1'
 
         - image: worker_deb
           tag:  'model_worker_deb-${{ github.sha }}'
