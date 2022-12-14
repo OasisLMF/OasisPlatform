@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - backports**
+
   pull_request:
     branches:
       - master
@@ -33,7 +34,6 @@ on:
 
 env:
   pre_release: 'false'  # look for pre-release when testing last released platform version
-  pytest_options: ${{ github.event_name != 'workflow_dispatch' && '-k case_1' ||  inputs.pytest_options }}
 
 jobs:
   build_images:
@@ -49,6 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build_images]
     outputs:
+      pytest_opts: : ${{ steps.pytest.outputs.opts }}
       piwind_branch: ${{ steps.piwind.outputs.branch }}
       release_tag: ${{ steps.released_images.outputs.prev_release_tag }}
       build_server_img: ${{ steps.built_images.outputs.server_img }}
@@ -84,6 +85,15 @@ jobs:
           fi
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
+      - name: Select Pytest Options
+        id: pytest
+        run: |
+          if [[ -z "${{ inputs.pytest_options }}" ]]; then
+            echo "opts='-k case_1'" >> $GITHUB_OUTPUT
+          else
+            echo "opts=${{ inputs.pytest_options }}" >> $GITHUB_OUTPUT
+          fi
+
       # Split ouput strings from build job
       - name: Load built images
         id: built_images
@@ -111,7 +121,7 @@ jobs:
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
       debug_mode: 0
-      pytest_opts: "${{ env.pytest_options }}"
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-server-compatibility'
 
   worker_compatibility:
@@ -126,7 +136,7 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 0
-      pytest_opts: "${{ env.pytest_options }}"
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-worker-compatibility'
 
   storage_s3:
@@ -141,5 +151,5 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 0
-      pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ env.pytest_options }}"
+      pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-s3'

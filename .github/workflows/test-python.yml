@@ -11,8 +11,6 @@ on:
       - master
       - develop
       - backports**
-
-on:
   workflow_dispatch:
 
 jobs:
