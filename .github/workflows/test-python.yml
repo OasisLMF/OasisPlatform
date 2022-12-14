@@ -1,7 +1,16 @@
 name: Platform Python Tests
 
 on:
-  #push:
+  push:
+    branches:
+      - master
+      - develop
+      - backports**
+  pull_request:
+    branches:
+      - master
+      - develop
+      - backports**
 
 jobs:
   unittest:
