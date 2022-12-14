@@ -12,6 +12,9 @@ on:
       - develop
       - backports**
 
+on:
+  workflow_dispatch:
+
 jobs:
   unittest:
     env:

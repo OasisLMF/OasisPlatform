@@ -14,7 +14,7 @@ on:
         default: true
         type: boolean
       cve_severity:
-        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL, SKIP]'
+        description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
         required: false
         default: 'CRITICAL,HIGH'
 

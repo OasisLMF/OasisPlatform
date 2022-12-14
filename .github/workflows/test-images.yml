@@ -1,4 +1,4 @@
-name: Platform Image Tests 
+name: Platform Image Tests
 
 on:
   push:
@@ -12,8 +12,28 @@ on:
       - develop
       - backports**
 
+  workflow_dispatch:
+    inputs:
+      last_release:
+        description: "Test backwards compatibility with platform ver [semvar]"
+        required: false
+
+      piwind_branch:
+        description: "Check Results from Piwind branch [git ref]"
+        required: true
+        default: 'develop'
+
+      pytest_options:
+        description: "Pytest optional args [-k <test_name>]"
+        required: false
+
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
+        required: false
+
 env:
   pre_release: 'false'  # look for pre-release when testing last released platform version
+  pytest_options: ${{ github.event_name != 'workflow_dispatch' && '-k case_1' ||  inputs.pytest_options }}
 
 jobs:
   build_images:
@@ -22,8 +42,8 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
-      #cve_severity: 'CRITICAL,HIGH'
-      cve_severity: 'SKIP'
+      cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
+
 
   setup:
     runs-on: ubuntu-latest
@@ -42,11 +62,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Load released image tag
+      - name: Load last released tag
         id: released_images
         run: |
-          tag=$( ./scripts/find_release.sh -p "${{ env.pre_release }}")
-          echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
+          if [[ -z "${{ inputs.last_release }}" ]]; then
+            tag=$( ./scripts/find_release.sh -p "${{ env.pre_release }}")
+            echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
+          else
+            echo "prev_release_tag=${{ inputs.last_release }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Select PiWind branch
         id: piwind
@@ -75,7 +99,6 @@ jobs:
           echo "worker_tag=$worker_tag" >> $GITHUB_OUTPUT
 
 
-
   server_compatibility:
     name: Server Compatibility (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
@@ -88,7 +111,7 @@ jobs:
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
       debug_mode: 0
-      pytest_opts: '-k case_1'
+      pytest_opts: "${{ env.pytest_options }}"
       storage_suffix: '-server-compatibility'
 
   worker_compatibility:
@@ -103,7 +126,7 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 0
-      pytest_opts: '-k case_1'
+      pytest_opts: "${{ env.pytest_options }}"
       storage_suffix: '-worker-compatibility'
 
   storage_s3:
@@ -118,5 +141,5 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 0
-      pytest_opts: '--docker-compose=./docker/s3.docker-compose.yml -k case_1'
+      pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ env.pytest_options }}"
       storage_suffix: '-s3'
