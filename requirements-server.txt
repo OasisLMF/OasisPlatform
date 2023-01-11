@@ -37,7 +37,7 @@ botocore==1.23.20
     #   s3transfer
 celery==5.2.7
     # via -r requirements-server.in
-certifi==2021.10.8
+certifi==2022.12.07
     # via
     #   msrest
     #   requests
@@ -239,7 +239,7 @@ sqlparse==0.4.2
     # via
     #   django
     #   django-debug-toolbar
-twisted[tls]==22.4.0
+twisted[tls]==22.10.0rc1
     # via
     #   -r requirements-server.in
     #   daphne

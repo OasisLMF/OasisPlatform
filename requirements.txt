@@ -61,7 +61,7 @@ celery==5.2.7
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-certifi==2021.10.8
+certifi==2022.12.07
     # via
     #   fiona
     #   msrest
@@ -459,7 +459,7 @@ tox==3.24.4
     # via -r requirements.in
 tqdm==4.62.3
     # via oasislmf
-twisted[tls]==22.4.0
+twisted[tls]==22.10.0rc1
     # via
     #   -r ./requirements-server.in
     #   daphne
@@ -492,7 +492,7 @@ webob==1.8.7
     # via webtest
 webtest==3.0.0
     # via django-webtest
-wheel==0.37.0
+wheel==0.38.1
     # via pip-tools
 whitenoise==5.3.0
     # via -r ./requirements-server.in

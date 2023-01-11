@@ -31,7 +31,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
-if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
+if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver') or ('pytest' in sys.argv[0]):
     # Always set Debug mode when in dev environment
     MEDIA_ROOT = './shared-fs/'
     DEBUG = True

@@ -21,17 +21,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    #- name: Set up Python 3.10
-    #  uses: actions/setup-python@v4
-    #  with:
-    #    python-version: '3.10'
-    #- run: pip install tox
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: pip install tox
 
     # mimic python version from dockerfile
-    - name: Set up Python ${{ matrix.cfg.python-version }}
-      run: |
-        sudo apt-get update  && sudo apt-get upgrade -y
-        sudo apt-get install -y --no-install-recommends python3 python3-pip
+    #- name: Set up Python ${{ matrix.cfg.python-version }}
+    #  run: |
+    #    sudo apt-get update  && sudo apt-get upgrade -y
+    #    sudo apt-get install -y --no-install-recommends python3 python3-pip
 
     - name: Run Tox
       run: |

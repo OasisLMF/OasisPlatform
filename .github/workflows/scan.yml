@@ -34,7 +34,7 @@ on:
         required: false
         default: 'true'
         type: string
-      exit_code:  
+      exit_code:
         description: 'Exit code if vulnerabilities found [0,1]'
         required: false
         default: '1'
@@ -54,7 +54,7 @@ jobs:
       run: echo "### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
 
     - name: Set inputs
-      if: github.event_name != 'push'
+      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
       run: |
         echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
         echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
@@ -73,6 +73,7 @@ jobs:
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
 
     - name: Upload Trivy scan results to GitHub Security tab
       if: success() || failure()
@@ -100,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Set inputs
-      if: github.event_name != 'push'
+      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
       run: |
         echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
         echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
@@ -124,6 +125,7 @@ jobs:
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
 
     - name: Rename requirments file in report
       if: success() || failure()
@@ -153,7 +155,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Set inputs
-      if: github.event_name != 'push'
+      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
       run: |
         echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
         echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
@@ -177,6 +179,7 @@ jobs:
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
 
     - name: Rename requirments file in report
       if: success() || failure()
