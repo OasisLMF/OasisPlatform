@@ -11,21 +11,20 @@ RUN pip install --user --no-warn-script-location -r ./requirements-server.txt &&
 FROM ubuntu:22.04
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends python3 python3-pip curl libmariadbclient-dev-compat \
+ && apt-get install -y --no-install-recommends sudo python3 python3-pip curl libmariadbclient-dev-compat \
  && rm -rf /var/lib/apt/lists/
 
-COPY --from=build-packages /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos "" server
+COPY --chown=server:server --from=build-packages /root/.local /home/server/.local
+RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
+
+RUN echo 'server ALL=(ALL) NOPASSWD:/usr/local/bin/update_hosts' >> /etc/sudoers
 
 WORKDIR /var/www/oasis
-ENV OASIS_MEDIA_ROOT=/shared-fs
-ENV OASIS_DEBUG=false
-RUN mkdir -p /var/log/oasis
-
+COPY ./src/update_server_hosts.sh /usr/local/bin/update_hosts
 COPY ./src/startup_server.sh /usr/local/bin/startup
 COPY ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
 COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
-RUN chmod +x /usr/local/bin/startup /usr/local/bin/wait-for-it
 
 COPY ./asgi ./asgi
 COPY ./wsgi ./wsgi
@@ -35,15 +34,24 @@ RUN chmod +x ./wsgi/run-wsgi.sh
 COPY ./conf.ini ./
 COPY manage.py .
 COPY ./src/utils/set_default_user.py .
-COPY ./src/utils/server_bashrc /root/.bashrc
-
+COPY ./src/utils/server_bashrc /home/server/.bashrc
 COPY ./src/server /var/www/oasis/src/server
 COPY ./src/common /var/www/oasis/src/common
 COPY ./src/conf /var/www/oasis/src/conf
+COPY ./VERSION /var/www/oasis/VERSION
 
+RUN chown -R server:server /shared-fs \
+    /var/www/oasis \
+    && chmod +x ./asgi/run-asgi.sh \
+    /usr/local/bin/startup \
+    /usr/local/bin/wait-for-it
+
+USER server
 RUN OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
 ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
-COPY ./VERSION /var/www/oasis/VERSION
+ENV OASIS_MEDIA_ROOT=/shared-fs
+ENV OASIS_DEBUG=false
+ENV PATH=/home/server/.local/bin:$PATH
 
 EXPOSE 8000
 
