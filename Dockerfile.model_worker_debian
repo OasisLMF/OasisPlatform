@@ -1,13 +1,8 @@
 FROM python:3.8
 
-ENV OASIS_MEDIA_ROOT=/shared-fs
-ENV OASIS_ENV_OVERRIDE=true
-ENV OASIS_CHECK_MISSING_INPUTS=true
-
 RUN apt-get update && apt-get install -y --no-install-recommends git vim libspatialindex-dev && rm -rf /var/lib/apt/lists/*
 RUN adduser  --home /home/worker --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
-USER worker
 
 # Install requirements
 COPY ./requirements-worker.txt ./requirements.txt
@@ -25,17 +20,23 @@ COPY ./src/conf ./src/conf/
 COPY ./src/model_execution_worker/ ./src/model_execution_worker/
 COPY ./src/utils/ ./src/utils/
 COPY ./src/utils/worker_bashrc /root/.bashrc
-COPY ./tests/integration /home/worker/tests/integration
 COPY ./VERSION ./
 
 RUN mkdir -p /var/oasis && \
+    mkdir -p /home/worker/model && \
     mkdir -p /var/log/oasis && \
+    mkdir -p /shared-fs && \
     touch /var/log/oasis/worker.log && \
     chmod 777 /var/log/oasis/worker.log
 
-RUN chmod -R 777 /home/worker /var/log/oasis /var/oasis && \
-    chown -R worker /home/worker && \
-    chown -R worker /var/oasis && \
-	chown -R worker /var/log
+RUN chown -R worker:worker /var/oasis \
+        /var/log \
+        /shared-fs
+
+USER worker
+ENV PATH=/home/worker/.local/bin:$PATH
+ENV OASIS_MEDIA_ROOT=/shared-fs
+ENV OASIS_ENV_OVERRIDE=true
+ENV OASIS_CHECK_MISSING_INPUTS=true
 
 ENTRYPOINT ./startup.sh
