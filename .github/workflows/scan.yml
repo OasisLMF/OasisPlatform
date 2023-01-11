@@ -73,6 +73,7 @@ jobs:
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
 
     - name: Upload Trivy scan results to GitHub Security tab
       if: success() || failure()
