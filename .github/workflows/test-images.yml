@@ -110,7 +110,7 @@ jobs:
           echo "worker_img=$worker_img" >> $GITHUB_OUTPUT
           echo "worker_tag=$worker_tag" >> $GITHUB_OUTPUT
 
-          deb_worker_img=$(echo ${{ needs.build_images.outputs.worker_deb_image }} | awk '{split($-1,a,":"); print a[1];}')
+          deb_worker_img=$(echo ${{ needs.build_images.outputs.worker_deb_image }} | awk '{split($0,a,":"); print a[1];}')
           deb_worker_tag=$(echo ${{ needs.build_images.outputs.worker_deb_image }} | awk '{split($0,a,":"); print a[2];}')
           echo "deb_worker_img=$deb_worker_img" >> $GITHUB_OUTPUT
           echo "deb_worker_tag=$deb_worker_tag" >> $GITHUB_OUTPUT
