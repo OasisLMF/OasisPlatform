@@ -5,9 +5,9 @@ ENV OASIS_ENV_OVERRIDE=true
 ENV OASIS_CHECK_MISSING_INPUTS=true
 
 RUN apt-get update && apt-get install -y --no-install-recommends git vim libspatialindex-dev && rm -rf /var/lib/apt/lists/*
-
-RUN adduser --shell /bin/bash --disabled-password --gecos "" worker
+RUN adduser  --home /home/worker --shell /bin/bash --disabled-password --gecos "" worker
 WORKDIR /home/worker
+USER worker
 
 # Install requirements
 COPY ./requirements-worker.txt ./requirements.txt
