@@ -125,6 +125,7 @@ jobs:
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
 
     - name: Rename requirments file in report
       if: success() || failure()
@@ -178,6 +179,7 @@ jobs:
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
 
     - name: Rename requirments file in report
       if: success() || failure()
