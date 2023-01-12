@@ -284,8 +284,8 @@ jobs:
     - name: Get ktools & oasislmf versions
       continue-on-error: true
       run: |
-        docker run --entrypoint "/root/.local/bin/oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
-        docker run --entrypoint "/root/.local/bin/eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
+        docker run --entrypoint "oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
+        docker run --entrypoint "eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
 
     - name: 'store OASISLMF_VERSION'
       uses: actions/upload-artifact@v3
