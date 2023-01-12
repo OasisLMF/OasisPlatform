@@ -131,7 +131,7 @@ jobs:
       storage_suffix: '-server-compatibility'
 
   worker_debian:
-    name: Worker Debian (${{ needs.setup.outputs.release_tag }})
+    name: Worker Debian
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
