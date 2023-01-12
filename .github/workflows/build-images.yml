@@ -68,16 +68,14 @@ jobs:
           file: 'Dockerfile.api_server'
           report: 'server-scan.sarif'
           dive: 'server-layers.txt'
-          #exit-code: '1'
-          exit-code: '0' #TESTING
+          exit-code: '1'
 
         - image: worker
           tag: 'model_worker-${{ github.sha }}'
           file: 'Dockerfile.model_worker'
           report: 'worker-scan.sarif'
           dive: 'worker-layers.txt'
-          #exit-code: '1'
-          exit-code: '0' #TESTING
+          exit-code: '1'
 
         - image: worker_deb
           tag:  'model_worker_deb-${{ github.sha }}'
@@ -168,5 +166,5 @@ jobs:
     - name: Docker summary
       if: env.DOCKER_PUSH == 'true'
       run: |
-        echo "#### Docker Image: " >> $GITHUB_STEP_SUMMARY 
-        echo "* [${{ env.IMAGE_REPO }}:${{ matrix.tag }}](https://hub.docker.com/r/${{ env.IMAGE_REPO }}/tags?name=${{ matrix.tag }})" >> $GITHUB_STEP_SUMMARY 
+        echo "#### Docker Image: " >> $GITHUB_STEP_SUMMARY
+        echo "* [${{ env.IMAGE_REPO }}:${{ matrix.tag }}](https://hub.docker.com/r/${{ env.IMAGE_REPO }}/tags?name=${{ matrix.tag }})" >> $GITHUB_STEP_SUMMARY

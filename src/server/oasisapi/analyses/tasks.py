@@ -5,6 +5,8 @@ import os
 
 # Remote debugging 'rdb.set_trace()'
 # https://docs.celeryproject.org/en/stable/userguide/debugging.html
+from celery.contrib import rdb
+
 from celery.utils.log import get_task_logger
 from celery import Task
 from celery import signals
@@ -40,7 +42,6 @@ def is_valid_url(url):
     else:
         return False
 
-
 def is_in_bucket(object_key):
     if not hasattr(default_storage, 'bucket'):
         return False
@@ -53,7 +54,6 @@ def is_in_bucket(object_key):
                 return False
             else:
                 raise e
-
 
 def is_in_container(object_key):
     if not hasattr(default_storage, 'azure_container'):
@@ -271,7 +271,6 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
-
 @celery_app.task(name='run_register_worker')
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
@@ -314,7 +313,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
         # Update model version info
         if m_version:
             try:
-                model.ver_ktools = m_version['ktools']
+                model.ver_ktools =  m_version['ktools']
                 model.ver_oasislmf = m_version['oasislmf']
                 model.ver_platform = m_version['platform']
                 model.save()
@@ -327,7 +326,6 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
     except Exception as e:
         logger.exception(str(e))
         logger.exception(model)
-
 
 @celery_app.task(name='set_task_status')
 def set_task_status(analysis_pk, task_status):
@@ -409,25 +407,18 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
 
     # Add current Output
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator,
-                                     filename=f'analysis_{analysis_pk}_inputs.tar.gz') if input_location else None
-    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator,
-                                              filename=f'analysis_{analysis_pk}_gul_summary_map.csv') if lookup_success_fp else None
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False,
-                                             filename=f'analysis_{analysis_pk}_keys-errors.csv') if lookup_error_fp else None
-    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False,
-                                                 filename=f'analysis_{analysis_pk}_exposure_summary_report.json') if lookup_validation_fp else None
-    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False,
-                                              filename=f'analysis_{analysis_pk}_exposure_summary_levels.json') if summary_levels_fp else None
+    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_inputs.tar.gz') if input_location else None
+    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_pk}_gul_summary_map.csv') if lookup_success_fp else None
+    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False, filename=f'analysis_{analysis_pk}_keys-errors.csv') if lookup_error_fp else None
+    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False, filename=f'analysis_{analysis_pk}_exposure_summary_report.json') if lookup_validation_fp else None
+    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False, filename=f'analysis_{analysis_pk}_exposure_summary_levels.json') if summary_levels_fp else None
     analysis.task_finished = timezone.now()
 
     # always store traceback
     if traceback_fp:
-        analysis.input_generation_traceback_file = store_file(
-            traceback_fp, 'text/plain', initiator, filename=f'analysis_{analysis_pk}_generation_traceback.txt')
+        analysis.input_generation_traceback_file = store_file(traceback_fp, 'text/plain', initiator, filename=f'analysis_{analysis_pk}_generation_traceback.txt')
         logger.info(analysis.input_generation_traceback_file)
     analysis.save()
-
 
 @celery_app.task(name='record_run_analysis_failure')
 def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
@@ -491,7 +482,6 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
 
 ## --- Deprecated tasks ---------------------------------------------------- ##
 
-
 @celery_app.task(name='run_analysis_success')
 def run_analysis_success(output_location, analysis_pk, initiator_pk):
     logger.warning('"run_analysis_success" is deprecated and should only be used to process tasks already on the queue.')
@@ -521,6 +511,7 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
         analysis.save()
     except Exception as e:
         logger.exception(str(e))
+
 
 
 @celery_app.task(name='generate_input_success')

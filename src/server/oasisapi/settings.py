@@ -21,6 +21,7 @@ from ...conf.celeryconf import *  # noqa
 from ...common.shared import set_aws_log_level, set_azure_log_level
 
 
+
 IN_TEST = 'test' in sys.argv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -30,7 +31,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
-if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
+if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver') or ('pytest' in sys.argv[0]):
     # Always set Debug mode when in dev environment
     MEDIA_ROOT = './shared-fs/'
     DEBUG = True
@@ -129,6 +130,7 @@ TEMPLATES = [
 ]
 
 ASGI_APPLICATION = "src.server.oasisapi.asgi.application"
+WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 
 
 # Database
@@ -216,14 +218,14 @@ AZURE_CONTAINER = '<blob container name>'
 AZURE_LOCATION = '<subdir in blob container name>'
 """
 AZURE_ACCOUNT_NAME = iniconf.settings.get('server', 'AZURE_ACCOUNT_NAME', fallback=None)
-AZURE_ACCOUNT_KEY = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback=None)
+AZURE_ACCOUNT_KEY  = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback=None)
 AZURE_CUSTOM_DOMAIN = f'{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
 AZURE_CONTAINER = iniconf.settings.get('server', 'AZURE_CONTAINER', fallback=None)
 AZURE_LOCATION = iniconf.settings.get('server', 'AZURE_LOCATION', fallback='')
 AZURE_SHARED_CONTAINER = iniconf.settings.get('server', 'AZURE_SHARED_CONTAINER', fallback=True)
 AZURE_OVERWRITE_FILES = iniconf.settings.get('server', 'AZURE_OVERWRITE_FILES', fallback=True)
 
-# Optional Blob storage settings
+## Optional Blob storage settings
 AZURE_LOG_LEVEL = iniconf.settings.get('server', 'AZURE_LOG_LEVEL', fallback="")
 AZURE_SSL = iniconf.settings.get('server', 'AZURE_SSL', fallback=True)
 
@@ -236,6 +238,7 @@ AZURE_SSL = iniconf.settings.get('server', 'AZURE_SSL', fallback=True)
 #AZURE_TOKEN_CREDENTIAL = iniconf.settings.get('server', 'AZURE_TOKEN_CREDENTIAL', fallback=None)
 #AZURE_CACHE_CONTROL = iniconf.settings.get('server', 'AZURE_CACHE_CONTROL', fallback=None)
 #AZURE_OBJECT_PARAMETERS = iniconf.settings.get('server', 'AZURE_OBJECT_PARAMETERS', fallback=None)
+
 
 
 # Select Data Storage
@@ -263,10 +266,12 @@ else:
 # storage selector for exposure files
 PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
 
+# limit analyses logs access to admin accounts
+RESTRICT_SYSTEM_LOGS = iniconf.settings.getboolean('server', 'RESTRICT_SYSTEM_LOGS', fallback=False)
 
 # https://github.com/davesque/django-rest-framework-simplejwt
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
+    'ACCESS_TOKEN_LIFETIME':  iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
     'REFRESH_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_REFRESH_LIFETIME', fallback='days=2'),
     'ROTATE_REFRESH_TOKENS': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
     'BLACKLIST_AFTER_ROTATION': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
@@ -301,14 +306,14 @@ LOGGING = {
     },
     'loggers': {
         'drf_yasg': {
-            'handlers': ['console'],
-            'level': 'WARNING',
-            'propagate': False,
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
         },
         'numexpr': {
-            'handlers': ['console'],
-            'level': 'WARNING',
-            'propagate': False,
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
         },
     },
     'formatters': {

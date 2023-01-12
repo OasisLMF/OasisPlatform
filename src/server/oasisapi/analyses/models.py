@@ -43,33 +43,26 @@ class Analysis(TimeStampedModel):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
     model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)
-    status = models.CharField(max_length=max(len(c) for c in status_choices._db_values),
-                              choices=status_choices, default=status_choices.NEW, editable=False)
+    status = models.CharField(max_length=max(len(c) for c in status_choices._db_values), choices=status_choices, default=status_choices.NEW, editable=False)
     task_started = models.DateTimeField(editable=False, null=True, default=None)
     task_finished = models.DateTimeField(editable=False, null=True, default=None)
     run_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     complex_model_data_files = models.ManyToManyField(DataFile, blank=True, related_name='complex_model_files_analyses')
 
-    settings_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
-                                      default=None, related_name='settings_file_analyses')
+    settings_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='settings_file_analyses')
     input_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='input_file_analyses')
-    input_generation_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL,
-                                                        blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
+    input_generation_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
     output_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='output_file_analyses')
-    run_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True,
-                                           default=None, related_name='run_traceback_file_analyses')
-    run_log_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True,
-                                     null=True, default=None, related_name='run_log_file_analyses')
+    run_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='run_traceback_file_analyses')
+    run_log_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True, default=None, related_name='run_log_file_analyses')
 
-    lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
-                                           default=None, related_name='lookup_errors_file_analyses')
-    lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
-                                            default=None, related_name='lookup_success_file_analyses')
-    lookup_validation_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
-                                               default=None, related_name='lookup_validation_file_analyses')
-    summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
-                                            default=None, related_name='summary_levels_file_analyses')
+    lookup_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_errors_file_analyses')
+    lookup_success_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_success_file_analyses')
+    lookup_validation_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='lookup_validation_file_analyses')
+    summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='summary_levels_file_analyses')
+
+
 
     class Meta:
         verbose_name_plural = 'analyses'
@@ -130,9 +123,10 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_run_log_file_url(self, request=None):
         return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
-
+    
     def get_absolute_storage_url(self, request=None):
         return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
 
     def validate_run(self):
         valid_choices = [
@@ -241,12 +235,13 @@ class Analysis(TimeStampedModel):
         valid_choices = INPUTS_GENERATION_STATES + RUN_ANALYSIS_STATES
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis is not running or queued']})
-
+        
         if self.status in INPUTS_GENERATION_STATES:
             self.cancel_generate_inputs()
-
+        
         if self.status in RUN_ANALYSIS_STATES:
             self.cancel_analysis()
+
 
     def cancel_analysis(self):
         valid_choices = [
@@ -311,6 +306,7 @@ class Analysis(TimeStampedModel):
         ]
         return complex_data_files
 
+
     def copy_file(self, obj):
         """ Duplicate a conneced DB object and
         store under a new ID
@@ -345,23 +341,22 @@ class Analysis(TimeStampedModel):
         new_instance.summary_levels_file = None
         return new_instance
 
-
 @receiver(post_delete, sender=Analysis)
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [
-        'settings_file',
-        'input_file',
-        'input_generation_traceback_file',
-        'output_file',
-        'run_traceback_file',
-        'run_log_file',
-        'lookup_errors_file',
-        'lookup_success_file',
-        'lookup_validation_file',
-        'summary_levels_file',
-    ]
+    files_for_removal = [ 
+         'settings_file',
+         'input_file',
+         'input_generation_traceback_file',
+         'output_file',
+         'run_traceback_file',
+         'run_log_file',
+         'lookup_errors_file',
+         'lookup_success_file',
+         'lookup_validation_file',
+         'summary_levels_file',
+    ]   
     for ref in files_for_removal:
         file_ref = getattr(instance, ref)
         if file_ref:

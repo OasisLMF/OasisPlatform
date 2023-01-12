@@ -1,6 +1,21 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.0`_
+ ---------
+* [#705](https://github.com/OasisLMF/OasisPlatform/pull/710) - CVE updates - Server images 
+* [#711](https://github.com/OasisLMF/OasisPlatform/pull/711) - Github actions CI/CD update
+* [#714](https://github.com/OasisLMF/OasisPlatform/pull/715) - Introduce contributing guidelines and Code Quality automated CI workflow
+* [#683](https://github.com/OasisLMF/OasisPlatform/pull/716) - Switch docker containers to non-root users 
+* [#647](https://github.com/OasisLMF/OasisPlatform/pull/654) - SettingsTemplateViewSet - Warning when starting server 
+* [#720](https://github.com/OasisLMF/OasisPlatform/pull/720) - Project workflows
+* [#673, #684](https://github.com/OasisLMF/OasisPlatform/pull/691) - Added option to block log access for non-admin accounts
+* [#677](https://github.com/OasisLMF/OasisPlatform/pull/692) - Investigate - large file downloads failing from the azure hosted platform  
+* [#693](https://github.com/OasisLMF/OasisPlatform/pull/693) - Enable the check-missing-inputs in workers by default
+* [#645](https://github.com/OasisLMF/OasisPlatform/pull/666) - Add parquet support for piwind testing 
+* [#667](https://github.com/OasisLMF/OasisPlatform/pull/667) - Fix/CVE issues 1.26.1
+.. _`1.27.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.26.0...1.27.0
+
 `1.26.2`_
  ---------
 * [#645](https://github.com/OasisLMF/OasisPlatform/pull/666) - Add parquet support for piwind testing 

@@ -1,12 +1,16 @@
 import configparser
 import os
+import pathlib
 import pytest
 import socket
 import tarfile
 import json
+
+import pandas as pd
+
 from pandas.util.testing import assert_frame_equal
 from oasislmf.platform.client import APIClient
-from oasislmf.utils.data import get_dataframe
+from oasislmf.utils.data import print_dataframe, get_dataframe
 
 
 # ------------ load command line optios -------------------- #
@@ -14,18 +18,16 @@ cli_test_conf = os.environ.get('PY_CONFIG', '/var/oasis/test/conf.ini')
 cli_test_output = True if os.environ.get('PY_TEST_OUTPUT') else False
 cli_test_case = os.environ.get('PY_TEST_CASE').split(' ') if os.environ.get('PY_TEST_CASE') else None
 cli_test_model = os.environ.get('PY_TEST_MODEL') if os.environ.get('PY_TEST_MODEL') else None
-cli_test_retry = int(os.environ.get('PY_TEST_RETRY')) if os.environ.get('PY_TEST_MODEL') else 1
+cli_test_retry  = int(os.environ.get('PY_TEST_RETRY')) if os.environ.get('PY_TEST_MODEL') else 1
 
 config = configparser.ConfigParser()
 config.read(os.path.abspath(cli_test_conf))
-
 
 def get_path(section, var, config=config):
     try:
         return os.path.abspath(config.get(section, var))
     except configparser.NoOptionError:
         return None
-
 
 def get_different_rows(source_df, new_df):
     """Returns just the rows from the new dataframe that differ from the source dataframe"""
@@ -60,16 +62,16 @@ def check_expected(result_path, expected_path):
             test_failed = True
             test_results[filename] = 'FAILED'
 
-        # if not df_expect.equals(df_found):
+        #if not df_expect.equals(df_found):
         #    test_failed = True
         #    test_results[filename] = 'FAILED'
         #    print(get_different_rows(df_expect, df_found))
-        # else:
+        #else:
         #    test_results[filename] = 'PASSED'
 
     print('\n -- Results --')
     print(json.dumps(test_results, indent=2))
-    assert (test_failed == False)
+    assert(test_failed == False)
 
 
 def check_non_empty(result_path):
@@ -86,10 +88,12 @@ def check_non_empty(result_path):
         file_path = os.path.join(result_path, csv)
         file_size = os.path.getsize(file_path)
         print(f'{file_size} Bytes: -> {csv}')
-        assert (file_size > 0)
+        assert(file_size > 0)
+
 
 
 # --- Test Paramatization --------------------------------------------------- #
+
 
 if cli_test_model:
     test_model = cli_test_model
