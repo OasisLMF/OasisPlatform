@@ -63,7 +63,7 @@ jobs:
 
 
   build_piwind:
-    uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@dockerbuild/github-actions
+    uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@master
     secrets: inherit
     needs: build_images
     with:
