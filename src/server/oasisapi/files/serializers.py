@@ -57,7 +57,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         oed_validate = True   # This will be a setting.py option
 
         # TODO: Skil if field not in EXPOSURE_ARGS
-
+        # TODO: add 'validate' url param to force validation on upload
         # TODO: Need to check content type to select either `read_csv` or `read_parquet`
 
         if oed_validate:
