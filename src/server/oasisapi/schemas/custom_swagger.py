@@ -3,6 +3,7 @@ __all__ = [
     'HEALTHCHECK',
     'TOKEN_REFRESH_HEADER',
     'FILE_FORMAT_PARAM',
+    'FILE_VALIDATION_PARAM',
 ]
 
 from drf_yasg import openapi
@@ -67,4 +68,11 @@ FILE_FORMAT_PARAM = openapi.Parameter(
     description="File format returned, default is `csv`", 
     type=openapi.TYPE_STRING, 
     enum=['csv', 'parquet']
+)
+
+FILE_VALIDATION_PARAM = openapi.Parameter(
+    'validate', 
+    openapi.IN_QUERY, 
+    description="Validate OED files on upload, default `false`", 
+    type=openapi.TYPE_BOOLEAN, 
 )
