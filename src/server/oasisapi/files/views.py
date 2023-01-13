@@ -82,7 +82,7 @@ def _handle_get_related_file(parent, field, file_format):
 
 
 def _handle_post_related_file(parent, field, request, content_types, parquet_storage):
-    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request}, parquet_storage=parquet_storage)
+    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request}, parquet_storage=parquet_storage, field=field)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 
