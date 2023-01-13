@@ -55,13 +55,29 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         oed_validate = True   # This will be a setting.py option
+
+        # TODO: Skil if field not in EXPOSURE_ARGS
+
         # TODO: Need to check content type to select either `read_csv` or `read_parquet`
 
         if oed_validate:
-            upload_exposure = OedExposure(**{
-                EXPOSURE_ARGS[self.oed_field]: pd.read_csv(io.BytesIO(attrs['file'].read()))
+            VALIDATION_CONFIG = [
+                {'name': 'required_fields', 'on_error': 'return'},
+                {'name': 'unknown_column', 'on_error': 'return'},
+                {'name': 'valid_values', 'on_error': 'return'},
+                {'name': 'perils', 'on_error': 'return'},
+                {'name': 'occupancy_code', 'on_error': 'return'},
+                {'name': 'construction_code', 'on_error': 'return'},
+                {'name': 'country_and_area_code', 'on_error': 'return'},
+            ]
+
+            uploaded_exposure = OedExposure(**{
+                EXPOSURE_ARGS[self.oed_field]: pd.read_csv(io.BytesIO(attrs['file'].read())),
+                'validation_config': VALIDATION_CONFIG
             })
-            upload_exposure.check()
+            oed_validation_errors = uploaded_exposure.check()
+            if len(oed_validation_errors) > 0:
+                raise ValidationError([(error['name'], error['msg']) for error in oed_validation_errors])
 
         # Covert to parquet if option is on and file is CSV
         if self.parquet_storage and attrs['file'].content_type == 'text/csv':
