@@ -104,6 +104,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['creator'] = self.context['request'].user
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name
+        attrs['oed_validated'] = oed_validate
         # attrs['filehash_md5'] = md5_filehash(self.context['request'].FILES['file'])
         return super(RelatedFileSerializer, self).validate(attrs)
 

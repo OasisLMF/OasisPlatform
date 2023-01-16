@@ -374,39 +374,43 @@ class CreateAnalysisSerializer(AnalysisSerializer):
 
 
 class PortfolioValidationSerializer(serializers.ModelSerializer):
-    portfolio_valid = serializers.SerializerMethodField()
-    accounts_valid = serializers.SerializerMethodField()
-    location_valid = serializers.SerializerMethodField()
-    reinsurance_info_valid = serializers.SerializerMethodField()
-    reinsurance_scope_valid = serializers.SerializerMethodField()
+    #portfolio_validated = serializers.SerializerMethodField()  # for cross file validtion (not yet implemented)
+    accounts_validated = serializers.SerializerMethodField()
+    location_validated = serializers.SerializerMethodField()
+    reinsurance_info_validated = serializers.SerializerMethodField()
+    reinsurance_scope_validated = serializers.SerializerMethodField()
 
 
     class Meta:
         model = Portfolio
         fields = (
-            'portfolio_valid',
-            'location_valid',
-            'accounts_valid',
-            'reinsurance_info_valid',
-            'reinsurance_scope_valid',
+     #       'portfolio_validated',
+            'location_validated',
+            'accounts_validated',
+            'reinsurance_info_validated',
+            'reinsurance_scope_validated',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
-    def get_portfolio_valid(self, instance):
-        return True
+    #@swagger_serializer_method(serializer_or_field=serializers.CharField) # for cross file validtion (not yet implemented)
+    #def get_portfolio_validated(self, instance):
+    #    return True
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
-    def get_location_valid(self, instance):
-        return True
+    def get_location_validated(self, instance):
+        if instance.location_file:
+            return instance.location_file.oed_validated
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
-    def get_accounts_valid(self, instance):
-        return True
+    def get_accounts_validated(self, instance):
+        if instance.accounts_file:
+            return instance.accounts_file.oed_validated
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
-    def get_reinsurance_info_valid(self, instance):
-        return True
+    def get_reinsurance_info_validated(self, instance):
+        if instance.reinsurance_info_file:
+            return instance.reinsurance_info_file.oed_validated
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
-    def get_reinsurance_scope_valid(self, instance):
-        return True
+    def get_reinsurance_scope_validated(self, instance):
+        if instance.reinsurance_scope_file:
+            return instance.reinsurance_scope_file.oed_validated

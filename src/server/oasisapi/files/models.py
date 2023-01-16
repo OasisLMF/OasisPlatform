@@ -61,6 +61,7 @@ class RelatedFile(TimeStampedModel):
     # filehash_md5 = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
     store_as_filename = models.BooleanField(default=False, blank=True, null=True)
+    oed_validated = models.BooleanField(default=False, editable=False)
 
     def __str__(self):
         return 'File_{}'.format(self.file)

@@ -242,9 +242,13 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
         return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
 
-    @action(methods=['get'], detail=True)
+
+    @action(methods=['get', 'post'], detail=True)
     def validate(self, request, pk=None, version=None):
         """
+        get: 
+        Return OED validation status for each attached file 
+
         post:
         Run OED validation on the connected exposure files 
         """
