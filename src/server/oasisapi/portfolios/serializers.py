@@ -370,3 +370,43 @@ class CreateAnalysisSerializer(AnalysisSerializer):
         if 'request' in self.context:
             data['creator'] = self.context.get('request').user
         return super(CreateAnalysisSerializer, self).create(data)
+
+
+
+class PortfolioValidationSerializer(serializers.ModelSerializer):
+    portfolio_valid = serializers.SerializerMethodField()
+    accounts_valid = serializers.SerializerMethodField()
+    location_valid = serializers.SerializerMethodField()
+    reinsurance_info_valid = serializers.SerializerMethodField()
+    reinsurance_scope_valid = serializers.SerializerMethodField()
+
+
+    class Meta:
+        model = Portfolio
+        fields = (
+            'portfolio_valid',
+            'location_valid',
+            'accounts_valid',
+            'reinsurance_info_valid',
+            'reinsurance_scope_valid',
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_portfolio_valid(self, instance):
+        return True
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_location_valid(self, instance):
+        return True
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_accounts_valid(self, instance):
+        return True
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_reinsurance_info_valid(self, instance):
+        return True
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_reinsurance_scope_valid(self, instance):
+        return True

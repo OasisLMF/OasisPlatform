@@ -23,7 +23,8 @@ from .serializers import (
     PortfolioSerializer,
     CreateAnalysisSerializer,
     PortfolioStorageSerializer,
-    PortfolioListSerializer
+    PortfolioListSerializer,
+    PortfolioValidationSerializer
 )
 
 
@@ -105,6 +106,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             return PortfolioListSerializer
         elif self.action in ['set_storage_links', 'storage_links']:
             return PortfolioStorageSerializer
+        elif self.action in ['validate']:    
+            return PortfolioValidationSerializer
         elif self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
             'set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file',
@@ -238,3 +241,17 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         """
         store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
         return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
+
+    @action(methods=['get'], detail=True)
+    def validate(self, request, pk=None, version=None):
+        """
+        post:
+        Run OED validation on the connected exposure files 
+        """
+        serializer = self.get_serializer(self.get_object())
+        return Response(serializer.data)
+
+        #obj = self.get_object()
+        #obj.generate_inputs(request.user)
+        #return Response(Port#folioSerializer(instance=obj, context=self.get_serializer_context()).data)
+        #return Response({"is_valid": True})
