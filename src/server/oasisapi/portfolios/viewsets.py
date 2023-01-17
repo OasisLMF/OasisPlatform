@@ -17,7 +17,7 @@ from ..analyses.serializers import AnalysisSerializer
 from ..files.views import handle_related_file
 from ..files.serializers import RelatedFileSerializer
 from .models import Portfolio
-from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
+from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ..schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
@@ -110,7 +110,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             return PortfolioValidationSerializer
         elif self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
-            'set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file',
         ]:
             return RelatedFileSerializer
         else:
@@ -119,7 +118,10 @@ class PortfolioViewSet(viewsets.ModelViewSet):
 
     @property
     def parser_classes(self):
-        if getattr(self, 'action', None) in ['set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file']:
+        method = self.request.method.lower()
+        upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']
+
+        if method == 'post' and  getattr(self, 'action', None) in upload_views:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
@@ -159,7 +161,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
 
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['get', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
         get:
@@ -168,19 +171,13 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `accounts_file` with the portfolio
         """
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types)
-
-    @accounts_file.mapping.post
-    def set_accounts_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the portfolios `accounts_file` contents
-        """
-        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        method = request.method.lower()
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE if method == 'post' else None 
         return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['get', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
         get:
@@ -189,57 +186,42 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `location_file` contents
         """
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types)
-
-    @location_file.mapping.post
-    def set_location_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the portfolios `location_file` contents
-        """
-        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        method = request.method.lower()
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE if method == 'post' else None 
         return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['get', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `reinsurance_info_file` contents
 
         delete:
-        Disassociates the portfolios `reinsurance_info_file` contents
+        Disassociates the portfolios `urance_info_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types)
-
-    @reinsurance_info_file.mapping.post
-    def set_reinsurance_info_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the portfolios `reinsurance_info_file` contents
-        """
-        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        method = request.method.lower()
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE if method == 'post' else None 
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
 
+
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['get', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `reinsurance_scope_file` contents
 
+        post:
+        Sets the portfolios `reinsurance_scope_file` contents
+
         delete:
         Disassociates the portfolios `reinsurance_scope_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types)
-
-    @reinsurance_scope_file.mapping.post
-    def set_reinsurance_scope_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the portfolios `reinsurance_scope_file` contents
-        """
-        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE
+        method = request.method.lower()
+        store_as_parquet=django_settings.PORTFOLIO_PARQUET_STORAGE if method == 'post' else None 
         return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
 
 
