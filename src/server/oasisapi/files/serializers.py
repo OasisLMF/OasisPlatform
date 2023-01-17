@@ -7,6 +7,7 @@ from ods_tools.oed.exposure import OedExposure
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
+from django.conf import settings as django_settings
 
 from .models import RelatedFile
 
@@ -46,10 +47,11 @@ class RelatedFileSerializer(serializers.ModelSerializer):
             # 'filehash_md5',
         )
 
-    def __init__(self, *args, content_types=None, parquet_storage=False, field=None, **kwargs):
+    def __init__(self, *args, content_types=None, parquet_storage=False, field=None, oed_validate=None, **kwargs):
         self.content_types = content_types or []
         self.parquet_storage = parquet_storage
         self.oed_field = field
+        self.oed_validate = oed_validate if oed_validate is not None else django_settings.PORTFOLIO_UPLOAD_VALIDATION
         super(RelatedFileSerializer, self).__init__(*args, **kwargs)
 
     def validate(self, attrs):
@@ -59,7 +61,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         # TODO: add 'validate' url param to force validation on upload
         # TODO: Need to check content type to select either `read_csv` or `read_parquet`
 
-        if oed_validate:
+        if self.oed_validate and self.oed_field in EXPOSURE_ARGS: 
             # Move to settings.py ?
             VALIDATION_CONFIG = [
                 {'name': 'required_fields', 'on_error': 'return'},
@@ -104,7 +106,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['creator'] = self.context['request'].user
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name
-        attrs['oed_validated'] = oed_validate
+        attrs['oed_validated'] = self.oed_validate
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):

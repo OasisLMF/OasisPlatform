@@ -5,6 +5,7 @@ import pandas as pd
 from ods_tools.oed.exposure import OedExposure
 from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
+from django.conf import settings as django_settings
 from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
@@ -81,8 +82,8 @@ def _handle_get_related_file(parent, field, file_format):
     return response
 
 
-def _handle_post_related_file(parent, field, request, content_types, parquet_storage):
-    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request}, parquet_storage=parquet_storage, field=field)
+def _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate):
+    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request}, parquet_storage=parquet_storage, field=field, oed_validate=oed_validate)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 
@@ -153,14 +154,14 @@ def _json_read_from_file(parent, field):
     else:
         return Response(json.load(f))
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False):
+def handle_related_file(parent, field, request, content_types, parquet_storage=False, oed_validate=None):
     method = request.method.lower()
 
     if method == 'get':
         requested_format = request.GET.get('file_format', None)
         return _handle_get_related_file(parent, field, file_format=requested_format)
     elif method == 'post':
-        return _handle_post_related_file(parent, field, request, content_types, parquet_storage)
+        return _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field)
 

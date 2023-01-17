@@ -374,7 +374,6 @@ class CreateAnalysisSerializer(AnalysisSerializer):
 
 
 class PortfolioValidationSerializer(serializers.ModelSerializer):
-    #portfolio_validated = serializers.SerializerMethodField()  # for cross file validtion (not yet implemented)
     accounts_validated = serializers.SerializerMethodField()
     location_validated = serializers.SerializerMethodField()
     reinsurance_info_validated = serializers.SerializerMethodField()
@@ -384,16 +383,11 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Portfolio
         fields = (
-     #       'portfolio_validated',
             'location_validated',
             'accounts_validated',
             'reinsurance_info_validated',
             'reinsurance_scope_validated',
         )
-
-    #@swagger_serializer_method(serializer_or_field=serializers.CharField) # for cross file validtion (not yet implemented)
-    #def get_portfolio_validated(self, instance):
-    #    return True
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField) # should it be BooleanField ?
     def get_location_validated(self, instance):
