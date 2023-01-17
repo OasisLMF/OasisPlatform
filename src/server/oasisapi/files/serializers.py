@@ -1,7 +1,6 @@
 import logging
 import hashlib
 import io
-
 import pandas as pd
 from ods_tools.oed.exposure import OedExposure
 
@@ -61,6 +60,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         # TODO: Need to check content type to select either `read_csv` or `read_parquet`
 
         if oed_validate:
+            # Move to settings.py ?
             VALIDATION_CONFIG = [
                 {'name': 'required_fields', 'on_error': 'return'},
                 {'name': 'unknown_column', 'on_error': 'return'},
@@ -77,7 +77,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
             })
             oed_validation_errors = uploaded_exposure.check()
             if len(oed_validation_errors) > 0:
-                raise ValidationError([(error['name'], error['msg']) for error in oed_validation_errors])
+                raise ValidationError(detail=[(error['name'], error['msg']) for error in oed_validation_errors])
 
         # Covert to parquet if option is on and file is CSV
         if self.parquet_storage and attrs['file'].content_type == 'text/csv':
@@ -105,7 +105,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name
         attrs['oed_validated'] = oed_validate
-        # attrs['filehash_md5'] = md5_filehash(self.context['request'].FILES['file'])
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):

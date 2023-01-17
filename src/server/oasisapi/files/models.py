@@ -7,6 +7,21 @@ from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 
 
+import io
+import pandas as pd
+
+def related_file_to_df(RelatedFile):
+    if not RelatedFile:
+        return None
+
+    if RelatedFile.content_type == 'text/csv':
+        return pd.read_csv(io.BytesIO(RelatedFile.read()))
+    
+    # handle content types  -> read_parquet vs read_csv
+    #if RelatedFile.content_type == '':
+
+
+
 def random_file_name(instance, filename):
     if instance.store_as_filename:
         return filename

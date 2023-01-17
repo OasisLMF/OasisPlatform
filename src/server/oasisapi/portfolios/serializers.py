@@ -395,7 +395,7 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
     #def get_portfolio_validated(self, instance):
     #    return True
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @swagger_serializer_method(serializer_or_field=serializers.CharField) # should it be BooleanField ?
     def get_location_validated(self, instance):
         if instance.location_file:
             return instance.location_file.oed_validated

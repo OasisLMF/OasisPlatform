@@ -106,7 +106,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             return PortfolioListSerializer
         elif self.action in ['set_storage_links', 'storage_links']:
             return PortfolioStorageSerializer
-        elif self.action in ['validate']:    
+        elif self.action in ['validate']:
             return PortfolioValidationSerializer
         elif self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
@@ -246,16 +246,17 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     @action(methods=['get', 'post'], detail=True)
     def validate(self, request, pk=None, version=None):
         """
-        get: 
-        Return OED validation status for each attached file 
+        get:
+        Return OED validation status for each attached file
 
         post:
-        Run OED validation on the connected exposure files 
+        Run OED validation on the connected exposure files
         """
-        serializer = self.get_serializer(self.get_object())
-        return Response(serializer.data)
+        method = request.method.lower()
+        instance = self.get_object()
 
-        #obj = self.get_object()
-        #obj.generate_inputs(request.user)
-        #return Response(Port#folioSerializer(instance=obj, context=self.get_serializer_context()).data)
-        #return Response({"is_valid": True})
+        if method == 'post':
+            instance.run_oed_validation()
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
