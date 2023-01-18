@@ -1,5 +1,8 @@
 import os
+import io
+
 from uuid import uuid4
+import pandas as pd
 
 from django.conf import settings
 from django.db import models
@@ -7,18 +10,14 @@ from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 
 
-import io
-import pandas as pd
 
 def related_file_to_df(RelatedFile):
     if not RelatedFile:
         return None
-
-    if RelatedFile.content_type == 'text/csv':
+    elif RelatedFile.content_type == 'application/octet-stream':
+        return pd.read_parquet(io.BytesIO(RelatedFile.read()))
+    else: 
         return pd.read_csv(io.BytesIO(RelatedFile.read()))
-    
-    # handle content types  -> read_parquet vs read_csv
-    #if RelatedFile.content_type == '':
 
 
 

@@ -55,12 +55,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         super(RelatedFileSerializer, self).__init__(*args, **kwargs)
 
     def validate(self, attrs):
-        oed_validate = True   # This will be a setting.py option
-
-        # TODO: Skil if field not in EXPOSURE_ARGS
-        # TODO: add 'validate' url param to force validation on upload
-        # TODO: Need to check content type to select either `read_csv` or `read_parquet`
-
         if self.oed_validate and self.oed_field in EXPOSURE_ARGS: 
             # Move to settings.py ?
             VALIDATION_CONFIG = [
@@ -87,7 +81,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
                 attrs['file'].seek(0)
 
 
-                temp_df = ods_tools.read_csv(io.BytesIO(attrs['file'].read()))
+                temp_df = pd.read_csv(io.BytesIO(attrs['file'].read()))
 
                 # Create new UploadedFile object
                 f = io.open(attrs['file'].name + '.parquet', 'wb+')

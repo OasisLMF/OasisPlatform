@@ -50,13 +50,14 @@ def _handle_get_related_file(parent, field, file_format):
         output_buffer = io.BytesIO()
 
         # Load DataFrame and pass to ods-tools exposure class
-        #df = ods_tools.read_csv(io.BytesIO(f.file.read()))
-        df = OedExposure(**{
+        exposure = OedExposure(**{
             EXPOSURE_ARGS[field]: pd.read_csv(io.BytesIO(f.file.read()))
-        }).location.dataframe
+        })
 
+        df = getattr(exposure, EXPOSURE_ARGS[field]).dataframe
         df.to_parquet(output_buffer, index=False)
         output_buffer.seek(0)
+
         response = StreamingHttpResponse(output_buffer, content_type='application/octet-stream')
         response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, '.parquet')
         return response
@@ -65,13 +66,15 @@ def _handle_get_related_file(parent, field, file_format):
     if file_format == 'csv' and f.content_type == 'application/octet-stream':
         output_buffer = io.BytesIO()
 
-        #df = ods_tools.read_parquet(io.BytesIO(f.file.read()))
-        df = OedExposure(**{
-            EXPOSURE_ARGS[field]: pd.read_parquet(io.BytesIO(f.file.read()))
-        }).location.dataframe
+        exposure =  OedExposure(**{
+            EXPOSURE_ARGS[field]: pd.read_parquet(io.BytesIO(f.file.read())),
+            'check_oed': False,
+        })
 
+        df = getattr(exposure, EXPOSURE_ARGS[field]).dataframe
         df.to_csv(output_buffer, index=False)
         output_buffer.seek(0)
+
         response = StreamingHttpResponse(output_buffer, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, '.csv')
         return response
