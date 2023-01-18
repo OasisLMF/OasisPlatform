@@ -282,7 +282,7 @@ oasislmf[extra]==1.27.0
     # via -r ./requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
-ods-tools==3.0.0
+ods-tools==3.0.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
