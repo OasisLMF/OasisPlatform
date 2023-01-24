@@ -19,7 +19,6 @@ CONTENT_TYPE_MAPPING = {
     'application/vnd.ms-excel': 'text/csv'
 }
 
-
 EXPOSURE_ARGS = {
     'accounts_file': 'account',
     'location_file': 'location',
@@ -27,6 +26,15 @@ EXPOSURE_ARGS = {
     'reinsurance_scope_file': 'ri_scope'
 }
 
+VALIDATION_CONFIG = [
+    {'name': 'required_fields', 'on_error': 'return'},
+    {'name': 'unknown_column', 'on_error': 'return'},
+    {'name': 'valid_values', 'on_error': 'return'},
+    {'name': 'perils', 'on_error': 'return'},
+    {'name': 'occupancy_code', 'on_error': 'return'},
+    {'name': 'construction_code', 'on_error': 'return'},
+    {'name': 'country_and_area_code', 'on_error': 'return'},
+]
 
 
 def md5_filehash(in_memory_file, chunk_size=4096):
@@ -55,37 +63,28 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         super(RelatedFileSerializer, self).__init__(*args, **kwargs)
 
     def validate(self, attrs):
-        if self.oed_validate and self.oed_field in EXPOSURE_ARGS: 
-            # Move to settings.py ?
-            VALIDATION_CONFIG = [
-                {'name': 'required_fields', 'on_error': 'return'},
-                {'name': 'unknown_column', 'on_error': 'return'},
-                {'name': 'valid_values', 'on_error': 'return'},
-                {'name': 'perils', 'on_error': 'return'},
-                {'name': 'occupancy_code', 'on_error': 'return'},
-                {'name': 'construction_code', 'on_error': 'return'},
-                {'name': 'country_and_area_code', 'on_error': 'return'},
-            ]
+        run_validation = self.oed_validate and self.oed_field in EXPOSURE_ARGS
+        convert_to_parquet = self.parquet_storage and attrs['file'].content_type == 'text/csv'
 
+        # Create dataframe from file upload
+        if run_validation or convert_to_parquet:
+            uploaded_data_df = self.file_to_dataframe(attrs['file'])
+
+        # Run OED Validation
+        if run_validation:
             uploaded_exposure = OedExposure(**{
-                EXPOSURE_ARGS[self.oed_field]: pd.read_csv(io.BytesIO(attrs['file'].read())),
+                EXPOSURE_ARGS[self.oed_field]: uploaded_data_df,
                 'validation_config': VALIDATION_CONFIG
             })
             oed_validation_errors = uploaded_exposure.check()
             if len(oed_validation_errors) > 0:
                 raise ValidationError(detail=[(error['name'], error['msg']) for error in oed_validation_errors])
 
-        # Covert to parquet if option is on and file is CSV
-        if self.parquet_storage and attrs['file'].content_type == 'text/csv':
+        # Covert 'CSV' upload to 'parquet'
+        if convert_to_parquet:
             try:
-                attrs['file'].seek(0)
-
-
-                temp_df = pd.read_csv(io.BytesIO(attrs['file'].read()))
-
-                # Create new UploadedFile object
                 f = io.open(attrs['file'].name + '.parquet', 'wb+')
-                temp_df.to_parquet(f)
+                uploaded_data_df.to_parquet(f)
                 in_memory_file = UploadedFile(
                     file=f,
                     name=f.name,
@@ -102,6 +101,15 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['filename'] = attrs['file'].name
         attrs['oed_validated'] = self.oed_validate
         return super(RelatedFileSerializer, self).validate(attrs)
+
+
+    def file_to_dataframe(self, related_file):
+        related_file.seek(0)
+        if related_file.content_type == 'application/octet-stream':
+            # Uploaded files is in parquet format
+            return pd.read_parquet(io.BytesIO(related_file.read()))
+        else:
+            return pd.read_csv(io.BytesIO(related_file.read()))
 
     def validate_file(self, value):
         mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)
