@@ -68,7 +68,10 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
         # Create dataframe from file upload
         if run_validation or convert_to_parquet:
-            uploaded_data_df = self.file_to_dataframe(attrs['file'])
+            try:
+                uploaded_data_df = self.file_to_dataframe(attrs['file'])
+            except Exception as e:
+                raise ValidationError('Failed to read uploaded data [{}]'.format(e))
 
         # Run OED Validation
         if run_validation:
