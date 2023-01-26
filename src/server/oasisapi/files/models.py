@@ -15,7 +15,7 @@ def related_file_to_df(RelatedFile):
     if not RelatedFile:
         return None
 
-    RelatedFile.seek(0)
+    RelatedFile.file.seek(0)
     if RelatedFile.content_type == 'application/octet-stream':
         return pd.read_parquet(io.BytesIO(RelatedFile.read()))
     else:

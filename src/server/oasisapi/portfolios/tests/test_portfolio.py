@@ -872,3 +872,333 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
 
                 prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
                 pd.testing.assert_frame_equal(prq_return_data, test_data)
+
+
+
+
+
+LOCATION_DATA_VALID = """PortNumber,AccNumber,LocNumber,IsTenant,BuildingID,CountryCode,Latitude,Longitude,StreetAddress,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
+1,A11111,10002082046,1,1,GB,52.76698052,-0.895469856,1 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,220000,0,0,0,GBP,2.0.0
+1,A11111,10002082047,1,1,GB,52.76697956,-0.89536613,2 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,790000,0,0,0,GBP,2.0.0
+1,A11111,10002082048,1,1,GB,52.76697845,-0.895247587,3 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,160000,0,0,0,GBP,2.0.0
+1,A11111,10002082049,1,1,GB,52.76696096,-0.895473908,4 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,30000,0,0,0,GBP,2.0.0
+"""
+
+LOCATION_DATA_INVALID = """Port,AccNumber,LocNumb,IsTenant,BuildingID,CountryCode,Latitude,Longitude,Street,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
+1,A11111,10002082046,1,1,GB,52.76698052,-0.895469856,1 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,220000,0,0,0,GBP,2.0.0
+1,A11111,10002082047,1,1,GB,52.76697956,-0.89536613,2 ABINGDON ROAD,LE13 0HL,1050,5000,XXYA,790000,0,0,0,GBP,2.0.0
+1,A11111,10002082048,1,1,GB,52.76697845,,3 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,160000,0,0,0,GBP,2.0.0
+1,A11111,10002082049,1,1,GB,52.76696096,-0.895473908,4 ABINGDON ROAD,LE13 0HL,1050,-1,WW1,30000,0,0,0,GBP,2.0.0
+"""
+
+class PortfolioValidation(WebTestMixin, TestCase):
+
+    def test_location_file__is_valid(self):
+        content_type='text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': False,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': None})
+
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': True,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': None})
+
+
+    def test_location_file__is_invalid__response_is_400(self):
+        content_type='text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_INVALID))
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': False,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': None})
+
+                # Run validate - check is invalid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                self.assertEqual(400, validate_response.status_code)
+                self.assertEqual(validate_response.json, [
+                    ['location', 'missing required column PortNumber'],
+                    ['location', 'missing required column LocNumber'],
+                    ['location', "column 'Port' is not a valid oed field"],
+                    ['location', "column 'LocNumb' is not a valid oed field"],
+                    ['location', "column 'Street' is not a valid oed field"],
+                    ['location', 'LocPerilsCovered has invalid perils.\n  AccNumber LocPerilsCovered\n1    A11111             XXYA']
+                ])
+
+    def test_account_file__is_invalid__response_is_400(self):
+        content_type='text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': None,
+                    'accounts_validated': False,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': None})
+
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                self.assertEqual(400, validate_response.status_code)
+                self.assertEqual(validate_response.json, [
+                    ['account', 'missing required column AccCurrency'], 
+                    ['account', 'missing required column PolNumber'], 
+                    ['account', 'missing required column PolPerilsCovered'], 
+                    ['account', "column 'LocNumber' is not a valid oed field"], 
+                    ['account', "column 'IsTenant' is not a valid oed field"], 
+                    ['account', "column 'BuildingID' is not a valid oed field"], 
+                    ['account', "column 'CountryCode' is not a valid oed field"], 
+                    ['account', "column 'Latitude' is not a valid oed field"], 
+                    ['account', "column 'Longitude' is not a valid oed field"], 
+                    ['account', "column 'StreetAddress' is not a valid oed field"], 
+                    ['account', "column 'PostalCode' is not a valid oed field"], 
+                    ['account', "column 'OccupancyCode' is not a valid oed field"], 
+                    ['account', "column 'ConstructionCode' is not a valid oed field"], 
+                    ['account', "column 'LocPerilsCovered' is not a valid oed field"], 
+                    ['account', "column 'BuildingTIV' is not a valid oed field"], 
+                    ['account', "column 'OtherTIV' is not a valid oed field"], 
+                    ['account', "column 'ContentsTIV' is not a valid oed field"], 
+                    ['account', "column 'BITIV' is not a valid oed field"], 
+                    ['account', "column 'LocCurrency' is not a valid oed field"]
+                ])
+
+
+    def test_reinsurance_info_file__is_invalid__response_is_400(self):
+        content_type='text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': None,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': False,
+                    'reinsurance_scope_validated': None})
+
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                self.assertEqual(400, validate_response.status_code)
+                self.assertEqual(validate_response.json, [
+                    ['ri_info', 'missing required column ReinsNumber'], 
+                    ['ri_info', 'missing required column ReinsPeril'], 
+                    ['ri_info', 'missing required column PlacedPercent'], 
+                    ['ri_info', 'missing required column ReinsCurrency'], 
+                    ['ri_info', 'missing required column InuringPriority'], 
+                    ['ri_info', 'missing required column ReinsType'], 
+                    ['ri_info', 'missing required column RiskLevel'], 
+                    ['ri_info', "column 'PortNumber' is not a valid oed field"], 
+                    ['ri_info', "column 'AccNumber' is not a valid oed field"], 
+                    ['ri_info', "column 'LocNumber' is not a valid oed field"], 
+                    ['ri_info', "column 'IsTenant' is not a valid oed field"], 
+                    ['ri_info', "column 'BuildingID' is not a valid oed field"], 
+                    ['ri_info', "column 'CountryCode' is not a valid oed field"], 
+                    ['ri_info', "column 'Latitude' is not a valid oed field"], 
+                    ['ri_info', "column 'Longitude' is not a valid oed field"], 
+                    ['ri_info', "column 'StreetAddress' is not a valid oed field"], 
+                    ['ri_info', "column 'PostalCode' is not a valid oed field"], 
+                    ['ri_info', "column 'OccupancyCode' is not a valid oed field"], 
+                    ['ri_info', "column 'ConstructionCode' is not a valid oed field"], 
+                    ['ri_info', "column 'LocPerilsCovered' is not a valid oed field"], 
+                    ['ri_info', "column 'BuildingTIV' is not a valid oed field"], 
+                    ['ri_info', "column 'OtherTIV' is not a valid oed field"], 
+                    ['ri_info', "column 'ContentsTIV' is not a valid oed field"], 
+                    ['ri_info', "column 'BITIV' is not a valid oed field"], 
+                    ['ri_info', "column 'LocCurrency' is not a valid oed field"]
+                ])
+
+    def test_reinsurance_scope_file__is_invalid__response_is_400(self):
+        content_type='text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content= test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': None,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': False})
+
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                self.assertEqual(400, validate_response.status_code)
+                self.assertEqual(validate_response.json,[
+                    ['ri_scope', 'missing required column ReinsNumber'], 
+                    ['ri_scope', "column 'IsTenant' is not a valid oed field"], 
+                    ['ri_scope', "column 'BuildingID' is not a valid oed field"], 
+                    ['ri_scope', "column 'Latitude' is not a valid oed field"], 
+                    ['ri_scope', "column 'Longitude' is not a valid oed field"], 
+                    ['ri_scope', "column 'StreetAddress' is not a valid oed field"], 
+                    ['ri_scope', "column 'PostalCode' is not a valid oed field"], 
+                    ['ri_scope', "column 'OccupancyCode' is not a valid oed field"], 
+                    ['ri_scope', "column 'ConstructionCode' is not a valid oed field"], 
+                    ['ri_scope', "column 'LocPerilsCovered' is not a valid oed field"], 
+                    ['ri_scope', "column 'BuildingTIV' is not a valid oed field"], 
+                    ['ri_scope', "column 'OtherTIV' is not a valid oed field"], 
+                    ['ri_scope', "column 'ContentsTIV' is not a valid oed field"], 
+                    ['ri_scope', "column 'BITIV' is not a valid oed field"], 
+                    ['ri_scope', "column 'LocCurrency' is not a valid oed field"]
+                ])
+
+
+    #def test_all_exposure__are_valid(self):
