@@ -29,6 +29,10 @@ workers:
     image: coreoasis/model_worker
     version: dev
     imagePullPolicy: Never
+# If using a private image registry, define a secret as per
+# https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ and
+# reference it here.
+#    registryCredentials: regcred
     env: # Additional worker environment variables
       - name: OASIS_DEBUG
         value: "1"
