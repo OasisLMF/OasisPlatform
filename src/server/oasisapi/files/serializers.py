@@ -9,7 +9,7 @@ from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.conf import settings as django_settings
 
-from .models import RelatedFile
+from .models import RelatedFile, related_file_to_df
 
 logger = logging.getLogger('root')
 
@@ -69,7 +69,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         # Create dataframe from file upload
         if run_validation or convert_to_parquet:
             try:
-                uploaded_data_df = self.file_to_dataframe(attrs['file'])
+                uploaded_data_df = related_file_to_df(attrs['file'])
             except Exception as e:
                 raise ValidationError('Failed to read uploaded data [{}]'.format(e))
 
@@ -105,14 +105,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['oed_validated'] = self.oed_validate
         return super(RelatedFileSerializer, self).validate(attrs)
 
-
-    def file_to_dataframe(self, related_file):
-        related_file.seek(0)
-        if related_file.content_type == 'application/octet-stream':
-            # Uploaded files is in parquet format
-            return pd.read_parquet(io.BytesIO(related_file.read()))
-        else:
-            return pd.read_csv(io.BytesIO(related_file.read()))
 
     def validate_file(self, value):
         mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)

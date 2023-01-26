@@ -14,11 +14,12 @@ from model_utils.models import TimeStampedModel
 def related_file_to_df(RelatedFile):
     if not RelatedFile:
         return None
-    elif RelatedFile.content_type == 'application/octet-stream':
-        return pd.read_parquet(io.BytesIO(RelatedFile.read()))
-    else: 
-        return pd.read_csv(io.BytesIO(RelatedFile.read()))
 
+    RelatedFile.seek(0)
+    if RelatedFile.content_type == 'application/octet-stream':
+        return pd.read_parquet(io.BytesIO(RelatedFile.read()))
+    else:
+        return pd.read_csv(io.BytesIO(RelatedFile.read()))
 
 
 def random_file_name(instance, filename):
