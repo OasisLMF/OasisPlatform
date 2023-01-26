@@ -5,7 +5,7 @@ import os
 
 # Remote debugging 'rdb.set_trace()'
 # https://docs.celeryproject.org/en/stable/userguide/debugging.html
-from celery.contrib import rdb
+# from celery.contrib import rdb
 
 from celery.utils.log import get_task_logger
 from celery import Task

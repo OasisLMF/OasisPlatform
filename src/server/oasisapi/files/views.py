@@ -5,7 +5,6 @@ import pandas as pd
 from ods_tools.oed.exposure import OedExposure
 from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
-from django.conf import settings as django_settings
 from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
