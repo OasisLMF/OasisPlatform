@@ -60,7 +60,7 @@ class RunAnalysisSuccess(TestCase):
                     self.assertEqual(analysis.output_file.content_type, 'application/gzip')
                     self.assertEqual(analysis.output_file.creator, initiator)
                 else:
-                      self.assertEqual(analysis.output_file, None)
+                    self.assertEqual(analysis.output_file, None)
 
                 self.assertEqual(analysis.run_log_file.file.name, log_location)
                 self.assertEqual(analysis.run_log_file.content_type, 'application/gzip')
@@ -116,12 +116,12 @@ class GenerateInputsSuccess(TestCase):
                 return_code = 0
 
                 record_generate_input_result((
-                    os.path.join(d, input_location), 
-                    os.path.join(d, lookup_error_fp), 
-                    os.path.join(d, lookup_success_fp), 
-                    os.path.join(d, lookup_validation_fp), 
-                    os.path.join(d, summary_levels_fp), 
-                    os.path.join(d, traceback_fp), 
+                    os.path.join(d, input_location),
+                    os.path.join(d, lookup_error_fp),
+                    os.path.join(d, lookup_success_fp),
+                    os.path.join(d, lookup_validation_fp),
+                    os.path.join(d, summary_levels_fp),
+                    os.path.join(d, traceback_fp),
                     return_code), analysis.pk, initiator.pk)
                 analysis.refresh_from_db()
 

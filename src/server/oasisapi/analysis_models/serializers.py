@@ -54,7 +54,7 @@ class TemplateSerializer(serializers.ModelSerializer):
     """ Catch-all Analysis settings Template Serializer,
         intended to be called from a nested ViewSet
     """
-    file_url  = serializers.SerializerMethodField()
+    file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = SettingsTemplate
@@ -93,13 +93,13 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         analysis_id = attrs.pop('analysis_id', None)
-        if  analysis_id:
+        if analysis_id:
             try:
                 analysis = Analysis.objects.get(id=analysis_id)
             except ObjectDoesNotExist:
-                 raise ValidationError({"Detail": f"analysis_id = {analysis_id} not found"})
+                raise ValidationError({"Detail": f"analysis_id = {analysis_id} not found"})
             if not analysis.settings_file:
-                 raise ValidationError({"Detail": f"analysis_id = {analysis_id} has no attached settings file"})
+                raise ValidationError({"Detail": f"analysis_id = {analysis_id} has no attached settings file"})
 
             new_settings = analysis.copy_file(analysis.settings_file)
             new_settings.name = attrs.get('name')

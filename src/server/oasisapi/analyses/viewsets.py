@@ -29,11 +29,11 @@ from ..schemas.custom_swagger import FILE_RESPONSE
 from ..schemas.serializers import AnalysisSettingsSerializer
 
 
-
 class LogAcessDenied(APIException):
     status_code = 403
     default_detail = 'Only accounts with staff access are alowed to view system logs.'
     default_code = 'system logs disabled by admin'
+
 
 class check_log_permission(permissions.BasePermission):
     RESTRICTED_ACTIONS = [
@@ -41,13 +41,14 @@ class check_log_permission(permissions.BasePermission):
         'run_traceback_file',
         'run_log_file'
     ]
+
     def has_permission(self, request, view):
-        if not settings.RESTRICT_SYSTEM_LOGS: # are analyses log restricted?
+        if not settings.RESTRICT_SYSTEM_LOGS:  # are analyses log restricted?
             return True
-        if request.user.is_staff: # user is admin?
-            return True 
-        # was it a system log message?    
-        if view.action not in self.RESTRICTED_ACTIONS: # request for a log file?
+        if request.user.is_staff:  # user is admin?
+            return True
+        # was it a system log message?
+        if view.action not in self.RESTRICTED_ACTIONS:  # request for a log file?
             return True
         else:
             raise LogAcessDenied
@@ -217,7 +218,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj.run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
@@ -228,7 +228,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         obj.cancel_any()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
-
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
@@ -427,8 +426,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)
-
-
 
     @action(methods=['get'], detail=True)
     def storage_links(self, request, pk=None, version=None):
