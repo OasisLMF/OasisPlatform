@@ -265,7 +265,7 @@ else:
 
 # storage selector for exposure files
 PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
-PORTFOLIO_UPLOAD_VALIDATION = iniconf.settings.getboolean('server', 'PORTFOLIO_UPLOAD_VALIDATION', fallback=False)
+PORTFOLIO_UPLOAD_VALIDATION = iniconf.settings.getboolean('server', 'PORTFOLIO_UPLOAD_VALIDATION', fallback=True)
 
 
 # limit analyses logs access to admin accounts
