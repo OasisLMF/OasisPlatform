@@ -62,11 +62,9 @@ spec:
               {{- end }}
               mountPath: {{ .mountPath }}
             {{- end }}
-{{- range .workers }}
-  {{- if .registryCredentials }}
-        imagePullSecrets:
-          - name: {{ .registryCredentials }}
-  {{- end }}
+{{- if .registryCredentials }}
+      imagePullSecrets:
+        - name: {{ .registryCredentials }}
 {{- end }}
 {{- if ($root.Values.azure).secretProvider }}
             - name: azure-secret-provider
