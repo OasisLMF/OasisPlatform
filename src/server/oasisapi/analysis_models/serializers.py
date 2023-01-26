@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_serializer_method
-from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError

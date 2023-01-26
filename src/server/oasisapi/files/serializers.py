@@ -1,7 +1,6 @@
 import logging
 import hashlib
 import io
-import pandas as pd
 from ods_tools.oed.exposure import OedExposure
 
 from rest_framework import serializers
