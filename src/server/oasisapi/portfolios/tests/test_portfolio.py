@@ -884,6 +884,20 @@ LOCATION_DATA_VALID = """PortNumber,AccNumber,LocNumber,IsTenant,BuildingID,Coun
 1,A11111,10002082049,1,1,GB,52.76696096,-0.895473908,4 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,30000,0,0,0,GBP,2.0.0
 """
 
+ACCOUNT_DATA_VALID = """PortNumber,AccNumber,AccCurrency,PolNumber,PolPerilsCovered,PolInceptionDate,PolExpiryDate,LayerNumber,LayerParticipation,LayerLimit,LayerAttachment,OEDVersion
+1,A11111,GBP,Layer1,WW1,2018-01-01,2018-12-31,1,0.3,5000000,500000,2.0.0
+1,A11111,GBP,Layer2,WW1,2018-01-01,2018-12-31,2,0.3,100000000,5500000,2.0.0
+"""
+
+INFO_DATA_VALID = """ReinsNumber,ReinsLayerNumber,ReinsName,ReinsPeril,ReinsInceptionDate,ReinsExpiryDate,CededPercent,RiskLimit,RiskAttachment,OccLimit,OccAttachment,PlacedPercent,ReinsCurrency,InuringPriority,ReinsType,RiskLevel,UseReinsDates,OEDVersion
+1,1,ABC QS,WW1,2018-01-01,2018-12-31,1,0,0,0,0,1,GBP,1,SS,LOC,N,2.0.0
+"""
+
+SCOPE_DATA_VALID = """ReinsNumber,PortNumber,AccNumber,PolNumber,LocGroup,LocNumber,CedantName,ProducerName,LOB,CountryCode,ReinsTag,CededPercent,OEDVersion
+1,1,A11111,,,10002082047,,,,,,0.1,2.0.0
+1,1,A11111,,,10002082048,,,,,,0.2,2.0.0
+"""
+
 LOCATION_DATA_INVALID = """Port,AccNumber,LocNumb,IsTenant,BuildingID,CountryCode,Latitude,Longitude,Street,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
 1,A11111,10002082046,1,1,GB,52.76698052,-0.895469856,1 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,220000,0,0,0,GBP,2.0.0
 1,A11111,10002082047,1,1,GB,52.76697956,-0.89536613,2 ABINGDON ROAD,LE13 0HL,1050,5000,XXYA,790000,0,0,0,GBP,2.0.0
@@ -892,6 +906,91 @@ LOCATION_DATA_INVALID = """Port,AccNumber,LocNumb,IsTenant,BuildingID,CountryCod
 """
 
 class PortfolioValidation(WebTestMixin, TestCase):
+
+    def test_all_exposure__are_valid(self):
+        content_type='text/csv'
+        loc_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        acc_data = pd.read_csv(io.StringIO(ACCOUNT_DATA_VALID))
+        inf_data = pd.read_csv(io.StringIO(INFO_DATA_VALID))
+        scp_data = pd.read_csv(io.StringIO(SCOPE_DATA_VALID))
+
+        loc_file_content= loc_data.to_csv(index=False).encode('utf-8')
+        acc_file_content= acc_data.to_csv(index=False).encode('utf-8')
+        inf_file_content= inf_data.to_csv(index=False).encode('utf-8')
+        scp_file_content= scp_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), loc_file_content),
+                    ),
+                )
+                self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), acc_file_content),
+                    ),
+                )
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), inf_file_content),
+                    ),
+                )
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), scp_file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': False,
+                    'accounts_validated': False,
+                    'reinsurance_info_validated': False,
+                    'reinsurance_scope_validated': False})
+
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': True,
+                    'accounts_validated': True,
+                    'reinsurance_info_validated': True,
+                    'reinsurance_scope_validated': True})
+
 
     def test_location_file__is_valid(self):
         content_type='text/csv'
@@ -1199,6 +1298,3 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     ['ri_scope', "column 'BITIV' is not a valid oed field"], 
                     ['ri_scope', "column 'LocCurrency' is not a valid oed field"]
                 ])
-
-
-    #def test_all_exposure__are_valid(self):
