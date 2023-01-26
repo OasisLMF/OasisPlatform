@@ -168,6 +168,9 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         get:
         Gets the portfolios `accounts_file` contents
 
+        post:
+        Sets the portfolios `accounts_file` contents
+
         delete:
         Disassociates the portfolios `accounts_file` with the portfolio
         """
@@ -187,6 +190,9 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         """
         get:
         Gets the portfolios `location_file` contents
+
+        post:
+        Sets the portfolios `location_file` contents
 
         delete:
         Disassociates the portfolios `location_file` contents
@@ -208,8 +214,11 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         get:
         Gets the portfolios `reinsurance_info_file` contents
 
+        post:
+        Sets the portfolios `reinsurance_info_file` contents
+
         delete:
-        Disassociates the portfolios `urance_info_file` contents
+        Disassociates the portfolios `reinsurance_info_file` contents
         """
         method = request.method.lower()
         if method == 'post':

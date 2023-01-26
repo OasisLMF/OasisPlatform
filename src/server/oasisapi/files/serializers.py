@@ -83,7 +83,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
             if len(oed_validation_errors) > 0:
                 raise ValidationError(detail=[(error['name'], error['msg']) for error in oed_validation_errors])
 
-        # Covert 'CSV' upload to 'parquet'
+        # Convert 'CSV' upload to 'parquet'
         if convert_to_parquet:
             try:
                 f = io.open(attrs['file'].name + '.parquet', 'wb+')
