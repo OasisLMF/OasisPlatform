@@ -95,7 +95,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['oed_validated'] = self.oed_validate
         return super(RelatedFileSerializer, self).validate(attrs)
 
-
     def validate_file(self, value):
         mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)
         if self.content_types and mapped_content_type not in self.content_types:
