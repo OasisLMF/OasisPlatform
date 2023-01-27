@@ -62,6 +62,10 @@ spec:
               {{- end }}
               mountPath: {{ .mountPath }}
             {{- end }}
+{{- if .registryCredentials }}
+      imagePullSecrets:
+        - name: {{ .registryCredentials }}
+{{- end }}
 {{- if ($root.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
