@@ -1,20 +1,18 @@
-oasislmf[extra]>=1.25.0
 #-e git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf[extra]
-celery
-boto3
-configparser
-fasteners
-pathlib2
-pymysql
-psycopg2-binary
-sqlalchemy
-pytest
+oasislmf[extra]>=1.26.5
 azure-core>=1.21.1
 azure-storage-blob>=12.9.0
-
-
-# new requ
 billiard
+boto3
+celery
+configparser
+fasteners
 filelock
-redis
+joblib>=1.2.0
+pathlib2
+psycopg2-binary
+pymysql
+pytest
+redi
 natsort 
+sqlalchemy

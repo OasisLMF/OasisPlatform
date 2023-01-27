@@ -9,7 +9,7 @@ images:
       imagePullPolicy: Never
     ui:
       image: coreoasis/oasisui_app
-      version: 1.11.3
+      version: 1.11.4
     worker_controller:
       image: coreoasis/worker_controller
       version: dev
@@ -22,7 +22,7 @@ images:
     version: 8.0.26
   keycloak:
     image: quay.io/keycloak/keycloak
-    version: 15.0.2
+    version: 15.1.1
   init:
     image: busybox
     version: 1.28
@@ -107,6 +107,7 @@ databases:
     type: redis
     name: channel-layer
     port: 6379
+    ssl: false
   broker:
     type: rabbitmq
     name: broker
@@ -160,7 +161,7 @@ keycloak:
         password: password
         admin: true
 
-# Oasis API host, port and credentials
+# Oasis API host, port and credentials (for HTTP connections)
 oasisServer:
   name: oasis-server
   port: 8000
@@ -174,6 +175,22 @@ oasisServer:
     endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
     clientName: oasis-server
     clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
+
+# Oasis API host, port and credentials (for Websocket connections)
+oasisWebsocket:
+  name: oasis-websocket
+  port: 8001
+  user: admin
+  password: password
+
+  # Use same settings as client (uncomment and update charts if needed)  
+  # Enable OIDC Keycloak authentication with 'keycloak or set to 'simple' for simple jwt.
+  #apiAuthType: keycloak
+  #oidc:
+  #  #endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
+  #  clientName: oasis-websocket
+  #  clientSecret: 4fbf064d-de2a-4f58-b031-14486a751a3d
+
 
 workerController:
   # The maximum number of workers the worker controller will start. No matter the number of analyses and models

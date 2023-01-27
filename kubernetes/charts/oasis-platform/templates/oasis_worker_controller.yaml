@@ -48,12 +48,12 @@ spec:
         app: oasis-worker-controller
       {{- include "h.labels" . | nindent 8}}
       annotations:
-        checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisServer | sha256sum }}
+        checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisWebsocket | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       serviceAccountName: {{ $workerControllerServiceAccountName }}
       initContainers:
-      {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisServer.name) | nindent 8}}
+      {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisWebsocket.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.worker_controller.image }}:{{ .Values.images.oasis.worker_controller.version }}
           imagePullPolicy: {{ .Values.images.oasis.worker_controller.imagePullPolicy }}
@@ -75,9 +75,9 @@ spec:
             - name: OASIS_NEVER_SHUTDOWN_FIXED_WORKERS
               value: "{{ .Values.workerController.neverShutdownFixedWorkers }}"
             - name: OASIS_API_HOST
-              value: {{ .Values.oasisServer.name }}
+              value: {{ .Values.oasisWebsocket.name }}
             - name: OASIS_API_PORT
-              value: {{ .Values.oasisServer.port | quote }}
+              value: {{ .Values.oasisWebsocket.port | quote }}
             - name: OASIS_CLUSTER_NAMESPACE
               value: {{ .Release.Namespace | quote }}
             {{- with .Values.workerController.totalWorkerLimit }}
