@@ -54,10 +54,10 @@ class Portfolio(TimeStampedModel):
 
     def set_portolio_valid(self):
         oed_files = [
-             'accounts_file',
-             'location_file',
-             'reinsurance_info_file',
-             'reinsurance_scope_file',
+            'accounts_file',
+            'location_file',
+            'reinsurance_info_file',
+            'reinsurance_scope_file',
         ]
         for ref in oed_files:
             file_ref = getattr(self, ref)
@@ -79,6 +79,7 @@ class Portfolio(TimeStampedModel):
             raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
         else:
             self.set_portolio_valid()
+
 
 class PortfolioStatus(TimeStampedModel):
 
