@@ -48,6 +48,19 @@ class Portfolio(TimeStampedModel):
     def get_absolute_storage_url(self, request=None):
         return reverse('portfolio-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+    def set_portolio_valid(self):
+        oed_files = [
+             'accounts_file',
+             'location_file',
+             'reinsurance_info_file',
+             'reinsurance_scope_file',
+        ]
+        for ref in oed_files:
+            file_ref = getattr(self, ref)
+            if file_ref:
+                file_ref.oed_validated = True
+                file_ref.save()
+
     def run_oed_validation(self):
         # Model to settings.py ?
         VALIDATION_CONFIG = [
@@ -65,20 +78,14 @@ class Portfolio(TimeStampedModel):
             account=related_file_to_df(self.accounts_file),
             ri_info=related_file_to_df(self.reinsurance_info_file),
             ri_scope=related_file_to_df(self.reinsurance_scope_file),
-            validation_config=VALIDATION_CONFIG
-        )
+            validation_config=VALIDATION_CONFIG)
         validation_errors = portfolio_exposure.check()
 
+        # Set validation fields to true or raise exception
         if validation_errors:
-            
             raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
         else:
-            set_portolio_valid(self) 
-
-
-
-        # Set validation fields to true/false
-
+            self.set_portolio_valid()
 
 
 class PortfolioStatus(TimeStampedModel):
@@ -100,17 +107,3 @@ def delete_connected_files(sender, instance, **kwargs):
         file_ref = getattr(instance, ref)
         if file_ref:
             file_ref.delete()
-
-
-def set_portolio_valid(instance):
-    oed_files = [
-         'accounts_file',
-         'location_file',
-         'reinsurance_info_file',
-         'reinsurance_scope_file',
-    ]
-    for ref in oed_files:
-        file_ref = getattr(instance, ref)
-        if file_ref:
-            file_ref.oed_validated = True
-            file_ref.save()
