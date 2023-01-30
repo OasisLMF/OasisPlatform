@@ -26,16 +26,6 @@ EXPOSURE_ARGS = {
     'reinsurance_scope_file': 'ri_scope'
 }
 
-VALIDATION_CONFIG = [
-    {'name': 'required_fields', 'on_error': 'return'},
-    {'name': 'unknown_column', 'on_error': 'return'},
-    {'name': 'valid_values', 'on_error': 'return'},
-    {'name': 'perils', 'on_error': 'return'},
-    {'name': 'occupancy_code', 'on_error': 'return'},
-    {'name': 'construction_code', 'on_error': 'return'},
-    {'name': 'country_and_area_code', 'on_error': 'return'},
-]
-
 
 def md5_filehash(in_memory_file, chunk_size=4096):
     hasher_md5 = hashlib.md5()
@@ -77,7 +67,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         if run_validation:
             uploaded_exposure = OedExposure(**{
                 EXPOSURE_ARGS[self.oed_field]: uploaded_data_df,
-                'validation_config': VALIDATION_CONFIG
+                'validation_config': django_settings.PORTFOLIO_VALIDATION_CONFIG
             })
             oed_validation_errors = uploaded_exposure.check()
             if len(oed_validation_errors) > 0:

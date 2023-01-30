@@ -62,23 +62,12 @@ class Portfolio(TimeStampedModel):
                 file_ref.save()
 
     def run_oed_validation(self):
-        # Model to settings.py ?
-        VALIDATION_CONFIG = [
-            {'name': 'required_fields', 'on_error': 'return'},
-            {'name': 'unknown_column', 'on_error': 'return'},
-            {'name': 'valid_values', 'on_error': 'return'},
-            {'name': 'perils', 'on_error': 'return'},
-            {'name': 'occupancy_code', 'on_error': 'return'},
-            {'name': 'construction_code', 'on_error': 'return'},
-            {'name': 'country_and_area_code', 'on_error': 'return'},
-        ]
-
         portfolio_exposure = OedExposure(
             location=related_file_to_df(self.location_file),
             account=related_file_to_df(self.accounts_file),
             ri_info=related_file_to_df(self.reinsurance_info_file),
             ri_scope=related_file_to_df(self.reinsurance_scope_file),
-            validation_config=VALIDATION_CONFIG)
+            validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
         validation_errors = portfolio_exposure.check()
 
         # Set validation fields to true or raise exception
