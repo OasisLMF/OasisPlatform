@@ -3,6 +3,7 @@ __all__ = [
     'HEALTHCHECK',
     'TOKEN_REFRESH_HEADER',
     'FILE_FORMAT_PARAM',
+    'FILE_VALIDATION_PARAM',
 ]
 
 from drf_yasg import openapi
@@ -40,15 +41,15 @@ SERVER_INFO = Schema(
     required=["version", "config"],
     properties={
         "version": Schema(
-            title='Server version', 
+            title='Server version',
             description="Version of oasis platform",
-            read_only=True, 
-            type='string', 
+            read_only=True,
+            type='string',
         ),
         "config": Schema(
-            title='Server config', 
+            title='Server config',
             description="Oasis server public configuration",
-            type='object', 
+            type='object',
         )
     }
 )
@@ -62,9 +63,16 @@ TOKEN_REFRESH_HEADER = openapi.Parameter(
 )
 
 FILE_FORMAT_PARAM = openapi.Parameter(
-    'file_format', 
-    openapi.IN_QUERY, 
-    description="File format returned, default is `csv`", 
-    type=openapi.TYPE_STRING, 
+    'file_format',
+    openapi.IN_QUERY,
+    description="File format returned, default is `csv`",
+    type=openapi.TYPE_STRING,
     enum=['csv', 'parquet']
+)
+
+FILE_VALIDATION_PARAM = openapi.Parameter(
+    'validate',
+    openapi.IN_QUERY,
+    description="Validate OED files on upload, default `True`",
+    type=openapi.TYPE_BOOLEAN,
 )
