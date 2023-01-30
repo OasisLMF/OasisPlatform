@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from .models import Analysis
 from ..files.models import file_storage_link
 
+
 class AnalysisListSerializer(serializers.Serializer):
     """ Read Only Analyses Deserializer for efficiently returning a list of all
         Analyses from DB
@@ -35,7 +36,6 @@ class AnalysisListSerializer(serializers.Serializer):
     run_traceback_file = serializers.SerializerMethodField(read_only=True)
     run_log_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
-
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_input_file(self, instance):
@@ -96,7 +96,6 @@ class AnalysisListSerializer(serializers.Serializer):
     def get_storage_links(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
-
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
@@ -200,7 +199,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
-
     def validate(self, attrs):
         if not attrs.get('creator') and 'request' in self.context:
             attrs['creator'] = self.context.get('request').user
@@ -228,7 +226,7 @@ class AnalysisStorageSerializer(serializers.ModelSerializer):
     lookup_errors_file = serializers.SerializerMethodField()
     lookup_success_file = serializers.SerializerMethodField()
     lookup_validation_file = serializers.SerializerMethodField()
-    summary_levels_file  = serializers.SerializerMethodField()
+    summary_levels_file = serializers.SerializerMethodField()
 
     class Meta:
         model = Analysis

@@ -1,7 +1,6 @@
 import logging
 import hashlib
 import io
-import pandas as pd
 from ods_tools.oed.exposure import OedExposure
 
 from rest_framework import serializers
@@ -94,7 +93,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['filename'] = attrs['file'].name
         attrs['oed_validated'] = self.oed_validate
         return super(RelatedFileSerializer, self).validate(attrs)
-
 
     def validate_file(self, value):
         mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)

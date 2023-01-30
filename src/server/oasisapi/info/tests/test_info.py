@@ -39,7 +39,7 @@ class ServerInfo(WebTest):
     def test_user_is_authenticated___response_is_ok(self):
         user = fake_user()
         response = self.app.get(
-            reverse('serverinfo'), 
+            reverse('serverinfo'),
             user=user,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
