@@ -51,7 +51,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
         cmf = fake_data_file()
 
         response = self.app.get(cmf.get_absolute_data_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_data_file_is_not_present___get_response_is_404(self):
         user = fake_user()

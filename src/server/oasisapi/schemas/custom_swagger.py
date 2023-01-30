@@ -10,7 +10,6 @@ from drf_yasg import openapi
 from drf_yasg.openapi import Schema
 
 
-
 FILE_RESPONSE = openapi.Response(
     'File Download',
     schema=Schema(type=openapi.TYPE_FILE),
