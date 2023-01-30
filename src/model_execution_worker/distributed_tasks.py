@@ -8,7 +8,6 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
-from natsort import natsorted
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -17,7 +16,9 @@ import filelock
 import pandas as pd
 from billiard.exceptions import WorkerLostError
 from celery import Celery, signature
-from celery.signals import worker_ready, before_task_publish, task_revoked, task_failure
+from celery.signals import (before_task_publish, task_failure, task_revoked,
+                            worker_ready)
+from natsort import natsorted
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
@@ -26,14 +27,12 @@ from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
-from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
+from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
-
-from .storage_manager import BaseStorageConnector
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
-
+from .storage_manager import BaseStorageConnector
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -689,8 +688,20 @@ def collect_keys(
 
     def merge_dataframes(paths, output_file, file_type, unique=True):
         pd_read_func = getattr(pd, f"read_{file_type}")
-        df_chunks = [pd_read_func(p) for p in paths]
+        if not paths:
+            logging.warning("merge_dataframes was called with an empty path list.")
+            return
+        df_chunks = []
+        for path in paths:
+            try:
+                df_chunks.append(pd_read_func(path))
+            except pd.errors.EmptyDataError:
+                # Ignore empty files.
+                logging.info(f"File {path} is empty. --skipped--")
 
+        if not df_chunks:
+            logging.warning(f"All files were empty: {paths}. --skipped--")
+            return
         # add opt for Select merge strat
         df = pd.concat(df_chunks)
 
@@ -699,6 +710,10 @@ def collect_keys(
         pd_write_func = getattr(df, f"to_{file_type}")
         pd_write_func(output_file, index=True)
 
+    def take_first(paths, output_file):
+        first_path = paths[0]
+        logging.info(f"Using {first_path} and ignoring others.")
+        shutil.copy2(first_path, output_file)
 
     # Collect files and tar here from chunk_params['target_dir']
     with TemporaryDir() as chunks_dir:
@@ -708,7 +723,6 @@ def collect_keys(
             extract_to = os.path.join(chunks_dir, os.path.basename(tar).split('.')[0])
             filestore.extract(tar, extract_to, storage_subdir)
 
-
         file_paths = glob.glob(chunks_dir + '/lookup-[0-9]*/*') # paths for every file to merge  (inputs for merge)
         file_names = set([ os.path.basename(f) for f in file_paths])            # unqiue filenames (output merged results)
 
@@ -717,6 +731,7 @@ def collect_keys(
                 logging.info(f'Merging into file: "{file}"')
 
                 file_type = Path(file).suffix[1:]
+                file_name = Path(file).stem
                 file_chunks = [f for f in file_paths if f.endswith(file)]
                 file_merged = os.path.join(merge_dir, file)
                 file_chunks = natsorted(file_chunks)
@@ -726,6 +741,8 @@ def collect_keys(
                     merge_dataframes(file_chunks, file_merged, file_type)
                 elif file_type == 'parquet':
                     merge_dataframes(file_chunks, file_merged, file_type)
+                elif file_name in ['events', 'occurrence']:
+                    take_first(file_chunks, file_merged)
                 else:
                     logging.info(f'No merge method for file: "{file}" --skipped--')
 
