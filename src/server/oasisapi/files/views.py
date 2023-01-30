@@ -1,13 +1,22 @@
 import json
 import io
-import ods_tools
+import pandas as pd
 
+from ods_tools.oed.exposure import OedExposure
 from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
+from django.conf import settings as django_settings
 from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
 
+
+EXPOSURE_ARGS = {
+    'accounts_file': 'account',
+    'location_file': 'location',
+    'reinsurance_info_file': 'ri_info',
+    'reinsurance_scope_file': 'ri_scope'
+}
 
 
 def _delete_related_file(parent, field):
@@ -39,9 +48,16 @@ def _handle_get_related_file(parent, field, file_format):
     # Parquet format requested and data stored as csv
     if file_format == 'parquet' and f.content_type == 'text/csv':
         output_buffer = io.BytesIO()
-        df = ods_tools.read_csv(io.BytesIO(f.file.read()))
+
+        # Load DataFrame and pass to ods-tools exposure class
+        exposure = OedExposure(**{
+            EXPOSURE_ARGS[field]: pd.read_csv(io.BytesIO(f.file.read()))
+        })
+
+        df = getattr(exposure, EXPOSURE_ARGS[field]).dataframe
         df.to_parquet(output_buffer, index=False)
         output_buffer.seek(0)
+
         response = StreamingHttpResponse(output_buffer, content_type='application/octet-stream')
         response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, '.parquet')
         return response
@@ -49,9 +65,16 @@ def _handle_get_related_file(parent, field, file_format):
     # CSV format requested and data stored as Parquet
     if file_format == 'csv' and f.content_type == 'application/octet-stream':
         output_buffer = io.BytesIO()
-        df = ods_tools.read_parquet(io.BytesIO(f.file.read()))
+
+        exposure =  OedExposure(**{
+            EXPOSURE_ARGS[field]: pd.read_parquet(io.BytesIO(f.file.read())),
+            'check_oed': False,
+        })
+
+        df = getattr(exposure, EXPOSURE_ARGS[field]).dataframe
         df.to_csv(output_buffer, index=False)
         output_buffer.seek(0)
+
         response = StreamingHttpResponse(output_buffer, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, '.csv')
         return response
@@ -62,8 +85,8 @@ def _handle_get_related_file(parent, field, file_format):
     return response
 
 
-def _handle_post_related_file(parent, field, request, content_types, parquet_storage):
-    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request}, parquet_storage=parquet_storage)
+def _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate):
+    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request}, parquet_storage=parquet_storage, field=field, oed_validate=oed_validate)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 
@@ -134,14 +157,14 @@ def _json_read_from_file(parent, field):
     else:
         return Response(json.load(f))
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False):
+def handle_related_file(parent, field, request, content_types, parquet_storage=False, oed_validate=None):
     method = request.method.lower()
 
     if method == 'get':
         requested_format = request.GET.get('file_format', None)
         return _handle_get_related_file(parent, field, file_format=requested_format)
     elif method == 'post':
-        return _handle_post_related_file(parent, field, request, content_types, parquet_storage)
+        return _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field)
 

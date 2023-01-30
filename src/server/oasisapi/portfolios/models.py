@@ -8,8 +8,11 @@ from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
+from rest_framework.exceptions import ValidationError
 
-from ..files.models import RelatedFile
+from ..files.models import RelatedFile, related_file_to_df
+
+from ods_tools.oed.exposure import OedExposure
 
 
 class Portfolio(TimeStampedModel):
@@ -42,8 +45,36 @@ class Portfolio(TimeStampedModel):
     def get_absolute_reinsurance_scope_file_url(self, request=None):
         return reverse('portfolio-reinsurance-scope-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-    def get_absolute_storage_url(self, request=None):                                                                                                                                                                                                                                                                           
+    def get_absolute_storage_url(self, request=None):
         return reverse('portfolio-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def set_portolio_valid(self):
+        oed_files = [
+             'accounts_file',
+             'location_file',
+             'reinsurance_info_file',
+             'reinsurance_scope_file',
+        ]
+        for ref in oed_files:
+            file_ref = getattr(self, ref)
+            if file_ref:
+                file_ref.oed_validated = True
+                file_ref.save()
+
+    def run_oed_validation(self):
+        portfolio_exposure = OedExposure(
+            location=related_file_to_df(self.location_file),
+            account=related_file_to_df(self.accounts_file),
+            ri_info=related_file_to_df(self.reinsurance_info_file),
+            ri_scope=related_file_to_df(self.reinsurance_scope_file),
+            validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
+        validation_errors = portfolio_exposure.check()
+
+        # Set validation fields to true or raise exception
+        if validation_errors:
+            raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
+        else:
+            self.set_portolio_valid()
 
 
 class PortfolioStatus(TimeStampedModel):
@@ -55,12 +86,12 @@ class PortfolioStatus(TimeStampedModel):
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [ 
+    files_for_removal = [
          'accounts_file',
          'location_file',
          'reinsurance_info_file',
          'reinsurance_scope_file',
-    ]   
+    ]
     for ref in files_for_removal:
         file_ref = getattr(instance, ref)
         if file_ref:

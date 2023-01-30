@@ -265,6 +265,17 @@ else:
 
 # storage selector for exposure files
 PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
+PORTFOLIO_UPLOAD_VALIDATION = iniconf.settings.getboolean('server', 'PORTFOLIO_UPLOAD_VALIDATION', fallback=True)
+PORTFOLIO_VALIDATION_CONFIG = [
+    {'name': 'required_fields', 'on_error': 'return'},
+    {'name': 'unknown_column', 'on_error': 'return'},
+    {'name': 'valid_values', 'on_error': 'return'},
+    {'name': 'perils', 'on_error': 'return'},
+    {'name': 'occupancy_code', 'on_error': 'return'},
+    {'name': 'construction_code', 'on_error': 'return'},
+    {'name': 'country_and_area_code', 'on_error': 'return'},
+]
+
 
 # limit analyses logs access to admin accounts
 RESTRICT_SYSTEM_LOGS = iniconf.settings.getboolean('server', 'RESTRICT_SYSTEM_LOGS', fallback=False)
