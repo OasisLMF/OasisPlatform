@@ -3,14 +3,12 @@ name: Platform Vulnerability Scanning
 on:
   push:
     branches:
-      - master
-      - develop
-      - backports**
+      - platform-2.0
+      - platform-2.0-develop
   pull_request:
     branches:
-      - master
-      - develop
-      - backports**
+      - platform-2.0
+      - platform-2.0-develop
 
   workflow_dispatch:
     inputs:
