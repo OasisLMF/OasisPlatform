@@ -4,6 +4,8 @@
 #
 #    pip-compile requirements-worker.in
 #
+
+natsort==8.1.0
 amqp==5.1.0
     # via kombu
 anytree==2.8.0

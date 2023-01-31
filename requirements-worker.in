@@ -1,5 +1,5 @@
 #-e git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf[extra]
-oasislmf[extra]>=1.25.0
+oasislmf[extra]>=1.26.5
 azure-core>=1.21.1
 azure-storage-blob>=12.9.0
 billiard
@@ -13,5 +13,6 @@ pathlib2
 psycopg2-binary
 pymysql
 pytest
-redis
+redi
+natsort 
 sqlalchemy
