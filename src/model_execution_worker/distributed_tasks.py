@@ -706,7 +706,7 @@ def collect_keys(
         df = pd.concat(df_chunks)
 
         if unique:
-            df.drop_duplicates(inplace=True, ignore_index=True)
+            df = df[~df.index.duplicated(keep='first')]
         pd_write_func = getattr(df, f"to_{file_type}")
         pd_write_func(output_file, index=True)
 
