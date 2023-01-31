@@ -88,7 +88,7 @@ class DataFileViewset(VerifyGroupAccessModelViewSet):
     def get_serializer_class(self):
         if self.action in ['content', 'set_content']:
             return RelatedFileSerializer
-        elif self.action in  ['list']:
+        elif self.action in ['list']:
             return DataFileListSerializer
         else:
             return super(DataFileViewset, self).get_serializer_class()

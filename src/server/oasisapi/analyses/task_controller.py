@@ -138,7 +138,8 @@ class Controller:
         :return: Signature representing the task
         """
         statuses, tasks = zip(*[
-            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, p)
+            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid,
+                                                   f'{status_name} {idx}', f'{status_slug}-{idx}', queue, p)
             for idx, p in enumerate(params)
         ])
 

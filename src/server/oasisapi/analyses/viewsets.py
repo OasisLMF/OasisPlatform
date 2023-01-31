@@ -497,7 +497,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     @action(methods=['get'], detail=True)
     def sub_task_list(self, request, pk=None, version=None):
 
-        ## Populate filter with query params
+        # Populate filter with query params
         filters = {}
         status = request.query_params.get("subtask_status")
         slug = request.query_params.get("subtask_slug")

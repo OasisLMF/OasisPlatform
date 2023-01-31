@@ -13,7 +13,7 @@ class DataFile(TimeStampedModel):
         max_length=255,
         help_text=_('Type of data contained within the file.')
     )
-    file_category= models.CharField(
+    file_category = models.CharField(
         max_length=255,
         blank=True,
         null=True,

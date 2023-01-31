@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from ...auth.tests.fakes import fake_user
 from ..views import HealthcheckView
 
+
 class Healthcheck(WebTest):
     def test_user_is_not_authenticated___response_is_ok(self):
         with patch.object(HealthcheckView, 'celery_is_ok', return_value=True) as mock_method:

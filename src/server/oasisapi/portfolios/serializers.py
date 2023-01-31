@@ -126,7 +126,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
-                data['creator'] = self.context.get('request').user
+            data['creator'] = self.context.get('request').user
         return super(PortfolioSerializer, self).create(data)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
@@ -242,7 +242,6 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
         else:
             return default_storage.exists(value)
 
-
     def user_belongs_to_file_group(self, value):
         file = RelatedFile.objects.filter(file=value)
         if file:
@@ -285,10 +284,10 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
         return super(PortfolioStorageSerializer, self).validate(attrs)
 
     def get_content_type(self, stored_filename):
-        try: # fetch content_type stored in Django's DB
+        try:  # fetch content_type stored in Django's DB
             return RelatedFile.objects.get(file=path.basename(stored_filename)).content_type
         except ObjectDoesNotExist:
-            try: # Find content_type from S3 Object header
+            try:  # Find content_type from S3 Object header
                 object_header = default_storage.connection.meta.client.head_object(
                     Bucket=default_storage.bucket_name,
                     Key=stored_filename)

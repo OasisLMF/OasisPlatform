@@ -121,7 +121,7 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
         else:
             return super(SettingsTemplateViewSet, self).get_serializer_class()
 
-    def list(self,  request, models_pk=None, **kwargs):
+    def list(self, request, models_pk=None, **kwargs):
         context = {'request': request}
         template_list = self.get_queryset()
         serializer = TemplateSerializer(template_list, many=True, context=context)
@@ -139,11 +139,10 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
         model.template_files.add(new_template)
         return Response(TemplateSerializer(new_template, context=context).data)
 
-
     @swagger_auto_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
     @swagger_auto_schema(methods=['post'], request_body=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
-    def content(self, request, pk=None, models_pk=None,  version=None):
+    def content(self, request, pk=None, models_pk=None, version=None):
         """
         get:
         Gets the analyses template `settings` contents
@@ -197,7 +196,6 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     filterset_class = AnalysisModelFilter
     group_access_model = AnalysisModel
 
-
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:
             return RelatedFileSerializer
@@ -208,7 +206,7 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
         elif self.action in ['scaling_configuration']:
             return ModelScalingConfigSerializer
         elif self.action in ['chunking_configuration']:
-           return ModelChunkingConfigSerializer
+            return ModelChunkingConfigSerializer
         else:
             return super(AnalysisModelViewSet, self).get_serializer_class()
 

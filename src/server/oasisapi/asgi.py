@@ -12,6 +12,6 @@ django.setup()
 
 application = get_default_application()
 
-## ONLY run the websocket from here (add safeguard to remove HTTP router)
-#if 'http' in application.application_mapping:
+# ONLY run the websocket from here (add safeguard to remove HTTP router)
+# if 'http' in application.application_mapping:
 #    del application.application_mapping['http']

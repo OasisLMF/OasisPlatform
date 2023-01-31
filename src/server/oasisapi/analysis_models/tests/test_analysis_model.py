@@ -95,7 +95,6 @@ class AnalysisModelApi(WebTest, TestCase):
         self.assertEqual(model.version_id, version_id)
         self.assertEqual(model.model_id, model_id)
 
-
     @given(
         supplier_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
         model_id=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
@@ -276,11 +275,11 @@ class ModelSettingsJson(WebTestMixin, TestCase):
         models = fake_analysis_model()
 
         response = self.app.get(models.get_absolute_settings_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
-
+        self.assertIn(response.status_code, [401, 403])
 
     """ Add these check back in once models auto-update their settings fields
     """
+
     def test_settings_json_is_not_present___get_response_is_404(self):
         user = fake_user()
         models = fake_analysis_model()
@@ -315,38 +314,38 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 models = fake_analysis_model()
                 json_data = {
-                    "model_settings":{
-                        "event_set":{
+                    "model_settings": {
+                        "event_set": {
                             "name": "Event Set",
                             "default": "P",
-                            "options":[
-                                {"id":"P", "desc": "Proabilistic"},
-                                {"id":"H", "desc": "Historic"}
+                            "options": [
+                                {"id": "P", "desc": "Proabilistic"},
+                                {"id": "H", "desc": "Historic"}
                             ]
-                         },
-                        "event_occurrence_id":{
+                        },
+                        "event_occurrence_id": {
                             "name": "Occurrence Set",
                             "desc": "PiWind Occurrence selection",
                             "default": 1,
-                            "options":[
-                                {"id":"1", "desc": "Long Term"}
+                            "options": [
+                                {"id": "1", "desc": "Long Term"}
                             ]
                         },
                         "boolean_parameters": [
-                            {"name": "peril_wind", "desc":"Boolean option", "default": 1.1},
-                            {"name": "peril_surge", "desc":"Boolean option", "default": True}
+                            {"name": "peril_wind", "desc": "Boolean option", "default": 1.1},
+                            {"name": "peril_surge", "desc": "Boolean option", "default": True}
                         ],
                         "float_parameter": [
-                            {"name": "float_1", "desc":"Some float value", "default": False, "max":1.0, "min":0.0},
-                            {"name": "float_2", "desc":"Some float value", "default": 0.3, "max":1.0, "min":0.0}
+                            {"name": "float_1", "desc": "Some float value", "default": False, "max": 1.0, "min": 0.0},
+                            {"name": "float_2", "desc": "Some float value", "default": 0.3, "max": 1.0, "min": 0.0}
                         ]
-                     },
-                    "lookup_settings":{
-                        "supported_perils":[
-                           {"i": "WSS", "desc": "Single Peril: Storm Surge"},
-                           {"id": "WTC", "des": "Single Peril: Tropical Cyclone"},
-                           {"id": "WW11", "desc": "Group Peril: Windstorm with storm surge"},
-                           {"id": "WW2", "desc": "Group Peril: Windstorm w/o storm surge"}
+                    },
+                    "lookup_settings": {
+                        "supported_perils": [
+                            {"i": "WSS", "desc": "Single Peril: Storm Surge"},
+                            {"id": "WTC", "des": "Single Peril: Tropical Cyclone"},
+                            {"id": "WW11", "desc": "Group Peril: Windstorm with storm surge"},
+                            {"id": "WW2", "desc": "Group Peril: Windstorm w/o storm surge"}
                         ]
                     }
                 }
@@ -361,7 +360,7 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                     expect_errors=True,
                 )
 
-                validation_error =  {
+                validation_error = {
                     'model_settings': ["Additional properties are not allowed ('float_parameter' was unexpected)"],
                     'model_settings-event_set': ["'desc' is a required property"],
                     'model_settings-event_occurrence_id-default': ["1 is not of type 'string'"],
@@ -375,46 +374,45 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 self.assertDictEqual.__self__.maxDiff = None
                 self.assertDictEqual(json.loads(response.body), validation_error)
 
-
     def test_settings_json_is_uploaded___can_be_retrieved(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 user = fake_user()
                 models = fake_analysis_model()
                 json_data = {
-                    "model_settings":{
-                        "event_set":{
+                    "model_settings": {
+                        "event_set": {
                             "name": "Event Set",
                             "desc": "Either Probablistic or Historic",
                             "default": "P",
-                            "options":[
-                                {"id":"P", "desc": "Proabilistic"},
-                                {"id":"H", "desc": "Historic"}
+                            "options": [
+                                {"id": "P", "desc": "Proabilistic"},
+                                {"id": "H", "desc": "Historic"}
                             ]
-                         },
-                        "event_occurrence_id":{
+                        },
+                        "event_occurrence_id": {
                             "name": "Occurrence Set",
                             "desc": "PiWind Occurrence selection",
                             "default": "1",
-                            "options":[
-                                {"id":"1", "desc": "Long Term"}
+                            "options": [
+                                {"id": "1", "desc": "Long Term"}
                             ]
                         },
                         "boolean_parameters": [
-                            {"name": "peril_wind", "desc":"Boolean option", "default": False},
-                            {"name": "peril_surge", "desc":"Boolean option", "default": True}
+                            {"name": "peril_wind", "desc": "Boolean option", "default": False},
+                            {"name": "peril_surge", "desc": "Boolean option", "default": True}
                         ],
                         "float_parameters": [
-                            {"name": "float_1", "desc":"Some float value", "default": 0.5, "max":1.0, "min":0.0},
-                            {"name": "float_2", "desc":"Some float value", "default": 0.3, "max":1.0, "min":0.0}
+                            {"name": "float_1", "desc": "Some float value", "default": 0.5, "max": 1.0, "min": 0.0},
+                            {"name": "float_2", "desc": "Some float value", "default": 0.3, "max": 1.0, "min": 0.0}
                         ]
-                     },
-                    "lookup_settings":{
-                        "supported_perils":[
-                           {"id": "WSS", "desc": "Single Peril: Storm Surge"},
-                           {"id": "WTC", "desc": "Single Peril: Tropical Cyclone"},
-                           {"id": "WW1", "desc": "Group Peril: Windstorm with storm surge"},
-                           {"id": "WW2", "desc": "Group Peril: Windstorm w/o storm surge"}
+                    },
+                    "lookup_settings": {
+                        "supported_perils": [
+                            {"id": "WSS", "desc": "Single Peril: Storm Surge"},
+                            {"id": "WTC", "desc": "Single Peril: Tropical Cyclone"},
+                            {"id": "WW1", "desc": "Group Peril: Windstorm with storm surge"},
+                            {"id": "WW2", "desc": "Group Peril: Windstorm w/o storm surge"}
                         ]
                     }
                 }

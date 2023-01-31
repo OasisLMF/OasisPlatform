@@ -24,8 +24,6 @@ settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
 
 
-
-
 class CancelAnalysisTask(WebTestMixin, TestCase):
     pass
 
@@ -165,7 +163,7 @@ class AnalysisRun(WebTestMixin, TestCase):
     def test_state_is_ready___run_is_started(self, status, task_id):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
-                #res_factory = FakeAsyncResultFactory(target_task_id=task_id)
+                # res_factory = FakeAsyncResultFactory(target_task_id=task_id)
                 analysis = fake_analysis(status=status, run_task_id=task_id, input_file=fake_related_file(), settings_file=fake_related_file())
                 initiator = fake_user()
 
@@ -175,8 +173,8 @@ class AnalysisRun(WebTestMixin, TestCase):
 
                 with patch('src.server.oasisapi.analyses.models.celery_app.send_task', new=mock_task):
                     analysis.run(initiator)
-                    mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, 1), {}, queue='celery', link_error=ANY, priority=4)
-
+                    mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, 1),
+                                                      {}, queue='celery', link_error=ANY, priority=4)
 
     @given(
         status=sampled_from([
@@ -199,7 +197,8 @@ class AnalysisRun(WebTestMixin, TestCase):
             with self.assertRaises(ValidationError) as ex:
                 analysis.run(initiator)
 
-            self.assertEqual({'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
+            self.assertEqual(
+                {'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 
@@ -238,7 +237,8 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 mock_task = MagicMock(return_value=task_obj)
                 with patch('src.server.oasisapi.analyses.models.celery_app.send_task', new=mock_task):
                     analysis.generate_inputs(initiator)
-                    mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk, None), {}, queue='celery', link_error=ANY, priority=4)
+                    mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk,
+                                                      None), {}, queue='celery', link_error=ANY, priority=4)
 
     @given(
         status=sampled_from([

@@ -51,8 +51,8 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
-#logging.getLogger('importlib').setLevel('INFO')
-#logging.getLogger('pandas').setLevel('INFO')
+# logging.getLogger('importlib').setLevel('INFO')
+# logging.getLogger('pandas').setLevel('INFO')
 
 
 # Set storage manager
@@ -73,6 +73,7 @@ class LoggingTaskContext:
 
         Docs: https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
     """
+
     def __init__(self, logger, log_filename, level=None, close=True):
         self.logger = logger
         self.level = level
@@ -201,14 +202,12 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
-
-#https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
+# https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
 @task_revoked.connect
 def revoked_handler(*args, **kwargs):
     # Break the chain
     request = kwargs.get('request')
     request.chain[:] = []
-
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -240,7 +239,6 @@ def register_worker(sender, **k):
             'run_register_worker',
             args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
         ).delay()
-
 
     # Required ENV
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
@@ -301,8 +299,6 @@ def register_worker(sender, **k):
         os.rmdir(tmpdir)
 
 
-
-
 class InvalidInputsException(OasisException):
     def __init__(self, input_archive):
         super(InvalidInputsException, self).__init__('Inputs location not a tarfile: {}'.format(input_archive))
@@ -357,6 +353,7 @@ def notify_api_task_started(analysis_id, task_id, task_slug):
         },
     ).delay()
 
+
 def update_all_tasks_ids(task_request):
     """ Extract other task_id's from the celery request chain.
         These are sent back to the `worker-monitor` container
@@ -374,16 +371,15 @@ def update_all_tasks_ids(task_request):
     task_update_list = list()
 
     # Sequential tasks - in the celery task chain, important for stopping stalls on a cancellation request
-    seq = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
+    seq = {t['options']['task_id']: t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
     for task_id in seq:
         task_update_list.append((task_id, seq[task_id]['analysis_id'], seq[task_id]['slug']))
 
     # Chunked tasks - This call might get heavy as the chunk load increases (possibly remove later)
-    chunks = {t['options']['task_id']:t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
+    chunks = {t['options']['task_id']: t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
     for task_id in chunks:
         task_update_list.append((task_id, chunks[task_id]['analysis_id'], chunks[task_id]['slug']))
     signature('update_task_id').delay(task_update_list)
-
 
 
 # --- input generation tasks ------------------------------------------------ #
@@ -412,7 +408,6 @@ def keys_generation_task(fn):
         except OSError:
             logging.info(f'Failed to remove {filepath}.lock')
 
-
     def get_file_ref(kwargs, params, arg_name):
         """ Either fetch file ref from Kwargs or override from pre-analysis hook
         """
@@ -426,7 +421,6 @@ def keys_generation_task(fn):
             return file_from_hook
         logging.info(f'{arg_name}: {file_from_server} (portfolio)')
         return file_from_server
-
 
     def log_task_entry(slug, request_id, analysis_id):
         if slug:
@@ -484,22 +478,22 @@ def keys_generation_task(fn):
         # Prepare 'generate-oasis-files' input files
         if loc_file:
             loc_extention = "".join(pathlib.Path(loc_file).suffixes)
-            loc_subdir = params.get('storage_subdir','') if params.get('pre_loc_file') else ''
+            loc_subdir = params.get('storage_subdir', '') if params.get('pre_loc_file') else ''
             params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'location{loc_extention}')
             maybe_fetch_file(loc_file, params['oed_location_csv'], loc_subdir)
         if acc_file:
             acc_extention = "".join(pathlib.Path(acc_file).suffixes)
-            acc_subdir = params.get('storage_subdir','') if params.get('pre_acc_file') else ''
+            acc_subdir = params.get('storage_subdir', '') if params.get('pre_acc_file') else ''
             params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'account{acc_extention}')
             maybe_fetch_file(acc_file, params['oed_accounts_csv'], acc_subdir)
         if info_file:
             info_extention = "".join(pathlib.Path(info_file).suffixes)
-            info_subdir = params.get('storage_subdir','') if params.get('pre_info_file') else ''
+            info_subdir = params.get('storage_subdir', '') if params.get('pre_info_file') else ''
             params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'reinsinfo{info_extention}')
             maybe_fetch_file(info_file, params['oed_info_csv'], info_subdir)
         if scope_file:
             scope_extention = "".join(pathlib.Path(scope_file).suffixes)
-            scope_subdir = params.get('storage_subdir','') if params.get('pre_scope_file') else ''
+            scope_subdir = params.get('storage_subdir', '') if params.get('pre_scope_file') else ''
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
             maybe_fetch_file(scope_file, params['oed_scope_csv'], scope_subdir)
 
@@ -509,7 +503,6 @@ def keys_generation_task(fn):
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
         else:
             params['user_data_dir'] = None
-
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
@@ -547,12 +540,12 @@ def prepare_input_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
-    update_all_tasks_ids(self.request) # updates all the assigned task_ids
+    update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
     config = get_json(config_path)
-    lookup_params = {**{k:v for k,v in config.items() if not k.startswith('oed_')}, **params}
+    lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **params}
 
     # convert relative paths to Aboslute
     lookup_path_vars = [
@@ -585,13 +578,13 @@ def prepare_input_generation_params(
 @app.task(bind=True, name='pre_analysis_hook', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def pre_analysis_hook(self,
-    params,
-    run_data_uuid=None,
-    analysis_id=None,
-    initiator_id=None,
-    slug=None,
-    **kwargs
-):
+                      params,
+                      run_data_uuid=None,
+                      analysis_id=None,
+                      initiator_id=None,
+                      slug=None,
+                      **kwargs
+                      ):
     if params.get('exposure_pre_analysis_module'):
         with TemporaryDir() as hook_target_dir:
             params['oasis_files_dir'] = hook_target_dir
@@ -599,13 +592,13 @@ def pre_analysis_hook(self,
             files_modified = pre_hook_output.get('modified', {})
 
             # store updated files
-            params['pre_loc_file']   = filestore.put(files_modified.get('oed_location_csv'), subdir=params['storage_subdir'])
-            params['pre_acc_file']   = filestore.put(files_modified.get('oed_accounts_csv'), subdir=params['storage_subdir'])
-            params['pre_info_file']  = filestore.put(files_modified.get('oed_info_csv'), subdir=params['storage_subdir'])
+            params['pre_loc_file'] = filestore.put(files_modified.get('oed_location_csv'), subdir=params['storage_subdir'])
+            params['pre_acc_file'] = filestore.put(files_modified.get('oed_accounts_csv'), subdir=params['storage_subdir'])
+            params['pre_info_file'] = filestore.put(files_modified.get('oed_info_csv'), subdir=params['storage_subdir'])
             params['pre_scope_file'] = filestore.put(files_modified.get('oed_scope_csv'), subdir=params['storage_subdir'])
 
         # remove any pre-loaded files (only affects this worker)
-        oed_files = {v for k,v in params.items() if k.startswith('oed_') and isinstance(v, str)}
+        oed_files = {v for k, v in params.items() if k.startswith('oed_') and isinstance(v, str)}
         for filepath in oed_files:
             if Path(filepath).exists():
                 os.remove(filepath)
@@ -682,7 +675,7 @@ def collect_keys(
     initiator_id=None,
     slug=None,
     **kwargs
- ):
+):
     # Setup return params
     chunk_params = {**params[0]}
     storage_subdir = chunk_params['storage_subdir']
@@ -796,7 +789,6 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return params
-
 
 
 # --- loss generation tasks ------------------------------------------------ #
@@ -920,7 +912,7 @@ def prepare_losses_generation_params(
     **kwargs,
 ):
     notify_api_status(analysis_id, 'RUN_STARTED')
-    update_all_tasks_ids(self.request) # updates all the assigned task_ids
+    update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(model_id)
@@ -981,7 +973,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     chunk_params = {
         **params,
         'process_number': current_chunk_id,
-        'max_process_id' : max_chunk_id,
+        'max_process_id': max_chunk_id,
         'ktools_fifo_relative': True,
         'ktools_work_dir': os.path.join(params['model_run_dir'], work_dir),
     }
@@ -1076,13 +1068,14 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
         else:
             os.symlink(from_path, to_path)
 
+
 @task_failure.connect
 def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     logging.info("Task error handler")
     task_params = kwargs.get('args')[0]
     task_args = sender.request.kwargs
-    
-    # Store output log 
+
+    # Store output log
     task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
     if os.path.isfile(task_log_file):
         signature('subtask_error_log').delay(
@@ -1093,7 +1086,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
             filestore.put(task_log_file)
         )
 
-    # Wipe worker's remote data storage  
+    # Wipe worker's remote data storage
     keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
     dir_remote_data = task_params.get('storage_subdir')
     if not keep_remote_data:
