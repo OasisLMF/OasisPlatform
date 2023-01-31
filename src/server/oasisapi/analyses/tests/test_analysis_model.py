@@ -19,7 +19,8 @@ from src.conf import iniconf
 from ...portfolios.tests.fakes import fake_portfolio
 from ...files.tests.fakes import fake_related_file
 from ...auth.tests.fakes import fake_user
-# from ..models import Analysis, AnalysisTaskStatus
+# from ..models import AnalysisTaskStatus
+from ..models import Analysis
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
