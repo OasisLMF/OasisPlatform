@@ -16,7 +16,6 @@ import ssl
 
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
-import urllib
 
 from ...common.shared import set_aws_log_level
 from ...conf import iniconf  # noqa

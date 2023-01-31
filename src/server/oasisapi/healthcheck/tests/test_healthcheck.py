@@ -1,6 +1,6 @@
 from django_webtest import WebTest
 from rest_framework.reverse import reverse
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from ...auth.tests.fakes import fake_user
 from ..views import HealthcheckView

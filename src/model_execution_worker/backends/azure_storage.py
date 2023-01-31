@@ -4,10 +4,7 @@ import shutil
 import tempfile
 
 from azure.core.exceptions import ResourceNotFoundError
-from azure.storage.blob import (
-    BlobClient, BlobSasPermissions, BlobServiceClient, ContentSettings,
-    generate_blob_sas,
-)
+from azure.storage.blob import BlobServiceClient
 
 from ...common.shared import set_azure_log_level
 from ..storage_manager import BaseStorageConnector

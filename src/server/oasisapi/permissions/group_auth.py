@@ -2,7 +2,7 @@ from functools import reduce
 
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
@@ -40,7 +40,7 @@ def verify_and_get_groups(user: settings.AUTH_USER_MODEL, groups):
         elif len(user_groups) == 0 and len(groups) == 0:
             return []
         elif not user.is_superuser and not user.is_staff:
-            raise ValidationError({'groups': f'user is required to specify groups'})
+            raise ValidationError({'groups': 'user is required to specify groups'})
     elif not user.is_superuser and not user.is_staff:
         user_group_names = get_group_names(user_groups)
         group_names = get_group_names(groups)

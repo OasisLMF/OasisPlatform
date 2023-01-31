@@ -14,7 +14,6 @@ from datetime import datetime
 import fasteners
 import filelock
 import pandas as pd
-from billiard.exceptions import WorkerLostError
 from celery import Celery, signature
 from celery.signals import worker_ready, before_task_publish, task_revoked, task_failure
 from oasislmf import __version__ as mdk_version
@@ -458,7 +457,7 @@ def keys_generation_task(fn):
 
         # Set `oasis-file-generation` input files
         params.setdefault('target_dir', params['root_run_dir'])
-        params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], f'user-data'))
+        params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], 'user-data'))
         params.setdefault('lookup_complex_config_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
         # Generate keys files
@@ -722,7 +721,7 @@ def collect_keys(
 
             chunk_params['keys_ref'] = filestore.put(
                 keys_file,
-                filename=f'keys.csv',
+                filename='keys.csv',
                 subdir=storage_subdir
             )
         else:
@@ -850,10 +849,10 @@ def loss_generation_task(fn):
         params['root_run_dir'] = os.path.join(settings.get('worker', 'base_run_dir', fallback='/tmp/run'), params['storage_subdir'])
         Path(params['root_run_dir']).mkdir(parents=True, exist_ok=True)
 
-        params.setdefault('oasis_files_dir', os.path.join(params['root_run_dir'], f'input-data'))
-        params.setdefault('model_run_dir', os.path.join(params['root_run_dir'], f'run-data'))
-        params.setdefault('results_path', os.path.join(params['root_run_dir'], f'results-data'))
-        params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], f'user-data'))
+        params.setdefault('oasis_files_dir', os.path.join(params['root_run_dir'], 'input-data'))
+        params.setdefault('model_run_dir', os.path.join(params['root_run_dir'], 'run-data'))
+        params.setdefault('results_path', os.path.join(params['root_run_dir'], 'results-data'))
+        params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], 'user-data'))
         params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
         input_location = kwargs.get('input_location')

@@ -1,13 +1,9 @@
 from __future__ import absolute_import
 
-import io
-import json
-import os
-from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
-from django.http import JsonResponse, Http404
+from django.http import Http404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action

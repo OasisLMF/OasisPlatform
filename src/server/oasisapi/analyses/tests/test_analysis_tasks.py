@@ -1,25 +1,26 @@
-import datetime
-import os
-import string
-from unittest.mock import Mock, patch
-from uuid import uuid4
+# import datetime
+# import os
+# import string
+# from unittest.mock import Mock, patch
+# from uuid import uuid4
 
-from backports.tempfile import TemporaryDirectory
-from django.test import override_settings
-from django.utils.timezone import now
-from freezegun import freeze_time
-from hypothesis import given, settings
-from hypothesis.extra.django import TestCase
-from hypothesis.strategies import text
-from pathlib2 import Path
+# from backports.tempfile import TemporaryDirectory
+# from django.test import override_settings
+# from django.utils.timezone import now
+# from freezegun import freeze_time
+# from hypothesis import given
+# from hypothesis import settings
+# from hypothesis.extra.django import TestCase
+# from hypothesis.strategies import text
+# from pathlib2 import Path
 
-from .fakes import fake_analysis, fake_analysis_task_status
-from ..models import Analysis, AnalysisTaskStatus
-from ...auth.tests.fakes import fake_user
+# from .fakes import fake_analysis, fake_analysis_task_status
+# from ..models import Analysis, AnalysisTaskStatus
+# from ...auth.tests.fakes import fake_user
 
 # Override default deadline for all tests to 8s
-settings.register_profile("ci", deadline=800.0)
-settings.load_profile("ci")
+# settings.register_profile("ci", deadline=800.0)
+# settings.load_profile("ci")
 
 #################################################
 # Commented out code - upgrade in 2.0 branch?

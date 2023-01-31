@@ -7,7 +7,6 @@ import os
 import sys
 import shutil
 import subprocess
-import time
 
 import fasteners
 import tempfile
