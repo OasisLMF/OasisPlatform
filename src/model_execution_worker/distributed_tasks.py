@@ -691,7 +691,6 @@ def collect_keys(
         pd_write_func = getattr(df, f"to_{file_type}")
         pd_write_func(output_file, index=True)
 
-
     # Collect files and tar here from chunk_params['target_dir']
     with TemporaryDir() as chunks_dir:
         # extract chunks
@@ -700,9 +699,8 @@ def collect_keys(
             extract_to = os.path.join(chunks_dir, os.path.basename(tar).split('.')[0])
             filestore.extract(tar, extract_to, storage_subdir)
 
-
-        file_paths = glob.glob(chunks_dir + '/lookup-[0-9]*/*') # paths for every file to merge  (inputs for merge)
-        file_names = set([ os.path.basename(f) for f in file_paths])            # unqiue filenames (output merged results)
+        file_paths = glob.glob(chunks_dir + '/lookup-[0-9]*/*')  # paths for every file to merge  (inputs for merge)
+        file_names = set([os.path.basename(f) for f in file_paths])            # unqiue filenames (output merged results)
 
         with TemporaryDir() as merge_dir:
             for file in file_names:
@@ -712,7 +710,7 @@ def collect_keys(
                 file_chunks = [f for f in file_paths if f.endswith(file)]
                 file_merged = os.path.join(merge_dir, file)
                 file_chunks = natsorted(file_chunks)
-                #file_unique_rows = True if file == 'ensemble_mapping.csv' else False
+                # file_unique_rows = True if file == 'ensemble_mapping.csv' else False
 
                 if file_type == 'csv':
                     merge_dataframes(file_chunks, file_merged, file_type)
@@ -724,7 +722,7 @@ def collect_keys(
             # store keys data
             chunk_params['keys_data'] = filestore.put(
                 merge_dir,
-                filename=f'keys-data.tar.gz',
+                filename='keys-data.tar.gz',
                 subdir=chunk_params['storage_subdir']
             )
 
