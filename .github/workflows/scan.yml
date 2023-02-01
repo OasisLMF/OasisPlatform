@@ -252,58 +252,59 @@ jobs:
         retention-days: 3
 
 
-  scan_keycloak:
-    name: Scan Keycloak
-    env:
-      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
-      REPORT: 'keycloak-results.sarif'
-      IGNORE_UNFIXED: 'true'
-    runs-on: ubuntu-latest
-    steps:
-    - name: Set inputs
-      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
-      run: |
-        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
-        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
-
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Get Keycloak Image
-      id: keycloak_img
-      uses: mikefarah/yq@master
-      with:
-        cmd: yq '.images.keycloak.image' kubernetes/charts/oasis-platform/values.yaml
-
-    - name: Get Keycloak Version
-      id: keycloak_ver
-      uses: mikefarah/yq@master
-      with:
-        cmd: yq '.images.keycloak.version' kubernetes/charts/oasis-platform/values.yaml
-
-    - name: Vulnerability scanner
-      if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ steps.keycloak_img.outputs.result }}:${{ steps.keycloak_ver.outputs.result }}
-        format: 'sarif'
-        output: ${{ env.REPORT }}
-        scan-type: 'image'
-        exit-code: '1'
-        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
-        severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      if: success() || failure()
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: ${{ env.REPORT }}
-
-    - name: Store report
-      if: success() || failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.REPORT }}
-        path: ${{ env.REPORT }}
-        retention-days: 3
+# Waitting for BUG fix https://github.com/aquasecurity/trivy/issues/3514
+#  scan_keycloak:
+#    name: Scan Keycloak
+#    env:
+#      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
+#      REPORT: 'keycloak-results.sarif'
+#      IGNORE_UNFIXED: 'true'
+#    runs-on: ubuntu-latest
+#    steps:
+#    - name: Set inputs
+#      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
+#      run: |
+#        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
+#        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
+#
+#    - name: Checkout code
+#      uses: actions/checkout@v3
+#
+#    - name: Get Keycloak Image
+#      id: keycloak_img
+#      uses: mikefarah/yq@master
+#      with:
+#        cmd: yq '.images.keycloak.image' kubernetes/charts/oasis-platform/values.yaml
+#
+#    - name: Get Keycloak Version
+#      id: keycloak_ver
+#      uses: mikefarah/yq@master
+#      with:
+#        cmd: yq '.images.keycloak.version' kubernetes/charts/oasis-platform/values.yaml
+#
+#    - name: Vulnerability scanner
+#      if: env.SEVERITY != ''
+#      uses: aquasecurity/trivy-action@master
+#      with:
+#        image-ref: ${{ steps.keycloak_img.outputs.result }}:${{ steps.keycloak_ver.outputs.result }}
+#        format: 'sarif'
+#        output: ${{ env.REPORT }}
+#        scan-type: 'image'
+#        exit-code: '1'
+#        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+#        severity: ${{ env.SEVERITY }}
+#        security-checks: 'vuln,config,secret'
+#
+#    - name: Upload Trivy scan results to GitHub Security tab
+#      if: success() || failure()
+#      uses: github/codeql-action/upload-sarif@v2
+#      with:
+#        sarif_file: ${{ env.REPORT }}
+#
+#    - name: Store report
+#      if: success() || failure()
+#      uses: actions/upload-artifact@v3
+#      with:
+#        name: ${{ env.REPORT }}
+#        path: ${{ env.REPORT }}
+#        retention-days: 3
