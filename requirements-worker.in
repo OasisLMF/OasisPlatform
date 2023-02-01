@@ -1,4 +1,4 @@
-oasislmf[extra]>=1.23.5
+oasislmf[extra]<1.24.0
 celery
 boto3
 configparser
@@ -8,4 +8,3 @@ pymysql
 psycopg2-binary
 sqlalchemy
 pytest
-numba
