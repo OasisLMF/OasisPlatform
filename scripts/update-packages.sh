@@ -1,5 +1,3 @@
-set -e 
-
 pkg_list=(
     'ods-tools==2.*'
     'oasislmf==1.23.*'
@@ -29,16 +27,12 @@ pkg_list=(
 )
 
 
+PKG_UPDATE=''
 for pk in "${pkg_list[@]}"; do
-    pip-compile --upgrade-package $pk requirements-worker.in
-    pip-compile --upgrade-package $pk requirements-server.in
-    pip-compile --upgrade-package $pk requirements.in
-
-#    if [[ `git status --porcelain --untracked-files=no` ]]; then
-#        echo "$pk - updated"
-#        git add -u
-#        git commit -m "Updated package $pk"
-#    else
-#        echo "$pk - no update found"
-#    fi
+    PKG_UPDATE=$PKG_UPDATE" --upgrade-package $pk"   
 done
+
+set -e 
+pip-compile $PKG_UPDATE requirements-worker.in
+pip-compile $PKG_UPDATE requirements-server.in
+pip-compile $PKG_UPDATE requirements.in
