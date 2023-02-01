@@ -197,10 +197,8 @@ jobs:
         path: ${{ env.REPORT }}
         retention-days: 3
 
-
-
   scan_worker-controller:
-    name: Scan Server
+    name: Scan worker controller
     env:
       SEVERITY: 'MEDIUM,HIGH,CRITICAL'
       REPORT: 'controller-results.sarif'
