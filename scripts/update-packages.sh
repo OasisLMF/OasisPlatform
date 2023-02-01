@@ -1,15 +1,14 @@
 pkg_list=(
-    sqlalchemy
+    'ods-tools==2.*'
+    'oasislmf==1.23.*'
     joblib
     oauthlib
     parso
-    numba
-    numpy
-    pandas
+    certifi
+    wheel
     ruamel.yaml
     distlib
-    ods-tools
-    'oasislmf==1.26.*'
+    'sqlalchemy==1.*'
     'django==3.*'
     django-celery-results
     'celery==5.*'
@@ -28,16 +27,12 @@ pkg_list=(
 )
 
 
+PKG_UPDATE=''
 for pk in "${pkg_list[@]}"; do
-    pip-compile --upgrade-package $pk requirements-worker.in
-    pip-compile --upgrade-package $pk requirements-server.in
-    pip-compile --upgrade-package $pk requirements.in
+    PKG_UPDATE=$PKG_UPDATE" --upgrade-package $pk"   
+done
 
-#    if [[ `git status --porcelain --untracked-files=no` ]]; then
-#        echo "$pk - updated"
-#        git add -u
-#        git commit -m "Updated package $pk"
-#    else 
-#        echo "$pk - no update found"
-#    fi     
-done 
+set -e 
+pip-compile $PKG_UPDATE requirements-worker.in
+pip-compile $PKG_UPDATE requirements-server.in
+pip-compile $PKG_UPDATE requirements.in
