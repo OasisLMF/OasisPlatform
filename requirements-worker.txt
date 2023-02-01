@@ -143,6 +143,8 @@ oasislmf[extra]==1.23.15
     # via -r requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
+ods-tools==2.3.2
+    # via -r requirements-worker.in
 packaging==23.0
     # via
     #   fastparquet
