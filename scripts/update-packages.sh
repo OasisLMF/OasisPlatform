@@ -1,12 +1,16 @@
+set -e 
+
 pkg_list=(
-    'sqlalchemy==1.*.*'
+    'ods-tools==2.*'
+    'oasislmf==1.23.*'
     joblib
     oauthlib
     parso
+    certifi
+    wheel
     ruamel.yaml
     distlib
-    'ods-tools==2.*.*'
-    'oasislmf==1.23.*'
+    'sqlalchemy==1.*'
     'django==3.*'
     django-celery-results
     'celery==5.*'
