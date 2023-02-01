@@ -241,7 +241,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 with patch('src.server.oasisapi.analyses.models.celery_app.send_task', new=mock_task):
                     analysis.generate_inputs(initiator)
                     mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk,
-                                                      None), {}, queue='celery', link_error=ANY, priority=4)
+                                                      4), {}, queue='celery', link_error=ANY, priority=4)
 
     @given(
         status=sampled_from([

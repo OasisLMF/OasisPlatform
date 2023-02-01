@@ -395,20 +395,21 @@ class Analysis(TimeStampedModel):
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
-
-        try:
-            loc_lines = self.portfolio.location_file_len()
-        except Exception as e:
-            raise ValidationError(f"Failed to read location file size for chunking: {e}")
-        if not isinstance(loc_lines, int):
-            errors['portfolio'] = [
-                f'Failed to read "location_file" size, content_type={self.portfolio.location_file.content_type} might not be supported']
-
         else:
-            if loc_lines < 1:
-                errors['portfolio'] = ['"location_file" must at least one row']
+            try:
+                loc_lines = self.portfolio.location_file_len()
+            except Exception as e:
+                raise ValidationError(f"Failed to read location file size for chunking: {e}")
+            if not isinstance(loc_lines, int):
+                errors['portfolio'] = [
+                    f'Failed to read "location_file" size, content_type={self.portfolio.location_file.content_type} might not be supported']
+
+            else:
+                if loc_lines < 1:
+                    errors['portfolio'] = ['"location_file" must at least one row']
         if errors:
             raise ValidationError(errors)
 
