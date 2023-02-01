@@ -1,12 +1,11 @@
 pkg_list=(
-    sqlalchemy
+    'sqlalchemy==1.*.*'
     joblib
     oauthlib
     parso
-    #pandas
     ruamel.yaml
     distlib
-    ods-tools
+    'ods-tools==2.*.*'
     'oasislmf==1.23.*'
     'django==3.*'
     django-celery-results
@@ -18,7 +17,6 @@ pkg_list=(
     coverage
     django-request-logging
     drf-yasg
-    #numpy
     scipy
     waitress
     sklearn
@@ -36,7 +34,7 @@ for pk in "${pkg_list[@]}"; do
 #        echo "$pk - updated"
 #        git add -u
 #        git commit -m "Updated package $pk"
-#    else 
+#    else
 #        echo "$pk - no update found"
-#    fi     
-done 
+#    fi
+done
