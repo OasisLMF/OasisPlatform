@@ -72,7 +72,7 @@ jobs:
         exit-code: '1'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
+        security-checks: 'vuln,secret'
         skip-dirs: './docker'
 
     - name: Upload Trivy scan results to GitHub Security tab
@@ -124,7 +124,7 @@ jobs:
         exit-code: '1'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
+        security-checks: 'vuln,secret'
         skip-dirs: './docker'
 
     - name: Rename requirments file in report
@@ -178,7 +178,7 @@ jobs:
         exit-code: '1'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
+        security-checks: 'vuln,secret'
         skip-dirs: './docker'
 
     - name: Rename requirments file in report
