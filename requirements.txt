@@ -272,17 +272,18 @@ numba==0.56.4
     # via oasislmf
 numexpr==2.8.4
     # via oasislmf
-numpy==1.23.5
+numpy==1.22.4
     # via
     #   fastparquet
     #   numba
     #   numexpr
+    #   oasislmf
     #   pandas
     #   pyarrow
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.23.15
+oasislmf[extra]==1.26.5
     # via -r ./requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
@@ -290,6 +291,7 @@ ods-tools==2.3.2
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
+    #   oasislmf
 packaging==23.0
     # via
     #   build
@@ -411,7 +413,9 @@ s3transfer==0.6.0
 scikit-learn==1.2.1
     # via oasislmf
 scipy==1.10.0
-    # via scikit-learn
+    # via
+    #   oasislmf
+    #   scikit-learn
 service-identity==21.1.0
     # via twisted
 shapely==2.0.1
