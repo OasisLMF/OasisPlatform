@@ -34,7 +34,7 @@ done
 if [[ "$pre_release" = "false" ]]; then
     release_tags=( $(git tag --merged $branch_name --sort=creatordate | grep -oP "^$version_prefix(\d+)\.(\d+)\.(\d+)$") )
 else
-    release_tags=( $(git tag --merged $branch_name --sort=creatordate | grep -oP "^$version_prefix(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
+    release_tags=( $(git tag --merged $branch_name --sort=creatordate | grep -oP "^$version_prefix(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)|^(\d+)\.(\d+)\.(\d+)-dev") )
 fi
 
 # --  DEBUG inputs ----------
