@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#737](https://github.com/OasisLMF/OasisPlatform/pull/737) - Replace Jenkins with Github actions 1.26
+.. _`1.26.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.26.4...1.26.5
+
 * [#713](https://github.com/OasisLMF/OasisPlatform/pull/713) -  CVE fixes 1.26.x
 .. _`1.26.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.26.3...1.26.4
 
