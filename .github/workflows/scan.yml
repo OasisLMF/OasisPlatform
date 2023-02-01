@@ -283,7 +283,7 @@ jobs:
 
     - name: Vulnerability scanner
       if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@9ab158e8597f3b310480b9a69402b419bc03dbd5
+      uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ steps.keycloak_img.outputs.result }}:${{ steps.keycloak_ver.outputs.result }}
         format: 'sarif'
