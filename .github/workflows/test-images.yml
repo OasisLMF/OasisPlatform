@@ -93,6 +93,8 @@ jobs:
           else
             BRANCH=${{ inputs.piwind_branch }}
           fi
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
 
       - name: Select Pytest Options
         id: pytest
