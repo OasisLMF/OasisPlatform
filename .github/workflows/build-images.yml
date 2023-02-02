@@ -72,6 +72,7 @@ jobs:
           report: 'server-scan.sarif'
           dive: 'server-layers.txt'
           exit-code: '1'
+          context: '.'
 
         - image: worker
           tag: 'model_worker-${{ github.sha }}'
@@ -79,6 +80,7 @@ jobs:
           report: 'worker-scan.sarif'
           dive: 'worker-layers.txt'
           exit-code: '1'
+          context: '.'
 
         - image: worker_deb
           tag:  'model_worker_deb-${{ github.sha }}'
@@ -86,6 +88,7 @@ jobs:
           report: 'worker-deb-scan.sarif'
           dive: 'worker-deb-layers.txt'
           exit-code: '0' # scan but don't fail
+          context: '.'
 
         - image: worker_controller
           tag:  'worker_controller-${{ github.sha }}'
@@ -93,6 +96,7 @@ jobs:
           report: 'worker-controller-scan.sarif'
           dive: 'worker-controller-layers.txt'
           exit-code: '0' # scan but don't fail
+          context: 'kubernetes/worker-controller/'
 
     steps:
     - name: Set inputs ${{ github.event_name }}
@@ -125,7 +129,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         file: ${{ matrix.file }}
-        context: .
+        context: {{ matrix.context }}
         push: ${{ env.DOCKER_PUSH }}
         tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
 
