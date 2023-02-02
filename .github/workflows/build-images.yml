@@ -46,6 +46,9 @@ on:
       worker_deb_image:
         description:
         value:  'coreoasis/github-actions:model_worker_deb-${{ github.sha }}'
+      worker_controller_image:
+        description:
+        value:  'coreoasis/github-actions:worker_controller-${{ github.sha }}'
 
 env:
   # inputs
@@ -81,7 +84,14 @@ jobs:
           tag:  'model_worker_deb-${{ github.sha }}'
           file: 'Dockerfile.model_worker_debian'
           report: 'worker-deb-scan.sarif'
-          dive: 'worker-deb--layers.txt'
+          dive: 'worker-deb-layers.txt'
+          exit-code: '0' # scan but don't fail
+
+        - image: worker_controller
+          tag:  'worker_controller-${{ github.sha }}'
+          file: 'kubernetes/worker-controller/Dockerfile'
+          report: 'worker-controller-scan.sarif'
+          dive: 'worker-controller-layers.txt'
           exit-code: '0' # scan but don't fail
 
     steps:
