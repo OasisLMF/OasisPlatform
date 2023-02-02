@@ -1,4 +1,4 @@
-name: Platform Vulnerability Scanning (external images) 
+name: Platform Vulnerability Scanning (external images)
 
 on:
   push:
@@ -46,7 +46,7 @@ env:
 
 jobs:
   scan_external_images:
-    name: Scan 
+    name: Scan External Image
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -72,11 +72,6 @@ jobs:
           report: 'mysql-scan.sarif'
           exit-code: '1'
 
-
-
-  scan_external_image:
-    name: Scan External Image ${{ matrix.image }}
-    runs-on: ubuntu-latest
     steps:
     - name: Set inputs
       if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
