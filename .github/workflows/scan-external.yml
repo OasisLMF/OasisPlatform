@@ -29,8 +29,8 @@ jobs:
   scan_external_images:
     name: Scan Image
     runs-on: ubuntu-latest
-    fail-fast: false
     strategy:
+      fail-fast: false
       matrix:
         image: [keycloak, redis, rabbitmq, postgres, mysql]
         include:

@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image: [worker, worker_deb, server]
+        image: [worker, worker_deb, server, worker_controller]
         include:
 
         - image: server
@@ -95,7 +95,7 @@ jobs:
           file: 'kubernetes/worker-controller/Dockerfile'
           report: 'worker-controller-scan.sarif'
           dive: 'worker-controller-layers.txt'
-          exit-code: '0' # scan but don't fail
+          exit-code: '1'
           context: 'kubernetes/worker-controller/'
 
     steps:
