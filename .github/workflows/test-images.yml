@@ -77,16 +77,22 @@ jobs:
         id: piwind
         run: |
           if [[ "${{ github.event_name }}" = "pull_request" ]]; then
-            BRANCH=${{ github.base_ref }}
+            #BRANCH=${{ github.base_ref }}
+            if [[ "${{ github.base_ref }}" = 'platform-2.0' ]]; then
+              BRANCH=master
+            else
+              BRANCH=develop
+            fi
           elif [[ "${{ github.event_name }}" = "push" ]]; then
-            BRANCH=${{ github.ref_name }}
+            #BRANCH=${{ github.ref_name }}
+            if [[ "${{ github.base_ref }}" = 'platform-2.0' ]]; then
+              BRANCH=master
+            else
+              BRANCH=develop
+            fi
           else
             BRANCH=${{ inputs.piwind_branch }}
           fi
-          #echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-          # TESTING
-          echo "branch=ci-plat2-testing" >> $GITHUB_OUTPUT
-
 
       - name: Select Pytest Options
         id: pytest
