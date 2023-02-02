@@ -25,8 +25,7 @@ class SimpleTokenObtainPairSerializer(BaseTokenObtainPairSerializer):
         data['access_token'] = data['access']
         data['token_type'] = 'Bearer'
         data['expires_in'] = jwt_settings.api_settings.ACCESS_TOKEN_LIFETIME.total_seconds()
-        #data['expires_in'] = jwt_settings.api_settings.REFRESH_TOKEN_LIFETIME.total_seconds()
-
+        # data['expires_in'] = jwt_settings.api_settings.REFRESH_TOKEN_LIFETIME.total_seconds()
 
         del data['refresh']
         del data['access']
@@ -62,6 +61,7 @@ class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
     """
     Token serializer to authenticate and obtain a access token from Keyloak
     """
+
     def __init__(self, *args, **kwargs):
         super(OIDCTokenObtainPairSerializer, self).__init__(*args, **kwargs)
 

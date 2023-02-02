@@ -16,6 +16,7 @@ class WebSocketConnection:
     Handles connecting to the websocket. Before connecting to the socket we
     first fetch the access token from the server to authenticate the websocket.
     """
+
     def __init__(self, oasis_client: OasisClient):
         """
         :param oasis_client: Oasis API client.
@@ -98,4 +99,3 @@ class OasisWebSocket:
                 running = False
 
         asyncio.get_event_loop().stop()
-

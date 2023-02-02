@@ -1,0 +1,46 @@
+name: Platform Python Tests
+
+on:
+  push:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+  pull_request:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+  workflow_dispatch:
+
+jobs:
+  unittest:
+    env:
+      JUNIT_REPORT: pytest_report.xml
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: pip install tox
+
+    # mimic python version from dockerfile
+    #- name: Set up Python ${{ matrix.cfg.python-version }}
+    #  run: |
+    #    sudo apt-get update  && sudo apt-get upgrade -y
+    #    sudo apt-get install -y --no-install-recommends python3 python3-pip
+
+    - name: Run Tox
+      run: |
+        pip install tox
+        tox -e py
+
+    - name: Generate Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()    # run this step even if previous step failed
+      with:
+        name: Pytest Results             # Name of the check run which will be created
+        path: ${{ env.JUNIT_REPORT }}    # Path to test results
+        reporter: java-junit             # Format of test results
+        fail-on-error: 'false'

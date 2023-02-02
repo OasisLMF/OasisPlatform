@@ -80,7 +80,7 @@ SUBTASK_STATUS_PARAM = openapi.Parameter(
           'COMPLETED',
           'CANCELLED',
           'ERROR'
-         )
+          )
 )
 
 SUBTASK_SLUG_PARAM = openapi.Parameter(

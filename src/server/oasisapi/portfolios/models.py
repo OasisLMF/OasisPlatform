@@ -1,7 +1,6 @@
 from __future__ import absolute_import, print_function
 
 import io
-import pathlib
 import ods_tools
 
 from django.contrib.auth.models import Group
@@ -21,10 +20,14 @@ class Portfolio(TimeStampedModel):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
     groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
 
-    accounts_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='accounts_file_portfolios')
-    location_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='location_file_portfolios')
-    reinsurance_info_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='reinsurance_info_file_portfolios')
-    reinsurance_scope_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='reinsurance_scope_file_portfolios')
+    accounts_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                      default=None, related_name='accounts_file_portfolios')
+    location_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                      default=None, related_name='location_file_portfolios')
+    reinsurance_info_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                              default=None, related_name='reinsurance_info_file_portfolios')
+    reinsurance_scope_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                               default=None, related_name='reinsurance_scope_file_portfolios')
 
     class Meta:
         ordering = ['id']
@@ -77,15 +80,16 @@ class PortfolioStatus(TimeStampedModel):
     def __str__(self):
         pass
 
+
 @receiver(post_delete, sender=Portfolio)
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
     files_for_removal = [
-         'accounts_file',
-         'location_file',
-         'reinsurance_info_file',
-         'reinsurance_scope_file',
+        'accounts_file',
+        'location_file',
+        'reinsurance_info_file',
+        'reinsurance_scope_file',
     ]
     for ref in files_for_removal:
         file_ref = getattr(instance, ref)

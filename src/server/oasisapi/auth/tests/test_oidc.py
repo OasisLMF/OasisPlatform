@@ -11,6 +11,7 @@ class MockResponse:
     """
     HTTP mock response, to simulate response from keycloak
     """
+
     def __init__(self, json_data, status_code):
         self.json_data = json_data
         self.status_code = status_code
@@ -75,7 +76,6 @@ class TestKeycloakOIDCAuthenticationBackend(WebTest):
         settings.OIDC_RP_CLIENT_ID = ''
         settings.OIDC_RP_CLIENT_SECRET = ''
 
-
     @mock.patch('requests.post', side_effect=mocked_requests_get)
     def test_access_token_valid(self, mock_post):
         """
@@ -88,13 +88,14 @@ class TestKeycloakOIDCAuthenticationBackend(WebTest):
         username = 'user123'
         password = 'password123'
 
-        mock_rules = {'http://fake-host/auth': lambda *args, **kwargs: mocked_keycloak_auth_respone(args, data=kwargs.get('data', {}), username=username, password=password)}
+        mock_rules = {'http://fake-host/auth': lambda *args, **
+                      kwargs: mocked_keycloak_auth_respone(args, data=kwargs.get('data', {}), username=username, password=password)}
 
         response = self.app.post(
-                reverse('auth:access_token'),
-                params=json.dumps({'username': username, 'password': password}),
-                content_type='application/json'
-            )
+            reverse('auth:access_token'),
+            params=json.dumps({'username': username, 'password': password}),
+            content_type='application/json'
+        )
 
         self.assertDictEqual(response.json, {
             "access_token": "access",
@@ -105,7 +106,6 @@ class TestKeycloakOIDCAuthenticationBackend(WebTest):
 
     @mock.patch('requests.post', side_effect=mocked_requests_get)
     def test_access_token_invalid(self, mock_post):
-
         """
         Test failed login attempt.
         """

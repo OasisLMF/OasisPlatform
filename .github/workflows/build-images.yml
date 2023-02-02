@@ -1,0 +1,184 @@
+name: Platform Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      docker_push:
+        description: 'Push the docker image to dockerhub and outout reference'
+        required: true
+        default: false
+        type: boolean
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: true
+        default: true
+        type: boolean
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
+        required: false
+        default: 'CRITICAL,HIGH'
+
+  workflow_call:
+    inputs:
+      docker_push:
+        description: 'Push the docker image to dockerhub and outout reference'
+        required: true
+        default: 'false'
+        type: string
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: true
+        default: 'true'
+        type: string
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, fails build if any found'
+        required: false
+        default: 'CRITICAL,HIGH'
+        type: string
+
+    outputs:
+      server_image:
+        description:
+        value:  'coreoasis/github-actions:api_server-${{ github.sha }}'
+      worker_image:
+        description:
+        value:  'coreoasis/github-actions:model_worker-${{ github.sha }}'
+      worker_deb_image:
+        description:
+        value:  'coreoasis/github-actions:model_worker_deb-${{ github.sha }}'
+      worker_controller_image:
+        description:
+        value:  'coreoasis/github-actions:worker_controller-${{ github.sha }}'
+
+env:
+  # inputs
+  DOCKER_PUSH: 'false'
+  IGNORE_UNFIXED: 'true'
+  SEVERITY: 'CRITICAL,HIGH'
+  IMAGE_REPO: 'coreoasis/github-actions'
+
+jobs:
+  build:
+    name: Docker build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: [worker, worker_deb, server, worker_controller]
+        include:
+
+        - image: server
+          tag: 'api_server-${{ github.sha }}'
+          file: 'Dockerfile.api_server'
+          report: 'server-scan.sarif'
+          dive: 'server-layers.txt'
+          exit-code: '1'
+          context: '.'
+
+        - image: worker
+          tag: 'model_worker-${{ github.sha }}'
+          file: 'Dockerfile.model_worker'
+          report: 'worker-scan.sarif'
+          dive: 'worker-layers.txt'
+          exit-code: '1'
+          context: '.'
+
+        - image: worker_deb
+          tag:  'model_worker_deb-${{ github.sha }}'
+          file: 'Dockerfile.model_worker_debian'
+          report: 'worker-deb-scan.sarif'
+          dive: 'worker-deb-layers.txt'
+          exit-code: '0' # scan but don't fail
+          context: '.'
+
+        - image: worker_controller
+          tag:  'worker_controller-${{ github.sha }}'
+          file: 'kubernetes/worker-controller/Dockerfile'
+          report: 'worker-controller-scan.sarif'
+          dive: 'worker-controller-layers.txt'
+          exit-code: '1'
+          context: 'kubernetes/worker-controller/'
+
+    steps:
+    - name: Set inputs ${{ github.event_name }}
+      run: |
+         [[ -z "${{ inputs.cve_severity }}" ]] || echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
+         [[ -z "${{ inputs.docker_push }}" ]] || echo "DOCKER_PUSH=${{ inputs.docker_push }}" >> $GITHUB_ENV
+         [[ -z "${{ inputs.ignore_unfixed }}" ]] || echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
+
+    - name: Github context
+      run:   echo "$GITHUB_CONTEXT"
+      shell: bash
+      env:
+       GITHUB_CONTEXT: ${{ toJson(github) }}
+
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref }}
+
+    - name: Login to Docker Hub
+      if: env.DOCKER_PUSH == 'true'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Docker Build ${{ matrix.image }}
+      uses: docker/build-push-action@v3
+      with:
+        file: ${{ matrix.file }}
+        context: ${{ matrix.context }}
+        push: ${{ env.DOCKER_PUSH }}
+        tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+
+    - name: Test image efficiency
+      if: env.SEVERITY != 'SKIP'
+      run: |
+        ./scripts/imagesize.sh ${{ env.IMAGE_REPO }}:${{ matrix.tag }} ${{ matrix.dive }}
+      env:
+        DIVE_HIGHEST_USER_WASTED: '0.20'
+        DIVE_HIGHEST_WASTED_BYTES: '50mb'
+        DIVE_LOWSET_EFFICIENCY: '0.95'
+
+    - name: Store image size report
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.dive }}
+        path: ${{ matrix.dive }}
+        retention-days: 3
+
+    - name: Vulnerability scanner
+      if: env.SEVERITY != 'SKIP'
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+        format: 'sarif'
+        output: ${{ matrix.report }}
+        scan-type: 'image'
+        exit-code: ${{ matrix.exit-code }}
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln'
+
+    - name: Upload scan results to Security tab
+      if: ( success() || failure() ) && matrix.exit-code == '1' && env.SEVERITY != 'SKIP'
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file:  ${{ matrix.report }}
+
+    - name: Store CVE report
+      if: success() || failure() && env.SEVERITY != 'SKIP'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.report }}
+        path: ${{ matrix.report }}
+        retention-days: 3
+
+    - name: Docker summary
+      if: env.DOCKER_PUSH == 'true'
+      run: |
+        echo "#### Docker Image: " >> $GITHUB_STEP_SUMMARY
+        echo "* [${{ env.IMAGE_REPO }}:${{ matrix.tag }}](https://hub.docker.com/r/${{ env.IMAGE_REPO }}/tags?name=${{ matrix.tag }})" >> $GITHUB_STEP_SUMMARY

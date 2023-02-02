@@ -34,38 +34,38 @@ class RelatedFileManager(models.Manager):
 
 
 def file_storage_link(storage_obj, fullpath=False):
-       """
-       Return link to file storage based on 'STORAGE_TYPE' value in settings.py
+    """
+    Return link to file storage based on 'STORAGE_TYPE' value in settings.py
 
-        storage_obj should point to a `RelatedFile` Obj
+     storage_obj should point to a `RelatedFile` Obj
 
-       STORAGE_TYPE;
-            'Default': local filesystem -> return filename
-            'AWS-S3': Remote Object Store -> Return URL with expire time
+    STORAGE_TYPE;
+         'Default': local filesystem -> return filename
+         'AWS-S3': Remote Object Store -> Return URL with expire time
 
-       fullpath: return the S3 storage path with aws_location
-       """
-       # GUARD check for file, return None it missing
-       if not hasattr(storage_obj, 'file'):
-           return None
-       if not storage_obj.file:
-           return None
+    fullpath: return the S3 storage path with aws_location
+    """
+    # GUARD check for file, return None it missing
+    if not hasattr(storage_obj, 'file'):
+        return None
+    if not storage_obj.file:
+        return None
 
-       # Remote storage links (Azure or AWS-S3)
-       if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws', 'azure']:
-           if settings.AWS_SHARED_BUCKET or settings.AZURE_SHARED_CONTAINER  or fullpath:
-               # Return object key for shared S3 bucket
-               return os.path.join(
-                   storage_obj.file.storage.location,
-                   storage_obj.file.name,
-               )
-           else:
-               # Return Download URL to S3 Object
-               return storage_obj.file.storage.url(storage_obj.file.name)
+    # Remote storage links (Azure or AWS-S3)
+    if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws', 'azure']:
+        if settings.AWS_SHARED_BUCKET or settings.AZURE_SHARED_CONTAINER or fullpath:
+            # Return object key for shared S3 bucket
+            return os.path.join(
+                storage_obj.file.storage.location,
+                storage_obj.file.name,
+            )
+        else:
+            # Return Download URL to S3 Object
+            return storage_obj.file.storage.url(storage_obj.file.name)
 
-       # Shared FS filename
-       else:
-           return storage_obj.file.name
+    # Shared FS filename
+    else:
+        return storage_obj.file.name
 
 
 class RelatedFile(TimeStampedModel):

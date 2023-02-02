@@ -15,8 +15,10 @@ def echo(app, message):
     print('Message received:')
     print(json.dumps(json.loads(message), indent=4))
 
+
 def on_error(app, error):
     print(error)
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):

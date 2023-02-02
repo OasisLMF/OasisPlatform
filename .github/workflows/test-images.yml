@@ -1,0 +1,185 @@
+name: Platform Image Tests
+
+on:
+  push:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+
+  pull_request:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+
+  workflow_dispatch:
+    inputs:
+      last_release:
+        description: "Test backwards compatibility with platform ver [semvar]"
+        required: false
+
+      piwind_branch:
+        description: "Check Results from Piwind branch [git ref]"
+        required: true
+        default: 'develop'
+
+      pytest_options:
+        description: "Pytest optional args [-k <test_name>]"
+        required: false
+
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
+        required: false
+
+env:
+  pre_release: 'true'  # look for pre-release when testing last released platform version
+
+jobs:
+  build_images:
+    uses: ./.github/workflows/build-images.yml
+    secrets: inherit
+    with:
+      docker_push: true
+      ignore_unfixed: true
+      cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
+
+
+  setup:
+    runs-on: ubuntu-latest
+    needs: [build_images]
+    outputs:
+      pytest_opts: ${{ steps.pytest.outputs.opts }}
+      piwind_branch: ${{ steps.piwind.outputs.branch }}
+      release_tag: ${{ steps.released_images.outputs.prev_release_tag }}
+      build_server_img: ${{ steps.built_images.outputs.server_img }}
+      build_server_tag: ${{ steps.built_images.outputs.server_tag }}
+      build_worker_img: ${{ steps.built_images.outputs.worker_img }}
+      build_worker_tag: ${{ steps.built_images.outputs.worker_tag }}
+      build_deb_worker_img: ${{ steps.built_images.outputs.deb_worker_img }}
+      build_deb_worker_tag: ${{ steps.built_images.outputs.deb_worker_tag }}
+
+    steps:
+      - name: Checkout Platform
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Load last released tag
+        id: released_images
+        run: |
+          if [[ -z "${{ inputs.last_release }}" ]]; then
+            tag=$( ./scripts/find_release.sh -p "${{ env.pre_release }}")
+            echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
+          else
+            echo "prev_release_tag=${{ inputs.last_release }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Select PiWind branch
+        id: piwind
+        run: |
+          if [[ "${{ github.event_name }}" = "pull_request" ]]; then
+            #BRANCH=${{ github.base_ref }}
+            if [[ "${{ github.base_ref }}" = 'platform-2.0' ]]; then
+              BRANCH=master
+            else
+              BRANCH=develop
+            fi
+          elif [[ "${{ github.event_name }}" = "push" ]]; then
+            #BRANCH=${{ github.ref_name }}
+            if [[ "${{ github.base_ref }}" = 'platform-2.0' ]]; then
+              BRANCH=master
+            else
+              BRANCH=develop
+            fi
+          else
+            BRANCH=${{ inputs.piwind_branch }}
+          fi
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+
+      - name: Select Pytest Options
+        id: pytest
+        run: |
+          if [[ -z "${{ inputs.pytest_options }}" ]]; then
+            echo "opts='-k case_1'" >> $GITHUB_OUTPUT
+          else
+            echo "opts=${{ inputs.pytest_options }}" >> $GITHUB_OUTPUT
+          fi
+
+      # Split ouput strings from build job
+      - name: Load built images
+        id: built_images
+        run: |
+          server_img=$(echo ${{ needs.build_images.outputs.server_image }} | awk '{split($0,a,":"); print a[1];}')
+          server_tag=$(echo ${{ needs.build_images.outputs.server_image }} | awk '{split($0,a,":"); print a[2];}')
+          echo "server_img=$server_img" >> $GITHUB_OUTPUT
+          echo "server_tag=$server_tag" >> $GITHUB_OUTPUT
+
+          worker_img=$(echo ${{ needs.build_images.outputs.worker_image }} | awk '{split($0,a,":"); print a[1];}')
+          worker_tag=$(echo ${{ needs.build_images.outputs.worker_image }} | awk '{split($0,a,":"); print a[2];}')
+          echo "worker_img=$worker_img" >> $GITHUB_OUTPUT
+          echo "worker_tag=$worker_tag" >> $GITHUB_OUTPUT
+
+          deb_worker_img=$(echo ${{ needs.build_images.outputs.worker_deb_image }} | awk '{split($0,a,":"); print a[1];}')
+          deb_worker_tag=$(echo ${{ needs.build_images.outputs.worker_deb_image }} | awk '{split($0,a,":"); print a[2];}')
+          echo "deb_worker_img=$deb_worker_img" >> $GITHUB_OUTPUT
+          echo "deb_worker_tag=$deb_worker_tag" >> $GITHUB_OUTPUT
+
+  server_compatibility:
+    name: Server Compatibility (${{ needs.setup.outputs.release_tag }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    with:
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_tag }}
+      debug_mode: 0
+      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      storage_suffix: '-server-compatibility'
+
+  worker_debian:
+    name: Worker Debian
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    with:
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: ${{ needs.setup.outputs.build_deb_worker_img }}
+      worker_tag: ${{ needs.setup.outputs.build_deb_worker_tag }}
+      debug_mode: 0
+      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      storage_suffix: '-worker-debian'
+
+  worker_compatibility:
+    name: Worker Compatibility (${{ needs.setup.outputs.release_tag }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    with:
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      server_image: 'coreoasis/api_server'
+      server_tag: ${{ needs.setup.outputs.release_tag }}
+      worker_image: ${{ needs.setup.outputs.build_worker_img }}
+      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      debug_mode: 0
+      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      storage_suffix: '-worker-compatibility'
+
+#  storage_s3:
+#    name: Storage Compatibility (S3)
+#    secrets: inherit
+#    needs: [setup]
+#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+#    with:
+#      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+#      server_image: ${{ needs.setup.outputs.build_server_img }}
+#      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+#      worker_image: ${{ needs.setup.outputs.build_worker_img }}
+#      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+#      debug_mode: 0
+#      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+#      storage_suffix: '-s3'

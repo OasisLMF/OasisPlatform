@@ -74,8 +74,6 @@ class ServerInfoView(views.APIView):
             server_config['ACCESS_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
             server_config['REFRESH_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
 
-
-
         return Response({
             'version': server_version,
             'config': server_config
