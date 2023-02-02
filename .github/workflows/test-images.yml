@@ -158,7 +158,6 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 0
-      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-worker-compatibility'
 
