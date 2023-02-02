@@ -41,7 +41,6 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
             return self.create_user(username, user_info)
 
     def create_user(self, username, claims):
-
         """
         Create a user, store the keycloak user id and groups.
 
@@ -109,7 +108,6 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         return True
 
     def get_username(self, claim) -> str:
-
         """
         Extract Keycloaks username from the JWT claim.
 
@@ -172,7 +170,6 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         KeycloakUserId.objects.create(user=user, keycloak_user_id=user_id)
 
     def is_keycloak_user_id_same(self, user, sub) -> bool:
-
         """
         Verify the user and keycloak user id is identical.
 
@@ -186,7 +183,6 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         return len(filter) == 1 and filter[0].keycloak_user_id == sub
 
     def get_userinfo_attribute(self, user_info, key):
-
         """
         Get key from user info (JWT claim) or raise an exception is missing.
 
@@ -203,7 +199,6 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         return value
 
     def archive_old_user(self, username, sub):
-
         """
         Check if the username exists and if that is the case rename the user. This is used to free the username
         for a new keycloak user (created with a previously existing username) but still keep all resources bound

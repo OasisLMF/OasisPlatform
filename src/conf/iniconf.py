@@ -76,13 +76,12 @@ class Settings(ConfigParser):
         kwargs.setdefault('vars', self._get_section_env_vars(section))
         kwargs_string = super(Settings, self).get(section, option, **kwargs)
         try:
-            kwargs = {k.split('=')[0].strip():int(k.split('=')[1])
+            kwargs = {k.split('=')[0].strip(): int(k.split('=')[1])
                       for k in kwargs_string.split(',')}
         except (TypeError, IndexError):
-            kwargs = {k.split('=')[0].strip():int(k.split('=')[1])
+            kwargs = {k.split('=')[0].strip(): int(k.split('=')[1])
                       for k in kwargs['fallback'].split(',')}
         return timedelta(**kwargs)
-
 
     def getboolean(self, section, option, **kwargs):
         kwargs.setdefault('vars', self._get_section_env_vars(section))

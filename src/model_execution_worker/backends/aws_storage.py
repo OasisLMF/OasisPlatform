@@ -190,7 +190,7 @@ class AwsObjectStore(BaseStorageConnector):
             # Return URL
             return self.url(object_name)
 
-    #def _store_dir(self, directory_path, suffix=None, arcname=None):
+    # def _store_dir(self, directory_path, suffix=None, arcname=None):
     def _store_dir(self, directory_path, storage_fname=None, storage_subdir='', suffix=None, arcname=None):
         """ Overloaded function for AWS Directory storage
 
@@ -339,7 +339,7 @@ class AwsObjectStore(BaseStorageConnector):
         """
 
         key_prefix = os.path.join(self.location, reference)
-        matching_obj = [{'Key':o.key} for o in self.bucket.objects.filter(Prefix=key_prefix)]
+        matching_obj = [{'Key': o.key} for o in self.bucket.objects.filter(Prefix=key_prefix)]
         del_request = {
             'Objects': matching_obj,
             'Quiet': False

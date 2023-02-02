@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 
 from ....conf import celeryconf as celery_conf
-from ....conf.iniconf import settings as  worker_settings
+from ....conf.iniconf import settings as worker_settings
 
 from botocore.exceptions import ClientError as S3_ClientError
 from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError
@@ -47,12 +47,14 @@ logger = get_task_logger(__name__)
 TaskId = str
 PathStr = str
 
+
 def is_valid_url(url):
     if url:
         result = urlparse(url)
         return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
     else:
         return False
+
 
 def is_in_bucket(object_key):
     if not hasattr(default_storage, 'bucket'):
@@ -66,6 +68,7 @@ def is_in_bucket(object_key):
                 return False
             else:
                 raise e
+
 
 def is_in_container(object_key):
     if not hasattr(default_storage, 'azure_container'):
@@ -283,7 +286,8 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
-@celery_app.task(name='run_register_worker')
+
+@celery_app.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
@@ -360,7 +364,6 @@ def _traceback_from_errback_args(*args):
     return tb
 
 
-
 def _find_celery_queue_reference(active_queues, queue_name):
     for q in active_queues:
         if active_queues[q][0].get('name', '') == queue_name:
@@ -391,13 +394,12 @@ def cancel_subtasks(self, analysis_pk):
     analysis = Analysis.objects.get(pk=analysis_pk)
     _now = timezone.now()
 
-
     subtask_qs = analysis.sub_task_statuses.filter(
-            status__in=[
-                AnalysisTaskStatus.status_choices.PENDING,
-                AnalysisTaskStatus.status_choices.QUEUED,
-                AnalysisTaskStatus.status_choices.STARTED]
-        )
+        status__in=[
+            AnalysisTaskStatus.status_choices.PENDING,
+            AnalysisTaskStatus.status_choices.QUEUED,
+            AnalysisTaskStatus.status_choices.STARTED]
+    )
 
     for subtask in subtask_qs:
         task_id = subtask.task_id
@@ -457,10 +459,12 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
     analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
     analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_gul_summary_map.csv')
-    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, filename=f'analysis_{analysis_id}_exposure_summary_report.json')
-    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, filename=f'analysis_{analysis_id}_exposure_summary_levels.json')
+    analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator,
+                                                 filename=f'analysis_{analysis_id}_exposure_summary_report.json')
+    analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator,
+                                              filename=f'analysis_{analysis_id}_exposure_summary_levels.json')
 
-    #if log_location:
+    # if log_location:
     #    analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
     #    logger.info(analysis.input_generation_traceback_file)
 

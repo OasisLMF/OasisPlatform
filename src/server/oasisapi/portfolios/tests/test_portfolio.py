@@ -11,7 +11,7 @@ from django.urls import reverse
 from django_webtest import WebTestMixin
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
-from hypothesis.strategies import text, binary, sampled_from, fixed_dictionaries, integers
+from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -27,13 +27,12 @@ settings.register_profile("ci", deadline=1000.0)
 settings.load_profile("ci")
 
 
-
 class PortfolioApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -193,7 +192,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_create_analysis_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -343,12 +342,17 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     self.assertEqual(response.json['model'], model.pk)
                     self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.get_absolute_settings_file_url())
                     self.assertEqual(response.json['input_file'], response.request.application_url + analysis.get_absolute_input_file_url())
-                    self.assertEqual(response.json['lookup_errors_file'], response.request.application_url + analysis.get_absolute_lookup_errors_file_url())
-                    self.assertEqual(response.json['lookup_success_file'], response.request.application_url + analysis.get_absolute_lookup_success_file_url())
-                    self.assertEqual(response.json['lookup_validation_file'], response.request.application_url + analysis.get_absolute_lookup_validation_file_url())
-                    self.assertEqual(response.json['input_generation_traceback_file'], response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url())
+                    self.assertEqual(response.json['lookup_errors_file'], response.request.application_url +
+                                     analysis.get_absolute_lookup_errors_file_url())
+                    self.assertEqual(response.json['lookup_success_file'], response.request.application_url +
+                                     analysis.get_absolute_lookup_success_file_url())
+                    self.assertEqual(response.json['lookup_validation_file'], response.request.application_url +
+                                     analysis.get_absolute_lookup_validation_file_url())
+                    self.assertEqual(response.json['input_generation_traceback_file'], response.request.application_url +
+                                     analysis.get_absolute_input_generation_traceback_file_url())
                     self.assertEqual(response.json['output_file'], response.request.application_url + analysis.get_absolute_output_file_url())
-                    self.assertEqual(response.json['run_traceback_file'], response.request.application_url + analysis.get_absolute_run_traceback_file_url())
+                    self.assertEqual(response.json['run_traceback_file'], response.request.application_url +
+                                     analysis.get_absolute_run_traceback_file_url())
                     generate_mock.assert_called_once_with(analysis, user)
 
 
@@ -357,7 +361,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_accounts_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_accounts_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -456,10 +460,9 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
 
-
     def test_accounts_file_invalid_uploaded___parquet_exception_raised(self):
-        content_type='text/csv'
-        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+        content_type = 'text/csv'
+        file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
@@ -479,9 +482,9 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     def test_accounts_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
-        content_type='text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
-        file_content= test_data.to_csv(index=False).encode('utf-8')
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
@@ -518,12 +521,13 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
                 pd.testing.assert_frame_equal(prq_return_data, test_data)
 
+
 class PortfolioLocationFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_location_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_location_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -600,8 +604,8 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, content_type)
 
     def test_location_file_invalid_uploaded___parquet_exception_raised(self):
-        content_type='text/csv'
-        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+        content_type = 'text/csv'
+        file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
@@ -621,9 +625,9 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     def test_location_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
-        content_type='text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
-        file_content= test_data.to_csv(index=False).encode('utf-8')
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
@@ -659,12 +663,13 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
                 pd.testing.assert_frame_equal(prq_return_data, test_data)
 
+
 class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_reinsurance_scope_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_reinsurance_scope_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -741,8 +746,8 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, content_type)
 
     def test_reinsurance_scope_file_invalid_uploaded___parquet_exception_raised(self):
-        content_type='text/csv'
-        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+        content_type = 'text/csv'
+        file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
@@ -762,9 +767,9 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     def test_reinsurance_scope_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
-        content_type='text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
-        file_content= test_data.to_csv(index=False).encode('utf-8')
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
@@ -807,7 +812,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_reinsurance_info_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_reinsurance_info_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -884,8 +889,8 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, content_type)
 
     def test_reinsurance_info_file_invalid_uploaded___parquet_exception_raised(self):
-        content_type='text/csv'
-        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+        content_type = 'text/csv'
+        file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
@@ -905,9 +910,9 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     def test_reinsurance_info_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
-        content_type='text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
-        file_content= test_data.to_csv(index=False).encode('utf-8')
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):

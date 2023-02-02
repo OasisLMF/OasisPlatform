@@ -1,6 +1,5 @@
 from django.contrib.auth.models import Group
 from drf_yasg.utils import swagger_serializer_method
-from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -79,11 +78,12 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_chunking_configuration_url(request=request)
 
+
 class TemplateSerializer(serializers.ModelSerializer):
     """ Catch-all Analysis settings Template Serializer,
         intended to be called from a nested ViewSet
     """
-    file_url  = serializers.SerializerMethodField()
+    file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = SettingsTemplate
@@ -122,13 +122,13 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         analysis_id = attrs.pop('analysis_id', None)
-        if  analysis_id:
+        if analysis_id:
             try:
                 analysis = Analysis.objects.get(id=analysis_id)
             except ObjectDoesNotExist:
-                 raise ValidationError({"Detail": f"analysis_id = {analysis_id} not found"})
+                raise ValidationError({"Detail": f"analysis_id = {analysis_id} not found"})
             if not analysis.settings_file:
-                 raise ValidationError({"Detail": f"analysis_id = {analysis_id} has no attached settings file"})
+                raise ValidationError({"Detail": f"analysis_id = {analysis_id} has no attached settings file"})
 
             new_settings = analysis.copy_file(analysis.settings_file)
             new_settings.name = attrs.get('name')

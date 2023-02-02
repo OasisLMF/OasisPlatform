@@ -143,4 +143,3 @@ class OasisClient:
 
         data = json.loads(raw)
         return data
-

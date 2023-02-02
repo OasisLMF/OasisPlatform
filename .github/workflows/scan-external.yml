@@ -1,0 +1,104 @@
+name: External Vulnerability Scanning
+
+on:
+  push:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+  pull_request:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+
+  workflow_dispatch:
+    inputs:
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+        required: false
+        default: 'CRITICAL,HIGH,MEDIUM'
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: false
+        default: 'true'
+
+env:
+  SEVERITY: 'MEDIUM,HIGH,CRITICAL'
+  IGNORE_UNFIXED: 'true'
+
+jobs:
+  scan_external_images:
+    name: Scan Image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [keycloak, redis, rabbitmq, postgres, mysql]
+        include:
+        - image: keycloak
+          report: 'keycloak-scan.sarif'
+          exit-code: '1'
+
+        - image: redis
+          report: 'redis-scan.sarif'
+          exit-code: '1'
+
+        - image: rabbitmq
+          report: 'rabbitmq-scan.sarif'
+          exit-code: '1'
+
+        - image: postgres
+          report: 'postgres-scan.sarif'
+          exit-code: '1'
+
+        - image: mysql
+          report: 'mysql-scan.sarif'
+          exit-code: '1'
+
+    steps:
+    - name: Set inputs
+      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
+      run: |
+        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
+        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Get Image Name
+      id: img
+      uses: mikefarah/yq@master
+      with:
+        cmd: yq '.images.${{ matrix.image }}.image' kubernetes/charts/oasis-platform/values.yaml
+
+    - name: Get Image Version
+      id: ver
+      uses: mikefarah/yq@master
+      with:
+        cmd: yq '.images.${{ matrix.image }}.version' kubernetes/charts/oasis-platform/values.yaml
+
+    - name: Vulnerability scanner
+      if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ steps.img.outputs.result }}:${{ steps.ver.outputs.result }}
+        format: 'sarif'
+        output: ${{ matrix.report }}
+        scan-type: 'image'
+        exit-code: ${{ matrix.exit-code }}
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      if: success() || failure()
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ${{ matrix.report }}
+
+    - name: Store report
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.report }}
+        path: ${{ matrix.report }}
+        retention-days: 3

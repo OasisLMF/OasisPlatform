@@ -15,6 +15,7 @@ from oasislmf.utils.exceptions import OasisException
 LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 
+
 class MissingInputsException(OasisException):
     def __init__(self, input_filepath):
         super(MissingInputsException, self).__init__('Input file not found: {}'.format(input_filepath))
@@ -26,6 +27,7 @@ class BaseStorageConnector(object):
     Implements storage for a local fileshare between
     `server` and `worker` containers
     """
+
     def __init__(self, setting, logger=None):
 
         # Use for caching files across multiple runs, set value 'None' or 'False' to disable
@@ -295,7 +297,6 @@ class BaseStorageConnector(object):
                 fpath = output_path
             return self._fetch_file(reference, fpath)
 
-
     def put(self, reference, filename=None, subdir='', suffix=None, arcname=None):
         """ Place object in storage
 
@@ -360,7 +361,6 @@ class BaseStorageConnector(object):
             logging.info('Deleted Shared file: {}'.format(ref_path))
         else:
             logging.info('Delete Error - Unknwon reference {}'.format(reference))
-
 
     def delete_dir(self, reference):
         """

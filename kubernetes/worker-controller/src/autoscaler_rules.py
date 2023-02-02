@@ -4,7 +4,6 @@ from models import ModelState
 
 
 def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState):
-
     """
     This function is called for each worker deployment (model) having one or more
     analyses running.

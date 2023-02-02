@@ -18,6 +18,7 @@ import jsonschema
 from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
 from jsonschema.exceptions import SchemaError as JSONSchemaError
 
+
 class TokenObtainPairResponseSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(read_only=True)
     access_token = serializers.CharField(read_only=True)
@@ -54,6 +55,7 @@ class StorageLinkSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise NotImplementedError()
+
 
 class LocFileSerializer(serializers.Serializer):
     url = serializers.URLField()
@@ -102,6 +104,7 @@ class ReinsScopeFileSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         raise NotImplementedError()
 
+
 def update_links(link_prefix, d):
     """
         Linking in pre-defined scheams with path links will be nested
@@ -111,7 +114,7 @@ def update_links(link_prefix, d):
             '#definitions/option' -> #definitions/SWAGGER_OBJECT/definitions/option
 
     """
-    for k,v in d.items():
+    for k, v in d.items():
         if isinstance(v, dict):
             update_links(link_prefix, v)
         elif isinstance(v, list):
@@ -122,6 +125,7 @@ def update_links(link_prefix, d):
             if k in '$ref':
                 link = v.split('#')[-1]
                 d[k] = "{}{}".format(link_prefix, link)
+
 
 def load_json_schema(json_schema_file, link_prefix=None):
     """
@@ -159,8 +163,8 @@ class JsonSettingsSerializer(serializers.Serializer):
 
                     if field in exception_msgs:
                         exception_msgs[field].append(err.message)
-                    else:          
-                        exception_msgs[field] = [err.message]  
+                    else:
+                        exception_msgs[field] = [err.message]
                 raise serializers.ValidationError(exception_msgs)
 
         except (JSONSchemaValidationError, JSONSchemaError) as e:
@@ -173,13 +177,13 @@ class ModelParametersSerializer(JsonSettingsSerializer):
         swagger_schema_fields = load_json_schema(
             json_schema_file='model_settings.json',
             link_prefix='#/definitions/ModelSettings'
-        )        
+        )
 
     def __init__(self, *args, **kwargs):
         super(ModelParametersSerializer, self).__init__(*args, **kwargs)
         self.filenmame = 'model_settings.json'
         self.schema = load_json_schema('model_settings.json')
-    
+
     def validate(self, data):
         return super(ModelParametersSerializer, self).validate_json(data)
 
@@ -189,7 +193,7 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
         swagger_schema_fields = load_json_schema(
             json_schema_file='analysis_settings.json',
             link_prefix='#/definitions/AnalysisSettings'
-        )        
+        )
 
     def __init__(self, *args, **kwargs):
         super(AnalysisSettingsSerializer, self).__init__(*args, **kwargs)

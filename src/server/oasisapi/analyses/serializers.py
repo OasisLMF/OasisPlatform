@@ -61,7 +61,7 @@ class AnalysisListSerializer(serializers.Serializer):
     # Groups - inherited from portfolio
     groups = serializers.SerializerMethodField(read_only=True)
 
-    ## check this for multiple SQL calls with the 'list' call
+    # check this for multiple SQL calls with the 'list' call
     analysis_chunks = serializers.IntegerField(read_only=True)
     lookup_chunks = serializers.IntegerField(read_only=True)
     sub_task_count = serializers.SerializerMethodField(read_only=True)
@@ -161,18 +161,18 @@ class AnalysisListSerializer(serializers.Serializer):
         return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
 
     def get_status_count(self, instance):
-        #request = self.context.get('request')
+        # request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()
 
         return {
             "TOTAL_IN_QUEUE": subtask_queryset.filter(status__in=['PENDING', 'QUEUED', 'STARTED']).count(),
-            "TOTAL":     subtask_queryset.filter().count(),
-            "PENDING":   subtask_queryset.filter(status='PENDING').count(),
-            "QUEUED":    subtask_queryset.filter(status='QUEUED').count(),
-            "STARTED":   subtask_queryset.filter(status='STARTED').count(),
+            "TOTAL": subtask_queryset.filter().count(),
+            "PENDING": subtask_queryset.filter(status='PENDING').count(),
+            "QUEUED": subtask_queryset.filter(status='QUEUED').count(),
+            "STARTED": subtask_queryset.filter(status='STARTED').count(),
             "COMPLETED": subtask_queryset.filter(status='COMPLETED').count(),
             "CANCELLED": subtask_queryset.filter(status='CANCELLED').count(),
-            "ERROR":     subtask_queryset.filter(status='ERROR').count()
+            "ERROR": subtask_queryset.filter(status='ERROR').count()
         }
 
 
@@ -313,18 +313,18 @@ class AnalysisSerializer(serializers.ModelSerializer):
         return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
 
     def get_status_count(self, instance):
-        #request = self.context.get('request')
+        # request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()
 
         return {
             "TOTAL_IN_QUEUE": subtask_queryset.filter(status__in=['PENDING', 'QUEUED', 'STARTED']).count(),
-            "TOTAL":     subtask_queryset.filter().count(),
-            "PENDING":   subtask_queryset.filter(status='PENDING').count(),
-            "QUEUED":    subtask_queryset.filter(status='QUEUED').count(),
-            "STARTED":   subtask_queryset.filter(status='STARTED').count(),
+            "TOTAL": subtask_queryset.filter().count(),
+            "PENDING": subtask_queryset.filter(status='PENDING').count(),
+            "QUEUED": subtask_queryset.filter(status='QUEUED').count(),
+            "STARTED": subtask_queryset.filter(status='STARTED').count(),
             "COMPLETED": subtask_queryset.filter(status='COMPLETED').count(),
             "CANCELLED": subtask_queryset.filter(status='CANCELLED').count(),
-            "ERROR":     subtask_queryset.filter(status='ERROR').count()
+            "ERROR": subtask_queryset.filter(status='ERROR').count()
         }
 
     def validate(self, attrs):
@@ -394,18 +394,18 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
         return list(running_subtasks_queryset.order_by().values_list('queue_name', flat=True).distinct())
 
     def get_status_count(self, instance):
-        #request = self.context.get('request')
+        # request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()
 
         return {
             "TOTAL_IN_QUEUE": subtask_queryset.filter(status__in=['PENDING', 'QUEUED', 'STARTED']).count(),
-            "TOTAL":     subtask_queryset.filter().count(),
-            "PENDING":   subtask_queryset.filter(status='PENDING').count(),
-            "QUEUED":    subtask_queryset.filter(status='QUEUED').count(),
-            "STARTED":   subtask_queryset.filter(status='STARTED').count(),
+            "TOTAL": subtask_queryset.filter().count(),
+            "PENDING": subtask_queryset.filter(status='PENDING').count(),
+            "QUEUED": subtask_queryset.filter(status='QUEUED').count(),
+            "STARTED": subtask_queryset.filter(status='STARTED').count(),
             "COMPLETED": subtask_queryset.filter(status='COMPLETED').count(),
             "CANCELLED": subtask_queryset.filter(status='CANCELLED').count(),
-            "ERROR":     subtask_queryset.filter(status='ERROR').count()
+            "ERROR": subtask_queryset.filter(status='ERROR').count()
         }
 
 
@@ -419,7 +419,7 @@ class AnalysisStorageSerializer(serializers.ModelSerializer):
     lookup_errors_file = serializers.SerializerMethodField()
     lookup_success_file = serializers.SerializerMethodField()
     lookup_validation_file = serializers.SerializerMethodField()
-    summary_levels_file  = serializers.SerializerMethodField()
+    summary_levels_file = serializers.SerializerMethodField()
 
     class Meta:
         model = Analysis

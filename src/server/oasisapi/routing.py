@@ -29,7 +29,7 @@ async def get_user(scope):
             authentication = OIDCAuthentication(backend)
             async_authentication = sync_to_async(authentication.authenticate, thread_sensitive=True)
 
-            request = type('', (), {'META': { 'HTTP_AUTHORIZATION': header_value}})()
+            request = type('', (), {'META': {'HTTP_AUTHORIZATION': header_value}})()
             user, access_token = await async_authentication(request)
             return user
         else:

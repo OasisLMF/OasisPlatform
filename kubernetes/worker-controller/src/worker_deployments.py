@@ -10,6 +10,7 @@ class WorkerDeployment:
     Represents a worker deployment in the kubernetes cluster. Each update is replicated to this object. The auto_scaling
     is actually not a part of the worker deployment in the cluster, it comes from the API, but kept here anyway.
     """
+
     def __init__(self, name: str, supplier_id: str, model_id: str, model_version_id: str):
         self.name = name
         self.supplier_id = supplier_id

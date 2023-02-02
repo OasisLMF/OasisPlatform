@@ -209,5 +209,6 @@ class TestAutoscaler(unittest.TestCase):
         desired_replicas = asyncio.run(autoscaler._scale_deployment(wd1, False, model_state, 10))
         self.assertEqual(2, desired_replicas)
 
+
 if __name__ == '__main__':
     unittest.main()
