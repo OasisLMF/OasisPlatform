@@ -38,7 +38,7 @@ from src.server.oasisapi.files.upload import wait_for_blob_copy
 
 from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
-from ..celery_app import celery_app, server_task_kwargs
+from ..celery_app import celery_app
 
 
 logger = get_task_logger(__name__)
@@ -287,7 +287,7 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 
-@celery_app.task(name='run_register_worker', *worker_task_kwargs)
+@celery_app.task(name='run_register_worker')
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
