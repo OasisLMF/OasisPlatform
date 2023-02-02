@@ -1,4 +1,4 @@
-name: Platform Vulnerability Scanning (external images)
+name: External Vulnerability Scanning
 
 on:
   push:

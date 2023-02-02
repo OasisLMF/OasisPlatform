@@ -129,7 +129,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         file: ${{ matrix.file }}
-        context: {{ matrix.context }}
+        context: ${{ matrix.context }}
         push: ${{ env.DOCKER_PUSH }}
         tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
 
