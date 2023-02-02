@@ -12,6 +12,7 @@ FAKE_LOCATION_DATA = """PortNumber,AccNumber,LocNumber,IsTenant,BuildingID,Count
 1,A11111,10002082049,1,1,GB,52.76696096,-0.895473908,4 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,30000,0,0,0,GBP,2.0.0
 """
 
+
 def fake_related_file(**kwargs):
     if 'content_type' not in kwargs:
         kwargs['content_type'] = 'text/csv'
