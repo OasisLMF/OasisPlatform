@@ -624,9 +624,6 @@ def prepare_keys_file_chunk(
         chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx+1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
 
-        chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx+1}')
-        Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
-
         _, lookup = OasisLookupFactory.create(
             lookup_config_fp=params['lookup_config_json'],
             model_keys_data_path=params['lookup_data_dir'],
