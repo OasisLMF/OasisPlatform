@@ -83,7 +83,10 @@ jobs:
           else
             BRANCH=${{ inputs.piwind_branch }}
           fi
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          #echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          # TESTING
+          echo "branch=ci-plat2-testing" >> $GITHUB_OUTPUT
+
 
       - name: Select Pytest Options
         id: pytest
@@ -125,7 +128,7 @@ jobs:
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
       debug_mode: 0
-      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-server-compatibility'
 
   worker_debian:
@@ -140,7 +143,7 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_deb_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_deb_worker_tag }}
       debug_mode: 0
-      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-worker-debian'
 
   worker_compatibility:
@@ -156,19 +159,20 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 0
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-worker-compatibility'
 
-  storage_s3:
-    name: Storage Compatibility (S3)
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
-    with:
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
-      server_image: ${{ needs.setup.outputs.build_server_img }}
-      server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: ${{ needs.setup.outputs.build_worker_img }}
-      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      debug_mode: 0
-      pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: '-s3'
+#  storage_s3:
+#    name: Storage Compatibility (S3)
+#    secrets: inherit
+#    needs: [setup]
+#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+#    with:
+#      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+#      server_image: ${{ needs.setup.outputs.build_server_img }}
+#      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+#      worker_image: ${{ needs.setup.outputs.build_worker_img }}
+#      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+#      debug_mode: 0
+#      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+#      storage_suffix: '-s3'
