@@ -240,6 +240,10 @@ jobs:
         # Worker-dev
         docker pull ${{ needs.build_images.outputs.worker_deb_image }}
         docker tag  ${{ needs.build_images.outputs.worker_deb_image }} coreoasis/model_worker:${{ env.release_tag }}-debian
+        # Worker-controller
+        docker pull ${{ needs.build_images.outputs.worker_controller_image }}
+        docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:${{ env.release_tag }}
+        docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:latest
         # Worker-PiWind
         docker pull ${{ needs.build_piwind.outputs.piwind_image }}
         docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.release_tag }}
@@ -255,7 +259,7 @@ jobs:
             echo "BUILD_VER: $BUILD_VER stored in Repo 'VERSION' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
         fi
 
-    - name: Check tags matche (worker image)
+    - name: Check tags match (worker image)
       run: |
         container_id=$(docker create "${{ needs.build_images.outputs.worker_image }}")
         docker cp "$container_id:/home/worker/VERSION" "./IMAGE_WORKER_VERSION"
@@ -268,7 +272,7 @@ jobs:
             echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_images.outputs.worker_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
         fi
 
-    - name: Check tags matche (piwind image)
+    - name: Check tags match (piwind image)
       run: |
         container_id=$(docker create "${{ needs.build_piwind.outputs.piwind_image }}")
         docker cp "$container_id:/home/worker/VERSION" "./IMAGE_PIWIND_VERSION"
@@ -377,6 +381,7 @@ jobs:
       run: |
         docker push coreoasis/api_server:${{ env.release_tag }}
         docker push coreoasis/model_worker:${{ env.release_tag }}
+        docker push coreoasis/worker_controller:${{ env.release_tag }}
         docker push coreoasis/model_worker:${{ env.release_tag }}-debian
         docker push coreoasis/piwind_worker:${{ env.release_tag }}
 
@@ -385,6 +390,7 @@ jobs:
       run: |
         docker push coreoasis/api_server:latest
         docker push coreoasis/model_worker:latest
+        docker push coreoasis/worker_controller:latest
         docker push coreoasis/piwind_worker:latest
 
     # --- Create Release --- #
