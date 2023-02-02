@@ -20,34 +20,16 @@ on:
         description: 'Include unfixed vulnerabilities in scan [true,false]'
         required: false
         default: 'true'
-#  workflow_call:
-#    inputs:
-#      cve_severity:
-#        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
-#        required: false
-#        default: 'CRITICAL,HIGH,MEDIUM'
-#        type: string
-#      ignore_unfixed:
-#        description: 'Include unfixed vulnerabilities in scan [true,false]'
-#        required: false
-#        default: 'true'
-#        type: string
-#      exit_code:
-#        description: 'Exit code if vulnerabilities found [0,1]'
-#        required: false
-#        default: '1'
-#        type: string
-
 
 env:
   SEVERITY: 'MEDIUM,HIGH,CRITICAL'
   IGNORE_UNFIXED: 'true'
 
-
 jobs:
   scan_external_images:
-    name: Scan External Image
+    name: Scan Image
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       matrix:
         image: [keycloak, redis, rabbitmq, postgres, mysql]
@@ -82,14 +64,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Get Keycloak Image
-      id: keycloak_img
+    - name: Get Image Name
+      id: img
       uses: mikefarah/yq@master
       with:
         cmd: yq '.images.${{ matrix.image }}.image' kubernetes/charts/oasis-platform/values.yaml
 
-    - name: Get Keycloak Version
-      id: keycloak_ver
+    - name: Get Image Version
+      id: ver
       uses: mikefarah/yq@master
       with:
         cmd: yq '.images.${{ matrix.image }}.version' kubernetes/charts/oasis-platform/values.yaml
@@ -98,9 +80,9 @@ jobs:
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: ${{ steps.keycloak_img.outputs.result }}:${{ steps.keycloak_ver.outputs.result }}
+        image-ref: ${{ steps.img.outputs.result }}:${{ steps.ver.outputs.result }}
         format: 'sarif'
-        output: ${{ env.REPORT }}
+        output: ${{ matrix.report }}
         scan-type: 'image'
         exit-code: ${{ matrix.exit-code }}
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
