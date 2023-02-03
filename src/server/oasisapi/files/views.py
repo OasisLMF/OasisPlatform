@@ -19,7 +19,7 @@ EXPOSURE_ARGS = {
 }
 
 
-def _delete_related_file(parent, field):
+def _delete_related_file(parent, field, user):
     """ Delete an attached RelatedFile model
         without triggering a cascade delete
     """

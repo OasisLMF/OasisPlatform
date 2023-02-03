@@ -70,12 +70,8 @@ class Portfolio(TimeStampedModel):
         if not self.location_file:
             return None
 
-        if self.location_file.content_type == 'application/octet-stream':
-            df = ods_tools.read_parquet(io.BytesIO(self.location_file.file.read()))
-            return len(df.index)
-        if self.location_file.content_type in csv_compression_types:
-            df = ods_tools.read_csv(io.BytesIO(self.location_file.file.read()), compression=csv_compression_types[self.location_file.content_type])
-            return len(df.index)
+        df = related_file_to_df(self.location_file)
+        return len(df.index)
 
     def set_portolio_valid(self):
         oed_files = [
