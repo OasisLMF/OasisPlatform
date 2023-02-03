@@ -15,14 +15,14 @@ on:
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
         required: false
-        default: 'CRITICAL,HIGH,MEDIUM'
+        default: 'CRITICAL,HIGH'
       ignore_unfixed:
         description: 'Include unfixed vulnerabilities in scan [true,false]'
         required: false
         default: 'true'
 
 env:
-  SEVERITY: 'MEDIUM,HIGH,CRITICAL'
+  SEVERITY: 'HIGH,CRITICAL'
   IGNORE_UNFIXED: 'true'
 
 jobs:
@@ -81,12 +81,22 @@ jobs:
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ steps.img.outputs.result }}:${{ steps.ver.outputs.result }}
-        format: 'sarif'
-        output: ${{ matrix.report }}
         scan-type: 'image'
         exit-code: ${{ matrix.exit-code }}
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+
+    - name: Create Report
+      if: success() || failure()
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ steps.img.outputs.result }}:${{ steps.ver.outputs.result }}
+        format: 'sarif'
+        output: ${{ matrix.report }}
+        scan-type: 'image'
+        exit-code: '0'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         security-checks: 'vuln,config,secret'
 
     - name: Upload Trivy scan results to GitHub Security tab

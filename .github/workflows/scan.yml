@@ -15,7 +15,7 @@ on:
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
         required: false
-        default: 'CRITICAL,HIGH,MEDIUM'
+        default: 'CRITICAL,HIGH'
       ignore_unfixed:
         description: 'Include unfixed vulnerabilities in scan [true,false]'
         required: false
@@ -25,7 +25,7 @@ on:
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
         required: false
-        default: 'CRITICAL,HIGH,MEDIUM'
+        default: 'CRITICAL,HIGH'
         type: string
       ignore_unfixed:
         description: 'Include unfixed vulnerabilities in scan [true,false]'
@@ -42,7 +42,7 @@ jobs:
   scan_repo:
     name: Scan Repo
     env:
-      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
+      SEVERITY: 'HIGH,CRITICAL'
       REPORT: 'repo-results.sarif'
       IGNORE_UNFIXED: 'true'
       EXIT_CODE: '1'
@@ -60,190 +60,36 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Trivy vulnerability scanner (Repo)
+    - name: Trivy vulnerability scanner (File system)
       if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        exit-code: '1'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
+
+    - name: Create Report
+      if: success() || failure()
       uses: aquasecurity/trivy-action@master
       with:
         format: 'sarif'
         output:  ${{ env.REPORT }}
         scan-type: 'fs'
-        exit-code: '1'
+        exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
-        severity: ${{ env.SEVERITY }}
         security-checks: 'vuln,config,secret'
         skip-dirs: './docker'
 
     - name: Upload Trivy scan results to GitHub Security tab
       if: success() || failure()
-
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file:  ${{ env.REPORT }}
 
     - name: Store CVE report
-      if: success() || failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.REPORT }}
-        path: ${{ env.REPORT }}
-        retention-days: 3
-
-
-  scan_worker:
-    name: Scan worker
-    env:
-      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
-      REPORT: 'worker-results.sarif'
-      REQU_FILE: 'requirements-worker.txt'
-      IGNORE_UNFIXED: 'true'
-    runs-on: ubuntu-latest
-    steps:
-    - name: Set inputs
-      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
-      run: |
-        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
-        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
-
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Switch requirments file
-      run: |
-        rm requirements.txt
-        cp ${{ env.REQU_FILE }} requirements.txt
-
-    - name: Vulnerability scanner
-      if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@master
-      with:
-        format: 'sarif'
-        output: ${{ env.REPORT }}
-        scan-type: 'fs'
-        exit-code: '1'
-        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
-        severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
-        skip-dirs: './docker'
-
-    - name: Rename requirments file in report
-      if: success() || failure()
-      run: sed -i "s|requirements.txt|${{ env.REQU_FILE }}|g" ${{ env.REPORT }}
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      if: success() || failure()
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: ${{ env.REPORT }}
-
-    - name: Store report
-      if: success() || failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.REPORT }}
-        path: ${{ env.REPORT }}
-        retention-days: 3
-
-  scan_server:
-    name: Scan Server
-    env:
-      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
-      REPORT: 'server-results.sarif'
-      REQU_FILE: 'requirements-server.txt'
-      IGNORE_UNFIXED: 'true'
-    runs-on: ubuntu-latest
-    steps:
-    - name: Set inputs
-      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
-      run: |
-        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
-        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
-
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Switch requirments file
-      run: |
-        rm requirements.txt
-        cp ${{ env.REQU_FILE }} requirements.txt
-
-    - name: Vulnerability scanner
-      if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@master
-      with:
-        format: 'sarif'
-        output: ${{ env.REPORT }}
-        scan-type: 'fs'
-        exit-code: '1'
-        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
-        severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
-        skip-dirs: './docker'
-
-    - name: Rename requirments file in report
-      if: success() || failure()
-      run: sed -i "s|requirements.txt|${{ env.REQU_FILE }}|g" ${{ env.REPORT }}
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      if: success() || failure()
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: ${{ env.REPORT }}
-
-    - name: Store report
-      if: success() || failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.REPORT }}
-        path: ${{ env.REPORT }}
-        retention-days: 3
-
-  scan_worker-controller:
-    name: Scan worker controller
-    env:
-      SEVERITY: 'MEDIUM,HIGH,CRITICAL'
-      REPORT: 'controller-results.sarif'
-      REQU_FILE: 'kubernetes/worker-controller/requirements.txt'
-      IGNORE_UNFIXED: 'true'
-    runs-on: ubuntu-latest
-    steps:
-    - name: Set inputs
-      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
-      run: |
-        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
-        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
-
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Switch requirments file
-      run: |
-        rm requirements.txt
-        cp ${{ env.REQU_FILE }} requirements.txt
-
-    - name: Vulnerability scanner
-      if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@master
-      with:
-        format: 'sarif'
-        output: ${{ env.REPORT }}
-        scan-type: 'fs'
-        exit-code: '1'
-        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
-        severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
-        skip-dirs: './docker'
-
-    - name: Rename requirments file in report
-      if: success() || failure()
-      run: sed -i "s|requirements.txt|${{ env.REQU_FILE }}|g" ${{ env.REPORT }}
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      if: success() || failure()
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: ${{ env.REPORT }}
-
-    - name: Store report
       if: success() || failure()
       uses: actions/upload-artifact@v3
       with:

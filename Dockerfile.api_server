@@ -21,6 +21,7 @@ RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
 RUN echo 'server ALL=(ALL) NOPASSWD:/usr/local/bin/update_hosts' >> /etc/sudoers
 
 WORKDIR /var/www/oasis
+COPY ./requirements-server.txt ./requirements.txt
 COPY ./src/update_server_hosts.sh /usr/local/bin/update_hosts
 COPY ./src/startup_server.sh /usr/local/bin/startup
 COPY ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
