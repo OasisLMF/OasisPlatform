@@ -655,7 +655,7 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        location_df = load_location_data(location_df)
+        location_df = load_location_data(params['oed_location_csv'])
         location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
         chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
         chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
