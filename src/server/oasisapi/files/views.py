@@ -5,7 +5,6 @@ import pandas as pd
 from ods_tools.oed.exposure import OedExposure
 from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
-from django.conf import settings as django_settings
 from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
@@ -73,7 +72,7 @@ def _handle_get_related_file(parent, field, request):
     if file_format == 'csv' and f.content_type == 'application/octet-stream':
         output_buffer = io.BytesIO()
 
-        exposure =  OedExposure(**{
+        exposure = OedExposure(**{
             EXPOSURE_ARGS[field]: pd.read_parquet(io.BytesIO(f.file.read())),
             'check_oed': False,
         })
@@ -93,7 +92,8 @@ def _handle_get_related_file(parent, field, request):
 
 
 def _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate):
-    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request}, parquet_storage=parquet_storage, field=field, oed_validate=oed_validate)
+    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={
+                                       'request': request}, parquet_storage=parquet_storage, field=field, oed_validate=oed_validate)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 

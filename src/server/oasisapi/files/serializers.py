@@ -2,7 +2,6 @@ import hashlib
 import logging
 import io
 from pathlib import Path
-import pandas as pd
 from ods_tools.oed.exposure import OedExposure
 
 from django.contrib.auth.models import Group
@@ -101,7 +100,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['groups'] = self.context['request'].user.groups.all()
         attrs['oed_validated'] = self.oed_validate
         return super(RelatedFileSerializer, self).validate(attrs)
-
 
     def validate_file(self, value):
         mapped_content_type = CONTENT_TYPE_MAPPING.get(value.content_type, value.content_type)

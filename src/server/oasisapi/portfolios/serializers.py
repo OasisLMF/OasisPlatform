@@ -406,13 +406,11 @@ class CreateAnalysisSerializer(AnalysisSerializer):
         return super(CreateAnalysisSerializer, self).create(data)
 
 
-
 class PortfolioValidationSerializer(serializers.ModelSerializer):
     accounts_validated = serializers.SerializerMethodField()
     location_validated = serializers.SerializerMethodField()
     reinsurance_info_validated = serializers.SerializerMethodField()
     reinsurance_scope_validated = serializers.SerializerMethodField()
-
 
     class Meta:
         model = Portfolio
@@ -423,7 +421,7 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
             'reinsurance_scope_validated',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField) # should it be BooleanField ?
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)  # should it be BooleanField ?
     def get_location_validated(self, instance):
         if instance.location_file:
             return instance.location_file.oed_validated

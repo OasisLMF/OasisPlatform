@@ -13,7 +13,6 @@ from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 
 
-
 def related_file_to_df(RelatedFile):
     if not RelatedFile:
         return None

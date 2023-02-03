@@ -126,7 +126,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         method = self.request.method.lower()
         upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']
 
-        if method == 'post' and  getattr(self, 'action', None) in upload_views:
+        if method == 'post' and getattr(self, 'action', None) in upload_views:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
@@ -236,7 +236,6 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -259,7 +258,6 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = None
             oed_validate = None
         return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
-
 
     @action(methods=['get', 'post'], detail=True)
     def validate(self, request, pk=None, version=None):

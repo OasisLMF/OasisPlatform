@@ -79,10 +79,10 @@ class Portfolio(TimeStampedModel):
 
     def set_portolio_valid(self):
         oed_files = [
-             'accounts_file',
-             'location_file',
-             'reinsurance_info_file',
-             'reinsurance_scope_file',
+            'accounts_file',
+            'location_file',
+            'reinsurance_info_file',
+            'reinsurance_scope_file',
         ]
         for ref in oed_files:
             file_ref = getattr(self, ref)
@@ -117,10 +117,10 @@ def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
     files_for_removal = [
-         'accounts_file',
-         'location_file',
-         'reinsurance_info_file',
-         'reinsurance_scope_file',
+        'accounts_file',
+        'location_file',
+        'reinsurance_info_file',
+        'reinsurance_scope_file',
     ]
     for ref in files_for_removal:
         file_ref = getattr(instance, ref)
