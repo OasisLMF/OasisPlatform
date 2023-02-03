@@ -12,11 +12,14 @@ from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
 
 from .models import Portfolio
+from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
+from ..schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
     CreateAnalysisSerializer,
     PortfolioStorageSerializer,
-    PortfolioListSerializer
+    PortfolioListSerializer,
+    PortfolioValidationSerializer
 )
 from ..analyses.serializers import AnalysisSerializer
 from ..files.serializers import RelatedFileSerializer
@@ -109,9 +112,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             return PortfolioListSerializer
         elif self.action in ['set_storage_links', 'storage_links']:
             return PortfolioStorageSerializer
+        elif self.action in ['validate']:
+            return PortfolioValidationSerializer
         elif self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
-            'set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file',
         ]:
             return RelatedFileSerializer
         else:
@@ -119,7 +123,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
 
     @property
     def parser_classes(self):
-        if getattr(self, 'action', None) in ['set_accounts_file', 'set_location_file', 'set_reinsurance_info_file', 'set_reinsurance_scope_file']:
+        method = self.request.method.lower()
+        upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']
+
+        if method == 'post' and getattr(self, 'action', None) in upload_views:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
@@ -161,85 +168,111 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             return Response(serializer.data)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['get', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `accounts_file` contents
 
+        post:
+        Sets the portfolios `accounts_file` contents
+
         delete:
         Disassociates the portfolios `accounts_file` with the portfolio
         """
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types)
-
-    @accounts_file.mapping.post
-    def set_accounts_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the portfolios `accounts_file` contents
-        """
-        store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
+        method = request.method.lower()
+        if method == 'post':
+            store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
+            oed_validate = request.GET.get('validate', 'false').lower() == 'true'
+        else:
+            store_as_parquet = None
+            oed_validate = None
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['get', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `location_file` contents
 
+        post:
+        Sets the portfolios `location_file` contents
+
         delete:
         Disassociates the portfolios `location_file` contents
         """
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types)
-
-    @location_file.mapping.post
-    def set_location_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the portfolios `location_file` contents
-        """
-        store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
+        method = request.method.lower()
+        if method == 'post':
+            store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
+            oed_validate = request.GET.get('validate', 'false').lower() == 'true'
+        else:
+            store_as_parquet = None
+            oed_validate = None
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['get', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `reinsurance_info_file` contents
 
+        post:
+        Sets the portfolios `reinsurance_info_file` contents
+
         delete:
         Disassociates the portfolios `reinsurance_info_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types)
-
-    @reinsurance_info_file.mapping.post
-    def set_reinsurance_info_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the portfolios `reinsurance_info_file` contents
-        """
-        store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
+        method = request.method.lower()
+        if method == 'post':
+            store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
+            oed_validate = request.GET.get('validate', 'false').lower() == 'true'
+        else:
+            store_as_parquet = None
+            oed_validate = None
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['get', 'delete'], detail=True)
+    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
         get:
         Gets the portfolios `reinsurance_scope_file` contents
 
+        post:
+        Sets the portfolios `reinsurance_scope_file` contents
+
         delete:
         Disassociates the portfolios `reinsurance_scope_file` contents
         """
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types)
+        method = request.method.lower()
+        if method == 'post':
+            store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
+            oed_validate = request.GET.get('validate', 'false').lower() == 'true'
+        else:
+            store_as_parquet = None
+            oed_validate = None
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @reinsurance_scope_file.mapping.post
-    def set_reinsurance_scope_file(self, request, pk=None, version=None):
+    @action(methods=['get', 'post'], detail=True)
+    def validate(self, request, pk=None, version=None):
         """
+        get:
+        Return OED validation status for each attached file
+
         post:
-        Sets the portfolios `reinsurance_scope_file` contents
+        Run OED validation on the connected exposure files
         """
-        store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
+        method = request.method.lower()
+        instance = self.get_object()
+
+        if method == 'post':
+            instance.run_oed_validation()
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

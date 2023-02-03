@@ -202,6 +202,26 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
+def load_location_data(loc_filepath):
+    """ Returns location file as DataFrame
+
+    Returns a DataFrame of Loaction data with 'loc_id' row assgined
+    has a fallback to support both 1.26 and 1.27 versions of oasislmf
+    """
+    try:
+        # oasislmf == 1.26.x or 1.23.x
+        from oasislmf.utils.data import get_location_df
+        return get_location_df(loc_filepath)
+    except ImportError:
+        # oasislmf == 1.27.x or greater
+        from ods_tools.oed.exposure import OedExposure
+        from oasislmf.utils.data import prepare_location_df
+
+        exposure = OedExposure(location=pathlib.Path(os.path.abspath(loc_filepath)))
+        exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
+        return exposure.location.dataframe
+
+
 # https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
 @task_revoked.connect
 def revoked_handler(*args, **kwargs):
@@ -635,7 +655,7 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        location_df = lookup.get_locations(location_fp=params['oed_location_csv'])
+        location_df = load_location_data(params['oed_location_csv'])
         location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
         chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
         chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')

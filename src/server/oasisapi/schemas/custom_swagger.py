@@ -5,6 +5,7 @@ __all__ = [
     'FILE_FORMAT_PARAM',
     'SUBTASK_STATUS_PARAM',
     'SUBTASK_SLUG_PARAM',
+    'FILE_VALIDATION_PARAM',
 ]
 
 from drf_yasg import openapi
@@ -88,4 +89,11 @@ SUBTASK_SLUG_PARAM = openapi.Parameter(
     openapi.IN_QUERY,
     description="Filter response by slug name containing string.",
     type=openapi.TYPE_STRING
+)
+
+FILE_VALIDATION_PARAM = openapi.Parameter(
+    'validate',
+    openapi.IN_QUERY,
+    description="Validate OED files on upload, default `True`",
+    type=openapi.TYPE_BOOLEAN,
 )
