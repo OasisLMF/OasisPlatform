@@ -1,6 +1,6 @@
 pkg_list=(
-    'ods-tools==2.*'
-    'oasislmf==1.26.*'
+    'ods-tools==3.*'
+    'oasislmf==1.27.*'
     joblib
     oauthlib
     parso
@@ -33,6 +33,6 @@ for pk in "${pkg_list[@]}"; do
 done
 
 set -e
-pip-compile $PKG_UPDATE requirements-worker.in
+#pip-compile $PKG_UPDATE requirements-worker.in
 pip-compile $PKG_UPDATE requirements-server.in
 pip-compile $PKG_UPDATE requirements.in
