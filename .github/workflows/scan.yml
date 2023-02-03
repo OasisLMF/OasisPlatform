@@ -116,12 +116,22 @@ jobs:
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
-        format: 'sarif'
-        output: ${{ env.REPORT }}
         scan-type: 'fs'
         exit-code: '1'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
+
+    - name: Create Report
+      if: success() || failure()
+      uses: aquasecurity/trivy-action@master
+      with:
+        format: 'sarif'
+        output: ${{ env.REPORT }}
+        scan-type: 'fs'
+        exit-code: '0'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         security-checks: 'vuln,config,secret'
         skip-dirs: './docker'
 
@@ -170,12 +180,22 @@ jobs:
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
-        format: 'sarif'
-        output: ${{ env.REPORT }}
         scan-type: 'fs'
         exit-code: '1'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
+
+    - name: Create Report
+      if: success() || failure()
+      uses: aquasecurity/trivy-action@master
+      with:
+        format: 'sarif'
+        output: ${{ env.REPORT }}
+        scan-type: 'fs'
+        exit-code: '0'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         security-checks: 'vuln,config,secret'
         skip-dirs: './docker'
 
@@ -224,12 +244,22 @@ jobs:
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
-        format: 'sarif'
-        output: ${{ env.REPORT }}
         scan-type: 'fs'
         exit-code: '1'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln,config,secret'
+        skip-dirs: './docker'
+
+    - name: Create Report
+      if: success() || failure()
+      uses: aquasecurity/trivy-action@master
+      with:
+        format: 'sarif'
+        output: ${{ env.REPORT }}
+        scan-type: 'fs'
+        exit-code: '0'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         security-checks: 'vuln,config,secret'
         skip-dirs: './docker'
 
