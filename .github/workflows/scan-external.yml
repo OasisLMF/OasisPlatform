@@ -30,7 +30,7 @@ jobs:
     name: Scan Image
     runs-on: ubuntu-latest
     strategy:
-      #fail-fast: false
+      fail-fast: false
       matrix:
         image: [keycloak, redis, rabbitmq, postgres, mysql]
         include:
