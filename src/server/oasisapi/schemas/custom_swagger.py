@@ -89,6 +89,7 @@ SUBTASK_SLUG_PARAM = openapi.Parameter(
     openapi.IN_QUERY,
     description="Filter response by slug name containing string.",
     type=openapi.TYPE_STRING
+)
 
 FILE_VALIDATION_PARAM = openapi.Parameter(
     'validate',
