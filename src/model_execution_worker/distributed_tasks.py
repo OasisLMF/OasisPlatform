@@ -203,10 +203,10 @@ def notify_api_status(analysis_pk, task_status):
 
 
 def load_location_data(loc_filepath):
-    """ Load location file
+    """ Returns location file as DataFrame
 
-    Returns a DataFrame of Loaction data, with a fallback to support versions
-    Oasislmf
+    Returns a DataFrame of Loaction data with 'loc_id' row assgined
+    has a fallback to support both 1.26 and 1.27 versions of oasislmf
     """
     try:
         # oasislmf == 1.26.x or 1.23.x
@@ -215,7 +215,10 @@ def load_location_data(loc_filepath):
     except ImportError:
         # oasislmf == 1.27.x or greater
         from ods_tools.oed.exposure import OedExposure
-        exposure = OedExposure(location=loc_filepath)
+        from oasislmf.utils.data import prepare_location_df
+
+        exposure = OedExposure(location=pathlib.Path(os.path.abspath(loc_filepath)))
+        exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
         return exposure.location.dataframe
 
 
@@ -652,7 +655,7 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        location_df = load_location_data(params['oed_location_csv'])
+        location_df = load_location_data(location_df)
         location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
         chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
         chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
