@@ -6,5 +6,5 @@ description: Deploys the Prometheus and Grafana to monitor Oasis
 
 dependencies:
 - name: kube-prometheus-stack
-  version: "32.3.0"
+  version: "44.3.0"
   repository: https://prometheus-community.github.io/helm-charts
