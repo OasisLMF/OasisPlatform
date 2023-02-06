@@ -345,7 +345,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
 
     def test_accounts_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -365,7 +365,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_accounts_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -394,7 +394,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
         file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -416,7 +416,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -488,7 +488,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
 
     def test_location_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -508,7 +508,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_location_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -537,7 +537,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
         file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -559,7 +559,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -630,7 +630,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
 
     def test_reinsurance_scope_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -650,7 +650,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_reinsurance_scope_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -679,7 +679,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
         file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -701,7 +701,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -773,7 +773,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
 
     def test_reinsurance_info_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -793,7 +793,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_reinsurance_info_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -822,7 +822,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
         file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -844,7 +844,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -923,7 +923,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
         scp_file_content = scp_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -999,7 +999,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -1048,7 +1048,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -1100,7 +1100,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -1166,7 +1166,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -1238,7 +1238,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
         file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
