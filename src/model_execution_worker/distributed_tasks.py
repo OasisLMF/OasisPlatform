@@ -1003,8 +1003,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
-    res['max_process_id'] = len(params)
-
     abs_work_dir = os.path.join(res['model_run_dir'], 'work')
     Path(abs_work_dir).mkdir(exist_ok=True, parents=True)
 
