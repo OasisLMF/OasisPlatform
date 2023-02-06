@@ -33,6 +33,6 @@ for pk in "${pkg_list[@]}"; do
 done
 
 set -e
-#pip-compile $PKG_UPDATE requirements-worker.in
+pip-compile $PKG_UPDATE requirements-worker.in
 pip-compile $PKG_UPDATE requirements-server.in
 pip-compile $PKG_UPDATE requirements.in

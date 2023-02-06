@@ -184,7 +184,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         method = request.method.lower()
         if method == 'post':
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-            oed_validate = request.GET.get('validate', 'false').lower() == 'true'
+            oed_validate = request.GET.get('validate', str(django_settings.PORTFOLIO_UPLOAD_VALIDATION)).lower() == 'true'
         else:
             store_as_parquet = None
             oed_validate = None
@@ -207,7 +207,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         method = request.method.lower()
         if method == 'post':
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-            oed_validate = request.GET.get('validate', 'false').lower() == 'true'
+            oed_validate = request.GET.get('validate', str(django_settings.PORTFOLIO_UPLOAD_VALIDATION)).lower() == 'true'
         else:
             store_as_parquet = None
             oed_validate = None
@@ -230,7 +230,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         method = request.method.lower()
         if method == 'post':
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-            oed_validate = request.GET.get('validate', 'false').lower() == 'true'
+            oed_validate = request.GET.get('validate', str(django_settings.PORTFOLIO_UPLOAD_VALIDATION)).lower() == 'true'
         else:
             store_as_parquet = None
             oed_validate = None
@@ -253,7 +253,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         method = request.method.lower()
         if method == 'post':
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-            oed_validate = request.GET.get('validate', 'false').lower() == 'true'
+            oed_validate = request.GET.get('validate', str(django_settings.PORTFOLIO_UPLOAD_VALIDATION)).lower() == 'true'
         else:
             store_as_parquet = None
             oed_validate = None
