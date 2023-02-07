@@ -17,6 +17,17 @@
 
 ?? kube tunnel and hosts file needed for access ??
 
+- name: Add hosts to /etc/hosts
+  run: |
+      CLUSTER_IP=$(kubectl get svc --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}")
+      sudo echo "$CLUSTER_IP ui.oasis.local" | sudo tee -a /etc/hosts
+      minikube tunnel &> /dev/null &
+
+    OR? 
+    https://github.com/kubernetes/minikube/issues/3647#issuecomment-1139978001
+    and update ingress
+
+
 4. Install oasis platform
     helm install platform oasis-platform
 
