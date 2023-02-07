@@ -94,6 +94,7 @@ spec:
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
+          args: ["start-dev"]
           ports:
             - containerPort: {{ .Values.keycloak.port }}
           env:
