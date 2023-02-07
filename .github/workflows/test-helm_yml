@@ -29,3 +29,4 @@
 7. Wait for PiWind checks to complete
     + extra checks vs the API?
 
+8. Check status and store logs via kubectl 
