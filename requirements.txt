@@ -130,7 +130,7 @@ coverage[toml]==7.1.0
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==39.0.0
+cryptography==39.0.1
     # via
     #   autobahn
     #   azure-storage-blob
@@ -283,7 +283,7 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.26.5
+oasislmf[extra]==1.26.6
     # via -r ./requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
@@ -490,7 +490,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.17.1
+virtualenv==20.19.0
     # via tox
 waitress==2.1.2
     # via webtest
