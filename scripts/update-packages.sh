@@ -5,6 +5,7 @@ pkg_list=(
     oauthlib
     parso
     certifi
+    cryptography
     wheel
     ruamel.yaml
     distlib
