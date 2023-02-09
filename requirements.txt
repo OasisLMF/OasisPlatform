@@ -120,7 +120,7 @@ coverage[toml]==7.1.0
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==39.0.0
+cryptography==39.0.1
     # via
     #   autobahn
     #   pyopenssl
@@ -261,7 +261,7 @@ numpy==1.23.5
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.23.15
+oasislmf[extra]==1.23.16
     # via -r ./requirements-worker.in
 ods-tools==2.3.2
     # via -r ./requirements-server.in
@@ -452,7 +452,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.17.1
+virtualenv==20.19.0
     # via tox
 waitress==2.1.2
     # via webtest
