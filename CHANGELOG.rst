@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#750](https://github.com/OasisLMF/OasisPlatform/pull/750) - Update Python packages (1.23)
+.. _`1.23.16`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.15...1.23.16
+
 * [#736](https://github.com/OasisLMF/OasisPlatform/pull/736) - Replace Jenkins with Github actions 1.23
 .. _`1.23.15`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.14-lts...1.23.15
 
