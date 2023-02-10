@@ -195,7 +195,7 @@ pyjwt==2.4.0
     # via djangorestframework-simplejwt
 pymysql==1.0.2
     # via -r requirements-server.in
-pyopenssl==21.0.0
+pyopenssl==23.0.0
     # via twisted
 pyparsing==3.0.6
     # via packaging
@@ -234,7 +234,6 @@ six==1.16.0
     #   click-repl
     #   isodate
     #   pathlib2
-    #   pyopenssl
     #   python-dateutil
     #   service-identity
 sqlalchemy==2.0.3

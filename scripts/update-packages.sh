@@ -16,6 +16,7 @@ pkg_list=(
     ods-tools
     pandas
     parso
+    pyopenssl
     psycopg2-binary
     ruamel.yaml
     scikit-learn

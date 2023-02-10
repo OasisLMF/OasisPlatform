@@ -278,7 +278,7 @@ numpy==1.22.4
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.27.0
+oasislmf[extra]==1.27.1
     # via -r ./requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
@@ -344,7 +344,7 @@ pymysql==1.0.2
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyopenssl==21.0.0
+pyopenssl==23.0.0
     # via
     #   -r requirements.in
     #   twisted
@@ -430,7 +430,6 @@ six==1.16.0
     #   isodate
     #   munch
     #   pathlib2
-    #   pyopenssl
     #   python-dateutil
     #   service-identity
     #   tox
