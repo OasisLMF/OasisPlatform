@@ -9,13 +9,7 @@ from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
 
-
-EXPOSURE_ARGS = {
-    'accounts_file': 'account',
-    'location_file': 'location',
-    'reinsurance_info_file': 'ri_info',
-    'reinsurance_scope_file': 'ri_scope'
-}
+from .models import related_file_to_df
 
 
 def _delete_related_file(parent, field):
@@ -48,13 +42,7 @@ def _handle_get_related_file(parent, field, file_format):
     # Parquet format requested and data stored as csv
     if file_format == 'parquet' and f.content_type == 'text/csv':
         output_buffer = io.BytesIO()
-
-        # Load DataFrame and pass to ods-tools exposure class
-        exposure = OedExposure(**{
-            EXPOSURE_ARGS[field]: pd.read_csv(io.BytesIO(f.file.read()))
-        })
-
-        df = getattr(exposure, EXPOSURE_ARGS[field]).dataframe
+        df = related_file_to_df(f)
         df.to_parquet(output_buffer, index=False)
         output_buffer.seek(0)
 
@@ -65,13 +53,7 @@ def _handle_get_related_file(parent, field, file_format):
     # CSV format requested and data stored as Parquet
     if file_format == 'csv' and f.content_type == 'application/octet-stream':
         output_buffer = io.BytesIO()
-
-        exposure = OedExposure(**{
-            EXPOSURE_ARGS[field]: pd.read_parquet(io.BytesIO(f.file.read())),
-            'check_oed': False,
-        })
-
-        df = getattr(exposure, EXPOSURE_ARGS[field]).dataframe
+        df = related_file_to_df(f)
         df.to_csv(output_buffer, index=False)
         output_buffer.seek(0)
 
