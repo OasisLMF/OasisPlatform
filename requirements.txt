@@ -118,13 +118,13 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-coverage[toml]==6.5.0
+coverage[toml]==7.1.0
     # via
     #   -r requirements.in
     #   pytest-cov
 cramjam==2.5.0
     # via fastparquet
-cryptography==36.0.0
+cryptography==39.0.1
     # via
     #   autobahn
     #   azure-storage-blob
@@ -136,7 +136,7 @@ daphne==3.0.2
     #   channels
 distlib==0.3.6
     # via virtualenv
-django==3.2.16
+django==3.2.17
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -176,7 +176,7 @@ djangorestframework-simplejwt==5.0.0
     # via -r ./requirements-server.in
 drf-nested-routers==0.93.4
     # via -r ./requirements-server.in
-drf-yasg==1.21.4
+drf-yasg==1.21.5
     # via -r ./requirements-server.in
 fasteners==0.16.3
     # via
@@ -184,7 +184,7 @@ fasteners==0.16.3
     #   -r requirements.in
 fastparquet==0.8.0
     # via oasislmf
-filelock==3.8.0
+filelock==3.9.0
     # via
     #   tox
     #   virtualenv
@@ -278,7 +278,7 @@ numpy==1.22.4
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.27.0
+oasislmf[extra]==1.27.1
     # via -r ./requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
@@ -291,7 +291,7 @@ packaging==21.3
     #   drf-yasg
     #   pytest
     #   tox
-pandas==1.5.1
+pandas==1.5.3
     # via
     #   -r ./requirements-server.in
     #   fastparquet
@@ -314,7 +314,7 @@ pluggy==1.0.0
     #   tox
 prompt-toolkit==3.0.23
     # via click-repl
-psycopg2-binary==2.9.4
+psycopg2-binary==2.9.5
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -344,7 +344,7 @@ pymysql==1.0.2
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyopenssl==21.0.0
+pyopenssl==23.0.0
     # via
     #   -r requirements.in
     #   twisted
@@ -403,9 +403,9 @@ ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.5.0
     # via boto3
-scikit-learn==1.1.2
+scikit-learn==1.2.1
     # via oasislmf
-scipy==1.9.3
+scipy==1.10.0
     # via
     #   oasislmf
     #   scikit-learn
@@ -430,7 +430,6 @@ six==1.16.0
     #   isodate
     #   munch
     #   pathlib2
-    #   pyopenssl
     #   python-dateutil
     #   service-identity
     #   tox
@@ -438,7 +437,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.3.1
     # via beautifulsoup4
-sqlalchemy==1.4.42
+sqlalchemy==2.0.3
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -472,9 +471,10 @@ twisted[tls]==22.10.0rc1
     #   daphne
 txaio==21.2.1
     # via autobahn
-typing-extensions==4.0.1
+typing-extensions==4.4.0
     # via
     #   azure-core
+    #   sqlalchemy
     #   twisted
 uritemplate==4.1.1
     # via
@@ -489,7 +489,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.16.5
+virtualenv==20.19.0
     # via tox
 waitress==2.1.2
     # via webtest
