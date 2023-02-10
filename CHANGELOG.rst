@@ -1,6 +1,17 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.1`_
+ ---------
+* [#747](https://github.com/OasisLMF/OasisPlatform/pull/747) - Fix/portfolio validate default
+* [#749](https://github.com/OasisLMF/OasisPlatform/pull/749) - Set Validation on Upload to false
+* [#752](https://github.com/OasisLMF/OasisPlatform/pull/752) - Update packages dev
+* [#721](https://github.com/OasisLMF/OasisPlatform/pull/721) - Release/1.27.0
+* [#753](https://github.com/OasisLMF/OasisPlatform/pull/753) - Set ods-tools 3.0.2
+* [#722, #723](https://github.com/OasisLMF/OasisPlatform/pull/724) - Added OED validation on file upload, and updated ods-tools package to 3.0.1
+* [#726](https://github.com/OasisLMF/OasisPlatform/pull/732) - Add Code QL to platform repo 
+.. _`1.27.1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.0...1.27.1
+
 `1.27.0`_
  ---------
 * [#705](https://github.com/OasisLMF/OasisPlatform/pull/710) - CVE updates - Server images 
