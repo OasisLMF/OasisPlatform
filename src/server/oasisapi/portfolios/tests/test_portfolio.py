@@ -1211,7 +1211,6 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     ['ri_info', 'missing required column ReinsCurrency'],
                     ['ri_info', 'missing required column InuringPriority'],
                     ['ri_info', 'missing required column ReinsType'],
-                    ['ri_info', 'missing required column RiskLevel'],
                     ['ri_info', "column 'PortNumber' is not a valid oed field"],
                     ['ri_info', "column 'AccNumber' is not a valid oed field"],
                     ['ri_info', "column 'LocNumber' is not a valid oed field"],
