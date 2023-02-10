@@ -1,6 +1,5 @@
 import json
 import io
-import pandas as pd
 
 from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
