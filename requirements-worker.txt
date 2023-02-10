@@ -78,7 +78,7 @@ cookiecutter==2.1.1
     # via oasislmf
 cramjam==2.5.0
     # via fastparquet
-cryptography==36.0.1
+cryptography==39.0.1
     # via azure-storage-blob
 fasteners==0.16.3
     # via -r requirements-worker.in
@@ -142,7 +142,7 @@ numpy==1.22.4
     #   pyarrow
     #   scikit-learn
     #   scipy
-oasislmf[extra]==1.27.0
+oasislmf[extra]==1.27.1
     # via -r requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
@@ -152,7 +152,7 @@ packaging==21.3
     # via
     #   numexpr
     #   pytest
-pandas==1.5.1
+pandas==1.5.3
     # via
     #   fastparquet
     #   geopandas
@@ -164,7 +164,7 @@ pluggy==1.0.0
     # via pytest
 prompt-toolkit==3.0.23
     # via click-repl
-psycopg2-binary==2.9.4
+psycopg2-binary==2.9.5
     # via -r requirements-worker.in
 py==1.11.0
     # via pytest
@@ -213,9 +213,9 @@ rtree==0.9.7
     # via oasislmf
 s3transfer==0.5.0
     # via boto3
-scikit-learn==1.1.2
+scikit-learn==1.2.1
     # via oasislmf
-scipy==1.9.3
+scipy==1.10.0
     # via
     #   oasislmf
     #   scikit-learn
@@ -238,7 +238,7 @@ six==1.16.0
     #   munch
     #   pathlib2
     #   python-dateutil
-sqlalchemy==1.4.42
+sqlalchemy==2.0.3
     # via -r requirements-worker.in
 tabulate==0.8.9
     # via oasislmf
@@ -253,7 +253,9 @@ toml==0.10.2
 tqdm==4.62.3
     # via oasislmf
 typing-extensions==4.4.0
-    # via azure-core
+    # via
+    #   azure-core
+    #   sqlalchemy
 urllib3==1.26.7
     # via
     #   botocore
