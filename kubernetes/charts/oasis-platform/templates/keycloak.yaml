@@ -94,7 +94,12 @@ spec:
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
-          args: ["start-dev --import-realm --http-relative-path /auth"]
+          args: [
+            "start-dev", 
+            "--import-realm",
+            "--http-relative-path /auth",
+            "--proxy passthrough",
+            "--hostname-strict=false"]
           ports:
             - containerPort: {{ .Values.keycloak.port }}
           env:
