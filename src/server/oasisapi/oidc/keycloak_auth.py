@@ -8,6 +8,7 @@ from urllib3.util import connection
 from urllib3.util.connection import create_connection as urllib3_create_connection
 from src.server.oasisapi.oidc.models import KeycloakUserId
 
+
 def keycloak_create_connection(address, *args, **kwargs):
     """
     Wrap urllib3's create_connection to replace keycloak external host
