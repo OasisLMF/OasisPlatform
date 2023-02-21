@@ -76,6 +76,7 @@ class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
                 'grant_type': 'password',
                 'client_id': settings.OIDC_RP_CLIENT_ID,
                 'client_secret': settings.OIDC_RP_CLIENT_SECRET,
+                'scope': 'openid',
                 'username': attrs.get('username', None),
                 'password': attrs.get('password', None)
             },
@@ -110,6 +111,7 @@ class OIDCTokenRefreshSerializer(serializers.Serializer):
                 'grant_type': 'refresh_token',
                 'client_id': settings.OIDC_RP_CLIENT_ID,
                 'client_secret': settings.OIDC_RP_CLIENT_SECRET,
+                'scope': 'openid',
                 'refresh_token': token
             },
             verify=False,
