@@ -751,9 +751,7 @@ def collect_keys(
 
                 if file_name in ['events', 'occurrence', 'ensemble_mapping']:
                     take_first(file_chunks, file_merged)
-                elif file_type == 'csv':
-                    merge_dataframes(file_chunks, file_merged, file_type)
-                elif file_type == 'parquet':
+                elif file_type in ['csv', 'parquet']:
                     merge_dataframes(file_chunks, file_merged, file_type)
                 else:
                     logging.info(f'No merge method for file: "{file}" --skipped--')
