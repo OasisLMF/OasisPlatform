@@ -151,7 +151,7 @@ coverage[toml]==7.1.0
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==39.0.0
+cryptography==39.0.1
     # via
     #   autobahn
     #   azure-storage-blob

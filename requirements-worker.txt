@@ -84,7 +84,7 @@ cookiecutter==2.1.1
     # via oasislmf
 cramjam==2.6.2
     # via fastparquet
-cryptography==39.0.0
+cryptography==39.0.1
     # via
     #   azure-storage-blob
     #   paramiko
