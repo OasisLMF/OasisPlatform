@@ -9,6 +9,8 @@ on:
     branches:
       - platform-2.0
       - platform-2.0-develop
+  schedule:
+    - cron:  '0 */6 * * *' # Run scan every 6 hours
 
   workflow_dispatch:
     inputs:
@@ -71,7 +73,7 @@ jobs:
         security-checks: 'vuln'
         skip-dirs: './docker'
 
-    - name: Trivy Configuration scanner (no fail) 
+    - name: Trivy Configuration scanner (no fail)
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
