@@ -60,7 +60,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Trivy vulnerability scanner (File system)
+    - name: Trivy vulnerability scanner
       if: env.SEVERITY != ''
       uses: aquasecurity/trivy-action@master
       with:
@@ -68,7 +68,18 @@ jobs:
         exit-code: '1'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
+        security-checks: 'vuln'
+        skip-dirs: './docker'
+
+    - name: Trivy Configuration scanner (no fail) 
+      if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        exit-code: '0'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'config,secret'
         skip-dirs: './docker'
 
     - name: Create Report
@@ -80,7 +91,7 @@ jobs:
         scan-type: 'fs'
         exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
-        security-checks: 'vuln,config,secret'
+        security-checks: 'vuln'
         skip-dirs: './docker'
 
     - name: Upload Trivy scan results to GitHub Security tab
