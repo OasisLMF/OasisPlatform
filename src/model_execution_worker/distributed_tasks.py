@@ -722,7 +722,7 @@ def collect_keys(
             df = df[~df.index.duplicated(keep='first')]
         pd_write_func = getattr(df, f"to_{file_type}")
         # Only write index for parquet files to avoid useless extra column for csv files.
-        pd_write_func(output_file, index=file_type=='parquet')
+        pd_write_func(output_file, index=file_type == 'parquet')
 
     def take_first(paths, output_file):
         first_path = paths[0]
