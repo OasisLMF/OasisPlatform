@@ -204,7 +204,7 @@ spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
-        - name: volume-mount-permissions
+        - name: set-mount-permissions
           image: busybox
           command: ["sh", "-c", "find /shared-fs -user root -exec chown 1000:1000 {} \\;"]
           volumeMounts:
