@@ -516,8 +516,11 @@ def keys_generation_task(fn):
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
             maybe_fetch_file(scope_file, params['oed_scope_csv'], scope_subdir)
 
+        # Complex model lookup files
         if settings_file:
             maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
+        else:
+            params['lookup_complex_config_json'] = None
         if complex_data_files:
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
         else:
