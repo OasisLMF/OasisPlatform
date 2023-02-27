@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [keycloak, redis, rabbitmq, postgres, mysql]
+        image: [keycloak, redis, rabbitmq, postgres]
         include:
         - image: keycloak
           report: 'keycloak-scan.sarif'
@@ -49,10 +49,6 @@ jobs:
         - image: postgres
           report: 'postgres-scan.sarif'
           exit-code: '1'
-
-        #- image: mysql
-        #  report: 'mysql-scan.sarif'
-        #  exit-code: '1'
 
     steps:
     - name: Set inputs
