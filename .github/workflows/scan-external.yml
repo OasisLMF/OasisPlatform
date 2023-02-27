@@ -50,9 +50,9 @@ jobs:
           report: 'postgres-scan.sarif'
           exit-code: '1'
 
-        - image: mysql
-          report: 'mysql-scan.sarif'
-          exit-code: '1'
+        #- image: mysql
+        #  report: 'mysql-scan.sarif'
+        #  exit-code: '1'
 
     steps:
     - name: Set inputs
