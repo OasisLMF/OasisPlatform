@@ -12,6 +12,7 @@ from .. import settings
 from ..oidc.keycloak_auth import keycloak_create_connection
 from urllib3.util import connection
 
+
 class SimpleTokenObtainPairSerializer(BaseTokenObtainPairSerializer):
     def __init__(self, *args, **kwargs):
         super(SimpleTokenObtainPairSerializer, self).__init__(*args, **kwargs)
