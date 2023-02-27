@@ -1,5 +1,5 @@
 pkg_list=(
-    'ods-tools==2.*'
+    'ods-tools==3.*'
     'oasislmf==1.27.*'
     joblib
     cryptography

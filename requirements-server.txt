@@ -24,21 +24,19 @@ attrs==22.2.0
     #   jsonschema
     #   service-identity
     #   twisted
-autobahn==23.1.1
+autobahn==23.1.2
     # via daphne
 automat==22.10.0
     # via twisted
 azure-core==1.26.3
-    # via
-    #   azure-storage-blob
-    #   msrest
-azure-storage-blob==12.14.1
+    # via azure-storage-blob
+azure-storage-blob==12.15.0
     # via django-storages
 billiard==3.6.4.0
     # via celery
-boto3==1.26.63
+boto3==1.26.79
     # via -r requirements-server.in
-botocore==1.29.63
+botocore==1.29.79
     # via
     #   boto3
     #   s3transfer
@@ -47,9 +45,7 @@ celery==5.2.7
     #   -r requirements-server.in
     #   django-celery-results
 certifi==2022.12.7
-    # via
-    #   msrest
-    #   requests
+    # via requests
 cffi==1.15.1
     # via cryptography
 chainmap==1.0.3
@@ -96,7 +92,7 @@ cryptography==39.0.1
     #   service-identity
 daphne==2.5.0
     # via channels
-django==3.2.17
+django==3.2.18
     # via
     #   channels
     #   django-debug-toolbar
@@ -111,7 +107,7 @@ django==3.2.17
     #   mozilla-django-oidc
 django-celery-results==2.4.0
     # via -r requirements-server.in
-django-cleanup==6.0.0
+django-cleanup==7.0.0
     # via -r requirements-server.in
 django-debug-toolbar==3.8.1
     # via -r requirements-server.in
@@ -133,13 +129,13 @@ djangorestframework-simplejwt==5.2.2
     # via -r requirements-server.in
 drf-nested-routers==0.93.4
     # via -r requirements-server.in
-drf-yasg==1.21.4
+drf-yasg==1.21.5
     # via -r requirements-server.in
 greenlet==2.0.2
     # via sqlalchemy
 gunicorn==20.1.0
     # via -r requirements-server.in
-hiredis==2.2.1
+hiredis==2.2.2
     # via aioredis
 httplib2==0.21.0
     # via pyrabbit
@@ -157,7 +153,7 @@ incremental==22.10.0
 inflection==0.5.1
     # via drf-yasg
 isodate==0.6.1
-    # via msrest
+    # via azure-storage-blob
 itypes==1.2.0
     # via coreapi
 jinja2==3.1.2
@@ -184,15 +180,11 @@ mozilla-django-oidc==3.0.0
     # via -r requirements-server.in
 msgpack==0.6.2
     # via channels-redis
-msrest==0.7.1
-    # via azure-storage-blob
-numpy==1.24.1
+numpy==1.24.2
     # via
     #   pandas
     #   pyarrow
-oauthlib==3.2.2
-    # via requests-oauthlib
-ods-tools==3.0.2
+ods-tools==3.0.3
     # via -r requirements-server.in
 packaging==23.0
     # via drf-yasg
@@ -202,7 +194,7 @@ pandas==1.5.3
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-server.in
-prompt-toolkit==3.0.36
+prompt-toolkit==3.0.37
     # via click-repl
 psycopg2-binary==2.9.5
     # via -r requirements-server.in
@@ -241,17 +233,13 @@ pytz==2022.7.1
     #   djangorestframework
     #   drf-yasg
     #   pandas
-redis==4.4.2
+redis==4.5.1
     # via -r requirements-server.in
 requests==2.28.2
     # via
     #   azure-core
     #   coreapi
     #   mozilla-django-oidc
-    #   msrest
-    #   requests-oauthlib
-requests-oauthlib==1.3.1
-    # via msrest
 ruamel-yaml==0.17.21
     # via drf-yasg
 ruamel-yaml-clib==0.2.7
@@ -279,9 +267,10 @@ twisted[tls]==22.10.0
     # via daphne
 txaio==23.1.1
     # via autobahn
-typing-extensions==4.4.0
+typing-extensions==4.5.0
     # via
     #   azure-core
+    #   azure-storage-blob
     #   twisted
 uritemplate==4.1.1
     # via
@@ -298,7 +287,7 @@ vine==5.0.0
     #   kombu
 wcwidth==0.2.6
     # via prompt-toolkit
-whitenoise==6.3.0
+whitenoise==6.4.0
     # via -r requirements-server.in
 zope-interface==5.5.2
     # via twisted
