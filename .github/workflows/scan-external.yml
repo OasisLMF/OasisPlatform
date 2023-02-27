@@ -97,6 +97,7 @@ jobs:
         scan-type: 'image'
         exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
         security-checks: 'vuln'
 
     - name: Upload Trivy scan results to GitHub Security tab
