@@ -513,7 +513,6 @@ def keys_generation_task(fn):
         else:
             params['user_data_dir'] = None
 
-
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename']):
