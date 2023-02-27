@@ -9,6 +9,9 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer as BaseT
 
 from .. import settings
 
+from ..oidc.keycloak_auth import keycloak_create_connection
+from urllib3.util import connection
+
 
 class SimpleTokenObtainPairSerializer(BaseTokenObtainPairSerializer):
     def __init__(self, *args, **kwargs):
@@ -61,6 +64,7 @@ class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
     """
     Token serializer to authenticate and obtain a access token from Keyloak
     """
+    connection.create_connection = keycloak_create_connection
 
     def __init__(self, *args, **kwargs):
         super(OIDCTokenObtainPairSerializer, self).__init__(*args, **kwargs)
@@ -98,6 +102,7 @@ class OIDCTokenRefreshSerializer(serializers.Serializer):
     """
     Token serializer to obtain a new access token from Keycloak
     """
+    connection.create_connection = keycloak_create_connection
 
     def validate(self, attrs):
         if 'HTTP_AUTHORIZATION' not in self.context['request'].META.keys():

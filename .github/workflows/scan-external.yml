@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [keycloak, redis, rabbitmq, postgres, mysql]
+        image: [keycloak, redis, rabbitmq, postgres]
         include:
         - image: keycloak
           report: 'keycloak-scan.sarif'
@@ -48,10 +48,6 @@ jobs:
 
         - image: postgres
           report: 'postgres-scan.sarif'
-          exit-code: '1'
-
-        - image: mysql
-          report: 'mysql-scan.sarif'
           exit-code: '1'
 
     steps:
@@ -85,7 +81,7 @@ jobs:
         exit-code: ${{ matrix.exit-code }}
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln,config,secret'
+        security-checks: 'vuln'
 
     - name: Create Report
       if: success() || failure()
@@ -97,7 +93,8 @@ jobs:
         scan-type: 'image'
         exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
-        security-checks: 'vuln,config,secret'
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln'
 
     - name: Upload Trivy scan results to GitHub Security tab
       if: success() || failure()

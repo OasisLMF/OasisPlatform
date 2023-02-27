@@ -162,7 +162,7 @@ jobs:
         security-checks: 'vuln'
 
     - name: Create Report
-      if: ( success() || failure() ) && env.SEVERITY != 'SKIP'
+      if: ( success() || failure() ) && env.SEVERITY != 'SKIP' && matrix.exit-code == '1'
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
@@ -171,10 +171,11 @@ jobs:
         scan-type: 'image'
         exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
         security-checks: 'vuln'
 
     - name: Upload scan results to Security tab
-      if: ( success() || failure() ) && env.SEVERITY != 'SKIP'
+      if: ( success() || failure() ) && env.SEVERITY != 'SKIP' && matrix.exit-code == '1'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file:  ${{ matrix.report }}

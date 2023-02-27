@@ -2,6 +2,7 @@ pkg_list=(
     'ods-tools==3.*'
     'oasislmf==1.27.*'
     joblib
+    cryptography
     oauthlib
     parso
     certifi

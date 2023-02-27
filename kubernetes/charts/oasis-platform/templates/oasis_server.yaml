@@ -41,7 +41,7 @@ metadata:
 data:
   host: {{ .Values.oasisWebsocket.name }}
   port: "{{ .Values.oasisWebsocket.port }}"
----  
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -122,7 +122,7 @@ spec:
           ports:
             - containerPort: {{ .Values.oasisWebsocket.port }}
               name: {{ .Values.oasisWebsocket.name }}
-          command: [ "./asgi/run-asgi.sh" ]    
+          command: [ "./asgi/run-asgi.sh" ]
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
@@ -204,6 +204,12 @@ spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
+        - name: set-mount-permissions
+          image: busybox
+          command: ["sh", "-c", "find /shared-fs -user root -exec chown 1000:1000 {} \\;"]
+          volumeMounts:
+          - mountPath: /shared-fs
+            name: shared-fs-persistent-storage
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisServer.name }}
