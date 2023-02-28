@@ -1,6 +1,14 @@
 name: Platform Schema (OpenAPI)
 
 on:
+  push:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+  pull_request:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
   workflow_dispatch:
   workflow_call:
 
@@ -12,20 +20,18 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
-      with:
-        ref: ${{ github.ref_name }}
 
-    - name: Set up Python
-      run: |
-        mkdir -p $(dirname ${{ env.SCHEMA }})
-        sudo apt-get update  && sudo apt-get upgrade -y
-        sudo apt-get install -y --no-install-recommends python3 python3-pip
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
     - name: Install requirments
       run: pip install -r requirements-server.txt
 
     - name: Generate OpenAPI
       run: |
+        test -d $(dirname ${{ env.SCHEMA }}) || mkdir -p $(dirname ${{ env.SCHEMA }})
         python ./manage.py migrate
         python ./manage.py generate_swagger ${{ env.SCHEMA }}
 
@@ -38,4 +44,3 @@ jobs:
 
     - name: Test Schema
       run: ./scripts/build-maven.sh $(cat VERSION)
-
