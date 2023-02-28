@@ -33,6 +33,7 @@ jobs:
 
     - name: Generate OpenAPI
       run: |
+        test -d $(dirname ${{ env.SCHEMA }}) || mkdir -p $(dirname ${{ env.SCHEMA }})
         python ./manage.py migrate
         python ./manage.py generate_swagger ${{ env.SCHEMA }}
 
