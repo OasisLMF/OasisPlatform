@@ -1,6 +1,27 @@
 OasisPlatform Changelog
 =======================
 
+`2.1.0`_
+ ---------
+* [#754](https://github.com/OasisLMF/OasisPlatform/pull/762) - Update the model settings schema to include correlation options  
+* [#740](https://github.com/OasisLMF/OasisPlatform/pull/709) - CVE Update external Image versions 
+* [#711](https://github.com/OasisLMF/OasisPlatform/pull/711) - Github actions CI/CD update
+* [#734](https://github.com/OasisLMF/OasisPlatform/pull/744) - Add OED v3 support to the scalable platform 
+* [#741](https://github.com/OasisLMF/OasisPlatform/pull/745) - Fix Piwind testing on platform 2 
+* [#746](https://github.com/OasisLMF/OasisPlatform/pull/746) - CVE scans are raising issues but Actions marked as passed
+* [#738](https://github.com/OasisLMF/OasisPlatform/pull/748) - CVE update Prometheus 
+* [#717](https://github.com/OasisLMF/OasisPlatform/pull/717) - Fixes for Github actions - Platform 2.x
+* [#718](https://github.com/OasisLMF/OasisPlatform/pull/719) - ConfigMap error when installing the helm charts to k3s
+* [#753](https://github.com/OasisLMF/OasisPlatform/pull/753) - Set ods-tools 3.0.2
+* [#722, #723](https://github.com/OasisLMF/OasisPlatform/pull/724) - Added OED validation on file upload, and updated ods-tools package to 3.0.1
+* [#740, #742](https://github.com/OasisLMF/OasisPlatform/pull/757) - Update external image versions 
+* [#758](https://github.com/OasisLMF/OasisPlatform/pull/758) - Fixes for merging of distributed input files
+* [#729](https://github.com/OasisLMF/OasisPlatform/pull/730) - No support for private image registries
+* [#674](https://github.com/OasisLMF/OasisPlatform/pull/731) - Collect custom lookup output 
+* [#764](https://github.com/OasisLMF/OasisPlatform/pull/764) - Fix schema build workflow
+* [#669](https://github.com/OasisLMF/OasisPlatform/pull/670) - Remove "lookup_complex_config_json" if no settings file given
+.. _`2.1.0`:  https://github.com/OasisLMF/OasisPlatform/compare/2.1.0-dev...2.1.0
+
 `1.18.0`_
  ---------
 * [#512](https://github.com/OasisLMF/OasisPlatform/pull/512) - Fix/django CVE issues
