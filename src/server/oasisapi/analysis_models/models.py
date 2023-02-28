@@ -47,7 +47,8 @@ class ModelScalingOptions(models.Model):
         ('QUEUE_LOAD', 'Scale based on model queue load'),
         ('DYNAMIC_TASKS', 'Scale based on tasks per worker'),
     )
-    scaling_strategy = models.CharField(max_length=max(len(c) for c in scaling_types._db_values), choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
+    scaling_strategy = models.CharField(max_length=max(len(c) for c in scaling_types._db_values),
+                                        choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
     worker_count_fixed = models.PositiveSmallIntegerField(default=1, null=False)
     worker_count_max = models.PositiveSmallIntegerField(default=10, null=False)
     chunks_per_worker = models.PositiveIntegerField(default=10, null=False)
@@ -58,12 +59,60 @@ class ModelChunkingOptions(models.Model):
         ('FIXED_CHUNKS', 'Fixed run partion sizes'),
         ('DYNAMIC_CHUNKS', 'Distribute runs based on input size'),
     )
-    lookup_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values), choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
-    loss_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values), choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
+    lookup_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values),
+                                       choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
+    loss_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values),
+                                     choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
     dynamic_locations_per_lookup = models.PositiveIntegerField(default=10000, null=False)
     dynamic_events_per_analysis = models.PositiveIntegerField(default=1, null=False)
+    dynamic_chunks_max = models.PositiveIntegerField(default=200, null=False)
     fixed_analysis_chunks = models.PositiveSmallIntegerField(default=1, null=True)
     fixed_lookup_chunks = models.PositiveSmallIntegerField(default=1, null=True)
+
+
+class SettingsTemplate(TimeStampedModel):
+    name = models.CharField(
+        max_length=255,
+        help_text=_('Name for analysis settings template')
+    )
+    description = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        default=None,
+        help_text=_('Description for type of analysis run settings.')
+    )
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='settings_template'
+    )
+    file = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        default=None,
+        related_name="analysis_settings_template"
+    )
+
+    def __str__(self):
+        return 'SettingsTemplate_{}'.format(self.name)
+
+    def get_filename(self):
+        if self.settings_template:
+            return self.file.filename
+        else:
+            return None
+
+    def get_filestore(self):
+        if self.settings_template:
+            return self.settings_template.file.name
+        else:
+            return None
+
+    def get_absolute_settings_template_url(self, model_pk, request=None):
+        return reverse('models-setting_templates-content', kwargs={'version': 'v1', 'pk': self.pk, 'models_pk': model_pk}, request=request)
 
 
 class AnalysisModel(TimeStampedModel):
@@ -74,6 +123,7 @@ class AnalysisModel(TimeStampedModel):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
     data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
+    template_files = models.ManyToManyField(SettingsTemplate, blank=True, related_name='analyses_model_settings_template')
     ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
     ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
@@ -89,6 +139,7 @@ class AnalysisModel(TimeStampedModel):
 
     class Meta:
         unique_together = ('supplier_id', 'model_id', 'version_id')
+        ordering = ['id']
 
     def __str__(self):
         return '{}-{}-{}'.format(self.supplier_id, self.model_id, self.version_id)
@@ -123,14 +174,19 @@ class AnalysisModel(TimeStampedModel):
 
     def get_absolute_resources_file_url(self, request=None):
         return reverse('analysis-model-resource-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
     def get_absolute_versions_url(self, request=None):
         return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
     def get_absolute_settings_url(self, request=None):
         return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
     def get_absolute_scaling_configuration_url(self, request=None):
         return reverse('analysis-model-scaling-configuration', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
     def get_absolute_chunking_configuration_url(self, request=None):
         return reverse('analysis-model-chunking-configuration', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
 
 class QueueModelAssociation(models.Model):
     model = models.ForeignKey(AnalysisModel, null=False, on_delete=models.CASCADE, related_name='queue_associations')
@@ -141,7 +197,6 @@ class QueueModelAssociation(models.Model):
 
     def __str__(self):
         return f'{self.model}: {self.queue_name}'
-
 
 
 @receiver(post_save, sender=AnalysisModel)
@@ -157,12 +212,13 @@ def create_default_scaling_options(sender, instance, **kwargs):
         instance.scaling_options.save()
         instance.save()
 
+
 @receiver(post_delete, sender=AnalysisModel)
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
     files_for_removal = [
-         'resource_file',
+        'resource_file',
     ]
     for ref in files_for_removal:
         try:

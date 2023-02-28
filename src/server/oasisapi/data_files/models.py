@@ -13,7 +13,7 @@ class DataFile(TimeStampedModel):
         max_length=255,
         help_text=_('Type of data contained within the file.')
     )
-    file_category= models.CharField(
+    file_category = models.CharField(
         max_length=255,
         blank=True,
         null=True,
@@ -34,6 +34,9 @@ class DataFile(TimeStampedModel):
         related_name="content_data_file"
     )
     groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+
+    class Meta:
+        ordering = ['id']
 
     def __str__(self):
         return 'DataFile_{}'.format(self.file)

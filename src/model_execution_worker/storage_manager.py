@@ -15,6 +15,7 @@ from oasislmf.utils.exceptions import OasisException
 LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 
+
 class MissingInputsException(OasisException):
     def __init__(self, input_filepath):
         super(MissingInputsException, self).__init__('Input file not found: {}'.format(input_filepath))
@@ -26,6 +27,7 @@ class BaseStorageConnector(object):
     Implements storage for a local fileshare between
     `server` and `worker` containers
     """
+
     def __init__(self, setting, logger=None):
 
         # Use for caching files across multiple runs, set value 'None' or 'False' to disable
@@ -114,7 +116,7 @@ class BaseStorageConnector(object):
         stored_fp = os.path.join(storage_dir, store_reference)
 
         self.logger.info('Store file: {} -> {}'.format(file_path, stored_fp))
-        shutil.copy(file_path, stored_fp)
+        shutil.copyfile(file_path, stored_fp)
         return os.path.join(storage_subdir, store_reference)
 
     def _store_dir(self, directory_path, storage_fname=None, storage_subdir='', suffix=None, arcname=None, **kwargs):
@@ -163,19 +165,17 @@ class BaseStorageConnector(object):
         )
         if os.path.isfile(fpath):
             logging.info('Get shared file: {}'.format(fpath))
-            if output_path:
-                shutil.copy(fpath, output_path)
+            if os.path.isdir(output_path):
+                shutil.copyfile(
+                    fpath,
+                    os.path.join(output_path, os.path.basename(fpath))
+                )
+            else:
+                shutil.copyfile(fpath, output_path)
             return os.path.abspath(fpath)
 
         else:
             raise MissingInputsException(fpath)
-
-        #fpath = os.path.join(
-        #    self.media_root,
-        #    os.path.basename(reference)
-        #)
-        #logging.info('Get shared file: {}'.format(reference))
-        #return os.path.abspath(fpath)
 
     def extract(self, archive_fp, directory, storage_subdir=''):
         """ Extract tar file
@@ -270,7 +270,7 @@ class BaseStorageConnector(object):
                 cached_file = os.path.join(self.cache_root, fname)
                 if os.path.isfile(cached_file):
                     logging.info('Get from Cache: {}'.format(fname))
-                    shutil.copy(cached_file, fpath)
+                    shutil.copyfile(cached_file, fpath)
                     return os.path.abspath(fpath)
 
             # Download if not cached
@@ -282,7 +282,7 @@ class BaseStorageConnector(object):
             # Store in cache if enabled
             if self.cache_root:
                 os.makedirs(self.cache_root, exist_ok=True)
-                shutil.copy(fpath, cached_file)
+                shutil.copyfile(fpath, cached_file)
             return os.path.abspath(fpath)
 
         # return local file
@@ -296,7 +296,6 @@ class BaseStorageConnector(object):
             else:
                 fpath = output_path
             return self._fetch_file(reference, fpath)
-
 
     def put(self, reference, filename=None, subdir='', suffix=None, arcname=None):
         """ Place object in storage
@@ -362,7 +361,6 @@ class BaseStorageConnector(object):
             logging.info('Deleted Shared file: {}'.format(ref_path))
         else:
             logging.info('Delete Error - Unknwon reference {}'.format(reference))
-
 
     def delete_dir(self, reference):
         """

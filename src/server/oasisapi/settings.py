@@ -11,17 +11,16 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
-
 import sys
+import ssl
+
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
-import urllib
 
 from ...common.shared import set_aws_log_level
 from ...conf import iniconf  # noqa
 from ...conf.celeryconf import *  # noqa
 from ...common.shared import set_aws_log_level, set_azure_log_level
-
 
 
 IN_TEST = 'test' in sys.argv
@@ -39,7 +38,7 @@ if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
     DEBUG = True
     DEBUG_TOOLBAR = True
     URL_SUB_PATH = False
-    CONSOLE_DEBUG = True # disable celery / db checks in health check 
+    CONSOLE_DEBUG = True  # disable celery / db checks in health check
 else:
     # SECURITY WARNING: don't run with debug turned on in production!
     MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
@@ -222,7 +221,7 @@ else:
 
     # https://github.com/davesque/django-rest-framework-simplejwt
     SIMPLE_JWT = {
-        'ACCESS_TOKEN_LIFETIME':  iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
+        'ACCESS_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
         'REFRESH_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_REFRESH_LIFETIME', fallback='days=2'),
         'ROTATE_REFRESH_TOKENS': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
         'BLACKLIST_AFTER_ROTATION': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
@@ -251,13 +250,13 @@ USE_L10N = True
 USE_TZ = True
 
 # Place the app in a sub path (swagger still available in /)
-FORCE_SCRIPT_NAME = '/api'
+# FORCE_SCRIPT_NAME = '/api/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 MEDIA_URL = '/api/media/'
 STATIC_URL = '/api/static/'
-STATIC_DEBUG_URL = '/static/'  #when running
+STATIC_DEBUG_URL = '/static/'  # when running
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -298,27 +297,26 @@ AZURE_CONTAINER = '<blob container name>'
 AZURE_LOCATION = '<subdir in blob container name>'
 """
 AZURE_ACCOUNT_NAME = iniconf.settings.get('server', 'AZURE_ACCOUNT_NAME', fallback=None)
-AZURE_ACCOUNT_KEY  = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback=None)
+AZURE_ACCOUNT_KEY = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback=None)
 AZURE_CUSTOM_DOMAIN = f'{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
 AZURE_CONTAINER = iniconf.settings.get('server', 'AZURE_CONTAINER', fallback=None)
 AZURE_LOCATION = iniconf.settings.get('server', 'AZURE_LOCATION', fallback='')
 AZURE_SHARED_CONTAINER = iniconf.settings.get('server', 'AZURE_SHARED_CONTAINER', fallback=True)
 AZURE_OVERWRITE_FILES = iniconf.settings.get('server', 'AZURE_OVERWRITE_FILES', fallback=True)
 
-## Optional Blob storage settings
+# Optional Blob storage settings
 AZURE_LOG_LEVEL = iniconf.settings.get('server', 'AZURE_LOG_LEVEL', fallback="")
 AZURE_SSL = iniconf.settings.get('server', 'AZURE_SSL', fallback=True)
 
 # WARNING, adding default settings with 'None' casues storage adapter to break
-#AZURE_UPLOAD_MAX_CONN = iniconf.settings.get('server', 'AZURE_UPLOAD_MAX_CONN', fallback=2)
-#AZURE_CONNECTION_TIMEOUT_SECS = iniconf.settings.get('server', 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20)
-#AZURE_BLOB_MAX_MEMORY_SIZE = iniconf.settings.get('server', 'AZURE_BLOB_MAX_MEMORY_SIZE', fallback='2MB')
-#AZURE_URL_EXPIRATION_SECS = iniconf.settings.get('server', 'AZURE_URL_EXPIRATION_SECS', fallback=None)
-#AZURE_CONNECTION_STRING = iniconf.settings.get('server', 'AZURE_CONNECTION_STRING', fallback=None)
-#AZURE_TOKEN_CREDENTIAL = iniconf.settings.get('server', 'AZURE_TOKEN_CREDENTIAL', fallback=None)
-#AZURE_CACHE_CONTROL = iniconf.settings.get('server', 'AZURE_CACHE_CONTROL', fallback=None)
-#AZURE_OBJECT_PARAMETERS = iniconf.settings.get('server', 'AZURE_OBJECT_PARAMETERS', fallback=None)
-
+# AZURE_UPLOAD_MAX_CONN = iniconf.settings.get('server', 'AZURE_UPLOAD_MAX_CONN', fallback=2)
+# AZURE_CONNECTION_TIMEOUT_SECS = iniconf.settings.get('server', 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20)
+# AZURE_BLOB_MAX_MEMORY_SIZE = iniconf.settings.get('server', 'AZURE_BLOB_MAX_MEMORY_SIZE', fallback='2MB')
+# AZURE_URL_EXPIRATION_SECS = iniconf.settings.get('server', 'AZURE_URL_EXPIRATION_SECS', fallback=None)
+# AZURE_CONNECTION_STRING = iniconf.settings.get('server', 'AZURE_CONNECTION_STRING', fallback=None)
+# AZURE_TOKEN_CREDENTIAL = iniconf.settings.get('server', 'AZURE_TOKEN_CREDENTIAL', fallback=None)
+# AZURE_CACHE_CONTROL = iniconf.settings.get('server', 'AZURE_CACHE_CONTROL', fallback=None)
+# AZURE_OBJECT_PARAMETERS = iniconf.settings.get('server', 'AZURE_OBJECT_PARAMETERS', fallback=None)
 
 
 # Select Data Storage
@@ -345,6 +343,17 @@ else:
 
 # storage selector for exposure files
 PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
+PORTFOLIO_UPLOAD_VALIDATION = iniconf.settings.getboolean('server', 'PORTFOLIO_UPLOAD_VALIDATION', fallback=True)
+PORTFOLIO_VALIDATION_CONFIG = [
+    {'name': 'required_fields', 'on_error': 'return'},
+    {'name': 'unknown_column', 'on_error': 'return'},
+    {'name': 'valid_values', 'on_error': 'return'},
+    {'name': 'perils', 'on_error': 'return'},
+    {'name': 'occupancy_code', 'on_error': 'return'},
+    {'name': 'construction_code', 'on_error': 'return'},
+    {'name': 'country_and_area_code', 'on_error': 'return'},
+]
+
 
 LOGGING = {
     'version': 1,
@@ -355,14 +364,14 @@ LOGGING = {
     },
     'loggers': {
         'drf_yasg': {
-                'handlers': ['console'],
-                'level': 'WARNING',
-                'propagate': False,
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
         },
         'numexpr': {
-                'handlers': ['console'],
-                'level': 'WARNING',
-                'propagate': False,
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
         },
     },
     'formatters': {
@@ -390,15 +399,30 @@ if IN_TEST:
     BROKER_URL = 'memory://'
     LOGGING['root'] = {}
 
+
+CHANNEL_LAYER_SSL = iniconf.settings.getboolean('server', 'channel_layer_ssl', fallback=False)
 CHANNEL_LAYER_HOST = iniconf.settings.get('server', 'channel_layer_host', fallback='localhost')
 CHANNEL_LAYER_PASS = iniconf.settings.get('server', 'channel_layer_pass', fallback='')
 CHANNEL_LAYER_USER = iniconf.settings.get('server', 'channel_layer_user', fallback='')
 CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_port', fallback='6379')
+# CHANNEL_LAYER_PORT = iniconf.settings.get('server', 'channel_layer_port', fallback='6379' if not CHANNEL_LAYER_SSL else '6380')
+
+if CHANNEL_LAYER_SSL:
+    ssl_context = ssl.SSLContext()
+    ssl_context.check_hostname = False
+    channel_host = [{
+        'address': f'rediss://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0',
+        'ssl': ssl_context,
+    }]
+else:
+    channel_host = [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0']
+
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [f'redis://{CHANNEL_LAYER_USER}:{CHANNEL_LAYER_PASS}@{CHANNEL_LAYER_HOST}:{CHANNEL_LAYER_PORT}/0'],
+            'hosts': channel_host,
             'symmetric_encryption_keys': [SECRET_KEY],
             "capacity": 1500,
         },
@@ -432,3 +456,17 @@ WSGI_APPLICATION = 'src.server.oasisapi.wsgi.application'
 if 'pytest' in sys.argv[0]:
     FORCE_SCRIPT_NAME = ''
     MEDIA_ROOT = './shared-fs/'
+
+"""
+Workaround, By default Django will try a chmod at file store to match its permistions, for disks
+mounted as root, world writable. `drwxrwxrwx   2 root root    0 Jun  6 13:19 shared-fs`
+
+The write content part works, but fails at chmod with:
+    Exception Type: PermissionError at /V1/portfolios/3/location_file/
+    Exception Value: [Errno 1] Operation not permitted: '/shared-fs/81987e7e62244184ba80a61dda2c194e.parquet'
+    Request information:
+
+To override this, that step will be skipped if 'FILE_UPLOAD_PERMISSIONS' is set as none
+https://github.com/django/django/blob/main/django/core/files/storage.py#L337-L338
+"""
+FILE_UPLOAD_PERMISSIONS = None

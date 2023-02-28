@@ -11,7 +11,7 @@ from django.urls import reverse
 from django_webtest import WebTestMixin
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
-from hypothesis.strategies import text, binary, sampled_from, fixed_dictionaries, integers
+from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -27,13 +27,12 @@ settings.register_profile("ci", deadline=1000.0)
 settings.load_profile("ci")
 
 
-
 class PortfolioApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -193,7 +192,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_create_analysis_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -343,12 +342,17 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     self.assertEqual(response.json['model'], model.pk)
                     self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.get_absolute_settings_file_url())
                     self.assertEqual(response.json['input_file'], response.request.application_url + analysis.get_absolute_input_file_url())
-                    self.assertEqual(response.json['lookup_errors_file'], response.request.application_url + analysis.get_absolute_lookup_errors_file_url())
-                    self.assertEqual(response.json['lookup_success_file'], response.request.application_url + analysis.get_absolute_lookup_success_file_url())
-                    self.assertEqual(response.json['lookup_validation_file'], response.request.application_url + analysis.get_absolute_lookup_validation_file_url())
-                    self.assertEqual(response.json['input_generation_traceback_file'], response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url())
+                    self.assertEqual(response.json['lookup_errors_file'], response.request.application_url +
+                                     analysis.get_absolute_lookup_errors_file_url())
+                    self.assertEqual(response.json['lookup_success_file'], response.request.application_url +
+                                     analysis.get_absolute_lookup_success_file_url())
+                    self.assertEqual(response.json['lookup_validation_file'], response.request.application_url +
+                                     analysis.get_absolute_lookup_validation_file_url())
+                    self.assertEqual(response.json['input_generation_traceback_file'], response.request.application_url +
+                                     analysis.get_absolute_input_generation_traceback_file_url())
                     self.assertEqual(response.json['output_file'], response.request.application_url + analysis.get_absolute_output_file_url())
-                    self.assertEqual(response.json['run_traceback_file'], response.request.application_url + analysis.get_absolute_run_traceback_file_url())
+                    self.assertEqual(response.json['run_traceback_file'], response.request.application_url +
+                                     analysis.get_absolute_run_traceback_file_url())
                     generate_mock.assert_called_once_with(analysis, user)
 
 
@@ -357,7 +361,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_accounts_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_accounts_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -389,7 +393,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
 
     def test_accounts_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -432,7 +436,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_accounts_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -456,13 +460,12 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
 
-
     def test_accounts_file_invalid_uploaded___parquet_exception_raised(self):
-        content_type='text/csv'
-        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+        content_type = 'text/csv'
+        file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -479,12 +482,12 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     def test_accounts_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
-        content_type='text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
-        file_content= test_data.to_csv(index=False).encode('utf-8')
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -518,12 +521,13 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
                 pd.testing.assert_frame_equal(prq_return_data, test_data)
 
+
 class PortfolioLocationFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_location_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_location_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -555,7 +559,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
 
     def test_location_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -575,7 +579,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_location_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -600,11 +604,11 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, content_type)
 
     def test_location_file_invalid_uploaded___parquet_exception_raised(self):
-        content_type='text/csv'
-        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+        content_type = 'text/csv'
+        file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -621,12 +625,12 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     def test_location_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
-        content_type='text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
-        file_content= test_data.to_csv(index=False).encode('utf-8')
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -659,12 +663,13 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
                 pd.testing.assert_frame_equal(prq_return_data, test_data)
 
+
 class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_reinsurance_scope_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_reinsurance_scope_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -696,7 +701,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
 
     def test_reinsurance_scope_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -716,7 +721,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_reinsurance_scope_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -741,11 +746,11 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, content_type)
 
     def test_reinsurance_scope_file_invalid_uploaded___parquet_exception_raised(self):
-        content_type='text/csv'
-        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+        content_type = 'text/csv'
+        file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -762,12 +767,12 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     def test_reinsurance_scope_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
-        content_type='text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
-        file_content= test_data.to_csv(index=False).encode('utf-8')
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -807,7 +812,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(portfolio.get_absolute_reinsurance_info_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_reinsurance_info_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -839,7 +844,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
 
     def test_reinsurance_info_file_is_not_a_valid_format___response_is_400(self):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -859,7 +864,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
     @given(file_content=binary(min_size=1), content_type=sampled_from(['text/csv', 'application/json']))
     def test_reinsurance_info_file_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -884,11 +889,11 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, content_type)
 
     def test_reinsurance_info_file_invalid_uploaded___parquet_exception_raised(self):
-        content_type='text/csv'
-        file_content=b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
+        content_type = 'text/csv'
+        file_content = b'\xf2hb\xca\xd2\xe6\xf3\xb0\xc1\xc7'
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -905,12 +910,12 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 self.assertEqual(400, response.status_code)
 
     def test_reinsurance_info_file_is_uploaded_as_parquet___file_can_be_retrieved(self):
-        content_type='text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5 ,6]})
-        file_content= test_data.to_csv(index=False).encode('utf-8')
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
         with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True):
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
 
@@ -943,3 +948,418 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
 
                 prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
                 pd.testing.assert_frame_equal(prq_return_data, test_data)
+
+
+LOCATION_DATA_VALID = """PortNumber,AccNumber,LocNumber,IsTenant,BuildingID,CountryCode,Latitude,Longitude,StreetAddress,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
+1,A11111,10002082046,1,1,GB,52.76698052,-0.895469856,1 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,220000,0,0,0,GBP,2.0.0
+1,A11111,10002082047,1,1,GB,52.76697956,-0.89536613,2 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,790000,0,0,0,GBP,2.0.0
+1,A11111,10002082048,1,1,GB,52.76697845,-0.895247587,3 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,160000,0,0,0,GBP,2.0.0
+1,A11111,10002082049,1,1,GB,52.76696096,-0.895473908,4 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,30000,0,0,0,GBP,2.0.0
+"""
+
+ACCOUNT_DATA_VALID = """PortNumber,AccNumber,AccCurrency,PolNumber,PolPerilsCovered,PolInceptionDate,PolExpiryDate,LayerNumber,LayerParticipation,LayerLimit,LayerAttachment,OEDVersion
+1,A11111,GBP,Layer1,WW1,2018-01-01,2018-12-31,1,0.3,5000000,500000,2.0.0
+1,A11111,GBP,Layer2,WW1,2018-01-01,2018-12-31,2,0.3,100000000,5500000,2.0.0
+"""
+
+INFO_DATA_VALID = """ReinsNumber,ReinsLayerNumber,ReinsName,ReinsPeril,ReinsInceptionDate,ReinsExpiryDate,CededPercent,RiskLimit,RiskAttachment,OccLimit,OccAttachment,PlacedPercent,ReinsCurrency,InuringPriority,ReinsType,RiskLevel,UseReinsDates,OEDVersion
+1,1,ABC QS,WW1,2018-01-01,2018-12-31,1,0,0,0,0,1,GBP,1,SS,LOC,N,2.0.0
+"""
+
+SCOPE_DATA_VALID = """ReinsNumber,PortNumber,AccNumber,PolNumber,LocGroup,LocNumber,CedantName,ProducerName,LOB,CountryCode,ReinsTag,CededPercent,OEDVersion
+1,1,A11111,,,10002082047,,,,,,0.1,2.0.0
+1,1,A11111,,,10002082048,,,,,,0.2,2.0.0
+"""
+
+LOCATION_DATA_INVALID = """Port,AccNumber,LocNumb,IsTenant,BuildingID,CountryCode,Latitude,Longitude,Street,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
+1,A11111,10002082046,1,1,GB,52.76698052,-0.895469856,1 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,220000,0,0,0,GBP,2.0.0
+1,A11111,10002082047,1,1,GB,52.76697956,-0.89536613,2 ABINGDON ROAD,LE13 0HL,1050,5000,XXYA,790000,0,0,0,GBP,2.0.0
+1,A11111,10002082048,1,1,GB,52.76697845,,3 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,160000,0,0,0,GBP,2.0.0
+1,A11111,10002082049,1,1,GB,52.76696096,-0.895473908,4 ABINGDON ROAD,LE13 0HL,1050,-1,WW1,30000,0,0,0,GBP,2.0.0
+"""
+
+
+class PortfolioValidation(WebTestMixin, TestCase):
+
+    def test_all_exposure__are_valid(self):
+        content_type = 'text/csv'
+        loc_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        acc_data = pd.read_csv(io.StringIO(ACCOUNT_DATA_VALID))
+        inf_data = pd.read_csv(io.StringIO(INFO_DATA_VALID))
+        scp_data = pd.read_csv(io.StringIO(SCOPE_DATA_VALID))
+
+        loc_file_content = loc_data.to_csv(index=False).encode('utf-8')
+        acc_file_content = acc_data.to_csv(index=False).encode('utf-8')
+        inf_file_content = inf_data.to_csv(index=False).encode('utf-8')
+        scp_file_content = scp_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), loc_file_content),
+                    ),
+                )
+                self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), acc_file_content),
+                    ),
+                )
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), inf_file_content),
+                    ),
+                )
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), scp_file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': False,
+                    'accounts_validated': False,
+                    'reinsurance_info_validated': False,
+                    'reinsurance_scope_validated': False})
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': True,
+                    'accounts_validated': True,
+                    'reinsurance_info_validated': True,
+                    'reinsurance_scope_validated': True})
+
+    def test_location_file__is_valid(self):
+        content_type = 'text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': False,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': None})
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': True,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': None})
+
+    def test_location_file__is_invalid__response_is_400(self):
+        content_type = 'text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_INVALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_location_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': False,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': None})
+
+                # Run validate - check is invalid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                self.assertEqual(400, validate_response.status_code)
+                self.assertEqual(validate_response.json, [
+                    ['location', 'missing required column PortNumber'],
+                    ['location', 'missing required column LocNumber'],
+                    ['location', "column 'Port' is not a valid oed field"],
+                    ['location', "column 'LocNumb' is not a valid oed field"],
+                    ['location', "column 'Street' is not a valid oed field"],
+                    ['location', 'LocPerilsCovered has invalid perils.\n  AccNumber LocPerilsCovered\n1    A11111             XXYA']
+                ])
+
+    def test_account_file__is_invalid__response_is_400(self):
+        content_type = 'text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_accounts_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': None,
+                    'accounts_validated': False,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': None})
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                self.assertEqual(400, validate_response.status_code)
+                self.assertEqual(validate_response.json, [
+                    ['account', 'missing required column AccCurrency'],
+                    ['account', 'missing required column PolNumber'],
+                    ['account', 'missing required column PolPerilsCovered'],
+                    ['account', "column 'LocNumber' is not a valid oed field"],
+                    ['account', "column 'IsTenant' is not a valid oed field"],
+                    ['account', "column 'BuildingID' is not a valid oed field"],
+                    ['account', "column 'CountryCode' is not a valid oed field"],
+                    ['account', "column 'Latitude' is not a valid oed field"],
+                    ['account', "column 'Longitude' is not a valid oed field"],
+                    ['account', "column 'StreetAddress' is not a valid oed field"],
+                    ['account', "column 'PostalCode' is not a valid oed field"],
+                    ['account', "column 'OccupancyCode' is not a valid oed field"],
+                    ['account', "column 'ConstructionCode' is not a valid oed field"],
+                    ['account', "column 'LocPerilsCovered' is not a valid oed field"],
+                    ['account', "column 'BuildingTIV' is not a valid oed field"],
+                    ['account', "column 'OtherTIV' is not a valid oed field"],
+                    ['account', "column 'ContentsTIV' is not a valid oed field"],
+                    ['account', "column 'BITIV' is not a valid oed field"],
+                    ['account', "column 'LocCurrency' is not a valid oed field"]
+                ])
+
+    def test_reinsurance_info_file__is_invalid__response_is_400(self):
+        content_type = 'text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': None,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': False,
+                    'reinsurance_scope_validated': None})
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                self.assertEqual(400, validate_response.status_code)
+                self.assertEqual(validate_response.json, [
+                    ['ri_info', 'missing required column ReinsNumber'],
+                    ['ri_info', 'missing required column ReinsPeril'],
+                    ['ri_info', 'missing required column PlacedPercent'],
+                    ['ri_info', 'missing required column ReinsCurrency'],
+                    ['ri_info', 'missing required column InuringPriority'],
+                    ['ri_info', 'missing required column ReinsType'],
+                    ['ri_info', "column 'PortNumber' is not a valid oed field"],
+                    ['ri_info', "column 'AccNumber' is not a valid oed field"],
+                    ['ri_info', "column 'LocNumber' is not a valid oed field"],
+                    ['ri_info', "column 'IsTenant' is not a valid oed field"],
+                    ['ri_info', "column 'BuildingID' is not a valid oed field"],
+                    ['ri_info', "column 'CountryCode' is not a valid oed field"],
+                    ['ri_info', "column 'Latitude' is not a valid oed field"],
+                    ['ri_info', "column 'Longitude' is not a valid oed field"],
+                    ['ri_info', "column 'StreetAddress' is not a valid oed field"],
+                    ['ri_info', "column 'PostalCode' is not a valid oed field"],
+                    ['ri_info', "column 'OccupancyCode' is not a valid oed field"],
+                    ['ri_info', "column 'ConstructionCode' is not a valid oed field"],
+                    ['ri_info', "column 'LocPerilsCovered' is not a valid oed field"],
+                    ['ri_info', "column 'BuildingTIV' is not a valid oed field"],
+                    ['ri_info', "column 'OtherTIV' is not a valid oed field"],
+                    ['ri_info', "column 'ContentsTIV' is not a valid oed field"],
+                    ['ri_info', "column 'BITIV' is not a valid oed field"],
+                    ['ri_info', "column 'LocCurrency' is not a valid oed field"]
+                ])
+
+    def test_reinsurance_scope_file__is_invalid__response_is_400(self):
+        content_type = 'text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': None,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': False})
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url() + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                self.assertEqual(400, validate_response.status_code)
+                self.assertEqual(validate_response.json, [
+                    ['ri_scope', 'missing required column ReinsNumber'],
+                    ['ri_scope', "column 'IsTenant' is not a valid oed field"],
+                    ['ri_scope', "column 'BuildingID' is not a valid oed field"],
+                    ['ri_scope', "column 'Latitude' is not a valid oed field"],
+                    ['ri_scope', "column 'Longitude' is not a valid oed field"],
+                    ['ri_scope', "column 'StreetAddress' is not a valid oed field"],
+                    ['ri_scope', "column 'PostalCode' is not a valid oed field"],
+                    ['ri_scope', "column 'OccupancyCode' is not a valid oed field"],
+                    ['ri_scope', "column 'ConstructionCode' is not a valid oed field"],
+                    ['ri_scope', "column 'LocPerilsCovered' is not a valid oed field"],
+                    ['ri_scope', "column 'BuildingTIV' is not a valid oed field"],
+                    ['ri_scope', "column 'OtherTIV' is not a valid oed field"],
+                    ['ri_scope', "column 'ContentsTIV' is not a valid oed field"],
+                    ['ri_scope', "column 'BITIV' is not a valid oed field"],
+                    ['ri_scope', "column 'LocCurrency' is not a valid oed field"]
+                ])

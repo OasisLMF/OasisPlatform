@@ -124,7 +124,6 @@ class AutoScaler:
             except ValueError as e:
                 logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
 
-
         if desired_replicas > 0 and wd.name in self.cleanup_deployments:
 
             if wd.name in self.cleanup_deployments:
@@ -190,9 +189,9 @@ class AutoScaler:
                     queue_names = analysis.get('queue_names', [])
 
                 ## REPLACED: with the code block above  ############
-                #queue_names = set()
-                #sub_task_statuses = analysis['sub_task_statuses']
-                #if sub_task_statuses and len(sub_task_statuses) > 0:
+                # queue_names = set()
+                # sub_task_statuses = analysis['sub_task_statuses']
+                # if sub_task_statuses and len(sub_task_statuses) > 0:
                 #    for sub_task in sub_task_statuses:
                 #        if sub_task['status'] != 'COMPLETED':
                 #            queue_names.add(sub_task['queue_name'])

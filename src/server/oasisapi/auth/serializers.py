@@ -9,6 +9,9 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer as BaseT
 
 from .. import settings
 
+from ..oidc.keycloak_auth import keycloak_create_connection
+from urllib3.util import connection
+
 
 class SimpleTokenObtainPairSerializer(BaseTokenObtainPairSerializer):
     def __init__(self, *args, **kwargs):
@@ -25,8 +28,7 @@ class SimpleTokenObtainPairSerializer(BaseTokenObtainPairSerializer):
         data['access_token'] = data['access']
         data['token_type'] = 'Bearer'
         data['expires_in'] = jwt_settings.api_settings.ACCESS_TOKEN_LIFETIME.total_seconds()
-        #data['expires_in'] = jwt_settings.api_settings.REFRESH_TOKEN_LIFETIME.total_seconds()
-
+        # data['expires_in'] = jwt_settings.api_settings.REFRESH_TOKEN_LIFETIME.total_seconds()
 
         del data['refresh']
         del data['access']
@@ -62,6 +64,8 @@ class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
     """
     Token serializer to authenticate and obtain a access token from Keyloak
     """
+    connection.create_connection = keycloak_create_connection
+
     def __init__(self, *args, **kwargs):
         super(OIDCTokenObtainPairSerializer, self).__init__(*args, **kwargs)
 
@@ -76,6 +80,7 @@ class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
                 'grant_type': 'password',
                 'client_id': settings.OIDC_RP_CLIENT_ID,
                 'client_secret': settings.OIDC_RP_CLIENT_SECRET,
+                'scope': 'openid',
                 'username': attrs.get('username', None),
                 'password': attrs.get('password', None)
             },
@@ -97,6 +102,7 @@ class OIDCTokenRefreshSerializer(serializers.Serializer):
     """
     Token serializer to obtain a new access token from Keycloak
     """
+    connection.create_connection = keycloak_create_connection
 
     def validate(self, attrs):
         if 'HTTP_AUTHORIZATION' not in self.context['request'].META.keys():
@@ -110,6 +116,7 @@ class OIDCTokenRefreshSerializer(serializers.Serializer):
                 'grant_type': 'refresh_token',
                 'client_id': settings.OIDC_RP_CLIENT_ID,
                 'client_secret': settings.OIDC_RP_CLIENT_SECRET,
+                'scope': 'openid',
                 'refresh_token': token
             },
             verify=False,

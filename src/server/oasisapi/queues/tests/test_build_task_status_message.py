@@ -3,10 +3,11 @@ from django.utils.timezone import now
 from freezegun import freeze_time
 from rest_framework.fields import DateTimeField
 
-from src.server.oasisapi.analyses.serializers import AnalysisSerializer, AnalysisTaskStatusSerializer
-from src.server.oasisapi.analyses.tests.fakes import fake_analysis, fake_analysis_task_status
-from src.server.oasisapi.queues.consumers import build_task_status_message, TaskStatusMessageItem, TaskStatusMessageAnalysisItem
-from src.server.oasisapi.queues.serializers import QueueSerializer
+from src.server.oasisapi.queues.consumers import build_task_status_message
+# from src.server.oasisapi.analyses.serializers import AnalysisSerializer, AnalysisTaskStatusSerializer
+# from src.server.oasisapi.analyses.tests.fakes import fake_analysis, fake_analysis_task_status
+# from src.server.oasisapi.queues.consumers import TaskStatusMessageItem, TaskStatusMessageAnalysisItem
+# from src.server.oasisapi.queues.serializers import QueueSerializer
 
 
 class BuildTaskStatusMessage(TestCase):

@@ -168,12 +168,32 @@ Variables for a channel layer client
     configMapKeyRef:
       name: {{ .Values.databases.channel_layer.name }}
       key: host
+- name: OASIS_SERVER_CHANNEL_LAYER_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.databases.channel_layer.name }}
+      key: port
+- name: OASIS_SERVER_CHANNEL_LAYER_SSL
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.databases.channel_layer.name }}
+      key: ssl
 {{- if eq (.Values.databases.channel_layer.type) "azure_redis" }}
 - name: OASIS_SERVER_CHANNEL_LAYER_PASS
   valueFrom:
     secretKeyRef:
       name: {{ .Values.databases.channel_layer.name }}
       key: password
+- name: OASIS_SERVER_CHANNEL_LAYER_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.databases.channel_layer.name }}
+      key: port
+- name: OASIS_SERVER_CHANNEL_LAYER_SSL
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.databases.channel_layer.name }}
+      key: ssl
 {{- end }}
 - name: OASIS_INPUT_GENERATION_CONTROLLER_QUEUE
   value: task-controller

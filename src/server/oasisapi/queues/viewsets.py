@@ -7,6 +7,7 @@ from .utils import get_queues_info
 
 from .consumers import build_all_queue_status_message
 
+
 class QueueViewSet(viewsets.ViewSet):
     @swagger_auto_schema(responses={200: QueueSerializer(many=True, read_only=True)})
     def list(self, request, *args, **kwargs):
@@ -15,6 +16,7 @@ class QueueViewSet(viewsets.ViewSet):
         """
         serializer = QueueSerializer(get_queues_info(), many=True)
         return Response(serializer.data)
+
 
 class WebsocketViewSet(viewsets.ViewSet):
     @swagger_auto_schema(responses={200: WebsocketSerializer(many=True, read_only=True)})
@@ -27,7 +29,7 @@ class WebsocketViewSet(viewsets.ViewSet):
         To print the websocket directly use the following:
         ```
         pip install websocket_client
-        ./manage.py ws_echo --url ws://localhost:8000/ws/v1/queue-status/
+        ./manage.py ws_echo --url ws://localhost:8001/ws/v1/queue-status/
         ```
         """
         return Response(build_all_queue_status_message())

@@ -1,6 +1,5 @@
 import json
 import io
-import ods_tools
 
 from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
@@ -8,6 +7,8 @@ from rest_framework.response import Response
 
 from .serializers import RelatedFileSerializer
 from ..permissions.group_auth import verify_user_is_in_obj_groups
+
+from .models import related_file_to_df
 
 
 def _delete_related_file(parent, field, user):
@@ -22,6 +23,7 @@ def _delete_related_file(parent, field, user):
         setattr(parent, field, None)
         parent.save(update_fields=[field])
         current.delete()
+
 
 def _get_chunked_content(f, chunk_size=1024):
     content = f.read(chunk_size)
@@ -44,9 +46,10 @@ def _handle_get_related_file(parent, field, request):
     # Parquet format requested and data stored as csv
     if file_format == 'parquet' and f.content_type == 'text/csv':
         output_buffer = io.BytesIO()
-        df = ods_tools.read_csv(io.BytesIO(f.file.read()))
+        df = related_file_to_df(f)
         df.to_parquet(output_buffer, index=False)
         output_buffer.seek(0)
+
         response = StreamingHttpResponse(output_buffer, content_type='application/octet-stream')
         response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, '.parquet')
         return response
@@ -54,9 +57,10 @@ def _handle_get_related_file(parent, field, request):
     # CSV format requested and data stored as Parquet
     if file_format == 'csv' and f.content_type == 'application/octet-stream':
         output_buffer = io.BytesIO()
-        df = ods_tools.read_parquet(io.BytesIO(f.file.read()))
+        df = related_file_to_df(f)
         df.to_csv(output_buffer, index=False)
         output_buffer.seek(0)
+
         response = StreamingHttpResponse(output_buffer, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, '.csv')
         return response
@@ -67,8 +71,9 @@ def _handle_get_related_file(parent, field, request):
     return response
 
 
-def _handle_post_related_file(parent, field, request, content_types, parquet_storage):
-    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={'request': request}, parquet_storage=parquet_storage)
+def _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate):
+    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={
+                                       'request': request}, parquet_storage=parquet_storage, field=field, oed_validate=oed_validate)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 
@@ -136,6 +141,7 @@ def _json_write_to_file(parent, field, request, serializer):
     response.data['file'] = instance.file.name
     return response
 
+
 def _json_read_from_file(parent, field):
     f = getattr(parent, field)
     if not f:
@@ -143,13 +149,14 @@ def _json_read_from_file(parent, field):
     else:
         return Response(json.load(f))
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False):
+
+def handle_related_file(parent, field, request, content_types, parquet_storage=False, oed_validate=None):
     method = request.method.lower()
 
     if method == 'get':
         return _handle_get_related_file(parent, field, request)
     elif method == 'post':
-        return _handle_post_related_file(parent, field, request, content_types, parquet_storage)
+        return _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field, request)
 

@@ -1,0 +1,111 @@
+name: Platform Vulnerability Scanning
+
+on:
+  push:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+  pull_request:
+    branches:
+      - platform-2.0
+      - platform-2.0-develop
+  schedule:
+    - cron:  '0 */6 * * *' # Run scan every 6 hours
+
+  workflow_dispatch:
+    inputs:
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+        required: false
+        default: 'CRITICAL,HIGH'
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: false
+        default: 'true'
+  workflow_call:
+    inputs:
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
+        required: false
+        default: 'CRITICAL,HIGH'
+        type: string
+      ignore_unfixed:
+        description: 'Include unfixed vulnerabilities in scan [true,false]'
+        required: false
+        default: 'true'
+        type: string
+      exit_code:
+        description: 'Exit code if vulnerabilities found [0,1]'
+        required: false
+        default: '1'
+        type: string
+
+jobs:
+  scan_repo:
+    name: Scan Repo
+    env:
+      SEVERITY: 'HIGH,CRITICAL'
+      REPORT: 'repo-results.sarif'
+      IGNORE_UNFIXED: 'true'
+      EXIT_CODE: '1'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Adding code-scanning URL
+      run: echo "### [code-scanning results](https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }})" >> $GITHUB_STEP_SUMMARY
+
+    - name: Set inputs
+      if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
+      run: |
+        echo "SEVERITY=${{ inputs.cve_severity }}" >> $GITHUB_ENV
+        echo "IGNORE_UNFIXED=${{ inputs.ignore_unfixed }}" >> $GITHUB_ENV
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Trivy vulnerability scanner
+      if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        exit-code: '1'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'vuln'
+        skip-dirs: './docker'
+
+    - name: Trivy Configuration scanner (no fail)
+      if: env.SEVERITY != ''
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        exit-code: '0'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
+        security-checks: 'config,secret'
+        skip-dirs: './docker'
+
+    - name: Create Report
+      if: success() || failure()
+      uses: aquasecurity/trivy-action@master
+      with:
+        format: 'sarif'
+        output:  ${{ env.REPORT }}
+        scan-type: 'fs'
+        exit-code: '0'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        security-checks: 'vuln'
+        skip-dirs: './docker'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      if: success() || failure()
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file:  ${{ env.REPORT }}
+
+    - name: Store CVE report
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.REPORT }}
+        path: ${{ env.REPORT }}
+        retention-days: 3

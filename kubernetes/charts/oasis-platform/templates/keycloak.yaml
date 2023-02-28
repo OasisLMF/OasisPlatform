@@ -94,9 +94,17 @@ spec:
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
+          args: [
+            "start-dev", 
+            "--import-realm",
+            "--http-relative-path /auth",
+            "--proxy passthrough",
+            "--hostname-strict=false"]
           ports:
             - containerPort: {{ .Values.keycloak.port }}
           env:
+            - name: KEYCLOAK_PROXY_ADDRESS_FORWARDING
+              value: "true"
             - name: DB_VENDOR
               {{- if eq .Values.databases.keycloak_db.type "mysql" }}
               value: mysql
@@ -128,12 +136,12 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.databases.keycloak_db.name }}
                   key: password
-            - name: KEYCLOAK_USER
+            - name: KEYCLOAK_ADMIN
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.keycloak.name }}
                   key: user
-            - name: KEYCLOAK_PASSWORD
+            - name: KEYCLOAK_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.keycloak.name }}
@@ -143,7 +151,7 @@ spec:
             - name: PROXY_ADDRESS_FORWARDING
               value: "true"
             - name: KEYCLOAK_IMPORT
-              value: "/opt/oasis-realm.json"
+              value: "/opt/keycloak/data/import/oasis-realm.json"
           startupProbe:
             httpGet:
               path: /auth/realms/master
@@ -161,8 +169,9 @@ spec:
             failureThreshold: 2
           volumeMounts:
             - name: realm-config
-              mountPath: /opt/oasis-realm.json
+              mountPath: /opt/keycloak/data/import/oasis-realm.json
               subPath: oasis
+
       volumes:
         - name: realm-config
           configMap:

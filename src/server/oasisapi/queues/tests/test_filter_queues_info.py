@@ -1,9 +1,10 @@
 from django.test import TestCase
 from mock import patch
 
-from src.server.oasisapi.analyses.models import AnalysisTaskStatus
-from src.server.oasisapi.analyses.tests.fakes import fake_analysis_task_status
-from src.server.oasisapi.queues.utils import get_queues_info, filter_queues_info
+# from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+# from src.server.oasisapi.analyses.tests.fakes import fake_analysis_task_status
+# from src.server.oasisapi.queues.utils import get_queues_info, filter_queues_info
+from src.server.oasisapi.queues.utils import filter_queues_info
 
 
 class FilterQueuesInfo(TestCase):

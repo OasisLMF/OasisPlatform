@@ -16,10 +16,11 @@ cli_test_conf = os.environ.get('PY_CONFIG', '/var/oasis/test/conf.ini')
 cli_test_output = True if os.environ.get('PY_TEST_OUTPUT') else False
 cli_test_case = os.environ.get('PY_TEST_CASE').split(' ') if os.environ.get('PY_TEST_CASE') else None
 cli_test_model = os.environ.get('PY_TEST_MODEL') if os.environ.get('PY_TEST_MODEL') else None
-cli_test_retry  = int(os.environ.get('PY_TEST_RETRY')) if os.environ.get('PY_TEST_MODEL') else 1
+cli_test_retry = int(os.environ.get('PY_TEST_RETRY')) if os.environ.get('PY_TEST_MODEL') else 1
 
 config = configparser.ConfigParser()
 config.read(os.path.abspath(cli_test_conf))
+
 
 def get_path(section, var, config=config):
     try:
@@ -59,7 +60,7 @@ def check_non_empty(result_path):
         file_path = os.path.join(result_path, csv)
         file_size = os.path.getsize(file_path)
         print(f'{file_size} Bytes: -> {csv}')
-        assert(file_size > 0)
+        assert (file_size > 0)
 
 
 # --- Test Paramatization --------------------------------------------------- #

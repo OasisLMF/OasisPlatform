@@ -1,8 +1,11 @@
 <img src="https://oasislmf.org/packages/oasis_theme_package/themes/oasis_theme/assets/src/oasis-lmf-colour.png" alt="Oasis LMF logo" width="250"/>
 
-[![Build Status](https://ci.oasislmfdev.org/buildStatus/icon?job=oasis_platform/master)](https://ci.oasislmfdev.org/view/Oasis/job/oasis_platform/job/master/)
 [![ktools version](https://img.shields.io/github/tag/Oasislmf/ktools?label=ktools)](https://github.com/OasisLMF/ktools/releases)
 [![PyPI version](https://badge.fury.io/py/oasislmf.svg)](https://badge.fury.io/py/oasislmf)
+
+[![Platform Image tests](https://github.com/OasisLMF/OasisPlatform/actions/workflows/test-images.yml/badge.svg?branch=master)](https://github.com/OasisLMF/OasisPlatform/actions/workflows/test-images.yml)
+[![Platform Python tests](https://github.com/OasisLMF/OasisPlatform/actions/workflows/test-python.yml/badge.svg?branch=master)](https://github.com/OasisLMF/OasisPlatform/actions/workflows/test-python.yml)
+[![Platform Vulnerability Scanning](https://github.com/OasisLMF/OasisPlatform/actions/workflows/scan.yml/badge.svg?branch=master)](https://github.com/OasisLMF/OasisPlatform/actions/workflows/scan.yml)
 
 # Oasis Platform
 Provides core components of the Oasis platform, specifically:

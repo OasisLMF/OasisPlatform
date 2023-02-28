@@ -9,29 +9,29 @@ images:
       imagePullPolicy: Never
     ui:
       image: coreoasis/oasisui_app
-      version: 1.11.3
+      version: 1.11.6
     worker_controller:
       image: coreoasis/worker_controller
       version: dev
       imagePullPolicy: Never
   postgres:
     image: postgres
-    version: 12.8-alpine3.14
+    version: 15.2-alpine3.17
   mysql:
     image: mysql
-    version: 8.0.26
+    version: 8.0.32
   keycloak:
     image: quay.io/keycloak/keycloak
-    version: 15.0.2
+    version: 20.0.3
   init:
     image: busybox
     version: 1.28
   redis:
     image: redis
-    version: 5.0.7
+    version: 7.0.8-alpine3.17
   rabbitmq:
     image: rabbitmq
-    version: 3.8-management-alpine
+    version: 3.11-management-alpine
 
 
 # Chart default values. Override by passing --set or -f to helm.
@@ -107,6 +107,7 @@ databases:
     type: redis
     name: channel-layer
     port: 6379
+    ssl: false
   broker:
     type: rabbitmq
     name: broker
@@ -160,7 +161,7 @@ keycloak:
         password: password
         admin: true
 
-# Oasis API host, port and credentials
+# Oasis API host, port and credentials (for HTTP connections)
 oasisServer:
   name: oasis-server
   port: 8000
@@ -175,6 +176,22 @@ oasisServer:
     clientName: oasis-server
     clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
 
+# Oasis API host, port and credentials (for Websocket connections)
+oasisWebsocket:
+  name: oasis-websocket
+  port: 8001
+  user: admin
+  password: password
+
+  # Use same settings as client (uncomment and update charts if needed)  
+  # Enable OIDC Keycloak authentication with 'keycloak or set to 'simple' for simple jwt.
+  #apiAuthType: keycloak
+  #oidc:
+  #  #endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
+  #  clientName: oasis-websocket
+  #  clientSecret: 4fbf064d-de2a-4f58-b031-14486a751a3d
+
+
 workerController:
   # The maximum number of workers the worker controller will start. No matter the number of analyses and models
   # this limit will never be exceeded by this worker controller.
@@ -182,7 +199,7 @@ workerController:
 
   # Debug option - Read the auto scaling configuration from the API on every update 
   # default is only to read it on for each model each time replicas is changed from 0 (first analysis running)) 
-  continueUpdateScaling: false
+  continueUpdateScaling: true
 
   # Debug option - This prevents workers for a model set to FIXED_WORKERS to be scaled to 0. They will always be started. 
   neverShutdownFixedWorkers: false 

@@ -56,7 +56,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_ENABLE_UTC = True
 
 #: Celery config - concurrency
-#CELERYD_CONCURRENCY = 1
+# CELERYD_CONCURRENCY = 1
 
 #: Disable celery task prefetch
 #: https://docs.celeryproject.org/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier

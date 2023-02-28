@@ -138,7 +138,8 @@ class Controller:
         :return: Signature representing the task
         """
         statuses, tasks = zip(*[
-            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid, f'{status_name} {idx}', f'{status_slug}-{idx}', queue, p)
+            cls.get_subtask_statuses_and_signature(task_name, analysis, initiator, run_data_uuid,
+                                                   f'{status_name} {idx}', f'{status_slug}-{idx}', queue, p)
             for idx, p in enumerate(params)
         ])
 
@@ -251,6 +252,16 @@ class Controller:
                 queue,
                 TaskParams(**base_kwargs),
             ),
+            cls.get_subtask_statuses_and_signature(
+                'pre_analysis_hook',
+                analysis,
+                initiator,
+                run_data_uuid,
+                'Pre analysis hook',
+                'pre-analysis-hook',
+                queue,
+                TaskParams(**files_kwargs),
+            ),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',
                 analysis,
@@ -322,10 +333,10 @@ class Controller:
 
         # fetch the number of lookup chunks and store in analysis
         if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
-            num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
+            num_chunks = min(analysis.model.chunking_options.fixed_lookup_chunks, loc_lines)
         elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
             loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
-            num_chunks = ceil(loc_lines / loc_lines_per_chunk)
+            num_chunks = min(ceil(loc_lines / loc_lines_per_chunk), analysis.model.chunking_options.dynamic_chunks_max)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
@@ -459,7 +470,7 @@ class Controller:
             num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
         elif analysis.model.chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
             events_per_chunk = analysis.model.chunking_options.dynamic_events_per_analysis
-            num_chunks = ceil(events_total / events_per_chunk)
+            num_chunks = min(ceil(events_total / events_per_chunk), analysis.model.chunking_options.dynamic_chunks_max)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)

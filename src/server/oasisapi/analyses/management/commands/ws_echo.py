@@ -15,12 +15,14 @@ def echo(app, message):
     print('Message received:')
     print(json.dumps(json.loads(message), indent=4))
 
+
 def on_error(app, error):
     print(error)
 
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument('--url', default='ws://localhost:8000/ws/v1/queue-status/')
+        parser.add_argument('--url', default='ws://localhost:8001/ws/v1/queue-status/')
 
     def handle(self, *args, **options):
         user = get_user_model().objects.first()

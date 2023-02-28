@@ -33,6 +33,22 @@ from autoscaler import AutoScaler
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
 
 
+def str2bool(v):
+    """ Func type for loading strings to boolean values using argparse
+        https://stackoverflow.com/a/43357954
+    """
+    if v is None:
+        return v
+    elif isinstance(v, bool):
+        return v
+    elif v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise ArgumentTypeError('Boolean value expected.')
+
+
 def parse_args():
     """
     Parse command line arguments.
@@ -47,10 +63,14 @@ def parse_args():
     parser.add_argument('--password', help='The password of the worker controller user', default=getenv('OASIS_PASSWORD') or 'password')
     parser.add_argument('--namespace', help='Namespace of cluster where oasis is deployed to', default=getenv('OASIS_CLUSTER_NAMESPACE') or 'default')
     parser.add_argument('--limit', help='Hard limit for the total number of workers created', default=getenv('OASIS_TOTAL_WORKER_LIMIT'))
-    parser.add_argument('--prioritized-models-limit', help='When prioritized runs are used - create workers for the models with the highest priority', default=getenv('OASIS_PRIORITIZED_MODELS_LIMIT'))
-    parser.add_argument('--cluster', help='Type of kubernetes cluster to connect to, either "local" (~/.kube/config) or "in" to connect to the cluster the pod exists in', default=getenv('CLUSTER') or 'in')
-    parser.add_argument('--continue-update-scaling', help='Auto scaling - read the scaling settings from the API for a model on every update. (for testing)', default=getenv('OASIS_CONTINUE_UPDATE_SCALING') or False)
-    parser.add_argument('--never-shutdown-fixed-workers', help='Auto scaling - never scale to 0 for strategy FIXED_WORKERS.', default=getenv('OASIS_NEVER_SHUTDOWN_FIXED_WORKERS') or False)
+    parser.add_argument('--prioritized-models-limit', help='When prioritized runs are used - create workers for the models with the highest priority',
+                        default=getenv('OASIS_PRIORITIZED_MODELS_LIMIT'))
+    parser.add_argument(
+        '--cluster', help='Type of kubernetes cluster to connect to, either "local" (~/.kube/config) or "in" to connect to the cluster the pod exists in', default=getenv('CLUSTER') or 'in')
+    parser.add_argument('--continue-update-scaling', help='Auto scaling - read the scaling settings from the API for a model on every update. (for testing)',
+                        type=str2bool, default=getenv('OASIS_CONTINUE_UPDATE_SCALING') or False)
+    parser.add_argument('--never-shutdown-fixed-workers', help='Auto scaling - never scale to 0 for strategy FIXED_WORKERS.',
+                        type=str2bool, default=getenv('OASIS_NEVER_SHUTDOWN_FIXED_WORKERS') or False)
 
     args = parser.parse_args()
 

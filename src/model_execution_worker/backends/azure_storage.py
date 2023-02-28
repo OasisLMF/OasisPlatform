@@ -4,44 +4,41 @@ import shutil
 import tempfile
 
 from azure.core.exceptions import ResourceNotFoundError
-from azure.storage.blob import (
-    BlobClient, BlobSasPermissions, BlobServiceClient, ContentSettings,
-    generate_blob_sas,
-)
+from azure.storage.blob import BlobServiceClient
 
 from ...common.shared import set_azure_log_level
 from ..storage_manager import BaseStorageConnector
 
 
 class AzureObjectStore(BaseStorageConnector):
-# https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python
+    # https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python
 
     def __init__(self, settings):
         self._service_client = None
         self._client = None
 
         # Required
-        self.account_name       = settings.get('worker', 'AZURE_ACCOUNT_NAME')
-        self.account_key        = settings.get('worker', 'AZURE_ACCOUNT_KEY')
-        self.azure_container    = settings.get('worker', 'AZURE_CONTAINER')
+        self.account_name = settings.get('worker', 'AZURE_ACCOUNT_NAME')
+        self.account_key = settings.get('worker', 'AZURE_ACCOUNT_KEY')
+        self.azure_container = settings.get('worker', 'AZURE_CONTAINER')
 
         # Optional
-        self.location             = settings.get('worker', 'AZURE_LOCATION', fallback='')
-        self.connection_string    = settings.get('worker', 'AZURE_CONNECTION_STRING', fallback=None)
-        self.shared_container     = settings.get('worker', 'AZURE_SHARED_CONTAINER', fallback=True)
-        self.azure_ssl            = settings.get('worker', 'AZURE_SSL', fallback=True)
-        self.upload_max_conn      = settings.get('worker', 'AZURE_UPLOAD_MAX_CONN', fallback=2)
-        self.timeout              = settings.get('worker', 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20)
-        self.max_memory_size      = settings.get('worker', 'AZURE_BLOB_MAX_MEMORY_SIZE', fallback=2*1024*1024)
-        self.expiration_secs      = settings.get('worker', 'AZURE_URL_EXPIRATION_SECS', fallback=None)
-        self.overwrite_files      = settings.get('worker', 'AZURE_OVERWRITE_FILES', fallback=True)
+        self.location = settings.get('worker', 'AZURE_LOCATION', fallback='')
+        self.connection_string = settings.get('worker', 'AZURE_CONNECTION_STRING', fallback=None)
+        self.shared_container = settings.get('worker', 'AZURE_SHARED_CONTAINER', fallback=True)
+        self.azure_ssl = settings.get('worker', 'AZURE_SSL', fallback=True)
+        self.upload_max_conn = settings.get('worker', 'AZURE_UPLOAD_MAX_CONN', fallback=2)
+        self.timeout = settings.get('worker', 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20)
+        self.max_memory_size = settings.get('worker', 'AZURE_BLOB_MAX_MEMORY_SIZE', fallback=2 * 1024 * 1024)
+        self.expiration_secs = settings.get('worker', 'AZURE_URL_EXPIRATION_SECS', fallback=None)
+        self.overwrite_files = settings.get('worker', 'AZURE_OVERWRITE_FILES', fallback=True)
         self.default_content_type = settings.get('worker', 'AZURE_DEFAULT_CONTENT', fallback='application/octet-stream')
-        self.cache_control        = settings.get('worker', 'AZURE_CACHE_CONTROL', fallback=None)
-        self.sas_token            = settings.get('worker', 'AZURE_SAS_TOKEN', fallback=None)
-        self.custom_domain        = settings.get('worker', 'AZURE_CUSTOM_DOMAIN', fallback=None)
-        self.token_credential     = settings.get('worker', 'AZURE_TOKEN_CREDENTIAL', fallback=None)
-        self.azure_log_level      = settings.get('worker', 'AWS_LOG_LEVEL', fallback=logging.ERROR)
-        self.azure_protocol       = 'https' if self.azure_ssl else 'http'
+        self.cache_control = settings.get('worker', 'AZURE_CACHE_CONTROL', fallback=None)
+        self.sas_token = settings.get('worker', 'AZURE_SAS_TOKEN', fallback=None)
+        self.custom_domain = settings.get('worker', 'AZURE_CUSTOM_DOMAIN', fallback=None)
+        self.token_credential = settings.get('worker', 'AZURE_TOKEN_CREDENTIAL', fallback=None)
+        self.azure_log_level = settings.get('worker', 'AWS_LOG_LEVEL', fallback=logging.ERROR)
+        self.azure_protocol = 'https' if self.azure_ssl else 'http'
         set_azure_log_level(self.azure_log_level)
         super(AzureObjectStore, self).__init__(settings)
 
@@ -154,14 +151,12 @@ class AzureObjectStore(BaseStorageConnector):
         blob_client = self.client.get_blob_client(blob_key)
         return blob_client.url
 
-
     def delete_file(self, reference):
         """ Marks blob for deletion, will also remove snapshots
         """
         blob_client = self.client.get_blob_client(reference)
         blob_client.delete_blob()
         logging.info(f'Deleted Azure Blob: {reference}')
-
 
     def delete_dir(self, reference):
         """ Delete multiple Objects
