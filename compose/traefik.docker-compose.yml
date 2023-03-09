@@ -181,8 +181,8 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      #- ./traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro
-      #- ./traefik/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
       #- ./traefik/letsencrypt:/letsencrypt
     labels:
       - "traefik.enable=true"
