@@ -144,38 +144,13 @@ class JsonSettingsSerializer(serializers.Serializer):
         return data
 
     def validate_json(self, data):
-
         try:
-            self.schemaClass.validate(data)
+            vaild, errors = self.schemaClass.validate(data, raise_error=False)
+            if not vaild:
+                raise serializers.ValidationError(errors)
         except (JSONSchemaValidationError, JSONSchemaError, OdsException) as e:
             raise serializers.ValidationError(e.message)
         return self.to_internal_value(json.dumps(data))
-
-
-        #try:
-        #    validator = jsonschema.Draft4Validator(self.schema)
-        #    validation_errors = [e for e in validator.iter_errors(data)]
-
-        #    # Iteratre over all errors and raise as single exception
-        #    if validation_errors:
-        #        exception_msgs = {}
-        #        for err in validation_errors:
-        #            if err.path:
-        #                field = '-'.join([str(e) for e in err.path])
-        #            elif err.schema_path:
-        #                field = '-'.join([str(e) for e in err.schema_path])
-        #            else:
-        #                field = 'error'
-
-        #            if field in exception_msgs:
-        #                exception_msgs[field].append(err.message)
-        #            else:
-        #                exception_msgs[field] = [err.message]
-        #        raise serializers.ValidationError(exception_msgs)
-
-        #except (JSONSchemaValidationError, JSONSchemaError) as e:
-        #    raise serializers.ValidationError(e.message)
-        #return self.to_internal_value(json.dumps(data))
 
 
 class ModelParametersSerializer(JsonSettingsSerializer):
@@ -187,7 +162,7 @@ class ModelParametersSerializer(JsonSettingsSerializer):
 
     def __init__(self, *args, **kwargs):
         super(ModelParametersSerializer, self).__init__(*args, **kwargs)
-        #self.filenmame = 'model_settings.json'
+        self.filenmame = 'model_settings.json' # Store POSTED JSON using this fname
         self.schemaClass = ModelSettingSchema()
 
     def validate(self, data):
@@ -203,8 +178,7 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
 
     def __init__(self, *args, **kwargs):
         super(AnalysisSettingsSerializer, self).__init__(*args, **kwargs)
-        #self.filenmame = 'analysis_settings.json'
-        #self.schema = load_json_schema('analysis_settings.json')
+        self.filenmame = 'analysis_settings.json' # Store POSTED JSON using this fname
         self.schemaClass = AnalysisSettingSchema()
 
     def validate(self, data):
