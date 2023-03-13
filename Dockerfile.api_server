@@ -18,7 +18,13 @@ RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos ""
 COPY --chown=server:server --from=build-packages /root/.local /home/server/.local
 RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
 
-RUN echo 'server ALL=(ALL) NOPASSWD:/usr/local/bin/update_hosts' >> /etc/sudoers
+# Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
+ARG ods_tools_branch
+RUN if [ ! -z "$ods_tools_branch" ] ; then \
+    apt update && apt install -y git; \
+    pip uninstall ods-tools -y; \
+    pip install -v git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}#egg=ods-tools; \
+  fi
 
 WORKDIR /var/www/oasis
 COPY ./src/startup_server.sh /usr/local/bin/startup

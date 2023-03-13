@@ -18,18 +18,21 @@ on:
       last_release:
         description: "Test backwards compatibility with platform ver [semvar]"
         required: false
-
       piwind_branch:
         description: "Check Results from Piwind branch [git ref]"
         required: true
         default: 'develop'
-
       pytest_options:
         description: "Pytest optional args [-k <test_name>]"
         required: false
-
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
+        required: false
+     oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+     ods_tools_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
         required: false
 
 env:
@@ -43,7 +46,8 @@ jobs:
       docker_push: true
       ignore_unfixed: true
       cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
-
+      oasislmf_branch: ${{ inputs.oasislmf_branch }}
+      ods_tools_branch: ${{ inputs.ods_tools_branch }}
 
   setup:
     runs-on: ubuntu-latest
