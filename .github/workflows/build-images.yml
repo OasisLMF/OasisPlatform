@@ -17,11 +17,11 @@ on:
         description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
         required: false
         default: 'CRITICAL,HIGH'
-     oasislmf_branch:
+      oasislmf_branch:
         description: 'If set, pip install oasislmf branch [git ref]'
         required: false
         type: string
-     ods_tools_branch:
+      ods_tools_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
         type: string
@@ -44,11 +44,11 @@ on:
         required: false
         default: 'CRITICAL,HIGH'
         type: string
-     oasislmf_branch:
+      oasislmf_branch:
         description: 'If set, pip install oasislmf branch [git ref]'
         required: false
         type: string
-     ods_tools_branch:
+      ods_tools_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
         type: string
