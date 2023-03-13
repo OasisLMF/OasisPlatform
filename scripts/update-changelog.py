@@ -424,7 +424,7 @@ def check_rate_limit(github_token):
 
 
 @cli.command()
-@click.option('--repo', type=click.Choice(['ktools', 'OasisLMF', 'OasisPlatform', 'OasisUI'], case_sensitive=True), required=True)
+@click.option('--repo', type=click.STRING, required=True, help="Oasislmf Repo name case sensitive, ['ktools', 'OasisLMF', 'OasisUI' ..]")
 @click.option('--output-path', type=click.Path(exists=False), default='./CHANGELOG.rst', help='changelog output path')
 @click.option('--local-repo-path', type=click.Path(exists=False), default=None, help=' Path to local git repository, used to skip clone step (optional) ')
 @click.option('--from-tag', required=True, help='Github tag to track changes from')
@@ -470,7 +470,7 @@ def build_changelog(repo, from_tag, to_tag, github_token, output_path, apply_mil
 
 
 @cli.command()
-@click.option('--repo', type=click.Choice(['ktools', 'OasisLMF', 'OasisUI'], case_sensitive=True), required=True)
+@click.option('--repo', type=click.STRING, required=True, help="Oasislmf Repo name case sensitive, ['ktools', 'OasisLMF', 'OasisUI' ..]")
 @click.option('--output-path', type=click.Path(exists=False), default='./RELEASE.md', help='Release notes output path')
 @click.option('--local-repo-path', type=click.Path(exists=False), default=None, help=' Path to local git repository, used to skip clone step (optional) ')
 @click.option('--from-tag', required=True, help='Github tag to track changes from')
