@@ -138,7 +138,7 @@ jobs:
     name: Worker Debian
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -153,7 +153,7 @@ jobs:
     name: Worker Compatibility (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: 'coreoasis/api_server'
@@ -168,7 +168,7 @@ jobs:
     name: Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
