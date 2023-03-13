@@ -145,7 +145,7 @@ jobs:
         exit-code: ${{ matrix.exit-code }}
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln'
+        scanners: 'vuln'
 
     - name: Create Report
       if: ( success() || failure() ) && env.SEVERITY != 'SKIP' && matrix.exit-code == '1'
@@ -158,7 +158,7 @@ jobs:
         exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln'
+        scanners: 'vuln'
 
     - name: Upload scan results to Security tab
       if: ( success() || failure() ) && env.SEVERITY != 'SKIP' && matrix.exit-code == '1'
