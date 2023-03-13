@@ -12,6 +12,7 @@ pkg_list=(
     joblib
     numpy
     oasislmf
+    pytest
     oauthlib
     ods-tools
     pandas

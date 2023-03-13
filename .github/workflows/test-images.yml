@@ -126,7 +126,7 @@ jobs:
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
-      debug_mode: 0
+      debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-server-compatibility'
 
@@ -141,7 +141,7 @@ jobs:
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_deb_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_deb_worker_tag }}
-      debug_mode: 0
+      debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-worker-debian'
 
@@ -156,7 +156,7 @@ jobs:
       server_tag: ${{ needs.setup.outputs.release_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      debug_mode: 0
+      debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-worker-compatibility'
 
@@ -171,6 +171,6 @@ jobs:
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      debug_mode: 0
+      debug_mode: 1
       pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-s3'
