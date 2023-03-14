@@ -14,12 +14,13 @@ import json
 
 from rest_framework import serializers
 
-#import jsonschema
+# import jsonschema
 from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
 from jsonschema.exceptions import SchemaError as JSONSchemaError
 
 from ods_tools.oed.setting_schema import ModelSettingSchema, AnalysisSettingSchema
 from ods_tools.oed.common import OdsException
+
 
 class TokenObtainPairResponseSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(read_only=True)
@@ -162,7 +163,7 @@ class ModelParametersSerializer(JsonSettingsSerializer):
 
     def __init__(self, *args, **kwargs):
         super(ModelParametersSerializer, self).__init__(*args, **kwargs)
-        self.filenmame = 'model_settings.json' # Store POSTED JSON using this fname
+        self.filenmame = 'model_settings.json'  # Store POSTED JSON using this fname
         self.schemaClass = ModelSettingSchema()
 
     def validate(self, data):
@@ -178,7 +179,7 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
 
     def __init__(self, *args, **kwargs):
         super(AnalysisSettingsSerializer, self).__init__(*args, **kwargs)
-        self.filenmame = 'analysis_settings.json' # Store POSTED JSON using this fname
+        self.filenmame = 'analysis_settings.json'  # Store POSTED JSON using this fname
         self.schemaClass = AnalysisSettingSchema()
 
     def validate(self, data):
