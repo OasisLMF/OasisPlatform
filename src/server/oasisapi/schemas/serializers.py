@@ -8,8 +8,6 @@ __all__ = [
     'ModelParametersSerializer',
 ]
 
-import io
-import os
 import json
 
 from rest_framework import serializers
