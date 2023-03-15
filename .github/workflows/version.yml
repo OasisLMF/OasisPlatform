@@ -6,28 +6,26 @@ on:
       platform_version:
         description: 'Update version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
         required: true
-        default: ""
       oasislmf_version:
         description: 'Update the package version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
         required: false
-        default: ""
+      ods_tools_version:
+        description: 'Update the package version'
+        required: false
 
   workflow_call:
     inputs:
       platform_version:
         description: 'Update version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
         required: true
-        default: ""
         type: string
       oasislmf_version:
         description: 'Update the package version'
         required: false
-        default: ""
         type: string
       ods_tools_version:
         description: 'Update the package version'
         required: false
-        default: ""
         type: string
 
 jobs:
