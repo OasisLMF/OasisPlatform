@@ -145,12 +145,8 @@ jmespath==1.0.1
     #   botocore
 jsonpickle==3.0.1
     # via -r requirements-server.in
-jsonref==1.1.0
-    # via ods-tools
 jsonschema==4.17.3
-    # via
-    #   -r requirements-server.in
-    #   ods-tools
+    # via -r requirements-server.in
 kombu==5.2.4
     # via celery
 markdown==3.4.1
@@ -161,12 +157,10 @@ numpy==1.24.2
     # via
     #   pandas
     #   pyarrow
-ods-tools==3.0.4
+ods-tools==3.0.3
     # via -r requirements-server.in
 packaging==23.0
-    # via
-    #   drf-yasg
-    #   ods-tools
+    # via drf-yasg
 pandas==1.5.3
     # via
     #   -r requirements-server.in
