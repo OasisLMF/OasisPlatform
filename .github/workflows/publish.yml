@@ -120,11 +120,11 @@ jobs:
 
     steps:
      ## RELEASE CHECKS
-    - name: check branchname is valid for release
-      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'backports/') }}
-      run: |
-        echo "Releases must be trigged on branchs 'release/x.x.x' or 'backports/x.x.x' "
-        exit 1
+#    - name: check branchname is valid for release
+#      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'backports/') }}
+#      run: |
+#        echo "Releases must be trigged on branchs 'release/x.x.x' or 'backports/x.x.x' "
+#        exit 1
 
     - name: Check tag is valid for release
       if: env.pre_release == 'false'
@@ -496,16 +496,16 @@ jobs:
         echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
         echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
 
-  # --- Notify Slack --- #
-  slack:
-    uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@master
-    secrets: inherit
-    needs: release
-    with:
-      heading: ${{ needs.release.outputs.heading }}
-      title: ${{ needs.release.outputs.title }}
-      build_branch: ${{ needs.release.outputs.build_branch }}
-      run_url: ${{ needs.release.outputs.run_url }}
-      run_id: ${{ needs.release.outputs.run_id }}
-      run_status: ${{ needs.release.outputs.run_status }}
-      run_date: ${{ needs.release.outputs.run_date }}
+#  # --- Notify Slack --- #
+#  slack:
+#    uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@master
+#    secrets: inherit
+#    needs: release
+#    with:
+#      heading: ${{ needs.release.outputs.heading }}
+#      title: ${{ needs.release.outputs.title }}
+#      build_branch: ${{ needs.release.outputs.build_branch }}
+#      run_url: ${{ needs.release.outputs.run_url }}
+#      run_id: ${{ needs.release.outputs.run_id }}
+#      run_status: ${{ needs.release.outputs.run_status }}
+#      run_date: ${{ needs.release.outputs.run_date }}
