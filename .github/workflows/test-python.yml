@@ -13,7 +13,7 @@ on:
       - backports**
   workflow_dispatch:
     inputs:
-      ods_tools_branch:
+      ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
 
@@ -37,7 +37,7 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    - run: pip install tox
+    - run: pip install -r requirements.txt
 
     - name: Download package
       if: needs.ods_tools.outputs.whl_filename != ''
@@ -52,10 +52,13 @@ jobs:
         pip uninstall ods-tools -y
         pip install ${{ needs.ods_tools.outputs.whl_filename }}
 
-    - name: Run Tox
-      run: |
-        pip install tox
-        tox -e py
+    - name: Run Pytest
+      run: pytest  --cov-config=tox.ini  pytest --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
+
+   # - name: Run Tox
+   #   run: |
+   #     pip install tox
+   #     tox -e py
 
     - name: Generate Report
       uses: dorny/test-reporter@v1
