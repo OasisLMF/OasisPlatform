@@ -53,7 +53,7 @@ jobs:
         pip install ${{ needs.ods_tools.outputs.whl_filename }}
 
     - name: Run Pytest
-      run: pytest  --cov-config=tox.ini  pytest --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
+      run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
 
    # - name: Run Tox
    #   run: |
