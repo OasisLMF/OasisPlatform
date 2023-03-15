@@ -24,6 +24,11 @@ on:
         required: false
         default: ""
         type: string
+      ods_tools_version:
+        description: 'Update the package version'
+        required: false
+        default: ""
+        type: string
 
 jobs:
   version:
@@ -89,6 +94,15 @@ jobs:
         requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
         for fl in "${requ_list[@]}"; do
           pip-compile --upgrade-package oasislmf==${{ inputs.oasislmf_version }} $fl.in
+          git add $fl.txt
+        done
+
+    - name: Update ods-tools Version
+      if: inputs.ods_tools_version != ''
+      run: |
+        requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
+        for fl in "${requ_list[@]}"; do
+          pip-compile --upgrade-package ods-tools==${{ inputs.ods_tools_version }} $fl.in
           git add $fl.txt
         done
 
