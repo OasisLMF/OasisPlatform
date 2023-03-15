@@ -29,6 +29,14 @@ on:
         description: '(OVERRIDE) The previous oasislmf version for changelog [semvar]'
         required: false
 
+      ods_tools_release:
+        description: '(OVERRIDE) The ods-tools version in this release [semvar]'
+        required: true
+
+      ods_tools_release_prev:
+        description: '(OVERRIDE) The previous ods-tools version for changelog [semvar]'
+        required: false
+
       ktools_release:
         description: '(OVERRIDE)  The ktools version in this release [semvar] "v{n}.{n}.{n}"'
         required: false
@@ -46,6 +54,7 @@ jobs:
     with:
       platform_version: ${{ inputs.release_tag }}
       oasislmf_version: ${{ inputs.oasislmf_release }}
+      ods_tools_version: ${{ inputs.ods_tools_release }}
 
   build_schema:
     uses: ./.github/workflows/build-schema.yml
@@ -88,19 +97,25 @@ jobs:
     env:
       pre_release: ${{ inputs.pre_release }}
       release_tag: ${{ inputs.release_tag }}
-      oasislmf_release: ${{ inputs.oasislmf_release }}
       prev_release_tag: ${{ inputs.prev_release_tag }}
+
+      oasislmf_release: ${{ inputs.oasislmf_release }}
       oasislmf_release_prev: ${{ inputs.oasislmf_release_prev }}
+
+      ods_tools_release: ${{ inputs.ods_tools_release }}
+      ods_tools_release_prev: ${{ inputs.ods_tools_release_prev }}
 
       ktools_release: ${{ inputs.ktools_release }}
       ktools_release_prev: ${{ inputs.ktools_release_prev }}
 
       dir_platform: ${{ github.workspace }}/platform
       dir_oasislmf: ${{ github.workspace }}/oasislmf
+      dir_ods_tools: ${{ github.workspace }}/ods_tools
       dir_ktools: ${{ github.workspace }}/ktools
 
       branch_platform: ${{ github.ref_name }}
       branch_oasislmf: 'master'
+      branch_ods_tools: 'master'
       branch_ktools: 'master'
 
     steps:
@@ -159,6 +174,14 @@ jobs:
         ref: ${{ env.branch_oasislmf }}
         fetch-depth: 0
 
+    - name: Checkout ODS_Tools
+      uses: actions/checkout@v3
+      with:
+        path: ${{ env.dir_ods_tools }}
+        repository: Oasislmf/ODS_Tools
+        ref: ${{ env.branch_ods_tools }}
+        fetch-depth: 0
+
     - name: Checkout Ktools
       uses: actions/checkout@v3
       with:
@@ -175,10 +198,10 @@ jobs:
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "prev_release_tag=$tag" >> $GITHUB_ENV
 
+
     - name: oasislmf tag (OVERRIDE)
       working-directory: ${{ env.dir_oasislmf }}
-      #if: ! inputs.oasislmf_release == ''
-      if: env.oasislmf_release != ''   # TESTING
+      if: env.oasislmf_release != ''
       run: |
         git checkout ${{ env.branch_oasislmf }}
         git reset  --hard $(git rev-list -n 1 ${{ env.oasislmf_release }} )
@@ -196,6 +219,29 @@ jobs:
       run: |
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
         echo "oasislmf_release_prev=$tag" >> $GITHUB_ENV
+
+
+    - name: ods_tools tag (OVERRIDE)
+      working-directory: ${{ env.dir_ods_tools }}
+      if: env.ods_tools_release != ''
+      run: |
+        git checkout ${{ env.branch_ods_tools }}
+        git reset  --hard $(git rev-list -n 1 ${{ env.ods_tools_release }} )
+
+    - name: Find 'ods_tools_release'
+      if: inputs.ods_tools_release == ''
+      working-directory: ${{ env.dir_ods_tools }}
+      run: |
+        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
+        echo "ods_tools_release=$tag" >> $GITHUB_ENV
+
+    - name: Find 'ods_tools_release_prev'
+      if: inputs.ods_tools_release_prev == ''
+      working-directory: ${{ env.dir_ods_tools }}
+      run: |
+        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
+        echo "ods_tools_release_prev=$tag" >> $GITHUB_ENV
+
 
     - name: Ktools tag (OVERRIDE)
       working-directory: ${{ env.dir_ktools }}
@@ -218,6 +264,8 @@ jobs:
       run: |
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2 -v 'v')
         echo "ktools_release_prev=$tag" >> $GITHUB_ENV
+
+
 
     ## TAG & assests
     - name: Login to Docker Hub
@@ -285,10 +333,11 @@ jobs:
             echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_piwind.outputs.piwind_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
         fi
 
-    - name: Get ktools & oasislmf versions
+    - name: Get component versions
       continue-on-error: true
       run: |
         docker run --entrypoint "oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
+        docker run --entrypoint "python3" ${{ needs.build_images.outputs.worker_image }} '-cimport ods_tools; print(ods_tools.__version__)' > ODS_VERSION
         docker run --entrypoint "eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
 
     - name: 'store OASISLMF_VERSION'
@@ -296,6 +345,13 @@ jobs:
       with:
         name: OASISLMF_VERSION
         path: OASISLMF_VERSION
+        retention-days: 5
+
+    - name: 'store ODS_VERSION'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ODS_VERSION
+        path: ODS_VERSION
         retention-days: 5
 
     - name: 'store KTOOLS_VERSION'
@@ -307,6 +363,9 @@ jobs:
 
     - name: Check for Oasislmf version match
       run: test "$(cat OASISLMF_VERSION)" = ${{ env.oasislmf_release }} || exit 1
+
+    - name: Check for ods-tools version match
+      run: test "$(cat ODS_VERSION)" = ${{ env.ods_tools_release }} || exit 1
 
     - name: Check for ktools version match
       run: |
@@ -369,6 +428,9 @@ jobs:
           --lmf-repo-path ${{ env.dir_oasislmf }} \
           --lmf-from-tag ${{ env.oasislmf_release_prev }} \
           --lmf-to-tag ${{ env.oasislmf_release }} \
+          --ods-repo-path ${{ env.dir_ods_tools }} \
+          --ods-from-tag ${{ env.ods_tools_release_prev }} \
+          --ods-to-tag ${{ env.ods_tools_release }} \
           --ktools-repo-path ${{ env.dir_ktools }} \
           --ktools-from-tag ${{ env.ktools_release_prev }} \
           --ktools-to-tag ${{ env.ktools_release }} \
