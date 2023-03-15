@@ -8,15 +8,16 @@ __all__ = [
     'ModelParametersSerializer',
 ]
 
-import io
-import os
 import json
 
 from rest_framework import serializers
 
-import jsonschema
+# import jsonschema
 from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
 from jsonschema.exceptions import SchemaError as JSONSchemaError
+
+from ods_tools.oed.setting_schema import ModelSettingSchema, AnalysisSettingSchema
+from ods_tools.oed.common import OdsException
 
 
 class TokenObtainPairResponseSerializer(serializers.Serializer):
@@ -127,14 +128,10 @@ def update_links(link_prefix, d):
                 d[k] = "{}{}".format(link_prefix, link)
 
 
-def load_json_schema(json_schema_file, link_prefix=None):
+def load_json_schema(schema, link_prefix=None):
     """
         Load json schema stored in the .schema dir
     """
-    schema_dir = os.path.dirname(os.path.abspath(__file__))
-    schema_fp = os.path.join(schema_dir, json_schema_file)
-    with io.open(schema_fp, 'r', encoding='utf-8') as f:
-        schema = json.load(f)
     if link_prefix:
         update_links(link_prefix, schema)
     return schema
@@ -147,27 +144,10 @@ class JsonSettingsSerializer(serializers.Serializer):
 
     def validate_json(self, data):
         try:
-            validator = jsonschema.Draft4Validator(self.schema)
-            validation_errors = [e for e in validator.iter_errors(data)]
-
-            # Iteratre over all errors and raise as single exception
-            if validation_errors:
-                exception_msgs = {}
-                for err in validation_errors:
-                    if err.path:
-                        field = '-'.join([str(e) for e in err.path])
-                    elif err.schema_path:
-                        field = '-'.join([str(e) for e in err.schema_path])
-                    else:
-                        field = 'error'
-
-                    if field in exception_msgs:
-                        exception_msgs[field].append(err.message)
-                    else:
-                        exception_msgs[field] = [err.message]
-                raise serializers.ValidationError(exception_msgs)
-
-        except (JSONSchemaValidationError, JSONSchemaError) as e:
+            vaild, errors = self.schemaClass.validate(data, raise_error=False)
+            if not vaild:
+                raise serializers.ValidationError(errors)
+        except (JSONSchemaValidationError, JSONSchemaError, OdsException) as e:
             raise serializers.ValidationError(e.message)
         return self.to_internal_value(json.dumps(data))
 
@@ -175,14 +155,14 @@ class JsonSettingsSerializer(serializers.Serializer):
 class ModelParametersSerializer(JsonSettingsSerializer):
     class Meta:
         swagger_schema_fields = load_json_schema(
-            json_schema_file='model_settings.json',
+            schema=ModelSettingSchema().schema,
             link_prefix='#/definitions/ModelSettings'
         )
 
     def __init__(self, *args, **kwargs):
         super(ModelParametersSerializer, self).__init__(*args, **kwargs)
-        self.filenmame = 'model_settings.json'
-        self.schema = load_json_schema('model_settings.json')
+        self.filenmame = 'model_settings.json'  # Store POSTED JSON using this fname
+        self.schemaClass = ModelSettingSchema()
 
     def validate(self, data):
         return super(ModelParametersSerializer, self).validate_json(data)
@@ -191,16 +171,15 @@ class ModelParametersSerializer(JsonSettingsSerializer):
 class AnalysisSettingsSerializer(JsonSettingsSerializer):
     class Meta:
         swagger_schema_fields = load_json_schema(
-            json_schema_file='analysis_settings.json',
+            schema=AnalysisSettingSchema().schema,
             link_prefix='#/definitions/AnalysisSettings'
         )
 
     def __init__(self, *args, **kwargs):
         super(AnalysisSettingsSerializer, self).__init__(*args, **kwargs)
-        self.filenmame = 'analysis_settings.json'
-        self.schema = load_json_schema('analysis_settings.json')
+        self.filenmame = 'analysis_settings.json'  # Store POSTED JSON using this fname
+        self.schemaClass = AnalysisSettingSchema()
 
     def validate(self, data):
-        if 'analysis_settings' in data:
-            data = data['analysis_settings']
+        data = self.schemaClass.compatibility(data)
         return super(AnalysisSettingsSerializer, self).validate_json(data)

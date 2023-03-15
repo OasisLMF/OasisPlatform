@@ -10,9 +10,21 @@ on:
       - platform-2.0
       - platform-2.0-develop
   workflow_dispatch:
+    inputs:
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
 
 jobs:
+  ods_tools:
+    #if: inputs.ods_branch != ''
+    uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@develop
+    secrets: inherit
+    with:
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
+
   unittest:
+    needs: ods_tools
     env:
       JUNIT_REPORT: pytest_report.xml
     runs-on: ubuntu-22.04
@@ -23,12 +35,28 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    - run: pip install tox
+    - run: pip install -r requirements.txt
 
-    - name: Run Tox
+    - name: Download package
+      if: needs.ods_tools.outputs.whl_filename != ''
+      uses: actions/download-artifact@v3
+      with:
+        name: bin_package
+        path: ${{ github.workspace }}/
+
+    - name: Install package
+      if: needs.ods_tools.outputs.whl_filename != ''
       run: |
-        pip install tox
-        tox -e py
+        pip uninstall ods-tools -y
+        pip install ${{ needs.ods_tools.outputs.whl_filename }}
+
+    - name: Run Pytest
+      run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
+
+   # - name: Run Tox
+   #   run: |
+   #     pip install tox
+   #     tox -e py
 
     - name: Generate Report
       uses: dorny/test-reporter@v1
