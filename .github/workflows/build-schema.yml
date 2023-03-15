@@ -13,12 +13,12 @@ on:
       - backports**
   workflow_dispatch:
     inputs:
-      ods_tools_branch:
+      ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
   workflow_call:
     inputs:
-      ods_tools_branch:
+      ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
         type: string
