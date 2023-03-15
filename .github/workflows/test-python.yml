@@ -12,9 +12,25 @@ on:
       - develop
       - backports**
   workflow_dispatch:
+    inputs:
+      ods_tools_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
+
+
+env:
+  ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
 
 jobs:
+  ods_tools:
+    #if: inputs.ods_branch != ''
+    uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@develop
+    secrets: inherit
+    with:
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
+
   unittest:
+    needs: ods_tools
     env:
       JUNIT_REPORT: pytest_report.xml
     runs-on: ubuntu-22.04
@@ -27,11 +43,18 @@ jobs:
         python-version: '3.10'
     - run: pip install tox
 
-    # mimic python version from dockerfile
-    #- name: Set up Python ${{ matrix.cfg.python-version }}
-    #  run: |
-    #    sudo apt-get update  && sudo apt-get upgrade -y
-    #    sudo apt-get install -y --no-install-recommends python3 python3-pip
+    - name: Download package
+      if: env.ods_branch
+      uses: actions/download-artifact@v3
+      with:
+        name: oasislmf-bin-pkg_linux
+        path: ${{ github.workspace }}/
+
+    - name: Install package
+      if: env.ods_branch
+      run: |
+        pip uninstall ods-tools -y
+        pip install ${{ needs.ods_tools.outputs.linux_pkg_filename }}
 
     - name: Run Tox
       run: |
