@@ -1,6 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.2rc1`_
+ ---------
+* [#768](https://github.com/OasisLMF/OasisPlatform/pull/768) - Loosen repository argument in changelog builder 
+* [#769](https://github.com/OasisLMF/OasisPlatform/pull/769) - 1.27.2 CVE update
+* [#752](https://github.com/OasisLMF/OasisPlatform/pull/752) - Update packages dev
+* [#753](https://github.com/OasisLMF/OasisPlatform/pull/753) - Set ods-tools 3.0.2
+* [#754](https://github.com/OasisLMF/OasisPlatform/pull/762) - Update the model settings schema to include correlation options  
+* [#763](https://github.com/OasisLMF/OasisPlatform/pull/763) - Fix schema build workflow
+.. _`1.27.2rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.1...1.27.2rc1
+
 `1.27.0`_
  ---------
 * [#705](https://github.com/OasisLMF/OasisPlatform/pull/710) - CVE updates - Server images 
