@@ -36,7 +36,8 @@ on:
         required: false
 
 env:
-  pre_release: 'true'  # look for pre-release when testing last released platform version
+  semver_major: '1'    # Search for published images but limited to {semvar_major}.x.x
+  semver_minor: '27'   # Search for published images but limited to x.{semvar_minor}.x
 
 jobs:
   build_images:
@@ -73,7 +74,7 @@ jobs:
         id: released_images
         run: |
           if [[ -z "${{ inputs.last_release }}" ]]; then
-            tag=$( ./scripts/find_release.sh -p "${{ env.pre_release }}")
+            tag=$( ./scripts/find_latest.sh -j "${{ env.semver_major }}" -i "${{ env.semver_minor }}" )
             echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
           else
             echo "prev_release_tag=${{ inputs.last_release }}" >> $GITHUB_OUTPUT
