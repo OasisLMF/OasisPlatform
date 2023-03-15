@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       platform_version:
-        description: 'Update version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
+        description: 'Update platform version [semvar]'
         required: true
       oasislmf_version:
-        description: 'Update the package version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
+        description: 'Update oasislmf package [semvar]'
         required: false
       ods_tools_version:
-        description: 'Update the package version'
+        description: 'Update the ods-tools package [semvar]'
         required: false
 
   workflow_call:
