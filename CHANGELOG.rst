@@ -1,6 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.2`_
+ ---------
+* [#769](https://github.com/OasisLMF/OasisPlatform/pull/769) - 1.27.2 CVE update
+* [#771](https://github.com/OasisLMF/OasisPlatform/pull/772) - Add ODS_Tools version summary to release notes builder
+* [#754](https://github.com/OasisLMF/OasisPlatform/pull/762) - Update the model settings schema to include correlation options  
+* [#763](https://github.com/OasisLMF/OasisPlatform/pull/763) - Fix schema build workflow
+* [#765](https://github.com/OasisLMF/OasisPlatform/pull/765) - Move json settings schema to ods-tools
+* [#767](https://github.com/OasisLMF/OasisPlatform/pull/767) - Add retry to model reg task
+.. _`1.27.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.1...1.27.2
+
 `1.27.1`_
  ---------
 * [#747](https://github.com/OasisLMF/OasisPlatform/pull/747) - Fix/portfolio validate default
