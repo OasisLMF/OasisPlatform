@@ -728,7 +728,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 analysis = fake_analysis()
                 json_data = {
-                    "version": 3,
+                    "version": "3",
                     "analysis_tag": "test_analysis",
                     "model_supplier_id": "OasisIM",
                     "model_name_id": "1",
@@ -775,7 +775,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 analysis = fake_analysis()
                 json_data = {
-                    "version": 3,
+                    "version": "3",
                     "source_tag": "test_source",
                     "analysis_tag": "test_analysis",
                     "model_supplier_id": "OasisIM",
