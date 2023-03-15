@@ -324,7 +324,7 @@ class ReleaseNotesBuilder(object):
         changelog_lines = list(map(lambda l: l + "\n", changelog_lines))
         return changelog_lines
 
-    def release_plat_header(self, tag_platform=None, tag_oasislmf=None, tag_ods=None,  tag_oasisui=None, tag_ktools=None):
+    def release_plat_header(self, tag_platform=None, tag_oasislmf=None, tag_ods=None, tag_oasisui=None, tag_ktools=None):
         """
         Create the header for the OasisPlatform release notes
         """
@@ -503,19 +503,15 @@ def build_release(repo, from_tag, to_tag, github_token, output_path, local_repo_
 @click.option('--platform-repo-path', type=click.Path(exists=False), default=None, help=' Path to local git repository, used to skip clone step (optional) ')
 @click.option('--platform-from-tag', default=None, help='Github tag to track changes from')
 @click.option('--platform-to-tag', default=None, help='Github tag to track changes to')
-
 @click.option('--lmf-repo-path', type=click.Path(exists=False), default=None, help=' Path to local git repository, used to skip clone step (optional) ')
 @click.option('--lmf-from-tag', default=None, help='Github tag to track changes from')
 @click.option('--lmf-to-tag', default=None, help='Github tag to track changes to')
-
 @click.option('--ods-repo-path', type=click.Path(exists=False), default=None, help=' Path to local git repository, used to skip clone step (optional) ')
 @click.option('--ods-from-tag', default=None, help='Github tag to track changes from')
 @click.option('--ods-to-tag', default=None, help='Github tag to track changes to')
-
 @click.option('--ktools-repo-path', type=click.Path(exists=False), default=None, help=' Path to local git repository, used to skip clone step (optional) ')
 @click.option('--ktools-from-tag', default=None, help='Github tag to track changes from')
 @click.option('--ktools-to-tag', default=None, help='Github tag to track changes to')
-
 @click.option('--github-token', default=None, help='Github OAuth token')
 @click.option('--output-path', type=click.Path(exists=False), default='./RELEASE.md', help='Release notes output path')
 def build_release_platform(platform_repo_path,
