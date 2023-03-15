@@ -75,3 +75,4 @@ jobs:
 
     - name: Test Schema
       run: ./scripts/build-maven.sh $(cat VERSION)
+
