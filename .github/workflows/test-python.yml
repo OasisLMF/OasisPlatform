@@ -17,10 +17,6 @@ on:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
 
-
-env:
-  ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
-
 jobs:
   ods_tools:
     #if: inputs.ods_branch != ''
@@ -44,17 +40,17 @@ jobs:
     - run: pip install tox
 
     - name: Download package
-      if: env.ods_branch
+      if: needs.ods_tools.outputs.whl_filename != ''
       uses: actions/download-artifact@v3
       with:
-        name: oasislmf-bin-pkg_linux
+        name: bin_package
         path: ${{ github.workspace }}/
 
     - name: Install package
-      if: env.ods_branch
+      if: needs.ods_tools.outputs.whl_filename != ''
       run: |
         pip uninstall ods-tools -y
-        pip install ${{ needs.ods_tools.outputs.linux_pkg_filename }}
+        pip install ${{ needs.ods_tools.outputs.whl_filename }}
 
     - name: Run Tox
       run: |
