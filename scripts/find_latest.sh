@@ -26,12 +26,4 @@ while getopts 'j:i:' flag; do
 done
 
 release_tags=( $(git tag --sort=creatordate | grep -oP "^($major)\.($minor)\.(\d+)$") )
-
-# --  DEBUG inputs ----------
-#echo "${release_tags[*]}"
-#echo "path: "pwd
-#echo "branch_name: "$branch_name
-#echo "pre_release: "$pre_release
-#echo "tag_select: "$tag_select
-
 echo "${release_tags[-$tag_select]}"
