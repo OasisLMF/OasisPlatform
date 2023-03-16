@@ -313,7 +313,6 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
             except Exception as e:
                 logger.info('Failed to update model settings:')
                 logger.exception(str(e))
-                # For S3 errors, raise for retry
                 if isinstance(e, S3_ClientError):
                     raise e
 
@@ -333,6 +332,8 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
     except Exception as e:
         logger.exception(str(e))
         logger.exception(model)
+        if isinstance(e, S3_ClientError):
+            raise e
 
 
 @celery_app.task(name='set_task_status')
