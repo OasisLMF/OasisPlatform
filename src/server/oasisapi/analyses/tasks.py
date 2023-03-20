@@ -325,6 +325,8 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
             except Exception as e:
                 logger.info('Failed to update model settings:')
                 logger.exception(str(e))
+                if isinstance(e, S3_ClientError):
+                    raise e
 
         # Update the oasislmf config
         if m_conf:
@@ -346,6 +348,8 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
     except Exception as e:
         logger.exception(str(e))
         logger.exception(model)
+        if isinstance(e, S3_ClientError):
+            raise e
 
 
 def _traceback_from_errback_args(*args):

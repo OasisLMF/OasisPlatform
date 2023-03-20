@@ -70,7 +70,7 @@ jobs:
         exit-code: '1'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln'
+        scanners: 'vuln'
         skip-dirs: './docker'
 
     - name: Trivy Configuration scanner (no fail)
@@ -81,7 +81,7 @@ jobs:
         exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'config,secret'
+        scanners: 'config,secret'
         skip-dirs: './docker'
 
     - name: Create Report
@@ -93,7 +93,7 @@ jobs:
         scan-type: 'fs'
         exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
-        security-checks: 'vuln'
+        scanners: 'vuln'
         skip-dirs: './docker'
 
     - name: Upload Trivy scan results to GitHub Security tab

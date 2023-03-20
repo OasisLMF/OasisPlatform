@@ -296,10 +296,12 @@ josepy==1.13.0
     # via mozilla-django-oidc
 jsonpickle==3.0.1
     # via -r ./requirements-server.in
+jsonref==1.1.0
+    # via ods-tools
 jsonschema==4.17.3
     # via
     #   -r ./requirements-server.in
-    #   oasislmf
+    #   ods-tools
 kombu==5.2.4
     # via celery
 llvmlite==0.39.1
@@ -343,9 +345,9 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.27.1
+oasislmf[extra]==1.27.2
     # via -r ./requirements-worker.in
-ods-tools==3.0.3
+ods-tools==3.0.4
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -355,6 +357,7 @@ packaging==23.0
     #   drf-yasg
     #   fastparquet
     #   geopandas
+    #   ods-tools
     #   pyproject-api
     #   pytest
     #   setuptools-scm

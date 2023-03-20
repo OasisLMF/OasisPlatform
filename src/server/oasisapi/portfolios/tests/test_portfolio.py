@@ -967,8 +967,8 @@ INFO_DATA_VALID = """ReinsNumber,ReinsLayerNumber,ReinsName,ReinsPeril,ReinsInce
 """
 
 SCOPE_DATA_VALID = """ReinsNumber,PortNumber,AccNumber,PolNumber,LocGroup,LocNumber,CedantName,ProducerName,LOB,CountryCode,ReinsTag,CededPercent,OEDVersion
-1,1,A11111,,,10002082047,,,,,,0.1,2.0.0
-1,1,A11111,,,10002082048,,,,,,0.2,2.0.0
+1,1,A11111,,,10002082047,,,,GB,,0.1,2.0.0
+1,1,A11111,,,10002082048,,,,GB,,0.2,2.0.0
 """
 
 LOCATION_DATA_INVALID = """Port,AccNumber,LocNumb,IsTenant,BuildingID,CountryCode,Latitude,Longitude,Street,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
@@ -1162,7 +1162,8 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     ['location', "column 'Port' is not a valid oed field"],
                     ['location', "column 'LocNumb' is not a valid oed field"],
                     ['location', "column 'Street' is not a valid oed field"],
-                    ['location', 'LocPerilsCovered has invalid perils.\n  AccNumber LocPerilsCovered\n1    A11111             XXYA']
+                    ['location', 'LocPerilsCovered has invalid perils.\n  AccNumber LocPerilsCovered\n1    A11111             XXYA'],
+                    ['location', 'invalid ConstructionCode.\n  AccNumber  ConstructionCode\n3    A11111                -1']
                 ])
 
     def test_account_file__is_invalid__response_is_400(self):

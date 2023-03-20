@@ -1222,30 +1222,28 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 analysis = fake_analysis()
                 json_data = {
-                    "analysis_settings": {
-                        "analysis_tag": "test_analysis",
-                        "model_supplier_id": "OasisLMF",
-                        "model_version_id": "1",
-                        "model_name_id": "PiWind",
-                        "number_of_samples": -1,
-                        "gul_threshold": 0,
-                        "model_settings": {
-                            "use_random_number_file": True,
-                            "event_occurrence_file_id": "1"
-                        },
-                        "gul_output": True,
-                        "gul_summaries": [
-                            {
-                                "id": 1,
-                                "summarycalc": True,
-                                "eltcalc": True,
-                                "aalcalc": "Not-A-Boolean",
-                                "pltcalc": True,
-                                "lec_output": False
-                            }
-                        ],
-                        "il_output": False
-                    }
+                    "version": "3",
+                    "analysis_tag": "test_analysis",
+                    "model_supplier_id": "OasisIM",
+                    "model_name_id": "1",
+                    "number_of_samples": -1,
+                    "gul_threshold": 0,
+                    "model_settings": {
+                        "use_random_number_file": True,
+                        "event_occurrence_file_id": "1"
+                    },
+                    "gul_output": True,
+                    "gul_summaries": [
+                        {
+                            "id": 1,
+                            "summarycalc": True,
+                            "eltcalc": True,
+                            "aalcalc": "Not-A-Boolean",
+                            "pltcalc": True,
+                            "lec_output": False
+                        }
+                    ],
+                    "il_output": False
                 }
 
                 response = self.app.post(
@@ -1271,31 +1269,31 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 analysis = fake_analysis()
                 json_data = {
-                    "analysis_settings": {
-                        "source_tag": "test_source",
-                        "analysis_tag": "test_analysis",
-                        "model_supplier_id": "OasisLMF",
-                        "model_version_id": "1",
-                        "model_name_id": "PiWind",
-                        "number_of_samples": 10,
-                        "gul_threshold": 0,
-                        "model_settings": {
-                            "use_random_number_file": True,
-                            "event_occurrence_file_id": "1"
-                        },
-                        "gul_output": True,
-                        "gul_summaries": [
-                            {
-                                "id": 1,
-                                "summarycalc": True,
-                                "eltcalc": True,
-                                "aalcalc": True,
-                                "pltcalc": True,
-                                "lec_output": False
-                            }
-                        ],
-                        "il_output": False
-                    }
+                    "version": "3",
+                    "source_tag": "test_source",
+                    "analysis_tag": "test_analysis",
+                    "model_supplier_id": "OasisIM",
+                    "model_name_id": "1",
+                    "number_of_samples": 10,
+                    "gul_threshold": 0,
+                    "model_settings": {
+                        "use_random_number_file": True,
+                        "event_occurrence_file_id": "1"
+                    },
+                    "gul_output": True,
+                    "gul_summaries": [
+                        {
+                            "id": 1,
+                            "summarycalc": True,
+                            "eltcalc": True,
+                            "aalcalc": True,
+                            "pltcalc": True,
+                            "lec_output": False
+                        }
+                    ],
+                    "il_output": False,
+                    'model_version_id': '1',
+                    'model_supplier_id': 'OasisIM'
                 }
 
                 self.app.post(
@@ -1313,7 +1311,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                 )
-                self.assertEqual(json.loads(response.body), json_data['analysis_settings'])
+                self.assertEqual(json.loads(response.body), json_data)
                 self.assertEqual(response.content_type, 'application/json')
 
 

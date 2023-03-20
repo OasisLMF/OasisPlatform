@@ -81,7 +81,7 @@ jobs:
         exit-code: ${{ matrix.exit-code }}
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln'
+        scanners: 'vuln'
 
     - name: Create Report
       if: success() || failure()
@@ -94,7 +94,7 @@ jobs:
         exit-code: '0'
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln'
+        scanners: 'vuln'
 
     - name: Upload Trivy scan results to GitHub Security tab
       if: success() || failure()
