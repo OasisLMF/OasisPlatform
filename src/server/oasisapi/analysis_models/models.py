@@ -96,6 +96,7 @@ class AnalysisModel(TimeStampedModel):
     ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     deleted = models.BooleanField(default=False, editable=False)
+    celery_tasks = models.JSONField(default=list, null=True, help_text=_('Celery tasks supported by worker') )
 
     # Logical Delete
     objects = SoftDeleteManager()

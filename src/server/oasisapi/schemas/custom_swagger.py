@@ -4,6 +4,7 @@ __all__ = [
     'TOKEN_REFRESH_HEADER',
     'FILE_FORMAT_PARAM',
     'FILE_VALIDATION_PARAM',
+    'CELERY_VALIDATION_PARAM',
 ]
 
 from drf_yasg import openapi
@@ -73,5 +74,12 @@ FILE_VALIDATION_PARAM = openapi.Parameter(
     'validate',
     openapi.IN_QUERY,
     description="Validate OED files on upload, default `True`",
+    type=openapi.TYPE_BOOLEAN,
+)
+
+CELERY_VALIDATION_PARAM = openapi.Parameter(
+    'validate',
+    openapi.IN_QUERY,
+    description="Validate Celery worker is connected and supports requested actions `False`",
     type=openapi.TYPE_BOOLEAN,
 )

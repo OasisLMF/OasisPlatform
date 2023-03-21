@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
 
-from celery import signature
+from celery import signature, chain
 from celery.result import AsyncResult
 from django.conf import settings
 from django.core.files.base import File
@@ -18,8 +18,14 @@ from ..files.models import RelatedFile, file_storage_link
 from ..analysis_models.models import AnalysisModel
 from ..data_files.models import DataFile
 from ..portfolios.models import Portfolio
-from .tasks import record_generate_input_result, record_run_analysis_result
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
+
+from .tasks import (
+    record_generate_input_result, 
+    record_run_analysis_result, 
+    delete_prev_output, 
+    check_model_task_sig,
+)    
 
 
 class Analysis(TimeStampedModel):
@@ -134,43 +140,41 @@ class Analysis(TimeStampedModel):
     def get_absolute_storage_url(self, request=None):
         return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-    def validate_run(self):
-        valid_choices = [
-            self.status_choices.READY,
-            self.status_choices.RUN_COMPLETED,
-            self.status_choices.RUN_ERROR,
-            self.status_choices.RUN_CANCELLED,
-        ]
+    def run_callback(self, body):
+        self.status = self.status_choices.RUN_STARTED
+        self.save()
+
+    def validate_status(self, valid_choices):
         if self.status not in valid_choices:
             raise ValidationError(
                 {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
             )
 
+    def validate_errors(self, errors, error_state):
+        if errors:
+            self.status = error_state
+            self.save()
+            raise ValidationError(detail=errors)
+
+
+    def run(self, initiator):
+        self.validate_status([
+            self.status_choices.READY,
+            self.status_choices.RUN_COMPLETED,
+            self.status_choices.RUN_ERROR,
+            self.status_choices.RUN_CANCELLED,
+        ])
+
         errors = {}
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-
         if not self.settings_file:
             errors['settings_file'] = ['Must not be null']
-
         if not self.input_file:
             errors['input_file'] = ['Must not be null']
-
-        if errors:
-            self.status = self.status_choices.RUN_ERROR
-            self.save()
-
-            raise ValidationError(detail=errors)
-
-    def run_callback(self, body):
-        self.status = self.status_choices.RUN_STARTED
-        self.save()
-
-    def run(self, initiator):
-        self.validate_run()
+        self.validate_errors(errors, self.status_choices.RUN_ERROR)
 
         self.status = self.status_choices.RUN_QUEUED
-
         run_analysis_signature = self.run_analysis_signature
         run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
         run_analysis_signature.link_error(
@@ -181,6 +185,83 @@ class Analysis(TimeStampedModel):
         self.task_started = None
         self.task_finished = None
         self.save()
+
+
+    def generate_and_run(self, initiator, validate_celery=False):
+        self.validate_status([
+            self.status_choices.NEW,
+            self.status_choices.INPUTS_GENERATION_ERROR,
+            self.status_choices.INPUTS_GENERATION_CANCELLED,
+            self.status_choices.READY,
+            self.status_choices.RUN_COMPLETED,
+            self.status_choices.RUN_CANCELLED,
+            self.status_choices.RUN_ERROR,
+        ])
+
+        # validation here
+        errors = {}
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        if not self.settings_file:
+            errors['settings_file'] = ['Must not be null']
+        if not self.portfolio.location_file:
+            errors['portfolio'] = ['"location_file" must not be null']
+            
+        # check worker supports chained execution 
+        #from celery.contrib import rdb; rdb.set_trace()
+        if validate_celery: 
+
+            # check worker support via worker monitor 
+            check_sig = check_model_task_sig.delay(
+                task_signature=self.run_analysis_chain_signature, 
+                queue_name=self.model.queue_name
+            )
+            worker_ready, msg = check_sig.wait()
+            errors['worker'] = msg
+
+
+            # Check support via stored celery tasks 
+            if  self.model.
+            import ipdb; ipdb.set_trace()
+
+
+        self.validate_errors(errors, self.status_choices.RUN_ERROR)
+        ## Test should pass ??
+        #check_sig = check_model_task_sig.delay(
+        #    task_signature=self.run_analysis_signature, 
+        #    queue_name=self.model.queue_name
+        #)
+
+
+        
+
+
+        # task 1 - input gen
+        self.status = self.status_choices.INPUTS_GENERATION_QUEUED
+        generate_input_signature = self.generate_input_signature
+        generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
+        generate_input_signature.link_error(
+            signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+        )
+
+        # task 2 - loss analyses
+        run_analysis_chain_signature = self.run_analysis_chain_signature
+        run_analysis_chain_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
+        run_analysis_chain_signature.link_error(
+            signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+        )
+
+        # Run 
+        task_chain = chain(generate_input_signature, run_analysis_chain_signature)
+        task_chain.delay()
+
+        # extract ids?
+
+        self.task_started = None
+        self.task_finished = None
+        self.save()
+
+
 
     @property
     def run_analysis_signature(self):
@@ -194,8 +275,21 @@ class Analysis(TimeStampedModel):
             queue=self.model.queue_name,
         )
 
+    @property
+    def run_analysis_chain_signature(self):
+        delete_prev_output(self, ['input_file'])
+        complex_data_files = self.create_complex_model_data_file_dicts()
+        input_file = file_storage_link(self.input_file)
+        settings_file = file_storage_link(self.settings_file)
+
+        return signature(
+            'run_analysis_chain',
+            args=(self.pk, input_file, settings_file, complex_data_files),
+            queue=self.model.queue_name,
+        )
+
     def generate_inputs(self, initiator):
-        valid_choices = [
+        self.validate_status([
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
             self.status_choices.INPUTS_GENERATION_CANCELLED,
@@ -203,20 +297,14 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_COMPLETED,
             self.status_choices.RUN_CANCELLED,
             self.status_choices.RUN_ERROR,
-        ]
+        ])
 
         errors = {}
-        if self.status not in valid_choices:
-            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
-
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
-
-        if errors:
-            raise ValidationError(errors)
+        self.validate_errors(errors, self.status_choices.INPUTS_GENERATION_ERROR)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         generate_input_signature = self.generate_input_signature

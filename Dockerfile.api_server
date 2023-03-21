@@ -20,7 +20,7 @@ USER server
 FROM ubuntu:22.04
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends sudo python3 python3-pip curl libmariadbclient-dev-compat \
+ && apt-get install -y --no-install-recommends sudo python3 python3-pip curl libmariadbclient-dev-compat telnet \
  && rm -rf /var/lib/apt/lists/
 
 RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos "" server

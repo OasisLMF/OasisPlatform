@@ -145,6 +145,8 @@ def get_worker_versions():
         "platform": plat_ver_str
     }
 
+def get_registered_tasks():
+    return [task for task in app.tasks.keys() if not task.startswith('celery.')]
 
 def check_worker_lost(task, analysis_pk):
     """
@@ -181,8 +183,10 @@ def register_worker(sender, **k):
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
     m_version = get_worker_versions()
+    m_tasks = get_registered_tasks()
     logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
+    logging.info('celery_tasks: {}'.format(m_tasks))
 
     # Check for 'DISABLE_WORKER_REG' before sending task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
@@ -196,7 +200,7 @@ def register_worker(sender, **k):
 
         signature(
             'run_register_worker',
-            args=(m_supplier, m_name, m_id, m_settings, m_version),
+            args=(m_supplier, m_name, m_id, m_settings, m_version, m_tasks),
             queue='celery'
         ).delay()
 
@@ -291,8 +295,8 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
-@app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,))
-def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None):
+@app.task(name='run_analysis_chain', bind=True, acks_late=True, throws=(Terminated,))
+def start_analysis_task_chained(self, chain, analysis_pk, input_location, analysis_settings, complex_data_files=None, **kwargs):
     """Task wrapper for running an analysis.
 
     Args:
@@ -308,7 +312,57 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
     logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
         settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
+    with get_lock() as gotten:
+        if not gotten:
+            logging.info("Failed to get resource lock - retry task")
+            raise self.retry(
+                max_retries=None,
+                countdown=settings.getint('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS'))
 
+        logging.info("Acquired resource lock")
+
+        # TESTING - Replace `input_location` with result from chain
+        #from celery.contrib import rdb; rdb.set_trace()
+        input_location = chain[0]
+
+        try:
+            # Check if this task was re-queued from a lost worker
+            check_worker_lost(self, analysis_pk)
+
+            notify_api_status(analysis_pk, 'RUN_STARTED')
+            self.update_state(state=RUNNING_TASK_STATUS)
+            output_location, traceback_location, log_location, return_code = start_analysis(
+                analysis_settings,
+                input_location,
+                complex_data_files=complex_data_files
+            )
+
+        except Terminated:
+            sys.exit('Task aborted')
+        except Exception:
+            logging.exception("Model execution task failed.")
+            raise
+
+        return output_location, traceback_location, log_location, return_code
+
+
+@app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,))
+def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None, **kwargs):
+    """Task wrapper for running an analysis.
+
+    Args:
+        self: Celery task instance.
+        analysis_settings (str): Path or URL to the analysis settings.
+        input_location (str): Path to the input tar file.
+        complex_data_files (list of complex_model_data_file): List of dicts containing
+            on-disk and original filenames for required complex model data files.
+
+    Returns:
+        (string) The location of the outputs.
+    """
+    logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
+    logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
+        settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
     with get_lock() as gotten:
         if not gotten:
             logging.info("Failed to get resource lock - retry task")

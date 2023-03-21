@@ -8,8 +8,7 @@ import os
 # from celery.contrib import rdb
 
 from celery.utils.log import get_task_logger
-from celery import Task
-from celery import signals
+from celery import Task, signals, current_app
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
@@ -276,11 +275,11 @@ def log_worker_monitor(sender, **k):
 
 
 @celery_app.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
-def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
+def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_tasks=None, **kwargs):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
-        from django.contrib.auth.models import User
         from src.server.oasisapi.analysis_models.models import AnalysisModel
+        from django.contrib.auth.models import User
 
         try:
             model = AnalysisModel.all_objects.get(
@@ -328,6 +327,16 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
                 logger.info('Failed to set model veriosns:')
                 logger.exception(str(e))
 
+        # Update list of supported celery tasks
+        if m_tasks:
+            try:
+                model.celery_tasks = m_tasks
+                model.save()
+                logger.info('Updated supported celery tasks')
+            except Exception as e:
+                logger.info('Failed to set model tasks:')
+                logger.exception(str(e))
+
     # Log unhandled execptions
     except Exception as e:
         logger.exception(str(e))
@@ -348,6 +357,45 @@ def set_task_status(analysis_pk, task_status):
     except Exception as e:
         logger.error('Task Status Update: Failed')
         logger.exception(str(e))
+
+
+def _find_celery_node(active_queues, queue_name):
+    for q in active_queues:
+        if active_queues[q][0].get('name', '') == queue_name:
+            return q
+    return None
+
+
+@celery_app.task(name='check_model_task_sig', base=LogTaskError)
+def check_model_task_sig(task_signature, queue_name):
+    """ Check if 'sig_name' can be processed by 'model_queue'
+
+    Inspect the model queue to test if a celery task can be
+    executed before submitting a task for execution.
+
+    Maybe fire this on model reg and store list of supported tasks?
+    """
+    inspector = current_app.control.inspect()
+
+    try:
+        active_queues = inspector.active_queues()
+        celery_worker = _find_celery_node(active_queues, queue_name)
+        if not celery_worker:
+            return False, "Worker not found"
+
+        # list reg tasks
+        celery_tasks = current_app.control.inspect([celery_worker]).registered()
+
+        # Update 
+
+        if task_signature.get('task') in celery_tasks[celery_worker]:
+            return True, f"{task_signature.get('task')} registered in {queue_name}"
+        else:
+            return False, f"{task_signature.get('task')} not found in {queue_name}"
+
+    except Exception as e:
+        return False, e
+
 
 
 @celery_app.task(name='record_run_analysis_result', base=LogTaskError)

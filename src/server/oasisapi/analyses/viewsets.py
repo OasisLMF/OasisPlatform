@@ -25,7 +25,7 @@ from ..data_files.serializers import DataFileSerializer
 from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ..files.views import handle_related_file, handle_json_data
 from ..files.serializers import RelatedFileSerializer
-from ..schemas.custom_swagger import FILE_RESPONSE
+from ..schemas.custom_swagger import FILE_RESPONSE, CELERY_VALIDATION_PARAM
 from ..schemas.serializers import AnalysisSettingsSerializer
 
 
@@ -206,12 +206,29 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
+
+    @swagger_auto_schema(responses={200: AnalysisSerializer}, manual_parameters=[CELERY_VALIDATION_PARAM])
+    @action(methods=['post'], detail=True)
+    def generate_and_run(self, request, pk=None, version=None):
+        """
+        Queues the 'Generate inputs' and `Run analysis` celery tasks.  
+        Running all the analysis steps 
+
+        Runs all the analysis. The analysis must have one of the following
+        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED`,  or 
+        `RUN_ERROR`
+        """
+        obj = self.get_object()
+        validate_celery = request.query_params.get('validate', str(settings.CELERY_TASK_VALIDATION)).lower() == 'true'
+        obj.generate_and_run(request.user, validate_celery)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
         Runs all the analysis. The analysis must have one of the following
-        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED`, 'READY',  or
         `RUN_ERROR`
         """
         obj = self.get_object()
