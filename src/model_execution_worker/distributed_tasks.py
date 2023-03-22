@@ -1082,7 +1082,7 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
             shutil.move(fpath, os.path.join(run_directory, orig_fn))
         elif filestore._is_locally_stored(stored_fn):
             # If refrence is local filepath check that it exisits and copy/symlink
-            from_path = filestore.get(stored_fn)
+            from_path = filestore.filepath(stored_fn)
             to_path = os.path.join(run_directory, orig_fn)
             if os.name == 'nt':
                 shutil.copy(from_path, to_path)
