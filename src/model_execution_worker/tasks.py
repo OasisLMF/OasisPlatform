@@ -320,9 +320,6 @@ def start_analysis_task_chained(self, chain, analysis_pk, input_location, analys
                 countdown=settings.getint('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS'))
 
         logging.info("Acquired resource lock")
-
-        # TESTING - Replace `input_location` with result from chain
-        #from celery.contrib import rdb; rdb.set_trace()
         input_location = chain[0]
 
         try:

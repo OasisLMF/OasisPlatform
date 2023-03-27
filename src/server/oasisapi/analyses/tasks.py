@@ -366,8 +366,8 @@ def _find_celery_node(active_queues, queue_name):
     return None
 
 
-@celery_app.task(name='check_model_task_sig', base=LogTaskError)
-def check_model_task_sig(task_signature, queue_name):
+@celery_app.task(name='check_model_task_support', base=LogTaskError)
+def check_model_task_support(task_signature, queue_name, model_pk):
     """ Check if 'sig_name' can be processed by 'model_queue'
 
     Inspect the model queue to test if a celery task can be
@@ -386,8 +386,16 @@ def check_model_task_sig(task_signature, queue_name):
         # list reg tasks
         celery_tasks = current_app.control.inspect([celery_worker]).registered()
 
-        # Update 
+        # Update Model 
+        try:
+            from src.server.oasisapi.analysis_models.models import AnalysisModel
+            model = AnalysisModel.objects.get(pk=model_pk)
+            model.celery_tasks = celery_tasks[celery_worker]
+            model.save(update_fields=['celery_tasks'])
+        except Exception as e:
+            logger.exception(str(e))
 
+        # Return status 
         if task_signature.get('task') in celery_tasks[celery_worker]:
             return True, f"{task_signature.get('task')} registered in {queue_name}"
         else:

@@ -80,6 +80,6 @@ FILE_VALIDATION_PARAM = openapi.Parameter(
 CELERY_VALIDATION_PARAM = openapi.Parameter(
     'validate',
     openapi.IN_QUERY,
-    description="Validate Celery worker is connected and supports requested actions `False`",
+    description="Validate Celery worker is connected and supports requested actions `True`",
     type=openapi.TYPE_BOOLEAN,
 )

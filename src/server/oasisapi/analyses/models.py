@@ -21,11 +21,11 @@ from ..portfolios.models import Portfolio
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 from .tasks import (
-    record_generate_input_result, 
-    record_run_analysis_result, 
-    delete_prev_output, 
-    check_model_task_sig,
-)    
+    record_generate_input_result,
+    record_run_analysis_result,
+    delete_prev_output,
+    check_model_task_support,
+)
 
 
 class Analysis(TimeStampedModel):
@@ -150,7 +150,23 @@ class Analysis(TimeStampedModel):
                 {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
             )
 
-    def validate_errors(self, errors, error_state):
+    def validate_celery_support(self, errors):
+        supported_tasks = self.model.celery_tasks
+        not_supported_msg =  f"Celery task 'generate_and_run' not supported in worker version {self.model.ver_platform}"
+        if not supported_tasks:
+            # check worker support via worker monitor
+            check_support = check_model_task_support.delay(
+                task_signature=self.run_analysis_chain_signature,
+                queue_name=self.model.queue_name,
+                model_pk=self.model.id
+            )
+            worker_ready, msg = check_support.wait()
+            errors['worker'] = not_supported_msg
+        else:
+            if 'run_analysis_chain' not in supported_tasks:
+                errors['worker'] = not_supported_msg
+
+    def raise_validate_errors(self, errors, error_state):
         if errors:
             self.status = error_state
             self.save()
@@ -172,7 +188,7 @@ class Analysis(TimeStampedModel):
             errors['settings_file'] = ['Must not be null']
         if not self.input_file:
             errors['input_file'] = ['Must not be null']
-        self.validate_errors(errors, self.status_choices.RUN_ERROR)
+        self.raise_validate_errors(errors, self.status_choices.RUN_ERROR)
 
         self.status = self.status_choices.RUN_QUEUED
         run_analysis_signature = self.run_analysis_signature
@@ -187,7 +203,7 @@ class Analysis(TimeStampedModel):
         self.save()
 
 
-    def generate_and_run(self, initiator, validate_celery=False):
+    def generate_and_run(self, initiator, validate_celery=True):
         self.validate_status([
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
@@ -206,57 +222,31 @@ class Analysis(TimeStampedModel):
             errors['settings_file'] = ['Must not be null']
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
-            
-        # check worker supports chained execution 
-        #from celery.contrib import rdb; rdb.set_trace()
-        if validate_celery: 
+        if validate_celery:
+            self.validate_celery_support(errors)
 
-            # check worker support via worker monitor 
-            check_sig = check_model_task_sig.delay(
-                task_signature=self.run_analysis_chain_signature, 
-                queue_name=self.model.queue_name
-            )
-            worker_ready, msg = check_sig.wait()
-            errors['worker'] = msg
-
-
-            # Check support via stored celery tasks 
-            if  self.model.
-            import ipdb; ipdb.set_trace()
-
-
-        self.validate_errors(errors, self.status_choices.RUN_ERROR)
-        ## Test should pass ??
-        #check_sig = check_model_task_sig.delay(
-        #    task_signature=self.run_analysis_signature, 
-        #    queue_name=self.model.queue_name
-        #)
-
-
-        
-
+        # Raise for error
+        self.raise_validate_errors(errors, self.status_choices.RUN_ERROR)
 
         # task 1 - input gen
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         generate_input_signature = self.generate_input_signature
         generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
         generate_input_signature.link_error(
-            signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-        )
+            signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name))
 
         # task 2 - loss analyses
         run_analysis_chain_signature = self.run_analysis_chain_signature
         run_analysis_chain_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
         run_analysis_chain_signature.link_error(
-            signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-        )
+            signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name))
 
-        # Run 
+        # Run
         task_chain = chain(generate_input_signature, run_analysis_chain_signature)
-        task_chain.delay()
+        dispatched_task = task_chain.delay()
 
         # extract ids?
-
+        self.run_task_id = dispatched_task.id
         self.task_started = None
         self.task_finished = None
         self.save()
@@ -304,7 +294,7 @@ class Analysis(TimeStampedModel):
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
-        self.validate_errors(errors, self.status_choices.INPUTS_GENERATION_ERROR)
+        self.raise_validate_errors(errors, self.status_choices.INPUTS_GENERATION_ERROR)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         generate_input_signature = self.generate_input_signature
