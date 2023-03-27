@@ -206,7 +206,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-
     @swagger_auto_schema(responses={200: AnalysisSerializer}, manual_parameters=[CELERY_VALIDATION_PARAM])
     @action(methods=['post'], detail=True)
     def generate_and_run(self, request, pk=None, version=None):

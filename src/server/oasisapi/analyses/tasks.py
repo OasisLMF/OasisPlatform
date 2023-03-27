@@ -386,7 +386,7 @@ def check_model_task_support(task_signature, queue_name, model_pk):
         # list reg tasks
         celery_tasks = current_app.control.inspect([celery_worker]).registered()
 
-        # Update Model 
+        # Update Model
         try:
             from src.server.oasisapi.analysis_models.models import AnalysisModel
             model = AnalysisModel.objects.get(pk=model_pk)
@@ -395,7 +395,7 @@ def check_model_task_support(task_signature, queue_name, model_pk):
         except Exception as e:
             logger.exception(str(e))
 
-        # Return status 
+        # Return status
         if task_signature.get('task') in celery_tasks[celery_worker]:
             return True, f"{task_signature.get('task')} registered in {queue_name}"
         else:
@@ -403,7 +403,6 @@ def check_model_task_support(task_signature, queue_name, model_pk):
 
     except Exception as e:
         return False, e
-
 
 
 @celery_app.task(name='record_run_analysis_result', base=LogTaskError)

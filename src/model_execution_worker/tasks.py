@@ -145,8 +145,10 @@ def get_worker_versions():
         "platform": plat_ver_str
     }
 
+
 def get_registered_tasks():
     return [task for task in app.tasks.keys() if not task.startswith('celery.')]
+
 
 def check_worker_lost(task, analysis_pk):
     """

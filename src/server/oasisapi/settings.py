@@ -275,7 +275,7 @@ PORTFOLIO_VALIDATION_CONFIG = [
 ]
 
 
-# Check worker connectivity and task support 
+# Check worker connectivity and task support
 CELERY_TASK_VALIDATION = iniconf.settings.getboolean('server', 'CELERY_TASK_VALIDATION', fallback=True)
 
 # limit analyses logs access to admin accounts

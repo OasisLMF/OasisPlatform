@@ -152,7 +152,7 @@ class Analysis(TimeStampedModel):
 
     def validate_celery_support(self, errors):
         supported_tasks = self.model.celery_tasks
-        not_supported_msg =  f"Celery task 'generate_and_run' not supported in worker version {self.model.ver_platform}"
+        not_supported_msg = f"Celery task 'generate_and_run' not supported in worker version {self.model.ver_platform}"
         if not supported_tasks:
             # check worker support via worker monitor
             check_support = check_model_task_support.delay(
@@ -171,7 +171,6 @@ class Analysis(TimeStampedModel):
             self.status = error_state
             self.save()
             raise ValidationError(detail=errors)
-
 
     def run(self, initiator):
         self.validate_status([
@@ -201,7 +200,6 @@ class Analysis(TimeStampedModel):
         self.task_started = None
         self.task_finished = None
         self.save()
-
 
     def generate_and_run(self, initiator, validate_celery=True):
         self.validate_status([
@@ -250,8 +248,6 @@ class Analysis(TimeStampedModel):
         self.task_started = None
         self.task_finished = None
         self.save()
-
-
 
     @property
     def run_analysis_signature(self):
