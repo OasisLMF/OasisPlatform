@@ -10,7 +10,7 @@ from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 
-from ..files.models import RelatedFile, related_file_to_df
+from ..files.models import RelatedFile
 
 from ods_tools.oed.exposure import OedExposure
 
@@ -85,10 +85,10 @@ class Portfolio(TimeStampedModel):
 
     def run_oed_validation(self):
         portfolio_exposure = OedExposure(
-            location=related_file_to_df(self.location_file),
-            account=related_file_to_df(self.accounts_file),
-            ri_info=related_file_to_df(self.reinsurance_info_file),
-            ri_scope=related_file_to_df(self.reinsurance_scope_file),
+            location=getattr(self.location_file, 'file', None),
+            account=getattr(self.accounts_file, 'file', None),
+            ri_info=getattr(self.reinsurance_info_file, 'file', None),
+            ri_scope=getattr(self.reinsurance_scope_file, 'file', None),
             validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
         validation_errors = portfolio_exposure.check()
 

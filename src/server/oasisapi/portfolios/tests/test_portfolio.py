@@ -14,6 +14,7 @@ from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
+from ods_tools.oed.exposure import OedExposure
 
 from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
@@ -515,11 +516,20 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                     },
                 )
 
-                csv_return_data = pd.read_csv(io.StringIO(csv_response.text))
-                pd.testing.assert_frame_equal(csv_return_data, test_data)
+                csv_obj = io.StringIO(csv_response.text)
+                prq_obj = io.BytesIO(parquet_response.content)
+                setattr(prq_obj, 'name', 'account.parquet')
 
-                prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
-                pd.testing.assert_frame_equal(prq_return_data, test_data)
+                input_data = OedExposure(account=test_data)
+                return_csv = OedExposure(account=csv_obj)
+                return_prq = OedExposure(account=prq_obj)
+
+                pd.testing.assert_frame_equal(
+                    return_csv.account.dataframe,
+                    input_data.account.dataframe)
+                pd.testing.assert_frame_equal(
+                    return_prq.account.dataframe,
+                    input_data.account.dataframe)
 
 
 class PortfolioLocationFile(WebTestMixin, TestCase):
@@ -657,11 +667,20 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                     },
                 )
 
-                csv_return_data = pd.read_csv(io.StringIO(csv_response.text))
-                pd.testing.assert_frame_equal(csv_return_data, test_data)
+                csv_obj = io.StringIO(csv_response.text)
+                prq_obj = io.BytesIO(parquet_response.content)
+                setattr(prq_obj, 'name', 'location.parquet')
 
-                prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
-                pd.testing.assert_frame_equal(prq_return_data, test_data)
+                input_data = OedExposure(location=test_data)
+                return_csv = OedExposure(location=csv_obj)
+                return_prq = OedExposure(location=prq_obj)
+
+                pd.testing.assert_frame_equal(
+                    return_csv.location.dataframe,
+                    input_data.location.dataframe)
+                pd.testing.assert_frame_equal(
+                    return_prq.location.dataframe,
+                    input_data.location.dataframe)
 
 
 class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
@@ -800,11 +819,20 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                     },
                 )
 
-                csv_return_data = pd.read_csv(io.StringIO(csv_response.text))
-                pd.testing.assert_frame_equal(csv_return_data, test_data)
+                csv_obj = io.StringIO(csv_response.text)
+                prq_obj = io.BytesIO(parquet_response.content)
+                setattr(prq_obj, 'name', 'ri_scope.parquet')
 
-                prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
-                pd.testing.assert_frame_equal(prq_return_data, test_data)
+                input_data = OedExposure(ri_scope=test_data)
+                return_csv = OedExposure(ri_scope=csv_obj)
+                return_prq = OedExposure(ri_scope=prq_obj)
+
+                pd.testing.assert_frame_equal(
+                    return_csv.ri_scope.dataframe,
+                    input_data.ri_scope.dataframe)
+                pd.testing.assert_frame_equal(
+                    return_prq.ri_scope.dataframe,
+                    input_data.ri_scope.dataframe)
 
 
 class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
@@ -943,11 +971,20 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                     },
                 )
 
-                csv_return_data = pd.read_csv(io.StringIO(csv_response.text))
-                pd.testing.assert_frame_equal(csv_return_data, test_data)
+                csv_obj = io.StringIO(csv_response.text)
+                prq_obj = io.BytesIO(parquet_response.content)
+                setattr(prq_obj, 'name', 'ri_info.parquet')
 
-                prq_return_data = pd.read_parquet(io.BytesIO(parquet_response.content))
-                pd.testing.assert_frame_equal(prq_return_data, test_data)
+                input_data = OedExposure(ri_info=test_data)
+                return_csv = OedExposure(ri_info=csv_obj)
+                return_prq = OedExposure(ri_info=prq_obj)
+
+                pd.testing.assert_frame_equal(
+                    return_csv.ri_info.dataframe,
+                    input_data.ri_info.dataframe)
+                pd.testing.assert_frame_equal(
+                    return_prq.ri_info.dataframe,
+                    input_data.ri_info.dataframe)
 
 
 LOCATION_DATA_VALID = """PortNumber,AccNumber,LocNumber,IsTenant,BuildingID,CountryCode,Latitude,Longitude,StreetAddress,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
