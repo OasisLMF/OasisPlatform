@@ -198,6 +198,7 @@ def get_worker_model(name, supplier, version):
         )
     return model
 
+
 def delete_prev_output(object_model, field_list=[]):
     files_for_removal = list()
 
@@ -298,7 +299,6 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 
-
 @celery_app.task(name='run_register_tasks', **celery_conf.worker_task_kwargs)
 def run_register_tasks(m_supplier, m_name, m_id, m_tasks, **kwargs):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
@@ -345,7 +345,6 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, **kwarg
             except Exception as e:
                 logger.info('Failed to set model veriosns:')
                 logger.exception(str(e))
-
 
     # Log unhandled execptions
     except Exception as e:

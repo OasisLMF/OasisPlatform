@@ -160,10 +160,11 @@ class Analysis(TimeStampedModel):
             if 'run_analysis_chain' not in supported_tasks:
                 errors['worker'] = not_supported_msg
 
-    def raise_validate_errors(self, errors, error_state):
-        if errors:
+    def raise_validate_errors(self, errors, error_state=None):
+        if error_state:
             self.status = error_state
             self.save()
+        if errors:
             raise ValidationError(detail=errors)
 
     def run(self, initiator):
@@ -174,9 +175,12 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_CANCELLED,
         ]
 
-        errors = {}
         if self.status not in valid_choices:
-            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
+            raise ValidationError(
+                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
+            )
+
+        errors = {}
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
         if not self.settings_file:
@@ -222,7 +226,7 @@ class Analysis(TimeStampedModel):
             self.validate_celery_support(errors)
 
         # Raise for error
-        self.raise_validate_errors(errors, self.status_choices.RUN_ERROR)
+        self.raise_validate_errors(errors)
 
         # task 1 - input gen
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
@@ -291,7 +295,7 @@ class Analysis(TimeStampedModel):
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
-        self.raise_validate_errors(errors, self.status_choices.INPUTS_GENERATION_ERROR)
+        self.raise_validate_errors(errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         generate_input_signature = self.generate_input_signature
