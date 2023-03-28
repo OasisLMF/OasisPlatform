@@ -174,6 +174,30 @@ def store_file(reference, content_type, creator, required=True, filename=None):
             raise e
 
 
+def get_worker_model(m_name, m_supplier, m_id):
+    from src.server.oasisapi.analysis_models.models import AnalysisModel
+    from django.contrib.auth.models import User
+
+    try:
+        model = AnalysisModel.all_objects.get(
+            model_id=m_name,
+            supplier_id=m_supplier,
+            version_id=m_id
+        )
+        # Re-enable model if soft deleted
+        if model.deleted:
+            model.activate()
+
+    except ObjectDoesNotExist:
+        user = User.objects.get(username='admin')
+        model = AnalysisModel.objects.create(
+            model_id=m_name,
+            supplier_id=m_supplier,
+            version_id=m_id,
+            creator=user
+        )
+    return model
+
 def delete_prev_output(object_model, field_list=[]):
     files_for_removal = list()
 
@@ -274,31 +298,26 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 
+
 @celery_app.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
-def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_tasks=None, **kwargs):
+def run_register_tasks(m_supplier, m_name, m_id, m_tasks, **kwargs):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
-        from src.server.oasisapi.analysis_models.models import AnalysisModel
-        from django.contrib.auth.models import User
+        model = get_worker_model(m_supplier, m_name, m_id)
+        model.celery_tasks = m_tasks
+        model.save()
+        logger.info('Updated supported celery tasks')
+    except Exception as e:
+        logger.info('Failed to set model tasks:')
+        logger.exception(str(e))
+        logger.exception(model)
 
-        try:
-            model = AnalysisModel.all_objects.get(
-                model_id=m_name,
-                supplier_id=m_supplier,
-                version_id=m_id
-            )
-            # Re-enable model if soft deleted
-            if model.deleted:
-                model.activate()
 
-        except ObjectDoesNotExist:
-            user = User.objects.get(username='admin')
-            model = AnalysisModel.objects.create(
-                model_id=m_name,
-                supplier_id=m_supplier,
-                version_id=m_id,
-                creator=user
-            )
+@celery_app.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
+def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, **kwargs):
+    logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
+    try:
+        model = get_worker_model(m_supplier, m_name, m_id)
 
         # Update model settings file
         if m_settings:
@@ -327,15 +346,6 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_tasks
                 logger.info('Failed to set model veriosns:')
                 logger.exception(str(e))
 
-        # Update list of supported celery tasks
-        if m_tasks:
-            try:
-                model.celery_tasks = m_tasks
-                model.save()
-                logger.info('Updated supported celery tasks')
-            except Exception as e:
-                logger.info('Failed to set model tasks:')
-                logger.exception(str(e))
 
     # Log unhandled execptions
     except Exception as e:

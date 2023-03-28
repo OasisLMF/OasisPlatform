@@ -177,6 +177,22 @@ def check_worker_lost(task, analysis_pk):
     task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
 
 
+@worker_ready.connect
+def register_tasks(sender, **k):
+    m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
+    m_name = os.environ.get('OASIS_MODEL_ID')
+    m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
+    m_tasks = get_registered_tasks()
+
+    logging.info('Registrating tasks with the Oasis API:')
+    logging.info('tasks: {}'.format(m_tasks))
+    signature(
+        'run_register_tasks',
+        args=(m_supplier, m_name, m_id, m_tasks),
+        queue='celery'
+    ).delay()
+
+
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
@@ -185,10 +201,8 @@ def register_worker(sender, **k):
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
     m_version = get_worker_versions()
-    m_tasks = get_registered_tasks()
     logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
-    logging.info('celery_tasks: {}'.format(m_tasks))
 
     # Check for 'DISABLE_WORKER_REG' before sending task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
@@ -202,7 +216,7 @@ def register_worker(sender, **k):
 
         signature(
             'run_register_worker',
-            args=(m_supplier, m_name, m_id, m_settings, m_version, m_tasks),
+            args=(m_supplier, m_name, m_id, m_settings, m_version),
             queue='celery'
         ).delay()
 
