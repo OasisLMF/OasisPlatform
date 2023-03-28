@@ -144,12 +144,6 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
-    def validate_status(self, valid_choices):
-        if self.status not in valid_choices:
-            raise ValidationError(
-                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
-            )
-
     def validate_celery_support(self, errors):
         supported_tasks = self.model.celery_tasks
         not_supported_msg = f"Celery task 'generate_and_run' not supported in worker version {self.model.ver_platform}"
@@ -173,14 +167,16 @@ class Analysis(TimeStampedModel):
             raise ValidationError(detail=errors)
 
     def run(self, initiator):
-        self.validate_status([
+        valid_choices = [
             self.status_choices.READY,
             self.status_choices.RUN_COMPLETED,
             self.status_choices.RUN_ERROR,
             self.status_choices.RUN_CANCELLED,
-        ])
+        ]
 
         errors = {}
+        if self.status not in valid_choices:
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
         if not self.settings_file:
@@ -202,7 +198,7 @@ class Analysis(TimeStampedModel):
         self.save()
 
     def generate_and_run(self, initiator, validate_celery=True):
-        self.validate_status([
+        valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
             self.status_choices.INPUTS_GENERATION_CANCELLED,
@@ -210,10 +206,12 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_COMPLETED,
             self.status_choices.RUN_CANCELLED,
             self.status_choices.RUN_ERROR,
-        ])
+        ]
 
-        # validation here
+        # validation
         errors = {}
+        if self.status not in valid_choices:
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
         if not self.settings_file:
@@ -275,7 +273,7 @@ class Analysis(TimeStampedModel):
         )
 
     def generate_inputs(self, initiator):
-        self.validate_status([
+        valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
             self.status_choices.INPUTS_GENERATION_CANCELLED,
@@ -283,9 +281,12 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_COMPLETED,
             self.status_choices.RUN_CANCELLED,
             self.status_choices.RUN_ERROR,
-        ])
+        ]
 
+        # validation
         errors = {}
+        if self.status not in valid_choices:
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
         if not self.portfolio.location_file:
