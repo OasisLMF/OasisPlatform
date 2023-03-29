@@ -210,12 +210,10 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=True)
     def generate_and_run(self, request, pk=None, version=None):
         """
-        Queues the 'Generate inputs' and `Run analysis` celery tasks.  
-        Running all the analysis steps 
-
-        Runs all the analysis. The analysis must have one of the following
-        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED`,  or 
-        `RUN_ERROR`
+        Queues the 'Generate inputs' and `Run analysis` tasks as a single step.
+        The analysis must have one of the following
+        statuses, `NEW`, `INPUTS_GENERATION_ERROR`, `INPUTS_GENERATION_CANCELLED`,
+        `READY`, `RUN_COMPLETED`, `RUN_CANCELLED`, or `RUN_ERROR`,
         """
         obj = self.get_object()
         validate_celery = request.query_params.get('validate', str(settings.CELERY_TASK_VALIDATION)).lower() == 'true'
@@ -226,7 +224,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
-        Runs all the analysis. The analysis must have one of the following
+        Runs the analysis. The analysis must have one of the following
         statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED`, 'READY',  or
         `RUN_ERROR`
         """
