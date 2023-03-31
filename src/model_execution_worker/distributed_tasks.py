@@ -734,22 +734,25 @@ def collect_keys(
 
     # Collect files and tar here from chunk_params['target_dir']
     with TemporaryDir() as chunks_dir:
+        chunks_dir = Path(chunks_dir)
         # extract chunks
-        chunk_tars = [d['chunk_keys'] for d in params]
+        chunk_tars = [Path(d['chunk_keys']) for d in params]
         for tar in chunk_tars:
-            extract_to = os.path.join(chunks_dir, os.path.basename(tar).split('.')[0])
-            filestore.extract(tar, extract_to, storage_subdir)
+            dirname = tar.name.removesuffix(''.join(tar.suffixes))
+            extract_to = chunks_dir / dirname
+            filestore.extract(tar.as_posix(), extract_to.as_posix(), storage_subdir)
 
-        file_paths = glob.glob(chunks_dir + '/lookup-[0-9]*/*')  # paths for every file to merge (inputs for merge)
-        file_names = set([os.path.basename(f) for f in file_paths])  # unique filenames (output merged results)
+        file_paths = list(chunks_dir.glob('lookup-[0-9]*/*'))  # all files that need merging (merge inputs)
+        file_names = {path.name for path in file_paths}  # unique filenames (merge outputs)
 
         with TemporaryDir() as merge_dir:
             for file in file_names:
                 logging.info(f'Merging into file: "{file}"')
+                merge_dir = Path(merge_dir)
                 file_type = Path(file).suffix[1:]
                 file_name = Path(file).stem
-                file_chunks = [f for f in file_paths if f.endswith(file)]
-                file_merged = os.path.join(merge_dir, file)
+                file_chunks = [f for f in file_paths if f.name == file]
+                file_merged = merge_dir / file
                 file_chunks = natsorted(file_chunks)
 
                 if file_name in ['events', 'occurrence', 'ensemble_mapping']:
@@ -761,7 +764,7 @@ def collect_keys(
 
             # store keys data
             chunk_params['keys_data'] = filestore.put(
-                merge_dir,
+                merge_dir.as_posix(),
                 filename='keys-data.tar.gz',
                 subdir=chunk_params['storage_subdir']
             )
