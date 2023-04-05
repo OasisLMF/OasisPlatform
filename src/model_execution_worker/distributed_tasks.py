@@ -780,6 +780,11 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     params['oasis_files_dir'] = params['target_dir']
     OasisManager().generate_files(**params)
 
+    # clear out user-data,
+    # these files should not be sorted in the generated inputs tar
+    if params['user_data_dir'] is not None:
+        shutil.rmtree(params['user_data_dir'])
+
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
