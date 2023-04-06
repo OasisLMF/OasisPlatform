@@ -2,6 +2,7 @@ import os
 import json
 from io import BytesIO
 
+import pandas as pd
 from uuid import uuid4
 
 from django.conf import settings
