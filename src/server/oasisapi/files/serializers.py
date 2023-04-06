@@ -2,7 +2,9 @@ import hashlib
 import logging
 import io
 from pathlib import Path
+
 from ods_tools.oed.exposure import OedExposure
+from ods_tools.oed.common import OdsException
 
 from django.contrib.auth.models import Group
 from rest_framework import serializers
@@ -10,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.conf import settings as django_settings
 
-from .models import RelatedFile, related_file_to_df
+from .models import RelatedFile
 
 logger = logging.getLogger('root')
 
@@ -64,16 +66,15 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         # Create dataframe from file upload
         if run_validation or convert_to_parquet:
             try:
-                uploaded_data_df = related_file_to_df(attrs['file'])
-            except Exception as e:
-                raise ValidationError('Failed to read uploaded data [{}]'.format(e))
+                uploaded_exposure = OedExposure(**{
+                    EXPOSURE_ARGS[self.oed_field]: attrs['file'],
+                    'validation_config': django_settings.PORTFOLIO_VALIDATION_CONFIG
+                })
+            except OdsException as e:
+                raise ValidationError('Failed to read exposure data, file is corrupted or set with incorrect format', e)
 
         # Run OED Validation
         if run_validation:
-            uploaded_exposure = OedExposure(**{
-                EXPOSURE_ARGS[self.oed_field]: uploaded_data_df,
-                'validation_config': django_settings.PORTFOLIO_VALIDATION_CONFIG
-            })
             oed_validation_errors = uploaded_exposure.check()
             if len(oed_validation_errors) > 0:
                 raise ValidationError(detail=[(error['name'], error['msg']) for error in oed_validation_errors])
@@ -82,7 +83,8 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         if convert_to_parquet:
             try:
                 f = io.open(attrs['file'].name + '.parquet', 'wb+')
-                uploaded_data_df.to_parquet(f)
+                exposure_file = getattr(uploaded_exposure, EXPOSURE_ARGS[self.oed_field])
+                exposure_file.dataframe.to_parquet(f)
                 in_memory_file = UploadedFile(
                     file=f,
                     name=f.name,
