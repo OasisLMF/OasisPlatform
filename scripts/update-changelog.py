@@ -78,7 +78,8 @@ class ReleaseNotesBuilder(object):
         else:
             repo = RepositoryMining(repo_url, from_tag=from_tag, to_tag=to_tag)
 
-        commit_list = [re.findall(r'#\d+', commit.msg) for commit in repo.traverse_commits()]
+        commit_titles = [commit.msg.split('\n\n')[0] for commit in repo.traverse_commits()]
+        commit_list = [re.findall(r'#\d+', title) for title in commit_titles]
         commit_list = sum(commit_list, [])
         return set(map(lambda cm: int(cm[1:]), commit_list))
 
