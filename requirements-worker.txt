@@ -31,9 +31,9 @@ billiard==3.6.4.0
     #   celery
 binaryornot==0.4.4
     # via cookiecutter
-boto3==1.26.79
+boto3==1.26.107
     # via -r requirements-worker.in
-botocore==1.29.79
+botocore==1.29.107
     # via
     #   boto3
     #   s3transfer
@@ -55,7 +55,7 @@ chardet==5.1.0
     #   binaryornot
     #   oasislmf
     #   ods-tools
-charset-normalizer==3.0.1
+charset-normalizer==3.1.0
     # via requests
 click==8.1.3
     # via
@@ -82,25 +82,25 @@ cookiecutter==2.1.1
     # via oasislmf
 cramjam==2.6.2
     # via fastparquet
-cryptography==39.0.1
+cryptography==40.0.1
     # via
     #   azure-storage-blob
     #   paramiko
 docopt==0.6.2
     # via redi
-exceptiongroup==1.1.0
+exceptiongroup==1.1.1
     # via pytest
 fasteners==0.18
     # via -r requirements-worker.in
 fastparquet==2023.2.0
     # via oasislmf
-filelock==3.9.0
+filelock==3.10.7
     # via -r requirements-worker.in
-fiona==1.9.1
+fiona==1.9.2
     # via geopandas
 forex-python==1.8
     # via oasislmf
-fsspec==2023.1.0
+fsspec==2023.3.0
     # via fastparquet
 geopandas==0.12.2
     # via oasislmf
@@ -138,11 +138,11 @@ lxml==4.9.2
     # via redi
 markupsafe==2.1.2
     # via jinja2
-msgpack==1.0.4
+msgpack==1.0.5
     # via oasislmf
 munch==2.5.0
     # via fiona
-natsort==8.2.0
+natsort==8.3.1
     # via -r requirements-worker.in
 numba==0.56.4
     # via oasislmf
@@ -161,7 +161,7 @@ numpy==1.22.4
     #   shapely
 oasislmf[extra]==1.27.2
     # via -r requirements-worker.in
-ods-tools==3.0.4
+ods-tools==3.0.5
     # via oasislmf
 packaging==23.0
     # via
@@ -176,19 +176,19 @@ pandas==1.5.3
     #   geopandas
     #   oasislmf
     #   ods-tools
-paramiko==3.0.0
+paramiko==3.1.0
     # via pysftp
 pathlib2==2.3.7.post1
     # via -r requirements-worker.in
 pluggy==1.0.0
     # via pytest
-prompt-toolkit==3.0.37
+prompt-toolkit==3.0.38
     # via click-repl
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via -r requirements-worker.in
 pyarrow==11.0.0
     # via oasislmf
-pycap==2.3.0
+pycap==2.4.0
     # via
     #   redcap-cli
     #   redi
@@ -196,17 +196,17 @@ pycparser==2.21
     # via cffi
 pycrypto==2.6.1
     # via redi
-pymysql==1.0.2
+pymysql==1.0.3
     # via -r requirements-worker.in
 pynacl==1.5.0
     # via paramiko
-pyproj==3.4.1
+pyproj==3.5.0
     # via geopandas
 pyrsistent==0.19.3
     # via jsonschema
 pysftp==0.2.9
     # via redi
-pytest==7.2.1
+pytest==7.2.2
     # via -r requirements-worker.in
 python-dateutil==2.8.2
     # via
@@ -215,7 +215,7 @@ python-dateutil==2.8.2
     #   pandas
 python-slugify==8.0.1
     # via cookiecutter
-pytz==2022.7.1
+pytz==2023.3
     # via
     #   celery
     #   oasislmf
@@ -241,7 +241,7 @@ rtree==1.0.1
     # via oasislmf
 s3transfer==0.6.0
     # via boto3
-scikit-learn==1.2.1
+scikit-learn==1.2.2
     # via oasislmf
 scipy==1.10.1
     # via
@@ -257,7 +257,7 @@ shapely==2.0.1
     #   oasislmf
 shutilwhich==1.1.0
     # via oasislmf
-simplejson==3.18.3
+simplejson==3.18.4
     # via forex-python
 six==1.16.0
     # via
@@ -268,7 +268,7 @@ six==1.16.0
     #   munch
     #   pathlib2
     #   python-dateutil
-sqlalchemy==1.4.46
+sqlalchemy==1.4.47
     # via -r requirements-worker.in
 tabulate==0.9.0
     # via oasislmf
@@ -282,14 +282,14 @@ tomli==2.0.1
     # via
     #   pytest
     #   setuptools-scm
-tqdm==4.64.1
+tqdm==4.65.0
     # via oasislmf
 typing-extensions==4.5.0
     # via
     #   azure-core
     #   azure-storage-blob
     #   setuptools-scm
-urllib3==1.26.14
+urllib3==1.26.15
     # via
     #   botocore
     #   requests

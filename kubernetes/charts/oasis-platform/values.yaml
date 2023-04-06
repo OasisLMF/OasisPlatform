@@ -22,13 +22,13 @@ images:
     version: 8.0.32
   keycloak:
     image: quay.io/keycloak/keycloak
-    version: 21.0.1
+    version: 21.0
   init:
     image: busybox
     version: 1.28
   redis:
     image: redis
-    version: 7.0.9-alpine3.17
+    version: 7.0.10-alpine3.17
   rabbitmq:
     image: rabbitmq
     version: 3.11-management-alpine
