@@ -143,13 +143,13 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-coverage[toml]==7.2.1
+coverage[toml]==7.2.2
     # via
     #   -r requirements.in
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==39.0.1
+cryptography==39.0.2
     # via
     #   autobahn
     #   azure-storage-blob
@@ -169,6 +169,7 @@ distlib==0.3.6
 django==3.2.18
     # via
     #   channels
+    #   django-celery-results
     #   django-debug-toolbar
     #   django-filter
     #   django-model-utils
@@ -180,7 +181,7 @@ django==3.2.18
     #   drf-yasg
     #   model-mommy
     #   mozilla-django-oidc
-django-celery-results==2.4.0
+django-celery-results==2.5.0
     # via -r ./requirements-server.in
 django-cleanup==6.0.0
     # via -r ./requirements-server.in
@@ -224,7 +225,7 @@ fasteners==0.18
     #   -r requirements.in
 fastparquet==2023.1.0
     # via oasislmf
-filelock==3.9.0
+filelock==3.10.7
     # via
     #   -r ./requirements-worker.in
     #   tox
@@ -395,7 +396,7 @@ prompt-toolkit==3.0.36
     # via
     #   click-repl
     #   ipython
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -510,7 +511,7 @@ ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.6.0
     # via boto3
-scikit-learn==1.2.1
+scikit-learn==1.2.2
     # via oasislmf
 scipy==1.10.1
     # via
@@ -546,7 +547,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.3.2.post1
     # via beautifulsoup4
-sqlalchemy==1.4.46
+sqlalchemy==1.4.47
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -605,7 +606,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.19.0
+virtualenv==20.21.0
     # via tox
 waitress==2.1.2
     # via webtest
@@ -615,7 +616,7 @@ webob==1.8.7
     # via webtest
 webtest==3.0.0
     # via django-webtest
-wheel==0.38.4
+wheel==0.40.0
     # via pip-tools
 whitenoise==6.3.0
     # via -r ./requirements-server.in

@@ -82,7 +82,7 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==39.0.1
+cryptography==39.0.2
     # via
     #   autobahn
     #   azure-storage-blob
@@ -95,6 +95,7 @@ daphne==2.5.0
 django==3.2.18
     # via
     #   channels
+    #   django-celery-results
     #   django-debug-toolbar
     #   django-filter
     #   django-model-utils
@@ -105,7 +106,7 @@ django==3.2.18
     #   drf-nested-routers
     #   drf-yasg
     #   mozilla-django-oidc
-django-celery-results==2.4.0
+django-celery-results==2.5.0
     # via -r requirements-server.in
 django-cleanup==7.0.0
     # via -r requirements-server.in
@@ -202,7 +203,7 @@ pathlib2==2.3.7.post1
     # via -r requirements-server.in
 prompt-toolkit==3.0.37
     # via click-repl
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via -r requirements-server.in
 pyarrow==11.0.0
     # via -r requirements-server.in
@@ -263,7 +264,7 @@ six==1.16.0
     #   pathlib2
     #   python-dateutil
     #   service-identity
-sqlalchemy==1.4.46
+sqlalchemy==1.4.47
     # via -r requirements-server.in
 sqlparse==0.4.3
     # via
