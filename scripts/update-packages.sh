@@ -1,6 +1,7 @@
 pkg_list=(
     'ods-tools==3.*'
     'oasislmf==1.27.*'
+    'pandas==1.*'
     joblib
     cryptography
     oauthlib

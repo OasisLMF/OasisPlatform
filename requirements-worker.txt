@@ -170,7 +170,7 @@ packaging==23.0
     #   ods-tools
     #   pytest
     #   setuptools-scm
-pandas==2.0.0
+pandas==1.5.3
     # via
     #   fastparquet
     #   geopandas
@@ -289,8 +289,6 @@ typing-extensions==4.5.0
     #   azure-core
     #   azure-storage-blob
     #   setuptools-scm
-tzdata==2023.3
-    # via pandas
 urllib3==1.26.15
     # via
     #   botocore

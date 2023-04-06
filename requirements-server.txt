@@ -195,7 +195,7 @@ packaging==23.0
     # via
     #   drf-yasg
     #   ods-tools
-pandas==2.0.0
+pandas==1.5.3
     # via
     #   -r requirements-server.in
     #   ods-tools
@@ -279,8 +279,6 @@ typing-extensions==4.5.0
     #   azure-core
     #   azure-storage-blob
     #   twisted
-tzdata==2023.3
-    # via pandas
 uritemplate==4.1.1
     # via
     #   coreapi
