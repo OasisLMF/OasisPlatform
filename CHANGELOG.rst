@@ -1,6 +1,53 @@
 OasisPlatform Changelog
 =======================
 
+`2.1.1`_
+ ---------
+* [#771](https://github.com/OasisLMF/OasisPlatform/pull/772) - Add ODS_Tools version summary to release notes builder
+* [#775](https://github.com/OasisLMF/OasisPlatform/pull/775) - Search all repo for tags, but limit the scope by env
+* [#639](https://github.com/OasisLMF/OasisPlatform/pull/648) - CVE security cleanup 
+* [#776](https://github.com/OasisLMF/OasisPlatform/pull/776) - Platform 2 - Updates and forward ports 
+* [#608](https://github.com/OasisLMF/OasisPlatform/pull/651) - Store templates for analysis settings 
+* [#780](https://github.com/OasisLMF/OasisPlatform/pull/779) - DataFiles are not loaded in Platform2 
+* [#633](https://github.com/OasisLMF/OasisPlatform/pull/653) - List serilizer reutrns are not sorted by 'id'
+* [#782](https://github.com/OasisLMF/OasisPlatform/pull/782) - Feature/ods read from stream Plat2
+* [#624](https://github.com/OasisLMF/OasisPlatform/pull/655) - Update sub_task_list endpoint
+* [#631](https://github.com/OasisLMF/OasisPlatform/pull/656) - Auto scaling not dropping to zero worker pods 
+* [#625, #635](https://github.com/OasisLMF/OasisPlatform/pull/657) - Fixes for work sub-tasks 
+* [#652](https://github.com/OasisLMF/OasisPlatform/pull/659) - Oasis UI - idle session crash 
+* [#660](https://github.com/OasisLMF/OasisPlatform/pull/660) - Fix/loclines lessthan chunks
+* [#785](https://github.com/OasisLMF/OasisPlatform/pull/787) - Analysis run fails when using custom user data files
+* [#646](https://github.com/OasisLMF/OasisPlatform/pull/662) - Dynamic scalling models can causes websocket pushes to fail. 
+* [#634](https://github.com/OasisLMF/OasisPlatform/pull/663) - Add pre-analysis hook to new workflow 
+* [#789](https://github.com/OasisLMF/OasisPlatform/pull/789) - Update Python packages for v2.1.1
+* [#646](https://github.com/OasisLMF/OasisPlatform/pull/665) - Dynamic scalling models can causes websocket pushes to fail. 
+* [#669](https://github.com/OasisLMF/OasisPlatform/pull/670) - Remove "lookup_complex_config_json" if no settings file given
+* [#677](https://github.com/OasisLMF/OasisPlatform/pull/685) - Investigate - large file downloads failing from the azure hosted platform  
+* [#686](https://github.com/OasisLMF/OasisPlatform/pull/687) - Update channels redis config to have SSL options
+* [#697](https://github.com/OasisLMF/OasisPlatform/pull/697) - Fix/auth timeout
+* [#700](https://github.com/OasisLMF/OasisPlatform/pull/700) - Fix/error reading file len
+* [#708](https://github.com/OasisLMF/OasisPlatform/pull/708) - Update/CVE versions
+* [#740](https://github.com/OasisLMF/OasisPlatform/pull/709) - CVE Update external Image versions 
+* [#711](https://github.com/OasisLMF/OasisPlatform/pull/711) - Github actions CI/CD update
+* [#717](https://github.com/OasisLMF/OasisPlatform/pull/717) - Fixes for Github actions - Platform 2.x
+* [#718](https://github.com/OasisLMF/OasisPlatform/pull/719) - ConfigMap error when installing the helm charts to k3s
+* [#722, #723](https://github.com/OasisLMF/OasisPlatform/pull/724) - Added OED validation on file upload, and updated ods-tools package to 3.0.1
+* [#674](https://github.com/OasisLMF/OasisPlatform/pull/731) - Collect custom lookup output 
+* [#734](https://github.com/OasisLMF/OasisPlatform/pull/744) - Add OED v3 support to the scalable platform 
+* [#741](https://github.com/OasisLMF/OasisPlatform/pull/745) - Fix Piwind testing on platform 2 
+* [#746](https://github.com/OasisLMF/OasisPlatform/pull/746) - CVE scans are raising issues but Actions marked as passed
+* [#620](https://github.com/OasisLMF/OasisPlatform/pull/620) - Feature/1018 default samples
+* [#608](https://github.com/OasisLMF/OasisPlatform/pull/621) - Store templates for analysis settings 
+* [#738](https://github.com/OasisLMF/OasisPlatform/pull/748) - CVE update Prometheus 
+* [#753](https://github.com/OasisLMF/OasisPlatform/pull/753) - Set ods-tools 3.0.2
+* [#740, #742](https://github.com/OasisLMF/OasisPlatform/pull/757) - Update external image versions 
+* [#758](https://github.com/OasisLMF/OasisPlatform/pull/758) - Fixes for merging of distributed input files
+* [#761](https://github.com/OasisLMF/OasisPlatform/pull/761) -  Release Platform 2.1.0 (Horizontal scaling / Kubernetes)  --
+* [#754](https://github.com/OasisLMF/OasisPlatform/pull/762) - Update the model settings schema to include correlation options  
+* [#764](https://github.com/OasisLMF/OasisPlatform/pull/764) - Fix schema build workflow
+* [#765](https://github.com/OasisLMF/OasisPlatform/pull/765) - Move json settings schema to ods-tools
+.. _`2.1.1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.1.0...2.1.1
+
 `2.1.0`_
  ---------
 * [#754](https://github.com/OasisLMF/OasisPlatform/pull/762) - Update the model settings schema to include correlation options  
