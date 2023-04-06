@@ -10,7 +10,7 @@ from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 
-from ..files.models import RelatedFile
+from ..files.models import RelatedFile, related_file_to_df
 
 from ods_tools.oed.exposure import OedExposure
 
