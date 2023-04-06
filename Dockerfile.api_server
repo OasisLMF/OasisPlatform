@@ -6,6 +6,15 @@ COPY ./requirements-server.txt ./requirements-server.txt
 RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential python3 python3-pip python3-dev libmariadbclient-dev-compat && rm -rf /var/lib/apt/lists/*
 RUN pip install --user --no-warn-script-location -r ./requirements-server.txt && pip install --no-warn-script-location --user mysqlclient
 
+# Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
+ARG ods_tools_branch
+RUN if [ ! -z "$ods_tools_branch" ] ; then \
+    apt update && apt install -y git; \
+    pip uninstall ods-tools -y; \
+    pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}#egg=ods-tools; \
+  fi
+
+USER server
 
 # ---- STAGE 2 ----
 FROM ubuntu:22.04
@@ -17,8 +26,6 @@ RUN apt-get update \
 RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos "" server
 COPY --chown=server:server --from=build-packages /root/.local /home/server/.local
 RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
-
-RUN echo 'server ALL=(ALL) NOPASSWD:/usr/local/bin/update_hosts' >> /etc/sudoers
 
 WORKDIR /var/www/oasis
 COPY ./requirements-server.txt ./requirements.txt

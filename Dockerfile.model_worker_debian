@@ -27,6 +27,22 @@ ENV PATH=/home/worker/.local/bin:$PATH
 COPY ./requirements-worker.txt ./requirements.txt
 RUN pip install -r ./requirements.txt
 
+# Install MDK from git branch (Optional) 'docker build --build-arg oasislmf_branch=develop'
+ARG oasislmf_branch
+RUN if [ ! -z "$oasislmf_branch" ] ; then \
+    apt update && apt install -y git; \
+    pip uninstall oasislmf -y; \
+    pip install -v git+https://git@github.com/OasisLMF/OasisLMF.git@${oasislmf_branch}#egg=oasislmf[extra]; \
+  fi
+
+# Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
+ARG ods_tools_branch
+RUN if [ ! -z "$ods_tools_branch" ] ; then \
+    apt update && apt install -y git; \
+    pip uninstall ods-tools -y; \
+    pip install -v git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}#egg=ods-tools; \
+  fi
+
 # Copy startup script + server config
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/startup_tester.sh ./runtest

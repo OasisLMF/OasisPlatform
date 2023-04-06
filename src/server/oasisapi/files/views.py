@@ -5,10 +5,10 @@ from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
 
-from .serializers import RelatedFileSerializer
+from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ..permissions.group_auth import verify_user_is_in_obj_groups
 
-from .models import related_file_to_df
+from ods_tools.oed.exposure import OedExposure
 
 
 def _delete_related_file(parent, field, user):
@@ -45,9 +45,12 @@ def _handle_get_related_file(parent, field, request):
 
     # Parquet format requested and data stored as csv
     if file_format == 'parquet' and f.content_type == 'text/csv':
+        exposure = OedExposure(**{
+            EXPOSURE_ARGS[field]: f.file,
+        })
         output_buffer = io.BytesIO()
-        df = related_file_to_df(f)
-        df.to_parquet(output_buffer, index=False)
+        exposure_data = getattr(exposure, EXPOSURE_ARGS[field])
+        exposure_data.dataframe.to_parquet(output_buffer, index=False)
         output_buffer.seek(0)
 
         response = StreamingHttpResponse(output_buffer, content_type='application/octet-stream')
@@ -56,9 +59,12 @@ def _handle_get_related_file(parent, field, request):
 
     # CSV format requested and data stored as Parquet
     if file_format == 'csv' and f.content_type == 'application/octet-stream':
+        exposure = OedExposure(**{
+            EXPOSURE_ARGS[field]: f.file,
+        })
         output_buffer = io.BytesIO()
-        df = related_file_to_df(f)
-        df.to_csv(output_buffer, index=False)
+        exposure_data = getattr(exposure, EXPOSURE_ARGS[field])
+        exposure_data.dataframe.to_csv(output_buffer, index=False)
         output_buffer.seek(0)
 
         response = StreamingHttpResponse(output_buffer, content_type='text/csv')

@@ -177,6 +177,16 @@ class BaseStorageConnector(object):
         else:
             raise MissingInputsException(fpath)
 
+    def filepath(self, reference):
+        """ return the absolute filepath 
+        """
+        fpath = os.path.join(
+            self.media_root,
+            os.path.basename(reference)
+        )
+        logging.info('Get shared filepath: {}'.format(reference))
+        return os.path.abspath(fpath)
+
     def extract(self, archive_fp, directory, storage_subdir=''):
         """ Extract tar file
 

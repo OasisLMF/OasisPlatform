@@ -100,5 +100,5 @@ CELERYBEAT_SCHEDULE = {
 worker_task_kwargs = {
     'autoretry_for': (Exception,),
     'max_retries': 2,               # The task will be run max_retries + 1 times
-    'default_retry_delay': 5,       # A small delay to recover from temporary bad states
+    'default_retry_delay': 6,       # A small delay to recover from temporary bad states
 }

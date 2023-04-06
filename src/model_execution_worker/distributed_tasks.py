@@ -780,6 +780,11 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     params['oasis_files_dir'] = params['target_dir']
     OasisManager().generate_files(**params)
 
+    # clear out user-data,
+    # these files should not be sorted in the generated inputs tar
+    if params['user_data_dir'] is not None:
+        shutil.rmtree(params['user_data_dir'])
+
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
@@ -1076,20 +1081,18 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
         stored_fn = cmf[STORED_FILENAME]
         orig_fn = cmf[ORIGINAL_FILENAME]
 
-        if filestore._is_valid_url(stored_fn):
-            # If reference is a URL, then download the file & rename to 'original_filename'
-            fpath = filestore.get(stored_fn, run_directory)
-            shutil.move(fpath, os.path.join(run_directory, orig_fn))
-        elif filestore._is_locally_stored(stored_fn):
+        if filestore._is_locally_stored(stored_fn):
             # If refrence is local filepath check that it exisits and copy/symlink
-            from_path = filestore.get(stored_fn)
+            from_path = filestore.filepath(stored_fn)
             to_path = os.path.join(run_directory, orig_fn)
             if os.name == 'nt':
                 shutil.copy(from_path, to_path)
             else:
                 os.symlink(from_path, to_path)
         else:
-            os.symlink(from_path, to_path)
+            # If reference is a remote, then download the file & rename to 'original_filename'
+            fpath = filestore.get(stored_fn, run_directory)
+            shutil.move(fpath, os.path.join(run_directory, orig_fn))
 
 
 @task_failure.connect

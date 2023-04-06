@@ -2,8 +2,8 @@ import os
 import json
 from io import BytesIO
 
-from uuid import uuid4
 import pandas as pd
+from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth.models import Group
