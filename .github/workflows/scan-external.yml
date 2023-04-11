@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - platform-2.0
-      - platform-2.0-develop
   pull_request:
     branches:
       - platform-2.0
-      - platform-2.0-develop
 
   workflow_dispatch:
     inputs:
