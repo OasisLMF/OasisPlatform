@@ -22,7 +22,7 @@ images:
     version: 8.0.32
   keycloak:
     image: quay.io/keycloak/keycloak
-    version: 21.0
+    version: 21.0.1
   init:
     image: busybox
     version: 1.28
