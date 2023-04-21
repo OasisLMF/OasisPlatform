@@ -29,12 +29,16 @@ USER worker
 FROM ubuntu:22.04
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends vim git python3 python3-pip libspatialindex-dev curl procps \
+ && apt-get install -y --no-install-recommends vim git python3 python3-pip libspatialindex-dev curl procps telnet \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy built python packages
 RUN adduser  --home /home/worker --shell /bin/bash --disabled-password --gecos "" worker
 COPY --chown=worker:worker --from=build-packages /root/.local /home/worker/.local
+
+# Download azcopy
+RUN curl -L https://aka.ms/downloadazcopy-v10-linux | tar --directory=/usr/local/bin --strip-components=1 --exclude=*.txt -xzvf -
+RUN chmod +x /usr/local/bin/azcopy
 
 # Copy in worker files
 WORKDIR /home/worker

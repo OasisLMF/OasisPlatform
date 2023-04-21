@@ -16,7 +16,7 @@ import filelock
 import pandas as pd
 from celery import Celery, signature
 from celery.signals import (before_task_publish, task_failure, task_revoked,
-                            worker_ready)
+                            worker_ready, worker_init)
 from natsort import natsorted
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
@@ -229,9 +229,39 @@ def revoked_handler(*args, **kwargs):
     request.chain[:] = []
 
 
+def on_worker_cache_init():
+    logging.info('Starting worker initialization steps')
+
+    azure_blob_store = settings.get('worker', 'MODEL_CACHE_BLOB_URL', fallback='')
+    azure_blob_sas = settings.get('worker', 'MODEL_CACHE_BLOB_SAS', fallback='')
+    cache_enabled = settings.getboolean('worker', 'MODEL_CACHE_ENABLED', fallback=False)
+    cache_path = settings.get('worker', 'MODEL_CACHE_PATH', fallback='')
+
+    # Copy Data from one loaction to the other at start up
+    logging.info("MODEL_CACHE_BLOB_URL: {}".format(settings.get('worker', 'MODEL_CACHE_BLOB_URL', fallback='None')))
+    logging.info("MODEL_CACHE_BLOB_SAS: {}".format('****' if azure_blob_sas else "-blank-"))
+    logging.info("MODEL_CACHE_PATH: {}".format(settings.get('worker', 'MODEL_CACHE_PATH', fallback='None')))
+    logging.info("MODEL_CACHE_ENABLED: {}".format(settings.getboolean('worker', 'MODEL_CACHE_ENABLED', fallback='False')))
+
+    if all([azure_blob_store, azure_blob_sas, cache_enabled, cache_path]):
+        logging.info("Downloading Model data from Azure Blob Storage")
+        cmd = f'azcopy cp "{azure_blob_store}/*?{azure_blob_sas}" "{cache_path}" --recursive'
+        with subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as p:
+            for line in iter(p.stdout.readline, b''):
+                logging.info(line.decode('utf-8').strip())
+
+            return_code = p.wait()
+            # check return_code and throw error if non-zero ?
+    else:
+        logging.info("Model cache disabled or missing variables")
+
+
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
+    # Load model data from blobs
+    on_worker_cache_init()
+
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
@@ -242,6 +272,7 @@ def register_worker(sender, **k):
     logging.info('versions: {}'.format(m_version))
     logging.info('settings: {}'.format(m_settings))
     logging.info('oasislmf config: {}'.format(m_conf))
+
 
     # Check for 'DISABLE_WORKER_REG' before se:NERDTreeToggle
     # unding task to API
@@ -291,6 +322,7 @@ def register_worker(sender, **k):
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
     logging.info("TASK_LOG_DIR: {}".format(settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')))
+
 
     # Log Env variables
     if debug_worker:
