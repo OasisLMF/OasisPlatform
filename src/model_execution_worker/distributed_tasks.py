@@ -720,9 +720,12 @@ def collect_keys(
         # add opt for Select merge strat
         df = pd.concat(df_chunks)
 
-        # CSV files will have a default index which must not be used to filter duplicates.
         if file_type == 'parquet':
+            # Parquet files should have an index which can be used to filter duplicates.
             df = df[~df.index.duplicated(keep='first')]
+        elif file_type == 'csv':
+            # CSV files only have an automatic index so we use the values themselves to filter dups.
+            df = df[~df.duplicated(keep='first')]
         pd_write_func = getattr(df, f"to_{file_type}")
         # Only write index for parquet files to avoid useless extra column for csv files.
         pd_write_func(output_file, index=file_type == 'parquet')
