@@ -1,4 +1,4 @@
-FROM maven:latest
+FROM maven:3.6-openjdk-17
 
 ARG DOCKER_USER=build
 RUN addgroup $DOCKER_USER && useradd -m -g $DOCKER_USER $DOCKER_USER
