@@ -245,7 +245,7 @@ spec:
             - name: OASIS_SERVER_OIDC_ENDPOINT
               value: {{ .Values.oasisServer.oidc.endpoint }}
             {{- end }}
-            {{- toYaml .Values.oasisServer.env | indent 12 }}
+            {{- toYaml .Values.oasisServer.env | nindent 12 }}
           ports:
             - containerPort: {{ .Values.oasisServer.port }}
               name: {{ .Values.oasisServer.name }}

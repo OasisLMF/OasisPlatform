@@ -32,4 +32,4 @@ else
 fi
 
 # Start new worker on init
-celery --app src.model_execution_worker.distributed_tasks worker $WORKER_CONCURRENCY --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}" ${EXTRA_CELERY_ARGS} |& tee -a /var/log/oasis/worker.log
+celery --app src.model_execution_worker.distributed_tasks worker $WORKER_CONCURRENCY --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}" ${OASIS_CELERY_EXTRA_ARGS} |& tee -a /var/log/oasis/worker.log

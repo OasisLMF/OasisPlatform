@@ -182,9 +182,6 @@ oasisServer:
       value: "1"
     - name: OASIS_PORTFOLIO_UPLOAD_VALIDATION
       value: "1"
-    - name: CELERY_EXTRA_ARGS
-      value: ""
-
 
 # Oasis API host, port and credentials (for Websocket connections)
 oasisWebsocket:
