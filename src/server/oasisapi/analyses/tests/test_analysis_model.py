@@ -273,9 +273,9 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
                 res_factory_gen = FakeAsyncResultFactory(target_task_id=task_gen_id)
                 res_factory_run = FakeAsyncResultFactory(target_task_id=task_run_id)
 
-                task_gen.delay.return_value = res_factory_gen(task_gen_id)
-                task_run.delay.return_value = res_factory_run(task_run_id)
-                task_chain.delay.return_value = res_factory_run(task_run_id)
+                task_gen.apply_async.return_value = res_factory_gen(task_gen_id)
+                task_run.apply_async.return_value = res_factory_run(task_run_id)
+                task_chain.apply_async.return_value = res_factory_run(task_run_id)
 
                 with (
                     patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=task_gen)),
