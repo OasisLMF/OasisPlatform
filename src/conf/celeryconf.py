@@ -53,6 +53,13 @@ CELERYD_CONCURRENCY = 1
 #: https://docs.celeryproject.org/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
 CELERYD_PREFETCH_MULTIPLIER = 1
 
+# Highest priority available
+CELERY_QUEUE_MAX_PRIORITY = 3
+
+# Set to make internal and subtasks inherit priority
+CELERY_INHERIT_PARENT_PRIORITY = True
+
+
 worker_task_kwargs = {
     'autoretry_for': (Exception,),
     'max_retries': 2,               # The task will be run max_retries + 1 times

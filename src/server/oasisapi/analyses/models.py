@@ -243,7 +243,7 @@ class Analysis(TimeStampedModel):
 
         # Run
         task_chain = chain(generate_input_signature, run_analysis_chain_signature)
-        dispatched_task = task_chain.delay()
+        dispatched_task = task_chain.apply_async(priority=3)
 
         # extract ids?
         self.run_task_id = dispatched_task.id
@@ -372,7 +372,7 @@ class Analysis(TimeStampedModel):
         return signature(
             'generate_input',
             args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
-            queue=self.model.queue_name
+            queue=self.model.queue_name, 
         )
 
     def create_complex_model_data_file_dicts(self):
