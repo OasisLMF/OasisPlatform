@@ -202,7 +202,7 @@ workerController:
   continueUpdateScaling: true
 
   # Debug option - This prevents workers for a model set to FIXED_WORKERS to be scaled to 0. They will always be started. 
-  neverShutdownFixedWorkers: false 
+  neverShutdownFixedWorkers: false
 
   # Settings related to prioritized runs
   priority:
