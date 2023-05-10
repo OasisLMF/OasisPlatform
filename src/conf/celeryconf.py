@@ -54,7 +54,7 @@ CELERYD_CONCURRENCY = 1
 CELERYD_PREFETCH_MULTIPLIER = 1
 
 # Highest priority available
-#CELERY_QUEUE_MAX_PRIORITY = 3
+CELERY_QUEUE_MAX_PRIORITY = 3
 
 # Set to make internal and subtasks inherit priority
 CELERY_INHERIT_PARENT_PRIORITY = True
