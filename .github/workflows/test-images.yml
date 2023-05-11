@@ -38,7 +38,7 @@ on:
 env:
   pre_release: 'true'  # look for pre-release when testing last released platform version
   semver_major: '1'    # Search for published images but limited to {semvar_major}.x.x
-  semver_minor: '27'   # Search for published images but limited to x.{semvar_minor}.x
+  semver_minor: '23'   # Search for published images but limited to x.{semvar_minor}.x
 
 jobs:
   build_images:
