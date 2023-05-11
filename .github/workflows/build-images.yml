@@ -17,6 +17,14 @@ on:
         description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
         required: false
         default: 'CRITICAL,HIGH'
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+        type: string
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
+        type: string
 
   workflow_call:
     inputs:
@@ -34,6 +42,14 @@ on:
         description: 'Severities of vulnerabilities to scanned for, fails build if any found'
         required: false
         default: 'CRITICAL,HIGH'
+        type: string
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+        type: string
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
         type: string
 
     outputs:
@@ -81,7 +97,7 @@ jobs:
           tag:  'model_worker_deb-${{ github.sha }}'
           file: 'Dockerfile.model_worker_debian'
           report: 'worker-deb-scan.sarif'
-          dive: 'worker-deb--layers.txt'
+          dive: 'worker-deb-layers.txt'
           exit-code: '0' # scan but don't fail
 
     steps:
@@ -118,6 +134,9 @@ jobs:
         context: .
         push: ${{ env.DOCKER_PUSH }}
         tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+        build-args: |
+          oasislmf_branch=${{ inputs.oasislmf_branch }}
+          ods_tools_branch=${{ inputs.ods_branch }}
 
     - name: Test image efficiency
       if: env.SEVERITY != 'SKIP'
@@ -141,16 +160,27 @@ jobs:
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
-        format: 'sarif'
-        output: ${{ matrix.report }}
         scan-type: 'image'
         exit-code: ${{ matrix.exit-code }}
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
         severity: ${{ env.SEVERITY }}
-        security-checks: 'vuln'
+        scanners: 'vuln'
+
+    - name: Create Report
+      if: ( success() || failure() ) && env.SEVERITY != 'SKIP' && matrix.exit-code == '1'
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+        format: 'sarif'
+        output: ${{ matrix.report }}
+        scan-type: 'image'
+        exit-code: '0'
+        ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
+        severity: ${{ env.SEVERITY }}
+        scanners: 'vuln'
 
     - name: Upload scan results to Security tab
-      if: ( success() || failure() ) && matrix.exit-code == '1' && env.SEVERITY != 'SKIP'
+      if: ( success() || failure() ) && env.SEVERITY != 'SKIP' && matrix.exit-code == '1'
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file:  ${{ matrix.report }}
