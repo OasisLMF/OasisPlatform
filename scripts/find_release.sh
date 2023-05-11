@@ -32,7 +32,7 @@ while getopts 'b:p:t:v:' flag; do
 done
 
 if [[ "$pre_release" = "false" ]]; then
-    release_tags=( $(git tag --merged $branch_name --sort=creatordate | grep -oP "^$version_prefix(\d+)\.(\d+)\.(\d+)$") )
+    release_tags=( $(git tag --merged $branch_name --sort=creatordate | grep -oP "^$version_prefix(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)-lts") )
 else
     release_tags=( $(git tag --merged $branch_name --sort=creatordate | grep -oP "^$version_prefix(\d+)\.(\d+)\.(\d+)$|^(\d+)\.(\d+)\.(\d+)rc(\d+)") )
 fi
