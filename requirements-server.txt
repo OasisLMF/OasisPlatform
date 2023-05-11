@@ -11,7 +11,7 @@ asgiref==3.6.0
     #   channels
     #   daphne
     #   django
-attrs==22.2.0
+attrs==23.1.0
     # via
     #   automat
     #   jsonschema
@@ -21,21 +21,21 @@ autobahn==23.1.2
     # via daphne
 automat==22.10.0
     # via twisted
-azure-core==1.26.3
+azure-core==1.26.4
     # via azure-storage-blob
-azure-storage-blob==12.15.0
+azure-storage-blob==12.16.0
     # via django-storages
 billiard==3.6.4.0
     # via celery
-boto3==1.26.89
+boto3==1.26.133
     # via -r requirements-server.in
-botocore==1.29.89
+botocore==1.29.133
     # via
     #   boto3
     #   s3transfer
 celery==5.2.7
     # via -r requirements-server.in
-certifi==2022.12.7
+certifi==2023.5.7
     # via requests
 cffi==1.15.1
     # via cryptography
@@ -71,7 +71,7 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==39.0.2
+cryptography==40.0.2
     # via
     #   autobahn
     #   azure-storage-blob
@@ -79,7 +79,7 @@ cryptography==39.0.2
     #   service-identity
 daphne==4.0.0
     # via -r requirements-server.in
-django==3.2.18
+django==3.2.19
     # via
     #   -r requirements-server.in
     #   channels
@@ -94,9 +94,9 @@ django==3.2.18
     #   drf-yasg
 django-cleanup==7.0.0
     # via -r requirements-server.in
-django-debug-toolbar==3.8.1
+django-debug-toolbar==4.0.0
     # via -r requirements-server.in
-django-filter==22.1
+django-filter==23.2
     # via -r requirements-server.in
 django-model-utils==4.3.1
     # via -r requirements-server.in
@@ -153,21 +153,21 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.2.4
     # via celery
-markdown==3.4.1
+markdown==3.4.3
     # via -r requirements-server.in
 markupsafe==2.1.2
     # via jinja2
-numpy==1.24.2
+numpy==1.24.3
     # via
     #   pandas
     #   pyarrow
-ods-tools==3.0.4
+ods-tools==3.0.6
     # via -r requirements-server.in
-packaging==23.0
+packaging==23.1
     # via
     #   drf-yasg
     #   ods-tools
-pandas==1.5.3
+pandas==2.0.1
     # via
     #   -r requirements-server.in
     #   ods-tools
@@ -175,23 +175,23 @@ pathlib2==2.3.7.post1
     # via -r requirements-server.in
 prompt-toolkit==3.0.38
     # via click-repl
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via -r requirements-server.in
-pyarrow==11.0.0
+pyarrow==12.0.0
     # via -r requirements-server.in
-pyasn1==0.4.8
+pyasn1==0.5.0
     # via
     #   pyasn1-modules
     #   service-identity
-pyasn1-modules==0.2.8
+pyasn1-modules==0.3.0
     # via service-identity
 pycparser==2.21
     # via cffi
-pyjwt==2.6.0
+pyjwt==2.7.0
     # via djangorestframework-simplejwt
-pymysql==1.0.2
+pymysql==1.0.3
     # via -r requirements-server.in
-pyopenssl==23.0.0
+pyopenssl==23.1.1
     # via twisted
 pyrsistent==0.19.3
     # via jsonschema
@@ -199,22 +199,22 @@ python-dateutil==2.8.2
     # via
     #   botocore
     #   pandas
-pytz==2022.7.1
+pytz==2023.3
     # via
     #   celery
     #   django
     #   djangorestframework
     #   drf-yasg
     #   pandas
-requests==2.28.2
+requests==2.30.0
     # via
     #   azure-core
     #   coreapi
-ruamel-yaml==0.17.21
+ruamel-yaml==0.17.26
     # via drf-yasg
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-s3transfer==0.6.0
+s3transfer==0.6.1
     # via boto3
 service-identity==21.1.0
     # via twisted
@@ -227,9 +227,9 @@ six==1.16.0
     #   pathlib2
     #   python-dateutil
     #   service-identity
-sqlalchemy==2.0.5.post1
+sqlalchemy==2.0.13
     # via -r requirements-server.in
-sqlparse==0.4.3
+sqlparse==0.4.4
     # via
     #   django
     #   django-debug-toolbar
@@ -245,6 +245,8 @@ typing-extensions==4.5.0
     #   azure-storage-blob
     #   sqlalchemy
     #   twisted
+tzdata==2023.3
+    # via pandas
 uritemplate==4.1.1
     # via
     #   coreapi
@@ -262,7 +264,7 @@ wcwidth==0.2.6
     # via prompt-toolkit
 whitenoise==6.4.0
     # via -r requirements-server.in
-zope-interface==5.5.2
+zope-interface==6.0
     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:

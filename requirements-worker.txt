@@ -12,30 +12,29 @@ argparsetree==0.0.6
     # via oasislmf
 arrow==1.2.3
     # via jinja2-time
-attrs==22.2.0
+attrs==23.1.0
     # via
     #   fiona
     #   jsonschema
-    #   pytest
-azure-core==1.26.3
+azure-core==1.26.4
     # via
     #   -r requirements-worker.in
     #   azure-storage-blob
-azure-storage-blob==12.15.0
+azure-storage-blob==12.16.0
     # via -r requirements-worker.in
 billiard==3.6.4.0
     # via celery
 binaryornot==0.4.4
     # via cookiecutter
-boto3==1.26.89
+boto3==1.26.133
     # via -r requirements-worker.in
-botocore==1.29.89
+botocore==1.29.133
     # via
     #   boto3
     #   s3transfer
 celery==5.2.7
     # via -r requirements-worker.in
-certifi==2022.12.7
+certifi==2023.5.7
     # via
     #   fiona
     #   pyproj
@@ -76,21 +75,21 @@ cookiecutter==2.1.1
     # via oasislmf
 cramjam==2.6.2
     # via fastparquet
-cryptography==39.0.2
+cryptography==40.0.2
     # via azure-storage-blob
 exceptiongroup==1.1.1
     # via pytest
 fasteners==0.18
     # via -r requirements-worker.in
-fastparquet==2023.2.0
+fastparquet==2023.4.0
     # via oasislmf
-fiona==1.9.1
+fiona==1.9.3
     # via geopandas
 forex-python==1.8
     # via oasislmf
-fsspec==2023.3.0
+fsspec==2023.5.0
     # via fastparquet
-geopandas==0.12.2
+geopandas==0.13.0
     # via oasislmf
 greenlet==2.0.2
     # via sqlalchemy
@@ -118,7 +117,7 @@ jsonschema==4.17.3
     # via ods-tools
 kombu==5.2.4
     # via celery
-llvmlite==0.39.1
+llvmlite==0.40.0
     # via numba
 markupsafe==2.1.2
     # via jinja2
@@ -126,7 +125,7 @@ msgpack==1.0.5
     # via oasislmf
 munch==2.5.0
     # via fiona
-numba==0.56.4
+numba==0.57.0
     # via
     #   -r requirements-worker.in
     #   oasislmf
@@ -143,17 +142,17 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.27.2
+oasislmf[extra]==1.27.3
     # via -r requirements-worker.in
-ods-tools==3.0.4
+ods-tools==3.0.6
     # via oasislmf
-packaging==23.0
+packaging==23.1
     # via
     #   fastparquet
     #   geopandas
     #   ods-tools
     #   pytest
-pandas==1.5.3
+pandas==2.0.1
     # via
     #   fastparquet
     #   geopandas
@@ -165,19 +164,19 @@ pluggy==1.0.0
     # via pytest
 prompt-toolkit==3.0.38
     # via click-repl
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via -r requirements-worker.in
-pyarrow==11.0.0
+pyarrow==12.0.0
     # via oasislmf
 pycparser==2.21
     # via cffi
-pymysql==1.0.2
+pymysql==1.0.3
     # via -r requirements-worker.in
-pyproj==3.4.1
+pyproj==3.5.0
     # via geopandas
 pyrsistent==0.19.3
     # via jsonschema
-pytest==7.2.2
+pytest==7.3.1
     # via -r requirements-worker.in
 python-dateutil==2.8.2
     # via
@@ -186,25 +185,25 @@ python-dateutil==2.8.2
     #   pandas
 python-slugify==8.0.1
     # via cookiecutter
-pytz==2022.7.1
+pytz==2023.3
     # via
     #   celery
     #   oasislmf
     #   pandas
 pyyaml==6.0
     # via cookiecutter
-requests==2.28.2
+requests==2.30.0
     # via
     #   azure-core
     #   cookiecutter
     #   forex-python
     #   oasislmf
     #   requests-toolbelt
-requests-toolbelt==0.10.1
+requests-toolbelt==1.0.0
     # via oasislmf
 rtree==1.0.1
     # via oasislmf
-s3transfer==0.6.0
+s3transfer==0.6.1
     # via boto3
 scikit-learn==1.2.2
     # via oasislmf
@@ -218,7 +217,7 @@ shapely==2.0.1
     #   oasislmf
 shutilwhich==1.1.0
     # via oasislmf
-simplejson==3.18.3
+simplejson==3.19.1
     # via forex-python
 six==1.16.0
     # via
@@ -229,7 +228,7 @@ six==1.16.0
     #   munch
     #   pathlib2
     #   python-dateutil
-sqlalchemy==2.0.5.post1
+sqlalchemy==2.0.13
     # via -r requirements-worker.in
 tabulate==0.9.0
     # via oasislmf
@@ -248,6 +247,8 @@ typing-extensions==4.5.0
     #   azure-core
     #   azure-storage-blob
     #   sqlalchemy
+tzdata==2023.3
+    # via pandas
 urllib3==1.26.15
     # via
     #   botocore
@@ -259,6 +260,3 @@ vine==5.0.0
     #   kombu
 wcwidth==0.2.6
     # via prompt-toolkit
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
