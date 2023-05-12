@@ -1,6 +1,7 @@
 pkg_list=(
     'ods-tools==2.*'
     'oasislmf==1.23.*'
+    'pandas==1.*'
     joblib
     oauthlib
     parso
