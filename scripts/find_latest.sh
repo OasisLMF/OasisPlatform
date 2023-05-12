@@ -25,5 +25,5 @@ while getopts 'j:i:' flag; do
   esac
 done
 
-release_tags=( $(git tag --sort=creatordate | grep -oP "^($major)\.($minor)\.(\d+)$") )
+release_tags=( $(git tag --sort=creatordate | grep -oP "^($major)\.($minor)\.(\d+)$|^($major)\.($minor)\.(\d+)-lts$") )
 echo "${release_tags[-$tag_select]}"
