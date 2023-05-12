@@ -1,7 +1,6 @@
 # ---- STAGE 1 -----
-FROM python:3.9.5-alpine3.13 AS build-packages
-
-RUN apk update && apk add curl gcc mariadb-dev bash build-base musl-dev linux-headers libressl-dev libffi-dev postgresql-dev libpq
+FROM ubuntu:22.04 AS build-packages
+RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential python3 python3-pip python3-dev libmariadbclient-dev-compat && rm -rf /var/lib/apt/lists/*
 
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
 COPY ./requirements-server.txt ./requirements-server.txt
@@ -9,10 +8,12 @@ RUN pip install --user --no-warn-script-location -r ./requirements-server.txt &&
 
 
 # ---- STAGE 2 ----
-FROM python:3.9.5-alpine3.13
-RUN apk update \
- && apk add --no-cache mariadb-dev libpq bash curl \
- && apk upgrade --available
+FROM ubuntu:22.04
+RUN apt-get update \
+ && apt-get upgrade -y \
+ && apt-get install -y --no-install-recommends sudo python3 python3-pip curl libmariadbclient-dev-compat \
+ && rm -rf /var/lib/apt/lists/
+
 
 # Note general package upgrade can be problematic for consistent builds, but safer in terms of security
 
@@ -46,7 +47,7 @@ COPY ./src/conf /var/www/oasis/src/conf
 COPY ./VERSION /var/www/oasis/VERSION
 
 COPY ./model_resource.json /var/www/oasis/src/server/static/model_resource.json
-RUN OASIS_API_SECRET_KEY=supersecret python manage.py collectstatic --noinput
+RUN OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
 ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
 
 EXPOSE 8000
