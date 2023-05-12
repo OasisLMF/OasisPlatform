@@ -117,7 +117,7 @@ pluggy==1.0.0
     # via pytest
 prompt-toolkit==3.0.38
     # via click-repl
-psycopg2==2.9.6
+psycopg2-binary==2.9.6
     # via -r requirements-worker.in
 pymysql==1.0.3
     # via -r requirements-worker.in
