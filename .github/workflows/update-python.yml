@@ -41,7 +41,7 @@ jobs:
 
     - name: Git Commit
       run: |
-        [[ -z $(git status -s) ]] || git commit -m "Set version ${{ inputs.platform_version }}"
+        [[ -z $(git status -s) ]] || git commit -m "Updated Package Requirements"
 
     - name: Push
       run: git push
