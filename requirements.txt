@@ -254,7 +254,7 @@ packaging==20.4
     #   drf-yasg
     #   pytest
     #   tox
-pandas==1.1.4
+pandas==1.5.3
     # via oasislmf
 parso==0.8.3
     # via jedi
