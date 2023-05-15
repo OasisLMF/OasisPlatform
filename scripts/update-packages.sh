@@ -33,7 +33,7 @@ for pk in "${pkg_list[@]}"; do
     PKG_UPDATE=$PKG_UPDATE" --upgrade-package $pk"   
 done
 
-set -e 
+set -e
 pip-compile $PKG_UPDATE requirements-worker.in
 pip-compile $PKG_UPDATE requirements-server.in
 pip-compile $PKG_UPDATE requirements.in

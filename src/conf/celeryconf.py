@@ -52,3 +52,9 @@ CELERYD_CONCURRENCY = 1
 #: Disable celery task prefetch
 #: https://docs.celeryproject.org/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
 CELERYD_PREFETCH_MULTIPLIER = 1
+
+worker_task_kwargs = {
+    'autoretry_for': (Exception,),
+    'max_retries': 2,               # The task will be run max_retries + 1 times
+    'default_retry_delay': 5,       # A small delay to recover from temporary bad states
+}
