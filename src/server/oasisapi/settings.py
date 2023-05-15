@@ -152,12 +152,15 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
+if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver') or ('pytest' in sys.argv[0]):
+    MEDIA_ROOT = './shared-fs/'
+else:
+    MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
+
 MEDIA_URL = '/media/'
-MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
 # Authenticate with S3
@@ -200,7 +203,7 @@ elif STORAGE_TYPE in AWS_S3:
     # AWS S3 Object Store via `Django-Storages`
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     set_aws_log_level(AWS_LOG_EVEL)
-    
+
 else:
     raise ImproperlyConfigured('Invalid value for STORAGE_TYPE: {}'.format(STORAGE_TYPE))
 
