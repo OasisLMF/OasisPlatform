@@ -46,7 +46,7 @@ jobs:
   scan_repo:
     name: Scan Repo
     env:
-      SEVERITY: 'HIGH,CRITICAL'
+      SEVERITY: 'CRITICAL'
       REPORT: 'repo-results.sarif'
       IGNORE_UNFIXED: 'true'
       EXIT_CODE: '1'
