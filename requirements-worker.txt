@@ -102,6 +102,7 @@ numpy==1.19.4
     #   numba
     #   numexpr
     #   pandas
+    #   shapely
 oasislmf==1.15.27
     # via -r requirements-worker.in
 packaging==20.4
@@ -153,7 +154,7 @@ rtree==1.0.1
     # via oasislmf
 s3transfer==0.3.3
     # via boto3
-shapely==1.7.1
+shapely==2.0.1
     # via oasislmf
 shutilwhich==1.1.0
     # via oasislmf
