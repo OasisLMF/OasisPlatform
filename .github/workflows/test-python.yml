@@ -12,21 +12,9 @@ on:
       - develop
       - backports**
   workflow_dispatch:
-    inputs:
-      ods_branch:
-        description: 'If set, pip install ods-tools branch [git ref]'
-        required: false
 
 jobs:
-  ods_tools:
-    #if: inputs.ods_branch != ''
-    uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@develop
-    secrets: inherit
-    with:
-      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
-
   unittest:
-    needs: ods_tools
     env:
       JUNIT_REPORT: pytest_report.xml
     runs-on: ubuntu-22.04
