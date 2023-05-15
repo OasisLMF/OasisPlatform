@@ -85,7 +85,7 @@ jsonschema==3.2.0
     # via oasislmf
 kombu==5.2.4
     # via celery
-llvmlite==0.34.0
+llvmlite==0.40.0
     # via numba
 markupsafe==1.1.1
     # via jinja2
@@ -93,11 +93,11 @@ monotonic==1.5
     # via fasteners
 msgpack==1.0.0
     # via oasislmf
-numba==0.51.2
+numba==0.57.0
     # via oasislmf
 numexpr==2.7.1
     # via oasislmf
-numpy==1.19.4
+numpy==1.24.3
     # via
     #   numba
     #   numexpr
