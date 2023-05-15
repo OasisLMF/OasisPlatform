@@ -4,25 +4,28 @@ on:
   workflow_dispatch:
     inputs:
       platform_version:
-        description: 'Update version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
+        description: 'Update platform version [semvar]'
         required: true
-        default: ""
       oasislmf_version:
-        description: 'Update the package version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
+        description: 'Update oasislmf package [semvar]'
         required: false
-        default: ""
+      ods_tools_version:
+        description: 'Update the ods-tools package [semvar]'
+        required: false
 
   workflow_call:
     inputs:
       platform_version:
         description: 'Update version, semvar, input "{n}.{n}.{n}" or for pre-release "{n}.{n}.{n}rc{n}" [3.0.0, 3.0.0rc1]  '
         required: true
-        default: ""
         type: string
       oasislmf_version:
         description: 'Update the package version'
         required: false
-        default: ""
+        type: string
+      ods_tools_version:
+        description: 'Update the package version'
+        required: false
         type: string
 
 jobs:
@@ -89,6 +92,15 @@ jobs:
         requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
         for fl in "${requ_list[@]}"; do
           pip-compile --upgrade-package oasislmf==${{ inputs.oasislmf_version }} $fl.in
+          git add $fl.txt
+        done
+
+    - name: Update ods-tools Version
+      if: inputs.ods_tools_version != ''
+      run: |
+        requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
+        for fl in "${requ_list[@]}"; do
+          pip-compile --upgrade-package ods-tools==${{ inputs.ods_tools_version }} $fl.in
           git add $fl.txt
         done
 

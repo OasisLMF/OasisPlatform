@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.17`_
+ ---------
+* [#807](https://github.com/OasisLMF/OasisPlatform/pull/807) - Ci updates 1.23.x
+* [#810](https://github.com/OasisLMF/OasisPlatform/pull/810) - Add workflow to update requirment files
+* [#816](https://github.com/OasisLMF/OasisPlatform/pull/816) - Fix model reg retry on S3 exception
+* [#791](https://github.com/OasisLMF/OasisPlatform/pull/791) - Fix bug in release note build script
+* [#767](https://github.com/OasisLMF/OasisPlatform/pull/767) - Add retry to model reg task
+.. _`1.23.17`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.16...1.23.17
+
 * [#750](https://github.com/OasisLMF/OasisPlatform/pull/750) - Update Python packages (1.23)
 .. _`1.23.16`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.15...1.23.16
 

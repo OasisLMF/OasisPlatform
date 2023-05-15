@@ -1,6 +1,7 @@
 pkg_list=(
     'ods-tools==2.*'
     'oasislmf==1.23.*'
+    'pandas==1.*'
     joblib
     oauthlib
     parso
@@ -33,7 +34,8 @@ for pk in "${pkg_list[@]}"; do
     PKG_UPDATE=$PKG_UPDATE" --upgrade-package $pk"   
 done
 
-set -e 
+rm requirements-worker.txt requirements-server.txt requirements.txt
+set -e
 pip-compile $PKG_UPDATE requirements-worker.in
 pip-compile $PKG_UPDATE requirements-server.in
 pip-compile $PKG_UPDATE requirements.in
