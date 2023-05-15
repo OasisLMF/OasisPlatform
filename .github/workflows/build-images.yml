@@ -16,7 +16,7 @@ on:
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
         required: false
-        default: 'CRITICAL,HIGH'
+        default: 'CRITICAL'
       oasislmf_branch:
         description: 'If set, pip install oasislmf branch [git ref]'
         required: false
@@ -41,7 +41,7 @@ on:
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for, fails build if any found'
         required: false
-        default: 'CRITICAL,HIGH'
+        default: 'CRITICAL'
         type: string
       oasislmf_branch:
         description: 'If set, pip install oasislmf branch [git ref]'
