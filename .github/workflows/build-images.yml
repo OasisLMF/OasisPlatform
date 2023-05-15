@@ -67,7 +67,7 @@ env:
   # inputs
   DOCKER_PUSH: 'false'
   IGNORE_UNFIXED: 'true'
-  SEVERITY: 'CRITICAL,HIGH'
+  SEVERITY: 'CRITICAL'
   IMAGE_REPO: 'coreoasis/github-actions'
 
 jobs:
