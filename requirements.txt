@@ -277,9 +277,9 @@ prompt-toolkit==3.0.38
     #   click-repl
     #   ipython
 psycopg2==2.9.6
-    # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    # via -r ./requirements-worker.in
+psycopg2-binary==2.9.6
+    # via -r ./requirements-server.in
 ptyprocess==0.6.0
     # via pexpect
 pure-eval==0.2.2
@@ -352,7 +352,7 @@ requests==2.30.0
     #   requests-toolbelt
 requests-toolbelt==0.9.1
     # via oasislmf
-rtree==0.9.4
+rtree==1.0.1
     # via oasislmf
 ruamel-yaml==0.16.12
     # via drf-yasg

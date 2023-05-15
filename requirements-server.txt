@@ -141,7 +141,7 @@ pathlib2==2.3.5
     # via -r requirements-server.in
 prompt-toolkit==1.0.18
     # via click-repl
-psycopg2==2.9.1
+psycopg2-binary==2.9.6
     # via -r requirements-server.in
 pyasn1==0.4.8
     # via
