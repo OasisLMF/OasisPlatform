@@ -31,9 +31,6 @@ jobs:
         python-version: '3.10'
     - run: pip install -r requirements.txt
 
-    - name: Install system packages
-      run: apt-get update && apt-get install libgeos-dev -y 
-
     - name: Download package
       if: needs.ods_tools.outputs.whl_filename != ''
       uses: actions/download-artifact@v3
