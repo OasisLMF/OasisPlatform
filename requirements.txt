@@ -283,7 +283,7 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.26.6
+oasislmf[extra]==1.26.7
     # via -r ./requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
