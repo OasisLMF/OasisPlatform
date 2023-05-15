@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.3`_
+ ---------
+* [#795](https://github.com/OasisLMF/OasisPlatform/pull/800) - Add missing check for RI files to workers 
+* [#791](https://github.com/OasisLMF/OasisPlatform/pull/791) - Fix bug in release note build script
+* [#774](https://github.com/OasisLMF/OasisPlatform/pull/774) - Release/1.27.2
+* [#775](https://github.com/OasisLMF/OasisPlatform/pull/775) - Search all repo for tags, but limit the scope by env
+.. _`1.27.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.2...1.27.3
+
 `1.27.2`_
  ---------
 * [#769](https://github.com/OasisLMF/OasisPlatform/pull/769) - 1.27.2 CVE update
