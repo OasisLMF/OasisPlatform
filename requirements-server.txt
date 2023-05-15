@@ -65,7 +65,7 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==39.0.2
+cryptography==3.3.2
     # via
     #   autobahn
     #   pyopenssl
@@ -181,6 +181,7 @@ six==1.15.0
     # via
     #   automat
     #   click-repl
+    #   cryptography
     #   jsonschema
     #   packaging
     #   pathlib2

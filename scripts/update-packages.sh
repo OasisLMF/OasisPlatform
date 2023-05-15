@@ -33,8 +33,8 @@ pkg_list=(
     'celery==5.*'
     certifi
     cookiecutter
-    #'cryptography==3.3.*'
-    'cryptography==39.*'
+    'cryptography==3.3.*'
+    #'cryptography==39.*'
     future
     ipython
     py
