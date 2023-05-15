@@ -1,6 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`1.15.27`_
+ ---------
+* [#808](https://github.com/OasisLMF/OasisPlatform/pull/808) - Ci update 1.15
+* [#810](https://github.com/OasisLMF/OasisPlatform/pull/810) - Add workflow to update requirment files
+* [#814](https://github.com/OasisLMF/OasisPlatform/pull/814) - Fix 1.15 build issues
+* [#815](https://github.com/OasisLMF/OasisPlatform/pull/815) - Collected fixes 1 15.27 release
+* [#816](https://github.com/OasisLMF/OasisPlatform/pull/816) - Fix model reg retry on S3 exception
+* [#767](https://github.com/OasisLMF/OasisPlatform/pull/767) - Add retry to model reg task
+.. _`1.15.27`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.26-lts...1.15.27
+
 .. _`1.15.26-lts`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.25-lts...1.15.26-lts
 
 * [#592](https://github.com/OasisLMF/OasisPlatform/pull/592) - Add analysis_settings workaround for lts-1.15.x workers
