@@ -41,7 +41,7 @@ jobs:
     needs: ods_tools
     env:
       JUNIT_REPORT: pytest_report.xml
-      PLAT_BRANCH: ${{ github.ref_name }}
+      PLAT_BRANCH: ${{ github.ref }}
     runs-on: ubuntu-22.04
 
     steps:
