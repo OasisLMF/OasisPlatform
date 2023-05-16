@@ -51,7 +51,8 @@ spec:
               command: ["celery", "-A", "src.model_execution_worker.distributed_tasks", "inspect", "ping"]
             initialDelaySeconds: 30
             periodSeconds: 60
-            timeoutSeconds: 30
+            timeoutSeconds: 60
+            failureThreshold: 15
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
