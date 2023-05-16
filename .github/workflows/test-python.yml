@@ -11,11 +11,23 @@ on:
       - master
       - develop
       - backports**
+
   workflow_dispatch:
     inputs:
       ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
+
+  workflow_call:
+    inputs:
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
+        type: string
+      platform_branch:
+        description: "Platform branch to test (remote trigger) [git ref]"
+        required: True
+        type: string
 
 jobs:
   ods_tools:
@@ -29,9 +41,19 @@ jobs:
     needs: ods_tools
     env:
       JUNIT_REPORT: pytest_report.xml
+      PLAT_BRANCH: ${{ github.ref_name }}
     runs-on: ubuntu-22.04
+
     steps:
-    - uses: actions/checkout@v3
+    - name: Branch selection (remote trigger)
+      if: inputs.platform_branch != ''
+      run: echo "PLAT_BRANCH=${{ inputs.platform_branch }}" >> $GITHUB_ENV
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        repository: OasisLMF/OasisPlatform
+        ref: ${{ env.PLAT_BRANCH }}
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v4
