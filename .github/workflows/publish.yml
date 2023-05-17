@@ -4,9 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       pre_release:
-        description: 'Mark GitHub release as pre-release: [true, false]'
-        required: true
-        type: string
+        description: 'Mark GitHub release as pre-release'
+        required: false
+        type: boolean
+
+      push_latest:
+        description: 'Push images with the "latest" tag'
+        required: false
+        type: boolean
 
       release_tag:
         description: 'Release tag, for release: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
@@ -23,7 +28,7 @@ on:
 
       oasislmf_release:
         description: '(OVERRIDE) The oasislmf version in this release [semvar]'
-        required: true
+        required: false
 
       oasislmf_release_prev:
         description: '(OVERRIDE) The previous oasislmf version for changelog [semvar]'
@@ -86,7 +91,8 @@ jobs:
 
 
     env:
-      pre_release: ${{ inputs.pre_release }}
+      pre_release: ${{ inputs.pre_release == '' && 'false' || inputs.pre_release }}
+      push_latest: ${{ inputs.push_latest == '' && 'false' || inputs.push_latest }}
       release_tag: ${{ inputs.release_tag }}
       oasislmf_release: ${{ inputs.oasislmf_release }}
       prev_release_tag: ${{ inputs.prev_release_tag }}
@@ -381,7 +387,7 @@ jobs:
         docker push coreoasis/piwind_worker:${{ env.release_tag }}
 
     - name: Push images (Production)
-      if: ${{ env.pre_release == 'false' && !startsWith(github.ref_name, 'backports/') }}
+      if: ${{ env.push_latest == 'true' }}
       run: |
         docker push coreoasis/api_server:latest
         docker push coreoasis/model_worker:latest
