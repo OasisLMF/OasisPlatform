@@ -28,7 +28,7 @@ on:
 
       oasislmf_release:
         description: '(OVERRIDE) The oasislmf version in this release [semvar]'
-        required: true
+        required: false
 
       oasislmf_release_prev:
         description: '(OVERRIDE) The previous oasislmf version for changelog [semvar]'
