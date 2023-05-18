@@ -176,6 +176,13 @@ oasisServer:
     clientName: oasis-server
     clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
 
+  # Set environment variables for the Oasis API server.
+  env:
+    - name: OASIS_DEBUG
+      value: "1"
+    - name: OASIS_PORTFOLIO_UPLOAD_VALIDATION
+      value: "1"
+
 # Oasis API host, port and credentials (for Websocket connections)
 oasisWebsocket:
   name: oasis-websocket
@@ -183,7 +190,7 @@ oasisWebsocket:
   user: admin
   password: password
 
-  # Use same settings as client (uncomment and update charts if needed)  
+  # Use same settings as client (uncomment and update charts if needed)
   # Enable OIDC Keycloak authentication with 'keycloak or set to 'simple' for simple jwt.
   #apiAuthType: keycloak
   #oidc:
@@ -197,11 +204,11 @@ workerController:
   # this limit will never be exceeded by this worker controller.
   totalWorkerLimit: 10
 
-  # Debug option - Read the auto scaling configuration from the API on every update 
-  # default is only to read it on for each model each time replicas is changed from 0 (first analysis running)) 
+  # Debug option - Read the auto scaling configuration from the API on every update
+  # default is only to read it on for each model each time replicas is changed from 0 (first analysis running))
   continueUpdateScaling: true
 
-  # Debug option - This prevents workers for a model set to FIXED_WORKERS to be scaled to 0. They will always be started. 
+  # Debug option - This prevents workers for a model set to FIXED_WORKERS to be scaled to 0. They will always be started.
   neverShutdownFixedWorkers: false
 
   # Settings related to prioritized runs
@@ -240,4 +247,3 @@ volumes:
 #        volumeAttributes:
 #          secretName: azure-secret
 #          shareName: oasisfs
-
