@@ -86,8 +86,6 @@ cryptography==40.0.1
     # via
     #   azure-storage-blob
     #   paramiko
-docopt==0.6.2
-    # via redi
 exceptiongroup==1.1.1
     # via pytest
 fasteners==0.18
@@ -134,8 +132,6 @@ kombu==5.2.4
     # via celery
 llvmlite==0.39.1
     # via numba
-lxml==4.9.2
-    # via redi
 markupsafe==2.1.2
     # via jinja2
 msgpack==1.0.5
@@ -194,8 +190,6 @@ pycap==2.4.0
     #   redi
 pycparser==2.21
     # via cffi
-pycrypto==2.6.1
-    # via redi
 pymysql==1.0.3
     # via -r requirements-worker.in
 pynacl==1.5.0
@@ -204,8 +198,6 @@ pyproj==3.5.0
     # via geopandas
 pyrsistent==0.19.3
     # via jsonschema
-pysftp==0.2.9
-    # via redi
 pytest==7.2.2
     # via -r requirements-worker.in
 python-dateutil==2.8.2
@@ -222,9 +214,7 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0
     # via cookiecutter
-redcap-cli==0.1.0
-    # via redi
-redi==0.15.5
+redis==4.5.5
     # via -r requirements-worker.in
 requests==2.28.2
     # via
@@ -249,8 +239,6 @@ scipy==1.10.1
     #   scikit-learn
 semantic-version==2.10.0
     # via pycap
-setuptools-scm==7.1.0
-    # via redi
 shapely==2.0.1
     # via
     #   geopandas

@@ -207,8 +207,6 @@ djangorestframework==3.14.0
     #   drf-yasg
 djangorestframework-simplejwt==5.2.2
     # via -r ./requirements-server.in
-docopt==0.6.2
-    # via redi
 drf-nested-routers==0.93.4
     # via -r ./requirements-server.in
 drf-yasg==1.21.5
@@ -307,8 +305,6 @@ kombu==5.2.4
     # via celery
 llvmlite==0.39.1
     # via numba
-lxml==4.9.2
-    # via redi
 markdown==3.4.3
     # via -r ./requirements-server.in
 markupsafe==2.1.2
@@ -422,8 +418,6 @@ pycodestyle==2.10.0
     # via flake8
 pycparser==2.21
     # via cffi
-pycrypto==2.6.1
-    # via redi
 pyflakes==3.0.1
     # via flake8
 pygments==2.14.0
@@ -453,8 +447,6 @@ pyrabbit==1.1.0
     # via -r ./requirements-server.in
 pyrsistent==0.19.3
     # via jsonschema
-pysftp==0.2.9
-    # via redi
 pytest==7.2.2
     # via
     #   -r ./requirements-worker.in
@@ -483,10 +475,6 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0
     # via cookiecutter
-redcap-cli==0.1.0
-    # via redi
-redi==0.15.5
-    # via -r ./requirements-worker.in
 redis==4.5.4
     # via -r ./requirements-server.in
 requests==2.28.2
@@ -521,8 +509,6 @@ semantic-version==2.10.0
     # via pycap
 service-identity==21.1.0
     # via twisted
-setuptools-scm==7.1.0
-    # via redi
 shapely==2.0.1
     # via
     #   geopandas
