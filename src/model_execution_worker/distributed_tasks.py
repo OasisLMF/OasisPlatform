@@ -743,7 +743,7 @@ def collect_keys(
         # extract chunks
         chunk_tars = [Path(d['chunk_keys']) for d in params]
         for tar in chunk_tars:
-            dirname = tar.name.removesuffix(''.join(tar.suffixes))
+            dirname = tar.name.rstrip(''.join(tar.suffixes))
             extract_to = chunks_dir / dirname
             filestore.extract(tar.as_posix(), extract_to.as_posix(), storage_subdir)
 
