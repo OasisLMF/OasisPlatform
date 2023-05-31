@@ -92,7 +92,7 @@ cryptography==40.0.1
     #   service-identity
 daphne==2.5.0
     # via channels
-django==3.2.18
+django==3.2.19
     # via
     #   channels
     #   django-celery-results

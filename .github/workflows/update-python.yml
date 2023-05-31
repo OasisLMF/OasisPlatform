@@ -1,0 +1,58 @@
+name: Update Requirements
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_update_list:
+        description: 'pass list of packages to update, [django celery "oasislmf==<ver>"]'
+        required: false
+  workflow_call:
+    inputs:
+      package_update_list:
+        description: 'pass list of packages to update, [django celery "oasislmf==<ver>"]'
+        required: false
+        type: string
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref_name }}
+        fetch-depth: 0 # fetch the whole repo for complete history
+
+    - name: Setup github user
+      run: |
+        git config --global user.email ${{ env.GIT_EMAIL }}
+        git config --global user.name ${{ env.GIT_USERNAME }}
+        git config --global pull.ff only
+      env:
+        GIT_EMAIL: ${{ secrets.BUILD_GIT_EMAIL }}
+        GIT_USERNAME: ${{ secrets.BUILD_GIT_USERNAME }}
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install piptools
+      run: pip install pip-tools
+
+    - name: Update Requirements files
+      run: |
+        ./scripts/update-packages.sh ${{ inputs.package_update_list }}
+        requ_list=( 'requirements-server' 'requirements-worker' 'requirements' 'kubernetes/worker-controller/requirements')
+        for fl in "${requ_list[@]}"; do
+          git add $fl.txt
+        done
+
+    - name: Git Commit
+      run: |
+        [[ -z $(git status -s) ]] || git commit -m "Updated Package Requirements"
+
+    - name: Push
+      run: git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}

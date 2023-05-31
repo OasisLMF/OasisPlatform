@@ -53,8 +53,6 @@ backports-tempfile==1.0
     # via -r requirements.in
 backports-weakref==1.0.post1
     # via backports-tempfile
-bcrypt==4.0.1
-    # via paramiko
 beautifulsoup4==4.12.1
     # via webtest
 billiard==3.6.4.0
@@ -86,9 +84,7 @@ certifi==2022.12.7
     #   pyproj
     #   requests
 cffi==1.15.1
-    # via
-    #   cryptography
-    #   pynacl
+    # via cryptography
 chainmap==1.0.3
     # via
     #   -r ./requirements-server.in
@@ -155,7 +151,6 @@ cryptography==40.0.1
     #   azure-storage-blob
     #   josepy
     #   mozilla-django-oidc
-    #   paramiko
     #   pyopenssl
     #   service-identity
 daphne==2.5.0
@@ -166,7 +161,7 @@ decorator==5.1.1
     #   ipython
 distlib==0.3.6
     # via virtualenv
-django==3.2.18
+django==3.2.19
     # via
     #   channels
     #   django-celery-results
@@ -357,7 +352,6 @@ packaging==23.0
     #   ods-tools
     #   pyproject-api
     #   pytest
-    #   setuptools-scm
     #   tox
 pandas==1.5.3
     # via
@@ -366,8 +360,6 @@ pandas==1.5.3
     #   geopandas
     #   oasislmf
     #   ods-tools
-paramiko==3.1.0
-    # via pysftp
 parso==0.8.3
     # via jedi
 pathlib2==2.3.7.post1
@@ -410,10 +402,6 @@ pyasn1==0.4.8
     #   service-identity
 pyasn1-modules==0.2.8
     # via service-identity
-pycap==2.4.0
-    # via
-    #   redcap-cli
-    #   redi
 pycodestyle==2.10.0
     # via flake8
 pycparser==2.21
@@ -428,8 +416,6 @@ pymysql==1.0.3
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pynacl==1.5.0
-    # via paramiko
 pyopenssl==23.1.1
     # via
     #   -r requirements.in
@@ -476,7 +462,9 @@ pytz==2023.3
 pyyaml==6.0
     # via cookiecutter
 redis==4.5.4
-    # via -r ./requirements-server.in
+    # via
+    #   -r ./requirements-server.in
+    #   -r ./requirements-worker.in
 requests==2.28.2
     # via
     #   -r requirements.in
@@ -486,8 +474,6 @@ requests==2.28.2
     #   forex-python
     #   mozilla-django-oidc
     #   oasislmf
-    #   pycap
-    #   redi
     #   requests-toolbelt
 requests-toolbelt==0.10.1
     # via oasislmf
@@ -505,8 +491,6 @@ scipy==1.10.1
     # via
     #   oasislmf
     #   scikit-learn
-semantic-version==2.10.0
-    # via pycap
 service-identity==21.1.0
     # via twisted
 shapely==2.0.1
@@ -559,7 +543,6 @@ tomli==2.0.1
     #   pyproject-api
     #   pyproject-hooks
     #   pytest
-    #   setuptools-scm
     #   tox
 tox==4.4.11
     # via -r requirements.in
@@ -577,7 +560,6 @@ typing-extensions==4.5.0
     # via
     #   azure-core
     #   azure-storage-blob
-    #   setuptools-scm
     #   twisted
 uritemplate==4.1.1
     # via
