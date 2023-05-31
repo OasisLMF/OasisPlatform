@@ -613,10 +613,10 @@ def pre_analysis_hook(self,
             pre_hook_output = OasisManager().exposure_pre_analysis(**params)
             files_modified = pre_hook_output.get('modified', {})
 
-            pre_loc_fp = os.path.join(pre_hook_output, files_modified.get('location'))
-            pre_acc_fp = os.path.join(pre_hook_output, files_modified.get('account'))
-            pre_info_fp = os.path.join(pre_hook_output, files_modified.get('ri_info'))
-            pre_scope_fp = os.path.join(pre_hook_output, files_modified.get('ri_scope'))
+            pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
+            pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
+            pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
+            pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
 
             # store updated files
             params['pre_loc_file'] = filestore.put(pre_loc_fp, subdir=params['storage_subdir'])
