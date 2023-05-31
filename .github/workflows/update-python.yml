@@ -50,7 +50,7 @@ jobs:
 
     - name: Git Commit
       run: |
-        [[ -z $(git status -s) ]] || git commit -m "Updated Package Requirements"
+        [[ -z $(git status -s) ]] || git commit -m "Updated Package Requirements: ${{ inputs.package_update_list }}"
 
     - name: Push
       run: git push
