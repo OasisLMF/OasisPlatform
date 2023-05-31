@@ -613,11 +613,16 @@ def pre_analysis_hook(self,
             pre_hook_output = OasisManager().exposure_pre_analysis(**params)
             files_modified = pre_hook_output.get('modified', {})
 
+            pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
+            pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
+            pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
+            pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
+
             # store updated files
-            params['pre_loc_file'] = filestore.put(files_modified.get('oed_location_csv'), subdir=params['storage_subdir'])
-            params['pre_acc_file'] = filestore.put(files_modified.get('oed_accounts_csv'), subdir=params['storage_subdir'])
-            params['pre_info_file'] = filestore.put(files_modified.get('oed_info_csv'), subdir=params['storage_subdir'])
-            params['pre_scope_file'] = filestore.put(files_modified.get('oed_scope_csv'), subdir=params['storage_subdir'])
+            params['pre_loc_file'] = filestore.put(pre_loc_fp, subdir=params['storage_subdir'])
+            params['pre_acc_file'] = filestore.put(pre_acc_fp, subdir=params['storage_subdir'])
+            params['pre_info_file'] = filestore.put(pre_info_fp, subdir=params['storage_subdir'])
+            params['pre_scope_file'] = filestore.put(pre_scope_fp, subdir=params['storage_subdir'])
 
         # remove any pre-loaded files (only affects this worker)
         oed_files = {v for k, v in params.items() if k.startswith('oed_') and isinstance(v, str)}
