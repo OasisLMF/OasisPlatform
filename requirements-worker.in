@@ -13,6 +13,6 @@ pathlib2
 psycopg2-binary
 pymysql
 pytest
-redi
+redis
 natsort 
 sqlalchemy
