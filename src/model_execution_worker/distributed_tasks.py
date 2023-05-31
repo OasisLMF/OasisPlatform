@@ -614,10 +614,10 @@ def pre_analysis_hook(self,
             files_modified = pre_hook_output.get('modified', {})
 
             # store updated files
-            params['pre_loc_file'] = filestore.put(files_modified.get('oed_location_csv'), subdir=params['storage_subdir'])
-            params['pre_acc_file'] = filestore.put(files_modified.get('oed_accounts_csv'), subdir=params['storage_subdir'])
-            params['pre_info_file'] = filestore.put(files_modified.get('oed_info_csv'), subdir=params['storage_subdir'])
-            params['pre_scope_file'] = filestore.put(files_modified.get('oed_scope_csv'), subdir=params['storage_subdir'])
+            params['pre_loc_file'] = filestore.put(files_modified.get('location'), subdir=params['storage_subdir'])
+            params['pre_acc_file'] = filestore.put(files_modified.get('account'), subdir=params['storage_subdir'])
+            params['pre_info_file'] = filestore.put(files_modified.get('ri_info'), subdir=params['storage_subdir'])
+            params['pre_scope_file'] = filestore.put(files_modified.get('ri_scope'), subdir=params['storage_subdir'])
 
         # remove any pre-loaded files (only affects this worker)
         oed_files = {v for k, v in params.items() if k.startswith('oed_') and isinstance(v, str)}
