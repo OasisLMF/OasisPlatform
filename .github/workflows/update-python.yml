@@ -43,7 +43,7 @@ jobs:
     - name: Update Requirements files
       run: |
         ./scripts/update-packages.sh ${{ inputs.package_update_list }}
-        requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
+        requ_list=( 'requirements-server' 'requirements-worker' 'requirements' 'kubernetes/worker-controller/requirements')
         for fl in "${requ_list[@]}"; do
           git add $fl.txt
         done
