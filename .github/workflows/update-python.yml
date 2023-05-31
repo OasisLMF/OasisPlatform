@@ -2,7 +2,16 @@ name: Update Requirements
 
 on:
   workflow_dispatch:
+    inputs:
+      package_update_list:
+        description: 'pass list of packages to update, [django celery "oasislmf==<ver>"]'
+        required: false
   workflow_call:
+    inputs:
+      package_update_list:
+        description: 'pass list of packages to update, [django celery "oasislmf==<ver>"]'
+        required: false
+        type: string
 
 jobs:
   update:
@@ -33,7 +42,7 @@ jobs:
 
     - name: Update Requirements files
       run: |
-        ./scripts/update-packages.sh
+        ./scripts/update-packages.sh ${{ inputs.package_update_list }}
         requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
         for fl in "${requ_list[@]}"; do
           git add $fl.txt
@@ -41,7 +50,7 @@ jobs:
 
     - name: Git Commit
       run: |
-        [[ -z $(git status -s) ]] || git commit -m "Updated Package Requirements"
+        [[ -z $(git status -s) ]] || git commit -m "Updated Package Requirements: ${{ inputs.package_update_list }}"
 
     - name: Push
       run: git push

@@ -1,40 +1,21 @@
+#!/bin/bash
+
 pkg_list=(
+    'django==3.*'
+    'celery==5.*'
     'ods-tools==2.*'
     'oasislmf==1.23.*'
-    'pandas==1.*'
-    joblib
-    oauthlib
-    parso
-    certifi
-    cryptography
-    wheel
-    ruamel.yaml
-    distlib
-    'sqlalchemy==1.*'
-    'django==3.*'
-    django-celery-results
-    'celery==5.*'
-    virtualenv
-    filelock
-    text-unidecode
-    azure-storage-blob
-    coverage
-    django-request-logging
-    drf-yasg
-    scipy
-    waitress
-    sklearn
-    psycopg2-binary
-    scikit-learn
 )
 
+if [ "$#" -gt 0 ]; then
+    pkg_list=( "$@" )
+fi
 
 PKG_UPDATE=''
 for pk in "${pkg_list[@]}"; do
-    PKG_UPDATE=$PKG_UPDATE" --upgrade-package $pk"   
+    PKG_UPDATE=$PKG_UPDATE" --upgrade-package $pk"
 done
 
-rm requirements-worker.txt requirements-server.txt requirements.txt
 set -e
 pip-compile $PKG_UPDATE requirements-worker.in
 pip-compile $PKG_UPDATE requirements-server.in
