@@ -25,7 +25,7 @@ azure-core==1.26.4
     # via azure-storage-blob
 azure-storage-blob==12.16.0
     # via django-storages
-billiard==3.6.4.0
+billiard==4.1.0
     # via celery
 boto3==1.26.133
     # via -r requirements-server.in
@@ -33,7 +33,7 @@ botocore==1.29.133
     # via
     #   boto3
     #   s3transfer
-celery==5.2.7
+celery==5.3.0
     # via -r requirements-server.in
 certifi==2023.5.7
     # via requests
@@ -151,7 +151,7 @@ jsonschema==4.17.3
     # via
     #   -r requirements-server.in
     #   ods-tools
-kombu==5.2.4
+kombu==5.3.0
     # via celery
 markdown==3.4.3
     # via -r requirements-server.in
@@ -161,7 +161,7 @@ numpy==1.24.3
     # via
     #   pandas
     #   pyarrow
-ods-tools==3.0.6
+ods-tools==3.0.7
     # via -r requirements-server.in
 packaging==23.1
     # via
@@ -198,10 +198,10 @@ pyrsistent==0.19.3
 python-dateutil==2.8.2
     # via
     #   botocore
+    #   celery
     #   pandas
 pytz==2023.3
     # via
-    #   celery
     #   django
     #   djangorestframework
     #   drf-yasg
@@ -246,7 +246,9 @@ typing-extensions==4.5.0
     #   sqlalchemy
     #   twisted
 tzdata==2023.3
-    # via pandas
+    # via
+    #   celery
+    #   pandas
 uritemplate==4.1.1
     # via
     #   coreapi

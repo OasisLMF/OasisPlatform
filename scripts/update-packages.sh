@@ -3,8 +3,8 @@
 pkg_list=(
     'celery==5.*'
     'django==3.*'
-    oasislmf
-    ods-tools
+    'oasislmf==1.27.*'
+    'ods-tools==3.0.*'
 )
 
 if [ "$#" -gt 0 ]; then
