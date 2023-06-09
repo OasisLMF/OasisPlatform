@@ -117,22 +117,22 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'created': portfolio.created.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'modified': portfolio.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'accounts_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
+                        "url": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
                         "name": portfolio.accounts_file.filename,
                         "stored": str(portfolio.accounts_file.file)
                     },
                     'location_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(),
+                        "url": response.request.application_url + portfolio.get_absolute_location_file_url(),
                         "name": portfolio.location_file.filename,
                         "stored": str(portfolio.location_file.file)
                     },
                     'reinsurance_info_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
+                        "url": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
                         "name": portfolio.reinsurance_info_file.filename,
                         "stored": str(portfolio.reinsurance_info_file.file)
                     },
                     'reinsurance_scope_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
+                        "url": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
                         "name": portfolio.reinsurance_scope_file.filename,
                         "stored": str(portfolio.reinsurance_scope_file.file)
                     },

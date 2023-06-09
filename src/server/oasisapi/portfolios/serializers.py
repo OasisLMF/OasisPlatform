@@ -50,7 +50,7 @@ class PortfolioListSerializer(serializers.Serializer):
             return None
         request = self.context.get('request')
         return {
-            "uri": instance.get_absolute_location_file_url(request=request),
+            "url": instance.get_absolute_location_file_url(request=request),
             "name": instance.location_file.filename,
             "stored": str(instance.location_file.file)
         }
@@ -61,7 +61,7 @@ class PortfolioListSerializer(serializers.Serializer):
             return None
         request = self.context.get('request')
         return {
-            "uri": instance.get_absolute_accounts_file_url(request=request),
+            "url": instance.get_absolute_accounts_file_url(request=request),
             "name": instance.accounts_file.filename,
             "stored": str(instance.accounts_file.file)
         }
@@ -73,7 +73,7 @@ class PortfolioListSerializer(serializers.Serializer):
 
         request = self.context.get('request')
         return {
-            "uri": instance.get_absolute_reinsurance_info_file_url(request=request),
+            "url": instance.get_absolute_reinsurance_info_file_url(request=request),
             "name": instance.reinsurance_info_file.filename,
             "stored": str(instance.reinsurance_info_file.file)
         }
@@ -84,7 +84,7 @@ class PortfolioListSerializer(serializers.Serializer):
             return None
         request = self.context.get('request')
         return {
-            "uri": instance.get_absolute_reinsurance_scope_file_url(request=request),
+            "url": instance.get_absolute_reinsurance_scope_file_url(request=request),
             "name": instance.reinsurance_scope_file.filename,
             "stored": str(instance.reinsurance_scope_file.file)
         }
