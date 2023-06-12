@@ -65,7 +65,8 @@ TOKEN_REFRESH_HEADER = openapi.Parameter(
 FILE_FORMAT_PARAM = openapi.Parameter(
     'file_format',
     openapi.IN_QUERY,
-    description="file format returned, default is `csv`",
+    required=False,
+    description="File format returned, default is `csv`",
     type=openapi.TYPE_STRING,
     enum=['csv', 'parquet']
 )
@@ -94,6 +95,7 @@ SUBTASK_SLUG_PARAM = openapi.Parameter(
 FILE_VALIDATION_PARAM = openapi.Parameter(
     'validate',
     openapi.IN_QUERY,
+    required=False,
     description="Validate OED files on upload, default `True`",
     type=openapi.TYPE_BOOLEAN,
 )
