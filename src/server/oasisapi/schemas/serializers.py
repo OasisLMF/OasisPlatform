@@ -59,7 +59,7 @@ class StorageLinkSerializer(serializers.Serializer):
 
 
 class LocFileSerializer(serializers.Serializer):
-    url = serializers.URLField()
+    uri = serializers.URLField()
     name = serializers.CharField()
     stored = serializers.CharField()
 
@@ -71,7 +71,7 @@ class LocFileSerializer(serializers.Serializer):
 
 
 class AccFileSerializer(serializers.Serializer):
-    url = serializers.URLField()
+    uri = serializers.URLField()
     name = serializers.CharField()
     stored = serializers.CharField()
 
@@ -83,7 +83,7 @@ class AccFileSerializer(serializers.Serializer):
 
 
 class ReinsInfoFileSerializer(serializers.Serializer):
-    url = serializers.URLField()
+    uri = serializers.URLField()
     name = serializers.CharField()
     stored = serializers.CharField()
 
@@ -95,7 +95,7 @@ class ReinsInfoFileSerializer(serializers.Serializer):
 
 
 class ReinsScopeFileSerializer(serializers.Serializer):
-    url = serializers.URLField()
+    uri = serializers.URLField()
     name = serializers.CharField()
     stored = serializers.CharField()
 
