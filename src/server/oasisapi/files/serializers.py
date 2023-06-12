@@ -36,6 +36,7 @@ def md5_filehash(in_memory_file, chunk_size=4096):
 
 class RelatedFileSerializer(serializers.ModelSerializer):
     class Meta:
+        ref_name = None
         model = RelatedFile
         fields = (
             'created',
