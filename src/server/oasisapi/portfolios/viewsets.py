@@ -123,10 +123,8 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
 
     @property
     def parser_classes(self):
-        method = self.request.method.lower()
         upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']
-
-        if method == 'post' and getattr(self, 'action', None) in upload_views:
+        if getattr(self, 'action', None) in upload_views:
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
