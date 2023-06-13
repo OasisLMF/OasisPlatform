@@ -102,10 +102,10 @@ To deploy the Oasis Platform with a PiWind model (default settings):
     ```
     # If you are in the root of this repository
     cd charts/
-   
+
     helm install platform oasis-platform
     helm install models oasis-models
-   
+
     # If you want monitoring tools
     helm install monitoring oasis-monitoring
     ```
@@ -115,7 +115,7 @@ To deploy the Oasis Platform with a PiWind model (default settings):
    ```
    # Manually check
    kubectl get pods
-   
+
    # Or using kubectl wait to block until the everything is ready.
    kubectl wait --for=condition=available --timeout=120s --all deployments
    kubectl wait --for=condition=complete --timeout=120s --all jobs
@@ -247,7 +247,7 @@ All default settings for a chart are stored and described in `<chart>/values.yam
 
     ```
     # cd kubernetes/charts/
-    
+
     for chart in oasis-models oasis-platform oasis-monitoring; do
         echo $chart
         echo -e "###\n### Begin of $chart chart settings ###\n###\n" >> values.yaml
@@ -259,6 +259,8 @@ All default settings for a chart are stored and described in `<chart>/values.yam
 
 * Make a copy of a specific charts values(`<chart>/values.yaml`), edit your copy and then
   use `-f chart-values-copy.yaml` as parameter to helm.
+  If you do not wish to deploy the Oasis PiWind demo model, you will need to add `--set
+  workers.piwind_demo=null` to explicitly disable it when deploying models.
 * Use helm with `--set` to override specific values. For example `--set ingress.uiHostname=ui.oasis.local` at
   installation to generate the ingress with a specific hostname.
 * Edit `<chart>/values.yaml` directly. This is not recommended since the file is part of the repository and might be
@@ -276,7 +278,7 @@ only.
    ```
    # Make a copy of platform values
    cp oasis-platform/values.yaml platform-values.yaml
-   
+
    # Make a copy of montoring values
    cp oasis-montoring/values.yaml monitoring-values.yaml
    ```
@@ -294,7 +296,7 @@ only.
        kube-prometheus-stack:
          grafana:
            adminPassword: password123
- 
+
        ```
 4. Apply changes
     1. If this is a first time installation:
@@ -306,7 +308,7 @@ only.
        ```
        # Check what names you used to install the charts with
        helm ls
-       
+
        # Upgrade charts
        helm upgrade <platform-name> oasis-platform -f platform-values.yaml
        helm upgrade <monitoring-name> oasis-monitoring -f monitoring-values.yaml
@@ -322,7 +324,7 @@ Let's say we like to set a custom hostname for our ingress. The default hostname
    ```
    # Make a copy of platform values
    cp oasis-platform/values.yaml platform-values.yaml
-   
+
    # Make a copy of montoring values (not necessary if you don't want to install it)
    cp oasis-montoring/values.yaml monitoring-values.yaml
    ```
@@ -345,17 +347,17 @@ Let's say we like to set a custom hostname for our ingress. The default hostname
              hosts:
                # Change this
                - ui.oasis.local  # Change this
- 
+
          alertmanager:
            ingress:
              hosts:
                - ui.oasis.local  # Change this
- 
+
          grafana:
            ingress:
              hosts:
                - ui.oasis.local # Change this
- 
+
        ```
     3. Optional: If you also want to change the paths for Prometheus, Alert manager and Grafana you can update these:
        ```
@@ -366,18 +368,18 @@ Let's say we like to set a custom hostname for our ingress. The default hostname
            ingress:
              paths:
                - /prometheus/ # Change this
- 
+
          alertmanager:
            alertmanagerSpec:
              routePrefix: /alert-manager/ # Change this
            ingress:
              paths:
                - /alert-manager/ # Change this
- 
+
          grafana:
            ingress:
              path: /grafana/ # Change this
- 
+
        ```
 3. Apply changes
     1. If this is a first time installation:
@@ -389,7 +391,7 @@ Let's say we like to set a custom hostname for our ingress. The default hostname
        ```
        # Check what names you used to install the charts with
        helm ls
-       
+
        # Upgrade charts
        helm upgrade <platform-name> oasis-platform -f platform-values.yaml
        helm upgrade <monitoring-name> oasis-monitoring -f monitoring-values.yaml

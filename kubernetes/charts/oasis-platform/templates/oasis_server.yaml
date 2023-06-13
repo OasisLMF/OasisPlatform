@@ -231,8 +231,6 @@ spec:
             {{- include "h.channelLayerVars" . | indent 12 }}
             - name: STARTUP_RUN_MIGRATIONS
               value: "true"
-            - name: OASIS_DEBUG
-              value: "1"
             - name: INGRESS_EXTERNAL_HOST
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
@@ -247,6 +245,7 @@ spec:
             - name: OASIS_SERVER_OIDC_ENDPOINT
               value: {{ .Values.oasisServer.oidc.endpoint }}
             {{- end }}
+            {{- toYaml .Values.oasisServer.env | nindent 12 }}
           ports:
             - containerPort: {{ .Values.oasisServer.port }}
               name: {{ .Values.oasisServer.name }}

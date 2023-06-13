@@ -613,11 +613,16 @@ def pre_analysis_hook(self,
             pre_hook_output = OasisManager().exposure_pre_analysis(**params)
             files_modified = pre_hook_output.get('modified', {})
 
+            pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
+            pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
+            pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
+            pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
+
             # store updated files
-            params['pre_loc_file'] = filestore.put(files_modified.get('oed_location_csv'), subdir=params['storage_subdir'])
-            params['pre_acc_file'] = filestore.put(files_modified.get('oed_accounts_csv'), subdir=params['storage_subdir'])
-            params['pre_info_file'] = filestore.put(files_modified.get('oed_info_csv'), subdir=params['storage_subdir'])
-            params['pre_scope_file'] = filestore.put(files_modified.get('oed_scope_csv'), subdir=params['storage_subdir'])
+            params['pre_loc_file'] = filestore.put(pre_loc_fp, subdir=params['storage_subdir'])
+            params['pre_acc_file'] = filestore.put(pre_acc_fp, subdir=params['storage_subdir'])
+            params['pre_info_file'] = filestore.put(pre_info_fp, subdir=params['storage_subdir'])
+            params['pre_scope_file'] = filestore.put(pre_scope_fp, subdir=params['storage_subdir'])
 
         # remove any pre-loaded files (only affects this worker)
         oed_files = {v for k, v in params.items() if k.startswith('oed_') and isinstance(v, str)}
@@ -659,6 +664,8 @@ def prepare_keys_file_chunk(
 
         location_df = load_location_data(params['oed_location_csv'])
         location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
+        location_df.reset_index(drop=True, inplace=True)
+
         chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
         chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
         lookup.generate_key_files(
@@ -720,9 +727,12 @@ def collect_keys(
         # add opt for Select merge strat
         df = pd.concat(df_chunks)
 
-        # CSV files will have a default index which must not be used to filter duplicates.
         if file_type == 'parquet':
+            # Parquet files should have an index which can be used to filter duplicates.
             df = df[~df.index.duplicated(keep='first')]
+        elif file_type == 'csv':
+            # CSV files only have an automatic index so we use the values themselves to filter dups.
+            df = df[~df.duplicated(keep='first')]
         pd_write_func = getattr(df, f"to_{file_type}")
         # Only write index for parquet files to avoid useless extra column for csv files.
         pd_write_func(output_file, index=file_type == 'parquet')
@@ -734,22 +744,25 @@ def collect_keys(
 
     # Collect files and tar here from chunk_params['target_dir']
     with TemporaryDir() as chunks_dir:
+        chunks_dir = Path(chunks_dir)
         # extract chunks
-        chunk_tars = [d['chunk_keys'] for d in params]
+        chunk_tars = [Path(d['chunk_keys']) for d in params]
         for tar in chunk_tars:
-            extract_to = os.path.join(chunks_dir, os.path.basename(tar).split('.')[0])
-            filestore.extract(tar, extract_to, storage_subdir)
+            dirname = tar.name.rstrip(''.join(tar.suffixes))
+            extract_to = chunks_dir / dirname
+            filestore.extract(tar.as_posix(), extract_to.as_posix(), storage_subdir)
 
-        file_paths = glob.glob(chunks_dir + '/lookup-[0-9]*/*')  # paths for every file to merge (inputs for merge)
-        file_names = set([os.path.basename(f) for f in file_paths])  # unique filenames (output merged results)
+        file_paths = list(chunks_dir.glob('lookup-[0-9]*/*'))  # all files that need merging (merge inputs)
+        file_names = {path.name for path in file_paths}  # unique filenames (merge outputs)
 
         with TemporaryDir() as merge_dir:
             for file in file_names:
                 logging.info(f'Merging into file: "{file}"')
+                merge_dir = Path(merge_dir)
                 file_type = Path(file).suffix[1:]
                 file_name = Path(file).stem
-                file_chunks = [f for f in file_paths if f.endswith(file)]
-                file_merged = os.path.join(merge_dir, file)
+                file_chunks = [f for f in file_paths if f.name == file]
+                file_merged = merge_dir / file
                 file_chunks = natsorted(file_chunks)
 
                 if file_name in ['events', 'occurrence', 'ensemble_mapping']:
@@ -761,7 +774,7 @@ def collect_keys(
 
             # store keys data
             chunk_params['keys_data'] = filestore.put(
-                merge_dir,
+                merge_dir.as_posix(),
                 filename='keys-data.tar.gz',
                 subdir=chunk_params['storage_subdir']
             )
