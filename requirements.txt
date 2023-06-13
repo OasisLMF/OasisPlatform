@@ -55,7 +55,7 @@ backports-weakref==1.0.post1
     # via backports-tempfile
 beautifulsoup4==4.12.1
     # via webtest
-billiard==3.6.4.0
+billiard==4.1.0
     # via
     #   -r ./requirements-worker.in
     #   celery
@@ -73,7 +73,7 @@ build==0.10.0
     # via pip-tools
 cachetools==5.3.0
     # via tox
-celery==5.2.7
+celery==5.3.0
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -296,7 +296,7 @@ jsonschema==4.17.3
     # via
     #   -r ./requirements-server.in
     #   ods-tools
-kombu==5.2.4
+kombu==5.3.0
     # via celery
 llvmlite==0.39.1
     # via numba
@@ -337,9 +337,9 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.27.2
+oasislmf[extra]==1.27.4
     # via -r ./requirements-worker.in
-ods-tools==3.0.5
+ods-tools==3.0.7
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -447,13 +447,13 @@ python-dateutil==2.8.2
     # via
     #   arrow
     #   botocore
+    #   celery
     #   freezegun
     #   pandas
 python-slugify==8.0.1
     # via cookiecutter
 pytz==2023.3
     # via
-    #   celery
     #   django
     #   djangorestframework
     #   drf-yasg
@@ -561,6 +561,8 @@ typing-extensions==4.5.0
     #   azure-core
     #   azure-storage-blob
     #   twisted
+tzdata==2023.3
+    # via celery
 uritemplate==4.1.1
     # via
     #   coreapi

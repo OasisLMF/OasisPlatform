@@ -1,6 +1,21 @@
 OasisPlatform Changelog
 =======================
 
+`2.1.2`_
+ ---------
+* [#834](https://github.com/OasisLMF/OasisPlatform/pull/834) - Update external docker images
+* [#813, #822](https://github.com/OasisLMF/OasisPlatform/pull/835) - Fixes for OpenAPI schema
+* [#823](https://github.com/OasisLMF/OasisPlatform/pull/828) - Possible bug in collect keys sub-task 
+* [#782](https://github.com/OasisLMF/OasisPlatform/pull/782) - Feature/ods read from stream Plat2
+* [#824](https://github.com/OasisLMF/OasisPlatform/pull/824) - Fix typo in requirments-worker.in causing incorrect package install
+* [#821](https://github.com/OasisLMF/OasisPlatform/pull/821) - Miscellaneous platform 2 improvements
+* [#790](https://github.com/OasisLMF/OasisPlatform/pull/790) - Release/2.1.1
+* [#791](https://github.com/OasisLMF/OasisPlatform/pull/791) - Fix bug in release note build script
+* [#792](https://github.com/OasisLMF/OasisPlatform/pull/792) - Limit external image scans to release PRs
+* [#796](https://github.com/OasisLMF/OasisPlatform/pull/796) - Plat 2.1.1 fixes
+* [#830](https://github.com/OasisLMF/OasisPlatform/pull/830) - Fix pre-analysis hook 
+.. _`2.1.2`:  https://github.com/OasisLMF/OasisPlatform/compare/2.1.1...2.1.2
+
 `2.1.1`_
  ---------
 * [#771](https://github.com/OasisLMF/OasisPlatform/pull/772) - Add ODS_Tools version summary to release notes builder

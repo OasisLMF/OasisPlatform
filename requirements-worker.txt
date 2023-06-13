@@ -25,7 +25,7 @@ azure-core==1.26.3
     #   azure-storage-blob
 azure-storage-blob==12.15.0
     # via -r requirements-worker.in
-billiard==3.6.4.0
+billiard==4.1.0
     # via
     #   -r requirements-worker.in
     #   celery
@@ -37,7 +37,7 @@ botocore==1.29.107
     # via
     #   boto3
     #   s3transfer
-celery==5.2.7
+celery==5.3.0
     # via -r requirements-worker.in
 certifi==2022.12.7
     # via
@@ -124,7 +124,7 @@ jsonref==1.1.0
     # via ods-tools
 jsonschema==4.17.3
     # via ods-tools
-kombu==5.2.4
+kombu==5.3.0
     # via celery
 llvmlite==0.39.1
     # via numba
@@ -151,9 +151,9 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.27.2
+oasislmf[extra]==1.27.4
     # via -r requirements-worker.in
-ods-tools==3.0.5
+ods-tools==3.0.7
     # via oasislmf
 packaging==23.0
     # via
@@ -191,12 +191,12 @@ python-dateutil==2.8.2
     # via
     #   arrow
     #   botocore
+    #   celery
     #   pandas
 python-slugify==8.0.1
     # via cookiecutter
 pytz==2023.3
     # via
-    #   celery
     #   oasislmf
     #   pandas
 pyyaml==6.0
@@ -257,6 +257,8 @@ typing-extensions==4.5.0
     # via
     #   azure-core
     #   azure-storage-blob
+tzdata==2023.3
+    # via celery
 urllib3==1.26.15
     # via
     #   botocore
