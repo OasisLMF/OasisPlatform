@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.4`_
+ ---------
+* [#813, #822](https://github.com/OasisLMF/OasisPlatform/pull/835) - Fixes for OpenAPI schema
+* [#806](https://github.com/OasisLMF/OasisPlatform/pull/806) - Release 1.27.3
+* [#820](https://github.com/OasisLMF/OasisPlatform/pull/820) - Update publish with checkbox to push images with latest tag
+* [#826](https://github.com/OasisLMF/OasisPlatform/pull/826) - Add option to select packages to update in workflow
+* [#829](https://github.com/OasisLMF/OasisPlatform/pull/831) - Fix worker analysis settings compatibility 
+.. _`1.27.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.3...1.27.4
+
 `1.27.3`_
  ---------
 * [#795](https://github.com/OasisLMF/OasisPlatform/pull/800) - Add missing check for RI files to workers 
