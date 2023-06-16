@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.27.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.4...1.27.5
+
 `1.27.4`_
  ---------
 * [#813, #822](https://github.com/OasisLMF/OasisPlatform/pull/835) - Fixes for OpenAPI schema
