@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`1.26.8`_
+ ---------
+* [#816](https://github.com/OasisLMF/OasisPlatform/pull/816) - Fix model reg retry on S3 exception
+* [#826](https://github.com/OasisLMF/OasisPlatform/pull/826) - Add option to select packages to update in workflow
+* [#820](https://github.com/OasisLMF/OasisPlatform/pull/820) - Update publish with checkbox to push images with latest tag
+* [#805](https://github.com/OasisLMF/OasisPlatform/pull/805) - Release 1.26.7
+.. _`1.26.8`:  https://github.com/OasisLMF/OasisPlatform/compare/1.26.7...1.26.8
+
 `1.26.7`_
  ---------
 * [#809](https://github.com/OasisLMF/OasisPlatform/pull/809) - CI update for 1.26

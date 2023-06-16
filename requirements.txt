@@ -283,7 +283,7 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.26.7
+oasislmf[extra]==1.26.8
     # via -r ./requirements-worker.in
 oauthlib==3.2.2
     # via requests-oauthlib
@@ -443,7 +443,7 @@ sqlalchemy==1.4.46
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-sqlparse==0.4.3
+sqlparse==0.4.4
     # via
     #   django
     #   django-debug-toolbar
