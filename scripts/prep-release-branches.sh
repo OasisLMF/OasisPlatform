@@ -46,9 +46,12 @@ for branch in "${branch_array[@]}"; do
     new_branch="release/$new_release"
     echo "Create release for: $new_branch"
     
+    
+    if git branch "$new_branch"; then
+        git push --set-upstream origin $new_branch
+    fi
 
-    git co -b $new_branch
-    git push --set-upstream origin $new_branch
-
+    git checkout $new_branch
+    #gh pr create --base $branch
 
 done
