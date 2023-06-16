@@ -51,7 +51,7 @@ for branch in "${branch_array[@]}"; do
         git push --set-upstream origin $new_branch
     fi
 
-    git checkout $new_branch
-    #gh pr create --base $branch
+    #git checkout $new_branch
+    gh pr create --base $branch --title "Release $new_release" --body "### Release $new_release" 
 
 done
