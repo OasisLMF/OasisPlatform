@@ -52,6 +52,6 @@ for branch in "${branch_array[@]}"; do
     fi
 
     #git checkout $new_branch
-    gh pr create --base $branch --title "Release $new_release" --body "### Release $new_release" 
+    gh pr create --base $branch --title "Release $new_release" --body "### Release $new_release" --head $new_branch
 
 done
