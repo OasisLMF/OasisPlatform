@@ -41,7 +41,6 @@ To run a test analysis using the worker image and example model data, run the fo
     
     docker exec oasisplatform_runner_1 sh run_api_test_analysis.sh
 
-
 ### Calling the Server
 
 The API server provides a REST interface which is described on the home page of the api server at 
