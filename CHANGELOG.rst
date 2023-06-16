@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.18`_
+ ---------
+* [#826](https://github.com/OasisLMF/OasisPlatform/pull/826) - Add option to select packages to update in workflow
+* [#804](https://github.com/OasisLMF/OasisPlatform/pull/804) - Release 1.23.17
+* [#820](https://github.com/OasisLMF/OasisPlatform/pull/820) - Update publish with checkbox to push images with latest tag
+.. _`1.23.18`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.17...1.23.18
+
 `1.23.17`_
  ---------
 * [#807](https://github.com/OasisLMF/OasisPlatform/pull/807) - Ci updates 1.23.x
