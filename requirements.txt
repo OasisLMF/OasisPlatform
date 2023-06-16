@@ -248,7 +248,7 @@ numpy==1.24.3
     #   numexpr
     #   pandas
     #   shapely
-oasislmf==1.15.28
+oasislmf==1.15.29
     # via -r ./requirements-worker.in
 packaging==20.4
     # via
