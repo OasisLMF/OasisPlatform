@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.15.29`_
+ ---------
+* [#826](https://github.com/OasisLMF/OasisPlatform/pull/826) - Add option to select packages to update in workflow
+* [#819](https://github.com/OasisLMF/OasisPlatform/pull/819) - Set version 1.15.28
+* [#820](https://github.com/OasisLMF/OasisPlatform/pull/820) - Update publish with checkbox to push images with latest tag
+.. _`1.15.29`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.28...1.15.29
+
 * [#802](https://github.com/OasisLMF/OasisPlatform/pull/802) - Release 1.15.27
 .. _`1.15.28`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.27...1.15.28
 
