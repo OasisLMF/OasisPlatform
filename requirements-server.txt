@@ -189,7 +189,7 @@ pycparser==2.21
     # via cffi
 pyjwt==2.6.0
     # via djangorestframework-simplejwt
-pymysql==1.0.2
+pymysql==1.1.0
     # via -r requirements-server.in
 pyopenssl==23.0.0
     # via twisted

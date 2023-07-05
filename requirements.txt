@@ -347,7 +347,7 @@ pyflakes==3.0.1
     # via flake8
 pyjwt==2.6.0
     # via djangorestframework-simplejwt
-pymysql==1.0.2
+pymysql==1.1.0
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
