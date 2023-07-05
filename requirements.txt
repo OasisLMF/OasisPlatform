@@ -269,6 +269,8 @@ msgpack==1.0.5
     # via oasislmf
 munch==2.5.0
     # via fiona
+mysqlclient==2.1.1
+    # via -r ./requirements-server.in
 numba==0.56.4
     # via
     #   -r ./requirements-worker.in

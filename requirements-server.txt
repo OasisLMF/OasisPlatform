@@ -157,6 +157,8 @@ markdown==3.4.1
     # via -r requirements-server.in
 markupsafe==2.1.2
     # via jinja2
+mysqlclient==2.1.1
+    # via -r requirements-server.in
 numpy==1.24.2
     # via
     #   pandas
