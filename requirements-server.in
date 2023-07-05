@@ -30,4 +30,5 @@ pymysql
 pyrabbit
 redis
 sqlalchemy
+mysqlclient
 whitenoise

@@ -322,6 +322,8 @@ munch==2.5.0
     # via fiona
 natsort==8.3.1
     # via -r ./requirements-worker.in
+mysqlclient==2.1.1
+    # via -r ./requirements-server.in
 numba==0.56.4
     # via oasislmf
 numexpr==2.8.4
@@ -412,7 +414,7 @@ pygments==2.14.0
     # via ipython
 pyjwt==2.6.0
     # via djangorestframework-simplejwt
-pymysql==1.0.3
+pymysql==1.1.0
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -521,7 +523,7 @@ sqlalchemy==1.4.47
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-sqlparse==0.4.3
+sqlparse==0.4.4
     # via
     #   django
     #   django-debug-toolbar

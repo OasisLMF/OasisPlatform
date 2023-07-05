@@ -185,6 +185,8 @@ mozilla-django-oidc==3.0.0
     # via -r requirements-server.in
 msgpack==0.6.2
     # via channels-redis
+mysqlclient==2.1.1
+    # via -r requirements-server.in
 numpy==1.24.2
     # via
     #   pandas
@@ -217,7 +219,7 @@ pycparser==2.21
     # via cffi
 pyjwt==2.6.0
     # via djangorestframework-simplejwt
-pymysql==1.0.3
+pymysql==1.1.0
     # via -r requirements-server.in
 pyopenssl==23.2.0
     # via
@@ -266,7 +268,7 @@ six==1.16.0
     #   service-identity
 sqlalchemy==1.4.47
     # via -r requirements-server.in
-sqlparse==0.4.3
+sqlparse==0.4.4
     # via
     #   django
     #   django-debug-toolbar
