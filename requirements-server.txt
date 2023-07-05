@@ -157,6 +157,8 @@ markdown==3.4.1
     # via -r requirements-server.in
 markupsafe==2.1.2
     # via jinja2
+mysqlclient==2.1.1
+    # via -r requirements-server.in
 numpy==1.24.2
     # via
     #   pandas
@@ -189,7 +191,7 @@ pycparser==2.21
     # via cffi
 pyjwt==2.6.0
     # via djangorestframework-simplejwt
-pymysql==1.0.2
+pymysql==1.1.0
     # via -r requirements-server.in
 pyopenssl==23.0.0
     # via twisted
@@ -229,7 +231,7 @@ six==1.16.0
     #   service-identity
 sqlalchemy==2.0.5.post1
     # via -r requirements-server.in
-sqlparse==0.4.3
+sqlparse==0.4.4
     # via
     #   django
     #   django-debug-toolbar
