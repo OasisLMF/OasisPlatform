@@ -444,7 +444,7 @@ sqlalchemy==2.0.5.post1
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-sqlparse==0.4.3
+sqlparse==0.4.4
     # via
     #   django
     #   django-debug-toolbar
