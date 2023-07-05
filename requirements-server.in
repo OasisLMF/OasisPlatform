@@ -26,7 +26,7 @@ psycopg2-binary
 pyarrow
 pymysql
 sqlalchemy
-mysqlclient<=2.1.1
+mysqlclient
 whitenoise
 twisted>=22.1
 gunicorn
