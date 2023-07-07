@@ -368,7 +368,7 @@ class Analysis(TimeStampedModel):
             options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
         )
 
-    def generate_inputs_and_run(self, initiator):
+    def generate_and_run(self, initiator):
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
