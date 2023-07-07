@@ -102,3 +102,19 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         if self.content_types and mapped_content_type not in self.content_types:
             raise ValidationError('File should be one of [{}]'.format(', '.join(self.content_types)))
         return value
+
+
+class FileSQLSerializer(serializers.Serializer):
+    sql = serializers.CharField()
+
+    def validate_sql(self, value):
+        # for purposes of validation, lowercase the sql, return the original
+        sql_to_validate = value.lower()
+        if "from table" not in sql_to_validate:
+            raise serializers.ValidationError("The from clause of the SQL must be "
+                                              "'FROM table', where table is explicitly the word table")
+
+        # TODO what else can we validate here? No point sanitising further as the SQL is not against a
+        # database which can be manipulated?
+
+        return value
