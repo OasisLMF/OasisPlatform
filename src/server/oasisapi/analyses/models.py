@@ -361,6 +361,96 @@ class Analysis(TimeStampedModel):
         self.task_finished = None
         self.save()
 
+    def raise_validate_errors(self, errors, error_state=None):
+        if error_state:
+            self.status = error_state
+            self.save()
+        if errors:
+            raise ValidationError(detail=errors)
+
+    @property
+    def start_input_and_loss_generation_signature(self):
+        return celery_app.signature(
+            'start_input_and_loss_generation_task',
+            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+        )
+
+    def generate_and_run(self, initiator):
+        valid_choices = [
+            self.status_choices.NEW,
+            self.status_choices.INPUTS_GENERATION_ERROR,
+            self.status_choices.INPUTS_GENERATION_CANCELLED,
+            self.status_choices.READY,
+            self.status_choices.RUN_COMPLETED,
+            self.status_choices.RUN_CANCELLED,
+            self.status_choices.RUN_ERROR,
+        ]
+
+        # validation
+        errors = {}
+        if self.status not in valid_choices:
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        if not self.settings_file:
+            errors['settings_file'] = ['Must not be null']
+        if not self.portfolio.location_file:
+            errors['portfolio'] = ['"location_file" must not be null']
+
+        # Raise for error
+        self.raise_validate_errors(errors)
+
+        self.status = self.status_choices.INPUTS_GENERATION_QUEUED
+        self.lookup_errors_file = None
+        self.lookup_success_file = None
+        self.lookup_validation_file = None
+        self.summary_levels_file = None
+        self.input_generation_traceback_file_id = None
+
+        task = self.start_input_and_loss_generation_signature
+        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+            'analysis_id': self.pk,
+            'initiator_id': initiator.pk,
+            'traceback_property': 'input_generation_traceback_file',
+            'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
+        }))
+        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
+
+        self.generate_inputs_task_id = task_id
+        self.task_started = timezone.now()
+        self.task_finished = None
+        self.save()
+
+    def cancel(self):
+        _now = timezone.now()
+
+        # cleanup the the sub tasks
+        qs = self.sub_task_statuses.filter(
+            status__in=[
+                AnalysisTaskStatus.status_choices.PENDING,
+                AnalysisTaskStatus.status_choices.QUEUED,
+                AnalysisTaskStatus.status_choices.STARTED]
+        )
+
+        for task_id in qs.values_list('task_id', flat=True):
+            if task_id:
+                AsyncResult(task_id).revoke(signal='SIGKILL', terminate=True)
+
+        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
+
+        # set the status on the analysis
+        status_map = {
+            Analysis.status_choices.INPUTS_GENERATION_STARTED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
+            Analysis.status_choices.RUN_QUEUED: Analysis.status_choices.RUN_CANCELLED,
+            Analysis.status_choices.RUN_STARTED: Analysis.status_choices.RUN_CANCELLED,
+        }
+
+        if self.status in status_map:
+            self.status = status_map[self.status]
+            self.task_finished = _now
+            self.save()
+
     @property
     def generate_input_signature(self):
         return celery_app.signature(

@@ -289,7 +289,7 @@ def notify_api_status(analysis_pk, task_status):
         'set_task_status',
         args=(analysis_pk, task_status),
         queue='celery'
-    ).delay()
+    ).delay({}, priority=analysis_pk)
 
 
 @app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,))

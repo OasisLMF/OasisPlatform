@@ -218,9 +218,11 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
                          'run_traceback_file']
 
     task_action_types = ['run',
-                         'cancel',
                          'generate_inputs',
-                         'cancel_generate_inputs']
+                         'generate_and_run',
+                         'cancel',
+                         'cancel_generate_inputs',
+                         'cancel_analysis_run']
 
     # queryset = Analysis.objects.all().select_related(*file_action_types).prefetch_related('complex_model_data_files')
     serializer_class = AnalysisSerializer
@@ -269,6 +271,19 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj = self.get_object()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.run(request.user)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @action(methods=['post'], detail=True)
+    def generate_and_run(self, request, pk=None, version=None):
+        """
+        Generates the inputs for the analysis based on the portfolio and then runs it.
+        The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
+        `INPUTS_GENERATION_CANCELLED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or `RUN_ERROR`.
+        """
+        obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        obj.generate_and_run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
