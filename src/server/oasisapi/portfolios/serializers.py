@@ -308,7 +308,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     return self.inferr_content_type(stored_filename)
 
             #  Find content_type from Blob Storage
-             elif hasattr(default_storage, 'azure_container'):
+            elif hasattr(default_storage, 'azure_container'):
                 blob_client = default_storage.client.get_blob_client(stored_filename)
                 blob_properties = blob_client.get_blob_properties()
                 return blob_properties.content_settings.content_type
@@ -345,11 +345,11 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 # https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-copy?tabs=python
                 fname = path.basename(validated_data[field])
                 new_file_name = default_storage.get_alternative_name(validated_data[field], '')
-                new_blobname = path.basename(new_file_name)
+                new_blobname = '/'.join([default_storage.location, path.basename(new_file_name)])
 
                 # Copies a blob asynchronously.
                 source_blob = default_storage.client.get_blob_client(validated_data[field])
-                dest_blob = default_storage.client.get_blob_client(new_file_name)
+                dest_blob = default_storage.client.get_blob_client(new_blobname)
 
                 try:
                     lease = BlobLeaseClient(source_blob)
@@ -362,9 +362,9 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     lease.break_lease()
                     raise e
 
-                stored_blob = default_storage.open(new_blobname)
+                stored_blob = default_storage.open(new_file_name)
                 new_related_file = RelatedFile.objects.create(
-                    file=File(stored_blob, name=new_blobname),
+                    file=File(stored_blob, name=new_file_name),
                     filename=fname,
                     content_type=content_type,
                     creator=self.context['request'].user,
