@@ -308,7 +308,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     return self.inferr_content_type(stored_filename)
 
             #  Find content_type from Blob Storage
-            #elif hasattr(default_storage, 'azure_container'):
+            # elif hasattr(default_storage, 'azure_container'):
             #     --- Add option to read content_type from blob store ---
 
             else:
