@@ -361,6 +361,13 @@ class Analysis(TimeStampedModel):
         self.task_finished = None
         self.save()
 
+    def raise_validate_errors(self, errors, error_state=None):
+        if error_state:
+            self.status = error_state
+            self.save()
+        if errors:
+            raise ValidationError(detail=errors)
+
     @property
     def start_input_and_loss_generation_signature(self):
         return celery_app.signature(
@@ -379,18 +386,20 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_ERROR,
         ]
 
+        # validation
         errors = {}
         if self.status not in valid_choices:
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
-
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-
+        if not self.settings_file:
+            errors['settings_file'] = ['Must not be null']
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
 
-        if errors:
-            raise ValidationError(errors)
+        # Raise for error
+        self.raise_validate_errors(errors)
+
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
