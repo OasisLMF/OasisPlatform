@@ -400,7 +400,6 @@ class Analysis(TimeStampedModel):
         # Raise for error
         self.raise_validate_errors(errors)
 
-
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
         self.lookup_success_file = None
