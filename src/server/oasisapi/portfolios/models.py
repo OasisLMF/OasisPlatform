@@ -56,6 +56,30 @@ class Portfolio(TimeStampedModel):
     def get_absolute_storage_url(self, request=None):
         return reverse('portfolio-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
+    def get_absolute_accounts_file_sql_url(self, request=None):
+        return reverse(
+            'portfolio-file-sql', kwargs={'version': 'v1', 'pk': self.pk, 'file': 'accounts_file'},
+            request=request
+        )
+
+    def get_absolute_location_file_sql_url(self, request=None):
+        return reverse(
+            'portfolio-file-sql', kwargs={'version': 'v1', 'pk': self.pk, 'file': 'location_file'},
+            request=request
+        )
+
+    def get_absolute_reinsurance_info_file_sql_url(self, request=None):
+        return reverse(
+            'portfolio-file-sql', kwargs={'version': 'v1', 'pk': self.pk, 'file': 'reinsurance_info_file'},
+            request=request
+        )
+
+    def get_absolute_reinsurance_scope_file_sql_url(self, request=None):
+        return reverse(
+            'portfolio-file-sql', kwargs={'version': 'v1', 'pk': self.pk, 'file': 'reinsurance_scope_file'},
+            request=request
+        )
+
     def location_file_len(self):
         csv_compression_types = {
             'text/csv': 'infer',
