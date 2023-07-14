@@ -153,6 +153,75 @@ class CancelAnalysisTask(WebTestMixin, TestCase):
     #         async_res_mock.assert_any_call(started.task_id)
 
 
+class AnalysisGenerateAndRun(WebTestMixin, TestCase):
+    @given(
+        status=sampled_from([
+            Analysis.status_choices.READY,
+            Analysis.status_choices.RUN_COMPLETED,
+            Analysis.status_choices.RUN_CANCELLED,
+            Analysis.status_choices.RUN_ERROR
+        ]),
+        task_gen_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+        task_run_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+    )
+    def test_state_is_ready___run_is_started(self, status, task_gen_id, task_run_id):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                initiator = fake_user()
+                analysis = fake_analysis(
+                    status=status,
+                    run_task_id=task_run_id,
+                    portfolio=fake_portfolio(location_file=fake_related_file()),
+                    settings_file=fake_related_file())
+
+                task_sig = Mock()
+                task_chain = Mock()
+
+                res_factory = FakeAsyncResultFactory(target_task_id=task_gen_id)
+                task_sig.apply_async.return_value = res_factory(task_gen_id)
+
+                with patch('src.server.oasisapi.analyses.models.Analysis.start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
+                    analysis.generate_and_run(initiator)
+
+                    task_sig.on_error.assert_called_once()
+                    task_sig.apply_async.assert_called_with(
+                        args=[analysis.pk, initiator.pk],
+                        priority=4
+                    )
+
+    @given(
+        status=sampled_from([
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED,
+            Analysis.status_choices.INPUTS_GENERATION_STARTED,
+            Analysis.status_choices.RUN_QUEUED,
+            Analysis.status_choices.RUN_STARTED,
+        ]),
+        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+    )
+    def test_state_is_running_or_generating_inputs___validation_error_is_raised_revoke_is_not_called(self, status, task_id):
+        res_factory = FakeAsyncResultFactory(target_task_id=task_id)
+        initiator = fake_user()
+
+        task_sig = Mock()
+        task_sig.delay.return_value = res_factory(task_id)
+
+        with patch('src.server.oasisapi.analyses.models.Analysis.start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
+            analysis = fake_analysis(status=status, run_task_id=task_id)
+
+            with self.assertRaises(ValidationError) as ex:
+                analysis.generate_and_run(initiator)
+
+            self.maxDiff = None
+            self.assertEqual({
+                'portfolio': ['"location_file" must not be null'],
+                'settings_file': ['Must not be null'],
+                'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
+            }, ex.exception.detail)
+
+            self.assertEqual(status, analysis.status)
+            self.assertFalse(res_factory.revoke_called)
+
+
 class AnalysisRun(WebTestMixin, TestCase):
     @given(
         status=sampled_from([
