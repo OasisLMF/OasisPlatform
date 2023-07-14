@@ -84,7 +84,6 @@ class SettingsTemplate(TimeStampedModel):
         return reverse('models-setting_templates-content', kwargs={'version': 'v1', 'pk': self.pk, 'models_pk': model_pk}, request=request)
 
 
-
 class AnalysisModel(TimeStampedModel):
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
@@ -98,7 +97,7 @@ class AnalysisModel(TimeStampedModel):
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     deleted = models.BooleanField(default=False, editable=False)
 
-    ## Logical Delete
+    # Logical Delete
     objects = SoftDeleteManager()
     all_objects = SoftDeleteManager(alive_only=False)
 
@@ -138,17 +137,20 @@ class AnalysisModel(TimeStampedModel):
 
     def get_absolute_resources_file_url(self, request=None):
         return reverse('analysis-model-resource-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
     def get_absolute_versions_url(self, request=None):
         return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
     def get_absolute_settings_url(self, request=None):
         return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
 
 @receiver(post_delete, sender=AnalysisModel)
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
     files_for_removal = [
-         'resource_file',
+        'resource_file',
     ]
     for ref in files_for_removal:
         try:

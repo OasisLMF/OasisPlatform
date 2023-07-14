@@ -18,22 +18,27 @@ on:
       last_release:
         description: "Test backwards compatibility with platform ver [semvar]"
         required: false
-
       piwind_branch:
         description: "Check Results from Piwind branch [git ref]"
         required: true
         default: 'develop'
-
       pytest_options:
         description: "Pytest optional args [-k <test_name>]"
         required: false
-
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
+        required: false
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
         required: false
 
 env:
   pre_release: 'true'  # look for pre-release when testing last released platform version
+  semver_major: '1'    # Search for published images but limited to {semvar_major}.x.x
+  semver_minor: '27'   # Search for published images but limited to x.{semvar_minor}.x
 
 jobs:
   build_images:
@@ -43,7 +48,8 @@ jobs:
       docker_push: true
       ignore_unfixed: true
       cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
-
+      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.oasislmf_branch }}
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
 
   setup:
     runs-on: ubuntu-latest
@@ -65,12 +71,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Load last released tag
+      - name: Load latest release tag
         id: released_images
         run: |
-          if [[ -z "${{ inputs.last_release }}" ]]; then
+          # Find the latest release tag only from current branch
+          if [[ "${{ github.ref_name }}" == backports/ ]]; then
             tag=$( ./scripts/find_release.sh -p "${{ env.pre_release }}")
             echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
+          # Find tags release accross all branches, limited to matching semver
+          elif [[ -z "${{ inputs.last_release }}" ]]; then
+            tag=$( ./scripts/find_latest.sh -j "${{ env.semver_major }}" -i "${{ env.semver_minor }}" )
+            echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
+          # Don't search, use the given input
           else
             echo "prev_release_tag=${{ inputs.last_release }}" >> $GITHUB_OUTPUT
           fi
@@ -126,7 +138,7 @@ jobs:
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
-      debug_mode: 0
+      debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-server-compatibility'
 
@@ -134,14 +146,14 @@ jobs:
     name: Worker Debian
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_deb_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_deb_worker_tag }}
-      debug_mode: 0
+      debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-worker-debian'
 
@@ -149,14 +161,14 @@ jobs:
     name: Worker Compatibility (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: 'coreoasis/api_server'
       server_tag: ${{ needs.setup.outputs.release_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      debug_mode: 0
+      debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-worker-compatibility'
 
@@ -164,13 +176,13 @@ jobs:
     name: Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@master
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      debug_mode: 0
+      debug_mode: 1
       pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-s3'

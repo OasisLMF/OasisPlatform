@@ -31,7 +31,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -244,7 +244,7 @@ class AnalysisRun(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_run_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -280,7 +280,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_cancel_analysis_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -316,7 +316,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_generate_inputs_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -352,7 +352,7 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_cancel_inputs_generation_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -388,7 +388,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(analysis.get_absolute_copy_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
         user = fake_user()
@@ -692,7 +692,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_settings_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_settings_json_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -728,29 +728,28 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 analysis = fake_analysis()
                 json_data = {
-                    "analysis_settings": {
-                        "analysis_tag": "test_analysis",
-                        "model_supplier_id": "OasisIM",
-                        "model_name_id": "1",
-                        "number_of_samples": -1,
-                        "gul_threshold": 0,
-                        "model_settings": {
-                          "use_random_number_file": True,
-                          "event_occurrence_file_id": "1"
-                        },
-                        "gul_output": True,
-                        "gul_summaries": [
-                          {
+                    "version": "3",
+                    "analysis_tag": "test_analysis",
+                    "model_supplier_id": "OasisIM",
+                    "model_name_id": "1",
+                    "number_of_samples": -1,
+                    "gul_threshold": 0,
+                    "model_settings": {
+                        "use_random_number_file": True,
+                        "event_occurrence_file_id": "1"
+                    },
+                    "gul_output": True,
+                    "gul_summaries": [
+                        {
                             "id": 1,
                             "summarycalc": True,
                             "eltcalc": True,
                             "aalcalc": "Not-A-Boolean",
                             "pltcalc": True,
-                            "lec_output":False
-                          }
-                        ],
-                        "il_output": False
-                      }
+                            "lec_output": False
+                        }
+                    ],
+                    "il_output": False
                 }
 
                 response = self.app.post(
@@ -763,13 +762,12 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                     expect_errors=True,
                 )
 
-                validation_error =  {
+                validation_error = {
                     'number_of_samples': ['-1 is less than the minimum of 0'],
                     'gul_summaries-0-aalcalc': ["'Not-A-Boolean' is not of type 'boolean'"]
                 }
                 self.assertEqual(400, response.status_code)
                 self.assertEqual(json.loads(response.body), validation_error)
-
 
     def test_settings_json_is_uploaded___can_be_retrieved(self):
         with TemporaryDirectory() as d:
@@ -777,32 +775,31 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 user = fake_user()
                 analysis = fake_analysis()
                 json_data = {
-                    "analysis_settings": {
-                        "source_tag": "test_source",
-                        "analysis_tag": "test_analysis",
-                        "model_supplier_id": "OasisIM",
-                        "model_name_id": "1",
-                        "number_of_samples": 10,
-                        "gul_threshold": 0,
-                        "model_settings": {
-                          "use_random_number_file": True,
-                          "event_occurrence_file_id": "1"
-                        },
-                        "gul_output": True,
-                        "gul_summaries": [
-                          {
+                    "version": "3",
+                    "source_tag": "test_source",
+                    "analysis_tag": "test_analysis",
+                    "model_supplier_id": "OasisIM",
+                    "model_name_id": "1",
+                    "number_of_samples": 10,
+                    "gul_threshold": 0,
+                    "model_settings": {
+                        "use_random_number_file": True,
+                        "event_occurrence_file_id": "1"
+                    },
+                    "gul_output": True,
+                    "gul_summaries": [
+                        {
                             "id": 1,
                             "summarycalc": True,
                             "eltcalc": True,
                             "aalcalc": True,
                             "pltcalc": True,
-                            "lec_output":False
-                          }
-                        ],
-                        "il_output": False,
-                        'model_version_id': '1',
-                        'module_supplier_id': 'OasisIM'
-                      }
+                            "lec_output": False
+                        }
+                    ],
+                    "il_output": False,
+                    'model_version_id': '1',
+                    'model_supplier_id': 'OasisIM'
                 }
 
                 self.app.post(
@@ -820,7 +817,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                 )
-                self.assertEqual(json.loads(response.body), json_data['analysis_settings'])
+                self.assertEqual(json.loads(response.body), json_data)
                 self.assertEqual(response.content_type, 'application/json')
 
 
@@ -829,7 +826,7 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_settings_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_settings_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -911,7 +908,7 @@ class AnalysisInputFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_input_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_input_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -950,7 +947,7 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_lookup_errors_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_lookup_errors_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -1005,7 +1002,7 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_lookup_success_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_lookup_success_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -1060,7 +1057,7 @@ class AnalysisLookupValidationFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_lookup_validation_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_lookup_validation_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -1115,7 +1112,7 @@ class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_input_generation_traceback_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_input_generation_traceback_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -1168,7 +1165,7 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_output_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_output_file_is_not_present___get_response_is_404(self):
         user = fake_user()
@@ -1240,7 +1237,7 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(analysis.get_absolute_run_traceback_file_url(), expect_errors=True)
-        self.assertIn(response.status_code, [401,403])
+        self.assertIn(response.status_code, [401, 403])
 
     def test_run_traceback_file_is_not_present___get_response_is_404(self):
         user = fake_user()

@@ -21,7 +21,6 @@ from ...conf.celeryconf import *  # noqa
 from ...common.shared import set_aws_log_level, set_azure_log_level
 
 
-
 IN_TEST = 'test' in sys.argv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -218,27 +217,26 @@ AZURE_CONTAINER = '<blob container name>'
 AZURE_LOCATION = '<subdir in blob container name>'
 """
 AZURE_ACCOUNT_NAME = iniconf.settings.get('server', 'AZURE_ACCOUNT_NAME', fallback=None)
-AZURE_ACCOUNT_KEY  = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback=None)
+AZURE_ACCOUNT_KEY = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback=None)
 AZURE_CUSTOM_DOMAIN = f'{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
 AZURE_CONTAINER = iniconf.settings.get('server', 'AZURE_CONTAINER', fallback=None)
 AZURE_LOCATION = iniconf.settings.get('server', 'AZURE_LOCATION', fallback='')
 AZURE_SHARED_CONTAINER = iniconf.settings.get('server', 'AZURE_SHARED_CONTAINER', fallback=True)
 AZURE_OVERWRITE_FILES = iniconf.settings.get('server', 'AZURE_OVERWRITE_FILES', fallback=True)
 
-## Optional Blob storage settings
+# Optional Blob storage settings
 AZURE_LOG_LEVEL = iniconf.settings.get('server', 'AZURE_LOG_LEVEL', fallback="")
 AZURE_SSL = iniconf.settings.get('server', 'AZURE_SSL', fallback=True)
 
 # WARNING, adding default settings with 'None' casues storage adapter to break
-#AZURE_UPLOAD_MAX_CONN = iniconf.settings.get('server', 'AZURE_UPLOAD_MAX_CONN', fallback=2)
-#AZURE_CONNECTION_TIMEOUT_SECS = iniconf.settings.get('server', 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20)
-#AZURE_BLOB_MAX_MEMORY_SIZE = iniconf.settings.get('server', 'AZURE_BLOB_MAX_MEMORY_SIZE', fallback='2MB')
-#AZURE_URL_EXPIRATION_SECS = iniconf.settings.get('server', 'AZURE_URL_EXPIRATION_SECS', fallback=None)
-#AZURE_CONNECTION_STRING = iniconf.settings.get('server', 'AZURE_CONNECTION_STRING', fallback=None)
-#AZURE_TOKEN_CREDENTIAL = iniconf.settings.get('server', 'AZURE_TOKEN_CREDENTIAL', fallback=None)
-#AZURE_CACHE_CONTROL = iniconf.settings.get('server', 'AZURE_CACHE_CONTROL', fallback=None)
-#AZURE_OBJECT_PARAMETERS = iniconf.settings.get('server', 'AZURE_OBJECT_PARAMETERS', fallback=None)
-
+# AZURE_UPLOAD_MAX_CONN = iniconf.settings.get('server', 'AZURE_UPLOAD_MAX_CONN', fallback=2)
+# AZURE_CONNECTION_TIMEOUT_SECS = iniconf.settings.get('server', 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20)
+# AZURE_BLOB_MAX_MEMORY_SIZE = iniconf.settings.get('server', 'AZURE_BLOB_MAX_MEMORY_SIZE', fallback='2MB')
+# AZURE_URL_EXPIRATION_SECS = iniconf.settings.get('server', 'AZURE_URL_EXPIRATION_SECS', fallback=None)
+# AZURE_CONNECTION_STRING = iniconf.settings.get('server', 'AZURE_CONNECTION_STRING', fallback=None)
+# AZURE_TOKEN_CREDENTIAL = iniconf.settings.get('server', 'AZURE_TOKEN_CREDENTIAL', fallback=None)
+# AZURE_CACHE_CONTROL = iniconf.settings.get('server', 'AZURE_CACHE_CONTROL', fallback=None)
+# AZURE_OBJECT_PARAMETERS = iniconf.settings.get('server', 'AZURE_OBJECT_PARAMETERS', fallback=None)
 
 
 # Select Data Storage
@@ -265,13 +263,24 @@ else:
 
 # storage selector for exposure files
 PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
+PORTFOLIO_UPLOAD_VALIDATION = iniconf.settings.getboolean('server', 'PORTFOLIO_UPLOAD_VALIDATION', fallback=False)
+PORTFOLIO_VALIDATION_CONFIG = [
+    {'name': 'required_fields', 'on_error': 'return'},
+    {'name': 'unknown_column', 'on_error': 'return'},
+    {'name': 'valid_values', 'on_error': 'return'},
+    {'name': 'perils', 'on_error': 'return'},
+    {'name': 'occupancy_code', 'on_error': 'return'},
+    {'name': 'construction_code', 'on_error': 'return'},
+    {'name': 'country_and_area_code', 'on_error': 'return'},
+]
+
 
 # limit analyses logs access to admin accounts
 RESTRICT_SYSTEM_LOGS = iniconf.settings.getboolean('server', 'RESTRICT_SYSTEM_LOGS', fallback=False)
 
 # https://github.com/davesque/django-rest-framework-simplejwt
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
+    'ACCESS_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_ACCESS_LIFETIME', fallback='hours=1'),
     'REFRESH_TOKEN_LIFETIME': iniconf.settings.get_timedelta('server', 'TOKEN_REFRESH_LIFETIME', fallback='days=2'),
     'ROTATE_REFRESH_TOKENS': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
     'BLACKLIST_AFTER_ROTATION': iniconf.settings.getboolean('server', 'TOKEN_REFRESH_ROTATE', fallback=True),
@@ -306,14 +315,14 @@ LOGGING = {
     },
     'loggers': {
         'drf_yasg': {
-                'handlers': ['console'],
-                'level': 'WARNING',
-                'propagate': False,
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
         },
         'numexpr': {
-                'handlers': ['console'],
-                'level': 'WARNING',
-                'propagate': False,
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
         },
     },
     'formatters': {

@@ -13,13 +13,13 @@ from oasislmf.utils.exceptions import OasisException
 LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 
-#from .backends.aws_storage import AwsObjectStore
-#from .backends.azure_storage import AzureObjectStore
+# from .backends.aws_storage import AwsObjectStore
+# from .backends.azure_storage import AzureObjectStore
 #
 #
 #
 #
-#def StorageSelector(settings_conf):
+# def StorageSelector(settings_conf):
 #    """ Returns a `StorageConnector` class based on conf.ini
 #
 #    Call this method from model_execution_worker.task
@@ -53,6 +53,7 @@ class BaseStorageConnector(object):
     Implements storage for a local fileshare between
     `server` and `worker` containers
     """
+
     def __init__(self, setting, logger=None):
         self.media_root = setting.get('worker', 'MEDIA_ROOT')
         self.storage_connector = 'FS-SHARE'

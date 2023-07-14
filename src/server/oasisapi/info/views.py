@@ -49,11 +49,11 @@ class ServerInfoView(views.APIView):
         server_config['LANGUAGE_CODE'] = settings.LANGUAGE_CODE
         server_config['TIME_ZONE'] = settings.TIME_ZONE
 
-        # Backends  
+        # Backends
         server_config['DEFAULT_FILE_STORAGE'] = settings.DEFAULT_FILE_STORAGE
         server_config['DB_ENGINE'] = settings.DB_ENGINE
 
-        # Storage 
+        # Storage
         server_config['STORAGE_TYPE'] = settings.STORAGE_TYPE
         server_config['MEDIA_ROOT'] = settings.MEDIA_ROOT
         server_config['AWS_STORAGE_BUCKET_NAME'] = settings.AWS_STORAGE_BUCKET_NAME
@@ -71,5 +71,3 @@ class ServerInfoView(views.APIView):
             'version': server_version,
             'config': server_config
         })
-
-
