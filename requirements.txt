@@ -153,7 +153,7 @@ decorator==5.1.1
     #   ipython
 distlib==0.3.6
     # via virtualenv
-django==3.2.19
+django==3.2.20
     # via
     #   channels
     #   django-celery-results
