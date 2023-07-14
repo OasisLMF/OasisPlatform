@@ -191,7 +191,7 @@ numpy==1.24.2
     # via
     #   pandas
     #   pyarrow
-ods-tools==3.0.7
+ods-tools==3.1.0
     # via -r requirements-server.in
 packaging==23.0
     # via
