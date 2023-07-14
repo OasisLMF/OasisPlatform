@@ -1,6 +1,35 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.0`_
+ ---------
+* [#768](https://github.com/OasisLMF/OasisPlatform/pull/768) - Loosen repository argument in changelog builder 
+* [#769](https://github.com/OasisLMF/OasisPlatform/pull/769) - 1.27.2 CVE update
+* [#771](https://github.com/OasisLMF/OasisPlatform/pull/772) - Add ODS_Tools version summary to release notes builder
+* [#775](https://github.com/OasisLMF/OasisPlatform/pull/775) - Search all repo for tags, but limit the scope by env
+* [#783](https://github.com/OasisLMF/OasisPlatform/pull/783) -  Feature/ods read from stream Plat1
+* [#791](https://github.com/OasisLMF/OasisPlatform/pull/791) - Fix bug in release note build script
+* [#795](https://github.com/OasisLMF/OasisPlatform/pull/800) - Add missing check for RI files to workers 
+* [#810](https://github.com/OasisLMF/OasisPlatform/pull/810) - Add workflow to update requirment files
+* [#818](https://github.com/OasisLMF/OasisPlatform/pull/818) - Update/remote trig python tests
+* [#820](https://github.com/OasisLMF/OasisPlatform/pull/820) - Update publish with checkbox to push images with latest tag
+* [#826](https://github.com/OasisLMF/OasisPlatform/pull/826) - Add option to select packages to update in workflow
+* [#827](https://github.com/OasisLMF/OasisPlatform/pull/827) - Updated Package Requirements: 'django==3.2.19'
+* [#813, #822](https://github.com/OasisLMF/OasisPlatform/pull/835) - Fixes for OpenAPI schema
+* [#842](https://github.com/OasisLMF/OasisPlatform/pull/842) - Fix CVE-2023-30608
+* [#721](https://github.com/OasisLMF/OasisPlatform/pull/721) - Release/1.27.0
+* [#722, #723](https://github.com/OasisLMF/OasisPlatform/pull/724) - Added OED validation on file upload, and updated ods-tools package to 3.0.1
+* [#726](https://github.com/OasisLMF/OasisPlatform/pull/732) - Add Code QL to platform repo 
+* [#747](https://github.com/OasisLMF/OasisPlatform/pull/747) - Fix/portfolio validate default
+* [#749](https://github.com/OasisLMF/OasisPlatform/pull/749) - Set Validation on Upload to false
+* [#752](https://github.com/OasisLMF/OasisPlatform/pull/752) - Update packages dev
+* [#753](https://github.com/OasisLMF/OasisPlatform/pull/753) - Set ods-tools 3.0.2
+* [#754](https://github.com/OasisLMF/OasisPlatform/pull/762) - Update the model settings schema to include correlation options  
+* [#763](https://github.com/OasisLMF/OasisPlatform/pull/763) - Fix schema build workflow
+* [#765](https://github.com/OasisLMF/OasisPlatform/pull/765) - Move json settings schema to ods-tools
+* [#767](https://github.com/OasisLMF/OasisPlatform/pull/767) - Add retry to model reg task
+.. _`1.28.0`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.0...1.28.0
+
 `1.27.0`_
  ---------
 * [#705](https://github.com/OasisLMF/OasisPlatform/pull/710) - CVE updates - Server images 

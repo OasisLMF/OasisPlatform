@@ -3,10 +3,10 @@ name: Platform Release
 on:
   workflow_dispatch:
     inputs:
-      pre_release:
-        description: 'Mark GitHub release as pre-release'
-        required: false
-        type: boolean
+      #pre_release:
+      #  description: 'Mark GitHub release as pre-release'
+      #  required: false
+      #  type: boolean
 
       push_latest:
         description: 'Push images with the "latest" tag'
