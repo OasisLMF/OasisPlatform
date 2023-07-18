@@ -8,7 +8,7 @@
 [![Platform Vulnerability Scanning](https://github.com/OasisLMF/OasisPlatform/actions/workflows/scan.yml/badge.svg?branch=master)](https://github.com/OasisLMF/OasisPlatform/actions/workflows/scan.yml)
 
 
-# Oasis Platform
+# Oasis Platform 2
 Provides core components of the Oasis platform, specifically:
 * DJango application that provides the Oasis REST API
 * Celery worker for running a model
