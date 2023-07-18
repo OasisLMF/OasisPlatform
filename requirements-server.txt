@@ -81,7 +81,7 @@ cryptography==39.0.1
     #   service-identity
 daphne==4.0.0
     # via -r requirements-server.in
-django==3.2.19
+django==3.2.20
     # via
     #   -r requirements-server.in
     #   channels
@@ -157,6 +157,8 @@ markupsafe==2.1.2
     # via jinja2
 msrest==0.7.1
     # via azure-storage-blob
+mysqlclient==2.1.1
+    # via -r requirements-server.in
 numpy==1.24.1
     # via
     #   pandas

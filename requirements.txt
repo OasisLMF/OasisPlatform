@@ -140,7 +140,7 @@ daphne==4.0.0
     # via -r ./requirements-server.in
 distlib==0.3.6
     # via virtualenv
-django==3.2.19
+django==3.2.20
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -268,6 +268,8 @@ msrest==0.7.1
     # via azure-storage-blob
 munch==2.5.0
     # via fiona
+mysqlclient==2.1.1
+    # via -r ./requirements-server.in
 numba==0.56.4
     # via oasislmf
 numexpr==2.8.4
