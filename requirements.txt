@@ -140,7 +140,7 @@ daphne==4.0.0
     # via -r ./requirements-server.in
 distlib==0.3.6
     # via virtualenv
-django==3.2.19
+django==3.2.20
     # via
     #   -r ./requirements-server.in
     #   channels
