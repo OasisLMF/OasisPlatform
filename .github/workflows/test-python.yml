@@ -3,14 +3,12 @@ name: Platform Python Tests
 on:
   push:
     branches:
-      - master
-      - develop
-      - backports**
+      - main-platform1
+      - stable**
   pull_request:
     branches:
-      - master
-      - develop
-      - backports**
+      - main-platform1
+      - stable**
   workflow_dispatch:
     inputs:
       ods_branch:
@@ -20,10 +18,10 @@ on:
 jobs:
   ods_tools:
     #if: inputs.ods_branch != ''
-    uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@develop
+    uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@main
     secrets: inherit
     with:
-      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
+      ods_branch: ${{ inputs.ods_branch == '' && 'main' || inputs.ods_branch }}
 
   unittest:
     needs: ods_tools
@@ -54,11 +52,6 @@ jobs:
 
     - name: Run Pytest
       run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
-
-   # - name: Run Tox
-   #   run: |
-   #     pip install tox
-   #     tox -e py
 
     - name: Generate Report
       uses: dorny/test-reporter@v1
