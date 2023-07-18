@@ -3,14 +3,12 @@ name: Platform Python Tests
 on:
   push:
     branches:
-      - master
-      - develop
-      - backports**
+      - main-platform1
+      - stable**
   pull_request:
     branches:
-      - master
-      - develop
-      - backports**
+      - main-platform1
+      - stable**
   workflow_dispatch:
 
 jobs:
@@ -42,11 +40,6 @@ jobs:
 
     - name: Run Pytest
       run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
-
-   # - name: Run Tox
-   #   run: |
-   #     pip install tox
-   #     tox -e py
 
     - name: Generate Report
       uses: dorny/test-reporter@v1

@@ -72,7 +72,7 @@ cryptography==40.0.2
     #   service-identity
 daphne==4.0.0
     # via -r requirements-server.in
-django==3.2.19
+django==3.2.20
     # via
     #   -r requirements-server.in
     #   channels
@@ -137,6 +137,8 @@ markdown==3.4.3
     # via -r requirements-server.in
 markupsafe==2.1.2
     # via jinja2
+mysqlclient==2.1.1
+    # via -r requirements-server.in
 numpy==1.24.3
     # via
     #   pandas
