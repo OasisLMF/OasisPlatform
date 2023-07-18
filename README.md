@@ -4,7 +4,7 @@
 [![ktools version](https://img.shields.io/github/tag/Oasislmf/ktools?label=ktools)](https://github.com/OasisLMF/ktools/releases)
 [![PyPI version](https://badge.fury.io/py/oasislmf.svg)](https://badge.fury.io/py/oasislmf)
 
-# Oasis Platform
+# Oasis Platform 1
 Provides core components of the Oasis platform, specifically:
 * DJango application that provides the Oasis REST API
 * Celery worker for running a model
