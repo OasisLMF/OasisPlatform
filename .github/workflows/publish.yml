@@ -14,7 +14,7 @@ on:
 
       piwind_branch:
         description: 'Branch to build piwind from'
-        default: 'develop'
+        default: 'main'
         required: true
 
       prev_release_tag:
@@ -72,7 +72,7 @@ jobs:
 
 
   build_piwind:
-    uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@master
+    uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@main
     secrets: inherit
     needs: build_images
     with:
@@ -114,16 +114,16 @@ jobs:
       dir_ktools: ${{ github.workspace }}/ktools
 
       branch_platform: ${{ github.ref_name }}
-      branch_oasislmf: 'master'
-      branch_ods_tools: 'master'
-      branch_ktools: 'master'
+      branch_oasislmf: 'main'
+      branch_ods_tools: 'main'
+      branch_ktools: 'main'
 
     steps:
      ## RELEASE CHECKS
     - name: check branchname is valid for release
-      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'backports/') }}
+      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'stable/') }}
       run: |
-        echo "Releases must be trigged on branchs 'release/x.x.x' or 'backports/x.x.x' "
+        echo "Releases must be trigged on branchs 'release/x.x.x' or 'stable/x.x.x' "
         exit 1
 
     - name: Check tag is valid for release
@@ -144,8 +144,8 @@ jobs:
             exit 1
         fi
 
-    - name: set Oasislmf to backports
-      if: startsWith(github.ref_name, 'backports/')
+    - name: set Oasislmf to stable
+      if: startsWith(github.ref_name, 'stable/')
       run: echo "branch_oasislmf=${{ env.branch_platform }}" >> $GITHUB_ENV
 
     ## CLONE REPOS (plat / oasislmf / ktools / UI)
@@ -448,7 +448,7 @@ jobs:
         docker push coreoasis/piwind_worker:${{ env.release_tag }}
 
     #- name: Push images (Production)
-    #  if: ${{ env.pre_release == 'false' && !startsWith(github.ref_name, 'backports/') }}
+    #  if: ${{ env.pre_release == 'false' && !startsWith(github.ref_name, 'stable/') }}
     #  run: |
     #    docker push coreoasis/api_server:latest
     #    docker push coreoasis/model_worker:latest
@@ -504,7 +504,7 @@ jobs:
 
   # --- Notify Slack --- #
   slack:
-    uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@master
+    uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@main
     secrets: inherit
     needs: release
     with:
