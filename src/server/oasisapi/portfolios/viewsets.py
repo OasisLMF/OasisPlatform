@@ -23,7 +23,7 @@ from .serializers import (
 )
 from ..analyses.serializers import AnalysisSerializer
 from ..files.serializers import RelatedFileSerializer, FileSQLSerializer
-from ..files.views import handle_related_file, handle_related_file_sql
+from ..files.views import handle_related_file, handle_file_sql
 from ..filters import TimeStampedFilter
 from ..permissions.group_auth import VerifyGroupAccessModelViewSet
 from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
@@ -288,4 +288,4 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         serializer.is_valid(raise_exception=True)
         sql = serializer.validated_data.get("sql")
 
-        return handle_related_file_sql(self.get_object(), kwargs["file"], request, sql)
+        return handle_file_sql(self.get_object(), kwargs["file"], request, sql)

@@ -3,6 +3,8 @@ import logging
 import io
 from pathlib import Path
 
+from drf_yasg.utils import swagger_serializer_method
+
 from ods_tools.oed.exposure import OedExposure
 from ods_tools.oed.common import OdsException
 
@@ -144,3 +146,28 @@ class FileSQLSerializer(serializers.Serializer):
         # database which can be manipulated?
 
         return value
+
+
+class NestedRelatedFileSerializer(serializers.ModelSerializer):
+    sql = serializers.SerializerMethodField()
+
+    class Meta:
+        ref_name = None
+        model = RelatedFile
+        fields = (
+            'id',
+            'created',
+            'file',
+            'filename',
+            'sql',
+        )
+
+    def __init__(self, *args, analyses=None, **kwargs):
+        self.analyses = analyses
+        super().__init__(*args, **kwargs)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_sql(self, instance):
+        request = self.context.get('request')
+
+        return self.analyses.get_absolute_output_file_sql_url(request=request, file_pk=instance.id)
