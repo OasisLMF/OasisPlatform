@@ -242,8 +242,8 @@ class Analysis(TimeStampedModel):
     def get_absolute_output_file_url(self, request=None):
         return reverse('analysis-output-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
-    def get_absolute_output_file_sql_list_url(self, request=None):
-        return reverse('analysis-output-file-sql-list', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_output_file_list_url(self, request=None):
+        return reverse('analysis-output-file-list', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
 
     def get_absolute_output_file_sql_url(self, file_pk, request=None):
         return reverse('analysis-output-file-sql', kwargs={'version': 'v1', 'pk': self.pk, "file_pk": file_pk}, request=request)

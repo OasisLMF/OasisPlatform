@@ -191,7 +191,7 @@ def handle_file_sql(parent, field, request, sql, m2m_file_pk=None):
         try:
             f = f.get(pk=m2m_file_pk)
         except RelatedFile.DoesNotExist:
-            raise ValidationError("Invalid SQL provided.")
+            raise Http404
 
     download_name = f.filename if f.filename else f.file.name
 
