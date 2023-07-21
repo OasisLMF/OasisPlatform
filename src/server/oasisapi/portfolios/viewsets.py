@@ -12,6 +12,7 @@ from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
 
 from .models import Portfolio
+from ..decorators import requires_sql_reader
 from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ..schemas.serializers import StorageLinkSerializer
 from .serializers import (
@@ -277,6 +278,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    @requires_sql_reader
     @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['post'], url_path=r'(?P<file>\w+)/sql', detail=True)
     def file_sql(self, request, *args, **kwargs):

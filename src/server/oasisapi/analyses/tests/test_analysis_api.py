@@ -1,13 +1,16 @@
 import io
 import json
 import string
+import sys
+from importlib import reload
 
 import pandas as pd
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch, clear_url_caches
 from django_webtest import WebTestMixin
+from django.conf import settings as django_settings
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
@@ -1800,7 +1803,33 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, content_type)
 
 
-class AnalysisOutputFileListSQLApi(WebTestMixin, TestCase):
+class ResetUrlMixin:
+    def setUp(self) -> None:
+        import src.server.oasisapi.analyses.viewsets
+        reload(src.server.oasisapi.analyses.viewsets)
+        if django_settings.ROOT_URLCONF in sys.modules:
+            reload(sys.modules[django_settings.ROOT_URLCONF])
+        clear_url_caches()
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_endpoint_disabled___raises_no_reverse_match(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        with self.assertRaises(NoReverseMatch):
+            self.app.get(
+                analysis.get_absolute_output_file_list_url(),
+                expect_errors=True,
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+class AnalysisOutputFileListSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
         response = self.app.get(analysis.get_absolute_output_file_list_url(), expect_errors=True)
@@ -1838,7 +1867,26 @@ class AnalysisOutputFileListSQLApi(WebTestMixin, TestCase):
         self.assertEqual(response.json[0]["sql"], f"/v1/analyses/{analysis.pk}/output_file_sql/{related_file_one.pk}/")
 
 
-class AnalysisOutputFileSQLApi(WebTestMixin, TestCase):
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+class AnalysisOutputFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_endpoint_disabled___raises_no_reverse_match(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        with self.assertRaises(NoReverseMatch):
+            self.app.post_json(
+                analysis.get_absolute_output_file_sql_url(related_file_one.pk),
+                expect_errors=True,
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                },
+                params={"sql": "SELECT * FROM table"},
+            )
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         related_file_one = fake_related_file()
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])

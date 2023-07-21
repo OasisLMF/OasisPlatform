@@ -470,3 +470,5 @@ To override this, that step will be skipped if 'FILE_UPLOAD_PERMISSIONS' is set 
 https://github.com/django/django/blob/main/django/core/files/storage.py#L337-L338
 """
 FILE_UPLOAD_PERMISSIONS = None
+
+DEFAULT_READER_ENGINE = iniconf.settings.get('server', 'default_reader_engine', fallback='lot3.df_reader.reader.OasisPandasReader')

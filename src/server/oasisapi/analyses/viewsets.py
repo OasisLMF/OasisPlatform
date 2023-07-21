@@ -18,6 +18,7 @@ from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTas
     AnalysisStorageSerializer, AnalysisListSerializer
 from ..analysis_models.models import AnalysisModel
 from ..data_files.serializers import DataFileSerializer
+from ..decorators import requires_sql_reader
 from ..files.serializers import RelatedFileSerializer, FileSQLSerializer, NestedRelatedFileSerializer
 from ..files.views import handle_related_file, handle_json_data, handle_file_sql
 from ..filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
@@ -468,6 +469,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
+    @requires_sql_reader
     @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
     @action(methods=['get'], detail=True)
     def output_file_list(self, request,  *args, **kwargs):
@@ -478,6 +480,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         serializer = NestedRelatedFileSerializer(self.get_object().raw_output_files.all(), analyses=self.get_object(), many=True)
         return Response(serializer.data)
 
+    @requires_sql_reader
     @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE})
     @action(methods=['post'], url_path=r'output_file_sql/(?P<file_pk>\d+)', detail=True)
     def output_file_sql(self, request, *args, file_pk=None, **kwargs):

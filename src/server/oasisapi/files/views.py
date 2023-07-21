@@ -1,12 +1,12 @@
 import json
 import io
 
+from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
-from lot3.df_engine.config import configure
 from lot3.df_reader.config import get_df_reader
 from lot3.df_reader.exceptions import InvalidSQLException
 from .models import RelatedFile
@@ -195,14 +195,12 @@ def handle_file_sql(parent, field, request, sql, m2m_file_pk=None):
 
     download_name = f.filename if f.filename else f.file.name
 
-    configure()
-    # TODO how is config being tied in here? hardcoded for now
-    reader = get_df_reader({"filepath": f.file.path, "engine": "lot3.df_reader.reader.OasisDaskReader"})
+    reader = get_df_reader({'filepath': f.file.path, 'engine': settings.DEFAULT_READER_ENGINE})
 
     try:
         df = reader.sql(sql).as_pandas()
     except InvalidSQLException:
-        raise ValidationError("Invalid SQL provided.")
+        raise ValidationError('Invalid SQL provided.')
 
     output_buffer = io.BytesIO()
 
