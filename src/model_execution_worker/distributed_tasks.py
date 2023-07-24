@@ -1053,10 +1053,17 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     OasisManager().generate_losses_output(**res)
     res['bash_trace'] = ""
 
+    output_dir = os.path.join(res['model_run_dir'], 'output')
+    raw_output_files = list(filter(lambda f: f.endswith('.csv') or f.endswith('.parquet'), os.listdir(output_dir)))
+
     return {
         **res,
-        'output_location': filestore.put(os.path.join(res['model_run_dir'], 'output'), arcname='output'),
+        'output_location': filestore.put(output_dir, arcname='output'),
         'log_location': filestore.put(kwargs.get('log_filename')),
+        'raw_output_locations': {
+            r: filestore.put(os.path.join(output_dir, r), arcname=f'output_{r}')
+            for r in raw_output_files
+        }
     }
 
 

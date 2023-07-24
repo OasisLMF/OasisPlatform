@@ -1,11 +1,16 @@
+import io
 import json
 import string
+import sys
+from importlib import reload
 
+import pandas as pd
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch, clear_url_caches
 from django_webtest import WebTestMixin
+from django.conf import settings as django_settings
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
@@ -1796,3 +1801,212 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
 
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
+
+
+class ResetUrlMixin:
+    def setUp(self) -> None:
+        import src.server.oasisapi.analyses.viewsets
+        reload(src.server.oasisapi.analyses.viewsets)
+        if django_settings.ROOT_URLCONF in sys.modules:
+            reload(sys.modules[django_settings.ROOT_URLCONF])
+        clear_url_caches()
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_endpoint_disabled___raises_no_reverse_match(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        with self.assertRaises(NoReverseMatch):
+            self.app.get(
+                analysis.get_absolute_output_file_list_url(),
+                expect_errors=True,
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+class AnalysisOutputFileListSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        analysis = fake_analysis()
+        response = self.app.get(analysis.get_absolute_output_file_list_url(), expect_errors=True)
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_output_file_list_url().replace(str(analysis.pk), str(analysis.pk + 1)),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_list_expected__response_200(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.get(
+            analysis.get_absolute_output_file_list_url(),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(len(response.json), 2)
+        self.assertEqual(response.json[0]["sql"], f"/v1/analyses/{analysis.pk}/output_file_sql/{related_file_one.pk}/")
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+class AnalysisOutputFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_endpoint_disabled___raises_no_reverse_match(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        with self.assertRaises(NoReverseMatch):
+            self.app.post_json(
+                analysis.get_absolute_output_file_sql_url(related_file_one.pk),
+                expect_errors=True,
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                },
+                params={"sql": "SELECT * FROM table"},
+            )
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post(analysis.get_absolute_output_file_sql_url(related_file_one.pk), expect_errors=True)
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_sql_is_empty___response_is_400(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_sql_is_invalid___response_is_400(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT x FROM table"},
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_sql___file_incorrect__response_is_404(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk + 2),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT x FROM table"},
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_sql__response_is_200(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table"},
+        )
+
+        self.assertEqual(200, response.status_code)
+
+    def test_file__sql_applied__csv_response(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk) + "?file_format=csv",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_csv(io.StringIO(response.content.decode('utf-8')))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("text/csv", response.content_type)
+        self.assertEqual(len(response_df.index), 1)
+
+    def test_file__sql_applied__parquet_response(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk) + "?file_format=parquet",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_parquet(io.BytesIO(response.content))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("application/octet-stream", response.content_type)
+        self.assertEqual(len(response_df.index), 1)
+
+    def test_file__sql_applied__json_response(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk) + "?file_format=json",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_json(io.BytesIO(response.content), orient="table")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("application/json", response.content_type)
+        self.assertEqual(len(response_df.index), 1)

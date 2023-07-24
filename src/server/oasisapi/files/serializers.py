@@ -3,6 +3,8 @@ import logging
 import io
 from pathlib import Path
 
+from drf_yasg.utils import swagger_serializer_method
+
 from ods_tools.oed.exposure import OedExposure
 from ods_tools.oed.common import OdsException
 
@@ -128,3 +130,44 @@ class RelatedFileSerializer(serializers.ModelSerializer):
                     f"File extention '{file_extention}' mismatched with request header 'Content-Type': '{mapped_content_type}', should be set to '{extention_mapping.get(file_extention)}'")
 
         return value
+
+
+class FileSQLSerializer(serializers.Serializer):
+    sql = serializers.CharField()
+
+    def validate_sql(self, value):
+        # for purposes of validation, lowercase the sql, return the original
+        sql_to_validate = value.lower()
+        if "from table" not in sql_to_validate:
+            raise serializers.ValidationError("The from clause of the SQL must be "
+                                              "'FROM table', where table is explicitly the word table")
+
+        # TODO what else can we validate here? No point sanitising further as the SQL is not against a
+        # database which can be manipulated?
+
+        return value
+
+
+class NestedRelatedFileSerializer(serializers.ModelSerializer):
+    sql = serializers.SerializerMethodField()
+
+    class Meta:
+        ref_name = None
+        model = RelatedFile
+        fields = (
+            'id',
+            'created',
+            'file',
+            'filename',
+            'sql',
+        )
+
+    def __init__(self, *args, analyses=None, **kwargs):
+        self.analyses = analyses
+        super().__init__(*args, **kwargs)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_sql(self, instance):
+        request = self.context.get('request')
+
+        return self.analyses.get_absolute_output_file_sql_url(request=request, file_pk=instance.id)

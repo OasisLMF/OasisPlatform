@@ -2,13 +2,17 @@ import json
 import mimetypes
 import string
 import io
+import sys
+from importlib import reload
+
 import pandas as pd
 
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch, clear_url_caches
 from django_webtest import WebTestMixin
+from django.conf import settings as django_settings
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
@@ -1401,3 +1405,205 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     ['ri_scope', "column 'BITIV' is not a valid oed field"],
                     ['ri_scope', "column 'LocCurrency' is not a valid oed field"]
                 ])
+
+
+
+class ResetUrlMixin:
+    def setUp(self) -> None:
+        import src.server.oasisapi.portfolios.viewsets
+        reload(src.server.oasisapi.portfolios.viewsets)
+        if django_settings.ROOT_URLCONF in sys.modules:
+            reload(sys.modules[django_settings.ROOT_URLCONF])
+        clear_url_caches()
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    urls = [
+        'get_absolute_accounts_file_sql_url',
+        'get_absolute_location_file_sql_url',
+        'get_absolute_reinsurance_info_file_sql_url',
+        'get_absolute_reinsurance_scope_file_sql_url',
+    ]
+
+    def test_endpoint_disabled___raises_no_reverse_match(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        with self.assertRaises(NoReverseMatch):
+            for url in self.urls:
+                with self.subTest():
+                    self.app.post_json(
+                        getattr(portfolio, url)(),
+                        expect_errors=True,
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                        params={"sql": "SELECT x FROM table"},
+                    )
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
+    urls = [
+        'get_absolute_accounts_file_sql_url',
+        'get_absolute_location_file_sql_url',
+        'get_absolute_reinsurance_info_file_sql_url',
+        'get_absolute_reinsurance_scope_file_sql_url',
+    ]
+
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        portfolio = fake_portfolio()
+
+        for url in self.urls:
+            with self.subTest():
+                response = self.app.post(getattr(portfolio, url)(), expect_errors=True)
+                self.assertIn(response.status_code, [401, 403])
+
+    def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        for url in self.urls:
+            with self.subTest():
+                response = self.app.post_json(
+                    getattr(portfolio, url)().replace(str(portfolio.pk), str(portfolio.pk + 1)),
+                    expect_errors=True,
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    }
+                )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_sql_is_empty___response_is_400(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        for url in self.urls:
+            with self.subTest():
+                response = self.app.post_json(
+                    getattr(portfolio, url)(),
+                    expect_errors=True,
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_sql_is_invalid___response_is_400(self):
+        user = fake_user()
+
+        account_file = pd.read_csv(io.StringIO(ACCOUNT_DATA_VALID)).to_csv(index=False).encode('utf-8')
+        location_file = pd.read_csv(io.StringIO(LOCATION_DATA_VALID)).to_csv(index=False).encode('utf-8')
+        info_file = pd.read_csv(io.StringIO(INFO_DATA_VALID)).to_csv(index=False).encode('utf-8')
+        scope_file = pd.read_csv(io.StringIO(SCOPE_DATA_VALID)).to_csv(index=False).encode('utf-8')
+
+        portfolio = fake_portfolio(
+            location_file=fake_related_file(file=location_file),
+            accounts_file=fake_related_file(file=account_file),
+            reinsurance_info_file=fake_related_file(file=info_file),
+            reinsurance_scope_file=fake_related_file(file=scope_file),
+        )
+
+        for url in self.urls:
+            with self.subTest():
+                response = self.app.post_json(
+                    getattr(portfolio, url)(),
+                    expect_errors=True,
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params={"sql": "SELECT x FROM table"},
+                )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_sql__response_is_200(self):
+        user = fake_user()
+
+        account_file = pd.read_csv(io.StringIO(ACCOUNT_DATA_VALID)).to_csv(index=False).encode('utf-8')
+        location_file = pd.read_csv(io.StringIO(LOCATION_DATA_VALID)).to_csv(index=False).encode('utf-8')
+        info_file = pd.read_csv(io.StringIO(INFO_DATA_VALID)).to_csv(index=False).encode('utf-8')
+        scope_file = pd.read_csv(io.StringIO(SCOPE_DATA_VALID)).to_csv(index=False).encode('utf-8')
+
+        portfolio = fake_portfolio(
+            location_file=fake_related_file(file=location_file),
+            accounts_file=fake_related_file(file=account_file),
+            reinsurance_info_file=fake_related_file(file=info_file),
+            reinsurance_scope_file=fake_related_file(file=scope_file),
+        )
+
+        for url in self.urls:
+            with self.subTest():
+                response = self.app.post_json(
+                    getattr(portfolio, url)(),
+                    expect_errors=True,
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params={"sql": "SELECT * FROM table"},
+                )
+
+        self.assertEqual(200, response.status_code)
+
+    def test_file__sql_applied__csv_response(self):
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+        portfolio = fake_portfolio(location_file=fake_related_file(file=file_content))
+
+        user = fake_user()
+
+        response = self.app.post_json(
+            portfolio.get_absolute_location_file_sql_url() + "?file_format=csv",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_csv(io.StringIO(response.content.decode('utf-8')))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("text/csv", response.content_type)
+        self.assertEqual(len(response_df.index), 1)
+
+    def test_file__sql_applied__parquet_response(self):
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+        portfolio = fake_portfolio(location_file=fake_related_file(file=file_content))
+
+        user = fake_user()
+
+        response = self.app.post_json(
+            portfolio.get_absolute_location_file_sql_url() + "?file_format=parquet",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_parquet(io.BytesIO(response.content))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("application/octet-stream", response.content_type)
+        self.assertEqual(len(response_df.index), 1)
+
+    def test_file__sql_applied__json_response(self):
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+        portfolio = fake_portfolio(location_file=fake_related_file(file=file_content))
+
+        user = fake_user()
+
+        response = self.app.post_json(
+            portfolio.get_absolute_location_file_sql_url() + "?file_format=json",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_json(io.BytesIO(response.content), orient="table")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("application/json", response.content_type)
+        self.assertEqual(len(response_df.index), 1)
