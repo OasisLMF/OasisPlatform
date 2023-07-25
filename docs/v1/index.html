@@ -22,27 +22,29 @@
     fetch('https://oasislmf.github.io/OasisPlatform/v1/oasis-platform-schema.json')
       .then(res => res.json())
       .then(spec => {
-        // Update Logo  
+        // Update Logo
         spec.info['x-logo'] = { url: "https://oasislmf.github.io/_static/OASIS_LMF_COLOUR.png" };
 
         // Switch schema type
         delete spec.swagger
         spec['openapi'] = "3.0.0";
-        
-        // Insert description 
+
+        // Insert description
         fetch('https://oasislmf.github.io/OasisPlatform/v1/description.md')
         .then(res => res.text())
         .then(markdown => {
           // Assign the fetched Markdown content to spec.description
-          spec.info.description = markdown;                
+          spec.info.description = markdown;
 
-        // Run Redoc
-        Redoc.init(spec, {
-          // options go here (e.g. pathInMiddlePanel) https://redocly.com/docs/api-reference-docs/configuration/functionality/
-          hideRightPanel: false,
-          hideDownloadButton: false,
-          showObjectSchemaExamples: true,
-        }, document.getElementById('redoc'));
+          // Run Redoc
+          Redoc.init(spec, {
+            // options go here (e.g. pathInMiddlePanel) https://redocly.com/docs/api-reference-docs/configuration/functionality/
+            hideRightPanel: false,
+            hideDownloadButton: false,
+            showObjectSchemaExamples: true,
+          }, document.getElementById('redoc'));
+
+        });
       });
       </script>
   </body>
