@@ -15,7 +15,24 @@
     </style>
   </head>
   <body>
-    <redoc spec-url="https://oasislmf.github.io/OasisPlatform/v1/oasis-platform-schema.json" hideDownloadButton showObjectSchemaExamples></redoc>
+    <div id="redoc"></div>
     <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
+    <script>
+    fetch('https://oasislmf.github.io/OasisPlatform/v1/oasis-platform-schema.json')
+      .then(res => res.json())
+      .then(spec => {
+        spec.info['x-logo'] = { url: "https://oasislmf.github.io/_static/OASIS_LMF_COLOUR.png" };
+        delete spec.swagger
+        spec['openapi'] = "3.0.0";
+        
+
+        Redoc.init(spec, {
+          // options go here (e.g. pathInMiddlePanel) https://redocly.com/docs/api-reference-docs/configuration/functionality/
+          hideRightPanel: false,
+          hideDownloadButton: false,
+          showObjectSchemaExamples: true,
+        }, document.getElementById('redoc'));
+      });
+      </script>
   </body>
 </html>
