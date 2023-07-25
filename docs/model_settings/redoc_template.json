@@ -15,7 +15,7 @@
         {
 			"name": "model_settings",
 			"x-displayName": "Model Settings Schema",
-			"description": "<SchemaDefinition schemaRef=\"#/definitions/ModelParameters\" />"
+			"description": "<SchemaDefinition schemaRef="#/definitions/ModelParameters" />"
 		}
 	],
 	"x-tagGroups": [{

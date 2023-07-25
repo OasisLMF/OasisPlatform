@@ -19,19 +19,19 @@
     <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
     <script>
     // Fetch and patch spec file
-    fetch('https://oasislmf.github.io/OasisPlatform/settings/redoc_template.json')
+    fetch('https://oasislmf.github.io/OasisPlatform/model_settings/redoc_template.json')
       .then(res => res.json())
       .then(spec => {
 
         // Insert description
-        fetch('https://oasislmf.github.io/OasisPlatform/settings/description.md')
+        fetch('https://oasislmf.github.io/OasisPlatform/model_settings/description.md')
         .then(res => res.text())
         .then(markdown => {
           // Assign the fetched Markdown content to spec.description
           spec.info.description = markdown;
 
             // Insert Model Settings
-            fetch('https://oasislmf.github.io/OasisPlatform/settings/model_schema.json')
+            fetch('https://oasislmf.github.io/OasisPlatform/model_settings/model_schema.json')
             .then(res => res.json())
             .then(model_schema => {
               spec.definitions.ModelParameters = model_schema;
