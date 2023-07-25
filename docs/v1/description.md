@@ -29,7 +29,7 @@ your catastrophe models.
 
 *Oasis docker componets*:
 
-![Oasis docker componets](https://github.com/OasisLMF/GenerateDocs/blob/feature/update_docs/src/images/oasis_containers.png){.align-center width="600px"}
+<img src="https://github.com/OasisLMF/GenerateDocs/blob/feature/update_docs/src/images/oasis_containers.png" alt="Oasis docker componets" style="align-center; width:600px;"/>
 
 
 # API deployment in the Oasis Enterprise Platform
@@ -42,8 +42,7 @@ to setup the Azure cloud services. The diagram below sets out the
 
 **Oasis Enterprise Platform** architecture:
 
-![Oasis Enterprise Platform Architecture](https://github.com/OasisLMF/GenerateDocs/blob/feature/update_docs/src/images/diag_oasis_components.png){.align-center
-width="600px"}
+<img src="https://github.com/OasisLMF/GenerateDocs/blob/feature/update_docs/src/images/diag_oasis_components.png" alt="Oasis Enterprise Platform Architecture" style="align-center; width:600px;"/>
 
 # Links for further information
 
