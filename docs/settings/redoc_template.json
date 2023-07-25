@@ -1,0 +1,37 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"title": "Oasis Schema",
+		"description": "<TEXT HERE>",
+		"version": "<ODS_VERSION>",
+		"x-logo": {
+			"url": "https://oasislmf.github.io/_static/OASIS_LMF_COLOUR.png",
+			"backgroundColor": "#FFFFFF",
+			"altText": "OasisLMF logo"
+		}
+	},
+
+	"tags": [{
+			"name": "model_settings",
+			"x-displayName": "Model Settings Schema",
+			"description": "<SchemaDefinition schemaRef=\"#/definitions/ModelParameters\" />"
+		},
+		{
+			"name": "analysis_settings",
+			"x-displayName": "Analysis Settings Schema",
+			"description": "<SchemaDefinition schemaRef=\"#/definitions/AnalysisSettings\" />"
+		}
+	],
+	"x-tagGroups": [{
+		"name": "Settings files",
+		"tags": [
+			"analysis_settings",
+			"model_settings"
+		]
+	}],
+
+	"definitions": {
+		"ModelParameters": {},
+		"AnalysisSettings": {}
+	}
+}
