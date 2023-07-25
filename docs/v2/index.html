@@ -15,7 +15,8 @@
     </style>
   </head>
   <body>
-    <redoc spec-url="https://oasislmf.github.io/OasisPlatform/v2/oasis-platform-schema.json"></redoc>
+    <div id="redoc"></div>
+    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
     <script>
     // Fetch and patch spec file
     fetch('https://oasislmf.github.io/OasisPlatform/v2/oasis-platform-schema.json')
@@ -37,7 +38,7 @@
 
           // Run Redoc
           Redoc.init(spec, {
-            // options go here - https://redocly.com/docs/api-reference-docs/configuration/functionality/
+            // options go here (e.g. pathInMiddlePanel) https://redocly.com/docs/api-reference-docs/configuration/functionality/
             hideRightPanel: false,
             hideDownloadButton: false,
             showObjectSchemaExamples: true,
