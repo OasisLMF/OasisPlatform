@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ReDoc Oasis Settings Files</title>
+    <!-- needed for adaptive design -->
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Raleway:300,400,700%7CRoboto:300,400,700" rel="stylesheet">
+    <!-- ReDoc doesn't change outer page styles -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="redoc"></div>
+    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
+    <script>
+    // Fetch and patch spec file
+    fetch('https://oasislmf.github.io/OasisPlatform/settings/redoc_template.json')
+      .then(res => res.json())
+      .then(spec => {
+
+        // Insert description
+        fetch('https://oasislmf.github.io/OasisPlatform/settings/description.md')
+        .then(res => res.text())
+        .then(markdown => {
+          // Assign the fetched Markdown content to spec.description
+          spec.info.description = markdown;
+
+            // Insert Model Settings
+            fetch('https://oasislmf.github.io/OasisPlatform/settings/model_schema.json')
+            .then(res => res.json())
+            .then(model_schema => {
+              spec.definitions.ModelParameters = model_schema;
+
+              // Run Redoc
+              Redoc.init(spec, {
+                // options go here (e.g. pathInMiddlePanel) https://redocly.com/docs/api-reference-docs/configuration/functionality/
+                hideRightPanel: false,
+                hideDownloadButton: true,
+                showObjectSchemaExamples: true,
+              }, document.getElementById('redoc'));
+
+          });
+        });
+      });
+      </script>
+  </body>
+</html>

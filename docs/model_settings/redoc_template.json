@@ -1,0 +1,31 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"title": "ODS Model Settings",
+		"description": "<TEXT HERE>",
+		"version": "<ODS_VERSION>",
+		"x-logo": {
+			"url": "https://oasislmf.github.io/_static/OASIS_LMF_COLOUR.png",
+			"backgroundColor": "#FFFFFF",
+			"altText": "OasisLMF logo"
+		}
+	},
+
+	"tags": [
+        {
+			"name": "model_settings",
+			"x-displayName": "Model Settings Schema",
+			"description": "<SchemaDefinition schemaRef=\"#/definitions/ModelParameters\" />"
+		}
+	],
+	"x-tagGroups": [{
+		"name": "JSON Schema",
+		"tags": [
+			"model_settings"
+		]
+	}],
+
+	"definitions": {
+		"ModelParameters": {}
+	}
+}

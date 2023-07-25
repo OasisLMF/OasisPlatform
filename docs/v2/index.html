@@ -16,6 +16,35 @@
   </head>
   <body>
     <redoc spec-url="https://oasislmf.github.io/OasisPlatform/v2/oasis-platform-schema.json"></redoc>
-    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
+    <script>
+    // Fetch and patch spec file
+    fetch('https://oasislmf.github.io/OasisPlatform/v2/oasis-platform-schema.json')
+      .then(res => res.json())
+      .then(spec => {
+        // Update Logo
+        spec.info['x-logo'] = { url: "https://oasislmf.github.io/_static/OASIS_LMF_COLOUR.png" };
+
+        // Switch schema type
+        delete spec.swagger
+        spec['openapi'] = "3.0.0";
+
+        // Insert description
+        fetch('https://oasislmf.github.io/OasisPlatform/v2/description.md')
+        .then(res => res.text())
+        .then(markdown => {
+          // Assign the fetched Markdown content to spec.description
+          spec.info.description = markdown;
+
+          // Run Redoc
+          Redoc.init(spec, {
+            // options go here - https://redocly.com/docs/api-reference-docs/configuration/functionality/
+            hideRightPanel: false,
+            hideDownloadButton: false,
+            showObjectSchemaExamples: true,
+          }, document.getElementById('redoc'));
+
+        });
+      });
+      </script>
   </body>
 </html>

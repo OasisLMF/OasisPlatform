@@ -36,12 +36,6 @@
           .then(analysis_schema => {
             spec.definitions.AnalysisSettings = analysis_schema;
 
-            // Insert Model Settings
-            fetch('https://oasislmf.github.io/OasisPlatform/settings/model_schema.json')
-            .then(res => res.json())
-            .then(model_schema => {
-              spec.definitions.ModelParameters = model_schema;
-
               // Run Redoc
               Redoc.init(spec, {
                 // options go here (e.g. pathInMiddlePanel) https://redocly.com/docs/api-reference-docs/configuration/functionality/
@@ -50,7 +44,6 @@
                 showObjectSchemaExamples: true,
               }, document.getElementById('redoc'));
 
-            });
           });
         });
       });

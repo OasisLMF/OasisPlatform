@@ -1,7 +1,7 @@
 {
 	"openapi": "3.0.0",
 	"info": {
-		"title": "Oasis Schema",
+		"title": "ODS Analysis Settings",
 		"description": "<TEXT HERE>",
 		"version": "<ODS_VERSION>",
 		"x-logo": {
@@ -10,12 +10,7 @@
 			"altText": "OasisLMF logo"
 		}
 	},
-
-	"tags": [{
-			"name": "model_settings",
-			"x-displayName": "Model Settings Schema",
-			"description": "<SchemaDefinition schemaRef=\"#/definitions/ModelParameters\" />"
-		},
+	"tags": [
 		{
 			"name": "analysis_settings",
 			"x-displayName": "Analysis Settings Schema",
@@ -23,15 +18,13 @@
 		}
 	],
 	"x-tagGroups": [{
-		"name": "Settings files",
+		"name": "JSON Schema",
 		"tags": [
-			"analysis_settings",
-			"model_settings"
+			"analysis_settings"
 		]
 	}],
 
 	"definitions": {
-		"ModelParameters": {},
 		"AnalysisSettings": {}
 	}
 }
