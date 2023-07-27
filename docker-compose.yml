@@ -24,7 +24,7 @@ x-shared-env: &shared-env
   OASIS_INPUT_GENERATION_CONTROLLER_QUEUE: task-controller
   OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE: task-controller
 x-volumes: &shared-volumes
-  - filestore-OasisData:/shared-fs:rw
+  - /home/sam/ram/filestore-OasisData:/shared-fs:rw
 services:
   server_http:
    restart: always
@@ -46,7 +46,7 @@ services:
      OASIS_ADMIN_USER: admin
      OASIS_ADMIN_PASS: password
    volumes:
-     - filestore-OasisData:/shared-fs:rw
+     - /home/sam/ram/filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   server_websocket:
    restart: always
@@ -61,7 +61,7 @@ services:
    environment:
      <<: *shared-env
    volumes:
-     - filestore-OasisData:/shared-fs:rw
+     - /home/sam/ram/filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   worker-monitor:
    restart: always
@@ -74,7 +74,7 @@ services:
    environment:
      <<: *shared-env
    volumes:
-     - filestore-OasisData:/shared-fs:rw
+     - /home/sam/ram/filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   task-controller:
    restart: always
@@ -87,7 +87,7 @@ services:
    environment:
      <<: *shared-env
    volumes:
-     - filestore-OasisData:/shared-fs:rw
+     - /home/sam/ram/filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   celery-beat:
    restart: always
@@ -118,7 +118,7 @@ services:
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ./src/model_execution_worker:/home/worker/src/model_execution_worker
-     - filestore-OasisData:/shared-fs:rw
+     - /home/sam/ram/filestore-OasisData:/shared-fs:rw
   server-db:
     restart: always
     image: postgres
@@ -127,7 +127,7 @@ services:
       - POSTGRES_USER=oasis
       - POSTGRES_PASSWORD=oasis
     volumes:
-      - server-db-OasisData:/var/lib/postgresql/data:rw
+      - /home/sam/ram/server-db-OasisData:/var/lib/postgresql/data:rw
     ports:
       - 33307:3306
   celery-db:
@@ -138,7 +138,7 @@ services:
       - POSTGRES_USER=celery
       - POSTGRES_PASSWORD=password
     volumes:
-      - celery-db-OasisData:/var/lib/postgresql/data:rw
+      - /home/sam/ram/celery-db-OasisData:/var/lib/postgresql/data:rw
     ports:
       - 33306:5432
 #  broker:
