@@ -1,4 +1,4 @@
-#python3 bipython3 bash
+#!/bin/bash
 
 # This is a help script to fix migration confits between Platform 2 
 # Needed for versions older than 2.2.0 migrating to to any version above 2.2.1+ 
