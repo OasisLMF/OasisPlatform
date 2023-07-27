@@ -32,6 +32,7 @@ COPY ./requirements-server.txt ./requirements.txt
 COPY ./src/startup_server.sh /usr/local/bin/startup
 COPY ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
 COPY ./src/utils/wait-for-server.sh /usr/local/bin/wait-for-server
+COPY ./src/utils/plat2-migration-helper.sh /usr/local/bin/migration-helper.sh
 
 COPY ./asgi ./asgi
 COPY ./wsgi ./wsgi
