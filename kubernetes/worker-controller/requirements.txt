@@ -28,7 +28,7 @@ multidict==6.0.2
     #   yarl
 python-dateutil==2.8.2
     # via kubernetes-asyncio
-pyyaml==6.0
+pyyaml==6.0.1
     # via kubernetes-asyncio
 six==1.16.0
     # via
