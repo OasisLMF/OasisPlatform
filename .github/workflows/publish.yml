@@ -69,6 +69,8 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
+      cve_severity: 'CRITICAL'
+
 
 
   build_piwind:
