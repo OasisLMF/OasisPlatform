@@ -76,7 +76,7 @@ def run_file_conversion(file_id):
                     },
                 }
             }
-        })).run()
+        }), raise_errors=True).run()
 
         instance.converted_file = signed_output_url
         instance.conversion_state = RelatedFile.ConversionState.DONE
