@@ -470,3 +470,27 @@ To override this, that step will be skipped if 'FILE_UPLOAD_PERMISSIONS' is set 
 https://github.com/django/django/blob/main/django/core/files/storage.py#L337-L338
 """
 FILE_UPLOAD_PERMISSIONS = None
+
+DEFAULT_CONVERTER_CONNECTOR = iniconf.settings.get(
+    'server',
+    'converter_path',
+    fallback='converter.connector.pandas.pandas.PandasConnector',
+)
+
+DEFAULT_CONVERTER_CONNECTOR_OPTIONS = iniconf.settings.get(
+    'server.converter.connector',
+    '',
+    fallback={},
+)
+
+DEFAULT_CONVERTER_RUNNER = iniconf.settings.get(
+    'server',
+    'runner_path',
+    fallback='converter.runner.PandasRunner',
+)
+
+DEFAULT_CONVERTER_RUNNER_OPTIONS = iniconf.settings.get(
+    'server.converter.runner',
+    '',
+    fallback={},
+)

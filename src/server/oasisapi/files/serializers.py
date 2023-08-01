@@ -3,16 +3,19 @@ import logging
 import io
 from pathlib import Path
 
+from rest_framework.parsers import MultiPartParser
+
 from ods_tools.oed.exposure import OedExposure
 from ods_tools.oed.common import OdsException
 
 from django.contrib.auth.models import Group
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.conf import settings as django_settings
 
-from .models import RelatedFile
+from .models import RelatedFile, MappingFile
 
 logger = logging.getLogger('root')
 
@@ -38,9 +41,25 @@ def md5_filehash(in_memory_file, chunk_size=4096):
     return hasher_md5.hexdigest()
 
 
+class MappingFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        ref_name = None
+        model = MappingFile
+        fields = (
+            'name',
+            'description',
+            'file',
+        )
+
+
+class ConvertSerializer(serializers.Serializer):
+    mapping_file = serializers.CharField()
+
+
 class RelatedFileSerializer(serializers.ModelSerializer):
 
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
 
     class Meta:
         ref_name = None
@@ -48,8 +67,11 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         fields = (
             'created',
             'file',
+            'converted_file',
             'filename',
             'groups',
+            'mapping_file',
+            'conversion_state',
             # 'filehash_md5',
         )
 

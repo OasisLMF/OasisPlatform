@@ -9,6 +9,7 @@ from rest_framework_nested import routers
 
 from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView, SettingsTemplateViewSet
 from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTaskStatusViewSet
+from .files.viewsets import FilesViewSet, MappingFilesViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .healthcheck.views import HealthcheckView
 from .data_files.viewsets import DataFileViewset
@@ -32,7 +33,8 @@ api_router.register('models', AnalysisModelViewSet, basename='analysis-model')
 api_router.register('data_files', DataFileViewset, basename='data-file')
 api_router.register('queue', QueueViewSet, basename='queue')
 api_router.register('queue-status', WebsocketViewSet, basename='queue')
-# api_router.register('files', FilesViewSet, basename='file')
+api_router.register('files', FilesViewSet, basename='file')
+api_router.register('mapping-files', MappingFilesViewSet, basename='mapping-file')
 
 templates_router = routers.NestedSimpleRouter(api_router, r'models', lookup='models')
 templates_router.register('setting_templates', SettingsTemplateViewSet, basename='models-setting_templates')

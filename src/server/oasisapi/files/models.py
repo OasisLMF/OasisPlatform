@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.files import File
 from django.db import models
+from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 
@@ -24,7 +25,7 @@ def related_file_to_df(RelatedFile):
 
 
 def random_file_name(instance, filename):
-    if instance.store_as_filename:
+    if getattr(instance, "store_as_filename", False):
         return filename
 
     # Work around: S3 objects pushed as '<hash>.gz' should be '<hash>.tar.gz'
@@ -80,15 +81,36 @@ def file_storage_link(storage_obj, fullpath=False):
         return storage_obj.file.name
 
 
+class MappingFile(models.Model):
+    name = models.CharField(max_length=255, default="")
+    description = models.TextField(default="", blank=True)
+    file = models.FileField(upload_to=random_file_name)
+
+
 class RelatedFile(TimeStampedModel):
+    class ConversionState(TextChoices):
+        NONE = "NONE", _("None")
+        PENDING = "PENDING", _("Pending")
+        IN_PROGRESS = "IN_PROGRESS", _("In Progress")
+        DONE = "DONE", _("Done")
+        ERROR = "ERROR", _("Error")
+
+        @classmethod
+        def is_ready(cls, state):
+            return state in [cls.NONE, cls.ERROR, cls.DONE]
+
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
     file = models.FileField(help_text=_('The file to store'), upload_to=random_file_name)
+    converted_file = models.FileField(help_text=_('The file to store after conversion'), upload_to=random_file_name, default=None, null=True, blank=True)
+    mapping_file = models.ForeignKey(MappingFile, blank=True, default=None, null=True, on_delete=models.CASCADE)
     filename = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
-    objects = RelatedFileManager()  # ARCH2020 -- Is this actually used??
     store_as_filename = models.BooleanField(default=False, blank=True, null=True)
     groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
     oed_validated = models.BooleanField(default=False, editable=False)
+    conversion_state = models.CharField(max_length=11, choices=ConversionState.choices, default=ConversionState.NONE)
+
+    objects = RelatedFileManager()  # ARCH2020 -- Is this actually used??
 
     def __str__(self):
         return 'File_{}'.format(self.file)
@@ -100,3 +122,12 @@ class RelatedFile(TimeStampedModel):
     def read_json(self, *args, **kwargs):
         self.file.seek(0)
         return json.loads(self.file.read(*args, **kwargs).decode("utf-8"))
+
+    def start_conversion(self, mapping_file):
+        from src.server.oasisapi.files.tasks import run_file_conversion
+
+        self.mapping_file = mapping_file
+        self.conversion_state = RelatedFile.ConversionState.PENDING
+        self.save()
+
+        run_file_conversion.delay(self.id)

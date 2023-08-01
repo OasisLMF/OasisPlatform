@@ -20,18 +20,16 @@ from celery.signals import (before_task_publish, task_failure, task_revoked,
 from natsort import natsorted
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
-from oasislmf.model_preparation.lookup import OasisLookupFactory
+from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
+from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
-from .backends.aws_storage import AwsObjectStore
-from .backends.azure_storage import AzureObjectStore
-from .storage_manager import BaseStorageConnector
 
 '''
 Celery task wrapper for Oasis ktools calculation.
