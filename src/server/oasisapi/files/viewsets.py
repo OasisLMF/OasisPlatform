@@ -4,18 +4,14 @@ from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets, mixins
-from rest_framework.fields import ModelField
+from rest_framework import viewsets
 from rest_framework.parsers import MultiPartParser
-from rest_framework.serializers import Serializer
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
-from .tasks import run_file_conversion
 from ..filters import TimeStampedFilter
 from .serializers import RelatedFileSerializer, ConvertSerializer, MappingFileSerializer
 from .models import RelatedFile, MappingFile
-from ..permissions.group_auth import VerifyGroupAccessModelViewSet
 
 
 class FilesFilter(TimeStampedFilter):

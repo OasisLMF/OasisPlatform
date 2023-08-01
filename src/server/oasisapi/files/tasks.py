@@ -39,7 +39,7 @@ def run_file_conversion(file_id):
     input_file_path = Path(instance.file.name)
     input_suffixes = "".join(input_file_path.suffixes)
     input_without_suffixes = str(input_file_path)[0:-len(input_suffixes)]
-    filename, signed_output_url = filestore.get_storage_url(
+    output_filename, signed_output_url = filestore.get_storage_url(
         f"{input_without_suffixes}-converted{input_suffixes}",
     )
 
@@ -47,6 +47,7 @@ def run_file_conversion(file_id):
 
     try:
         Controller(Config(overrides={
+            "parallel": False,
             "transformations": {
                 mapping_content["file_type"].lower(): {
                     "extractor": {
@@ -78,7 +79,7 @@ def run_file_conversion(file_id):
             }
         }), raise_errors=True).run()
 
-        instance.converted_file = signed_output_url
+        instance.converted_file = output_filename
         instance.conversion_state = RelatedFile.ConversionState.DONE
         instance.save()
     except Exception:

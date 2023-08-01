@@ -5,6 +5,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
 
+from .models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ..permissions.group_auth import verify_user_is_in_obj_groups
 
@@ -41,12 +42,21 @@ def _handle_get_related_file(parent, field, request):
 
     verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to delete this file')
     file_format = request.GET.get('file_format', None)
-    download_name = f.filename if f.filename else f.file.name
+
+    if 'converted' in request.GET:
+        if not (f.converted_file and f.conversion_state == RelatedFile.ConversionState.DONE):
+            raise Http404()
+
+        download_name = f.converted_filename if f.converted_filename else f.converted_file.name
+        file_obj = f.converted_file
+    else:
+        download_name = f.filename if f.filename else f.file.name
+        file_obj = f.file
 
     # Parquet format requested and data stored as csv
     if file_format == 'parquet' and f.content_type == 'text/csv':
         exposure = OedExposure(**{
-            EXPOSURE_ARGS[field]: f.file,
+            EXPOSURE_ARGS[field]: file_obj,
         })
         output_buffer = io.BytesIO()
         exposure_data = getattr(exposure, EXPOSURE_ARGS[field])
@@ -60,7 +70,7 @@ def _handle_get_related_file(parent, field, request):
     # CSV format requested and data stored as Parquet
     if file_format == 'csv' and f.content_type == 'application/octet-stream':
         exposure = OedExposure(**{
-            EXPOSURE_ARGS[field]: f.file,
+            EXPOSURE_ARGS[field]: file_obj,
         })
         output_buffer = io.BytesIO()
         exposure_data = getattr(exposure, EXPOSURE_ARGS[field])
@@ -72,7 +82,7 @@ def _handle_get_related_file(parent, field, request):
         return response
 
     # Original Fallback method - Reutrn data 'as is'
-    response = StreamingHttpResponse(_get_chunked_content(f.file), content_type=f.content_type)
+    response = StreamingHttpResponse(_get_chunked_content(file_obj), content_type=f.content_type)
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(download_name)
     return response
 
