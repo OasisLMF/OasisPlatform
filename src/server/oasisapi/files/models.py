@@ -64,21 +64,27 @@ def file_storage_link(storage_obj, fullpath=False):
     if not storage_obj.file:
         return None
 
+    storage_file = (
+        storage_obj.converted_file
+        if storage_obj.converted_file and storage_obj.conversion_status == RelatedFile.ConversionState.DONE else
+        storage_obj.file
+    )
+
     # Remote storage links (Azure or AWS-S3)
     if settings.STORAGE_TYPE in ['aws-s3', 's3', 'aws', 'azure']:
         if settings.AWS_SHARED_BUCKET or settings.AZURE_SHARED_CONTAINER or fullpath:
             # Return object key for shared S3 bucket
             return os.path.join(
-                storage_obj.file.storage.location,
-                storage_obj.file.name,
+                storage_file.storage.location,
+                storage_file.name,
             )
         else:
             # Return Download URL to S3 Object
-            return storage_obj.file.storage.url(storage_obj.file.name)
+            return storage_file.storage.url(storage_file.name)
 
     # Shared FS filename
     else:
-        return storage_obj.file.name
+        return storage_file.name
 
 
 class MappingFile(models.Model):

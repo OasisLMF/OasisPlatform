@@ -129,7 +129,7 @@ services:
     volumes:
       - server-db-OasisData:/var/lib/postgresql/data:rw
     ports:
-      - 33307:3306
+      - 33307:5432
   celery-db:
     restart: always
     image: postgres

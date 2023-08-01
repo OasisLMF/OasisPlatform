@@ -283,7 +283,7 @@ class LogTaskError(Task):
 
 @signals.worker_ready.connect
 def log_worker_monitor(sender, **k):
-    logger.info('DEBUG: {}'.format(settings.DEBUG))
+    logger.info('DEBUG: {}'.format(getattr(settings, "DEBUG", False)))
     logger.info('DB_ENGINE: {}'.format(settings.DB_ENGINE))
     logger.info('STORAGE_TYPE: {}'.format(settings.STORAGE_TYPE))
     logger.info('DEFAULT_FILE_STORAGE: {}'.format(settings.DEFAULT_FILE_STORAGE))
