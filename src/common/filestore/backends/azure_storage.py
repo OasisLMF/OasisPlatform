@@ -2,12 +2,13 @@ import logging
 import os
 import shutil
 import tempfile
+from urllib import parse
 
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import BlobServiceClient
 
-from ...common.shared import set_azure_log_level
-from ..storage_manager import BaseStorageConnector
+from ...shared import set_azure_log_level
+from .storage_manager import BaseStorageConnector
 
 
 class AzureObjectStore(BaseStorageConnector):
@@ -168,3 +169,24 @@ class AzureObjectStore(BaseStorageConnector):
         matching_objs = self.client.list_blobs(name_starts_with=key_prefix)
         for blob in matching_objs:
             self.delete_file(blob.name)
+
+    def get_storage_url(self, filename=None, suffix="tar.gz"):
+        filename = filename or self._get_unique_filename(suffix)
+
+        params = {}
+        if self.connection_string:
+            params["connection_string"] = self.connection_string
+        else:
+            if self.account_name:
+                params["account"] = self.account_name
+
+            if self.account_key:
+                params["key"] = self.account_key
+
+            if self.location:
+                params["endpoint"] = self.location
+
+        return (
+            filename,
+            f"abfs://{self.azure_container}/{filename}?{parse.urlencode(params)}",
+        )

@@ -400,3 +400,7 @@ class BaseStorageConnector(object):
             if stderr:
                 f.write(stderr)
         return os.path.abspath(fpath)
+
+    def get_storage_url(self, filename=None, suffix="tar.gz"):
+        filename = filename or self._get_unique_filename(suffix)
+        return filename, str(Path(self.media_root, filename))

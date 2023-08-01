@@ -1,3 +1,6 @@
+from pathlib import Path
+from urllib import parse
+
 import boto3
 import logging
 import os
@@ -7,8 +10,8 @@ import shutil
 from urllib.parse import urlsplit, parse_qsl
 from botocore.exceptions import ClientError as S3_ClientError
 
-from ...common.shared import set_aws_log_level
-from ..storage_manager import BaseStorageConnector
+from .storage_manager import BaseStorageConnector
+from ...shared import set_aws_log_level
 
 
 class AwsObjectStore(BaseStorageConnector):
@@ -385,3 +388,27 @@ class AwsObjectStore(BaseStorageConnector):
             params['ACL'] = self.default_acl
 
         self.bucket.upload_file(filepath, object_key, ExtraArgs=params)
+
+    def get_storage_url(self, filename=None, suffix="tar.gz"):
+        filename = filename or self._get_unique_filename(suffix)
+
+        params = {}
+        if self.default_acl:
+            params["acl"] = self.default_acl
+
+        if self.access_key:
+            params["key"] = self.access_key
+
+        if self.secret_key:
+            params["secret"] = self.secret_key
+
+        if self.security_token:
+            params["token"] = self.security_token
+
+        if self.endpoint_url:
+            params["endpoint"] = self.endpoint_url
+
+        return (
+            filename,
+            f"s3://{self.bucket_name}/{filename}?{parse.urlencode(params)}",
+        )
