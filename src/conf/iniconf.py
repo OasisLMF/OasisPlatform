@@ -57,8 +57,25 @@ class Settings(ConfigParser):
         )
 
     def get(self, section, option, **kwargs):
-        kwargs.setdefault('vars', self._get_section_env_vars(section))
-        return super(Settings, self).get(section, option, **kwargs)
+        if not option:
+            section_env_prefix = 'OASIS_{}_'.format(section.upper())
+            from_env = {
+                k.replace(section_env_prefix, ''):
+                v for k, v in os.environ.items() if k.startswith(section_env_prefix)
+            }
+            try:
+                res = self[section]
+                res = dict(res.items())
+            except KeyError:
+                res = {}
+
+            return {
+                **res,
+                **from_env,
+            }
+        else:
+            kwargs.setdefault('vars', self._get_section_env_vars(section))
+            return super(Settings, self).get(section, option, **kwargs)
 
     def getint(self, section, option, **kwargs):
         kwargs.setdefault('vars', self._get_section_env_vars(section))
