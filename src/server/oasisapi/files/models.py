@@ -109,14 +109,16 @@ class RelatedFile(TimeStampedModel):
 
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
     file = models.FileField(help_text=_('The file to store'), upload_to=random_file_name)
-    converted_file = models.FileField(help_text=_('The file to store after conversion'), upload_to=random_file_name, default=None, null=True, blank=True)
-    mapping_file = models.ForeignKey(MappingFile, blank=True, default=None, null=True, on_delete=models.CASCADE, related_name="mapped_files")
     filename = models.CharField(max_length=255, editable=False, default="", blank=True)
-    converted_filename = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
     store_as_filename = models.BooleanField(default=False, blank=True, null=True)
     groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
     oed_validated = models.BooleanField(default=False, editable=False)
+
+    mapping_file = models.ForeignKey(MappingFile, blank=True, default=None, null=True, on_delete=models.CASCADE, related_name="mapped_files")
+    converted_file = models.FileField(help_text=_('The file to store after conversion'), upload_to=random_file_name, default=None, null=True, blank=True)
+    converted_filename = models.CharField(max_length=255, editable=False, default="", blank=True)
+    conversion_time = models.DateTimeField(help_text=_('The time the last conversion was started'), null=True, default=None, blank=True, editable=False)
     conversion_state = models.CharField(max_length=11, choices=ConversionState.choices, default=ConversionState.NONE)
 
     objects = RelatedFileManager()  # ARCH2020 -- Is this actually used??

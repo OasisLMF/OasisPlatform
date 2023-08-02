@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.utils.timezone import now
 
 from converter.config import Config
 from converter.controller import Controller
@@ -26,6 +27,7 @@ def run_file_conversion(file_id):
         logger.error(f"Conversion for file {file_id} is already in progress")
         return None
 
+    instance.conversion_time = now()
     instance.conversion_state = RelatedFile.ConversionState.IN_PROGRESS
     instance.save()
 
