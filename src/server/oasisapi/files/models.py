@@ -91,6 +91,8 @@ class MappingFile(models.Model):
     name = models.CharField(max_length=255, default="")
     description = models.TextField(default="", blank=True)
     file = models.FileField(upload_to=random_file_name)
+    input_validation_file = models.FileField(upload_to=random_file_name, null=True, blank=True, default=None)
+    output_validation_file = models.FileField(upload_to=random_file_name, null=True, blank=True, default=None)
 
 
 class RelatedFile(TimeStampedModel):

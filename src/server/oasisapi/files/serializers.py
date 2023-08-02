@@ -49,6 +49,8 @@ class MappingFileSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'file',
+            'input_validation_file',
+            'output_validation_file',
         )
 
 

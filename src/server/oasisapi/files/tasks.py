@@ -46,6 +46,17 @@ def run_file_conversion(file_id):
     _, signed_mapping_url = filestore.get_storage_url(mapping_file.file.name)
 
     try:
+        # if validation files are provided setup the config for the transformation
+        validation_config = {}
+        if mapping_file.input_validation_file:
+            validation_config[mapping_content["input_format"]["name"]] = filestore.get_storage_url(
+                mapping_file.input_validation_file.name
+            )[1]
+        if mapping_file.output_validation_file:
+            validation_config[mapping_content["output_format"]["name"]] = filestore.get_storage_url(
+                mapping_file.output_validation_file.name
+            )[1]
+
         Controller(Config(overrides={
             "parallel": False,
             "transformations": {
@@ -73,7 +84,8 @@ def run_file_conversion(file_id):
                     "mapping": {
                         "options": {
                             "file_override": signed_mapping_url,
-                        }
+                        },
+                        "validation": validation_config,
                     },
                 }
             }
