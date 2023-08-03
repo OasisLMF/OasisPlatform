@@ -22,7 +22,7 @@ from ..permissions.group_auth import validate_and_update_groups, validate_user_i
 from ..schemas.serializers import InputFileSerializer
 
 
-def _serialize_input_file(file_obj, abs_uri):
+def _serialize_input_file(file_obj, abs_uri, request):
     if not file_obj:
         return None
     else:
@@ -37,6 +37,7 @@ def _serialize_input_file(file_obj, abs_uri):
             "converted_uri": abs_uri + "?converted" if converted else None,
             "converted_stored": str(file_obj.converted_file) if converted else None,
             "conversion_state": file_obj.conversion_state,
+            "conversion_log_fie": file_obj.get_absolute_conversion_log_file_url(request),
         }
 
 
@@ -66,7 +67,8 @@ class PortfolioListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return _serialize_input_file(
             instance.location_file,
-            instance.get_absolute_location_file_url(request=request)
+            instance.get_absolute_location_file_url(request=request),
+            request,
         )
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
@@ -74,7 +76,8 @@ class PortfolioListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return _serialize_input_file(
             instance.accounts_file,
-            instance.get_absolute_accounts_file_url(request=request)
+            instance.get_absolute_accounts_file_url(request=request),
+            request,
         )
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
@@ -82,7 +85,8 @@ class PortfolioListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return _serialize_input_file(
             instance.reinsurance_info_file,
-            instance.get_absolute_reinsurance_info_file_url(request=request)
+            instance.get_absolute_reinsurance_info_file_url(request=request),
+            request,
         )
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
@@ -90,7 +94,8 @@ class PortfolioListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return _serialize_input_file(
             instance.reinsurance_scope_file,
-            instance.get_absolute_reinsurance_scope_file_url(request=request)
+            instance.get_absolute_reinsurance_scope_file_url(request=request),
+            request,
         )
 
 
@@ -147,6 +152,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         return _serialize_input_file(
             instance.location_file,
             instance.get_absolute_location_file_url(request=request),
+            request,
         )
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
@@ -155,6 +161,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         return _serialize_input_file(
             instance.accounts_file,
             instance.get_absolute_accounts_file_url(request=request),
+            request,
         )
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
@@ -163,6 +170,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         return _serialize_input_file(
             instance.reinsurance_info_file,
             instance.get_absolute_reinsurance_info_file_url(request=request),
+            request,
         )
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
@@ -171,6 +179,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         return _serialize_input_file(
             instance.reinsurance_scope_file,
             instance.get_absolute_reinsurance_scope_file_url(request=request),
+            request,
         )
 
 

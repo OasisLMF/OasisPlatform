@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404, StreamingHttpResponse, HttpResponse
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -12,6 +12,7 @@ from rest_framework.exceptions import ValidationError
 from ..filters import TimeStampedFilter
 from .serializers import RelatedFileSerializer, ConvertSerializer, MappingFileSerializer
 from .models import RelatedFile, MappingFile
+from ..permissions.group_auth import verify_user_is_in_obj_groups
 
 
 class FilesFilter(TimeStampedFilter):
@@ -49,10 +50,20 @@ class FilesViewSet(viewsets.GenericViewSet):
 
     group_access_model = RelatedFile
 
+    @action(methods=['get'], detail=True)
+    def conversion_log_file(self, request, **kwargs):
+        instance = self.get_object()
+        if not instance.conversion_log_file:
+            raise Http404()
+
+        verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to read the log file')
+        return HttpResponse(instance.conversion_log_file.read(), content_type="text/plain")
+
     @action(methods=['post'], detail=True, serializer_class=ConvertSerializer)
     def convert(self, request, pk=None, version=None):
         instance = self.get_object()
 
+        verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to ru a conversion on the file')
         if not RelatedFile.ConversionState.is_ready(instance.conversion_state):
             raise ValidationError(
                 "File is not in a convertable state. " +
@@ -74,3 +85,6 @@ class MappingFilesViewSet(viewsets.ModelViewSet):
 
     queryset = MappingFile.objects.all()
     serializer_class = MappingFileSerializer
+
+    # TODO: add endpoints for accessing mapping and validation files
+    # TODO: add permissions

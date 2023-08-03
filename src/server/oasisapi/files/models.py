@@ -12,6 +12,7 @@ from django.db import models
 from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
+from rest_framework.reverse import reverse
 
 
 def related_file_to_df(RelatedFile):
@@ -117,6 +118,7 @@ class RelatedFile(TimeStampedModel):
 
     mapping_file = models.ForeignKey(MappingFile, blank=True, default=None, null=True, on_delete=models.CASCADE, related_name="mapped_files")
     converted_file = models.FileField(help_text=_('The file to store after conversion'), upload_to=random_file_name, default=None, null=True, blank=True)
+    conversion_log_file = models.FileField(upload_to=random_file_name, default=None, null=True, blank=True)
     converted_filename = models.CharField(max_length=255, editable=False, default="", blank=True)
     conversion_time = models.DateTimeField(help_text=_('The time the last conversion was started'), null=True, default=None, blank=True, editable=False)
     conversion_state = models.CharField(max_length=11, choices=ConversionState.choices, default=ConversionState.NONE)
@@ -125,6 +127,13 @@ class RelatedFile(TimeStampedModel):
 
     def __str__(self):
         return 'File_{}'.format(self.file)
+
+    def get_absolute_conversion_log_file_url(self, request):
+        return (
+            reverse('file-conversion-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+            if self.conversion_log_file else
+            None
+        )
 
     def read(self, *args, **kwargs):
         self.file.seek(0)

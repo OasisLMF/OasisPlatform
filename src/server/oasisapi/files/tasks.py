@@ -1,20 +1,39 @@
 from __future__ import absolute_import
 
+import logging
+import tempfile
+import uuid
+from io import StringIO
 from pathlib import Path
 
 import yaml
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.core.files import File
+from django.core.files.base import ContentFile
 from django.utils.timezone import now
 
 from converter.config import Config
 from converter.controller import Controller
-from .models import RelatedFile, MappingFile
+from .models import RelatedFile
 from ..celery_app import celery_app
 from ....common.filestore.filestore import get_filestore
 from ....conf import celeryconf as celery_conf
 
 logger = get_task_logger(__name__)
+
+
+def build_converter_logger(f):
+    converter_logger = logging.Logger(str(uuid.uuid4()))
+
+    handler = logging.StreamHandler(f)
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter(
+        '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+    ))
+    converter_logger.addHandler(handler)
+
+    return converter_logger
 
 
 @celery_app.task(name='run_file_conversion', **celery_conf.worker_task_kwargs)
@@ -47,7 +66,12 @@ def run_file_conversion(file_id):
 
     _, signed_mapping_url = filestore.get_storage_url(mapping_file.file.name)
 
+    log_file = StringIO()
     try:
+        # create a logger, we do this so that we dont interfere with the default logging
+        # and we can inject filters to extract any sensitive formation
+        converter_logger = build_converter_logger(log_file)
+
         # if validation files are provided setup the config for the transformation
         validation_config = {}
         if mapping_file.input_validation_file:
@@ -91,12 +115,13 @@ def run_file_conversion(file_id):
                     },
                 }
             }
-        }), raise_errors=True).run()
+        }), raise_errors=True, logger=converter_logger, redact_logs=not settings.DEBUG).run()
 
         instance.converted_file = output_filename
         instance.conversion_state = RelatedFile.ConversionState.DONE
-        instance.save()
     except Exception:
         instance.conversion_state = RelatedFile.ConversionState.ERROR
-        instance.save()
         raise
+    finally:
+        instance.conversion_log_file = ContentFile(log_file.getvalue(), name=f"{uuid.uuid4()}.log")
+        instance.save()
