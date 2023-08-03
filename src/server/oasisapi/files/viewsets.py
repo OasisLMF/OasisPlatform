@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from ..filters import TimeStampedFilter
 from .serializers import RelatedFileSerializer, ConvertSerializer, MappingFileSerializer
 from .models import RelatedFile, MappingFile
-from ..permissions.group_auth import verify_user_is_in_obj_groups
+from ..permissions.group_auth import verify_user_is_in_obj_groups, VerifyGroupAccessModelViewSet
 
 
 class FilesFilter(TimeStampedFilter):
@@ -57,13 +57,16 @@ class FilesViewSet(viewsets.GenericViewSet):
             raise Http404()
 
         verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to read the log file')
-        return HttpResponse(instance.conversion_log_file.read(), content_type="text/plain")
+
+        response = StreamingHttpResponse(instance.conversion_log_file.open(), content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(instance.conversion_log_file.name)
+        return response
 
     @action(methods=['post'], detail=True, serializer_class=ConvertSerializer)
     def convert(self, request, pk=None, version=None):
         instance = self.get_object()
 
-        verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to ru a conversion on the file')
+        verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to run a conversion on the file')
         if not RelatedFile.ConversionState.is_ready(instance.conversion_state):
             raise ValidationError(
                 "File is not in a convertable state. " +
@@ -79,12 +82,45 @@ class FilesViewSet(viewsets.GenericViewSet):
         return JsonResponse(RelatedFileSerializer(instance).data)
 
 
-@swagger_auto_schema(methods=['post'])
-class MappingFilesViewSet(viewsets.ModelViewSet):
+@swagger_auto_schema(methods=['post', 'get'])
+class MappingFilesViewSet(VerifyGroupAccessModelViewSet):
     parser_classes = (MultiPartParser,)
 
     queryset = MappingFile.objects.all()
     serializer_class = MappingFileSerializer
 
-    # TODO: add endpoints for accessing mapping and validation files
-    # TODO: add permissions
+    @action(methods=['get'], detail=True)
+    def conversion_file(self, request, **kwargs):
+        instance = self.get_object()
+        if not instance.file:
+            raise Http404()
+
+        verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to read the conversion file')
+
+        response = StreamingHttpResponse(instance.file.open(), content_type='text/yaml')
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(instance.file.name)
+        return response
+
+    @action(methods=['get'], detail=True)
+    def input_validation_file(self, request, **kwargs):
+        instance: MappingFile = self.get_object()
+        if not instance.file:
+            raise Http404()
+
+        verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to read the input validation file')
+
+        response = StreamingHttpResponse(instance.input_validation_file.open(), content_type='text/yaml')
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(instance.input_validation_file.name)
+        return response
+
+    @action(methods=['get'], detail=True)
+    def output_validation_file(self, request, **kwargs):
+        instance: MappingFile = self.get_object()
+        if not instance.file:
+            raise Http404()
+
+        verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to read the output validation file')
+
+        response = StreamingHttpResponse(instance.output_validation_file.open(), content_type='text/yaml')
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(instance.output_validation_file.name)
+        return response

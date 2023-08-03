@@ -3,6 +3,7 @@ import logging
 import io
 from pathlib import Path
 
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework.parsers import MultiPartParser
 
 from ods_tools.oed.exposure import OedExposure
@@ -42,6 +43,10 @@ def md5_filehash(in_memory_file, chunk_size=4096):
 
 
 class MappingFileSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+    input_validation_file = serializers.SerializerMethodField()
+    output_validation_file = serializers.SerializerMethodField()
+
     class Meta:
         ref_name = None
         model = MappingFile
@@ -52,6 +57,21 @@ class MappingFileSerializer(serializers.ModelSerializer):
             'input_validation_file',
             'output_validation_file',
         )
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_file(self, instance: MappingFile):
+        request = self.context.get('request')
+        return instance.get_absolute_conversion_file_url(request)
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_input_validation_file(self, instance: MappingFile):
+        request = self.context.get('request')
+        return instance.get_absolute_input_validation_file_url(request)
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_output_validation_file(self, instance: MappingFile):
+        request = self.context.get('request')
+        return instance.get_absolute_output_validation_file_url(request)
 
 
 class ConvertSerializer(serializers.Serializer):

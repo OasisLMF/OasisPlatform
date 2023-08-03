@@ -40,7 +40,7 @@ def _handle_get_related_file(parent, field, request):
     if not f:
         raise Http404()
 
-    verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to delete this file')
+    verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to read this file')
     file_format = request.GET.get('file_format', None)
 
     if 'converted' in request.GET:

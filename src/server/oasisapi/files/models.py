@@ -94,6 +94,28 @@ class MappingFile(models.Model):
     file = models.FileField(upload_to=random_file_name)
     input_validation_file = models.FileField(upload_to=random_file_name, null=True, blank=True, default=None)
     output_validation_file = models.FileField(upload_to=random_file_name, null=True, blank=True, default=None)
+    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+
+    def get_absolute_conversion_file_url(self, request):
+        return (
+            reverse('mapping-file-conversion-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+            if self.file else
+            None
+        )
+
+    def get_absolute_input_validation_file_url(self, request):
+        return (
+            reverse('mapping-file-input-validation-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+            if self.input_validation_file else
+            None
+        )
+
+    def get_absolute_output_validation_file_url(self, request):
+        return (
+            reverse('mapping-file-output-validation-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+            if self.output_validation_file else
+            None
+        )
 
 
 class RelatedFile(TimeStampedModel):
