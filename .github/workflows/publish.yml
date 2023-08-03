@@ -492,8 +492,7 @@ jobs:
         echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
 
   tag_piwind:
-    #uses: OasisLMF/OasisPiWind/.github/workflows/tag-release.yml@main
-    uses: OasisLMF/OasisPiWind/.github/workflows/tag-release.yml@actions/tag-repo-workflow
+    uses: OasisLMF/OasisPiWind/.github/workflows/tag-release.yml@main
     secrets: inherit
     needs: release
     with:
