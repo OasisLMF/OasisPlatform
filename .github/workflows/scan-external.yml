@@ -3,10 +3,10 @@ name: External Vulnerability Scanning
 on:
   push:
     branches:
-      - platform-2.0
+      - main
   pull_request:
     branches:
-      - platform-2.0
+      - main
 
   workflow_dispatch:
     inputs:
