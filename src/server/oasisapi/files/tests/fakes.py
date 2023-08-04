@@ -3,7 +3,7 @@ from django.core.files import File
 from io import StringIO, BytesIO
 from model_mommy import mommy
 
-from ..models import RelatedFile
+from ..models import RelatedFile, MappingFile
 
 FAKE_LOCATION_DATA = """PortNumber,AccNumber,LocNumber,IsTenant,BuildingID,CountryCode,Latitude,Longitude,StreetAddress,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
 1,A11111,10002082046,1,1,GB,52.76698052,-0.895469856,1 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,220000,0,0,0,GBP,2.0.0
@@ -24,3 +24,7 @@ def fake_related_file(**kwargs):
         kwargs['file'] = File(BytesIO(kwargs['file'].encode()), 'filename')
 
     return mommy.make(RelatedFile, **kwargs)
+
+
+def fake_mapping_file(**kwargs):
+    return mommy.make(MappingFile, **kwargs)

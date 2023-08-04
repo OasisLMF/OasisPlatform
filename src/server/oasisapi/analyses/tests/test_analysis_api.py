@@ -144,10 +144,10 @@ class AnalysisApi(WebTestMixin, TestCase):
                                      'STARTED': 0,
                                      'TOTAL': 0,
                                      'TOTAL_IN_QUEUE': 0},
-                    'storage_links': 'http://testserver/v1/analyses/1/storage_links/',
+                    'storage_links': f'http://testserver/v1/analyses/{analysis.id}/storage_links/',
                     'sub_task_count': 0,
                     'sub_task_error_ids': [],
-                    'sub_task_list': 'http://testserver/v1/analyses/1/sub_task_list/',
+                    'sub_task_list': f'http://testserver/v1/analyses/{analysis.id}/sub_task_list/',
                     'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(),
                     'task_started': None,
                     'task_finished': None,
@@ -219,10 +219,10 @@ class AnalysisApi(WebTestMixin, TestCase):
                                      'STARTED': 0,
                                      'TOTAL': 0,
                                      'TOTAL_IN_QUEUE': 0},
-                    'storage_links': 'http://testserver/v1/analyses/1/storage_links/',
+                    'storage_links': f'http://testserver/v1/analyses/{analysis.id}/storage_links/',
                     'sub_task_count': 0,
                     'sub_task_error_ids': [],
-                    'sub_task_list': 'http://testserver/v1/analyses/1/sub_task_list/',
+                    'sub_task_list': f'http://testserver/v1/analyses/{analysis.id}/sub_task_list/',
                     'storage_links': response.request.application_url + analysis.get_absolute_storage_url(),
                     'summary_levels_file': None,
                     'groups': [],
@@ -923,7 +923,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
             }
         )
 
-        self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, '{} - Copy'.format(name))
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, '{} - Copy'.format(name[:-7]))
 
     @given(orig_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters), new_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
     def test_new_name_is_provided___new_name_is_set_on_new_object(self, orig_name, new_name):

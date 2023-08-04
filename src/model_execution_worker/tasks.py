@@ -32,9 +32,9 @@ from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 # from .storage_manager import StorageSelector
-from .storage_manager import BaseStorageConnector
-from .backends.aws_storage import AwsObjectStore
-from .backends.azure_storage import AzureObjectStore
+from ..common.filestore.filestore import BaseStorageConnector
+from ..common.filestore.backends.aws_storage import AwsObjectStore
+from ..common.filestore.backends.azure_storage import AzureObjectStore
 
 '''
 Celery task wrapper for Oasis ktools calculation.

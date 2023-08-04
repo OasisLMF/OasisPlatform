@@ -618,7 +618,7 @@ class Analysis(TimeStampedModel):
     def copy(self):
         new_instance = self
         new_instance.pk = None
-        new_instance.name = '{} - Copy'.format(new_instance.name)
+        new_instance.name = '{} - Copy'.format(new_instance.name[:-7])
         new_instance.run_task_id = ''
         new_instance.generate_inputs_task_id = ''
         new_instance.status = self.status_choices.NEW

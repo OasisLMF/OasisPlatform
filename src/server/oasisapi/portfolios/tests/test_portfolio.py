@@ -6,6 +6,7 @@ import pandas as pd
 
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
+from django.core.files.base import ContentFile
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
@@ -15,6 +16,7 @@ from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 from ods_tools.oed.exposure import OedExposure
+from ...files.models import RelatedFile
 
 from ...files.tests.fakes import fake_related_file
 from ...analysis_models.tests.fakes import fake_analysis_model
@@ -125,22 +127,186 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'accounts_file': {
                         "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
                         "name": portfolio.accounts_file.filename,
-                        "stored": str(portfolio.accounts_file.file)
+                        "stored": str(portfolio.accounts_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
                     },
                     'location_file': {
                         "uri": response.request.application_url + portfolio.get_absolute_location_file_url(),
                         "name": portfolio.location_file.filename,
-                        "stored": str(portfolio.location_file.file)
+                        "stored": str(portfolio.location_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
                     },
                     'reinsurance_info_file': {
                         "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
                         "name": portfolio.reinsurance_info_file.filename,
-                        "stored": str(portfolio.reinsurance_info_file.file)
+                        "stored": str(portfolio.reinsurance_info_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
                     },
                     'reinsurance_scope_file': {
                         "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
                         "name": portfolio.reinsurance_scope_file.filename,
-                        "stored": str(portfolio.reinsurance_scope_file.file)
+                        "stored": str(portfolio.reinsurance_scope_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
+                    },
+                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url()
+                }, response.json)
+
+    @given(group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    def test_portfolio_files_have_conversions___conversion_urls_are_present(self, group_name):
+        self.maxDiff = None
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                add_fake_group(user, group_name)
+
+                portfolio = fake_portfolio()
+                portfolio.accounts_file = fake_related_file()
+                portfolio.accounts_file.conversion_log_file = ContentFile("log", "test.log")
+                portfolio.accounts_file.conversion_state = RelatedFile.ConversionState.DONE
+                portfolio.accounts_file.converted_file = ContentFile("converted", "converted.csv")
+                portfolio.accounts_file.converted_filename = "converted.csv"
+                portfolio.groups.set(user.groups.all())
+                portfolio.accounts_file.save()
+                portfolio.location_file = fake_related_file()
+                portfolio.reinsurance_scope_file = fake_related_file()
+                portfolio.reinsurance_info_file = fake_related_file()
+                portfolio.save()
+
+                response = self.app.get(
+                    portfolio.get_absolute_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(200, response.status_code)
+                self.assertEqual({
+                    'id': portfolio.pk,
+                    'name': portfolio.name,
+                    'created': portfolio.created.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                    'modified': portfolio.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                    'groups': [group_name],
+                    'accounts_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
+                        "name": portfolio.accounts_file.filename,
+                        "stored": str(portfolio.accounts_file.file),
+                        'conversion_log_fie': response.request.application_url + f"/v1/files/{portfolio.accounts_file.id}/conversion_log_file/",
+                        'conversion_state': 'DONE',
+                        'converted_stored': str(portfolio.accounts_file.converted_file),
+                        'converted_uri': response.request.application_url + portfolio.get_absolute_accounts_file_url() + "?converted",
+                    },
+                    'location_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(),
+                        "name": portfolio.location_file.filename,
+                        "stored": str(portfolio.location_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
+                    },
+                    'reinsurance_info_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
+                        "name": portfolio.reinsurance_info_file.filename,
+                        "stored": str(portfolio.reinsurance_info_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
+                    },
+                    'reinsurance_scope_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
+                        "name": portfolio.reinsurance_scope_file.filename,
+                        "stored": str(portfolio.reinsurance_scope_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
+                    },
+                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url()
+                }, response.json)
+
+    @given(group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    def test_portfolio_files_have_failed_conversions___conversion_urls_are_not_present(self, group_name):
+        self.maxDiff = None
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                add_fake_group(user, group_name)
+
+                portfolio = fake_portfolio()
+                portfolio.accounts_file = fake_related_file()
+                portfolio.accounts_file.conversion_log_file = ContentFile("log", "test.log")
+                portfolio.accounts_file.conversion_state = RelatedFile.ConversionState.ERROR
+                portfolio.accounts_file.converted_file = ContentFile("converted", "converted.csv")
+                portfolio.accounts_file.converted_filename = "converted.csv"
+                portfolio.groups.set(user.groups.all())
+                portfolio.accounts_file.save()
+                portfolio.location_file = fake_related_file()
+                portfolio.reinsurance_scope_file = fake_related_file()
+                portfolio.reinsurance_info_file = fake_related_file()
+                portfolio.save()
+
+                response = self.app.get(
+                    portfolio.get_absolute_url(),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(200, response.status_code)
+                self.assertEqual({
+                    'id': portfolio.pk,
+                    'name': portfolio.name,
+                    'created': portfolio.created.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                    'modified': portfolio.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                    'groups': [group_name],
+                    'accounts_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
+                        "name": portfolio.accounts_file.filename,
+                        "stored": str(portfolio.accounts_file.file),
+                        'conversion_log_fie': response.request.application_url + f"/v1/files/{portfolio.accounts_file.id}/conversion_log_file/",
+                        'conversion_state': 'ERROR',
+                        'converted_stored': None,
+                        'converted_uri': None,
+                    },
+                    'location_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(),
+                        "name": portfolio.location_file.filename,
+                        "stored": str(portfolio.location_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
+                    },
+                    'reinsurance_info_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
+                        "name": portfolio.reinsurance_info_file.filename,
+                        "stored": str(portfolio.reinsurance_info_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
+                    },
+                    'reinsurance_scope_file': {
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
+                        "name": portfolio.reinsurance_scope_file.filename,
+                        "stored": str(portfolio.reinsurance_scope_file.file),
+                        'conversion_log_fie': None,
+                        'conversion_state': 'NONE',
+                        'converted_stored': None,
+                        'converted_uri': None,
                     },
                     'storage_links': response.request.application_url + portfolio.get_absolute_storage_url()
                 }, response.json)

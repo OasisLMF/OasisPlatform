@@ -7,7 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.parsers import MultiPartParser
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from ..filters import TimeStampedFilter
 from .serializers import RelatedFileSerializer, ConvertSerializer, MappingFileSerializer
@@ -66,18 +66,35 @@ class FilesViewSet(viewsets.GenericViewSet):
     def convert(self, request, pk=None, version=None):
         instance = self.get_object()
 
-        verify_user_is_in_obj_groups(request.user, instance, 'You dont have permission to run a conversion on the file')
-        if not RelatedFile.ConversionState.is_ready(instance.conversion_state):
-            raise ValidationError(
-                "File is not in a convertable state. " +
-                "Current conversion state is " +
-                RelatedFile.ConversionState[instance.conversion_state]
-            )
-
         serializer = ConvertSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        mapping_file = MappingFile.objects.filter(id=serializer.validated_data["mapping_file"]).first()
+        if not mapping_file:
+            raise ValidationError(_("Mapping file does not exist."))
 
-        instance.start_conversion(MappingFile.objects.get(id=serializer.validated_data["mapping_file"]))
+        verify_user_is_in_obj_groups(request.user, instance, _('You dont have permission to run a conversion on the file'))
+        verify_user_is_in_obj_groups(request.user, mapping_file, _('You dont have permission to use the mapping file'))
+
+        # check the mapping file and related file share a group or either have no groups
+        instance_groups = set(instance.groups.all())
+        mapping_groups = set(mapping_file.groups.all())
+        user_groups = set(request.user.groups.all())
+
+        if (instance_groups and mapping_groups) and not ((instance_groups & mapping_groups) & user_groups):
+            raise PermissionDenied(_("The file and mapping do not share a group you are part of"))
+
+        if not RelatedFile.ConversionState.is_ready(instance.conversion_state):
+            raise ValidationError(
+                {
+                    "detail": (
+                        "File is not in a convertable state. " +
+                        "Current conversion state is " +
+                        RelatedFile.ConversionState[instance.conversion_state]
+                    )
+                }
+            )
+
+        instance.start_conversion(mapping_file)
 
         return JsonResponse(RelatedFileSerializer(instance).data)
 

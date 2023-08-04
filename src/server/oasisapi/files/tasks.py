@@ -9,7 +9,6 @@ from pathlib import Path
 import yaml
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.core.files import File
 from django.core.files.base import ContentFile
 from django.utils.timezone import now
 

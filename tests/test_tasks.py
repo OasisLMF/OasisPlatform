@@ -13,7 +13,6 @@ from mock import patch, Mock, ANY
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
-from src.model_execution_worker.storage_manager import MissingInputsException
 from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, \
     start_analysis_task, get_oasislmf_config_path
 
