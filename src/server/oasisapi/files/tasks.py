@@ -14,9 +14,9 @@ from django.utils.timezone import now
 
 from converter.config import Config
 from converter.controller import Controller
+from lot3.filestore.filestore import get_filestore
 from .models import RelatedFile
 from ..celery_app import celery_app
-from ....common.filestore.filestore import get_filestore
 from ....conf import celeryconf as celery_conf
 
 logger = get_task_logger(__name__)
@@ -52,7 +52,7 @@ def run_file_conversion(file_id):
     mapping_file = instance.mapping_file
     mapping_content = yaml.load(mapping_file.file.read(), yaml.SafeLoader)
 
-    filestore = get_filestore()
+    filestore = get_filestore(settings)
 
     _, signed_input_url = filestore.get_storage_url(instance.file.name)
 

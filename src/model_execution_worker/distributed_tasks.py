@@ -18,6 +18,8 @@ from celery import Celery, signature
 from celery.signals import (before_task_publish, task_failure, task_revoked,
                             worker_ready)
 from natsort import natsorted
+
+from lot3.filestore.filestore import get_filestore
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.preparation.lookup import OasisLookupFactory
@@ -27,7 +29,6 @@ from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
-from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 
@@ -53,7 +54,7 @@ logging.getLogger('billiard').setLevel('INFO')
 
 
 # Set storage manager
-filestore = get_filestore()
+filestore = get_filestore(settings)
 
 
 class LoggingTaskContext:

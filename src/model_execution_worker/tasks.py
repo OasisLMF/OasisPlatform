@@ -20,6 +20,7 @@ from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 from celery.platforms import signals
 
+from lot3.filestore.filestore import get_filestore
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
@@ -32,9 +33,6 @@ from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 # from .storage_manager import StorageSelector
-from ..common.filestore.filestore import BaseStorageConnector
-from ..common.filestore.backends.aws_storage import AwsObjectStore
-from ..common.filestore.backends.azure_storage import AzureObjectStore
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -49,15 +47,7 @@ logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
 # Set storage manager
-selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
-if selected_storage in ['local-fs', 'shared-fs']:
-    filestore = BaseStorageConnector(settings)
-elif selected_storage in ['aws-s3', 'aws', 's3']:
-    filestore = AwsObjectStore(settings)
-elif selected_storage in ['azure']:
-    filestore = AzureObjectStore(settings)
-else:
-    raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
+filestore = get_filestore(settings)
 
 
 class TemporaryDir(object):
