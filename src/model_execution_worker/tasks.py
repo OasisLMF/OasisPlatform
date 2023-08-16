@@ -395,6 +395,15 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         if model_storage:
             model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')
             with open(model_storage_settings_file, "w") as f:
+                config = {
+                    "root_dir": os.path.join(
+                        "/",
+                        analysis_settings["model_supplier_id"],
+                        analysis_settings["model_name_id"],
+                        analysis_settings["version"],
+                    ),
+                    **model_storage.to_config(),
+                }
                 json.dump(model_storage.to_config(), f)
 
             run_args += ['--model-storage-json', model_storage_settings_file]
