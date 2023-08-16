@@ -390,6 +390,15 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             '--verbose'
         ]
 
+
+        model_storage = get_filestore(settings, "worker.model_storage")
+        if model_storage:
+            model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')
+            with open(model_storage_settings_file, "w") as f:
+                json.dump(model_storage.to_config(), f)
+
+            run_args += ['--model-storage-json', model_storage_settings_file]
+
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             run_args += ['--user-data-dir', input_data_dir]
