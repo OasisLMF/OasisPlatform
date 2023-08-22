@@ -63,7 +63,7 @@ spec:
               {{- end }}
               mountPath: {{ .mountPath }}
             {{- end }}
-            // HACK to enable a shared datasets dir
+            # HACK to enable a shared datasets dir
             - name: oasis-models-azure-files
               subPath: datasets
               mountPath: /datasets
