@@ -14,9 +14,9 @@ from django.utils.timezone import now
 
 from converter.config import Config
 from converter.controller import Controller
-from lot3.filestore.filestore import get_filestore
 from .models import RelatedFile
 from ..celery_app import celery_app
+from ....common.filestore.filestore import get_filestore
 from ....conf import celeryconf as celery_conf
 
 logger = get_task_logger(__name__)

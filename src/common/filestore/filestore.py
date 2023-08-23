@@ -1,16 +1,18 @@
 import logging
+from typing import Union
 
 from lot3.errors import OasisException
 from lot3.filestore.backends.aws_storage import AwsObjectStore
 from lot3.filestore.backends.azure_storage import AzureObjectStore
 from lot3.filestore.backends.local_manager import LocalStorageConnector
+from lot3.filestore.backends.storage_manager import BaseStorageConnector
 
 
-def get_filestore(settings, section='worker'):
+def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorageConnector | None]:
     selected_storage = settings.get(section, 'STORAGE_TYPE', fallback="").lower()
     if selected_storage in ['local-fs', 'shared-fs']:
         return LocalStorageConnector(
-            root_dir=settings.get("worker", "MEDIA_ROOT"),
+            root_dir=settings.get(section, "MEDIA_ROOT"),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
         )
     elif selected_storage in ['aws-s3', 'aws', 's3']:
@@ -77,4 +79,7 @@ def get_filestore(settings, section='worker'):
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
         )
     else:
-        raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
+        if raise_error:
+            raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
+        else:
+            return None

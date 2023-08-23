@@ -19,7 +19,6 @@ from celery.signals import (before_task_publish, task_failure, task_revoked,
                             worker_ready)
 from natsort import natsorted
 
-from lot3.filestore.filestore import get_filestore
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.preparation.lookup import OasisLookupFactory
@@ -29,6 +28,7 @@ from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
+from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 
@@ -978,14 +978,31 @@ def prepare_losses_generation_params(
 @app.task(bind=True, name='prepare_losses_generation_directory', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def prepare_losses_generation_directory(self, params, analysis_id=None, slug=None, **kwargs):
-    params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
-    params['run_location'] = filestore.put(
-        params['model_run_dir'],
-        filename='run_directory.tar.gz',
-        subdir=params['storage_subdir']
-    )
-    params['log_location'] = filestore.put(kwargs.get('log_filename'))
-    return params
+    with tempfile.NamedTemporaryFile(mode="w+") as f:
+        # build the config for the file store storage
+        model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
+        if model_storage:
+            config = model_storage.to_config()
+            config["options"]["root_dir"] = os.path.join(
+                config["options"].get("root_dir", ""),
+                settings.get("worker", "MODEL_SUPPLIER_ID"),
+                settings.get("worker", "MODEL_ID"),
+                settings.get("worker", "MODEL_VERSION_ID"),
+            )
+            json.dump(config, f)
+            f.flush()
+
+        params['analysis_settings'] = OasisManager().generate_losses_dir(**{
+            **params,
+            "model_storage_json": f.name if model_storage else None,
+        })
+        params['run_location'] = filestore.put(
+            params['model_run_dir'],
+            filename='run_directory.tar.gz',
+            subdir=params['storage_subdir']
+        )
+        params['log_location'] = filestore.put(kwargs.get('log_filename'))
+        return params
 
 
 @app.task(bind=True, name='generate_losses_chunk', **celery_conf.worker_task_kwargs)

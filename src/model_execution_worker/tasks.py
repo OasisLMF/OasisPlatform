@@ -20,7 +20,6 @@ from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 from celery.platforms import signals
 
-from lot3.filestore.filestore import get_filestore
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
@@ -28,6 +27,7 @@ from oasislmf.utils.status import OASIS_TASK_STATUS
 from oasislmf import __version__ as mdk_version
 from pathlib2 import Path
 
+from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME

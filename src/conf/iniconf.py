@@ -1,8 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
+import logging
 import os
 
 from datetime import timedelta
+from logging.handlers import RotatingFileHandler
 
 from chainmap import ChainMap
 
@@ -45,8 +47,11 @@ class Settings(ConfigParser):
 
         self.read(ini_files)
 
+    def _section_to_env_prefix(self, section):
+        return '_'.join(section.split('.')).upper()
+
     def _get_section_env_vars(self, section):
-        section_env_prefix = 'OASIS_{}_'.format(section.upper())
+        section_env_prefix = 'OASIS_{}_'.format(self._section_to_env_prefix(section))
         global_env_prefix = 'OASIS_'
 
         return ChainMap(
@@ -58,7 +63,7 @@ class Settings(ConfigParser):
 
     def get(self, section, option, **kwargs):
         if not option:
-            section_env_prefix = 'OASIS_{}_'.format(section.upper())
+            section_env_prefix = 'OASIS_{}_'.format(self._section_to_env_prefix(section))
             from_env = {
                 k.replace(section_env_prefix, ''):
                 v for k, v in os.environ.items() if k.startswith(section_env_prefix)
