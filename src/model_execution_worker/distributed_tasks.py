@@ -13,6 +13,7 @@ from datetime import datetime
 
 import fasteners
 import filelock
+import numpy as np
 import pandas as pd
 from celery import Celery, signature
 from celery.signals import (before_task_publish, task_failure, task_revoked,
@@ -654,7 +655,7 @@ def prepare_keys_file_chunk(
         )
 
         location_df = load_location_data(params['oed_location_csv'])
-        location_df = pd.np.array_split(location_df, num_chunks)[chunk_idx]
+        location_df = np.array_split(location_df, num_chunks)[chunk_idx]
         location_df.reset_index(drop=True, inplace=True)
 
         chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
