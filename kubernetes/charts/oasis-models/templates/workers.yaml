@@ -58,15 +58,13 @@ spec:
               mountPath: /shared-fs
             {{- range .volumes }}
             - name: {{ .name }}
-              {{- if eq .source "azureFiles" }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- else if eq .source "azureFiles" }}
               subPath: {{ printf "%s/%s/%s" $worker.supplierId $worker.modelId $worker.modelVersionId }}
               {{- end }}
               mountPath: {{ .mountPath }}
             {{- end }}
-            # HACK to enable a shared datasets dir
-            - name: oasis-models-azure-file
-              subPath: datasets
-              mountPath: /datasets
 {{- if .registryCredentials }}
       imagePullSecrets:
         - name: {{ .registryCredentials }}

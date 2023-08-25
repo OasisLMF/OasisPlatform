@@ -45,6 +45,9 @@ workers:
 #        source: Can either be 'host' or 'azureFiles':
 #                host       - Host path on kubernetes node
 #                azureFiles - Azure files on account storage
+#        subPath: Subdirectory of the volume to mount at the given path. If not specified, for Azure
+#                 volumes this will default to {supplierId}/{modelId}/{modelVersionId}.
+#                 Can be used to make available cross-model data.
       - name: piwind-model-data-pv
         type: model-data
         mountPath: /home/worker/model
