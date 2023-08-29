@@ -4,6 +4,7 @@ import tarfile
 from unittest import TestCase
 from contextlib import contextmanager
 
+import mock
 from backports.tempfile import TemporaryDirectory
 from celery.exceptions import Retry
 from hypothesis import given
@@ -72,8 +73,8 @@ class StartAnalysis(TestCase):
                 Path(media_root, 'not-tar-file.tar').touch()
                 Path(media_root, 'analysis_settings.json').touch()
                 self.assertRaises(InvalidInputsException, start_analysis,
-                                  os.path.join(media_root, 'analysis_settings.json'),
-                                  os.path.join(media_root, 'not-tar-file.tar')
+                                  'analysis_settings.json',
+                                  'not-tar-file.tar'
                                   )
 
     def test_custom_model_runner_does_not_exist___generate_losses_is_called_output_files_are_tared_up(self):
@@ -105,23 +106,22 @@ class StartAnalysis(TestCase):
 
                 with patch('subprocess.Popen', Mock(return_value=cmd_instance)) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
-                        patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
+                        patch('lot3.filestore.backends.storage_manager.BaseStorageConnector.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
                     output_location, log_location, error_location, returncode = start_analysis(
-                        os.path.join(media_root, 'analysis_settings.json'),
-                        os.path.join(media_root, 'location.tar'),
+                        'analysis_settings.json', 'location.tar',
                     )
                     test_env = os.environ.copy()
                     cmd_mock.assert_called_once_with(['oasislmf', 'model', 'generate-losses',
                                                       '--oasis-files-dir', os.path.join(run_dir, 'input'),
                                                       '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
                                                       '--model-run-dir', run_dir,
-                                                      '--analysis-settings-json', os.path.join(media_root, 'analysis_settings.json'),
+                                                      '--analysis-settings-json', os.path.join(run_dir, 'analysis_settings.json'),
                                                       '--ktools-fifo-relative',
                                                       '--verbose',
                                                       ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
-                    tarfile.assert_called_once_with(os.path.join(media_root, output_location), os.path.join(run_dir, 'output'), 'output')
+                    tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')
 
 
 class StartAnalysisTask(TestCase):

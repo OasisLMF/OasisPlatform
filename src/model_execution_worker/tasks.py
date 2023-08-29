@@ -32,8 +32,6 @@ from ..conf import celeryconf as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
-# from .storage_manager import StorageSelector
-
 '''
 Celery task wrapper for Oasis ktools calculation.
 '''
@@ -45,9 +43,6 @@ app = Celery()
 app.config_from_object(celery_conf)
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
-
-# Set storage manager
-filestore = get_filestore(settings)
 
 
 class TemporaryDir(object):
@@ -166,6 +161,8 @@ def check_worker_lost(task, analysis_pk):
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
+    filestore = get_filestore(settings)
+
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
@@ -344,6 +341,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         (string) The location of the outputs.
 
     """
+    filestore = get_filestore(settings)
+
     # Check that the input archive exists and is valid
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
@@ -363,7 +362,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
 
     config_path = get_oasislmf_config_path()
     tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
-    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
     if complex_data_files:
         tmp_input_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
@@ -379,7 +377,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             raise InvalidInputsException(input_archive)
 
         oasis_files_dir = os.path.join(run_dir, 'input')
-        filestore.extract(input_archive, oasis_files_dir)
+        filestore.extract(input_location, oasis_files_dir)
 
         run_args = [
             '--oasis-files-dir', oasis_files_dir,
@@ -391,7 +389,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
         ]
 
 
-        model_storage = get_filestore(settings, "worker.model_storage")
+        model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
         if model_storage:
             model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')
             with open(model_storage_settings_file, "w") as f:
@@ -489,6 +487,8 @@ def generate_input(self,
         (tuple(str, str)) Paths to the outputs tar file and errors tar file.
 
     """
+    filestore = get_filestore(settings)
+
     logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
 
@@ -634,6 +634,8 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
         None.
 
     """
+    filestore = get_filestore(settings)
+
     for cmf in complex_model_files:
         stored_fn = cmf[STORED_FILENAME]
         orig_fn = cmf[ORIGINAL_FILENAME]
