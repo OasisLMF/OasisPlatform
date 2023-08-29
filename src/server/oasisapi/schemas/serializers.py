@@ -185,6 +185,7 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
         # Note: Workaround for to support workers 1.15.x and older. With the analysis settings schema change the workers with fail
         # These are added into existing files as a 'fix' so older workers can run without patching the worker schema
         # This *SHOULD* be removed at a later date once older models are not longer used
+        data = self.schemaClass.compatibility(data)
         compatibility_field_map = {
             "module_supplier_id": {
                 "updated_to": "model_supplier_id"
