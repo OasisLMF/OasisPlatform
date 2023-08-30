@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`2.2.0`_
+ ---------
+* [#725](https://github.com/OasisLMF/OasisPlatform/pull/843) - Queue priority for same job
+* [#842](https://github.com/OasisLMF/OasisPlatform/pull/842) - Fix CVE-2023-30608
+* [#813, #822](https://github.com/OasisLMF/OasisPlatform/pull/835) - Fixes for OpenAPI schema
+* [#679](https://github.com/OasisLMF/OasisPlatform/pull/844) - Portfolio file linking fails with azure file share 
+.. _`2.2.0`:  https://github.com/OasisLMF/OasisPlatform/compare/2.1.2...2.2.0
+
 `2.1.2`_
  ---------
 * [#834](https://github.com/OasisLMF/OasisPlatform/pull/834) - Update external docker images

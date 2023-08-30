@@ -1,10 +1,14 @@
 import json
 import io
 
+from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
+from lot3.df_reader.config import get_df_reader
+from lot3.df_reader.exceptions import InvalidSQLException
 from .models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ..permissions.group_auth import verify_user_is_in_obj_groups
@@ -186,3 +190,41 @@ def handle_json_data(parent, field, request, serializer):
         return _json_write_to_file(parent, field, request, serializer)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field, request)
+
+
+def handle_related_file_sql(parent, field, request, sql, m2m_file_pk=None):
+    requested_format = request.GET.get('file_format', None)
+    f = getattr(parent, field)
+
+    if m2m_file_pk:
+        try:
+            f = f.get(pk=m2m_file_pk)
+        except RelatedFile.DoesNotExist:
+            raise Http404
+
+    download_name = f.filename if f.filename else f.file.name
+
+    reader = get_df_reader({'filepath': f.file.path, 'engine': settings.DEFAULT_READER_ENGINE})
+
+    try:
+        df = reader.sql(sql).as_pandas()
+    except InvalidSQLException:
+        raise ValidationError('Invalid SQL provided.')
+
+    output_buffer = io.BytesIO()
+
+    if requested_format == 'parquet':
+        df.to_parquet(output_buffer, index=False)
+        content_type = 'application/octet-stream'
+    elif requested_format == 'json':
+        df.to_json(output_buffer, orient='table', index=False)
+        content_type = 'application/json'
+    else:
+        df.to_csv(output_buffer, index=False)
+        content_type = 'text/csv'
+
+    output_buffer.seek(0)
+    response = StreamingHttpResponse(output_buffer, content_type=content_type)
+    response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, f'.{requested_format}')
+
+    return response

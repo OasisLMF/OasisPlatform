@@ -167,6 +167,7 @@ class Analysis(TimeStampedModel):
     input_generation_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL,
                                                         blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
     output_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='output_file_analyses')
+    raw_output_files = models.ManyToManyField(RelatedFile, blank=True, related_name='raw_output_files_analyses')
     run_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True,
                                            default=None, related_name='run_traceback_file_analyses')
     run_log_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True,
@@ -240,6 +241,12 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_output_file_url(self, request=None):
         return reverse('analysis-output-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def get_absolute_output_file_list_url(self, request=None):
+        return reverse('analysis-output-file-list', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+
+    def get_absolute_output_file_sql_url(self, file_pk, request=None):
+        return reverse('analysis-output-file-sql', kwargs={'version': 'v1', 'pk': self.pk, "file_pk": file_pk}, request=request)
 
     def get_absolute_run_traceback_file_url(self, request=None):
         return reverse('analysis-run-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)

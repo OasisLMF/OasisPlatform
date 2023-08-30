@@ -493,3 +493,5 @@ DEFAULT_CONVERTER_RUNNER_OPTIONS = iniconf.settings.get(
     '',
     fallback={},
 )
+
+DEFAULT_READER_ENGINE = iniconf.settings.get('server', 'default_reader_engine', fallback='lot3.df_reader.reader.OasisPandasReader')

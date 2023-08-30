@@ -8,7 +8,7 @@ import src.server.oasisapi.files.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('files', '0006_relatedfile_oed_validated'),
+        ('files', '0005_relatedfile_oed_validated'),
     ]
 
     operations = [
