@@ -2,13 +2,17 @@ import json
 import mimetypes
 import string
 import io
+import sys
+from importlib import reload
+
 import pandas as pd
 
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch, clear_url_caches
 from django_webtest import WebTestMixin
+from django.conf import settings as django_settings
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
@@ -1403,7 +1407,43 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 ])
 
 
-class PortfolioFileSQLApi(WebTestMixin, TestCase):
+class ResetUrlMixin:
+    def setUp(self) -> None:
+        import src.server.oasisapi.portfolios.viewsets
+        reload(src.server.oasisapi.portfolios.viewsets)
+        if django_settings.ROOT_URLCONF in sys.modules:
+            reload(sys.modules[django_settings.ROOT_URLCONF])
+        clear_url_caches()
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    urls = [
+        'get_absolute_accounts_file_sql_url',
+        'get_absolute_location_file_sql_url',
+        'get_absolute_reinsurance_info_file_sql_url',
+        'get_absolute_reinsurance_scope_file_sql_url',
+    ]
+
+    def test_endpoint_disabled___raises_no_reverse_match(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        with self.assertRaises(NoReverseMatch):
+            for url in self.urls:
+                with self.subTest():
+                    self.app.post_json(
+                        getattr(portfolio, url)(),
+                        expect_errors=True,
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                        params={"sql": "SELECT x FROM table"},
+                    )
+
+
+@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
     urls = [
         'get_absolute_accounts_file_sql_url',
         'get_absolute_location_file_sql_url',

@@ -3,12 +3,10 @@ name: Platform Python Tests
 on:
   push:
     branches:
-      - platform-2.0
-      - platform-2.0-develop
+      - main
   pull_request:
     branches:
-      - platform-2.0
-      - platform-2.0-develop
+      - main
   workflow_dispatch:
     inputs:
       ods_branch:
@@ -18,10 +16,10 @@ on:
 jobs:
   ods_tools:
     #if: inputs.ods_branch != ''
-    uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@develop
+    uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@main
     secrets: inherit
     with:
-      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
 
   unittest:
     needs: ods_tools
