@@ -6,8 +6,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('files', '0006_relatedfile_oed_validated'),
-        ('analyses', '0021_auto_20220621_0803'),
+        ('files', '0005_relatedfile_oed_validated'),
+        ('analyses', '0011_auto_20230724_1134'),
     ]
 
     operations = [

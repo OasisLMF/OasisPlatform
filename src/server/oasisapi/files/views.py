@@ -183,7 +183,7 @@ def handle_json_data(parent, field, request, serializer):
         return _handle_delete_related_file(parent, field, request)
 
 
-def handle_file_sql(parent, field, request, sql, m2m_file_pk=None):
+def handle_related_file_sql(parent, field, request, sql, m2m_file_pk=None):
     requested_format = request.GET.get('file_format', None)
     f = getattr(parent, field)
 

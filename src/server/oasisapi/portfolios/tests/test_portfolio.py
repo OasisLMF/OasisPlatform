@@ -1407,7 +1407,6 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 ])
 
 
-
 class ResetUrlMixin:
     def setUp(self) -> None:
         import src.server.oasisapi.portfolios.viewsets
