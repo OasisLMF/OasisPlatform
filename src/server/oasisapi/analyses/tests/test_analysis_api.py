@@ -779,7 +779,9 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                     "source_tag": "test_source",
                     "analysis_tag": "test_analysis",
                     "model_supplier_id": "OasisIM",
+                    'module_supplier_id': 'OasisIM',
                     "model_name_id": "1",
+                    'model_version_id': '1',
                     "number_of_samples": 10,
                     "gul_threshold": 0,
                     "model_settings": {
@@ -797,9 +799,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                             "lec_output": False
                         }
                     ],
-                    "il_output": False,
-                    'model_version_id': '1',
-                    'model_supplier_id': 'OasisIM'
+                    "il_output": False
                 }
 
                 self.app.post(

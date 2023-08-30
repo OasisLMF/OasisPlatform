@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.6`_
+ ---------
+* [#868](https://github.com/OasisLMF/OasisPlatform/pull/865) - Fixes for OasisPlatform Publish
+* [#867](https://github.com/OasisLMF/OasisPlatform/pull/874) - Fix cryptography CVE 
+* [#852](https://github.com/OasisLMF/OasisPlatform/pull/852) - Update CI 1.27
+* [#878](https://github.com/OasisLMF/OasisPlatform/pull/878) - revert settings compatibility to older version
+.. _`1.27.6`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.5...1.27.6
+
 .. _`1.27.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.4...1.27.5
 
 `1.27.4`_
