@@ -1,6 +1,21 @@
 OasisPlatform Changelog
 =======================
 
+`2.2.1`_
+ ---------
+* [#849](https://github.com/OasisLMF/OasisPlatform/pull/849) - Feautre/1323 reorganize branches plat2
+* [#868](https://github.com/OasisLMF/OasisPlatform/pull/865) - Fixes for OasisPlatform Publish
+* [#860, #863](https://github.com/OasisLMF/OasisPlatform/pull/862) - Fix/migrations plat1 to plat2
+* [#847](https://github.com/OasisLMF/OasisPlatform/pull/847) - Release 2.2.0
+.. _`2.2.1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.2.0...2.2.1
+
+`2.2.1rc1`_
+ ---------
+* [#849](https://github.com/OasisLMF/OasisPlatform/pull/849) - Feautre/1323 reorganize branches plat2
+* [#860, #863](https://github.com/OasisLMF/OasisPlatform/pull/862) - Fix/migrations plat1 to plat2
+* [#847](https://github.com/OasisLMF/OasisPlatform/pull/847) - Release 2.2.0
+.. _`2.2.1rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.2.0...2.2.1rc1
+
 `2.2.0`_
  ---------
 * [#725](https://github.com/OasisLMF/OasisPlatform/pull/843) - Queue priority for same job
