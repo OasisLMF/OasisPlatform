@@ -4,7 +4,6 @@ import io
 from pathlib import Path
 
 from ods_tools.oed.exposure import OedExposure
-from ods_tools.oed.common import OdsException
 
 from django.contrib.auth.models import Group
 from rest_framework import serializers
@@ -71,8 +70,12 @@ class RelatedFileSerializer(serializers.ModelSerializer):
                     EXPOSURE_ARGS[self.oed_field]: attrs['file'],
                     'validation_config': django_settings.PORTFOLIO_VALIDATION_CONFIG
                 })
-            except OdsException as e:
-                raise ValidationError('Failed to read exposure data, file is corrupted or set with incorrect format', e)
+            except Exception as e:
+                raise ValidationError({
+                    'error': 'Failed to validate exposure data',
+                    'detail': str(e),
+                    'exception': type(e).__name__
+                })
 
         # Run OED Validation
         if run_validation:
