@@ -66,13 +66,20 @@ class Portfolio(TimeStampedModel):
                 file_ref.save()
 
     def run_oed_validation(self):
-        portfolio_exposure = OedExposure(
-            location=getattr(self.location_file, 'file', None),
-            account=getattr(self.accounts_file, 'file', None),
-            ri_info=getattr(self.reinsurance_info_file, 'file', None),
-            ri_scope=getattr(self.reinsurance_scope_file, 'file', None),
-            validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
-        validation_errors = portfolio_exposure.check()
+        try:
+            portfolio_exposure = OedExposure(
+                location=getattr(self.location_file, 'file', None),
+                account=getattr(self.accounts_file, 'file', None),
+                ri_info=getattr(self.reinsurance_info_file, 'file', None),
+                ri_scope=getattr(self.reinsurance_scope_file, 'file', None),
+                validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
+            validation_errors = portfolio_exposure.check()
+        except Exception as e:
+            raise ValidationError({
+                'error': 'Failed to validate portfolio',
+                'detail': str(e),
+                'exception': type(e).__name__
+            })
 
         # Set validation fields to true or raise exception
         if validation_errors:
