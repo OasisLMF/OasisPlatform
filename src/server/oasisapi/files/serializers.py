@@ -4,13 +4,11 @@ import io
 from pathlib import Path
 
 from drf_yasg.utils import swagger_serializer_method
-from rest_framework.parsers import MultiPartParser
 
 from ods_tools.oed.exposure import OedExposure
 from ods_tools.oed.common import OdsException
 
 from django.contrib.auth.models import Group
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile

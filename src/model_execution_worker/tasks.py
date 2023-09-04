@@ -388,7 +388,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             '--verbose'
         ]
 
-
         model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
         if model_storage:
             model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')

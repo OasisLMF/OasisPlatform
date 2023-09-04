@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.http import JsonResponse, Http404, StreamingHttpResponse, HttpResponse
+from django.http import JsonResponse, Http404, StreamingHttpResponse
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema

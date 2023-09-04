@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import logging
-import tempfile
 import uuid
 from io import StringIO
 from pathlib import Path

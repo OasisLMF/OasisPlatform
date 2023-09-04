@@ -472,7 +472,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     @requires_sql_reader
     @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
     @action(methods=['get'], detail=True)
-    def output_file_list(self, request,  *args, **kwargs):
+    def output_file_list(self, request, *args, **kwargs):
         """
         get:
         Gets the portfolios `output_file` as a list of raw files, which can have SQL applied.
