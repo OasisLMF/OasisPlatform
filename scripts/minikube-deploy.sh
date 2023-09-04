@@ -1,10 +1,17 @@
 #!/bin/bash
 
 # cd to repo root
+PIWIND_PATH_FILE=/tmp/piwind-path-cfg
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $SCRIPT_DIR/..
 
 # Store PiWind Path
+if ! [ -f $PIWIND_PATH_FILE ]; then
+    touch $PIWIND_PATH_FILE
+else
+    source $PIWIND_PATH_FILE
+fi
+
 if [[ -z $OASIS_MODEL_DATA_DIR ]]; then
     echo -n "OasisPiwind Repo Path: "
     read filepath
@@ -14,6 +21,7 @@ if [[ -z $OASIS_MODEL_DATA_DIR ]]; then
             $SCRIPT_DIR/deploy.sh
         fi
     export OASIS_MODEL_DATA_DIR=$filepath
+    echo "export OASIS_MODEL_DATA_DIR=$filepath" > $PIWIND_PATH_FILE
 fi
 
 # Wipe minikube
@@ -48,3 +56,9 @@ pushd kubernetes/charts
         helm upgrade models oasis-models
     fi
 popd
+
+
+
+# Open local access to cluster
+minikube tunnel &
+kubectl port-forward deployment/oasis-websocket 8001:8001  #(forward websocket)
