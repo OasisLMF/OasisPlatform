@@ -35,6 +35,13 @@ jobs:
         python-version: '3.10'
     - run: pip install -r requirements.txt
 
+    # Temp build step
+    - name: Install LOT3 package
+      run: |
+        pip install pyspark dask
+        sudo apt-get install protobuf-compiler
+        pip install -v git+https://git@github.com/OasisLMF/OasisPlatformLot3.git@feature/lot3-model-data#egg=lot3
+
     - name: Download package
       if: needs.ods_tools.outputs.whl_filename != ''
       uses: actions/download-artifact@v3
