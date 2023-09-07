@@ -69,5 +69,3 @@ popd
 
 # Open single service 
 #kubectl port-forward deployment/oasis-websocket 8001:8001  #(forward websocket)
-
-
