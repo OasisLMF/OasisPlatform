@@ -32,6 +32,8 @@ spec:
             {{- include "h.brokerVars" . | indent 12 }}
             - name: FLOWER_LOGGING
               value: INFO
+            - name: FLOWER_UNAUTHENTICATED_API
+              value: true
           livenessProbe:
             failureThreshold: 2
             httpGet:
