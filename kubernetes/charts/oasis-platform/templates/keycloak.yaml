@@ -98,7 +98,7 @@ spec:
             "start-dev", 
             "--import-realm",
             "--http-relative-path /auth",
-            "--proxy passthrough",
+            "--proxy edge",
             "--hostname-strict=false"]
           ports:
             - containerPort: {{ .Values.keycloak.port }}
