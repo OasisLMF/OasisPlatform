@@ -45,13 +45,13 @@ class AutoScaler:
 
         :param msg: The message content
         """
+        pending_analyses: [RunningAnalysis] = await self.pasre_queued_pending(msg)
+        logging.info('Analyses pending: %s', pending_analyses)
 
         running_analyses: [RunningAnalysis] = await self.parse_running_analyses(msg)
-
         logging.info('Analyses running: %s', running_analyses)
 
-        model_states = self._aggregate_model_states(running_analyses)
-
+        model_states = self._aggregate_model_states({**pending_analyses, **running_analyses})
         logging.debug('Model statuses: %s', model_states)
 
         model_states_with_wd = await self._filter_model_states_with_wd(model_states)
@@ -164,6 +164,31 @@ class AutoScaler:
 
             self.cleanup_deployments.clear()
 
+    async def pasre_queued_pending(self, msg) -> [RunningAnalysis]:
+        """
+        Parse the web socket message and return a list of models with pending analyses
+
+        :param msg: Web socket message
+        :return: A list of running analyses and their tasks.
+        """
+        content: List[QueueStatusContentEntry] = msg['content']
+        pending_analyses: [RunningAnalysis] = {}
+
+        for entry in content:
+            analyses_list = entry['analyses']
+            queue_name = entry['queue']['name']
+
+            # Check for pending analyses
+            if (queue_name not in ['celery', 'task-controller']):
+                queued_count = entry['queue']['queued_count']
+
+                if (queued_count > 0) and not analyses_list:
+                    # a task is queued, but no analyses are running.
+                    # worker-controller might have missed the analysis displatch
+                    pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[queue_name], priority=4)
+
+        return pending_analyses
+
     async def parse_running_analyses(self, msg) -> [RunningAnalysis]:
         """
         Parse the web socket message and return a list of running analyses.
@@ -172,7 +197,6 @@ class AutoScaler:
         :return: A list of running analyses and their tasks.
         """
         content: List[QueueStatusContentEntry] = msg['content']
-
         running_analyses: [RunningAnalysis] = {}
 
         for entry in content:
@@ -185,23 +209,16 @@ class AutoScaler:
                 queue_names = set()
                 task_counts = analysis.get('status_count', {})
                 tasks_in_queue = task_counts.get('TOTAL_IN_QUEUE', 0)
+
                 if tasks_in_queue > 0:
                     queue_names = analysis.get('queue_names', [])
-
-                ## REPLACED: with the code block above  ############
-                # queue_names = set()
-                # sub_task_statuses = analysis['sub_task_statuses']
-                # if sub_task_statuses and len(sub_task_statuses) > 0:
-                #    for sub_task in sub_task_statuses:
-                #        if sub_task['status'] != 'COMPLETED':
-                #            queue_names.add(sub_task['queue_name'])
-                ####################################################
 
                 if tasks and tasks > 0 and len(queue_names) > 0:
                     sa_id = analysis['id']
                     if sa_id not in running_analyses:
                         priority = int(analysis.get('priority', 1))
-                        running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=tasks, queue_names=list(queue_names), priority=priority)
+                        running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=tasks,
+                                                                  queue_names=list(queue_names), priority=priority)
 
         return running_analyses
 
@@ -212,9 +229,7 @@ class AutoScaler:
 
         :param prioritized_models: A dict of model names and their states.
         """
-
         workers_total = 0
-
         for model, state, wd in prioritized_models:
 
             # Load auto scaling settings everytime we scale up workers from 0

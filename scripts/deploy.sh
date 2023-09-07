@@ -14,8 +14,6 @@ if [[ -z $OASIS_MODEL_DATA_DIR ]]; then
             $SCRIPT_DIR/deploy.sh
         fi
     export OASIS_MODEL_DATA_DIR=$filepath    
-    #echo "path=$filepath" >> .gitpush
-    #echo "$Path saved in the following file: $cur/.gitpush"
 fi
 
 docker rmi coreoasis/api_server:dev
