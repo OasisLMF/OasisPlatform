@@ -53,7 +53,12 @@ jobs:
     outputs:
       pytest_opts: ${{ steps.pytest.outputs.opts }}
       piwind_branch: ${{ steps.piwind.outputs.branch }}
+
       release_tag: ${{ steps.released_images.outputs.prev_release_tag }}
+      release_stable_15: ${{ steps.released_images.outputs.stable_15 }}
+      release_stable_23: ${{ steps.released_images.outputs.stable_23 }}
+      release_stable_27: ${{ steps.released_images.outputs.stable_27 }}
+
       build_server_img: ${{ steps.built_images.outputs.server_img }}
       build_server_tag: ${{ steps.built_images.outputs.server_tag }}
       build_worker_img: ${{ steps.built_images.outputs.worker_img }}
@@ -82,6 +87,16 @@ jobs:
           else
             echo "prev_release_tag=${{ inputs.last_release }}" >> $GITHUB_OUTPUT
           fi
+
+          # Find latest LTS from each stable branch
+          stable_1_15=$( ./scripts/find_latest.sh -j 1 -i 15 )
+          echo "stable_15=$stable_1_15" >> $GITHUB_OUTPUT
+
+          stable_1_23=$( ./scripts/find_latest.sh -j 1 -i 23 )
+          echo "stable_23=$stable_1_23" >> $GITHUB_OUTPUT
+
+          stable_1_27=$( ./scripts/find_latest.sh -j 1 -i 27 )
+          echo "stable_27=$stable_1_27" >> $GITHUB_OUTPUT
 
       - name: Select PiWind branch
         id: piwind
@@ -141,6 +156,52 @@ jobs:
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_tag }}
+      debug_mode: 1
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      storage_suffix: '-server-compatibility'
+
+
+  stable_compatibility_15:
+    name: Test with stable worker (${{ needs.setup.outputs.release_stable_15 }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    with:
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_15 }}
+      debug_mode: 1
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      storage_suffix: '-server-compatibility'
+
+  stable_compatibility_23:
+    name: Test with stable worker (${{ needs.setup.outputs.release_stable_23 }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    with:
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_23 }}
+      debug_mode: 1
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      storage_suffix: '-server-compatibility'
+
+  stable_compatibility_27:
+    name: Test with stable worker (${{ needs.setup.outputs.release_stable_27 }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    with:
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_27 }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-server-compatibility'
