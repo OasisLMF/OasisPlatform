@@ -167,7 +167,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      piwind_branch: 'stable/1.15.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
@@ -182,7 +182,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      piwind_branch: 'stable/1.23.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
@@ -197,7 +197,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      piwind_branch: 'stable/1.27.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
