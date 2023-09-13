@@ -45,7 +45,7 @@ jobs:
       ignore_unfixed: true
       cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'fix/compat-model-settings-post' || inputs.ods_branch }}
 
   setup:
     runs-on: ubuntu-latest
@@ -121,7 +121,7 @@ jobs:
         id: pytest
         run: |
           if [[ -z "${{ inputs.pytest_options }}" ]]; then
-            echo "opts='-k case_1'" >> $GITHUB_OUTPUT
+            echo "opts='-k all_outputs'" >> $GITHUB_OUTPUT
           else
             echo "opts=${{ inputs.pytest_options }}" >> $GITHUB_OUTPUT
           fi
@@ -167,13 +167,13 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      piwind_branch: 'fix/output-checking-skip'
+      piwind_branch: 'stable/1.15.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_stable_15 }}
       debug_mode: 1
-      pytest_opts: --skip-output-cmp ${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_15 }}"
 
   stable_compatibility_23:
@@ -182,7 +182,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      piwind_branch: 'fix/output-checking-skip'
+      piwind_branch: 'stable/1.23.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
