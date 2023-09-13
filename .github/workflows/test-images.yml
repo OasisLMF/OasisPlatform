@@ -145,8 +145,8 @@ jobs:
           echo "deb_worker_img=$deb_worker_img" >> $GITHUB_OUTPUT
           echo "deb_worker_tag=$deb_worker_tag" >> $GITHUB_OUTPUT
 
-  server_compatibility:
-    name: Server Compatibility (${{ needs.setup.outputs.release_tag }})
+  worker_compatibility:
+    name: Test last worker (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -158,11 +158,11 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_tag }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-server-compatibility'
+      storage_suffix: '-worker_'${{ needs.setup.outputs.release_tag }} 
 
 
   stable_compatibility_15:
-    name: Test with stable worker (${{ needs.setup.outputs.release_stable_15 }})
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_15 }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -174,10 +174,10 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_15 }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-server-compatibility'
+      storage_suffix: '-worker_'${{ needs.setup.outputs.release_stable_15 }}
 
   stable_compatibility_23:
-    name: Test with stable worker (${{ needs.setup.outputs.release_stable_23 }})
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_23 }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -189,10 +189,10 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_23 }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-server-compatibility'
+      storage_suffix: '-worker_'${{ needs.setup.outputs.release_stable_23 }}
 
   stable_compatibility_27:
-    name: Test with stable worker (${{ needs.setup.outputs.release_stable_27 }})
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_27 }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -204,7 +204,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_27 }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-server-compatibility'
+      storage_suffix: '-worker_'${{ needs.setup.outputs.release_stable_27 }}
 
   worker_debian:
     name: Worker Debian
@@ -221,8 +221,8 @@ jobs:
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: '-worker-debian'
 
-  worker_compatibility:
-    name: Worker Compatibility (${{ needs.setup.outputs.release_tag }})
+  server_compatibility:
+    name: Test last Server (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -234,7 +234,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-worker-compatibility'
+      storage_suffix: '-server_'${{ needs.setup.outputs.release_tag }}
 
   storage_s3:
     name: Storage Compatibility (S3)
