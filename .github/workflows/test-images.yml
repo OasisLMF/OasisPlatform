@@ -158,7 +158,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_tag }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-worker_'${{ needs.setup.outputs.release_tag }} 
+      storage_suffix: "-worker_${{ needs.setup.outputs.release_tag }}"
 
 
   stable_compatibility_15:
@@ -174,7 +174,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_15 }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-worker_'${{ needs.setup.outputs.release_stable_15 }}
+      storage_suffix: "-worker_${{ needs.setup.outputs.release_stable_15 }}"
 
   stable_compatibility_23:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_23 }})
@@ -189,7 +189,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_23 }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-worker_'${{ needs.setup.outputs.release_stable_23 }}
+      storage_suffix: "-worker_${{ needs.setup.outputs.release_stable_23 }}"
 
   stable_compatibility_27:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_27 }})
@@ -204,7 +204,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_27 }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-worker_'${{ needs.setup.outputs.release_stable_27 }}
+      storage_suffix: "-worker_${{ needs.setup.outputs.release_stable_27 }}"
 
   worker_debian:
     name: Worker Debian
@@ -234,7 +234,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-server_'${{ needs.setup.outputs.release_tag }}
+      storage_suffix: "-server_${{ needs.setup.outputs.release_tag }}"
 
   storage_s3:
     name: Storage Compatibility (S3)
