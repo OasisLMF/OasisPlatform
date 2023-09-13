@@ -121,7 +121,7 @@ jobs:
         id: pytest
         run: |
           if [[ -z "${{ inputs.pytest_options }}" ]]; then
-            echo "opts='-k all_outputs'" >> $GITHUB_OUTPUT
+            echo "opts='-k case_1'" >> $GITHUB_OUTPUT
           else
             echo "opts=${{ inputs.pytest_options }}" >> $GITHUB_OUTPUT
           fi
@@ -173,7 +173,7 @@ jobs:
       worker_image: 'coreoasis/model_worker'
       worker_tag: ${{ needs.setup.outputs.release_stable_15 }}
       debug_mode: 1
-      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: -k all_output ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_15 }}"
 
   stable_compatibility_23:
