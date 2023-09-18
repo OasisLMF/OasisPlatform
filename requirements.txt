@@ -275,9 +275,9 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.0
+oasislmf[extra]==1.28.2
     # via -r ./requirements-worker.in
-ods-tools==3.1.0
+ods-tools==3.1.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
