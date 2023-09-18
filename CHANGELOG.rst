@@ -1,6 +1,17 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.2`_
+ ---------
+* [#868](https://github.com/OasisLMF/OasisPlatform/pull/865) - Fixes for OasisPlatform Publish
+* [#841](https://github.com/OasisLMF/OasisPlatform/pull/841) - Release 1.28.0
+* [#867](https://github.com/OasisLMF/OasisPlatform/pull/874) - Fix cryptography CVE 
+* [#880](https://github.com/OasisLMF/OasisPlatform/pull/878) - Analysis settings compatibility fix 1.15.x workers  
+* [#871](https://github.com/OasisLMF/OasisPlatform/pull/884) - Handle exceptions from OedExposure on file Upload 
+* [#853](https://github.com/OasisLMF/OasisPlatform/pull/853) - Update CI 1.28
+* [#892](https://github.com/OasisLMF/OasisPlatform/pull/894) - CI Increase compatibility testing to check LTS workers 
+.. _`1.28.2`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.0...1.28.2
+
 `1.28.0`_
  ---------
 * [#768](https://github.com/OasisLMF/OasisPlatform/pull/768) - Loosen repository argument in changelog builder 

@@ -53,7 +53,12 @@ jobs:
     outputs:
       pytest_opts: ${{ steps.pytest.outputs.opts }}
       piwind_branch: ${{ steps.piwind.outputs.branch }}
+
       release_tag: ${{ steps.released_images.outputs.prev_release_tag }}
+      release_stable_15: ${{ steps.released_images.outputs.stable_15 }}
+      release_stable_23: ${{ steps.released_images.outputs.stable_23 }}
+      release_stable_27: ${{ steps.released_images.outputs.stable_27 }}
+
       build_server_img: ${{ steps.built_images.outputs.server_img }}
       build_server_tag: ${{ steps.built_images.outputs.server_tag }}
       build_worker_img: ${{ steps.built_images.outputs.worker_img }}
@@ -83,6 +88,16 @@ jobs:
             echo "prev_release_tag=${{ inputs.last_release }}" >> $GITHUB_OUTPUT
           fi
 
+          # Find latest LTS from each stable branch
+          stable_1_15=$( ./scripts/find_latest.sh -j 1 -i 15 )
+          echo "stable_15=$stable_1_15" >> $GITHUB_OUTPUT
+
+          stable_1_23=$( ./scripts/find_latest.sh -j 1 -i 23 )
+          echo "stable_23=$stable_1_23" >> $GITHUB_OUTPUT
+
+          stable_1_27=$( ./scripts/find_latest.sh -j 1 -i 27 )
+          echo "stable_27=$stable_1_27" >> $GITHUB_OUTPUT
+
       - name: Select PiWind branch
         id: piwind
         run: |
@@ -106,7 +121,7 @@ jobs:
         id: pytest
         run: |
           if [[ -z "${{ inputs.pytest_options }}" ]]; then
-            echo "opts='-k case_1'" >> $GITHUB_OUTPUT
+            echo "opts='-k all_output'" >> $GITHUB_OUTPUT
           else
             echo "opts=${{ inputs.pytest_options }}" >> $GITHUB_OUTPUT
           fi
@@ -130,8 +145,8 @@ jobs:
           echo "deb_worker_img=$deb_worker_img" >> $GITHUB_OUTPUT
           echo "deb_worker_tag=$deb_worker_tag" >> $GITHUB_OUTPUT
 
-  server_compatibility:
-    name: Server Compatibility (${{ needs.setup.outputs.release_tag }})
+  worker_compatibility:
+    name: Test last worker (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -143,7 +158,53 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_tag }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-server-compatibility'
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_tag }}"
+
+
+  stable_compatibility_15:
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_15 }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    with:
+      piwind_branch: 'stable/1.15.x'
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_15 }}
+      debug_mode: 1
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_15 }}"
+
+  stable_compatibility_23:
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_23 }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    with:
+      piwind_branch: 'stable/1.23.x'
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_23 }}
+      debug_mode: 1
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_23 }}"
+
+  stable_compatibility_27:
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_27 }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    with:
+      piwind_branch: 'stable/1.27.x'
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_27 }}
+      debug_mode: 1
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_27 }}"
 
   worker_debian:
     name: Worker Debian
@@ -158,10 +219,10 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_deb_worker_tag }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-worker-debian'
+      storage_suffix: '_worker-debian'
 
-  worker_compatibility:
-    name: Worker Compatibility (${{ needs.setup.outputs.release_tag }})
+  server_compatibility:
+    name: Test last Server (${{ needs.setup.outputs.release_tag }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -173,7 +234,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: '-worker-compatibility'
+      storage_suffix: "_server-${{ needs.setup.outputs.release_tag }}"
 
   storage_s3:
     name: Storage Compatibility (S3)
@@ -188,4 +249,4 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: '-s3'
+      storage_suffix: '_s3'

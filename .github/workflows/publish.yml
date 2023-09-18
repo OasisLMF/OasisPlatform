@@ -12,39 +12,32 @@ on:
         description: 'Release tag, for release: [{n}.{n}.{n}] e.g. 3.0.0,  for Pre-Release  [{n}.{n}.{n}rc{n}]'
         required: true
 
+      prev_release_tag:
+        description: '(OVERRIDE) The previous release version for changelog [semvar]'
+        required: false
+
       piwind_branch:
         description: 'Branch to build piwind from'
         default: 'main'
         required: true
 
-      prev_release_tag:
-        description: '(OVERRIDE) The previous release version for changelog [semvar]'
-        required: false
-
       oasislmf_release:
         description: '(OVERRIDE) The oasislmf version in this release [semvar]'
         required: false
 
-      oasislmf_release_prev:
-        description: '(OVERRIDE) The previous oasislmf version for changelog [semvar]'
-        required: false
-
       ods_tools_release:
         description: '(OVERRIDE) The ods-tools version in this release [semvar]'
-        required: true
-
-      ods_tools_release_prev:
-        description: '(OVERRIDE) The previous ods-tools version for changelog [semvar]'
         required: false
 
       ktools_release:
-        description: '(OVERRIDE)  The ktools version in this release [semvar] "v{n}.{n}.{n}"'
+        description: '(OVERRIDE) The ktools version in this release [semvar] "v{n}.{n}.{n}"'
         required: false
 
-      ktools_release_prev:
-        description: '(OVERRIDE)  The previous ktools version for changelog [semvar] "v{n}.{n}.{n}"'
+      cve_severity:
+        description: 'Severities of vulnerabilities to scanned for, fails build if any found'
         required: false
-
+        default: 'CRITICAL,HIGH'
+        type: string
 
 
 jobs:
@@ -69,6 +62,7 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
+      cve_severity: ${{ inputs.cve_severity }}
 
 
   build_piwind:
@@ -97,17 +91,14 @@ jobs:
     env:
       pre_release: ${{ inputs.pre_release == '' && 'false' || inputs.pre_release }}
       push_latest: ${{ inputs.push_latest == '' && 'false' || inputs.push_latest }}
+      latest_tag: '1-latest'
+
       release_tag: ${{ inputs.release_tag }}
       prev_release_tag: ${{ inputs.prev_release_tag }}
 
       oasislmf_release: ${{ inputs.oasislmf_release }}
-      oasislmf_release_prev: ${{ inputs.oasislmf_release_prev }}
-
       ods_tools_release: ${{ inputs.ods_tools_release }}
-      ods_tools_release_prev: ${{ inputs.ods_tools_release_prev }}
-
       ktools_release: ${{ inputs.ktools_release }}
-      ktools_release_prev: ${{ inputs.ktools_release_prev }}
 
       dir_platform: ${{ github.workspace }}/platform
       dir_oasislmf: ${{ github.workspace }}/oasislmf
@@ -117,7 +108,7 @@ jobs:
       branch_platform: ${{ github.ref_name }}
       branch_oasislmf: 'main'
       branch_ods_tools: 'main'
-      branch_ktools: 'main'
+      branch_ktools: 'master'
 
     steps:
      ## RELEASE CHECKS
@@ -199,6 +190,22 @@ jobs:
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "prev_release_tag=$tag" >> $GITHUB_ENV
 
+    - name: Extract prev component versions
+      continue-on-error: true
+      run: |
+        docker pull coreoasis/model_worker:${{ env.prev_release_tag }}
+        docker run --entrypoint "oasislmf" coreoasis/model_worker:${{ env.prev_release_tag }} 'version' > OASISLMF_VERSION_PREV
+        docker run --entrypoint "python3" coreoasis/model_worker:${{ env.prev_release_tag }} '-cimport ods_tools; print(ods_tools.__version__)' > ODS_VERSION_PREV
+        docker run --entrypoint "eve" coreoasis/model_worker:${{ env.prev_release_tag }} '-v' 2> KTOOLS_VERSION_PREV
+
+    - name: Set prev component versions
+      run: |
+        PREV_OASISLMF_VER=$(cat OASISLMF_VERSION_PREV)
+        PREV_ODS_VER=$(cat ODS_VERSION_PREV)
+        PREV_KTOOL_VER=$(head -1 KTOOLS_VERSION_PREV | grep -oP "(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)")
+        echo "oasislmf_release_prev=$PREV_OASISLMF_VER" >> $GITHUB_ENV
+        echo "ods_tools_release_prev=$PREV_ODS_VER" >> $GITHUB_ENV
+        echo "ktools_release_prev=v$PREV_KTOOL_VER" >> $GITHUB_ENV
 
     - name: oasislmf tag (OVERRIDE)
       working-directory: ${{ env.dir_oasislmf }}
@@ -214,14 +221,6 @@ jobs:
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "oasislmf_release=$tag" >> $GITHUB_ENV
 
-    - name: Find 'oasislmf_release_prev'
-      if: inputs.oasislmf_release_prev == ''
-      working-directory: ${{ env.dir_oasislmf }}
-      run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
-        echo "oasislmf_release_prev=$tag" >> $GITHUB_ENV
-
-
     - name: ods_tools tag (OVERRIDE)
       working-directory: ${{ env.dir_ods_tools }}
       if: env.ods_tools_release != ''
@@ -235,14 +234,6 @@ jobs:
       run: |
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "ods_tools_release=$tag" >> $GITHUB_ENV
-
-    - name: Find 'ods_tools_release_prev'
-      if: inputs.ods_tools_release_prev == ''
-      working-directory: ${{ env.dir_ods_tools }}
-      run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2)
-        echo "ods_tools_release_prev=$tag" >> $GITHUB_ENV
-
 
     - name: Ktools tag (OVERRIDE)
       working-directory: ${{ env.dir_ktools }}
@@ -259,14 +250,6 @@ jobs:
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1 -v 'v')
         echo "ktools_release=$tag" >> $GITHUB_ENV
 
-    - name: Find 'ktools_release_prev'
-      if: inputs.ktools_release_prev == ''
-      working-directory: ${{ env.dir_ktools }}
-      run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 2 -v 'v')
-        echo "ktools_release_prev=$tag" >> $GITHUB_ENV
-
-
 
     ## TAG & assests
     - name: Login to Docker Hub
@@ -281,18 +264,18 @@ jobs:
         # Server
         docker pull ${{ needs.build_images.outputs.server_image }}
         docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.release_tag }}
-        docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:latest
+        docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.latest_tag }}
         # Worker
         docker pull ${{ needs.build_images.outputs.worker_image }}
         docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.release_tag }}
-        docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:latest
+        docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.latest_tag }}
         # Worker-dev
         docker pull ${{ needs.build_images.outputs.worker_deb_image }}
         docker tag  ${{ needs.build_images.outputs.worker_deb_image }} coreoasis/model_worker:${{ env.release_tag }}-debian
         # Worker-PiWind
         docker pull ${{ needs.build_piwind.outputs.piwind_image }}
         docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.release_tag }}
-        docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:latest
+        docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.latest_tag }}
 
 
     - name: Check tag matches (Repo)
@@ -330,7 +313,7 @@ jobs:
             echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_piwind.outputs.piwind_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
         fi
 
-    - name: Get component versions
+    - name: Check new component versions
       continue-on-error: true
       run: |
         docker run --entrypoint "oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
@@ -435,7 +418,7 @@ jobs:
           --output-path ./RELEASE.md
         cat ./RELEASE.md >> $GITHUB_STEP_SUMMARY
 
-    # --- Push Images --- #
+    ## --- Push Images --- #
     - name: Push images
       run: |
         docker push coreoasis/api_server:${{ env.release_tag }}
@@ -444,11 +427,11 @@ jobs:
         docker push coreoasis/piwind_worker:${{ env.release_tag }}
 
     - name: Push images (Production)
-      if: ${{ env.push_latest == 'true' }}
+      if: ${{ env.pre_release == 'false' && env.push_latest == 'true' }}
       run: |
-        docker push coreoasis/api_server:latest
-        docker push coreoasis/model_worker:latest
-        docker push coreoasis/piwind_worker:latest
+        docker push coreoasis/api_server:${{ env.latest_tag }}
+        docker push coreoasis/model_worker:${{ env.latest_tag }}
+        docker push coreoasis/piwind_worker:${{ env.latest_tag }}
 
     # --- Create Release --- #
     - name: Push changes
@@ -496,6 +479,15 @@ jobs:
         echo "run_id=${{ github.run_id }}"  >> $GITHUB_OUTPUT
         echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
         echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
+
+  tag_piwind:
+    uses: OasisLMF/OasisPiWind/.github/workflows/tag-release.yml@main
+    secrets: inherit
+    needs: release
+    with:
+      release_tag: ${{ inputs.release_tag }}
+      piwind_branch: ${{ inputs.piwind_branch }}
+
 
   # --- Notify Slack --- #
   slack:
