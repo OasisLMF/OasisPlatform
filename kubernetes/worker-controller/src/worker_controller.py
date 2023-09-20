@@ -58,6 +58,8 @@ def parse_args():
     parser = argparse.ArgumentParser('Oasis example model worker controller')
     parser.add_argument('--api-host', help='The sever API hostname', default=getenv('OASIS_API_HOST') or 'localhost')
     parser.add_argument('--api-port', help='The server API portnumber', default=getenv('OASIS_API_PORT') or 8000)
+    parser.add_argument('--websocket-host', help='The websocket hostname', default=getenv('OASIS_WEBSOCKET_HOST') or 'localhost')
+    parser.add_argument('--websocket-port', help='The websocket portnumber', default=getenv('OASIS_WEBSOCKET_PORT') or 8001)
     parser.add_argument('--secure', help='Flag if https and wss should be used', default=bool(getenv('OASIS_API_SECURE')), action='store_true')
     parser.add_argument('--username', help='The username of the worker controller user', default=getenv('OASIS_USERNAME') or 'admin')
     parser.add_argument('--password', help='The password of the worker controller user', default=getenv('OASIS_PASSWORD') or 'password')
@@ -92,7 +94,6 @@ def main():
     args = parse_args()
 
     # Create an oasis client
-    oasis_client = OasisClient(args.api_host, args.api_port, args.secure, args.username, args.password)
 
     # Cache to keep track of all deployments in the cluster
     deployments: worker_deployments.WorkerDeployments = worker_deployments.WorkerDeployments(args)
@@ -104,7 +105,8 @@ def main():
     event_loop.run_until_complete(cluster_client.load_config(args.cluster))
 
     # Create the autoscaler to bind everything together
-    autoscaler = AutoScaler(deployments, cluster_client, oasis_client, args.prioritized_models_limit, args.limit,
+    oasis_server_client = OasisClient(args.api_host, args.api_port, args.secure, args.username, args.password)
+    autoscaler = AutoScaler(deployments, cluster_client, oasis_server_client, args.prioritized_models_limit, args.limit,
                             args.continue_update_scaling, args.never_shutdown_fixed_workers)
 
     # Create the deployment watcher and load all available deployments
@@ -113,7 +115,9 @@ def main():
     deployments.print_list()
 
     # Connect to the oasis api websocket
-    oasis_web_socket = OasisWebSocket(oasis_client, autoscaler)
+
+    oasis_websock_client = OasisClient(args.websocket_host, args.websocket_port, args.secure, args.username, args.password)
+    oasis_web_socket = OasisWebSocket(oasis_websock_client, autoscaler)
 
     # Watch changes in the clutser and oasis
     event_loop.create_task(deployments_watcher.watch())
