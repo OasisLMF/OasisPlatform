@@ -22,16 +22,12 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState)
     if strategy:
 
         if strategy == 'FIXED_WORKERS':
-
             count = get_req_setting(autoscaling_setting, 'worker_count_fixed')
-
             return int(count)
 
         elif strategy == 'QUEUE_LOAD':
-
             worker_count_max = get_req_setting(autoscaling_setting, 'worker_count_max')
             analyses = model_state['analyses']
-
             return min(analyses, worker_count_max)
 
         elif strategy == 'DYNAMIC_TASKS':

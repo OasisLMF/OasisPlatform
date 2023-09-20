@@ -34,7 +34,6 @@ class WebSocketConnection:
             urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', '/ws/v1/queue-status/'),
             extra_headers={'AUTHORIZATION': f'Bearer {access_token}'},
             ping_interval=None,
-            ping_timeout=None,
         )
         return await self.connection.__aenter__()
 
@@ -93,7 +92,8 @@ class OasisWebSocket:
                         await self.autoscaler.process_queue_status_message(msg)
             except ConnectionClosedError as e:
                 logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} was closed')
-                running = False
+                logging.info('Reconnecting...')
+
             except (WebSocketException, ClientError) as e:
                 logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} failed', e)
                 running = False
