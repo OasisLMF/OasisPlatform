@@ -30,7 +30,7 @@ import worker_deployments
 from oasis_websocket import OasisWebSocket
 from autoscaler import AutoScaler
 
-LOGLEVEL = os.environ.get('OASIS_LOGLEVEL', 'INFO').upper()
+LOGLEVEL = getenv('OASIS_LOGLEVEL') or 'INFO'
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=LOGLEVEL)
 
 # Websocket debug
