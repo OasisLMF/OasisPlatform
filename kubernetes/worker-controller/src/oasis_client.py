@@ -28,7 +28,7 @@ class OasisClient:
         self.ws_port = ws_port
 
         self.secure = secure
-        self.http_host = ('https://' if secure else 'http://') + f'{host}:{port}'
+        self.http_host = ('https://' if secure else 'http://') + f'{http_host}:{http_port}'
         self.username = username
         self.password = password
         self.access_token = None
