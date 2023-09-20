@@ -84,6 +84,11 @@ spec:
               value: {{ .Values.oasisWebsocket.port | quote }}
             - name: OASIS_CLUSTER_NAMESPACE
               value: {{ .Release.Namespace | quote }}
+
+            - name: OASIS_LOGLEVEL
+              value: "{{ .Values.workerController.LogLevel }}"
+
+
             {{- with .Values.workerController.totalWorkerLimit }}
             - name: OASIS_TOTAL_WORKER_LIMIT
               value: {{ . | quote }}

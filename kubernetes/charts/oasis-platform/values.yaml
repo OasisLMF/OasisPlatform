@@ -211,6 +211,9 @@ workerController:
   # Debug option - This prevents workers for a model set to FIXED_WORKERS to be scaled to 0. They will always be started.
   neverShutdownFixedWorkers: false
 
+  # Set Log level, Warning - setting 'DEBUG' will cause instability under high load do not set this in production
+  logLevel: 'INFO'
+
   # Settings related to prioritized runs
   priority:
 

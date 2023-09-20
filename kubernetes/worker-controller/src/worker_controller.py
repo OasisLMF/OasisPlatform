@@ -30,14 +30,14 @@ import worker_deployments
 from oasis_websocket import OasisWebSocket
 from autoscaler import AutoScaler
 
+# Set worker-controller logger 
 LOGLEVEL = getenv('OASIS_LOGLEVEL') or 'INFO'
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=LOGLEVEL)
 
-# Websocket debug
+# Set Websocket logger  
 logger = logging.getLogger('websockets')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(LOGLEVEL)
 logger.addHandler(logging.StreamHandler())
-
 
 
 def str2bool(v):

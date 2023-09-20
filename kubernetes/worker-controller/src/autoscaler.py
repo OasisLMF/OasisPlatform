@@ -132,6 +132,7 @@ class AutoScaler:
         if wd.replicas != desired_replicas:
 
             if desired_replicas > 0:
+                logging.info(f'Scaling "{wd.name}", to "{desired_replicas}" replicas from "{wd.replicas}"')
                 await self.cluster.set_replicas(wd.name, desired_replicas)
             else:
                 if self.cleanup_timer:
@@ -255,7 +256,7 @@ class AutoScaler:
             else:
                 logging.warning('No auto scaling setting found for model %s', wd.id_string())
 
-        logging.info('Total desired number of workers: ' + str(workers_total))
+        logging.debug('Total desired number of workers: ' + str(workers_total))
 
     def _get_highest_model_priorities(self, model_states_with_wd):
         """
