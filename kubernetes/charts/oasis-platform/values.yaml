@@ -181,7 +181,7 @@ oasisServer:
     - name: OASIS_DEBUG
       value: "1"
     - name: OASIS_PORTFOLIO_UPLOAD_VALIDATION
-      value: "1"
+      value: "0"
 
 # Oasis API host, port and credentials (for Websocket connections)
 oasisWebsocket:
