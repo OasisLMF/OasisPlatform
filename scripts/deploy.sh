@@ -1,33 +1,38 @@
 #!/bin/bash
 
+PIWIND_PATH_FILE=/tmp/piwind-path-cfg
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $SCRIPT_DIR; cd ..
 pwd
 
+# Store PiWind Path
+if ! [ -f $PIWIND_PATH_FILE ]; then
+    touch $PIWIND_PATH_FILE
+else
+    source $PIWIND_PATH_FILE
+fi
 
-if [[ -z $OASIS_MODEL_DATA_DIR ]]; then 
-   echo '"OASIS_MODEL_DATA_DIR" not set, searching for PiWind in home dir:'
-   mapfile -d $'\0' options < <(find ~/ -type d -path "*/model_data/PiWind" -print0 2> /dev/null)
+if [[ -z $OASIS_MODEL_DATA_DIR ]]; then
+    echo -n "OasisPiwind Repo Path: "
+    read filepath
+        if [ ! -d $filepath ]; then
+            echo "Please insert a correct path"
+            sleep 1
+            $SCRIPT_DIR/deploy.sh
+        fi
+    export OASIS_MODEL_DATA_DIR=$filepath
+    echo "export OASIS_MODEL_DATA_DIR=$filepath" > $PIWIND_PATH_FILE
+fi
 
+#docker rmi coreoasis/api_server:dev
+#docker rmi coreoasis/model_worker:dev
 
-   PS3="$prompt "
-   select opt in "${options[@]}" "Quit" ; do 
-     if (( REPLY == 1 + "${#options[@]}" )) ; then
-       exit
-     elif (( REPLY > 0 && REPLY <= "${#options[@]}" )) ; then
-       echo  "You picked $opt which is file $REPLY"
-       export OASIS_MODEL_DATA_DIR=$opt
-       break
-     else
-       echo "Invalid option. Try another one."
-     fi
-   done
+# Check for prev install and offer to clean wipe
+if [[ $(docker volume ls | grep OasisData -c) -gt 1 ]]; then
+    printf "Deleting docker data: \n"
+    docker volume ls | grep OasisData | awk 'BEGIN { FS = "[ \t\n]+" }{ print $2 }' | xargs -r docker volume rm
+fi
 
-fi     
-
-docker rmi coreoasis/api_server:latest
-docker rmi coreoasis/model_worker:latest
-
-docker build -f Dockerfile.api_server -t coreoasis/api_server .
-docker build -f Dockerfile.model_worker -t coreoasis/model_worker .
+docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
+docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
 docker-compose up -d

@@ -45,10 +45,11 @@ class AutoScaler:
 
         :param msg: The message content
         """
+        pending_analyses: [RunningAnalysis] = await self.pasre_queued_pending(msg)
+        logging.debug('Analyses pending: %s', pending_analyses)
 
         running_analyses: [RunningAnalysis] = await self.parse_running_analyses(msg)
-
-        logging.info('Analyses running: %s', running_analyses)
+        logging.debug('Analyses running: %s', running_analyses)
 
         model_states = self._aggregate_model_states(running_analyses)
 
@@ -87,7 +88,6 @@ class AutoScaler:
         for wd in self.deployments.worker_deployments:
 
             id = wd.id_string()
-
             if id not in model_states:
                 model_state = ModelState(tasks=0, analyses=0, priority=1)
                 model_states[id] = model_state
@@ -106,15 +106,15 @@ class AutoScaler:
         :return: Number of replicas set on deployment
         """
 
-        desired_replicas = 0
+        desired_replicas = wd.auto_scaling.get('worker_count_min', 0)  # Set to min value of workers (always running)
         is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS' and self.never_shutdown_fixed_workers
 
         if analysis_in_progress or is_fixed_strategy:
 
             if analysis_in_progress:
-                logging.info('Analysis for model %s is running', wd.name)
+                logging.debug('Analysis for model %s is running', wd.name)
             if is_fixed_strategy:
-                logging.info('Model %s is set to "FIXED_WORKERS"', wd.name)
+                logging.debug('Model %s is set to "FIXED_WORKERS"', wd.name)
 
             try:
                 desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state)
@@ -216,9 +216,10 @@ class AutoScaler:
         workers_total = 0
 
         for model, state, wd in prioritized_models:
+            workers_min = wd.auto_scaling.get('worker_count_min', 0) if wd.auto_scaling else 0
 
-            # Load auto scaling settings everytime we scale up workers from 0
-            if not wd.auto_scaling or wd.replicas == 0 or self.continue_update_scaling:
+            # Load auto scaling settings everytime we scale up workers from 0 or if 'worker_count_min' is set
+            if not wd.auto_scaling or wd.replicas == 0 or self.continue_update_scaling or workers_min > 0:
                 if not wd.oasis_model_id:
 
                     logging.info('Get oasis model id from API for model %s', wd.id_string())
@@ -228,7 +229,6 @@ class AutoScaler:
                         logging.error('No model id found for model %s', wd.id_string())
 
                 if wd.oasis_model_id:
-
                     wd.auto_scaling = await self.oasis_client.get_auto_scaling(wd.oasis_model_id)
 
             if wd.auto_scaling:
@@ -240,7 +240,7 @@ class AutoScaler:
             else:
                 logging.warning('No auto scaling setting found for model %s', wd.id_string())
 
-        logging.info('Total desired number of workers: ' + str(workers_total))
+        logging.debug('Total desired number of workers: ' + str(workers_total))
 
     def _get_highest_model_priorities(self, model_states_with_wd):
         """

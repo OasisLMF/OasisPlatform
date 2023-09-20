@@ -204,6 +204,7 @@ class ModelScalingConfigSerializer(serializers.ModelSerializer):
             'scaling_strategy',
             'worker_count_fixed',
             'worker_count_max',
+            'worker_count_min',
             'chunks_per_worker'
         )
 
@@ -211,6 +212,7 @@ class ModelScalingConfigSerializer(serializers.ModelSerializer):
         non_neg_fields = [
             'worker_count_fixed',
             'worker_count_max',
+            'worker_count_min',
             'chunks_per_worker'
         ]
         errors = dict()

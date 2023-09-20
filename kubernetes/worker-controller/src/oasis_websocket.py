@@ -29,9 +29,11 @@ class WebSocketConnection:
 
         access_token = await self.oasis_client.get_access_token()
 
+        # https://websockets.readthedocs.io/en/stable/reference/asyncio/client.html#websockets.client.connect
         self.connection = websockets.connect(
-            urljoin(f'{self.ws_scheme}{self.oasis_client.host}:{self.oasis_client.port}', '/ws/v1/queue-status/'),
-            extra_headers={'AUTHORIZATION': f'Bearer {access_token}'}
+            urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', '/ws/v1/queue-status/'),
+            extra_headers={'AUTHORIZATION': f'Bearer {access_token}'},
+            ping_interval=None,
         )
         return await self.connection.__aenter__()
 
@@ -84,15 +86,23 @@ class OasisWebSocket:
         while running:
             try:
                 async with WebSocketConnection(self.oasis_client) as socket:
-
+                    logging.info(f'Connected to ws: {self.oasis_client.ws_host}:{self.oasis_client.ws_port}')
                     async for msg in next_msg(socket):
-                        logging.info('Socket message: %s', msg)
+                        logging.debug('Socket message: %s', msg)
                         await self.autoscaler.process_queue_status_message(msg)
+
             except ConnectionClosedError as e:
-                logging.exception(f'Connection to {self.oasis_client.host}:{self.oasis_client.port} was closed')
-                running = False
+                """
+                Websockets has an auto-reconnect with exponential back-off built in
+                See:
+                  https://websockets.readthedocs.io/en/stable/reference/asyncio/client.html#opening-a-connection
+                  https://github.com/python-websockets/websockets/issues/414
+                """
+                logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} was closed', e)
+                continue
+
             except (WebSocketException, ClientError) as e:
-                logging.exception(f'Connection to {self.oasis_client.host}:{self.oasis_client.port} failed', e)
+                logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} failed', e)
                 running = False
             except Exception as e:
                 logging.exception(f'Unexpected web socket exception thrown', e)

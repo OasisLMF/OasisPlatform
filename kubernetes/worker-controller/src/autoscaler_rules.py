@@ -18,29 +18,26 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState)
     """
 
     strategy = autoscaling_setting.get('scaling_strategy')
+    worker_count_min = int(autoscaling_setting.get('worker_count_min'))
 
     if strategy:
 
         if strategy == 'FIXED_WORKERS':
-
-            count = get_req_setting(autoscaling_setting, 'worker_count_fixed')
-
-            return int(count)
+            count = int(get_req_setting(autoscaling_setting, 'worker_count_fixed'))
+            return min(worker_count_min, count)
 
         elif strategy == 'QUEUE_LOAD':
-
             worker_count_max = get_req_setting(autoscaling_setting, 'worker_count_max')
             analyses = model_state['analyses']
-
-            return min(analyses, worker_count_max)
+            return min(worker_count_min, analyses, worker_count_max)
 
         elif strategy == 'DYNAMIC_TASKS':
 
             chunks_per_worker = autoscaling_setting.get('chunks_per_worker')
-            worker_count_max = get_req_setting(autoscaling_setting, 'worker_count_max')
+            worker_count_max = int(get_req_setting(autoscaling_setting, 'worker_count_max'))
 
             workers = math.ceil(int(model_state.get('tasks', 0)) / int(chunks_per_worker))
-            return min(workers, int(worker_count_max))
+            return min(worker_count_min, workers, worker_count_max)
 
         else:
             raise ValueError(f'Unsupported scaling strategy: {strategy}')
