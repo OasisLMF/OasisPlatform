@@ -33,8 +33,8 @@ class WebSocketConnection:
         self.connection = websockets.connect(
             urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', '/ws/v1/queue-status/'),
             extra_headers={'AUTHORIZATION': f'Bearer {access_token}'},
-            ping_interval=60,
-            ping_timeout=60,
+            ping_interval=None,
+            ping_timeout=None,
         )
         return await self.connection.__aenter__()
 

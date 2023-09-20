@@ -132,7 +132,6 @@ class AutoScaler:
         if wd.replicas != desired_replicas:
 
             if desired_replicas > 0:
-                logging.info(f'Scaling "{wd.name}", to "{desired_replicas}" replicas from "{wd.replicas}"')
                 await self.cluster.set_replicas(wd.name, desired_replicas)
             else:
                 if self.cleanup_timer:
