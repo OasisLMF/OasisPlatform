@@ -30,7 +30,7 @@ class WebSocketConnection:
         access_token = await self.oasis_client.get_access_token()
 
         self.connection = websockets.connect(
-            urljoin(f'{self.ws_scheme}{self.oasis_client.host}:{self.oasis_client.port}', '/ws/v1/queue-status/'),
+            urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', '/ws/v1/queue-status/'),
             extra_headers={'AUTHORIZATION': f'Bearer {access_token}'}
         )
         return await self.connection.__aenter__()

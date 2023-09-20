@@ -91,9 +91,17 @@ def main():
     Entrypoint. Parse arguments, creates client for oasis and kubernetes cluster and starts tasks to monitor changes.
     """
 
-    args = parse_args()
-
     # Create an oasis client
+    args = parse_args()
+    oasis_client = OasisClient(
+        args.api_host,
+        args.api_port,
+        args.websocket_host,
+        args.websocket_port,
+        args.secure,
+        args.username,
+        args.password
+    )
 
     # Cache to keep track of all deployments in the cluster
     deployments: worker_deployments.WorkerDeployments = worker_deployments.WorkerDeployments(args)
@@ -105,8 +113,7 @@ def main():
     event_loop.run_until_complete(cluster_client.load_config(args.cluster))
 
     # Create the autoscaler to bind everything together
-    oasis_server_client = OasisClient(args.api_host, args.api_port, args.secure, args.username, args.password)
-    autoscaler = AutoScaler(deployments, cluster_client, oasis_server_client, args.prioritized_models_limit, args.limit,
+    autoscaler = AutoScaler(deployments, cluster_client, oasis_client, args.prioritized_models_limit, args.limit,
                             args.continue_update_scaling, args.never_shutdown_fixed_workers)
 
     # Create the deployment watcher and load all available deployments
@@ -115,9 +122,7 @@ def main():
     deployments.print_list()
 
     # Connect to the oasis api websocket
-
-    oasis_websock_client = OasisClient(args.websocket_host, args.websocket_port, args.secure, args.username, args.password)
-    oasis_web_socket = OasisWebSocket(oasis_websock_client, autoscaler)
+    oasis_web_socket = OasisWebSocket(oasis_client, autoscaler)
 
     # Watch changes in the clutser and oasis
     event_loop.create_task(deployments_watcher.watch())
