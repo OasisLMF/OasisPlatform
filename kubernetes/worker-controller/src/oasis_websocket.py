@@ -82,17 +82,25 @@ class OasisWebSocket:
         let kubernetes restart the pod.
         """
         running = True
+        retry = 0
 
         while running:
             try:
                 async with WebSocketConnection(self.oasis_client) as socket:
-
+                    retry = 0
+                    logging.info(f'Connected to {self.oasis_client.ws_host}:{self.oasis_client.ws_port}')
                     async for msg in next_msg(socket):
                         logging.debug('Socket message: %s', msg)
                         await self.autoscaler.process_queue_status_message(msg)
             except ConnectionClosedError as e:
                 logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} was closed')
-                logging.info('Reconnecting...')
+
+                if retry < 5:
+                    logging.info(f'Reconnecting...  attempt {retry}')
+                    retry += 1
+                else:
+                    running = False
+
 
             except (WebSocketException, ClientError) as e:
                 logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} failed', e)
