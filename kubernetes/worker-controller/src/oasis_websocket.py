@@ -95,7 +95,7 @@ class OasisWebSocket:
                 async with WebSocketConnection(self.oasis_client) as socket:
 
                     async for msg in next_msg(socket):
-                        logging.info('Socket message: %s', msg)
+                        logging.debug('Socket message: %s', msg)
                         await self.autoscaler.process_queue_status_message(msg)
             except ConnectionClosedError as e:
                 logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} was closed')

@@ -46,10 +46,10 @@ class AutoScaler:
         :param msg: The message content
         """
         pending_analyses: [RunningAnalysis] = await self.pasre_queued_pending(msg)
-        logging.info('Analyses pending: %s', pending_analyses)
+        logging.debug('Analyses pending: %s', pending_analyses)
 
         running_analyses: [RunningAnalysis] = await self.parse_running_analyses(msg)
-        logging.info('Analyses running: %s', running_analyses)
+        logging.debug('Analyses running: %s', running_analyses)
 
         model_states = self._aggregate_model_states({**pending_analyses, **running_analyses})
         logging.debug('Model statuses: %s', model_states)
@@ -112,9 +112,9 @@ class AutoScaler:
         if analysis_in_progress or is_fixed_strategy:
 
             if analysis_in_progress:
-                logging.info('Analysis for model %s is running', wd.name)
+                logging.debug('Analysis for model %s is running', wd.name)
             if is_fixed_strategy:
-                logging.info('Model %s is set to "FIXED_WORKERS"', wd.name)
+                logging.debug('Model %s is set to "FIXED_WORKERS"', wd.name)
 
             try:
                 desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state)
