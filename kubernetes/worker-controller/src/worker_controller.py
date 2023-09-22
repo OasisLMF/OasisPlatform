@@ -53,24 +53,24 @@ def parse_args():
     :return:
     """
     parser = argparse.ArgumentParser('Oasis example model worker controller')
-    parser.add_argument('--api-host', help='The sever API hostname', default=getenv('OASIS_API_HOST') or 'localhost')
-    parser.add_argument('--api-port', help='The server API portnumber', default=getenv('OASIS_API_PORT') or 8000)
-    parser.add_argument('--websocket-host', help='The websocket hostname', default=getenv('OASIS_WEBSOCKET_HOST') or 'localhost')
-    parser.add_argument('--websocket-port', help='The websocket portnumber', default=getenv('OASIS_WEBSOCKET_PORT') or 8001)
+    parser.add_argument('--api-host', help='The sever API hostname', default=getenv('OASIS_API_HOST', default='localhost'))
+    parser.add_argument('--api-port', help='The server API portnumber', default=getenv('OASIS_API_PORT', default=8000))
+    parser.add_argument('--websocket-host', help='The websocket hostname', default=getenv('OASIS_WEBSOCKET_HOST', default='localhost'))
+    parser.add_argument('--websocket-port', help='The websocket portnumber', default=getenv('OASIS_WEBSOCKET_PORT', default=8001))
     parser.add_argument('--secure', help='Flag if https and wss should be used', default=bool(getenv('OASIS_API_SECURE')), action='store_true')
-    parser.add_argument('--username', help='The username of the worker controller user', default=getenv('OASIS_USERNAME') or 'admin')
-    parser.add_argument('--password', help='The password of the worker controller user', default=getenv('OASIS_PASSWORD') or 'password')
-    parser.add_argument('--namespace', help='Namespace of cluster where oasis is deployed to', default=getenv('OASIS_CLUSTER_NAMESPACE') or 'default')
+    parser.add_argument('--username', help='The username of the worker controller user', default=getenv('OASIS_USERNAME', default='admin'))
+    parser.add_argument('--password', help='The password of the worker controller user', default=getenv('OASIS_PASSWORD', default='password'))
+    parser.add_argument('--namespace', help='Namespace of cluster where oasis is deployed to', default=getenv('OASIS_CLUSTER_NAMESPACE', default='default'))
     parser.add_argument('--limit', help='Hard limit for the total number of workers created', default=getenv('OASIS_TOTAL_WORKER_LIMIT'))
     parser.add_argument('--prioritized-models-limit', help='When prioritized runs are used - create workers for the models with the highest priority',
                         default=getenv('OASIS_PRIORITIZED_MODELS_LIMIT'))
     parser.add_argument(
-        '--cluster', help='Type of kubernetes cluster to connect to, either "local" (~/.kube/config) or "in" to connect to the cluster the pod exists in', default=getenv('CLUSTER') or 'in')
+        '--cluster', help='Type of kubernetes cluster to connect to, either "local" (~/.kube/config) or "in" to connect to the cluster the pod exists in', default=getenv('CLUSTER', default='in'))
     parser.add_argument('--continue-update-scaling', help='Auto scaling - read the scaling settings from the API for a model on every update. (for testing)',
-                        type=str2bool, default=getenv('OASIS_CONTINUE_UPDATE_SCALING') or False)
+                        type=str2bool, default=getenv('OASIS_CONTINUE_UPDATE_SCALING', default=False))
     parser.add_argument('--never-shutdown-fixed-workers', help='Auto scaling - never scale to 0 for strategy FIXED_WORKERS.',
-                        type=str2bool, default=getenv('OASIS_NEVER_SHUTDOWN_FIXED_WORKERS') or False)
-    parser.add_argument('--log-level', help='The logging level', default=getenv('OASIS_LOGLEVEL') or 'INFO')
+                        type=str2bool, default=getenv('OASIS_NEVER_SHUTDOWN_FIXED_WORKERS', default=False))
+    parser.add_argument('--log-level', help='The logging level', default=getenv('OASIS_LOGLEVEL', default='INFO'))
 
     args = parser.parse_args()
 
@@ -101,10 +101,10 @@ def main():
         args.password
     )
 
-    # Set worker-controller logger 
+    # Set worker-controller logger
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=args.log_level)
 
-    # Set Websocket logger  
+    # Set Websocket logger
     logger = logging.getLogger('websockets')
     logger.setLevel(args.log_level)
     logger.addHandler(logging.StreamHandler())
