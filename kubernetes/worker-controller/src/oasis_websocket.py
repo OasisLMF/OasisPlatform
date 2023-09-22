@@ -28,7 +28,7 @@ class WebSocketConnection:
     async def __aenter__(self):
 
         access_token = await self.oasis_client.get_access_token()
-        
+
         # https://websockets.readthedocs.io/en/stable/reference/asyncio/client.html#websockets.client.connect
         self.connection = websockets.connect(
             urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', '/ws/v1/queue-status/'),
@@ -82,25 +82,24 @@ class OasisWebSocket:
         let kubernetes restart the pod.
         """
         running = True
-        retry = 0
 
         while running:
             try:
                 async with WebSocketConnection(self.oasis_client) as socket:
-                    retry = 0
-                    logging.info(f'Connected to {self.oasis_client.ws_host}:{self.oasis_client.ws_port}')
+                    logging.info(f'Connected to ws: {self.oasis_client.ws_host}:{self.oasis_client.ws_port}')
                     async for msg in next_msg(socket):
                         logging.debug('Socket message: %s', msg)
                         await self.autoscaler.process_queue_status_message(msg)
+
             except ConnectionClosedError as e:
+                """
+                Websockets has an auto-reconnect with exponential back-off built in
+                See:
+                  https://websockets.readthedocs.io/en/stable/reference/asyncio/client.html#opening-a-connection
+                  https://github.com/python-websockets/websockets/issues/414
+                """
                 logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} was closed')
-
-                if retry < 5:
-                    logging.info(f'Reconnecting...  attempt {retry}')
-                    retry += 1
-                else:
-                    running = False
-
+                continue
 
             except (WebSocketException, ClientError) as e:
                 logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} failed', e)
