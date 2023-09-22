@@ -98,7 +98,7 @@ class OasisWebSocket:
                   https://websockets.readthedocs.io/en/stable/reference/asyncio/client.html#opening-a-connection
                   https://github.com/python-websockets/websockets/issues/414
                 """
-                logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} was closed')
+                logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} was closed', e)
                 continue
 
             except (WebSocketException, ClientError) as e:

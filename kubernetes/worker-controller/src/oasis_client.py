@@ -1,10 +1,13 @@
 import asyncio
 import json
-from urllib.parse import urljoin
 
 import aiohttp
 import time
 from aiohttp import ClientResponse
+
+
+def urljoin(*args):
+    return '/'.join(s.strip('/') for s in args) + '/'
 
 
 class OasisClient:
@@ -52,9 +55,7 @@ class OasisClient:
             params = {'username': self.username, 'password': self.password}
 
             async with session.post(urljoin(self.http_host, '/access_token/'), data=params) as response:
-
                 data = await self.parse_answer(response)
-
                 self.access_token = data['access_token']
                 self.token_expire_time = time.time() + round(data['expires_in'] / 2)
 
