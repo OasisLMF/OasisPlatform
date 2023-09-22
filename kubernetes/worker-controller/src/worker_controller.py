@@ -30,16 +30,6 @@ import worker_deployments
 from oasis_websocket import OasisWebSocket
 from autoscaler import AutoScaler
 
-# Set worker-controller logger 
-LOGLEVEL = getenv('OASIS_LOGLEVEL') or 'INFO'
-logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=LOGLEVEL)
-
-# Set Websocket logger  
-logger = logging.getLogger('websockets')
-logger.setLevel(LOGLEVEL)
-logger.addHandler(logging.StreamHandler())
-
-
 def str2bool(v):
     """ Func type for loading strings to boolean values using argparse
         https://stackoverflow.com/a/43357954
@@ -80,6 +70,7 @@ def parse_args():
                         type=str2bool, default=getenv('OASIS_CONTINUE_UPDATE_SCALING') or False)
     parser.add_argument('--never-shutdown-fixed-workers', help='Auto scaling - never scale to 0 for strategy FIXED_WORKERS.',
                         type=str2bool, default=getenv('OASIS_NEVER_SHUTDOWN_FIXED_WORKERS') or False)
+    parser.add_argument('--log-level', help='The logging level', default=getenv('OASIS_LOGLEVEL') or 'INFO')
 
     args = parser.parse_args()
 
@@ -110,9 +101,16 @@ def main():
         args.password
     )
 
+    # Set worker-controller logger 
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=args.log_level)
+
+    # Set Websocket logger  
+    logger = logging.getLogger('websockets')
+    logger.setLevel(args.log_level)
+    logger.addHandler(logging.StreamHandler())
+
     # Cache to keep track of all deployments in the cluster
     deployments: worker_deployments.WorkerDeployments = worker_deployments.WorkerDeployments(args)
-
     event_loop = asyncio.get_event_loop()
 
     # Create cluster client and load configuration
