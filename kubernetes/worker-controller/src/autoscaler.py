@@ -87,7 +87,6 @@ class AutoScaler:
         for wd in self.deployments.worker_deployments:
 
             id = wd.id_string()
-
             if id not in model_states:
                 model_state = ModelState(tasks=0, analyses=0, priority=1)
                 model_states[id] = model_state
@@ -106,7 +105,7 @@ class AutoScaler:
         :return: Number of replicas set on deployment
         """
 
-        desired_replicas = 0
+        desired_replicas = wd.auto_scaling.get('worker_count_min', 0) # Set to min value of workers (always running)
         is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS' and self.never_shutdown_fixed_workers
 
         if analysis_in_progress or is_fixed_strategy:
@@ -230,10 +229,12 @@ class AutoScaler:
         :param prioritized_models: A dict of model names and their states.
         """
         workers_total = 0
-        for model, state, wd in prioritized_models:
 
-            # Load auto scaling settings everytime we scale up workers from 0
-            if not wd.auto_scaling or wd.replicas == 0 or self.continue_update_scaling:
+        for model, state, wd in prioritized_models:
+            workers_min = wd.auto_scaling.get('worker_count_min', 0) if wd.auto_scaling else 0
+
+            # Load auto scaling settings everytime we scale up workers from 0 or if 'worker_count_min' is set
+            if not wd.auto_scaling or wd.replicas == 0 or self.continue_update_scaling or workers_min > 0:
                 if not wd.oasis_model_id:
 
                     logging.info('Get oasis model id from API for model %s', wd.id_string())
@@ -243,7 +244,6 @@ class AutoScaler:
                         logging.error('No model id found for model %s', wd.id_string())
 
                 if wd.oasis_model_id:
-
                     wd.auto_scaling = await self.oasis_client.get_auto_scaling(wd.oasis_model_id)
 
             if wd.auto_scaling:
