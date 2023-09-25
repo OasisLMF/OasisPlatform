@@ -45,7 +45,7 @@ class AutoScaler:
 
         :param msg: The message content
         """
-        pending_analyses: [RunningAnalysis] = await self.pasre_queued_pending(msg)
+        pending_analyses: [RunningAnalysis] = await self.parse_queued_pending(msg)
         logging.debug('Analyses pending: %s', pending_analyses)
 
         running_analyses: [RunningAnalysis] = await self.parse_running_analyses(msg)
@@ -163,7 +163,7 @@ class AutoScaler:
 
             self.cleanup_deployments.clear()
 
-    async def pasre_queued_pending(self, msg) -> [RunningAnalysis]:
+    async def parse_queued_pending(self, msg) -> [RunningAnalysis]:
         """
         Parse the web socket message and return a list of models with pending analyses
 
