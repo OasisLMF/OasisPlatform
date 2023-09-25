@@ -3,12 +3,12 @@ name: Platform Vulnerability Scanning
 on:
   push:
     branches:
-      - platform-2.0
-      - platform-2.0-develop
+      - main
+      - stable**
   pull_request:
     branches:
-      - platform-2.0
-      - platform-2.0-develop
+      - main
+      - stable**
   schedule:
     - cron:  '0 */6 * * *' # Run scan every 6 hours
 

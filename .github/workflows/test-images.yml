@@ -3,14 +3,12 @@ name: Platform Image Tests
 on:
   push:
     branches:
-      - platform-2.0
-      - platform-2.0-develop
-
+      - main
+      - stable**
   pull_request:
     branches:
-      - platform-2.0
-      - platform-2.0-develop
-
+      - main
+      - stable**
   workflow_dispatch:
     inputs:
       last_release:
@@ -19,7 +17,7 @@ on:
       piwind_branch:
         description: "Check Results from Piwind branch [git ref]"
         required: true
-        default: 'develop'
+        default: 'main'
       pytest_options:
         description: "Pytest optional args [-k <test_name>]"
         required: false
@@ -36,7 +34,7 @@ on:
 env:
   pre_release: 'true'  # look for pre-release when testing last released platform version
   semver_major: '2'    # Search for published images but limited to {semvar_major}.x.x
-  #semver_minor: '27'   # Search for published images but limited to x.{semvar_minor}.x
+  semver_minor: '1'   # Search for published images but limited to x.{semvar_minor}.x
 
 jobs:
   build_images:
@@ -45,9 +43,10 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
-      cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
-      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.oasislmf_branch }}
-      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' || inputs.ods_branch }}
+      #cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
+      cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'SKIP' ||  inputs.cve_severity }}
+      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
 
   setup:
     runs-on: ubuntu-latest
@@ -89,23 +88,19 @@ jobs:
       - name: Select PiWind branch
         id: piwind
         run: |
+          # Select matching base branch on piwind
           if [[ "${{ github.event_name }}" = "pull_request" ]]; then
-            #BRANCH=${{ github.base_ref }}
-            if [[ "${{ github.base_ref }}" = 'platform-2.0' ]]; then
-              BRANCH=master
-            else
-              BRANCH=develop
-            fi
+            BRANCH=${{ github.base_ref }}
           elif [[ "${{ github.event_name }}" = "push" ]]; then
-            #BRANCH=${{ github.ref_name }}
-            if [[ "${{ github.base_ref }}" = 'platform-2.0' ]]; then
-              BRANCH=master
-            else
-              BRANCH=develop
-            fi
+            BRANCH=${{ github.ref_name }}
           else
             BRANCH=${{ inputs.piwind_branch }}
-          fi
+          fi  
+
+          #override 'main-platform1' -> 'main'
+          if [[ "$BRANCH" = 'main-platform1' ]]; then
+             BRANCH=main
+          fi  
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
 
@@ -141,7 +136,7 @@ jobs:
     name: PiWind all checks 
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -156,7 +151,7 @@ jobs:
     name: Worker Debian
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -171,7 +166,7 @@ jobs:
 #    name: Server Compatibility (${{ needs.setup.outputs.release_tag }})
 #    secrets: inherit
 #    needs: [setup]
-#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
+#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
 #    with:
 #      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
 #      server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -186,7 +181,7 @@ jobs:
 #    name: Worker Compatibility (${{ needs.setup.outputs.release_tag }})
 #    secrets: inherit
 #    needs: [setup]
-#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
+#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
 #    with:
 #      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
 #      server_image: 'coreoasis/api_server'
@@ -201,7 +196,7 @@ jobs:
 #    name: Storage Compatibility (S3)
 #    secrets: inherit
 #    needs: [setup]
-#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@develop
+#    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
 #    with:
 #      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
 #      server_image: ${{ needs.setup.outputs.build_server_img }}
