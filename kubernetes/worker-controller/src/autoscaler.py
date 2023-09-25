@@ -105,7 +105,7 @@ class AutoScaler:
         :return: Number of replicas set on deployment
         """
 
-        desired_replicas = wd.auto_scaling.get('worker_count_min', 0) # Set to min value of workers (always running)
+        desired_replicas = wd.auto_scaling.get('worker_count_min', 0)  # Set to min value of workers (always running)
         is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS' and self.never_shutdown_fixed_workers
 
         if analysis_in_progress or is_fixed_strategy:
