@@ -92,39 +92,39 @@ def main():
     """
 
     # Create an oasis client
-    args = parse_args()
+    cli_args = parse_args()
     oasis_client = OasisClient(
-        args.api_host,
-        args.api_port,
-        args.websocket_host,
-        args.websocket_port,
-        args.secure,
-        args.username,
-        args.password
+        cli_args.api_host,
+        cli_args.api_port,
+        cli_args.websocket_host,
+        cli_args.websocket_port,
+        cli_args.secure,
+        cli_args.username,
+        cli_args.password
     )
 
     # Set worker-controller logger
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=args.log_level)
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=cli_args.log_level)
 
     # Set Websocket logger
     logger = logging.getLogger('websockets')
-    logger.setLevel(args.log_level)
+    logger.setLevel(cli_args.log_level)
     logger.addHandler(logging.StreamHandler())
 
     # Cache to keep track of all deployments in the cluster
-    deployments: worker_deployments.WorkerDeployments = worker_deployments.WorkerDeployments(args)
+    deployments: worker_deployments.WorkerDeployments = worker_deployments.WorkerDeployments(cli_args)
     event_loop = asyncio.get_event_loop()
 
     # Create cluster client and load configuration
-    cluster_client = ClusterClient(args.namespace)
-    event_loop.run_until_complete(cluster_client.load_config(args.cluster))
+    cluster_client = ClusterClient(cli_args.namespace)
+    event_loop.run_until_complete(cluster_client.load_config(cli_args.cluster))
 
     # Create the autoscaler to bind everything together
-    autoscaler = AutoScaler(deployments, cluster_client, oasis_client, args.prioritized_models_limit, args.limit,
-                            args.continue_update_scaling, args.never_shutdown_fixed_workers)
+    autoscaler = AutoScaler(deployments, cluster_client, oasis_client, cli_args.prioritized_models_limit, cli_args.limit,
+                            cli_args.continue_update_scaling, cli_args.never_shutdown_fixed_workers)
 
     # Create the deployment watcher and load all available deployments
-    deployments_watcher = DeploymentWatcher(args.namespace, deployments)
+    deployments_watcher = DeploymentWatcher(cli_args.namespace, deployments)
     event_loop.run_until_complete(deployments_watcher.load_deployments())
     deployments.print_list()
 
