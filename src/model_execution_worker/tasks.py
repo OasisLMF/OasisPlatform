@@ -385,7 +385,19 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
             '--model-run-dir', run_dir,
             '--analysis-settings-json', analysis_settings_file,
             '--ktools-fifo-relative',
-            '--verbose'
+            '--verbose',
+            '--df-engine', "'" + json.dumps({
+                "path": settings.get(
+                    'worker',
+                    'default_reader_engine',
+                    fallback='lot3.df_reader.reader.OasisPandasReader'
+                ),
+                "options": settings.get(
+                    'worker.default_reader_engine_options',
+                    None,
+                    fallback={}
+                ),
+            }) + "'",
         ]
 
         model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)

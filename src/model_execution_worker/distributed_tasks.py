@@ -1045,6 +1045,18 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         'max_process_id': max_chunk_id,
         'ktools_fifo_relative': True,
         'ktools_work_dir': os.path.join(params['model_run_dir'], work_dir),
+        'df_engine': json.dumps({
+            "path": settings.get(
+                'worker',
+                'default_reader_engine',
+                fallback='lot3.df_reader.reader.OasisPandasReader'
+            ),
+            "options": settings.get(
+                'worker.default_reader_engine_options',
+                None,
+                fallback={}
+            ),
+        })
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
     OasisManager().generate_losses_partial(**chunk_params)

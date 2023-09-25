@@ -311,7 +311,7 @@ mysqlclient==2.1.1
     # via -r ./requirements-server.in
 natsort==8.3.1
     # via -r ./requirements-worker.in
-numba==0.56.4
+numba==1.25.2
     # via oasislmf
 numexpr==2.8.4
     # via oasislmf
