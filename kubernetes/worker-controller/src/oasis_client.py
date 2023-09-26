@@ -1,10 +1,13 @@
 import asyncio
 import json
-from urllib.parse import urljoin
 
 import aiohttp
 import time
 from aiohttp import ClientResponse
+
+
+def urljoin(*args):
+    return '/'.join(s.strip('/') for s in args) + '/'
 
 
 class OasisClient:
@@ -12,18 +15,23 @@ class OasisClient:
     A simple client for the Oasis API. Takes care of the access token and supports searching for models.
     """
 
-    def __init__(self, host, port, secure, username, password):
+    def __init__(self, http_host, http_port, ws_host, ws_port, secure, username, password):
         """
-        :param host: Oasis API hostname.
-        :param port: Oasis API port.
+        :param http_host: Oasis API hostname.
+        :param http_port: Oasis API port.
+        :param ws_host: Oasis Websocket hostname.
+        :param ws_port: Oasis Websocket port.
         :param secure: Use secure connection.
         :param username: Username for API authentication.
         :param password: Password for API authentication.
         """
-        self.host = host
-        self.port = port
+        self.host = http_host
+        self.port = http_port
+        self.ws_host = ws_host
+        self.ws_port = ws_port
+
         self.secure = secure
-        self.http_host = ('https://' if secure else 'http://') + f'{host}:{port}'
+        self.http_host = ('https://' if secure else 'http://') + f'{http_host}' + (f':{http_port}' if http_port else '')
         self.username = username
         self.password = password
         self.access_token = None
@@ -47,9 +55,7 @@ class OasisClient:
             params = {'username': self.username, 'password': self.password}
 
             async with session.post(urljoin(self.http_host, '/access_token/'), data=params) as response:
-
                 data = await self.parse_answer(response)
-
                 self.access_token = data['access_token']
                 self.token_expire_time = time.time() + round(data['expires_in'] / 2)
 

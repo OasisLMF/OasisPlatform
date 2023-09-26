@@ -24,9 +24,11 @@ if [[ -z $OASIS_MODEL_DATA_DIR ]]; then
     echo "export OASIS_MODEL_DATA_DIR=$filepath" > $PIWIND_PATH_FILE
 fi
 
-# Wipe minikube
-#minikube delete
-
+## init minikube
+minikube delete
+minikube config set cpus 12
+minikube config set memory 16000
+minikube start
 
 # build images
 eval $(minikube docker-env)
@@ -58,7 +60,14 @@ pushd kubernetes/charts
 popd
 
 
+# kubectl scale --replicas=0 deployment/oasis-worker-controller
 
 # Open local access to cluster
-minikube tunnel &
-kubectl port-forward deployment/oasis-websocket 8001:8001  #(forward websocket)
+#
+#minikube tunnel &
+# kubectl get svc --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}"
+
+# Open single service 
+#kubectl port-forward deployment/oasis-websocket 8001:8001  #(forward websocket)
+
+

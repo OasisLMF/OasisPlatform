@@ -51,6 +51,7 @@ class ModelScalingOptions(models.Model):
                                         choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
     worker_count_fixed = models.PositiveSmallIntegerField(default=1, null=False)
     worker_count_max = models.PositiveSmallIntegerField(default=10, null=False)
+    worker_count_min = models.PositiveSmallIntegerField(default=0, null=False)
     chunks_per_worker = models.PositiveIntegerField(default=10, null=False)
 
 
