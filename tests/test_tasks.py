@@ -120,6 +120,7 @@ class StartAnalysis(TestCase):
                                                       '--analysis-settings-json', os.path.join(run_dir, 'analysis_settings.json'),
                                                       '--ktools-fifo-relative',
                                                       '--verbose',
+                                                      '--df-engine', '\'{"path": "lot3.df_reader.reader.OasisPandasReader", "options": {}}\''
                                                       ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
                     tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')
 
