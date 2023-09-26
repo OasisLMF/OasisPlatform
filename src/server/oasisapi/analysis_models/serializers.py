@@ -216,6 +216,8 @@ class ModelScalingConfigSerializer(serializers.ModelSerializer):
             'chunks_per_worker'
         ]
         errors = dict()
+
+        # check for negative values
         for k in non_neg_fields:
             value = self.initial_data.get(k)
             if value is not None:
@@ -229,6 +231,18 @@ class ModelScalingConfigSerializer(serializers.ModelSerializer):
                     continue
                 # Data is valid
                 attrs[k] = value
+
+        # Check that `worker_count_min` < `worker_count_max`
+        m_id = self.context['request'].parser_context['kwargs']['pk']
+        current_val = ModelScalingOptions.objects.get(id=m_id)
+
+        wrk_min = self.initial_data.get('worker_count_min', current_val.worker_count_min)
+        wrk_max = self.initial_data.get('worker_count_max', current_val.worker_count_max)
+        if 'worker_count_min' in self.initial_data and (wrk_min > wrk_max):
+            errors['worker_count_min'] = f"Value '{wrk_min}' must be less than 'worker_count_max: {wrk_max}'"
+        if 'worker_count_max' in self.initial_data and (wrk_max < wrk_min):
+            errors['worker_count_max'] = f"Value '{wrk_max}' must be greater than 'worker_count_min: {wrk_min}'"
+
         if errors:
             raise serializers.ValidationError(errors)
         return super(ModelScalingConfigSerializer, self).validate(attrs)
