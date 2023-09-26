@@ -238,6 +238,99 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
 
     @action(methods=['get', 'post'], detail=True)
     def scaling_configuration(self, request, pk=None, version=None):
+        """
+        get:
+        Configuration for creating parallel workers to process an analysis
+
+        There are three scaling strategy to select from, `FIXED_WORKERS`, `QUEUE_LOAD`, and `DYNAMIC_TASKS`.  These set the replica sets for this**
+        model deployment, but only when an analysis is submitted.
+
+        When the model queue is inactive the number of workers is set to `worker_count_min`. (always running)
+
+        ### Example 1 - Fixed workers
+        * When **any analyses** are either queued or running, create 5 workers.
+        * When **no analysis** are queued, spin down to `0` workers.
+        ```
+        {
+           scaling_strategy: 'FIXED_WORKERS',
+           worker_count_fixed: 5,
+           worker_count_min: 0
+        }
+        ```
+
+        ### Example 2 - Queue Load
+        The number of workers started depends on how many analyses are added to a model's queue.
+        * One worker created per analysis
+        * When inactive spin down to either `worker_count_min` (if set) or default to 0.
+        ```
+        {
+           scaling_strategy: 'QUEUE_LOAD',
+           worker_count_max: 10
+        }
+        ```
+
+        ### Example 3 - Dynamic
+        The number of workers started is controlled by the total sub-tasks, or chunks, on the model's queue.
+
+        * If an analysis is split into 12 parts, then `12 (chunks on queue) / 4 (chunks_per_worker) = 3` Add three workers.
+        * The total number of sub-tasks is summed across all running analysis.
+        * The scaling is capped by `worker_count_max`, no more than 15 workers will be created.
+        * When idle spin the workers down to `worker_count_min`, a single worker is always 'warm' and waiting to process requests.
+        ```
+        {
+           scaling_strategy: 'DYNAMIC_TASKS',
+           worker_count_max: 15,
+           chunks_per_worker: 4,
+           worker_count_min: 1
+        }
+        ```
+
+        post:
+        Configuration for creating parallel workers to process an analysis
+
+        There are three scaling strategy to select from, `FIXED_WORKERS`, `QUEUE_LOAD`, and `DYNAMIC_TASKS`.  These set the replica sets for this**
+        model deployment, but only when an analysis is submitted.
+
+        When the model queue is inactive the number of workers is set to `worker_count_min`. (always running)
+
+        ### Example 1 - Fixed workers
+        * When **any analyses** are either queued or running, create 5 workers.
+        * When **no analysis** are queued, spin down to `0` workers.
+        ```
+        {
+           scaling_strategy: 'FIXED_WORKERS',
+           worker_count_fixed: 5,
+           worker_count_min: 0
+        }
+        ```
+
+        ### Example 2 - Queue Load
+        The number of workers started depends on how many analyses are added to a model's queue.
+        * One worker created per analysis
+        * When inactive spin down to either `worker_count_min` (if set) or default to 0.
+        ```
+        {
+           scaling_strategy: 'QUEUE_LOAD',
+           worker_count_max: 10
+        }
+        ```
+
+        ### Example 3 - Dynamic
+        The number of workers started is controlled by the total sub-tasks, or chunks, on the model's queue.
+
+        * If an analysis is split into 12 parts, then `12 (chunks on queue) / 4 (chunks_per_worker) = 3` Add three workers.
+        * The total number of sub-tasks is summed across all running analysis.
+        * The scaling is capped by `worker_count_max`, no more than 15 workers will be created.
+        * When idle spin the workers down to `worker_count_min`, a single worker is always 'warm' and waiting to process requests.
+        ```
+        {
+           scaling_strategy: 'DYNAMIC_TASKS',
+           worker_count_max: 15,
+           chunks_per_worker: 4,
+           worker_count_min: 1
+        }
+        ```
+        """
         method = request.method.lower()
         if method == 'get':
             serializer = self.get_serializer(self.get_object().scaling_options)
@@ -249,6 +342,73 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
 
     @action(methods=['get', 'post'], detail=True)
     def chunking_configuration(self, request, pk=None, version=None):
+        """
+        get:
+        Configuration used to split and distribute an analysis execution
+
+        Each phase of the execution can either be set to `fixed` or `dynamic`, where fixed will split
+        all jobs into a fixed number of parts, and dyanmic scales depending on the input size.
+
+
+        ### Example 1 - Fixed chunking
+        Every analysis is broken into `10` lookup chunks, and `20` event batches.
+        ```
+        {
+          lookup_strategy:  `FIXED_CHUNKS`,
+          fixed_lookup_chunks: 10,
+          loss_strategy: `FIXED_CHUNKS`,
+          fixed_analysis_chunks: 20,
+        }
+        ```
+
+        ### Example 2 - Dyanmic chunking
+        * A lookup chunk is generated for each `1000` rows in the location file.
+        * An event batch is generated for each `1000` events in the selected event set. (analysis settings)
+        * Each execution phase is capped by `dynamic_chunks_max`, the number of chunks cannot exceed 250.
+
+        ```
+        {
+          lookup_strategy:  `DYNAMIC_CHUNKS`,
+          dynamic_locations_per_lookup: 1000,
+          loss_strategy: `DYNAMIC_CHUNKS`,
+          dynamic_events_per_analysis: 1000,
+          dynamic_chunks_max: 250,
+        }
+        ```
+
+        post:
+        Configuration used to split and distribute an analysis execution
+
+        Each phase of the execution can either be set to `fixed` or `dynamic`, where fixed will split
+        all jobs into a fixed number of parts, and dyanmic scales depending on the input size.
+
+
+        ### Example 1 - Fixed chunking
+        Every analysis is broken into `10` lookup chunks, and `20` event batches.
+        ```
+        {
+          lookup_strategy:  `FIXED_CHUNKS`,
+          fixed_lookup_chunks: 10,
+          loss_strategy: `FIXED_CHUNKS`,
+          fixed_analysis_chunks: 20,
+        }
+        ```
+
+        ### Example 2 - Dyanmic chunking
+        * A lookup chunk is generated for each `1000` rows in the location file.
+        * An event batch is generated for each `1000` events in the selected event set. (analysis settings)
+        * Each execution phase is capped by `dynamic_chunks_max`, the number of chunks cannot exceed 250.
+
+        ```
+        {
+          lookup_strategy:  `DYNAMIC_CHUNKS`,
+          dynamic_locations_per_lookup: 1000,
+          loss_strategy: `DYNAMIC_CHUNKS`,
+          dynamic_events_per_analysis: 1000,
+          dynamic_chunks_max: 250,
+        }
+        ```
+        """
         method = request.method.lower()
         if method == 'get':
             serializer = self.get_serializer(self.get_object().chunking_options)

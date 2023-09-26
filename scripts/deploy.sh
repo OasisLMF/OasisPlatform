@@ -1,23 +1,31 @@
 #!/bin/bash
 
+PIWIND_PATH_FILE=/tmp/piwind-path-cfg
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $SCRIPT_DIR; cd ..
 pwd
 
+# Store PiWind Path
+if ! [ -f $PIWIND_PATH_FILE ]; then
+    touch $PIWIND_PATH_FILE
+else
+    source $PIWIND_PATH_FILE
+fi
 
 if [[ -z $OASIS_MODEL_DATA_DIR ]]; then
-    echo -n "Path: "
+    echo -n "OasisPiwind Repo Path: "
     read filepath
         if [ ! -d $filepath ]; then
             echo "Please insert a correct path"
             sleep 1
             $SCRIPT_DIR/deploy.sh
         fi
-    export OASIS_MODEL_DATA_DIR=$filepath    
+    export OASIS_MODEL_DATA_DIR=$filepath
+    echo "export OASIS_MODEL_DATA_DIR=$filepath" > $PIWIND_PATH_FILE
 fi
 
-docker rmi coreoasis/api_server:dev
-docker rmi coreoasis/model_worker:dev
+#docker rmi coreoasis/api_server:dev
+#docker rmi coreoasis/model_worker:dev
 
 # Check for prev install and offer to clean wipe
 if [[ $(docker volume ls | grep OasisData -c) -gt 1 ]]; then
