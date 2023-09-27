@@ -32,6 +32,7 @@ class WebsocketContentSerializer(serializers.Serializer):
     @swagger_serializer_method(serializer_or_field=AnalysisSerializer(many=True))
     def get_analyses(self, instance, *args, **kwargs):
         pass
+        #return AnalysisSerializer(instance.profiles, many=True).data
 
     @swagger_serializer_method(serializer_or_field=AnalysisTaskStatusSerializer(many=True))
     def get_updated_tasks(self, instance, *args, **kwargs):

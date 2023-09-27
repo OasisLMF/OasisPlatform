@@ -10,6 +10,12 @@ from ..files.models import file_storage_link
 from ..permissions.group_auth import verify_and_get_groups, validate_data_files
 
 
+from ..schemas.serializers import (
+    GroupNameSerializer, 
+    TaskCountSerializer,
+    TaskErrorSerializer,
+)    
+
 class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     output_log = serializers.SerializerMethodField()
     error_log = serializers.SerializerMethodField()
@@ -143,7 +149,7 @@ class AnalysisListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @swagger_serializer_method(serializer_or_field=GroupNameSerializer(many=True))
     def get_groups(self, instance):
         return instance.get_groups()
 
@@ -152,14 +158,18 @@ class AnalysisListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return instance.get_absolute_subtask_list_url(request=request)
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_sub_task_count(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
 
+    @swagger_serializer_method(serializer_or_field=TaskErrorSerializer(many=True))
     def get_sub_task_error_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
 
+
+    @swagger_serializer_method(serializer_or_field=TaskCountSerializer())
     def get_status_count(self, instance):
         # request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()
@@ -174,6 +184,8 @@ class AnalysisListSerializer(serializers.Serializer):
             "CANCELLED": subtask_queryset.filter(status='CANCELLED').count(),
             "ERROR": subtask_queryset.filter(status='ERROR').count()
         }
+
+
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
@@ -295,7 +307,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    #@swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @swagger_serializer_method(serializer_or_field=GroupNameSerializer(many=True))
     def get_groups(self, instance):
         return instance.get_groups()
 
@@ -304,14 +317,17 @@ class AnalysisSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_subtask_list_url(request=request)
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_sub_task_count(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
 
+    @swagger_serializer_method(serializer_or_field=TaskErrorSerializer(many=True))
     def get_sub_task_error_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
 
+    @swagger_serializer_method(serializer_or_field=TaskCountSerializer())
     def get_status_count(self, instance):
         # request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()
@@ -384,6 +400,7 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
     queue_names = serializers.SerializerMethodField(read_only=True)
     status_count = serializers.SerializerMethodField(read_only=True)
 
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_sub_task_count(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
@@ -393,6 +410,7 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
         running_subtasks_queryset = subtask_queryset.filter(status__in=['PENDING', 'QUEUED', 'STARTED'])
         return list(running_subtasks_queryset.order_by().values_list('queue_name', flat=True).distinct())
 
+    @swagger_serializer_method(serializer_or_field=TaskCountSerializer())
     def get_status_count(self, instance):
         # request = self.context.get('request')
         subtask_queryset = instance.sub_task_statuses.get_queryset()

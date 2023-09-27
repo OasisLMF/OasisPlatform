@@ -6,6 +6,9 @@ __all__ = [
     'ReinsScopeFileSerializer',
     'AnalysisSettingsSerializer',
     'ModelParametersSerializer',
+    'GroupNameSerializer',
+    'TaskCountSerializer',
+    'TaskErrorSerializer',
 ]
 
 import json
@@ -50,6 +53,16 @@ class StorageLinkSerializer(serializers.Serializer):
     location_file = serializers.CharField()
     reinsurance_info_file = serializers.CharField()
     reinsurance_scope_file = serializers.CharField()
+
+    def create(self, validated_data):
+        raise NotImplementedError()
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError()
+
+
+class GroupNameSerializer(serializers.Serializer):
+    keycloak_access_group = serializers.CharField()
 
     def create(self, validated_data):
         raise NotImplementedError()
@@ -104,6 +117,34 @@ class ReinsScopeFileSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise NotImplementedError()
+
+
+class TaskCountSerializer(serializers.Serializer):
+    TOTAL_IN_QUEUE = serializers.IntegerField()
+    TOTAL = serializers.IntegerField()
+    PENDING = serializers.IntegerField()
+    QUEUED = serializers.IntegerField()
+    STARTED = serializers.IntegerField()
+    COMPLETED = serializers.IntegerField()
+    CANCELLED = serializers.IntegerField()
+    ERROR = serializers.IntegerField()
+
+    def create(self, validated_data):
+        raise NotImplementedError()
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError()
+
+
+class TaskErrorSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def create(self, validated_data):
+        raise NotImplementedError()
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError()
+
 
 
 def update_links(link_prefix, d):
