@@ -168,7 +168,6 @@ class AnalysisListSerializer(serializers.Serializer):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
 
-
     @swagger_serializer_method(serializer_or_field=TaskCountSerializer())
     def get_status_count(self, instance):
         # request = self.context.get('request')
@@ -307,7 +306,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
-    #@swagger_serializer_method(serializer_or_field=serializers.CharField)
     @swagger_serializer_method(serializer_or_field=GroupNameSerializer(many=True))
     def get_groups(self, instance):
         return instance.get_groups()
