@@ -70,6 +70,7 @@ class AutoScaler:
         model_states = {}
 
         # Add all models from oasis API
+        import ipdb; ipdb.set_trace()
         for analysis in analyses.values():
             for queue_name in analysis['queue_names']:
                 queue_name = queue_name.lower()
@@ -198,8 +199,16 @@ class AutoScaler:
         content: List[QueueStatusContentEntry] = msg['content']
         running_analyses: [RunningAnalysis] = {}
 
+        #import ipdb; ipdb.set_trace()
         for entry in content:
             analyses_list = entry['analyses']
+            queue_info = entry['queue']
+
+            total_queued_tasks = sum([
+                queue_info.get('pending_count', 0),
+                queue_info.get('queued_count', 0),
+                queue_info.get('running_count', 0),
+            ])
 
             for analysis_entry in analyses_list:
                 analysis = analysis_entry['analysis']
@@ -216,7 +225,7 @@ class AutoScaler:
                     sa_id = analysis['id']
                     if sa_id not in running_analyses:
                         priority = int(analysis.get('priority', 1))
-                        running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=tasks,
+                        running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=total_queued_tasks,
                                                                   queue_names=list(queue_names), priority=priority)
 
         return running_analyses
