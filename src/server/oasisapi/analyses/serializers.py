@@ -11,10 +11,12 @@ from ..permissions.group_auth import verify_and_get_groups, validate_data_files
 
 
 from ..schemas.serializers import (
-    GroupNameSerializer, 
+    GroupNameSerializer,
     TaskCountSerializer,
     TaskErrorSerializer,
-)    
+)
+
+
 
 class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     output_log = serializers.SerializerMethodField()
@@ -149,7 +151,7 @@ class AnalysisListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
-    @swagger_serializer_method(serializer_or_field=GroupNameSerializer(many=True))
+    @swagger_serializer_method(serializer_or_field=GroupNameSerializer)
     def get_groups(self, instance):
         return instance.get_groups()
 
@@ -163,7 +165,7 @@ class AnalysisListSerializer(serializers.Serializer):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
 
-    @swagger_serializer_method(serializer_or_field=TaskErrorSerializer(many=True))
+    @swagger_serializer_method(serializer_or_field=TaskErrorSerializer)
     def get_sub_task_error_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)
@@ -306,7 +308,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
-    @swagger_serializer_method(serializer_or_field=GroupNameSerializer(many=True))
+    @swagger_serializer_method(serializer_or_field=GroupNameSerializer)
     def get_groups(self, instance):
         return instance.get_groups()
 
@@ -320,7 +322,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
 
-    @swagger_serializer_method(serializer_or_field=TaskErrorSerializer(many=True))
+    @swagger_serializer_method(serializer_or_field=TaskErrorSerializer)
     def get_sub_task_error_ids(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.filter(status='ERROR').values_list('pk', flat=True)

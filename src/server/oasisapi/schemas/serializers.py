@@ -23,6 +23,12 @@ from ods_tools.oed.setting_schema import ModelSettingSchema, AnalysisSettingSche
 from ods_tools.oed.common import OdsException
 
 
+
+
+TaskErrorSerializer = serializers.ListField(child=serializers.IntegerField())
+GroupNameSerializer = serializers.ListField(child=serializers.CharField())
+
+
 class TokenObtainPairResponseSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(read_only=True)
     access_token = serializers.CharField(read_only=True)
@@ -53,16 +59,6 @@ class StorageLinkSerializer(serializers.Serializer):
     location_file = serializers.CharField()
     reinsurance_info_file = serializers.CharField()
     reinsurance_scope_file = serializers.CharField()
-
-    def create(self, validated_data):
-        raise NotImplementedError()
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError()
-
-
-class GroupNameSerializer(serializers.Serializer):
-    keycloak_access_group = serializers.CharField()
 
     def create(self, validated_data):
         raise NotImplementedError()
@@ -134,17 +130,6 @@ class TaskCountSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise NotImplementedError()
-
-
-class TaskErrorSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-
-    def create(self, validated_data):
-        raise NotImplementedError()
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError()
-
 
 
 def update_links(link_prefix, d):
