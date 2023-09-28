@@ -65,7 +65,7 @@ class Settings(ConfigParser):
         if not option:
             section_env_prefix = 'OASIS_{}_'.format(self._section_to_env_prefix(section))
             from_env = {
-                k.replace(section_env_prefix, ''):
+                k.replace(section_env_prefix, '').lower():
                 v for k, v in os.environ.items() if k.startswith(section_env_prefix)
             }
             try:
