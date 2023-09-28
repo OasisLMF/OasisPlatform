@@ -20,22 +20,30 @@ class QueueSerializer(serializers.Serializer):
         return AnalysisModelSerializer(instance=models, many=True).data
 
 
-class WebsocketContentSerializer(serializers.Serializer):
-    queue = serializers.SerializerMethodField()
-    analyses = serializers.SerializerMethodField()
+class WebsocketAnalysesSerializer(serializers.Serializer):
+    analysis = serializers.SerializerMethodField()
     updated_tasks = serializers.SerializerMethodField()
 
-    @swagger_serializer_method(serializer_or_field=QueueSerializer)
-    def get_queue(self, instance, *args, **kwargs):
-        pass
-
-    @swagger_serializer_method(serializer_or_field=AnalysisSerializer(many=True))
-    def get_analyses(self, instance, *args, **kwargs):
+    @swagger_serializer_method(serializer_or_field=AnalysisSerializer())
+    def get_analysis(self, instance, *args, **kwargs):
         pass
         #return AnalysisSerializer(instance.profiles, many=True).data
 
     @swagger_serializer_method(serializer_or_field=AnalysisTaskStatusSerializer(many=True))
     def get_updated_tasks(self, instance, *args, **kwargs):
+        pass
+
+
+class WebsocketContentSerializer(serializers.Serializer):
+    queue = serializers.SerializerMethodField()
+    analyses = serializers.SerializerMethodField()
+
+    @swagger_serializer_method(serializer_or_field=QueueSerializer)
+    def get_queue(self, instance, *args, **kwargs):
+        pass
+
+    @swagger_serializer_method(serializer_or_field=WebsocketAnalysesSerializer(many=True))
+    def get_analyses(self, instance, *args, **kwargs):
         pass
 
 
