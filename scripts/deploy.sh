@@ -1,7 +1,7 @@
 #!/bin/bash
 
-PIWIND_PATH_FILE=/tmp/piwind-path-cfg
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PIWIND_PATH_FILE=$SCRIPT_DIR/piwind-path-cfg
 cd $SCRIPT_DIR; cd ..
 pwd
 
