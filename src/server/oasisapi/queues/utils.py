@@ -11,7 +11,10 @@ QueueInfo = Dict[str, int]
 
 
 def _add_to_dict(d, k, v):
-    d[k] = v
+    if k not in d:
+        d[k] = v
+    else:
+        d[k] += v
     return d
 
 
