@@ -180,7 +180,9 @@ services:
       - "8786:8786"
       - "8787:8787"
     command: ["dask-scheduler"]
+    network_mode: "host"
 
   dask-worker:
     image: ghcr.io/dask/dask:latest
-    command: ["dask-worker", "tcp://dask-scheduler:8786"]
+    command: ["dask-worker", "tcp://localhost:8786"]
+    network_mode: "host"
