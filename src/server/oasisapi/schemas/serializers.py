@@ -7,6 +7,7 @@ __all__ = [
     'AnalysisSettingsSerializer',
     'ModelParametersSerializer',
     'GroupNameSerializer',
+    'QueueNameSerializer',
     'TaskCountSerializer',
     'TaskErrorSerializer',
 ]
@@ -27,6 +28,7 @@ from ods_tools.oed.common import OdsException
 
 TaskErrorSerializer = serializers.ListField(child=serializers.IntegerField())
 GroupNameSerializer = serializers.ListField(child=serializers.CharField())
+QueueNameSerializer = serializers.ListField(child=serializers.CharField())
 
 
 class TokenObtainPairResponseSerializer(serializers.Serializer):

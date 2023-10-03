@@ -12,6 +12,7 @@ from ..permissions.group_auth import verify_and_get_groups, validate_data_files
 
 from ..schemas.serializers import (
     GroupNameSerializer,
+    QueueNameSerializer,
     TaskCountSerializer,
     TaskErrorSerializer,
 )
@@ -405,6 +406,8 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
 
+
+    @swagger_serializer_method(serializer_or_field=QueueNameSerializer)
     def get_queue_names(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         running_subtasks_queryset = subtask_queryset.filter(status__in=['PENDING', 'QUEUED', 'STARTED'])
