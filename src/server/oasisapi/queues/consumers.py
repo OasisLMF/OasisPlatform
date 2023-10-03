@@ -114,7 +114,7 @@ def build_all_queue_status_message(analysis_filter=None, message_type='queue_sta
     return build_task_status_message(status_message, message_type=message_type)
 
 
-#class QueueStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
+# class QueueStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
 class QueueStatusConsumer(AsyncJsonWebsocketConsumer):
     groups = ['queue_status']
 

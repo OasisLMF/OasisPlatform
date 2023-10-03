@@ -24,8 +24,6 @@ from ods_tools.oed.setting_schema import ModelSettingSchema, AnalysisSettingSche
 from ods_tools.oed.common import OdsException
 
 
-
-
 TaskErrorSerializer = serializers.ListField(child=serializers.IntegerField())
 GroupNameSerializer = serializers.ListField(child=serializers.CharField())
 QueueNameSerializer = serializers.ListField(child=serializers.CharField())

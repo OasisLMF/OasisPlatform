@@ -18,7 +18,6 @@ from ..schemas.serializers import (
 )
 
 
-
 class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     output_log = serializers.SerializerMethodField()
     error_log = serializers.SerializerMethodField()
@@ -186,8 +185,6 @@ class AnalysisListSerializer(serializers.Serializer):
             "CANCELLED": subtask_queryset.filter(status='CANCELLED').count(),
             "ERROR": subtask_queryset.filter(status='ERROR').count()
         }
-
-
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
@@ -405,7 +402,6 @@ class AnalysisSerializerWebSocket(serializers.Serializer):
     def get_sub_task_count(self, instance):
         subtask_queryset = instance.sub_task_statuses.get_queryset()
         return subtask_queryset.count()
-
 
     @swagger_serializer_method(serializer_or_field=QueueNameSerializer)
     def get_queue_names(self, instance):
