@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel
 from src.server.oasisapi.analysis_models.serializers import AnalysisModelSerializer
-from src.server.oasisapi.analyses.serializers import AnalysisSerializer, AnalysisTaskStatusSerializer
+from src.server.oasisapi.analyses.serializers import AnalysisSerializerWebSocket, AnalysisTaskStatusSerializer
 
 
 class QueueSerializer(serializers.Serializer):
@@ -20,25 +20,41 @@ class QueueSerializer(serializers.Serializer):
         return AnalysisModelSerializer(instance=models, many=True).data
 
 
-class WebsocketSerializer(serializers.Serializer):
-    """ This is a 'dummy' Serializer to document 
-    the WebSocket  schema 
-    """
+class WebsocketAnalysesSerializer(serializers.Serializer):
+    analysis = serializers.SerializerMethodField()
+    updated_tasks = serializers.SerializerMethodField()
+
+    @swagger_serializer_method(serializer_or_field=AnalysisSerializerWebSocket())
+    def get_analysis(self, instance, *args, **kwargs):
+        pass
+
+    @swagger_serializer_method(serializer_or_field=AnalysisTaskStatusSerializer(many=True))
+    def get_updated_tasks(self, instance, *args, **kwargs):
+        pass
+
+
+class WebsocketContentSerializer(serializers.Serializer):
     queue = serializers.SerializerMethodField()
     analyses = serializers.SerializerMethodField()
-    updated_tasks = serializers.SerializerMethodField()
-    time = serializers.DateField()
-    type = serializers.CharField()
-    status = serializers.CharField()
 
     @swagger_serializer_method(serializer_or_field=QueueSerializer)
     def get_queue(self, instance, *args, **kwargs):
         pass
 
-    @swagger_serializer_method(serializer_or_field=AnalysisSerializer(many=True))
+    @swagger_serializer_method(serializer_or_field=WebsocketAnalysesSerializer(many=True))
     def get_analyses(self, instance, *args, **kwargs):
         pass
 
-    @swagger_serializer_method(serializer_or_field=AnalysisTaskStatusSerializer(many=True))
-    def get_updated_tasks(self, instance, *args, **kwargs):
+
+class WebsocketSerializer(serializers.Serializer):
+    """ This is a 'dummy' Serializer to document
+    the WebSocket  schema
+    """
+    time = serializers.DateField()
+    type = serializers.CharField()
+    status = serializers.CharField()
+    content = serializers.SerializerMethodField()
+
+    @swagger_serializer_method(serializer_or_field=WebsocketContentSerializer)
+    def get_content(self, instance, *args, **kwargs):
         pass
