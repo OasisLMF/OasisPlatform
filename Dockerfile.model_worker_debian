@@ -16,10 +16,6 @@ RUN chown -R worker:worker /home/worker \
         /var \
         /shared-fs
 
-# Download azcopy
-RUN curl -L https://aka.ms/downloadazcopy-v10-linux | tar --directory=/usr/local/bin --strip-components=1 --exclude=*.txt -xzvf -
-RUN chmod +x /usr/local/bin/azcopy
-
 # User enviroment setup
 COPY ./VERSION ./
 USER worker

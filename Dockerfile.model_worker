@@ -36,10 +36,6 @@ RUN apt-get update \
 RUN adduser  --home /home/worker --shell /bin/bash --disabled-password --gecos "" worker
 COPY --chown=worker:worker --from=build-packages /root/.local /home/worker/.local
 
-# Download azcopy
-RUN curl -L https://aka.ms/downloadazcopy-v10-linux | tar --directory=/usr/local/bin --strip-components=1 --exclude=*.txt -xzvf -
-RUN chmod +x /usr/local/bin/azcopy
-
 # Copy in worker files
 WORKDIR /home/worker
 COPY ./requirements-worker.txt ./requirements.txt
