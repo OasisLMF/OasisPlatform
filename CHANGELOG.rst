@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#891](https://github.com/OasisLMF/OasisPlatform/pull/891) - Release 1.28.2 (Staging) 
+.. _`1.28.3`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.2...1.28.3
+
 `1.28.2`_
  ---------
 * [#868](https://github.com/OasisLMF/OasisPlatform/pull/865) - Fixes for OasisPlatform Publish
