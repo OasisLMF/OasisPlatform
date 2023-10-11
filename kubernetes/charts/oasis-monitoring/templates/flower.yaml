@@ -33,7 +33,7 @@ spec:
             - name: FLOWER_LOGGING
               value: INFO
             - name: FLOWER_UNAUTHENTICATED_API
-              value: true
+              value: "true"
           livenessProbe:
             failureThreshold: 2
             httpGet:
