@@ -14,7 +14,7 @@ class QueueSerializer(serializers.Serializer):
     running_count = serializers.IntegerField()
     models = serializers.SerializerMethodField()
 
-    @swagger_serializer_method(serializer_or_field=AnalysisModelSerializer)
+    @swagger_serializer_method(serializer_or_field=AnalysisModelSerializer(many=True))
     def get_models(self, instance, *args, **kwargs):
         models = [m for m in AnalysisModel.objects.all() if str(m) == instance['name']]
         return AnalysisModelSerializer(instance=models, many=True).data
@@ -55,6 +55,6 @@ class WebsocketSerializer(serializers.Serializer):
     status = serializers.CharField()
     content = serializers.SerializerMethodField()
 
-    @swagger_serializer_method(serializer_or_field=WebsocketContentSerializer)
+    @swagger_serializer_method(serializer_or_field=WebsocketContentSerializer(many=True))
     def get_content(self, instance, *args, **kwargs):
         pass

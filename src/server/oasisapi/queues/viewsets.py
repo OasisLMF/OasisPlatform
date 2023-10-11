@@ -19,7 +19,7 @@ class QueueViewSet(viewsets.ViewSet):
 
 
 class WebsocketViewSet(viewsets.ViewSet):
-    @swagger_auto_schema(responses={200: WebsocketSerializer(many=True, read_only=True)})
+    @swagger_auto_schema(responses={200: WebsocketSerializer(many=False, read_only=True)})
     def list(self, request, *args, **kwargs):
         """
         This endpoint documents the schema for the WebSocket used for async status updates at
