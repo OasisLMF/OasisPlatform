@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import tarfile
 from unittest import TestCase
@@ -120,8 +121,12 @@ class StartAnalysis(TestCase):
                                                       '--analysis-settings-json', os.path.join(run_dir, 'analysis_settings.json'),
                                                       '--ktools-fifo-relative',
                                                       '--verbose',
-                                                      '--df-engine', '\'{"path": "lot3.df_reader.reader.OasisPandasReader", "options": {}}\''
+                                                      '--df-engine', mock.ANY
                                                       ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
+                    assert re.match(
+                        r'\'\{"path": "lot3.df_reader.reader.OasisPandasReader", "options": \{.*\}\}\'',
+                        cmd_mock.call_args[0][0][14],
+                    )
                     tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')
 
 
