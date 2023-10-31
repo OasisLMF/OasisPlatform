@@ -107,7 +107,7 @@ class StartAnalysis(TestCase):
 
                 with patch('subprocess.Popen', Mock(return_value=cmd_instance)) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
-                        patch('lot3.filestore.backends.storage_manager.BaseStorageConnector.compress') as tarfile, \
+                        patch('lot3.filestore.backends.base.BaseStorage.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
                     output_location, log_location, error_location, returncode = start_analysis(

@@ -334,7 +334,7 @@ elif STORAGE_TYPE in AWS_S3:
     set_aws_log_level(AWS_LOG_LEVEL)
 
 elif STORAGE_TYPE in AZURE:
-    DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+    DEFAULT_FILE_STORAGE = 'storages.backends.azure_abfs.AzureStorage'
     set_azure_log_level(AZURE_LOG_LEVEL)
 
 else:

@@ -2,21 +2,21 @@ import logging
 from typing import Union
 
 from lot3.errors import OasisException
-from lot3.filestore.backends.aws_storage import AwsObjectStore
-from lot3.filestore.backends.azure_storage import AzureObjectStore
-from lot3.filestore.backends.local_manager import LocalStorageConnector
-from lot3.filestore.backends.storage_manager import BaseStorageConnector
+from lot3.filestore.backends.aws_s3 import AwsS3Storage
+from lot3.filestore.backends.azure_abfs import AzureABFSStorage
+from lot3.filestore.backends.local import LocalStorage
+from lot3.filestore.backends.base import BaseStorage
 
 
-def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorageConnector | None]:
+def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorage | None]:
     selected_storage = settings.get(section, 'STORAGE_TYPE', fallback="").lower()
     if selected_storage in ['local-fs', 'shared-fs']:
-        return LocalStorageConnector(
+        return LocalStorage(
             root_dir=settings.get(section, "MEDIA_ROOT"),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
         )
     elif selected_storage in ['aws-s3', 'aws', 's3']:
-        return AwsObjectStore(
+        return AwsS3Storage(
             bucket_name=settings.get(section, 'AWS_BUCKET_NAME'),
             access_key=settings.get(section, 'AWS_ACCESS_KEY_ID', fallback=None),
             secret_key=settings.get(section, 'AWS_SECRET_ACCESS_KEY', fallback=None),
@@ -57,7 +57,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
         )
     elif selected_storage in ['azure']:
-        return AzureObjectStore(
+        return AzureABFSStorage(
             account_name=settings.get(section, 'AZURE_ACCOUNT_NAME'),
             account_key=settings.get(section, 'AZURE_ACCOUNT_KEY'),
             azure_container=settings.get(section, 'AZURE_CONTAINER'),

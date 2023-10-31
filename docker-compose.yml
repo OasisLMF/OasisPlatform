@@ -169,20 +169,3 @@ services:
     image: redis:5.0.7
     ports:
       - 6379:6379
-
-#
-# dask cluster configuration
-#
-  dask-scheduler:
-    image: ghcr.io/dask/dask:latest
-    hostname: scheduler
-    ports:
-      - "8786:8786"
-      - "8787:8787"
-    command: ["dask-scheduler"]
-    network_mode: "host"
-
-  dask-worker:
-    image: ghcr.io/dask/dask:latest
-    command: ["dask-worker", "tcp://localhost:8786"]
-    network_mode: "host"
