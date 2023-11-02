@@ -103,7 +103,7 @@ jobs:
       branch_platform: ${{ github.ref_name }}
       branch_oasislmf: 'main'
       branch_ods_tools: 'main'
-      branch_ktools: 'main'
+      branch_ktools: 'master'
 
     steps:
      ## RELEASE CHECKS

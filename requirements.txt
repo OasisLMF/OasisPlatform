@@ -12,7 +12,7 @@ argparsetree==0.0.6
     # via oasislmf
 arrow==1.2.3
     # via jinja2-time
-asgiref==3.6.0
+asgiref==3.7.2
     # via
     #   channels
     #   daphne
@@ -25,7 +25,7 @@ attrs==23.1.0
     #   jsonschema
     #   service-identity
     #   twisted
-autobahn==23.1.2
+autobahn==23.6.2
     # via daphne
 automat==22.10.0
     # via twisted
@@ -55,7 +55,7 @@ celery==5.2.7
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   fiona
     #   pyproj
@@ -119,7 +119,7 @@ coverage[toml]==7.2.5
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==40.0.2
+cryptography==41.0.4
     # via
     #   autobahn
     #   pyopenssl
@@ -128,7 +128,7 @@ daphne==4.0.0
     # via -r ./requirements-server.in
 distlib==0.3.6
     # via virtualenv
-django==3.2.20
+django==3.2.22
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -164,7 +164,7 @@ djangorestframework-simplejwt==5.2.2
     # via -r ./requirements-server.in
 drf-yasg==1.21.5
     # via -r ./requirements-server.in
-exceptiongroup==1.1.1
+exceptiongroup==1.1.3
     # via
     #   hypothesis
     #   pytest
@@ -263,7 +263,9 @@ numpy==1.24.3
     #   scipy
     #   shapely
 oasislmf[extra]==1.23.18
-    # via -r ./requirements-worker.in
+    # via
+    #   -r ./requirements-worker.in
+    #   oasislmf
 ods-tools==2.3.2
     # via -r ./requirements-server.in
 packaging==23.1
@@ -323,7 +325,7 @@ pymysql==1.0.3
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyopenssl==23.1.1
+pyopenssl==23.2.0
     # via
     #   -r requirements.in
     #   twisted
@@ -432,19 +434,21 @@ tox==4.5.1
     # via -r requirements.in
 tqdm==4.65.0
     # via oasislmf
-twisted[tls]==22.10.0
+twisted[tls]==23.8.0
     # via
     #   -r ./requirements-server.in
     #   daphne
 txaio==23.1.1
     # via autobahn
 typing-extensions==4.5.0
-    # via twisted
+    # via
+    #   asgiref
+    #   twisted
 uritemplate==4.1.1
     # via
     #   coreapi
     #   drf-yasg
-urllib3==1.26.15
+urllib3==1.26.18
     # via
     #   botocore
     #   requests

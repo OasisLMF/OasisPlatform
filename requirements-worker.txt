@@ -28,7 +28,7 @@ botocore==1.29.133
     #   s3transfer
 celery==5.2.7
     # via -r requirements-worker.in
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   fiona
     #   pyproj
@@ -66,7 +66,7 @@ cookiecutter==2.1.1
     # via oasislmf
 cramjam==2.6.2
     # via fastparquet
-exceptiongroup==1.1.1
+exceptiongroup==1.1.3
     # via pytest
 fasteners==0.18
     # via -r requirements-worker.in
@@ -123,7 +123,9 @@ numpy==1.24.3
     #   scipy
     #   shapely
 oasislmf[extra]==1.23.18
-    # via -r requirements-worker.in
+    # via
+    #   -r requirements-worker.in
+    #   oasislmf
 packaging==23.1
     # via
     #   fastparquet
@@ -208,7 +210,7 @@ tomli==2.0.1
     # via pytest
 tqdm==4.65.0
     # via oasislmf
-urllib3==1.26.15
+urllib3==1.26.18
     # via
     #   botocore
     #   requests

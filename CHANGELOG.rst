@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.23.19`_
+ ---------
+* [#915](https://github.com/OasisLMF/OasisPlatform/pull/916) - Platform 1.23.x CVE 
+* [#855](https://github.com/OasisLMF/OasisPlatform/pull/855) - Update CI 1.23
+.. _`1.23.19`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.18...1.23.19
+
 `1.23.18`_
  ---------
 * [#826](https://github.com/OasisLMF/OasisPlatform/pull/826) - Add option to select packages to update in workflow
