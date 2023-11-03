@@ -25,6 +25,7 @@ x-shared-env: &shared-env
   OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE: task-controller
 x-volumes: &shared-volumes
   - filestore-OasisData:/shared-fs:rw
+
 services:
   server_http:
    restart: always
@@ -94,15 +95,14 @@ services:
   worker-monitor_v1:
    restart: always
    image: coreoasis/api_server:1.28.3
-   command: [wait-for-server, 'server:8000', celery, -A, src.server.oasisapi, worker, --loglevel=INFO]
-   #command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO, -Q, celery]
+   command: [celery, -A, src.server.oasisapi, worker, --loglevel=INFO]
    links:
      - server-db
      - celery-db
      - broker
    environment:
      - OASIS_DEBUG=1
-     - OASIS_RABBIT_HOST=rabbit
+     - OASIS_RABBIT_HOST=broker
      - OASIS_RABBIT_PORT=5672
      - OASIS_RABBIT_USER=rabbit
      - OASIS_RABBIT_PASS=rabbit
@@ -111,7 +111,8 @@ services:
      - OASIS_SERVER_DB_USER=oasis
      - OASIS_SERVER_DB_NAME=oasis
      - OASIS_SERVER_DB_PORT=5432
-     - OASIS_CELERY_DB_ENGINE=db+mysql+pymysql
+     - OASIS_SERVER_DB_ENGINE=django.db.backends.postgresql_psycopg2
+     - OASIS_CELERY_DB_ENGINE=db+postgresql+psycopg2
      - OASIS_CELERY_DB_HOST=celery-db
      - OASIS_CELERY_DB_PASS=password
      - OASIS_CELERY_DB_USER=celery
@@ -141,22 +142,24 @@ services:
       context: .
       dockerfile: Dockerfile.model_worker
     links:
+     - server-db
      - celery-db
-     - broker:mybroker
+     - broker
     environment:
      - OASIS_MODEL_SUPPLIER_ID=OasisLMF
      - OASIS_MODEL_ID=PiWind
      - OASIS_MODEL_VERSION_ID=1
-     - OASIS_RABBIT_HOST=rabbit
+     - OASIS_RABBIT_HOST=broker
      - OASIS_RABBIT_PORT=5672
      - OASIS_RABBIT_USER=rabbit
      - OASIS_RABBIT_PASS=rabbit
-     - OASIS_CELERY_DB_ENGINE=db+mysql+pymysql
+     - OASIS_SERVER_DB_ENGINE=django.db.backends.postgresql_psycopg2
+     - OASIS_CELERY_DB_ENGINE=db+postgresql+psycopg2
      - OASIS_CELERY_DB_HOST=celery-db
      - OASIS_CELERY_DB_PASS=password
      - OASIS_CELERY_DB_USER=celery
      - OASIS_CELERY_DB_NAME=celery
-     - OASIS_CELERY_DB_PORT=3306
+     - OASIS_CELERY_DB_PORT=5432
      - OASIS_MODEL_DATA_DIRECTORY=/home/worker/model
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw

@@ -26,6 +26,10 @@ from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
 
+from .tasks import record_generate_input_result, record_run_analysis_result
+from celery import signature
+
+
 class AnalysisTaskStatusQuerySet(models.QuerySet):
     @classmethod
     def _send_socket_messages(cls, objects):
