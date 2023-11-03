@@ -244,7 +244,7 @@ class Controller:
 
         :return: The name of the queue
         """
-        return str(analysis.model)
+        return str(analysis.model) + '-platform-2'
 
     @classmethod
     def get_inputs_generation_tasks(
@@ -413,7 +413,7 @@ class Controller:
 
         :return: The name of the queue
         """
-        return str(analysis.model)
+        return str(analysis.model) + '-platform-2'
 
     @classmethod
     def get_loss_generation_tasks(cls, analysis: 'Analysis', initiator: User, run_data_uuid: str, num_chunks: int):

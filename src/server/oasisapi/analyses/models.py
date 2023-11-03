@@ -334,11 +334,101 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
+
+
+# ---- TESTING PLAT 1 ----------------------------------------------------- #
+
+    @property
+    def generate_input_signature_v1(self):
+        loc_file = file_storage_link(self.portfolio.location_file)
+        acc_file = file_storage_link(self.portfolio.accounts_file)
+        info_file = file_storage_link(self.portfolio.reinsurance_info_file)
+        scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
+        settings_file = file_storage_link(self.settings_file)
+        complex_data_files = self.create_complex_model_data_file_dicts()
+
+        return signature(
+            'generate_input',
+            args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
+            queue=self.model.queue_name
+        )
+
+
+    def generate_inputs_v1(self, initiator):
+        valid_choices = [
+            self.status_choices.NEW,
+            self.status_choices.INPUTS_GENERATION_ERROR,
+            self.status_choices.INPUTS_GENERATION_CANCELLED,
+            self.status_choices.READY,
+            self.status_choices.RUN_COMPLETED,
+            self.status_choices.RUN_CANCELLED,
+            self.status_choices.RUN_ERROR,
+        ]
+
+        errors = {}
+        if self.status not in valid_choices:
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
+
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+
+        if not self.portfolio.location_file:
+            errors['portfolio'] = ['"location_file" must not be null']
+
+        if errors:
+            raise ValidationError(errors)
+
+        self.status = self.status_choices.INPUTS_GENERATION_QUEUED
+        generate_input_signature = self.generate_input_signature
+        generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
+        generate_input_signature.link_error(
+            signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+        )
+        self.generate_inputs_task_id = generate_input_signature.delay().id
+        self.task_started = None
+        self.task_finished = None
+        self.save()
+
+
+
+    @property
+    def run_analysis_signature_v1(self):
+        complex_data_files = self.create_complex_model_data_file_dicts()
+        input_file = file_storage_link(self.input_file)
+        settings_file = file_storage_link(self.settings_file)
+
+        return signature(
+            'run_analysis',
+            args=(self.pk, input_file, settings_file, complex_data_files),
+            queue=self.model.queue_name,
+        )
+
+    def run_v1(self, initiator):
+        self.validate_run()
+
+        self.status = self.status_choices.RUN_QUEUED
+
+        run_analysis_signature = self.run_analysis_signature_v1
+        run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
+        run_analysis_signature.link_error(
+            signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+        )
+        dispatched_task = run_analysis_signature.delay()
+        self.run_task_id = dispatched_task.id
+        self.task_started = None
+        self.task_finished = None
+        self.save()
+
+
+
+# ----------------------------------------------------------------------- #
+
+
     @property
     def run_analysis_signature(self):
         return celery_app.signature(
             'start_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery-platform-2')}
         )
 
     def run(self, initiator):
@@ -456,7 +546,7 @@ class Analysis(TimeStampedModel):
         return celery_app.signature(
             'start_input_generation_task',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-platform-2')
             }
         )
 
@@ -465,7 +555,7 @@ class Analysis(TimeStampedModel):
         return celery_app.signature(
             'cancel_subtasks',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-platform-2')
             }
         )
 

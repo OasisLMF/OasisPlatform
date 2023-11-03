@@ -288,7 +288,7 @@ def notify_api_status(analysis_pk, task_status):
     signature(
         'set_task_status',
         args=(analysis_pk, task_status),
-        queue='celery'
+        queue='celery-platform-2'
     ).delay({}, priority=analysis_pk)
 
 
@@ -605,7 +605,7 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
         signature(
             record_task_name,
             args=(analysis_pk, initiator_pk, traceback),
-            queue='celery'
+            queue='celery-platform-2'
         ).delay({})
 
 

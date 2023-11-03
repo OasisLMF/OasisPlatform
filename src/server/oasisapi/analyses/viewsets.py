@@ -218,7 +218,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
                          'run_traceback_file']
 
     task_action_types = ['run',
+                         'run_platform_1',
                          'generate_inputs',
+                         'generate_inputs_platform_1',
                          'generate_and_run',
                          'cancel',
                          'cancel_generate_inputs',
@@ -259,6 +261,45 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
             return [MultiPartParser]
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
+
+
+
+    # ---- platform 1 -------------------------------------------------------- #
+
+
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @action(methods=['post'], detail=True)
+    def run_platform_1(self, request, pk=None, version=None):
+        """
+        Runs all the analysis. The analysis must have one of the following
+        statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED` or
+        `RUN_ERROR`
+        """
+        obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        obj.run_v1(request.user)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+
+
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @action(methods=['post'], detail=True)
+    def generate_inputs_platform_1(self, request, pk=None, version=None):
+        """
+        Generates the inputs for the analysis based on the portfolio.
+        The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
+        """
+        obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        obj.generate_inputs_v1(request.user)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+
+
+    # ------------------------------------------------------------------------
+
+
+
+
+
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
