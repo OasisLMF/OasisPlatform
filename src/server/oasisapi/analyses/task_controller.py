@@ -341,7 +341,7 @@ class Controller:
                 run_data_uuid,
                 'Record input files',
                 'record-input-files',
-                'celery',
+                'celery-platform-2',
                 TaskParams(analysis_finish_status=analysis_finish_status),
             ),
             cls.get_subtask_statuses_and_signature(
@@ -485,7 +485,7 @@ class Controller:
                 run_data_uuid,
                 'Record losses files',
                 'record-losses-files',
-                'celery',
+                'celery-platform-2',
                 TaskParams(**base_kwargs),
             ),
             cls.get_subtask_statuses_and_signature(
