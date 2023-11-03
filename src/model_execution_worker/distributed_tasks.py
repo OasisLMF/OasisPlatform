@@ -197,7 +197,7 @@ def notify_api_status(analysis_pk, task_status):
     signature(
         'set_task_status',
         args=(analysis_pk, task_status, datetime.now().timestamp()),
-        queue='celery'
+        queue='celery-platform-2'
     ).delay()
 
 
