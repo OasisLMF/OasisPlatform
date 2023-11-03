@@ -63,19 +63,6 @@ services:
    volumes:
      - filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
-  worker-monitor:
-   restart: always
-   image: coreoasis/api_server:dev
-   command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO, -Q, celery-platform-2]
-   links:
-     - server-db
-     - celery-db
-     - broker
-   environment:
-     <<: *shared-env
-   volumes:
-     - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   task-controller:
    restart: always
    image: coreoasis/api_server:dev
@@ -100,7 +87,59 @@ services:
    environment:
      <<: *shared-env
    volumes: *shared-volumes
-  worker:
+
+
+
+
+  worker-monitor_v1:
+   restart: always
+   image: coreoasis/api_server:1.28.3
+   command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO, -Q, celery]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+
+  worker-monitor_v2:
+   restart: always
+   image: coreoasis/api_server:dev
+   command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO, -Q, celery-platform-2]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+
+
+  worker_v1:
+    restart: always
+    image: coreoasis/model_worker:1.28.3
+    build:
+      context: .
+      dockerfile: Dockerfile.model_worker
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *shared-env
+     OASIS_MODEL_SUPPLIER_ID: OasisLMF
+     OASIS_MODEL_ID: PiWind
+     OASIS_MODEL_VERSION_ID: 1
+     OASIS_MODEL_NUM_ANALYSIS_CHUNKS: 8
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - filestore-OasisData:/shared-fs:rw
+
+
+  worker_v2:
     restart: always
     image: coreoasis/model_worker:dev
     build:
@@ -119,6 +158,10 @@ services:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ./src/model_execution_worker:/home/worker/src/model_execution_worker
      - filestore-OasisData:/shared-fs:rw
+
+
+
+
   server-db:
     restart: always
     image: postgres
