@@ -346,7 +346,7 @@ class ReleaseNotesBuilder(object):
         plat_header.append(f'* [coreoasis/oasisui_proxy:{t_ui}](https://hub.docker.com/r/coreoasis/oasisui_proxy/tags?name={t_ui})\n')
         plat_header.append('## Components\n')
         plat_header.append(f'* [oasislmf {t_lmf}](https://github.com/OasisLMF/OasisLMF/releases/tag/{t_lmf})\n')
-        plat_header.append(f'* [ods-tools {t_ods}](https://github.com/OasisLMF/OasisLMF/releases/tag/{t_ods})\n')
+        plat_header.append(f'* [ods-tools {t_ods}](https://github.com/OasisLMF/ODS_Tools/releases/tag/{t_ods})\n')
         plat_header.append(f'* [ktools {t_ktools}](https://github.com/OasisLMF/ktools/releases/tag/{t_ktools})\n')
         plat_header.append(f'* [Oasis UI {t_ui}](https://github.com/OasisLMF/OasisUI/releases/tag/{t_ui})\n')
         plat_header.append('\n')
