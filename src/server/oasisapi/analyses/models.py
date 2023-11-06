@@ -14,7 +14,7 @@ from model_utils.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
-from src.server.oasisapi.celery_app import celery_app
+from src.server.oasisapi.celery_app import celery_app, celery_app_v1
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
     TaskStatusMessageAnalysisItem, build_task_status_message
 from ..analysis_models.models import AnalysisModel
@@ -27,7 +27,6 @@ from ....conf import iniconf
 
 
 from .tasks import record_generate_input_result, record_run_analysis_result
-from celery import signature
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -351,7 +350,7 @@ class Analysis(TimeStampedModel):
         settings_file = file_storage_link(self.settings_file)
         complex_data_files = self.create_complex_model_data_file_dicts()
 
-        return signature(
+        return celery_app_v1.signature(
             'generate_input',
             args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
             queue=self.model.queue_name
@@ -383,10 +382,10 @@ class Analysis(TimeStampedModel):
             raise ValidationError(errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
-        generate_input_signature = self.generate_input_signature
+        generate_input_signature = self.generate_input_signature_v1
         generate_input_signature.link(record_generate_input_result.s(self.pk, initiator.pk))
         generate_input_signature.link_error(
-            signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+            celery_app_v1.signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
         self.generate_inputs_task_id = generate_input_signature.delay().id
         self.task_started = None
@@ -401,7 +400,7 @@ class Analysis(TimeStampedModel):
         input_file = file_storage_link(self.input_file)
         settings_file = file_storage_link(self.settings_file)
 
-        return signature(
+        return celery_app_v1.signature(
             'run_analysis',
             args=(self.pk, input_file, settings_file, complex_data_files),
             queue=self.model.queue_name,
@@ -415,7 +414,7 @@ class Analysis(TimeStampedModel):
         run_analysis_signature = self.run_analysis_signature_v1
         run_analysis_signature.link(record_run_analysis_result.s(self.pk, initiator.pk))
         run_analysis_signature.link_error(
-            signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+            celery_app_v1.signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
         )
         dispatched_task = run_analysis_signature.delay()
         self.run_task_id = dispatched_task.id

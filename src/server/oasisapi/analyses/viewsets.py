@@ -266,6 +266,17 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     # ---- platform 1 -------------------------------------------------------- #
 
+    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @action(methods=['post'], detail=True)
+    def generate_inputs_platform_1(self, request, pk=None, version=None):
+        """
+        Generates the inputs for the analysis based on the portfolio.
+        The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
+        """
+        obj = self.get_object()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        obj.generate_inputs_v1(request.user)
+        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
@@ -279,20 +290,6 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.run_v1(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
-
-
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
-    @action(methods=['post'], detail=True)
-    def generate_inputs_platform_1(self, request, pk=None, version=None):
-        """
-        Generates the inputs for the analysis based on the portfolio.
-        The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
-        """
-        obj = self.get_object()
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        obj.generate_inputs_v1(request.user)
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
-
 
     # ------------------------------------------------------------------------
 

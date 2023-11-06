@@ -44,12 +44,10 @@ from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
 
-from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
 from ..celery_app import celery_app
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
-from .models import Analysis
 
 
 logger = get_task_logger(__name__)
@@ -406,6 +404,7 @@ def cancel_subtasks(self, analysis_pk):
     """
 
     from .models import Analysis
+    from .models import AnalysisTaskStatus
     analysis = Analysis.objects.get(pk=analysis_pk)
     _now = timezone.now()
 
@@ -457,7 +456,7 @@ def start_input_and_loss_generation_task(analysis_pk, initiator_pk):
 
 
 @celery_app.task(bind=True, name='record_input_files')
-def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, analysis_finish_status=Analysis.status_choices.READY):
+def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, analysis_finish_status='READY'):
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id, dt=datetime.now().timestamp())
     logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id))
@@ -529,6 +528,7 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None, dt=None):
     _now = timezone.now() if not dt else datetime.fromtimestamp(dt, tz=timezone.utc)
 
+    from .models import AnalysisTaskStatus
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
         slug=task_slug
@@ -556,6 +556,7 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
     log_location = res.get('log_location')
     error_location = res.get('error_location')
 
+    from .models import AnalysisTaskStatus
     task_id = self.request.parent_id
     AnalysisTaskStatus.objects.filter(
         slug=task_slug,
@@ -584,6 +585,7 @@ def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, ta
     tb = _traceback_from_errback_args(*args)
     task_id = self.request.parent_id
 
+    from .models import AnalysisTaskStatus
     with TemporaryFile() as tmp_file:
         tmp_file.write(tb.encode('utf-8'))
         AnalysisTaskStatus.objects.filter(
@@ -604,6 +606,7 @@ def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, ta
 
 @celery_app.task(bind=True, name='chord_error_callback')
 def chord_error_callback(self, analysis_id):
+    from .models import AnalysisTaskStatus
     unfinished_statuses = [AnalysisTaskStatus.status_choices.QUEUED, AnalysisTaskStatus.status_choices.STARTED]
     ids_to_revoke = AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
@@ -690,6 +693,7 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
 
 @celery_app.task(name='subtask_error_log')
 def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
+    from .models import AnalysisTaskStatus
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
         slug=slug,
@@ -719,6 +723,7 @@ def set_task_status(analysis_pk, task_status, dt):
 
 @celery_app.task(name='update_task_id')
 def update_task_id(task_update_list):
+    from .models import AnalysisTaskStatus
     for task in task_update_list:
         task_id, analysis_id, slug = task
         AnalysisTaskStatus.objects.filter(
