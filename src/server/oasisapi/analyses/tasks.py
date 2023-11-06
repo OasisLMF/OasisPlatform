@@ -457,7 +457,7 @@ def start_input_and_loss_generation_task(analysis_pk, initiator_pk):
 
 @celery_app.task(bind=True, name='record_input_files')
 def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, analysis_finish_status='READY'):
-
+    from .models import Analysis
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id, dt=datetime.now().timestamp())
     logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id))
     logger.info('results: {}'.format(result))
