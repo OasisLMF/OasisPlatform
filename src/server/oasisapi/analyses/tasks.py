@@ -681,6 +681,7 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
 
 @celery_app.task(name='mark_task_as_queued')
 def mark_task_as_queued(analysis_id, slug, task_id, dt):
+    from .models import AnalysisTaskStatus
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
         slug=slug,
