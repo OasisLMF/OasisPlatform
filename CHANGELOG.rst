@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#854](https://github.com/OasisLMF/OasisPlatform/pull/854) - Update CI 1.15
+.. _`1.15.30`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.29...1.15.30
+
 `1.15.29`_
  ---------
 * [#826](https://github.com/OasisLMF/OasisPlatform/pull/826) - Add option to select packages to update in workflow
