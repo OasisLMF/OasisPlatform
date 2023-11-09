@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.23.20`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.19...1.23.20
+
 `1.23.19`_
  ---------
 * [#915](https://github.com/OasisLMF/OasisPlatform/pull/916) - Platform 1.23.x CVE 
