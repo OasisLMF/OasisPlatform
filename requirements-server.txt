@@ -195,7 +195,9 @@ sqlparse==0.4.4
     #   django
     #   django-debug-toolbar
 twisted[tls]==20.3.0
-    # via daphne
+    # via
+    #   daphne
+    #   twisted
 txaio==20.12.1
     # via autobahn
 uritemplate==3.0.1
