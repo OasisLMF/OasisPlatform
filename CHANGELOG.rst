@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#856](https://github.com/OasisLMF/OasisPlatform/pull/856) - Update CI 1.26
+.. _`1.26.9`:  https://github.com/OasisLMF/OasisPlatform/compare/1.26.8...1.26.9
+
 `1.26.8`_
  ---------
 * [#816](https://github.com/OasisLMF/OasisPlatform/pull/816) - Fix model reg retry on S3 exception

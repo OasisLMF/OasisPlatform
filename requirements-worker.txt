@@ -36,7 +36,7 @@ botocore==1.29.61
     #   s3transfer
 celery==5.2.7
     # via -r requirements-worker.in
-certifi==2022.12.7
+certifi==2023.7.22
     # via
     #   fiona
     #   msrest
@@ -140,8 +140,10 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.26.8
-    # via -r requirements-worker.in
+oasislmf[extra]==1.26.9
+    # via
+    #   -r requirements-worker.in
+    #   oasislmf
 oauthlib==3.2.2
     # via requests-oauthlib
 ods-tools==2.3.2
