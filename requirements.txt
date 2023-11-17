@@ -131,7 +131,7 @@ daphne==4.0.0
     # via -r ./requirements-server.in
 distlib==0.3.6
     # via virtualenv
-django==3.2.20
+django==3.2.23
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -321,7 +321,7 @@ psycopg2-binary==2.9.5
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyarrow==11.0.0
+pyarrow==14.0.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf

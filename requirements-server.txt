@@ -79,7 +79,7 @@ cryptography==41.0.2
     #   service-identity
 daphne==4.0.0
     # via -r requirements-server.in
-django==3.2.20
+django==3.2.23
     # via
     #   -r requirements-server.in
     #   channels
@@ -184,7 +184,7 @@ prompt-toolkit==3.0.38
     # via click-repl
 psycopg2-binary==2.9.5
     # via -r requirements-server.in
-pyarrow==11.0.0
+pyarrow==14.0.1
     # via -r requirements-server.in
 pyasn1==0.4.8
     # via
