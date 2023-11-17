@@ -153,17 +153,22 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.2.4
     # via celery
+llvmlite==0.41.1
+    # via numba
 markdown==3.4.1
     # via -r requirements-server.in
 markupsafe==2.1.2
     # via jinja2
 mysqlclient==2.1.1
     # via -r requirements-server.in
+numba==0.58.1
+    # via ods-tools
 numpy==1.24.2
     # via
+    #   numba
     #   pandas
     #   pyarrow
-ods-tools==3.1.2
+ods-tools==3.1.3
     # via -r requirements-server.in
 packaging==23.0
     # via
