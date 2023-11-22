@@ -111,12 +111,11 @@ spec:
               {{- else }}
               value: postgres
               {{- end }}
-            - name: KC_DB_URL
-              value: "jdbc:postgresql://oasis-plndlajorgidw.postgres.database.azure.com:5432/keycloak"
-              #valueFrom:
-              #  configMapKeyRef:
-              #    name: {{ .Values.databases.keycloak_db.name }}
-              #    key: host
+            - name: KC_DB_URL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.databases.keycloak_db.name }}
+                  key: host
             - name: KC_DB_URL_PORT
               valueFrom:
                 configMapKeyRef:
