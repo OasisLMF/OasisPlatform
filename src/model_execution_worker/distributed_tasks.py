@@ -522,6 +522,7 @@ def keys_generation_task(fn):
             maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
         else:
             params['lookup_complex_config_json'] = None
+            params['analysis_settings_json'] = None
         if complex_data_files:
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
         else:
