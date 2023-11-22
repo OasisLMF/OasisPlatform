@@ -95,7 +95,8 @@ spec:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
           args: [
-            "start-dev",
+            #"start-dev",  # --- Development mode --- # 
+            "start",
             "--import-realm",
             "--http-relative-path /auth",
             "--proxy edge",
