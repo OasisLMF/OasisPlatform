@@ -161,7 +161,7 @@ decorator==5.1.1
     #   ipython
 distlib==0.3.6
     # via virtualenv
-django==3.2.20
+django==3.2.23
     # via
     #   channels
     #   django-celery-results
@@ -191,7 +191,9 @@ django-model-utils==4.3.1
 django-request-logging==0.7.5
     # via -r ./requirements-server.in
 django-storages[azure]==1.13.2
-    # via -r ./requirements-server.in
+    # via
+    #   -r ./requirements-server.in
+    #   django-storages
 django-webtest==1.9.10
     # via -r requirements.in
 djangorestframework==3.14.0
@@ -394,7 +396,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyarrow==11.0.0
+pyarrow==14.0.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -555,7 +557,9 @@ traitlets==5.9.0
     #   ipython
     #   matplotlib-inline
 twisted[tls]==22.10.0
-    # via daphne
+    # via
+    #   daphne
+    #   twisted
 txaio==23.1.1
     # via autobahn
 typing-extensions==4.5.0

@@ -95,7 +95,8 @@ spec:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
           args: [
-            "start-dev", 
+            #"start-dev",  # --- Development mode --- # 
+            "start",
             "--import-realm",
             "--http-relative-path /auth",
             "--proxy edge",
@@ -103,35 +104,35 @@ spec:
           ports:
             - containerPort: {{ .Values.keycloak.port }}
           env:
-            - name: KEYCLOAK_PROXY_ADDRESS_FORWARDING
+            - name: KC_PROXY_ADDRESS_FORWARDING
               value: "true"
-            - name: DB_VENDOR
+            - name: KC_DB
               {{- if eq .Values.databases.keycloak_db.type "mysql" }}
               value: mysql
               {{- else }}
               value: postgres
               {{- end }}
-            - name: DB_ADDR
+            - name: KC_DB_URL_HOST
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.databases.keycloak_db.name }}
                   key: host
-            - name: DB_PORT
+            - name: KC_DB_URL_PORT
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.databases.keycloak_db.name }}
                   key: port
-            - name: DB_DATABASE
+            - name: KC_DB_URL_DATABASE
               valueFrom:
                 configMapKeyRef:
                   name: {{ .Values.databases.keycloak_db.name }}
                   key: dbName
-            - name: DB_USER
+            - name: KC_DB_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.databases.keycloak_db.name }}
                   key: user
-            - name: DB_PASSWORD
+            - name: KC_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.databases.keycloak_db.name }}
@@ -146,11 +147,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.keycloak.name }}
                   key: password
-            - name: KEYCLOAK_LOGLEVEL
-              value: INFO
+            - name: KC_LOGLEVEL
+              value: DEBUG
             - name: PROXY_ADDRESS_FORWARDING
               value: "true"
-            - name: KEYCLOAK_IMPORT
+            - name: KC_IMPORT
               value: "/opt/keycloak/data/import/oasis-realm.json"
           startupProbe:
             httpGet:
