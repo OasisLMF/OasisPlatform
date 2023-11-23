@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PIWIND_PATH_FILE=$SCRIPT_DIR/piwind-path-cfg
 cd $SCRIPT_DIR; cd ..
@@ -33,6 +34,7 @@ if [[ $(docker volume ls | grep OasisData -c) -gt 1 ]]; then
     docker volume ls | grep OasisData | awk 'BEGIN { FS = "[ \t\n]+" }{ print $2 }' | xargs -r docker volume rm
 fi
 
+set -e
 docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
 docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
 docker-compose up -d

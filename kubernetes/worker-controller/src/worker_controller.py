@@ -56,6 +56,7 @@ def parse_args():
     parser = argparse.ArgumentParser('Oasis example model worker controller')
     parser.add_argument('--api-host', help='The sever API hostname', default=getenv('OASIS_API_HOST', default='localhost'))
     parser.add_argument('--api-port', help='The server API portnumber', default=getenv('OASIS_API_PORT', default=8000))
+    parser.add_argument('--api-subpath', help='The server API subpath, e.g. "api"', default=getenv('OASIS_API_SUBPATH', default=''))
     parser.add_argument('--websocket-host', help='The websocket hostname', default=getenv('OASIS_WEBSOCKET_HOST', default='localhost'))
     parser.add_argument('--websocket-port', help='The websocket portnumber', default=getenv('OASIS_WEBSOCKET_PORT', default=8001))
     parser.add_argument('--secure', help='Flag if https and wss should be used', default=bool(getenv('OASIS_API_SECURE')), action='store_true')
@@ -96,6 +97,7 @@ def main():
     oasis_client = OasisClient(
         cli_args.api_host,
         cli_args.api_port,
+        cli_args.api_subpath,
         cli_args.websocket_host,
         cli_args.websocket_port,
         cli_args.secure,

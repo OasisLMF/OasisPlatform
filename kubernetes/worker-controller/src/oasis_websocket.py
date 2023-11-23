@@ -31,7 +31,7 @@ class WebSocketConnection:
 
         # https://websockets.readthedocs.io/en/stable/reference/asyncio/client.html#websockets.client.connect
         self.connection = websockets.connect(
-            urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', '/ws/v1/queue-status/'),
+            urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', '/ws/v2/queue-status/'),
             extra_headers={'AUTHORIZATION': f'Bearer {access_token}'},
             ping_interval=None,
         )

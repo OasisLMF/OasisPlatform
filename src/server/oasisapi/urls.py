@@ -1,41 +1,14 @@
 from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
-from django.contrib import admin
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-from rest_framework_nested import routers
-
-from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView, SettingsTemplateViewSet
-from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTaskStatusViewSet
-from .portfolios.viewsets import PortfolioViewSet
-from .healthcheck.views import HealthcheckView
-from .data_files.viewsets import DataFileViewset
-from .info.views import PerilcodesView
-from .info.views import ServerInfoView
-from .queues.viewsets import QueueViewSet
-from .queues.viewsets import WebsocketViewSet
+# from rest_framework_nested import routers
 
 if settings.DEBUG_TOOLBAR:
     from django.urls import path
     import debug_toolbar
-
-admin.autodiscover()
-
-api_router = routers.DefaultRouter()
-api_router.include_root_view = False
-api_router.register('portfolios', PortfolioViewSet, basename='portfolio')
-api_router.register('analyses', AnalysisViewSet, basename='analysis')
-api_router.register('analysis-task-statuses', AnalysisTaskStatusViewSet, basename='analysis-task-status')
-api_router.register('models', AnalysisModelViewSet, basename='analysis-model')
-api_router.register('data_files', DataFileViewset, basename='data-file')
-api_router.register('queue', QueueViewSet, basename='queue')
-api_router.register('queue-status', WebsocketViewSet, basename='queue')
-# api_router.register('files', FilesViewSet, basename='file')
-
-templates_router = routers.NestedSimpleRouter(api_router, r'models', lookup='models')
-templates_router.register('setting_templates', SettingsTemplateViewSet, basename='models-setting_templates')
 
 
 api_info_description = """
@@ -73,7 +46,7 @@ api_info_description += """
 
 api_info = openapi.Info(
     title="Oasis Platform",
-    default_version='v1',
+    default_version='v2',
     description=api_info_description,
 )
 
@@ -83,47 +56,38 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-""" Developer note:
-
-These are custom routes to use the endpoint 'settings'
-adding the method 'def settings( .. )' fails under
-viewsets.ModelViewSet due to it overriding
-the internal Django settings object
-"""
-
-model_settings = ModelSettingsView.as_view({
-    'get': 'model_settings',
-    'post': 'model_settings',
-    'delete': 'model_settings'
-})
-analyses_settings = AnalysisSettingsView.as_view({
-    'get': 'analysis_settings',
-    'post': 'analysis_settings',
-    'delete': 'analysis_settings'
-})
-
-
-urlpatterns = [
-    url(r'^(?P<version>[^/]+)/models/(?P<pk>\d+)/settings/', model_settings, name='model-settings'),
-    url(r'^(?P<version>[^/]+)/analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
+# Base Routes (no version)
+api_urlpatterns = [
     url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
-    url(r'^', include('src.server.oasisapi.auth.urls', namespace='auth')),
-    url(r'^healthcheck/$', HealthcheckView.as_view(), name='healthcheck'),
-    url(r'^oed_peril_codes/$', PerilcodesView.as_view(), name='perilcodes'),
-    url(r'^server_info/$', ServerInfoView.as_view(), name='serverinfo'),
-    url(r'^auth/', include('rest_framework.urls')),
-    url(r'^admin/', admin.site.urls),
-    url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
-    url(r'^(?P<version>[^/]+)/', include(templates_router.urls)),
+    url(r'^', include('src.server.oasisapi.base_urls')),
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# API v1 Routes
+api_urlpatterns += [
+    url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls', namespace='v1-models')),
+    url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls', namespace='v1-portfolios')),
+    url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls', namespace='v1-analyses')),
+    url(r'^v1/', include('src.server.oasisapi.data_files.v1_api.urls', namespace='v1-files')),
+]
+
+# API v2 Routes
+api_urlpatterns += [
+    url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
+    url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls', namespace='v2-analyses')),
+    url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
+    url(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-files')),
+    url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
+]
+
+urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.URL_SUB_PATH:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns = [url(r'^api/', include(urlpatterns))] + urlpatterns
+    urlpatterns += [url(r'^api/', include(api_urlpatterns))]
 else:
     urlpatterns += static(settings.STATIC_DEBUG_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += [url(r'^', include(api_urlpatterns))]
 
 if settings.DEBUG_TOOLBAR:
     urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))

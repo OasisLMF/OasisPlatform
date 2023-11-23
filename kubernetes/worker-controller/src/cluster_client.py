@@ -127,8 +127,9 @@ class DeploymentWatcher:
             supplier_id = labels.get('oasislmf/supplier-id', '')
             model_id = labels.get('oasislmf/model-id', '')
             model_version_id = labels.get('oasislmf/model-version-id', '')
+            api_version = labels.get('oasislmf/api-version', '')
 
-            await self.deployments.update_worker(name, supplier_id, model_id, model_version_id, replicas)
+            await self.deployments.update_worker(name, supplier_id, model_id, model_version_id, api_version, replicas)
 
     async def load_deployments(self):
         """

@@ -35,26 +35,33 @@ class Portfolio(TimeStampedModel):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, request=None):
-        return reverse('portfolio-detail', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-detail', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_create_analysis_url(self, request=None):
-        return reverse('portfolio-create-analysis', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_create_analysis_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-create-analysis', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_accounts_file_url(self, request=None):
-        return reverse('portfolio-accounts-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_accounts_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-accounts-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_location_file_url(self, request=None):
-        return reverse('portfolio-location-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_location_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-location-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_reinsurance_info_file_url(self, request=None):
-        return reverse('portfolio-reinsurance-info-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_reinsurance_info_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-reinsurance-info-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_reinsurance_scope_file_url(self, request=None):
-        return reverse('portfolio-reinsurance-scope-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_reinsurance_scope_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-reinsurance-scope-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_storage_url(self, request=None):
-        return reverse('portfolio-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_storage_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-storage-links', kwargs={'pk': self.pk}, request=request)
 
     def location_file_len(self):
         csv_compression_types = {

@@ -7,20 +7,14 @@ export PYTHONPATH=$SCRIPT_DIR
 # Set the ini file path
 export OASIS_INI_PATH="${SCRIPT_DIR}/conf.ini"
 
+
 # Delete celeryd.pid file - fix que pickup issues on reboot of server
 rm -f /home/worker/celeryd.pid
 
 
-# ---- needs to be one or the other?? ---
-    # OLD - wait for it (test and remove)
-    #./src/utils/wait-for-it.sh "$OASIS_RABBIT_HOST:$OASIS_RABBIT_PORT" -t 60
-    # use for REDIS
-    ./src/utils/wait-for-it.sh "$OASIS_CELERY_BROKER_URL" -t 60
-
+# Check connectivity
+./src/utils/wait-for-it.sh "$OASIS_CELERY_BROKER_URL" -t 60
 ./src/utils/wait-for-it.sh "$OASIS_CELERY_DB_HOST:$OASIS_CELERY_DB_PORT" -t 60
-
-# Start current worker on init
-# celery --app src.model_execution_worker.tasks worker --concurrency=1 --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}" |& tee -a /var/log/oasis/worker.log
 
 
 # set concurrency flag
@@ -31,5 +25,26 @@ else
       WORKER_CONCURRENCY='--concurrency '$OASIS_CELERY_CONCURRENCY
 fi
 
+
+# Oasis select API version
+SELECT_API_VERSION=$(echo "$OASIS_API_VERSION" | tr '[:upper:]' '[:lower:]')
+case "$SELECT_API_VERSION" in
+    "v1")
+      API_VER=''
+      TASK_FILE='src.model_execution_worker.tasks'
+    ;;
+    "v2")
+      API_VER='-v2'
+      TASK_FILE='src.model_execution_worker.distributed_tasks'
+    ;;
+    *)
+        echo "Invalid value for api version:"
+        echo " Set 'OASIS_API_VERSION=v1'  For Single server execution"
+        echo " Set 'OASIS_API_VERSION=v2'  For Distributed execution"
+        exit 1
+    ;;
+esac
+
+
 # Start new worker on init
-celery --app src.model_execution_worker.distributed_tasks worker $WORKER_CONCURRENCY --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}" ${OASIS_CELERY_EXTRA_ARGS} |& tee -a /var/log/oasis/worker.log
+celery --app $TASK_FILE worker $WORKER_CONCURRENCY --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}${API_VER}" ${OASIS_CELERY_EXTRA_ARGS} |& tee -a /var/log/oasis/worker.log

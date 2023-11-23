@@ -59,5 +59,6 @@ class DataFile(TimeStampedModel):
         else:
             return None
 
-    def get_absolute_data_file_url(self, request=None):
-        return reverse('data-file-content', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_data_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}data-file-content', kwargs={'pk': self.pk}, request=request)
