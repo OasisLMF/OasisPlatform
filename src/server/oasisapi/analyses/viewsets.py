@@ -158,6 +158,8 @@ class AnalysisTaskFilter(TimeStampedFilter):
         ]
 
 
+## https://stackoverflow.com/questions/62572389/django-drf-yasg-how-to-add-description-to-tags
+
 @method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisSerializer(many=True)}, tags=['analyses']))
 @method_decorator(name='create', decorator=swagger_auto_schema(tags=['analyses']))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(tags=['analyses']))
