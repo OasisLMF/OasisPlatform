@@ -14,6 +14,7 @@ class PerilcodesView(views.APIView):
     authentication_classes = []
     permission_classes = []
 
+    @swagger_auto_schema(tags=['info'])
     def get(self, request):
         peril_codes = {PERILS[p]['id']: {'desc': PERILS[p]['desc']} for p in PERILS.keys()}
         peril_groups = {
@@ -34,7 +35,7 @@ class ServerInfoView(views.APIView):
     Return a list of all support OED peril codes in the oasislmf package
     """
 
-    @swagger_auto_schema(responses={200: SERVER_INFO})
+    @swagger_auto_schema(responses={200: SERVER_INFO}, tags=['info'])
     def get(self, request):
         server_version = ""
         server_config = dict()

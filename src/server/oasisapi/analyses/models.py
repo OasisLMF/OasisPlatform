@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 
 from celery.result import AsyncResult
-from django.conf import settings
+from django.conf import settings as django_settings
 from django.core.files.base import File
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -14,7 +14,8 @@ from model_utils.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
-from src.server.oasisapi.celery_app import celery_app
+from src.server.oasisapi.celery_app_v1 import v1 as celery_app_v1
+from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
     TaskStatusMessageAnalysisItem, build_task_status_message
 from ..analysis_models.models import AnalysisModel
@@ -24,6 +25,8 @@ from ..portfolios.models import Portfolio
 from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
+
+from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -125,11 +128,13 @@ class AnalysisTaskStatus(models.Model):
             ('analysis', 'slug',)
         )
 
-    def get_output_log_url(self, request=None):
-        return reverse('analysis-task-status-output-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_output_log_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
+        return reverse(f'{override_ns}analysis-task-status-output-log', kwargs={'pk': self.pk}, request=request)
 
-    def get_error_log_url(self, request=None):
-        return reverse('analysis-task-status-error-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_error_log_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
+        return reverse(f'{override_ns}analysis-task-status-error-log', kwargs={'pk': self.pk}, request=request)
 
 
 class Analysis(TimeStampedModel):
@@ -146,16 +151,23 @@ class Analysis(TimeStampedModel):
         ('RUN_CANCELLED', 'Run cancelled'),
         ('RUN_ERROR', 'Run error'),
     )
+    run_mode_choices = Choices(
+        ('V1', 'Single-Instance Execution'),
+        ('V2', 'Distributed Execution'),
+    )
 
     input_generation_traceback_file_id = None
 
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
+    creator = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
     model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values),
                               choices=status_choices, default=status_choices.NEW, editable=False)
+    run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),
+                                choices=run_mode_choices, default=None, editable=False, null=True)
     task_started = models.DateTimeField(editable=False, null=True, default=None)
+
     task_finished = models.DateTimeField(editable=False, null=True, default=None)
     run_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
@@ -193,65 +205,99 @@ class Analysis(TimeStampedModel):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, request=None):
-        return reverse('analysis-detail', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def _update_ns(self, request=None):
+        """ WORKAROUND - this is needed for when a copy request is issued
+                         from the portfolio view '/{ver}/portfolios/{id}/create_analysis/'
 
-    def get_absolute_run_url(self, request=None):
-        return reverse('analysis-run', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+                         The inncorrect namespace '{ver}-portfolios' is inherited from the
+                         original request. This needs to be replaced with '{ver}-analyses'
+        """
+        if not request:
+            return None
+        ns_ver, ns_view = request.version.split('-')
+        if ns_view != 'analyses':
+            request.version = f'{ns_ver}-analyses'
+        return request
 
-    def get_absolute_cancel_url(self, request=None):
-        return reverse('analysis-cancel', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-detail', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_cancel_analysis_url(self, request=None):
-        return reverse('analysis-cancel-analysis-run', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_run_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-run', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_generate_inputs_url(self, request=None):
-        return reverse('analysis-generate-inputs', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_cancel_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-cancel', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_cancel_inputs_generation_url(self, request=None):
-        return reverse('analysis-cancel-generate-inputs', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_cancel_analysis_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-cancel-analysis-run', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_copy_url(self, request=None):
-        return reverse('analysis-copy', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_generate_inputs_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-generate-inputs', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_settings_file_url(self, request=None):
-        return reverse('analysis-settings-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_cancel_inputs_generation_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-cancel-generate-inputs', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_settings_url(self, request=None):
-        return reverse('analysis-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_copy_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-copy', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_input_file_url(self, request=None):
-        return reverse('analysis-input-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_settings_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-settings-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_lookup_errors_file_url(self, request=None):
-        return reverse('analysis-lookup-errors-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_settings_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-settings', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_lookup_success_file_url(self, request=None):
-        return reverse('analysis-lookup-success-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_input_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-input-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_lookup_validation_file_url(self, request=None):
-        return reverse('analysis-lookup-validation-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_lookup_errors_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-lookup-errors-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_summary_levels_file_url(self, request=None):
-        return reverse('analysis-summary-levels-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_lookup_success_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-lookup-success-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_input_generation_traceback_file_url(self, request=None):
-        return reverse('analysis-input-generation-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_lookup_validation_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-lookup-validation-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_output_file_url(self, request=None):
-        return reverse('analysis-output-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_summary_levels_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-summary-levels-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_run_traceback_file_url(self, request=None):
-        return reverse('analysis-run-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_input_generation_traceback_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-input-generation-traceback-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_run_log_file_url(self, request=None):
-        return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_output_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-output-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_storage_url(self, request=None):
-        return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_run_traceback_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-run-traceback-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_subtask_list_url(self, request=None):
-        return reverse('analysis-sub-task-list', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_run_log_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-run-log-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
+
+    def get_absolute_storage_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-storage-links', kwargs={'pk': self.pk}, request=self._update_ns(request))
+
+    def get_absolute_subtask_list_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-sub-task-list', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_groups(self):
         groups = []
@@ -279,6 +325,69 @@ class Analysis(TimeStampedModel):
             raise ValidationError(
                 f"Failed to read event set size for chunking: selected event_id: {selected_event_set}, options: {event_set_options}")
         return event_set_sizes.get(selected_event_set)
+
+    # --- V1 task signatures ------------------------------------------------ #
+
+    @property
+    def v1_run_analysis_signature(self):
+        complex_data_files = self.create_complex_model_data_file_dicts()
+        input_file = file_storage_link(self.input_file)
+        settings_file = file_storage_link(self.settings_file)
+
+        return celery_app_v1.signature(
+            'run_analysis',
+            args=(self.pk, input_file, settings_file, complex_data_files),
+            queue=self.model.queue_name,
+        )
+
+    @property
+    def v1_generate_input_signature(self):
+        loc_file = file_storage_link(self.portfolio.location_file)
+        acc_file = file_storage_link(self.portfolio.accounts_file)
+        info_file = file_storage_link(self.portfolio.reinsurance_info_file)
+        scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
+        settings_file = file_storage_link(self.settings_file)
+        complex_data_files = self.create_complex_model_data_file_dicts()
+
+        return celery_app_v1.signature(
+            'generate_input',
+            args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
+            queue=self.model.queue_name,
+        )
+
+    # --- V2 task signatures ------------------------------------------------ #
+
+    @property
+    def v2_run_analysis_signature(self):
+        return celery_app_v2.signature(
+            'start_loss_generation_task',
+            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')}
+        )
+
+    @property
+    def v2_start_input_and_loss_generation_signature(self):
+        return celery_app_v2.signature(
+            'start_input_and_loss_generation_task',
+            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')}
+        )
+
+    @property
+    def v2_cancel_subtasks_signature(self):
+        return celery_app_v2.signature(
+            'cancel_subtasks',
+            options={
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
+            }
+        )
+
+    @property
+    def v2_generate_input_signature(self):
+        return celery_app_v2.signature(
+            'start_input_generation_task',
+            options={
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
+            }
+        )
 
     def validate_run(self):
         valid_choices = [
@@ -334,27 +443,37 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
-    @property
-    def run_analysis_signature(self):
-        return celery_app.signature(
-            'start_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
-        )
-
-    def run(self, initiator):
+    def run(self, initiator, version):
         self.validate_run()
         events_total = self.get_num_events()
         self.status = self.status_choices.RUN_QUEUED
         self.save()
 
-        task = self.run_analysis_signature
-        task.on_error(celery_app.signature('handle_task_failure', kwargs={
-            'analysis_id': self.pk,
-            'initiator_id': initiator.pk,
-            'traceback_property': 'run_traceback_file',
-            'failure_status': Analysis.status_choices.RUN_ERROR,
-        }))
-        task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
+        if version.startswith('v1'):
+            task = self.v1_run_analysis_signature
+            task.link(record_run_analysis_result.s(self.pk, initiator.pk))
+            task.link_error(
+                celery_app_v1.signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+            )
+            self.status = self.status_choices.RUN_QUEUED
+            self.run_mode = self.run_mode_choices.V1
+            task_id = task.delay().id
+
+        elif version.startswith('v2'):  # V2 task dispatch
+            task = self.v2_run_analysis_signature
+            task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
+                'analysis_id': self.pk,
+                'initiator_id': initiator.pk,
+                'traceback_property': 'run_traceback_file',
+                'failure_status': Analysis.status_choices.RUN_ERROR,
+            }, queue='celery-v2'))
+            self.run_mode = self.run_mode_choices.V2
+            task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
+
+        else:
+            raise ValidationError(detail={'version':
+                                          [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
+                                          })
 
         self.run_task_id = task_id
         self.task_started = timezone.now()
@@ -368,14 +487,7 @@ class Analysis(TimeStampedModel):
         if errors:
             raise ValidationError(detail=errors)
 
-    @property
-    def start_input_and_loss_generation_signature(self):
-        return celery_app.signature(
-            'start_input_and_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
-        )
-
-    def generate_and_run(self, initiator):
+    def generate_and_run(self, initiator, version):
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
@@ -407,13 +519,14 @@ class Analysis(TimeStampedModel):
         self.summary_levels_file = None
         self.input_generation_traceback_file_id = None
 
-        task = self.start_input_and_loss_generation_signature
-        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+        task = self.v2_start_input_and_loss_generation_signature
+        task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
             'analysis_id': self.pk,
             'initiator_id': initiator.pk,
             'traceback_property': 'input_generation_traceback_file',
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
+        self.run_mode = self.run_mode_choices.V2
         task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
 
         self.generate_inputs_task_id = task_id
@@ -451,25 +564,7 @@ class Analysis(TimeStampedModel):
             self.task_finished = _now
             self.save()
 
-    @property
-    def generate_input_signature(self):
-        return celery_app.signature(
-            'start_input_generation_task',
-            options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
-            }
-        )
-
-    @property
-    def cancel_subtasks_signature(self):
-        return celery_app.signature(
-            'cancel_subtasks',
-            options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
-            }
-        )
-
-    def generate_inputs(self, initiator):
+    def generate_inputs(self, initiator, version):
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
@@ -511,14 +606,31 @@ class Analysis(TimeStampedModel):
         self.input_generation_traceback_file_id = None
         self.save()
 
-        task = self.generate_input_signature
-        task.on_error(celery_app.signature('handle_task_failure', kwargs={
-            'analysis_id': self.pk,
-            'initiator_id': initiator.pk,
-            'traceback_property': 'input_generation_traceback_file',
-            'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
-        }))
-        task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
+        if version.startswith('v1'):
+            task = self.v1_generate_input_signature
+            task.link(record_generate_input_result.s(self.pk, initiator.pk))
+            task.link_error(
+                celery_app_v1.signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
+            )
+            self.run_mode = self.run_mode_choices.V1
+            self.status = self.status_choices.INPUTS_GENERATION_QUEUED
+            task_id = task.delay().id
+
+        elif version.startswith('v2'):
+            task = self.v2_generate_input_signature
+            task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
+                'analysis_id': self.pk,
+                'initiator_id': initiator.pk,
+                'traceback_property': 'input_generation_traceback_file',
+                'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
+            }))
+            self.run_mode = self.run_mode_choices.V2
+            task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
+        else:
+            raise ValidationError(detail={'version':
+                                          [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
+                                          })
+
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
         self.task_finished = None
@@ -551,17 +663,26 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
-        # Kill the task controller job incase its still on queue
-        AsyncResult(self.run_task_id).revoke(
-            signal='SIGKILL',
-            terminate=True,
-        )
+        # Terminate V2 Execution
+        if self.run_mode is self.run_mode_choices.V2:
+            # Kill the task controller job incase its still on queue
+            AsyncResult(self.run_task_id).revoke(
+                signal='SIGKILL',
+                terminate=True,
+            )
+            # Send Kill chain call to worker-controller
+            cancel_tasks = self.v2_cancel_subtasks_signature
+            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
 
-        # Send Kill chain call to worker-controller
-        cancel_tasks = self.cancel_subtasks_signature
-        task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
+        # Terminate V1 Execution -- assume this option if not set
+        else:
+            AsyncResult(self.run_task_id).revoke(
+                signal='SIGTERM',
+                terminate=True,
+            )
 
         self.status = self.status_choices.RUN_CANCELLED
+        self.run_mode = None
         self.task_finished = timezone.now()
         self.save()
 
@@ -573,17 +694,26 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
-        # Kill the task controller job incase its still on queue
-        AsyncResult(self.generate_inputs_task_id).revoke(
-            signal='SIGKILL',
-            terminate=True,
-        )
+        # Terminate V2 Execution
+        if self.run_mode is self.run_mode_choices.V2:
+            # Kill the task controller job incase its still on queue
+            AsyncResult(self.generate_inputs_task_id).revoke(
+                signal='SIGKILL',
+                terminate=True,
+            )
+            # Send Kill chain call to worker-controller
+            cancel_tasks = self.v2_cancel_subtasks_signature
+            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
 
-        # Send Kill chain call to worker-controller
-        cancel_tasks = self.cancel_subtasks_signature
-        task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
+        # Terminate V1 Execution -- assume this option if not set
+        else:
+            AsyncResult(self.generate_inputs_task_id).revoke(
+                signal='SIGTERM',
+                terminate=True,
+            )
 
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
+        self.run_mode = None
         self.task_finished = timezone.now()
         self.save()
 

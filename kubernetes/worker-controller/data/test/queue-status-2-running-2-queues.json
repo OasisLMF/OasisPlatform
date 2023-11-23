@@ -5,7 +5,7 @@
   "content": [
     {
       "queue": {
-        "name": "OasisLMF-PiWind-1",
+        "name": "OasisLMF-PiWind-1-v2",
         "pending_count": 8,
         "worker_count": 1,
         "queued_count": 2,
@@ -41,8 +41,8 @@
             "lookup_chunks": 2,
             "sub_task_count": 7,
             "queue_names": [
-              "OasisLMF-PiWind-1",
-              "celery"
+              "OasisLMF-PiWind-1-v2",
+              "celery-v2"
             ],
             "status_count": {
               "TOTAL_IN_QUEUE": 6,
@@ -61,7 +61,7 @@
     },
     {
       "queue": {
-        "name": "OasisLMF-PiWind-2",
+        "name": "OasisLMF-PiWind-2-v2",
         "pending_count": 8,
         "worker_count": 1,
         "queued_count": 2,
@@ -97,8 +97,8 @@
             "lookup_chunks": 2,
             "sub_task_count": 7,
             "queue_names": [
-              "OasisLMF-PiWind-2",
-              "celery"
+              "OasisLMF-PiWind-2-v2",
+              "celery-v2"
             ],
             "status_count": {
               "TOTAL_IN_QUEUE": 7,

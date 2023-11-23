@@ -55,7 +55,8 @@ class AutoScaler:
         logging.debug('Model statuses: %s', model_states)
 
         model_states_with_wd = await self._filter_model_states_with_wd(model_states)
-        prioritized_models = self._clear_unprioritized_models(model_states_with_wd)
+        v2_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v2')
+        prioritized_models = self._clear_unprioritized_models(v2_models)
 
         await self._scale_models(prioritized_models)
 
@@ -93,43 +94,30 @@ class AutoScaler:
 
         return model_states
 
-    async def _scale_deployment(self, wd: WorkerDeployment, analysis_in_progress: bool, model_state: ModelState, limit: int) -> int:
+    async def _scale_deployment(self, wd: WorkerDeployment, model_state: ModelState, limit: int) -> int:
         """
         Update a worker deployments number of replicas, based on what autoscaler_rules returns as desired number
         of replicas (if changed since laste time).
 
         :param wd: The WorkerDeployment for this model.
-        :param analysis_in_progress: Is an analysis currently running for this model?
         :param model_state: Number of taks available to be processed by the worker pool for this model.
         :param limit: None or maximum value of total number of replicas/workers for this model deployment.
         :return: Number of replicas set on deployment
         """
 
-        desired_replicas = wd.auto_scaling.get('worker_count_min', 0)  # Set to min value of workers (always running)
-        is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS' and self.never_shutdown_fixed_workers
-
-        if analysis_in_progress or is_fixed_strategy:
-
-            if analysis_in_progress:
-                logging.debug('Analysis for model %s is running', wd.name)
-            if is_fixed_strategy:
-                logging.debug('Model %s is set to "FIXED_WORKERS"', wd.name)
-
-            try:
-                desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state)
-
-                if limit is not None and desired_replicas > limit:
-                    desired_replicas = limit
-            except ValueError as e:
-                logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
+        try:
+            desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state, self.never_shutdown_fixed_workers)
+            if limit is not None and desired_replicas > limit:
+                desired_replicas = limit
+        except ValueError as e:
+            desired_replicas = 0
+            logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
 
         if desired_replicas > 0 and wd.name in self.cleanup_deployments:
-
             if wd.name in self.cleanup_deployments:
                 self.cleanup_deployments.remove(wd.name)
 
         if wd.replicas != desired_replicas:
-
             if desired_replicas > 0:
                 await self.cluster.set_replicas(wd.name, desired_replicas)
             else:
@@ -141,7 +129,6 @@ class AutoScaler:
 
                 loop = asyncio.get_event_loop()
                 self.cleanup_timer = loop.call_later(20, self._cleanup)
-
                 return wd.replicas
 
         return desired_replicas
@@ -178,7 +165,7 @@ class AutoScaler:
             queue_name = entry['queue']['name']
 
             # Check for pending analyses
-            if (queue_name not in ['celery', 'task-controller']):
+            if (queue_name not in ['celery', 'celery-v2', 'task-controller']):
                 queued_count = entry['queue']['queued_count']
 
                 if (queued_count > 0) and not analyses_list:
@@ -229,6 +216,7 @@ class AutoScaler:
         :param prioritized_models: A dict of model names and their states.
         """
         workers_total = 0
+        logging.debug('Scaling: %s', prioritized_models)
 
         for model, state, wd in prioritized_models:
             workers_min = wd.auto_scaling.get('worker_count_min', 0) if wd.auto_scaling else 0
@@ -247,10 +235,9 @@ class AutoScaler:
                     wd.auto_scaling = await self.oasis_client.get_auto_scaling(wd.oasis_model_id)
 
             if wd.auto_scaling:
-                analysis_in_progress = state.get('tasks', 0) > 0
                 replicas_limit = self.limit - workers_total if self.limit else None
 
-                workers_created = await self._scale_deployment(wd, analysis_in_progress, state, replicas_limit)
+                workers_created = await self._scale_deployment(wd, state, replicas_limit)
                 workers_total += workers_created
             else:
                 logging.warning('No auto scaling setting found for model %s', wd.id_string())
@@ -297,6 +284,20 @@ class AutoScaler:
 
             return result
 
+    def _filter_models_by_api_version(self, model_states_with_wd, api_version):
+        """
+        Select model deployments matching an API version
+
+        :param model_states_with_wd: List of (model, model state, WorkerDeployment)
+        :param api_version: String of either `v1` or `v2`
+        :return: Models as input model_states_with_wd, but filtered by deployment version
+        """
+        result = []
+        for model, state, wd in model_states_with_wd:
+            if wd.api_version == api_version.lower():
+                result.append((model, state, wd), )
+        return result
+
     async def _filter_model_states_with_wd(self, model_states):
         """
         Filter and exclude models with no worker deployment in the cluster and return a list of
@@ -305,13 +306,9 @@ class AutoScaler:
         :param model_states: List of model states
         :return: Models with an attached WorkerDeployment.
         """
-
         result = []
-
         for model, state in model_states.items():
-
             wd = await self.deployments.get_worker_deployment_by_name_id(model)
-
             if wd:
                 result.append((model, state, wd), )
 
