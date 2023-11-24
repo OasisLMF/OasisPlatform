@@ -57,7 +57,7 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-## Base Routes (no version) 
+## Base Routes (no version)
 urlpatterns = [
     url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
@@ -69,9 +69,10 @@ urlpatterns += [
     url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls')),
     url(r'^v1/', include('src.server.oasisapi.data_files.urls')),
     url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls')),
+    url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls')),
 ]
 
-# API v2 Routes  
+# API v2 Routes
 urlpatterns += [
     #url(r'^v2/', include(v2_router.urls)),
     url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls')),
