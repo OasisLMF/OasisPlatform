@@ -5,6 +5,7 @@ from .info.views import PerilcodesView
 from .info.views import ServerInfoView
 from .healthcheck.views import HealthcheckView
 
+#app_name = 'base'
 
 urlpatterns = [
     url(r'^healthcheck/$', HealthcheckView.as_view(), name='healthcheck'),

@@ -20,7 +20,7 @@ class HealthcheckView(views.APIView):
     authentication_classes = []
     permission_classes = []
 
-    @swagger_auto_schema(responses={200: HEALTHCHECK})
+    @swagger_auto_schema(responses={200: HEALTHCHECK}, tags=['info'])
     def get(self, request):
         """
         Check db and celery connectivity and return a 200 if healthy, 503 if not.
