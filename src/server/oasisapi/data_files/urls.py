@@ -7,5 +7,5 @@ api_router.include_root_view = False
 api_router.register('data_files', DataFileViewset, basename='data-file')
 
 urlpatterns = [
-    url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
+    url(r'', include(api_router.urls)),
 ]

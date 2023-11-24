@@ -13,7 +13,8 @@ analyses_settings = AnalysisSettingsView.as_view({
     'delete': 'analysis_settings'
 })
 
+
 urlpatterns = [
-    url(r'^(?p<version>[^/]+)/analyses/(?p<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
-    url(r'^(?p<version>[^/]+)/', include(v2_api_router.urls)),
+    url(r'analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
+    url(r'', include(v2_api_router.urls)),
 ]    

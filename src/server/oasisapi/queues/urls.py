@@ -10,5 +10,5 @@ v2_api_router.register('queue', QueueViewSet, basename='queue')
 v2_api_router.register('queue-status', WebsocketViewSet, basename='queue')
 
 urlpatterns = [
-    url(r'^(?p<version>[^/]+)/', include(v2_api_router.urls)),
+    url(r'', include(v2_api_router.urls)),
 ]    

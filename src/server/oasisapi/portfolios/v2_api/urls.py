@@ -7,5 +7,5 @@ v2_api_router.include_root_view = False
 v2_api_router.register('portfolios', PortfolioViewSet, basename='portfolio')
 
 urlpatterns = [
-    url(r'^(?P<version>[^/]+)/', include(v2_api_router.urls)),
+    url(r'', include(v2_api_router.urls)),
 ]
