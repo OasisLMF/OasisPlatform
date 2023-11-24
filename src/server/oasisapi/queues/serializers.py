@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel
 from src.server.oasisapi.analysis_models.serializers import AnalysisModelSerializer
-from src.server.oasisapi.analyses.serializers import AnalysisSerializerWebSocket, AnalysisTaskStatusSerializer
+from src.server.oasisapi.analyses.v2_api.serializers import AnalysisSerializerWebSocket, AnalysisTaskStatusSerializer
 
 
 class QueueSerializer(serializers.Serializer):

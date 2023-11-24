@@ -21,7 +21,7 @@ from .serializers import (
     PortfolioListSerializer,
     PortfolioValidationSerializer
 )
-from ..analyses.serializers import AnalysisSerializer
+from ..analyses.v2_api.serializers import AnalysisSerializer
 from ..files.serializers import RelatedFileSerializer
 from ..files.views import handle_related_file
 from ..filters import TimeStampedFilter

@@ -8,7 +8,7 @@ from rest_framework import permissions
 from rest_framework_nested import routers
 
 from .analysis_models.viewsets import AnalysisModelViewSet, ModelSettingsView, SettingsTemplateViewSet
-from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTaskStatusViewSet
+#from .analyses.viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTaskStatusViewSet
 from .portfolios.viewsets import PortfolioViewSet
 from .healthcheck.views import HealthcheckView
 from .data_files.viewsets import DataFileViewset
@@ -26,13 +26,25 @@ admin.autodiscover()
 api_router = routers.DefaultRouter()
 api_router.include_root_view = False
 api_router.register('portfolios', PortfolioViewSet, basename='portfolio')
-api_router.register('analyses', AnalysisViewSet, basename='analysis')
-api_router.register('analysis-task-statuses', AnalysisTaskStatusViewSet, basename='analysis-task-status')
+#api_router.register('analyses', AnalysisViewSet, basename='analysis')
+#api_router.register('analysis-task-statuses', AnalysisTaskStatusViewSet, basename='analysis-task-status')
 api_router.register('models', AnalysisModelViewSet, basename='analysis-model')
 api_router.register('data_files', DataFileViewset, basename='data-file')
 api_router.register('queue', QueueViewSet, basename='queue')
 api_router.register('queue-status', WebsocketViewSet, basename='queue')
 # api_router.register('files', FilesViewSet, basename='file')
+
+
+from .analyses.v1_api.urls import v1_api_router
+from .analyses.v2_api.urls import v2_api_router
+
+
+v1_router = routers.DefaultRouter()
+v1_router.registry.extend(v1_api_router.registry)
+
+v2_router = routers.DefaultRouter()
+v2_router.registry.extend(v2_api_router.registry)
+
 
 templates_router = routers.NestedSimpleRouter(api_router, r'models', lookup='models')
 templates_router.register('setting_templates', SettingsTemplateViewSet, basename='models-setting_templates')
@@ -96,16 +108,16 @@ model_settings = ModelSettingsView.as_view({
     'post': 'model_settings',
     'delete': 'model_settings'
 })
-analyses_settings = AnalysisSettingsView.as_view({
-    'get': 'analysis_settings',
-    'post': 'analysis_settings',
-    'delete': 'analysis_settings'
-})
+#analyses_settings = AnalysisSettingsView.as_view({
+#    'get': 'analysis_settings',
+#    'post': 'analysis_settings',
+#    'delete': 'analysis_settings'
+#})
 
 
 urlpatterns = [
     url(r'^(?P<version>[^/]+)/models/(?P<pk>\d+)/settings/', model_settings, name='model-settings'),
-    url(r'^(?P<version>[^/]+)/analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
+    #url(r'^(?P<version>[^/]+)/analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
     url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
     url(r'^', include('src.server.oasisapi.auth.urls', namespace='auth')),
@@ -116,6 +128,9 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
     url(r'^(?P<version>[^/]+)/', include(templates_router.urls)),
+    url(r'^v1/', include(v1_router.urls)),
+    url(r'^v2/', include(v2_router.urls)),
+
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

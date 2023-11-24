@@ -14,7 +14,7 @@ from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFound
 from azure.storage.blob import BlobLeaseClient
 
 from .models import Portfolio
-from ..analyses.serializers import AnalysisSerializer
+from ..analyses.v2_api.serializers import AnalysisSerializer
 from ..files.models import RelatedFile
 from ..files.models import file_storage_link
 from ..files.upload import wait_for_blob_copy

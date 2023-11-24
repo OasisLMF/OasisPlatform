@@ -4,13 +4,13 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from ....conf import iniconf
-from .models import Analysis, AnalysisTaskStatus
-from ..files.models import file_storage_link
-from ..permissions.group_auth import verify_and_get_groups, validate_data_files
+from .....conf import iniconf
+from ..models import Analysis, AnalysisTaskStatus
+from ...files.models import file_storage_link
+from ...permissions.group_auth import verify_and_get_groups, validate_data_files
 
 
-from ..schemas.serializers import (
+from ...schemas.serializers import (
     GroupNameSerializer,
     QueueNameSerializer,
     TaskCountSerializer,
@@ -23,6 +23,7 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     error_log = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name =  "v2" + __qualname__.split('.')[0]
         model = AnalysisTaskStatus
         fields = (
             'id',
@@ -54,6 +55,9 @@ class AnalysisListSerializer(serializers.Serializer):
     """ Read Only Analyses Deserializer for efficiently returning a list of all
         Analyses from DB
     """
+    class Meta:
+        ref_name =  "v2" + __qualname__.split('.')[0]
+
     # model fields
     created = serializers.DateTimeField(read_only=True)
     modified = serializers.DateTimeField(read_only=True)
@@ -212,6 +216,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     status_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
+        ref_name =  "v2" + __qualname__.split('.')[0]
         model = Analysis
         fields = (
             'created',
@@ -383,6 +388,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
 class AnalysisSerializerWebSocket(serializers.Serializer):
     """ Minimal Analysis Infomation needed to send via WebSocket
     """
+    class Meta:
+        ref_name =  "v2" + __qualname__.split('.')[0]
+
     # model fields
     name = serializers.CharField(read_only=True)
     id = serializers.IntegerField(read_only=True)
@@ -439,6 +447,7 @@ class AnalysisStorageSerializer(serializers.ModelSerializer):
     summary_levels_file = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name =  "v2" + __qualname__.split('.')[0]
         model = Analysis
         fields = (
             'settings_file',

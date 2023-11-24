@@ -8,7 +8,7 @@ from django.utils.timezone import now
 from rest_framework.serializers import DateTimeField
 
 if TYPE_CHECKING:
-    from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
+    from src.server.oasisapi.v2_api.analyses.models import Analysis, AnalysisTaskStatus
     from src.server.oasisapi.queues.utils import QueueInfo
 
 
