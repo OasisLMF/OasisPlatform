@@ -4,11 +4,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from .models import AnalysisModel, SettingsTemplate
-from ..analyses.models import Analysis
+from ..models import AnalysisModel, SettingsTemplate
+from ...analyses.models import Analysis
 
-from .models import AnalysisModel, ModelScalingOptions, ModelChunkingOptions
-from ..permissions.group_auth import validate_and_update_groups, validate_data_files
+from ..models import AnalysisModel, ModelScalingOptions, ModelChunkingOptions
+from ...permissions.group_auth import validate_and_update_groups, validate_data_files
 
 
 class AnalysisModelSerializer(serializers.ModelSerializer):

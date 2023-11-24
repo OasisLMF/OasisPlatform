@@ -1,7 +1,6 @@
-#from rest_framework_nested import routers
+from django.conf.urls import include, url
 from rest_framework.routers import SimpleRouter
 from .viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTaskStatusViewSet
-from django.conf.urls import include, url
 
 v2_api_router = SimpleRouter()
 v2_api_router.include_root_view = False
@@ -15,6 +14,6 @@ analyses_settings = AnalysisSettingsView.as_view({
 })
 
 urlpatterns = [
-    url(r'^(?P<version>[^/]+)/analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
-    url(r'^(?P<version>[^/]+)/', include(v2_api_router.urls)),
+    url(r'^(?p<version>[^/]+)/analyses/(?p<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
+    url(r'^(?p<version>[^/]+)/', include(v2_api_router.urls)),
 ]    

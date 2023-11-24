@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel
-from src.server.oasisapi.analysis_models.serializers import AnalysisModelSerializer
+from src.server.oasisapi.analysis_models.v2_api.serializers import AnalysisModelSerializer
 from src.server.oasisapi.analyses.v2_api.serializers import AnalysisSerializerWebSocket, AnalysisTaskStatusSerializer
 
 

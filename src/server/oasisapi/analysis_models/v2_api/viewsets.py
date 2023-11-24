@@ -11,7 +11,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
-from .models import AnalysisModel, SettingsTemplate
+from ..models import AnalysisModel, SettingsTemplate
 from .serializers import (
     AnalysisModelSerializer,
     ModelVersionsSerializer,
@@ -21,13 +21,13 @@ from .serializers import (
     ModelChunkingConfigSerializer,
 )
 
-from ..data_files.serializers import DataFileSerializer
-from ..filters import TimeStampedFilter
-from ..files.views import handle_related_file, handle_json_data
-from ..files.serializers import RelatedFileSerializer
-from ..permissions.group_auth import VerifyGroupAccessModelViewSet
-from ..schemas.custom_swagger import FILE_RESPONSE
-from ..schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
+from ...data_files.serializers import DataFileSerializer
+from ...filters import TimeStampedFilter
+from ...files.views import handle_related_file, handle_json_data
+from ...files.serializers import RelatedFileSerializer
+from ...permissions.group_auth import VerifyGroupAccessModelViewSet
+from ...schemas.custom_swagger import FILE_RESPONSE
+from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 
 
 class AnalysisModelFilter(TimeStampedFilter):

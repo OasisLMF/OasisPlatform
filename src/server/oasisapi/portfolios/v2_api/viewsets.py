@@ -11,9 +11,9 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
 
-from .models import Portfolio
-from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
-from ..schemas.serializers import StorageLinkSerializer
+from ..models import Portfolio
+from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
+from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
     CreateAnalysisSerializer,
@@ -21,13 +21,13 @@ from .serializers import (
     PortfolioListSerializer,
     PortfolioValidationSerializer
 )
-from ..analyses.v2_api.serializers import AnalysisSerializer
-from ..files.serializers import RelatedFileSerializer
-from ..files.views import handle_related_file
-from ..filters import TimeStampedFilter
-from ..permissions.group_auth import VerifyGroupAccessModelViewSet
-from ..schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
-from ..schemas.serializers import StorageLinkSerializer
+from ...analyses.v2_api.serializers import AnalysisSerializer
+from ...files.serializers import RelatedFileSerializer
+from ...files.views import handle_related_file
+from ...filters import TimeStampedFilter
+from ...permissions.group_auth import VerifyGroupAccessModelViewSet
+from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
+from ...schemas.serializers import StorageLinkSerializer
 
 
 class PortfolioFilter(TimeStampedFilter):
