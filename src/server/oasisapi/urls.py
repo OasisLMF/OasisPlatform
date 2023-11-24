@@ -66,6 +66,7 @@ urlpatterns = [
 
 ## API v1 Routes
 urlpatterns += [
+    url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls')),
     url(r'^v1/', include('src.server.oasisapi.data_files.urls')),
     url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls')),
 ]
