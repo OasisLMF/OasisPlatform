@@ -7,6 +7,7 @@ import os
 import sys
 import shutil
 import subprocess
+import time
 
 import fasteners
 import tempfile
@@ -20,7 +21,6 @@ from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 from celery.platforms import signals
 
-from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -176,15 +176,13 @@ def check_worker_lost(task, analysis_pk):
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
+    time.sleep(1)  # Workaround, pause for 1 sec to makesure log messages are printed
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
     m_version = get_worker_versions()
-    m_conf = get_json(get_oasislmf_config_path(m_id))
-
     logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
-    logging.info('oasislmf config: {}'.format(m_conf))
 
     # Check for 'DISABLE_WORKER_REG' before sending task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
@@ -198,7 +196,8 @@ def register_worker(sender, **k):
 
         signature(
             'run_register_worker',
-            args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
+            args=(m_supplier, m_name, m_id, m_settings, m_version),
+            queue='celery'
         ).delay()
 
     # Required ENV
@@ -289,7 +288,7 @@ def notify_api_status(analysis_pk, task_status):
         'set_task_status',
         args=(analysis_pk, task_status),
         queue='celery'
-    ).delay({}, priority=analysis_pk)
+    ).delay()
 
 
 @app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,))
@@ -606,7 +605,7 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
             record_task_name,
             args=(analysis_pk, initiator_pk, traceback),
             queue='celery'
-        ).delay({})
+        ).delay()
 
 
 def prepare_complex_model_file_inputs(complex_model_files, run_directory):
@@ -646,3 +645,4 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
                 os.symlink(from_path, to_path)
         else:
             logging.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))
+
