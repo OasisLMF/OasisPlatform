@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_extensions',
     'django_filters',
     'rest_framework',
     'drf_yasg',
@@ -93,6 +94,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.info',
     'src.server.oasisapi.queues',
     'django_cleanup.apps.CleanupConfig',
+    
 ]
 
 MIDDLEWARE = [
@@ -171,9 +173,9 @@ REST_FRAMEWORK = {
         'src.server.oasisapi.filters.Backend',
     ),
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
-    #'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
-    'DEFAULT_VERSION': 'v2',
+    #'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+#    'DEFAULT_VERSION': 'v2',
 }
 
 # Password validation
