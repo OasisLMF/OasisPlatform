@@ -18,6 +18,7 @@ from src.server.oasisapi.auth.tests.fakes import fake_user, add_fake_group
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
+NAMESPACE = 'v2-models'
 
 
 class AnalysisModelApi(WebTest, TestCase):
@@ -29,7 +30,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -52,7 +53,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -76,7 +77,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -106,7 +107,7 @@ class AnalysisModelApi(WebTest, TestCase):
         add_fake_group(user, group_name)
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -136,7 +137,7 @@ class AnalysisModelApi(WebTest, TestCase):
         add_fake_group(user, group_name)
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -165,7 +166,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -197,7 +198,7 @@ class AnalysisModelApi(WebTest, TestCase):
 
         # List models as the user that created it
         response = self.app.get(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group))
@@ -210,7 +211,7 @@ class AnalysisModelApi(WebTest, TestCase):
         # Test with a user not a member of the group the model was created with
         user_without_group = fake_user()
         response = self.app.get(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
@@ -223,13 +224,13 @@ class AnalysisModelApi(WebTest, TestCase):
     @given(
         group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
-    def test_as_admin_create_with_non_existing_groups___successfully(self, group_name):
+    def test_as_admin_create_with_non_existing_groups___successfully_1(self, group_name):
         admin_user = fake_user()
         admin_user.is_staff = True
         admin_user.save()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(admin_user))
@@ -249,11 +250,11 @@ class AnalysisModelApi(WebTest, TestCase):
     @given(
         group_name=text(alphabet=string.ascii_letters, min_size=1, max_size=10),
     )
-    def test_as_admin_create_with_non_existing_groups___successfully(self, group_name):
+    def test_as_admin_create_with_non_existing_groups___successfully_2(self, group_name):
         ordinary_user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v2'}),
+            reverse(f'{NAMESPACE}:analysis-model-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(ordinary_user))
@@ -273,8 +274,8 @@ class AnalysisModelApi(WebTest, TestCase):
 class ModelSettingsJson(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         models = fake_analysis_model()
-
-        response = self.app.get(models.get_absolute_settings_url(), expect_errors=True)
+        settings_url = reverse(f'{NAMESPACE}:model-settings', kwargs={'pk': models.pk})
+        response = self.app.get(settings_url, expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     """ Add these check back in once models auto-update their settings fields
@@ -284,8 +285,9 @@ class ModelSettingsJson(WebTestMixin, TestCase):
         user = fake_user()
         models = fake_analysis_model()
 
+        settings_url = reverse(f'{NAMESPACE}:model-settings', kwargs={'pk': models.pk})
         response = self.app.get(
-            models.get_absolute_settings_url(),
+            settings_url,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -298,8 +300,9 @@ class ModelSettingsJson(WebTestMixin, TestCase):
         user = fake_user()
         models = fake_analysis_model()
 
+        settings_url = reverse(f'{NAMESPACE}:model-settings', kwargs={'pk': models.pk})
         response = self.app.delete(
-            models.get_absolute_settings_url(),
+            settings_url,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -350,8 +353,9 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                     }
                 }
 
+                settings_url = reverse(f'{NAMESPACE}:model-settings', kwargs={'pk': models.pk})
                 response = self.app.post(
-                    models.get_absolute_settings_url(),
+                    settings_url,
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -417,8 +421,9 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                     }
                 }
 
+                settings_url = reverse(f'{NAMESPACE}:model-settings', kwargs={'pk': models.pk})
                 self.app.post(
-                    models.get_absolute_settings_url(),
+                    settings_url,
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -427,7 +432,7 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    models.get_absolute_settings_url(),
+                    settings_url,
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
