@@ -113,7 +113,7 @@ class SettingsTemplate(TimeStampedModel):
             return None
 
     def get_absolute_settings_template_url(self, model_pk, request=None):
-        return reverse('models-setting_templates-content', kwargs={'version': 'v1', 'pk': self.pk, 'models_pk': model_pk}, request=request)
+        return reverse(f'{request.version}:models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=request)
 
 
 class AnalysisModel(TimeStampedModel):
@@ -174,19 +174,19 @@ class AnalysisModel(TimeStampedModel):
         self.save()
 
     def get_absolute_resources_file_url(self, request=None):
-        return reverse('analysis-model-resource-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse(f'{request.version}:analysis-model-resource-file', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_versions_url(self, request=None):
-        return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse(f'{request.version}:analysis-model-versions', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_settings_url(self, request=None):
-        return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse(f'{request.version}:model-settings', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_scaling_configuration_url(self, request=None):
-        return reverse('analysis-model-scaling-configuration', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse(f'{request.version}:analysis-model-scaling-configuration', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_chunking_configuration_url(self, request=None):
-        return reverse('analysis-model-chunking-configuration', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse(f'{request.version}:analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=request)
 
 
 class QueueModelAssociation(models.Model):

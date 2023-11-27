@@ -126,10 +126,10 @@ class AnalysisTaskStatus(models.Model):
         )
 
     def get_output_log_url(self, request=None):
-        return reverse('analysis-task-status-output-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-task-status-output-log', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_error_log_url(self, request=None):
-        return reverse('analysis-task-status-error-log', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-task-status-error-log', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
 
 class Analysis(TimeStampedModel):
@@ -194,64 +194,64 @@ class Analysis(TimeStampedModel):
         return self.name
 
     def get_absolute_url(self, request=None):
-        return reverse('analysis-detail', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-detail', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_run_url(self, request=None):
-        return reverse('analysis-run', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-run', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_cancel_url(self, request=None):
-        return reverse('analysis-cancel', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-cancel', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_cancel_analysis_url(self, request=None):
-        return reverse('analysis-cancel-analysis-run', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-cancel-analysis-run', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_generate_inputs_url(self, request=None):
-        return reverse('analysis-generate-inputs', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-generate-inputs', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_cancel_inputs_generation_url(self, request=None):
-        return reverse('analysis-cancel-generate-inputs', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-cancel-generate-inputs', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_copy_url(self, request=None):
-        return reverse('analysis-copy', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-copy', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_settings_file_url(self, request=None):
-        return reverse('analysis-settings-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-settings-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_settings_url(self, request=None):
-        return reverse('analysis-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-settings', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_input_file_url(self, request=None):
-        return reverse('analysis-input-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-input-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_lookup_errors_file_url(self, request=None):
-        return reverse('analysis-lookup-errors-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-lookup-errors-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_lookup_success_file_url(self, request=None):
-        return reverse('analysis-lookup-success-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-lookup-success-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_lookup_validation_file_url(self, request=None):
-        return reverse('analysis-lookup-validation-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-lookup-validation-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_summary_levels_file_url(self, request=None):
-        return reverse('analysis-summary-levels-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-summary-levels-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_input_generation_traceback_file_url(self, request=None):
-        return reverse('analysis-input-generation-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-input-generation-traceback-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_output_file_url(self, request=None):
-        return reverse('analysis-output-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-output-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_run_traceback_file_url(self, request=None):
-        return reverse('analysis-run-traceback-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-run-traceback-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_run_log_file_url(self, request=None):
-        return reverse('analysis-run-log-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-run-log-file', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_storage_url(self, request=None):
-        return reverse('analysis-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-storage-links', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_absolute_subtask_list_url(self, request=None):
-        return reverse('analysis-sub-task-list', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('analysis-sub-task-list', kwargs={'version': 'v2', 'pk': self.pk}, request=request)
 
     def get_groups(self):
         groups = []

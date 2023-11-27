@@ -2,6 +2,8 @@ from django.conf.urls import include, url
 from rest_framework_nested import routers
 from .viewsets import AnalysisModelViewSet, ModelSettingsView, SettingsTemplateViewSet
 
+
+app_name = 'models'
 v2_api_router = routers.SimpleRouter()
 v2_api_router.register('models', AnalysisModelViewSet, basename='analysis-model')
 

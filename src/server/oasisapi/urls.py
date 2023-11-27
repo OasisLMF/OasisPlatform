@@ -66,20 +66,21 @@ urlpatterns = [
 
 ## API v1 Routes
 urlpatterns += [
-    url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls')),
-    url(r'^v1/', include('src.server.oasisapi.data_files.urls')),
-    url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls')),
-    url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls')),
+    url(r'^v1/', include(('src.server.oasisapi.analyses.v1_api.urls', 'api'), namespace='v1')),
+    url(r'^v1/', include(('src.server.oasisapi.data_files.urls', 'api'), namespace='v1')),
+    url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls', namespace='v1')),
+    url(r'^v1/', include(('src.server.oasisapi.portfolios.v1_api.urls', 'api'), namespace='v1')),
 ]
 
 # API v2 Routes
 urlpatterns += [
     #url(r'^v2/', include(v2_router.urls)),
-    url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls')),
-    url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls')),
-    url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls')),
-    url(r'^v2/', include('src.server.oasisapi.queues.urls')),
-    url(r'^v2/', include('src.server.oasisapi.data_files.urls')),
+
+    url(r'^v2/', include(('src.server.oasisapi.analysis_models.v2_api.urls', 'api'), namespace='v2')),
+    url(r'^v2/', include(('src.server.oasisapi.analyses.v2_api.urls', 'api'), namespace='v2')),
+    url(r'^v2/', include(('src.server.oasisapi.portfolios.v2_api.urls', 'api'), namespace='v2')),
+    url(r'^v2/', include(('src.server.oasisapi.queues.urls', 'api'), namespace='v2')),
+    url(r'^v2/', include(('src.server.oasisapi.data_files.urls', 'api'), namespace='v2')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

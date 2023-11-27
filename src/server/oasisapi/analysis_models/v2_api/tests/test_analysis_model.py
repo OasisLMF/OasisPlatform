@@ -29,7 +29,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -52,7 +52,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -76,7 +76,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -106,7 +106,7 @@ class AnalysisModelApi(WebTest, TestCase):
         add_fake_group(user, group_name)
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -136,7 +136,7 @@ class AnalysisModelApi(WebTest, TestCase):
         add_fake_group(user, group_name)
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -165,7 +165,7 @@ class AnalysisModelApi(WebTest, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -197,7 +197,7 @@ class AnalysisModelApi(WebTest, TestCase):
 
         # List models as the user that created it
         response = self.app.get(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group))
@@ -210,7 +210,7 @@ class AnalysisModelApi(WebTest, TestCase):
         # Test with a user not a member of the group the model was created with
         user_without_group = fake_user()
         response = self.app.get(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
@@ -229,7 +229,7 @@ class AnalysisModelApi(WebTest, TestCase):
         admin_user.save()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(admin_user))
@@ -253,7 +253,7 @@ class AnalysisModelApi(WebTest, TestCase):
         ordinary_user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-model-list', kwargs={'version': 'v1'}),
+            reverse('analysis-model-list', kwargs={'version': 'v2'}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(ordinary_user))
