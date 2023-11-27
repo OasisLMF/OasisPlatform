@@ -9,6 +9,8 @@ from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 
+from django.urls import reverse as reverse_1
+
 from ..files.models import RelatedFile
 from ..data_files.models import DataFile
 
@@ -174,19 +176,19 @@ class AnalysisModel(TimeStampedModel):
         self.save()
 
     def get_absolute_resources_file_url(self, request=None):
-        return reverse(f'{request.version}:analysis-model-resource-file', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-model-resource-file', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_versions_url(self, request=None):
-        return reverse(f'{request.version}:analysis-model-versions', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-model-versions', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_settings_url(self, request=None):
-        return reverse(f'{request.version}:model-settings', kwargs={'pk': self.pk}, request=request)
+        return reverse('model-settings', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_scaling_configuration_url(self, request=None):
-        return reverse(f'{request.version}:analysis-model-scaling-configuration', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-model-scaling-configuration', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_chunking_configuration_url(self, request=None):
-        return reverse(f'{request.version}:analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=request)
+        return reverse('analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=request)
 
 
 class QueueModelAssociation(models.Model):

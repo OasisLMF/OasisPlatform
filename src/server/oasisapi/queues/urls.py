@@ -4,6 +4,7 @@ from .viewsets import QueueViewSet
 from .viewsets import WebsocketViewSet
 
 
+app_name = 'queue'
 v2_api_router = SimpleRouter()
 v2_api_router.include_root_view = False
 v2_api_router.register('queue', QueueViewSet, basename='queue')

@@ -60,4 +60,4 @@ class DataFile(TimeStampedModel):
             return None
 
     def get_absolute_data_file_url(self, request=None):
-        return reverse('data-file-content', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+        return reverse('data-file-content', kwargs={'pk': self.pk}, request=request)

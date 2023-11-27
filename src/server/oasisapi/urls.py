@@ -64,23 +64,22 @@ urlpatterns = [
     url(r'^', include('src.server.oasisapi.base_urls')),
 ]
 
-## API v1 Routes
+
+#### API v1 Routes
 urlpatterns += [
-    url(r'^v1/', include(('src.server.oasisapi.analyses.v1_api.urls', 'api'), namespace='v1')),
-    url(r'^v1/', include(('src.server.oasisapi.data_files.urls', 'api'), namespace='v1')),
-    url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls', namespace='v1')),
-    url(r'^v1/', include(('src.server.oasisapi.portfolios.v1_api.urls', 'api'), namespace='v1')),
+    url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls', namespace='v1-models')),
+    url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls',      namespace='v1-portfolios')),
+    url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls',        namespace='v1-analyses')),
+    url(r'^v1/', include('src.server.oasisapi.data_files.urls',             namespace='v1-files')),
 ]
 
 # API v2 Routes
 urlpatterns += [
-    #url(r'^v2/', include(v2_router.urls)),
-
-    url(r'^v2/', include(('src.server.oasisapi.analysis_models.v2_api.urls', 'api'), namespace='v2')),
-    url(r'^v2/', include(('src.server.oasisapi.analyses.v2_api.urls', 'api'), namespace='v2')),
-    url(r'^v2/', include(('src.server.oasisapi.portfolios.v2_api.urls', 'api'), namespace='v2')),
-    url(r'^v2/', include(('src.server.oasisapi.queues.urls', 'api'), namespace='v2')),
-    url(r'^v2/', include(('src.server.oasisapi.data_files.urls', 'api'), namespace='v2')),
+    url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
+    url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls',        namespace='v2-analyses')),
+    url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls',      namespace='v2-portfolios')),
+    url(r'^v2/', include('src.server.oasisapi.queues.urls',                 namespace='v2-queues')),
+    url(r'^v2/', include('src.server.oasisapi.data_files.urls',             namespace='v2-files')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

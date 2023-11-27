@@ -3,6 +3,7 @@ from rest_framework.routers import SimpleRouter
 from .viewsets import AnalysisViewSet, AnalysisSettingsView
 
 
+app_name = 'analyses'
 v1_api_router = SimpleRouter()
 v1_api_router.include_root_view = False
 v1_api_router.register('analyses', AnalysisViewSet, basename='analysis')

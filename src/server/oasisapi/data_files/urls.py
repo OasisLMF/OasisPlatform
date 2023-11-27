@@ -2,6 +2,8 @@ from django.conf.urls import include, url
 from rest_framework.routers import SimpleRouter
 from .viewsets import DataFileViewset
 
+
+app_name = 'data_files'
 api_router = SimpleRouter()
 api_router.include_root_view = False
 api_router.register('data_files', DataFileViewset, basename='data-file')
