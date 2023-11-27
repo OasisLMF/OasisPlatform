@@ -31,7 +31,6 @@ class PortfolioListSerializer(serializers.Serializer):
     """ Read Only Portfolio Deserializer for efficiently returning a list of all
         Portfolios in DB
     """
-
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(read_only=True)
     created = serializers.DateTimeField(read_only=True)
@@ -42,6 +41,9 @@ class PortfolioListSerializer(serializers.Serializer):
     reinsurance_scope_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
     groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+
+    class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_storage_links(self, instance):
@@ -103,6 +105,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = Portfolio
         fields = (
             'id',
@@ -197,6 +200,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
     reinsurance_scope_file = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = Portfolio
         fields = (
             'location_file',
@@ -403,6 +407,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
 
 class CreateAnalysisSerializer(AnalysisSerializer):
     class Meta(AnalysisSerializer.Meta):
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         fields = ['name', 'model', 'groups']
 
     def __init__(self, portfolio=None, *args, **kwargs):
@@ -433,6 +438,7 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
     reinsurance_scope_validated = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = Portfolio
         fields = (
             'location_validated',

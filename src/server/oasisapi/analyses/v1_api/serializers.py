@@ -37,6 +37,9 @@ class AnalysisListSerializer(serializers.Serializer):
     run_log_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
 
+    class Meta:
+        ref_name =  "v1_" + __qualname__.split('.')[0]
+
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_input_file(self, instance):
         request = self.context.get('request')
@@ -113,6 +116,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     storage_links = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name =  "v1_" + __qualname__.split('.')[0]
         model = Analysis
         fields = (
             'created',
@@ -229,6 +233,7 @@ class AnalysisStorageSerializer(serializers.ModelSerializer):
     summary_levels_file = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name =  "v1_" + __qualname__.split('.')[0]
         model = Analysis
         fields = (
             'settings_file',
@@ -285,6 +290,9 @@ class AnalysisStorageSerializer(serializers.ModelSerializer):
 
 
 class AnalysisCopySerializer(AnalysisSerializer):
+    class Meta:
+        ref_name =  "v1_" + __qualname__.split('.')[0]
+
     def __init__(self, *args, **kwargs):
         super(AnalysisCopySerializer, self).__init__(*args, **kwargs)
 

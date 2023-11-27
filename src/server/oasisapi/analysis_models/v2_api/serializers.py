@@ -20,6 +20,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = AnalysisModel
         fields = (
             'id',
@@ -86,6 +87,7 @@ class TemplateSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = SettingsTemplate
         fields = (
             'id',
@@ -112,6 +114,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
     analysis_id = serializers.IntegerField(required=False)
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = SettingsTemplate
         fields = (
             'id',
@@ -147,6 +150,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
 class ModelVersionsSerializer(serializers.ModelSerializer):
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = AnalysisModel
         fields = (
             'ver_ktools',
@@ -158,6 +162,7 @@ class ModelVersionsSerializer(serializers.ModelSerializer):
 class ModelChunkingConfigSerializer(serializers.ModelSerializer):
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = ModelChunkingOptions
         fields = (
             'lookup_strategy',
@@ -199,6 +204,7 @@ class ModelChunkingConfigSerializer(serializers.ModelSerializer):
 class ModelScalingConfigSerializer(serializers.ModelSerializer):
 
     class Meta:
+        ref_name =  "v2_" + __qualname__.split('.')[0]
         model = ModelScalingOptions
         fields = (
             'scaling_strategy',

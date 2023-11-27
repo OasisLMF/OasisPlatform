@@ -13,7 +13,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     versions = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name =  "v1" + __qualname__.split('.')[0]
+        ref_name =  "v1_" + __qualname__.split('.')[0]
         model = AnalysisModel
         fields = (
             'id',
@@ -57,7 +57,7 @@ class TemplateSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name =  "v1" + __qualname__.split('.')[0]
+        ref_name =  "v1_" + __qualname__.split('.')[0]
         model = SettingsTemplate
         fields = (
             'id',
@@ -84,7 +84,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
     analysis_id = serializers.IntegerField(required=False)
 
     class Meta:
-        ref_name =  "v1" + __qualname__.split('.')[0]
+        ref_name =  "v1_" + __qualname__.split('.')[0]
         model = SettingsTemplate
         fields = (
             'id',
@@ -119,7 +119,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
 
 class ModelVersionsSerializer(serializers.ModelSerializer):
     class Meta:
-        ref_name =  "v1" + __qualname__.split('.')[0]
+        ref_name =  "v1_" + __qualname__.split('.')[0]
         model = AnalysisModel
         fields = (
             'ver_ktools',
