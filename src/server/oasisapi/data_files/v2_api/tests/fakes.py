@@ -1,6 +1,6 @@
 from model_mommy import mommy
 
-from ..models import DataFile
+from src.server.oasisapi.data_files.models import DataFile
 
 
 def fake_data_file(**kwargs):

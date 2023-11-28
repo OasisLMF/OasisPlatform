@@ -114,8 +114,9 @@ class SettingsTemplate(TimeStampedModel):
         else:
             return None
 
-    def get_absolute_settings_template_url(self, model_pk, request=None):
-        return reverse(f'{request.version}:models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=request)
+    def get_absolute_settings_template_url(self, model_pk, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=request)
 
 
 class AnalysisModel(TimeStampedModel):

@@ -12,13 +12,14 @@ from hypothesis.strategies import text, binary, sampled_from
 
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ...auth.tests.fakes import fake_user, add_fake_group
-from ..models import DataFile
+from src.server.oasisapi.auth.tests.fakes import fake_user, add_fake_group
+from src.server.oasisapi.data_files.models import DataFile
 from .fakes import fake_data_file
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
+NAMESPACE = 'v2-files'
 
 
 class ComplexModelFilesApi(WebTestMixin, TestCase):
@@ -32,7 +33,7 @@ class ComplexModelFilesApi(WebTestMixin, TestCase):
         add_fake_group(user, group_name)
 
         response = self.app.post(
-            reverse('data-file-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:data-file-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -53,7 +54,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         cmf = fake_data_file()
 
-        response = self.app.get(cmf.get_absolute_data_file_url(), expect_errors=True)
+        response = self.app.get(cmf.get_absolute_data_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_data_file_is_not_present___get_response_is_404(self):
@@ -61,7 +62,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
         cmf = fake_data_file()
 
         response = self.app.get(
-            cmf.get_absolute_data_file_url(),
+            cmf.get_absolute_data_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -75,7 +76,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
         cmf = fake_data_file()
 
         response = self.app.delete(
-            cmf.get_absolute_data_file_url(),
+            cmf.get_absolute_data_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -91,7 +92,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
                 cmf = fake_data_file()
 
                 response = self.app.post(
-                    cmf.get_absolute_data_file_url(),
+                    cmf.get_absolute_data_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -110,7 +111,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
                 cmf = fake_data_file()
 
                 self.app.post(
-                    cmf.get_absolute_data_file_url(),
+                    cmf.get_absolute_data_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -120,7 +121,7 @@ class ComplexModelFileDataFile(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    cmf.get_absolute_data_file_url(),
+                    cmf.get_absolute_data_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
