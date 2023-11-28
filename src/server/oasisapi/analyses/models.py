@@ -193,6 +193,22 @@ class Analysis(TimeStampedModel):
     def __str__(self):
         return self.name
 
+    def _update_namespace(self, request=None):
+        """ WORKAROUND - this is needed for when a copy request is issued 
+                         from the portfolio view '/{ver}/portfolios/{id}/create_analysis/'
+
+                         The inncorrect namespace '{ver}-portfolios' is inherited from the
+                         original request. This needs to be replaced with '{ver}-analyses'
+        """
+        if not request:
+            return None
+
+        ns_ver, ns_view = request.version.split('-')
+        if ns_view != 'analyses':
+            request.version = f'{ns_ver}-analyses'
+        return request
+        
+
     def get_absolute_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}analysis-detail', kwargs={'pk': self.pk}, request=request)
@@ -267,6 +283,7 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_storage_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
+        request = self._update_namespace(request)
         return reverse(f'{override_ns}analysis-storage-links', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_subtask_list_url(self, request=None, namespace=None):

@@ -327,8 +327,9 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     analysis.run_traceback_file = fake_related_file()
                     analysis.save()
 
+                    ANALYSES_NAMESPACE = 'v1-analyses'
                     response = self.app.get(
-                        analysis.get_absolute_url(namespace=NAMESPACE),
+                        analysis.get_absolute_url(namespace=ANALYSES_NAMESPACE),
                         headers={
                             'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                         },
@@ -341,19 +342,19 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     self.assertEqual(response.json['name'], name)
                     self.assertEqual(response.json['portfolio'], portfolio.pk)
                     self.assertEqual(response.json['model'], model.pk)
-                    self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.get_absolute_settings_file_url(namespace=NAMESPACE))
-                    self.assertEqual(response.json['input_file'], response.request.application_url + analysis.get_absolute_input_file_url(namespace=NAMESPACE))
+                    self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.get_absolute_settings_file_url(namespace=ANALYSES_NAMESPACE))
+                    self.assertEqual(response.json['input_file'], response.request.application_url + analysis.get_absolute_input_file_url(namespace=ANALYSES_NAMESPACE))
                     self.assertEqual(response.json['lookup_errors_file'], response.request.application_url +
-                                     analysis.get_absolute_lookup_errors_file_url(namespace=NAMESPACE))
+                                     analysis.get_absolute_lookup_errors_file_url(namespace=ANALYSES_NAMESPACE))
                     self.assertEqual(response.json['lookup_success_file'], response.request.application_url +
-                                     analysis.get_absolute_lookup_success_file_url(namespace=NAMESPACE))
+                                     analysis.get_absolute_lookup_success_file_url(namespace=ANALYSES_NAMESPACE))
                     self.assertEqual(response.json['lookup_validation_file'], response.request.application_url +
-                                     analysis.get_absolute_lookup_validation_file_url(namespace=NAMESPACE))
+                                     analysis.get_absolute_lookup_validation_file_url(namespace=ANALYSES_NAMESPACE))
                     self.assertEqual(response.json['input_generation_traceback_file'], response.request.application_url +
-                                     analysis.get_absolute_input_generation_traceback_file_url(namespace=NAMESPACE))
-                    self.assertEqual(response.json['output_file'], response.request.application_url + analysis.get_absolute_output_file_url(namespace=NAMESPACE))
+                                     analysis.get_absolute_input_generation_traceback_file_url(namespace=ANALYSES_NAMESPACE))
+                    self.assertEqual(response.json['output_file'], response.request.application_url + analysis.get_absolute_output_file_url(namespace=ANALYSES_NAMESPACE))
                     self.assertEqual(response.json['run_traceback_file'], response.request.application_url +
-                                     analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE))
+                                     analysis.get_absolute_run_traceback_file_url(namespace=ANALYSES_NAMESPACE))
                     generate_mock.assert_called_once_with(analysis, user)
 
 
