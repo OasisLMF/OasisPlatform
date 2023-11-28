@@ -12,4 +12,4 @@ v2_api_router.register('queue-status', WebsocketViewSet, basename='queue')
 
 urlpatterns = [
     url(r'', include(v2_api_router.urls)),
-]    
+]

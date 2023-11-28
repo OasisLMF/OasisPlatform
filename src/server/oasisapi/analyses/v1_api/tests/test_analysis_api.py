@@ -26,6 +26,7 @@ settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
 NAMESPACE = 'v1-analyses'
 
+
 class AnalysisApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()

@@ -9,8 +9,6 @@ from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 
-from django.urls import reverse as reverse_1
-
 from ..files.models import RelatedFile
 from ..data_files.models import DataFile
 

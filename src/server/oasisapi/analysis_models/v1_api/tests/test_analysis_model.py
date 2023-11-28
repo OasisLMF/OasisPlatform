@@ -102,7 +102,6 @@ class ModelSettingsJson(WebTestMixin, TestCase):
         models = fake_analysis_model()
         settings_url = reverse(f'{NAMESPACE}:model-settings', kwargs={'pk': models.pk})
 
-        
         response = self.app.get(settings_url, expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 

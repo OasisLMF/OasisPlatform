@@ -22,8 +22,7 @@ class DataFileListSerializer(serializers.Serializer):
     content_type = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        ref_name =  "v1_" + __qualname__.split('.')[0]
-
+        ref_name = "v1_" + __qualname__.split('.')[0]
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_file(self, instance):
@@ -47,7 +46,7 @@ class DataFileSerializer(serializers.ModelSerializer):
     content_type = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name =  "v1_" + __qualname__.split('.')[0]
+        ref_name = "v1_" + __qualname__.split('.')[0]
         model = DataFile
         fields = (
             'id',

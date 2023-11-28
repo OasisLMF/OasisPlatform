@@ -207,7 +207,6 @@ class Analysis(TimeStampedModel):
         if ns_view != 'analyses':
             request.version = f'{ns_ver}-analyses'
         return request
-        
 
     def get_absolute_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''

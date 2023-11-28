@@ -80,7 +80,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-#    'django_extensions',
+    #    'django_extensions',
     'django_filters',
     'rest_framework',
     'drf_yasg',
@@ -256,7 +256,7 @@ USE_TZ = True
 # Place the app in a sub path (swagger still available in /)
 # FORCE_SCRIPT_NAME = '/api/'
 
-# limit analyses logs access to admin accounts                                                                      
+# limit analyses logs access to admin accounts
 RESTRICT_SYSTEM_LOGS = iniconf.settings.getboolean('server', 'RESTRICT_SYSTEM_LOGS', fallback=False)
 
 # Static files (CSS, JavaScript, Images)

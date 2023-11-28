@@ -43,7 +43,7 @@ class PortfolioListSerializer(serializers.Serializer):
     groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
     class Meta:
-        ref_name =  "v2_" + __qualname__.split('.')[0]
+        ref_name = "v2_" + __qualname__.split('.')[0]
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_storage_links(self, instance):
@@ -105,7 +105,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
 
     class Meta:
-        ref_name =  "v2_" + __qualname__.split('.')[0]
+        ref_name = "v2_" + __qualname__.split('.')[0]
         model = Portfolio
         fields = (
             'id',
@@ -200,7 +200,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
     reinsurance_scope_file = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name =  "v2_" + __qualname__.split('.')[0]
+        ref_name = "v2_" + __qualname__.split('.')[0]
         model = Portfolio
         fields = (
             'location_file',
@@ -407,7 +407,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
 
 class CreateAnalysisSerializer(AnalysisSerializer):
     class Meta(AnalysisSerializer.Meta):
-        ref_name =  "v2_" + __qualname__.split('.')[0]
+        ref_name = "v2_" + __qualname__.split('.')[0]
         fields = ['name', 'model', 'groups']
 
     def __init__(self, portfolio=None, *args, **kwargs):
@@ -438,7 +438,7 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
     reinsurance_scope_validated = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name =  "v2_" + __qualname__.split('.')[0]
+        ref_name = "v2_" + __qualname__.split('.')[0]
         model = Portfolio
         fields = (
             'location_validated',

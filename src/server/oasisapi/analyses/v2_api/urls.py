@@ -19,4 +19,4 @@ analyses_settings = AnalysisSettingsView.as_view({
 urlpatterns = [
     url(r'analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
     url(r'', include(v2_api_router.urls)),
-]    
+]
