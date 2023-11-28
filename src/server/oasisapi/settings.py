@@ -256,6 +256,9 @@ USE_TZ = True
 # Place the app in a sub path (swagger still available in /)
 # FORCE_SCRIPT_NAME = '/api/'
 
+# limit analyses logs access to admin accounts                                                                      
+RESTRICT_SYSTEM_LOGS = iniconf.settings.getboolean('server', 'RESTRICT_SYSTEM_LOGS', fallback=False)
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 MEDIA_URL = '/api/media/'

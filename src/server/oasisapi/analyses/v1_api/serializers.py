@@ -290,8 +290,6 @@ class AnalysisStorageSerializer(serializers.ModelSerializer):
 
 
 class AnalysisCopySerializer(AnalysisSerializer):
-    class Meta:
-        ref_name =  "v1_" + __qualname__.split('.')[0]
 
     def __init__(self, *args, **kwargs):
         super(AnalysisCopySerializer, self).__init__(*args, **kwargs)
