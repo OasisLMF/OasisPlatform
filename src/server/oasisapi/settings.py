@@ -32,7 +32,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
-if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
+IS_UNITTEST = sys.argv[0].endswith('pytest')
+IS_TESTSERVER = len(sys.argv) >= 2 and sys.argv[1] == 'runserver'
+
+if IS_UNITTEST or IS_TESTSERVER:
     # Always set Debug mode when in dev environment
     MEDIA_ROOT = './shared-fs/'
     DEBUG = True
@@ -94,7 +97,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.info',
     'src.server.oasisapi.queues',
     'django_cleanup.apps.CleanupConfig',
-    
+
 ]
 
 MIDDLEWARE = [
@@ -173,9 +176,7 @@ REST_FRAMEWORK = {
         'src.server.oasisapi.filters.Backend',
     ),
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
-    #'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
-#    'DEFAULT_VERSION': 'v2',
 }
 
 # Password validation

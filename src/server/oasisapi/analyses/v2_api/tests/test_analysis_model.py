@@ -16,11 +16,11 @@ from rest_framework.exceptions import ValidationError
 from unittest.mock import ANY, MagicMock
 
 from src.conf import iniconf
-from ...portfolios.tests.fakes import fake_portfolio
-from ...files.tests.fakes import fake_related_file
-from ...auth.tests.fakes import fake_user
+from src.server.oasisapi.portfolios.v2_api.tests.fakes import fake_portfolio
+from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.auth.tests.fakes import fake_user
 # from ..models import AnalysisTaskStatus
-from ..models import Analysis
+from ...models import Analysis
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)

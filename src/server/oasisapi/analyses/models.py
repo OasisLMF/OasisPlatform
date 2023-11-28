@@ -193,65 +193,85 @@ class Analysis(TimeStampedModel):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, request=None):
-        return reverse('analysis-detail', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-detail', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_run_url(self, request=None):
-        return reverse('analysis-run', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_run_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-run', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_cancel_url(self, request=None):
-        return reverse('analysis-cancel', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_cancel_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-cancel', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_cancel_analysis_url(self, request=None):
-        return reverse('analysis-cancel-analysis-run', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_cancel_analysis_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-cancel-analysis-run', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_generate_inputs_url(self, request=None):
-        return reverse('analysis-generate-inputs', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_generate_inputs_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-generate-inputs', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_cancel_inputs_generation_url(self, request=None):
-        return reverse('analysis-cancel-generate-inputs', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_cancel_inputs_generation_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-cancel-generate-inputs', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_copy_url(self, request=None):
-        return reverse('analysis-copy', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_copy_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-copy', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_settings_file_url(self, request=None):
-        return reverse('analysis-settings-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_settings_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-settings-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_settings_url(self, request=None):
-        return reverse('analysis-settings', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_settings_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-settings', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_input_file_url(self, request=None):
-        return reverse('analysis-input-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_input_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-input-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_lookup_errors_file_url(self, request=None):
-        return reverse('analysis-lookup-errors-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_lookup_errors_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-lookup-errors-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_lookup_success_file_url(self, request=None):
-        return reverse('analysis-lookup-success-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_lookup_success_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-lookup-success-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_lookup_validation_file_url(self, request=None):
-        return reverse('analysis-lookup-validation-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_lookup_validation_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-lookup-validation-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_summary_levels_file_url(self, request=None):
-        return reverse('analysis-summary-levels-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_summary_levels_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-summary-levels-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_input_generation_traceback_file_url(self, request=None):
-        return reverse('analysis-input-generation-traceback-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_input_generation_traceback_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-input-generation-traceback-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_output_file_url(self, request=None):
-        return reverse('analysis-output-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_output_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-output-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_run_traceback_file_url(self, request=None):
-        return reverse('analysis-run-traceback-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_run_traceback_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-run-traceback-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_run_log_file_url(self, request=None):
-        return reverse('analysis-run-log-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_run_log_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-run-log-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_storage_url(self, request=None):
-        return reverse('analysis-storage-links', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_storage_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-storage-links', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_subtask_list_url(self, request=None):
-        return reverse('analysis-sub-task-list', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_subtask_list_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-sub-task-list', kwargs={'pk': self.pk}, request=request)
 
     def get_groups(self):
         groups = []

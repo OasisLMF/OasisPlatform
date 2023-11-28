@@ -12,24 +12,24 @@ from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
-from ...files.tests.fakes import fake_related_file
-from ...analysis_models.tests.fakes import fake_analysis_model
-from ...portfolios.tests.fakes import fake_portfolio
-from ...auth.tests.fakes import fake_user, add_fake_group
-from ...data_files.tests.fakes import fake_data_file
-from ..models import Analysis
+from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.analysis_models.v2_api.tests.fakes import fake_analysis_model
+from src.server.oasisapi.portfolios.v2_api.tests.fakes import fake_portfolio
+from src.server.oasisapi.auth.tests.fakes import fake_user, add_fake_group
+from src.server.oasisapi.data_files.v2_api.tests.fakes import fake_data_file
+from ...models import Analysis
 from .fakes import fake_analysis
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
-
+NAMESPACE = 'v2-analyses'
 
 class AnalysisApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -37,7 +37,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            reverse('analysis-detail', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
+            reverse(f'{NAMESPACE}:analysis-detail', kwargs={'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -50,7 +50,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -66,7 +66,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -87,7 +87,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 portfolio = fake_portfolio(location_file=fake_related_file())
 
                 response = self.app.post(
-                    reverse('analysis-list', kwargs={'version': 'v1'}),
+                    reverse(f'{NAMESPACE}:analysis-list'),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -110,7 +110,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 analysis.save()
 
                 response = self.app.get(
-                    analysis.get_absolute_url(),
+                    analysis.get_absolute_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -125,16 +125,16 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'name': name,
                     'portfolio': portfolio.pk,
                     'model': model.pk,
-                    'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(),
-                    'settings': response.request.application_url + analysis.get_absolute_settings_url(),
-                    'input_file': response.request.application_url + analysis.get_absolute_input_file_url(),
-                    'lookup_errors_file': response.request.application_url + analysis.get_absolute_lookup_errors_file_url(),
-                    'lookup_success_file': response.request.application_url + analysis.get_absolute_lookup_success_file_url(),
-                    'lookup_validation_file': response.request.application_url + analysis.get_absolute_lookup_validation_file_url(),
-                    'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(),
-                    'output_file': response.request.application_url + analysis.get_absolute_output_file_url(),
-                    'run_log_file': response.request.application_url + analysis.get_absolute_run_log_file_url(),
-                    'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(),
+                    'settings_file': response.request.application_url + analysis.get_absolute_settings_file_url(namespace=NAMESPACE),
+                    'settings': response.request.application_url + analysis.get_absolute_settings_url(namespace=NAMESPACE),
+                    'input_file': response.request.application_url + analysis.get_absolute_input_file_url(namespace=NAMESPACE),
+                    'lookup_errors_file': response.request.application_url + analysis.get_absolute_lookup_errors_file_url(namespace=NAMESPACE),
+                    'lookup_success_file': response.request.application_url + analysis.get_absolute_lookup_success_file_url(namespace=NAMESPACE),
+                    'lookup_validation_file': response.request.application_url + analysis.get_absolute_lookup_validation_file_url(namespace=NAMESPACE),
+                    'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(namespace=NAMESPACE),
+                    'output_file': response.request.application_url + analysis.get_absolute_output_file_url(namespace=NAMESPACE),
+                    'run_log_file': response.request.application_url + analysis.get_absolute_run_log_file_url(namespace=NAMESPACE),
+                    'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE),
                     'status': Analysis.status_choices.NEW,
                     'status_count': {'CANCELLED': 0,
                                      'COMPLETED': 0,
@@ -144,11 +144,11 @@ class AnalysisApi(WebTestMixin, TestCase):
                                      'STARTED': 0,
                                      'TOTAL': 0,
                                      'TOTAL_IN_QUEUE': 0},
-                    'storage_links': 'http://testserver/v1/analyses/1/storage_links/',
+                    'storage_links': 'http://testserver/v2/analyses/1/storage_links/',
                     'sub_task_count': 0,
                     'sub_task_error_ids': [],
-                    'sub_task_list': 'http://testserver/v1/analyses/1/sub_task_list/',
-                    'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(),
+                    'sub_task_list': 'http://testserver/v2/analyses/1/sub_task_list/',
+                    'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(namespace=NAMESPACE),
                     'task_started': None,
                     'task_finished': None,
                     'groups': [],
@@ -169,7 +169,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 portfolio = fake_portfolio(location_file=fake_related_file())
 
                 response = self.app.post(
-                    reverse('analysis-list', kwargs={'version': 'v1'}),
+                    reverse(f'{NAMESPACE}:analysis-list'),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -185,7 +185,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 analysis.save()
 
                 response = self.app.get(
-                    analysis.get_absolute_url(),
+                    analysis.get_absolute_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -219,11 +219,11 @@ class AnalysisApi(WebTestMixin, TestCase):
                                      'STARTED': 0,
                                      'TOTAL': 0,
                                      'TOTAL_IN_QUEUE': 0},
-                    'storage_links': 'http://testserver/v1/analyses/1/storage_links/',
+                    'storage_links': 'http://testserver/v2/analyses/1/storage_links/',
                     'sub_task_count': 0,
                     'sub_task_error_ids': [],
-                    'sub_task_list': 'http://testserver/v1/analyses/1/sub_task_list/',
-                    'storage_links': response.request.application_url + analysis.get_absolute_storage_url(),
+                    'sub_task_list': 'http://testserver/v2/analyses/1/sub_task_list/',
+                    'storage_links': response.request.application_url + analysis.get_absolute_storage_url(namespace=NAMESPACE),
                     'summary_levels_file': None,
                     'groups': [],
                     'task_started': None,
@@ -239,7 +239,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         model = fake_analysis_model()
 
         response = self.app.patch(
-            analysis.get_absolute_url(),
+            analysis.get_absolute_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -256,7 +256,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         model = fake_analysis_model()
 
         response = self.app.patch(
-            analysis.get_absolute_url(),
+            analysis.get_absolute_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -283,7 +283,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Deny due to not in the same group as model
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -299,7 +299,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Deny due to not in the same group as portfolio
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -315,7 +315,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Successfully create
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -327,7 +327,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         analysis = Analysis.objects.get(pk=response.json['id'])
 
         response = self.app.get(
-            analysis.get_absolute_url(),
+            analysis.get_absolute_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -377,7 +377,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Create an analysis with portfolio1 - group2
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
             },
@@ -389,7 +389,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Create an analysis with portfolio2 - group3
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
             },
@@ -401,7 +401,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # User1 should only se analysis 1 with groups2
         response = self.app.get(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
             },
@@ -413,7 +413,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # User2 should only se analysis2 with groups3
         response = self.app.get(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
             },
@@ -449,7 +449,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Create an analysis
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
             },
@@ -460,7 +460,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # User2 should not see any analysis
         response = self.app.get(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
             },
@@ -491,7 +491,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Create an analysis
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
             },
@@ -502,7 +502,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # user_with_group1 should see the analysis
         response = self.app.get(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
             },
@@ -513,7 +513,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # user_without_group should see the analysis
         response = self.app.get(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
             },
@@ -544,7 +544,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Create an analysis
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
             },
@@ -555,7 +555,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # user_with_group1 should see the analysis
         response = self.app.get(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
             },
@@ -567,7 +567,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # user_with_group1 should be allowed to write
         response = self.app.post(
-            reverse('analysis-settings', kwargs={'version': 'v1', 'pk': analysis_id}),
+            reverse(f'{NAMESPACE}:analysis-settings', kwargs={'pk': analysis_id}),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
             },
@@ -578,7 +578,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # user_without_group should see the analysis
         response = self.app.get(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
             },
@@ -589,7 +589,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # user_without_group should be allowed to write
         response = self.app.post(
-            reverse('analysis-settings', kwargs={'version': 'v1', 'pk': analysis_id}),
+            reverse(f'{NAMESPACE}:analysis-settings', kwargs={'pk': analysis_id}),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
             },
@@ -607,7 +607,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Create an analysis
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
             },
@@ -630,7 +630,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Create an analysis
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -649,7 +649,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         # Create an analysis
         response = self.app.post(
-            reverse('analysis-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
             },
@@ -665,7 +665,7 @@ class AnalysisRun(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.post(analysis.get_absolute_run_url(), expect_errors=True)
+        response = self.app.post(analysis.get_absolute_run_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -673,7 +673,7 @@ class AnalysisRun(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-run', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
+            reverse(f'{NAMESPACE}:analysis-run', kwargs={'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -688,7 +688,7 @@ class AnalysisRun(WebTestMixin, TestCase):
             analysis = fake_analysis()
 
             self.app.post(
-                analysis.get_absolute_run_url(),
+                analysis.get_absolute_run_url(namespace=NAMESPACE),
                 headers={
                     'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                 }
@@ -704,7 +704,7 @@ class AnalysisRun(WebTestMixin, TestCase):
         analysis.model.save()
 
         response = self.app.post(
-            analysis.get_absolute_run_url(),
+            analysis.get_absolute_run_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -719,7 +719,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.post(analysis.get_absolute_cancel_analysis_url(), expect_errors=True)
+        response = self.app.post(analysis.get_absolute_cancel_analysis_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -727,7 +727,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-cancel', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
+            reverse(f'{NAMESPACE}:analysis-cancel', kwargs={'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -742,7 +742,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
             analysis = fake_analysis()
 
             self.app.post(
-                analysis.get_absolute_cancel_analysis_url(),
+                analysis.get_absolute_cancel_analysis_url(namespace=NAMESPACE),
                 headers={
                     'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                 }
@@ -758,7 +758,7 @@ class AnalysisCancel(WebTestMixin, TestCase):
         analysis.model.save()
 
         response = self.app.post(
-            analysis.get_absolute_cancel_analysis_url(),
+            analysis.get_absolute_cancel_analysis_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -773,7 +773,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.post(analysis.get_absolute_generate_inputs_url(), expect_errors=True)
+        response = self.app.post(analysis.get_absolute_generate_inputs_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -781,7 +781,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-generate-inputs', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
+            reverse(f'{NAMESPACE}:analysis-generate-inputs', kwargs={'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -796,7 +796,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
             analysis = fake_analysis()
 
             self.app.post(
-                analysis.get_absolute_generate_inputs_url(),
+                analysis.get_absolute_generate_inputs_url(namespace=NAMESPACE),
                 headers={
                     'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                 }
@@ -812,7 +812,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
         analysis.model.save()
 
         response = self.app.post(
-            analysis.get_absolute_generate_inputs_url(),
+            analysis.get_absolute_generate_inputs_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -827,7 +827,7 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.post(analysis.get_absolute_cancel_inputs_generation_url(), expect_errors=True)
+        response = self.app.post(analysis.get_absolute_cancel_inputs_generation_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -835,7 +835,7 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-cancel-generate-inputs', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
+            reverse(f'{NAMESPACE}:analysis-cancel-generate-inputs', kwargs={'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -850,7 +850,7 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
             analysis = fake_analysis()
 
             self.app.post(
-                analysis.get_absolute_cancel_inputs_generation_url(),
+                analysis.get_absolute_cancel_inputs_generation_url(namespace=NAMESPACE),
                 headers={
                     'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                 }
@@ -866,7 +866,7 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
         analysis.model.save()
 
         response = self.app.post(
-            analysis.get_absolute_cancel_inputs_generation_url(),
+            analysis.get_absolute_cancel_inputs_generation_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -881,7 +881,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.post(analysis.get_absolute_copy_url(), expect_errors=True)
+        response = self.app.post(analysis.get_absolute_copy_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -889,7 +889,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            reverse('analysis-copy', kwargs={'version': 'v1', 'pk': analysis.pk + 1}),
+            reverse(f'{NAMESPACE}:analysis-copy', kwargs={'pk': analysis.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -903,7 +903,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -917,7 +917,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis(name=name)
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -931,7 +931,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis(name=orig_name)
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -947,7 +947,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis(status=status)
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -960,7 +960,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -974,7 +974,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis(run_task_id=task_id)
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -988,7 +988,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis(generate_inputs_task_id=task_id)
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -1001,7 +1001,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -1015,7 +1015,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         new_portfolio = fake_portfolio(location_file=fake_related_file())
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1030,7 +1030,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -1044,7 +1044,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         new_model = fake_analysis_model()
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1059,7 +1059,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             }
@@ -1077,7 +1077,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         new_cmf_2 = fake_data_file()
 
         response = self.app.post(
-            analysis.get_absolute_copy_url(),
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1097,7 +1097,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
                 analysis = fake_analysis(settings_file=fake_related_file(file='{}'))
 
                 response = self.app.post(
-                    analysis.get_absolute_copy_url(),
+                    analysis.get_absolute_copy_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     }
@@ -1112,7 +1112,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
                 analysis = fake_analysis(input_file=fake_related_file())
 
                 response = self.app.post(
-                    analysis.get_absolute_copy_url(),
+                    analysis.get_absolute_copy_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     }
@@ -1127,7 +1127,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
                 analysis = fake_analysis(lookup_errors_file=fake_related_file())
 
                 response = self.app.post(
-                    analysis.get_absolute_copy_url(),
+                    analysis.get_absolute_copy_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1142,7 +1142,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
                 analysis = fake_analysis(lookup_success_file=fake_related_file())
 
                 response = self.app.post(
-                    analysis.get_absolute_copy_url(),
+                    analysis.get_absolute_copy_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1157,7 +1157,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
                 analysis = fake_analysis(lookup_validation_file=fake_related_file())
 
                 response = self.app.post(
-                    analysis.get_absolute_copy_url(),
+                    analysis.get_absolute_copy_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1172,7 +1172,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
                 analysis = fake_analysis(output_file=fake_related_file())
 
                 response = self.app.post(
-                    analysis.get_absolute_copy_url(),
+                    analysis.get_absolute_copy_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1185,7 +1185,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_settings_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_settings_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_settings_json_is_not_present___get_response_is_404(self):
@@ -1193,7 +1193,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_settings_url(),
+            analysis.get_absolute_settings_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1207,7 +1207,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_settings_url(),
+            analysis.get_absolute_settings_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1247,7 +1247,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 }
 
                 response = self.app.post(
-                    analysis.get_absolute_settings_url(),
+                    analysis.get_absolute_settings_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1297,7 +1297,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 }
 
                 self.app.post(
-                    analysis.get_absolute_settings_url(),
+                    analysis.get_absolute_settings_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1306,7 +1306,7 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    analysis.get_absolute_settings_url(),
+                    analysis.get_absolute_settings_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1319,7 +1319,7 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_settings_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_settings_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_settings_file_is_not_present___get_response_is_404(self):
@@ -1327,7 +1327,7 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_settings_file_url(),
+            analysis.get_absolute_settings_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1341,7 +1341,7 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_settings_file_url(),
+            analysis.get_absolute_settings_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1357,7 +1357,7 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
                 analysis = fake_analysis()
 
                 response = self.app.post(
-                    analysis.get_absolute_settings_file_url(),
+                    analysis.get_absolute_settings_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1377,7 +1377,7 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
                 analysis = fake_analysis()
 
                 self.app.post(
-                    analysis.get_absolute_settings_file_url(),
+                    analysis.get_absolute_settings_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1387,7 +1387,7 @@ class AnalysisSettingsFile(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    analysis.get_absolute_settings_file_url(),
+                    analysis.get_absolute_settings_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1401,7 +1401,7 @@ class AnalysisInputFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_input_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_input_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_input_file_is_not_present___get_response_is_404(self):
@@ -1409,7 +1409,7 @@ class AnalysisInputFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_input_file_url(),
+            analysis.get_absolute_input_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1426,7 +1426,7 @@ class AnalysisInputFile(WebTestMixin, TestCase):
                 analysis = fake_analysis(input_file=fake_related_file(file=file_content, content_type=content_type))
 
                 response = self.app.get(
-                    analysis.get_absolute_input_file_url(),
+                    analysis.get_absolute_input_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1440,7 +1440,7 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_lookup_errors_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_lookup_errors_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_lookup_errors_file_is_not_present___get_response_is_404(self):
@@ -1448,7 +1448,7 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_lookup_errors_file_url(),
+            analysis.get_absolute_lookup_errors_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1463,7 +1463,7 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_lookup_errors_file_url(),
+            analysis.get_absolute_lookup_errors_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1481,7 +1481,7 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
                 analysis = fake_analysis(lookup_errors_file=fake_related_file(file=file_content, content_type=content_type))
 
                 response = self.app.get(
-                    analysis.get_absolute_lookup_errors_file_url(),
+                    analysis.get_absolute_lookup_errors_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1495,7 +1495,7 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_lookup_success_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_lookup_success_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_lookup_success_file_is_not_present___get_response_is_404(self):
@@ -1503,7 +1503,7 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_lookup_success_file_url(),
+            analysis.get_absolute_lookup_success_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1518,7 +1518,7 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_lookup_success_file_url(),
+            analysis.get_absolute_lookup_success_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1536,7 +1536,7 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
                 analysis = fake_analysis(lookup_success_file=fake_related_file(file=file_content, content_type=content_type))
 
                 response = self.app.get(
-                    analysis.get_absolute_lookup_success_file_url(),
+                    analysis.get_absolute_lookup_success_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1550,7 +1550,7 @@ class AnalysisLookupValidationFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_lookup_validation_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_lookup_validation_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_lookup_validation_file_is_not_present___get_response_is_404(self):
@@ -1558,7 +1558,7 @@ class AnalysisLookupValidationFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_lookup_validation_file_url(),
+            analysis.get_absolute_lookup_validation_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1573,7 +1573,7 @@ class AnalysisLookupValidationFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_lookup_validation_file_url(),
+            analysis.get_absolute_lookup_validation_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1591,7 +1591,7 @@ class AnalysisLookupValidationFile(WebTestMixin, TestCase):
                 analysis = fake_analysis(lookup_validation_file=fake_related_file(file=file_content, content_type=content_type))
 
                 response = self.app.get(
-                    analysis.get_absolute_lookup_validation_file_url(),
+                    analysis.get_absolute_lookup_validation_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1605,7 +1605,7 @@ class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_input_generation_traceback_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_input_generation_traceback_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_input_generation_traceback_file_is_not_present___get_response_is_404(self):
@@ -1613,7 +1613,7 @@ class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_input_generation_traceback_file_url(),
+            analysis.get_absolute_input_generation_traceback_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1627,7 +1627,7 @@ class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_input_generation_traceback_file_url(),
+            analysis.get_absolute_input_generation_traceback_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1644,7 +1644,7 @@ class AnalysisInputGenerationTracebackFile(WebTestMixin, TestCase):
                 analysis = fake_analysis(input_generation_traceback_file=fake_related_file(file=file_content, content_type='text/plain'))
 
                 response = self.app.get(
-                    analysis.get_absolute_input_generation_traceback_file_url(),
+                    analysis.get_absolute_input_generation_traceback_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1658,7 +1658,7 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_output_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_output_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_output_file_is_not_present___get_response_is_404(self):
@@ -1666,7 +1666,7 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_output_file_url(),
+            analysis.get_absolute_output_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1680,7 +1680,7 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_output_file_url(),
+            analysis.get_absolute_output_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1696,7 +1696,7 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
                 analysis = fake_analysis()
 
                 response = self.app.post(
-                    analysis.get_absolute_output_file_url(),
+                    analysis.get_absolute_output_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1716,7 +1716,7 @@ class AnalysisOutputFile(WebTestMixin, TestCase):
                 analysis = fake_analysis(output_file=fake_related_file(file=file_content, content_type=content_type))
 
                 response = self.app.get(
-                    analysis.get_absolute_output_file_url(),
+                    analysis.get_absolute_output_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1730,7 +1730,7 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
-        response = self.app.get(analysis.get_absolute_run_traceback_file_url(), expect_errors=True)
+        response = self.app.get(analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_run_traceback_file_is_not_present___get_response_is_404(self):
@@ -1738,7 +1738,7 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.get(
-            analysis.get_absolute_run_traceback_file_url(),
+            analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1752,7 +1752,7 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
         analysis = fake_analysis()
 
         response = self.app.delete(
-            analysis.get_absolute_run_traceback_file_url(),
+            analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1768,7 +1768,7 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
                 analysis = fake_analysis()
 
                 response = self.app.post(
-                    analysis.get_absolute_run_traceback_file_url(),
+                    analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1788,7 +1788,7 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
                 analysis = fake_analysis(run_traceback_file=fake_related_file(file=file_content, content_type=content_type))
 
                 response = self.app.get(
-                    analysis.get_absolute_run_traceback_file_url(),
+                    analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
