@@ -21,7 +21,7 @@ from .serializers import (
     ModelChunkingConfigSerializer,
 )
 
-from ...data_files.serializers import DataFileSerializer
+from ...data_files.v2_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter
 from ...files.views import handle_related_file, handle_json_data
 from ...files.serializers import RelatedFileSerializer

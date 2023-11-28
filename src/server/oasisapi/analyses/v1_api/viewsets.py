@@ -21,7 +21,7 @@ from ..models import Analysis
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisStorageSerializer, AnalysisListSerializer
 
 from ...analysis_models.models import AnalysisModel
-from ...data_files.serializers import DataFileSerializer
+from ...data_files.v1_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...files.views import handle_related_file, handle_json_data
 from ...files.serializers import RelatedFileSerializer

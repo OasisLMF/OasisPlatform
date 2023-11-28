@@ -6,12 +6,12 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.settings import api_settings
 
-from ..files.serializers import RelatedFileSerializer
-from ..files.views import handle_related_file
-from ..filters import TimeStampedFilter
-from .models import DataFile
-from ..permissions.group_auth import VerifyGroupAccessModelViewSet
-from ..schemas.custom_swagger import FILE_RESPONSE
+from ...files.serializers import RelatedFileSerializer
+from ...files.views import handle_related_file
+from ...filters import TimeStampedFilter
+from ..models import DataFile
+from ...permissions.group_auth import VerifyGroupAccessModelViewSet
+from ...schemas.custom_swagger import FILE_RESPONSE
 from .serializers import DataFileSerializer, DataFileListSerializer
 
 

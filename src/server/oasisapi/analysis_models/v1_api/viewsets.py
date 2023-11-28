@@ -14,7 +14,7 @@ from rest_framework.settings import api_settings
 from ..models import AnalysisModel, SettingsTemplate
 from .serializers import AnalysisModelSerializer, ModelVersionsSerializer, CreateTemplateSerializer, TemplateSerializer
 
-from ...data_files.serializers import DataFileSerializer
+from ...data_files.v1_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter
 from ...files.views import handle_related_file, handle_json_data
 from ...files.serializers import RelatedFileSerializer
