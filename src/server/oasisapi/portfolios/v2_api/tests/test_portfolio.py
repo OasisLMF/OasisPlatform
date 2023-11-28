@@ -16,23 +16,23 @@ from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 from ods_tools.oed.exposure import OedExposure
 
-from ...files.tests.fakes import fake_related_file
-from ...analysis_models.tests.fakes import fake_analysis_model
-from ...analyses.models import Analysis
-from ...auth.tests.fakes import fake_user, add_fake_group
-from ..models import Portfolio
+from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.analysis_models.v2_api.tests.fakes import fake_analysis_model
+from src.server.oasisapi.analyses.models import Analysis
+from src.server.oasisapi.auth.tests.fakes import fake_user, add_fake_group
+from src.server.oasisapi.portfolios.models import Portfolio
 from .fakes import fake_portfolio
 
 # Override default deadline for all tests to 10s
 settings.register_profile("ci", deadline=1000.0)
 settings.load_profile("ci")
-
+NAMESPACE = 'v2-portfolios'
 
 class PortfolioApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
-        response = self.app.get(portfolio.get_absolute_url(), expect_errors=True)
+        response = self.app.get(portfolio.get_absolute_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -40,7 +40,7 @@ class PortfolioApi(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(
-            reverse('portfolio-detail', kwargs={'version': 'v1', 'pk': portfolio.pk + 1}),
+            reverse(f'{NAMESPACE}:portfolio-detail', kwargs={'pk': portfolio.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -53,7 +53,7 @@ class PortfolioApi(WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('portfolio-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:portfolio-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -69,7 +69,7 @@ class PortfolioApi(WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post(
-            reverse('portfolio-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:portfolio-list'),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -92,7 +92,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                 add_fake_group(user, group_name)
 
                 response = self.app.post(
-                    reverse('portfolio-list', kwargs={'version': 'v1'}),
+                    reverse(f'{NAMESPACE}:portfolio-list'),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -109,7 +109,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                 portfolio.save()
 
                 response = self.app.get(
-                    portfolio.get_absolute_url(),
+                    portfolio.get_absolute_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -123,26 +123,26 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'modified': portfolio.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'groups': [group_name],
                     'accounts_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                         "name": portfolio.accounts_file.filename,
                         "stored": str(portfolio.accounts_file.file)
                     },
                     'location_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                         "name": portfolio.location_file.filename,
                         "stored": str(portfolio.location_file.file)
                     },
                     'reinsurance_info_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                         "name": portfolio.reinsurance_info_file.filename,
                         "stored": str(portfolio.reinsurance_info_file.file)
                     },
                     'reinsurance_scope_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                         "name": portfolio.reinsurance_scope_file.filename,
                         "stored": str(portfolio.reinsurance_scope_file.file)
                     },
-                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url()
+                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE)
                 }, response.json)
 
     @given(
@@ -155,7 +155,7 @@ class PortfolioApi(WebTestMixin, TestCase):
         add_fake_group(user_with_groups, group_name)
 
         response = self.app.post(
-            reverse('portfolio-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:portfolio-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_groups))
             },
@@ -169,7 +169,7 @@ class PortfolioApi(WebTestMixin, TestCase):
 
         # The same user who created it should also see it
         response = self.app.get(
-            reverse('portfolio-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:portfolio-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_groups))
             },
@@ -179,7 +179,7 @@ class PortfolioApi(WebTestMixin, TestCase):
 
         # Another user that don't belong to the group should not see it
         response = self.app.get(
-            reverse('portfolio-list', kwargs={'version': 'v1'}),
+            reverse(f'{NAMESPACE}:portfolio-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
             },
@@ -192,7 +192,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
-        response = self.app.get(portfolio.get_absolute_create_analysis_url(), expect_errors=True)
+        response = self.app.get(portfolio.get_absolute_create_analysis_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -200,7 +200,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.post(
-            reverse('portfolio-create-analysis', kwargs={'version': 'v1', 'pk': portfolio.pk + 1}),
+            reverse(f'{NAMESPACE}:portfolio-create-analysis', kwargs={'pk': portfolio.pk + 1}),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -215,7 +215,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.post(
-            portfolio.get_absolute_create_analysis_url(),
+            portfolio.get_absolute_create_analysis_url(namespace=NAMESPACE),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -232,7 +232,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.post(
-            portfolio.get_absolute_create_analysis_url(),
+            portfolio.get_absolute_create_analysis_url(namespace=NAMESPACE),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -249,7 +249,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.post(
-            portfolio.get_absolute_create_analysis_url(),
+            portfolio.get_absolute_create_analysis_url(namespace=NAMESPACE),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -266,7 +266,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         model = fake_analysis_model()
 
         response = self.app.post(
-            portfolio.get_absolute_create_analysis_url(),
+            portfolio.get_absolute_create_analysis_url(namespace=NAMESPACE),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -284,7 +284,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.post(
-            portfolio.get_absolute_create_analysis_url(),
+            portfolio.get_absolute_create_analysis_url(namespace=NAMESPACE),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -307,7 +307,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     portfolio = fake_portfolio(location_file=fake_related_file())
 
                     response = self.app.post(
-                        portfolio.get_absolute_create_analysis_url(),
+                        portfolio.get_absolute_create_analysis_url(namespace=NAMESPACE),
                         headers={
                             'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                         },
@@ -328,7 +328,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     analysis.save()
 
                     response = self.app.get(
-                        analysis.get_absolute_url(),
+                        analysis.get_absolute_url(namespace=NAMESPACE),
                         headers={
                             'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                         },
@@ -341,19 +341,19 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     self.assertEqual(response.json['name'], name)
                     self.assertEqual(response.json['portfolio'], portfolio.pk)
                     self.assertEqual(response.json['model'], model.pk)
-                    self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.get_absolute_settings_file_url())
-                    self.assertEqual(response.json['input_file'], response.request.application_url + analysis.get_absolute_input_file_url())
+                    self.assertEqual(response.json['settings_file'], response.request.application_url + analysis.get_absolute_settings_file_url(namespace=NAMESPACE))
+                    self.assertEqual(response.json['input_file'], response.request.application_url + analysis.get_absolute_input_file_url(namespace=NAMESPACE))
                     self.assertEqual(response.json['lookup_errors_file'], response.request.application_url +
-                                     analysis.get_absolute_lookup_errors_file_url())
+                                     analysis.get_absolute_lookup_errors_file_url(namespace=NAMESPACE))
                     self.assertEqual(response.json['lookup_success_file'], response.request.application_url +
-                                     analysis.get_absolute_lookup_success_file_url())
+                                     analysis.get_absolute_lookup_success_file_url(namespace=NAMESPACE))
                     self.assertEqual(response.json['lookup_validation_file'], response.request.application_url +
-                                     analysis.get_absolute_lookup_validation_file_url())
+                                     analysis.get_absolute_lookup_validation_file_url(namespace=NAMESPACE))
                     self.assertEqual(response.json['input_generation_traceback_file'], response.request.application_url +
-                                     analysis.get_absolute_input_generation_traceback_file_url())
-                    self.assertEqual(response.json['output_file'], response.request.application_url + analysis.get_absolute_output_file_url())
+                                     analysis.get_absolute_input_generation_traceback_file_url(namespace=NAMESPACE))
+                    self.assertEqual(response.json['output_file'], response.request.application_url + analysis.get_absolute_output_file_url(namespace=NAMESPACE))
                     self.assertEqual(response.json['run_traceback_file'], response.request.application_url +
-                                     analysis.get_absolute_run_traceback_file_url())
+                                     analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE))
                     generate_mock.assert_called_once_with(analysis, user)
 
 
@@ -361,7 +361,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
-        response = self.app.get(portfolio.get_absolute_accounts_file_url(), expect_errors=True)
+        response = self.app.get(portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_accounts_file_is_not_present___get_response_is_404(self):
@@ -369,7 +369,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(
-            portfolio.get_absolute_accounts_file_url(),
+            portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -383,7 +383,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.delete(
-            portfolio.get_absolute_accounts_file_url(),
+            portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -399,7 +399,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_accounts_file_url(),
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -422,7 +422,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 portfolio.save()
 
                 response = self.app.post(
-                    portfolio.get_absolute_accounts_file_url(),
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -442,7 +442,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_accounts_file_url(),
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -452,7 +452,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    portfolio.get_absolute_accounts_file_url(),
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -471,7 +471,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_accounts_file_url(),
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -493,7 +493,7 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_accounts_file_url(),
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -503,14 +503,14 @@ class PortfolioAccountsFile(WebTestMixin, TestCase):
                 )
 
                 csv_response = self.app.get(
-                    portfolio.get_absolute_accounts_file_url() + '?file_format=csv',
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE) + '?file_format=csv',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                 )
 
                 parquet_response = self.app.get(
-                    portfolio.get_absolute_accounts_file_url() + '?file_format=parquet',
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE) + '?file_format=parquet',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -536,7 +536,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
-        response = self.app.get(portfolio.get_absolute_location_file_url(), expect_errors=True)
+        response = self.app.get(portfolio.get_absolute_location_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_location_file_is_not_present___get_response_is_404(self):
@@ -544,7 +544,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(
-            portfolio.get_absolute_location_file_url(),
+            portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -558,7 +558,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.delete(
-            portfolio.get_absolute_location_file_url(),
+            portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -574,7 +574,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_location_file_url(),
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -594,7 +594,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_location_file_url(),
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -604,7 +604,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    portfolio.get_absolute_location_file_url(),
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -623,7 +623,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_location_file_url(),
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -645,7 +645,7 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_location_file_url(),
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -655,13 +655,13 @@ class PortfolioLocationFile(WebTestMixin, TestCase):
                 )
 
                 csv_response = self.app.get(
-                    portfolio.get_absolute_location_file_url() + '?file_format=csv',
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE) + '?file_format=csv',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                 )
                 parquet_response = self.app.get(
-                    portfolio.get_absolute_location_file_url() + '?file_format=parquet',
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE) + '?file_format=parquet',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -687,7 +687,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
-        response = self.app.get(portfolio.get_absolute_reinsurance_scope_file_url(), expect_errors=True)
+        response = self.app.get(portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_reinsurance_scope_file_is_not_present___get_response_is_404(self):
@@ -695,7 +695,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(
-            portfolio.get_absolute_reinsurance_scope_file_url(),
+            portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -709,7 +709,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.delete(
-            portfolio.get_absolute_reinsurance_scope_file_url(),
+            portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -725,7 +725,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -745,7 +745,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -755,7 +755,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -774,7 +774,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -796,7 +796,7 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -806,14 +806,14 @@ class PortfolioReinsuranceSourceFile(WebTestMixin, TestCase):
                 )
 
                 csv_response = self.app.get(
-                    portfolio.get_absolute_reinsurance_scope_file_url() + '?file_format=csv',
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE) + '?file_format=csv',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                 )
 
                 parquet_response = self.app.get(
-                    portfolio.get_absolute_reinsurance_scope_file_url() + '?file_format=parquet',
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE) + '?file_format=parquet',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -839,7 +839,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         portfolio = fake_portfolio()
 
-        response = self.app.get(portfolio.get_absolute_reinsurance_info_file_url(), expect_errors=True)
+        response = self.app.get(portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_reinsurance_info_file_is_not_present___get_response_is_404(self):
@@ -847,7 +847,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.get(
-            portfolio.get_absolute_reinsurance_info_file_url(),
+            portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -861,7 +861,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
         portfolio = fake_portfolio()
 
         response = self.app.delete(
-            portfolio.get_absolute_reinsurance_info_file_url(),
+            portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -877,7 +877,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -897,7 +897,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -907,7 +907,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -926,7 +926,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 response = self.app.post(
-                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -948,7 +948,7 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -958,14 +958,14 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                 )
 
                 csv_response = self.app.get(
-                    portfolio.get_absolute_reinsurance_info_file_url() + '?file_format=csv',
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE) + '?file_format=csv',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                 )
 
                 parquet_response = self.app.get(
-                    portfolio.get_absolute_reinsurance_info_file_url() + '?file_format=parquet',
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE) + '?file_format=parquet',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1036,7 +1036,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_location_file_url(),
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1045,7 +1045,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     ),
                 )
                 self.app.post(
-                    portfolio.get_absolute_accounts_file_url(),
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1054,7 +1054,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     ),
                 )
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1063,7 +1063,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     ),
                 )
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1073,7 +1073,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
 
                 validate_response = self.app.get(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1089,7 +1089,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
 
                 # Run validate - check is valid
                 validate_response = self.app.post(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1112,7 +1112,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_location_file_url(),
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1122,7 +1122,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
 
                 validate_response = self.app.get(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1138,7 +1138,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
 
                 # Run validate - check is valid
                 validate_response = self.app.post(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1161,7 +1161,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_location_file_url(),
+                    portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1170,7 +1170,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     ),
                 )
                 validate_response = self.app.get(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1186,7 +1186,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
 
                 # Run validate - check is invalid
                 validate_response = self.app.post(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1214,7 +1214,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_accounts_file_url(),
+                    portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1224,7 +1224,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
 
                 validate_response = self.app.get(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1240,7 +1240,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
 
                 # Run validate - check is valid
                 validate_response = self.app.post(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1280,7 +1280,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_info_file_url(),
+                    portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1290,7 +1290,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
 
                 validate_response = self.app.get(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1306,7 +1306,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
 
                 # Run validate - check is valid
                 validate_response = self.app.post(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1351,7 +1351,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 portfolio = fake_portfolio()
 
                 self.app.post(
-                    portfolio.get_absolute_reinsurance_scope_file_url(),
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1361,7 +1361,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
 
                 validate_response = self.app.get(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -1377,7 +1377,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
 
                 # Run validate - check is valid
                 validate_response = self.app.post(
-                    portfolio.get_absolute_url() + 'validate/',
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },

@@ -175,20 +175,25 @@ class AnalysisModel(TimeStampedModel):
                 pass
         self.save()
 
-    def get_absolute_resources_file_url(self, request=None):
-        return reverse('analysis-model-resource-file', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_resources_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-model-resource-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_versions_url(self, request=None):
-        return reverse('analysis-model-versions', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_versions_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-model-versions', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_settings_url(self, request=None):
-        return reverse('model-settings', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_settings_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}model-settings', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_scaling_configuration_url(self, request=None):
-        return reverse('analysis-model-scaling-configuration', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_scaling_configuration_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-model-scaling-configuration', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_chunking_configuration_url(self, request=None):
-        return reverse('analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=request)
+    def get_absolute_chunking_configuration_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=request)
 
 
 class QueueModelAssociation(models.Model):
