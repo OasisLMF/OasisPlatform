@@ -182,6 +182,8 @@ oasisServer:
       value: "1"
     - name: OASIS_PORTFOLIO_UPLOAD_VALIDATION
       value: "0"
+    - name: OASIS_PORTFOLIO_PARQUET_STORAGE
+      value: "1"
 
 # Oasis API host, port and credentials (for Websocket connections)
 oasisWebsocket:

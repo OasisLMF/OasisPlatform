@@ -103,7 +103,7 @@ class Settings(ConfigParser):
         })
 
 
-settings = Settings()
+settings = Settings(interpolation=None)
 
 
 class SettingsPatcher(object):

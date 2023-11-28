@@ -213,6 +213,7 @@ def register_worker(sender, **k):
 
     if debug_worker:
         logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
+
         if selected_storage in ['local-fs', 'shared-fs']:
             logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
