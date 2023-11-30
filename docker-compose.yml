@@ -76,7 +76,7 @@ services:
   worker-monitor_v2:
    restart: always
    image: coreoasis/api_server:dev
-   command: [celery, -A, src.server.oasisapi.celery_app_v2, worker, --loglevel=INFO]
+   command: [celery, -A, src.server.oasisapi.celery_app_v2, worker, --loglevel=INFO,  -Q, celery-v2]
    links:
      - server-db
      - celery-db

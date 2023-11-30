@@ -244,7 +244,7 @@ class Controller:
 
         :return: The name of the queue
         """
-        return str(analysis.model)
+        return str(analysis.model) + '-v2'
 
     @classmethod
     def get_inputs_generation_tasks(
@@ -341,7 +341,7 @@ class Controller:
                 run_data_uuid,
                 'Record input files',
                 'record-input-files',
-                'celery',
+                'celery-v2',
                 TaskParams(analysis_finish_status=analysis_finish_status),
             ),
             cls.get_subtask_statuses_and_signature(
@@ -413,7 +413,7 @@ class Controller:
 
         :return: The name of the queue
         """
-        return str(analysis.model)
+        return str(analysis.model) + '-v2'
 
     @classmethod
     def get_loss_generation_tasks(cls, analysis: 'Analysis', initiator: User, run_data_uuid: str, num_chunks: int):
@@ -485,7 +485,7 @@ class Controller:
                 run_data_uuid,
                 'Record losses files',
                 'record-losses-files',
-                'celery',
+                'celery-v2',
                 TaskParams(**base_kwargs),
             ),
             cls.get_subtask_statuses_and_signature(

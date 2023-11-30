@@ -375,7 +375,7 @@ class Analysis(TimeStampedModel):
     def run_analysis_signature(self):
         return celery_app_v2.signature(
             'start_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')}
         )
 
     def run(self, initiator):
@@ -409,7 +409,7 @@ class Analysis(TimeStampedModel):
     def start_input_and_loss_generation_signature(self):
         return celery_app_v2.signature(
             'start_input_and_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
+            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')}
         )
 
     def generate_and_run(self, initiator):
@@ -493,7 +493,7 @@ class Analysis(TimeStampedModel):
         return celery_app_v2.signature(
             'start_input_generation_task',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
             }
         )
 
@@ -502,7 +502,7 @@ class Analysis(TimeStampedModel):
         return celery_app_v2.signature(
             'cancel_subtasks',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
             }
         )
 
