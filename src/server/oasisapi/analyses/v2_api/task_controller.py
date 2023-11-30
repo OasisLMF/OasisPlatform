@@ -38,7 +38,7 @@ class Controller:
         :param params: The parameters to send to the task
         :return: Signature representing the task
         """
-        from src.server.oasisapi.analyses.tasks import record_sub_task_success, record_sub_task_failure
+        from src.server.oasisapi.analyses.v2_api.tasks import record_sub_task_success, record_sub_task_failure
         sig = signature(
             task_name,
             queue=queue,
@@ -632,7 +632,7 @@ def get_analysis_task_controller() -> Type[Controller]:
     controller_path = settings.get(
         'worker',
         'ANALYSIS_TASK_CONTROLLER',
-        fallback='src.server.oasisapi.analyses.task_controller.Controller'
+        fallback='src.server.oasisapi.analyses.v2_api.task_controller.Controller'
     )
 
     controller_module, controller_class = controller_path.rsplit('.', maxsplit=1)
