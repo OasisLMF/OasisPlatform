@@ -33,6 +33,7 @@ fi
 
 # Oasis API version 
 if [ -z "$OASIS_API_VER" ]
+then    
       API_VER='-v2'
 else
       API_VER='-'$OASIS_API_VER
