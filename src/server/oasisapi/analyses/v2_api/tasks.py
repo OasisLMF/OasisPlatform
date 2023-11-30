@@ -46,7 +46,7 @@ from src.server.oasisapi.files.upload import wait_for_blob_copy
 
 from .models import AnalysisTaskStatus
 from .task_controller import get_analysis_task_controller
-from ..celery_app import celery_app
+from ...celery_app_v2 import celery_app_v2
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from .models import Analysis
@@ -298,7 +298,7 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 
-@celery_app.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
+@celery_app_v2.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
@@ -386,7 +386,7 @@ def _find_celery_queue_reference(active_queues, queue_name):
     return None
 
 
-@celery_app.task(bind=True, name='cancel_subtasks')
+@celery_app_v2.task(bind=True, name='cancel_subtasks')
 def cancel_subtasks(self, analysis_pk):
     """ This is needed because AsyncResults(<task-id>).revoke() is not working correctly
     when called from the server container. using`app.control.revoke( .. )` does work
@@ -426,7 +426,7 @@ def cancel_subtasks(self, analysis_pk):
     subtask_qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
 
 
-@celery_app.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
+@celery_app_v2.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
 def start_input_generation_task(analysis_pk, initiator_pk, loc_lines):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
@@ -435,7 +435,7 @@ def start_input_generation_task(analysis_pk, initiator_pk, loc_lines):
     analysis.save()
 
 
-@celery_app.task(name='start_loss_generation_task')
+@celery_app_v2.task(name='start_loss_generation_task')
 def start_loss_generation_task(analysis_pk, initiator_pk, events_total):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
@@ -444,7 +444,7 @@ def start_loss_generation_task(analysis_pk, initiator_pk, events_total):
     analysis.save()
 
 
-@celery_app.task(name='start_input_and_loss_generation_task')
+@celery_app_v2.task(name='start_input_and_loss_generation_task')
 def start_input_and_loss_generation_task(analysis_pk, initiator_pk):
     from .models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
@@ -456,7 +456,7 @@ def start_input_and_loss_generation_task(analysis_pk, initiator_pk):
     analysis.save()
 
 
-@celery_app.task(bind=True, name='record_input_files')
+@celery_app_v2.task(bind=True, name='record_input_files')
 def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, analysis_finish_status=Analysis.status_choices.READY):
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id, dt=datetime.now().timestamp())
@@ -498,7 +498,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     return result
 
 
-@celery_app.task(bind=True, name='record_losses_files')
+@celery_app_v2.task(bind=True, name='record_losses_files')
 def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     from .models import Analysis
 
@@ -525,7 +525,7 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
     return result
 
 
-@celery_app.task(bind=True, name='record_sub_task_start')
+@celery_app_v2.task(bind=True, name='record_sub_task_start')
 def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None, dt=None):
     _now = timezone.now() if not dt else datetime.fromtimestamp(dt, tz=timezone.utc)
 
@@ -551,7 +551,7 @@ def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None, 
     )
 
 
-@celery_app.task(bind=True, name='record_sub_task_success')
+@celery_app_v2.task(bind=True, name='record_sub_task_success')
 def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task_slug=None):
     log_location = res.get('log_location')
     error_location = res.get('error_location')
@@ -579,7 +579,7 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
     )
 
 
-@celery_app.task(bind=True, name='record_sub_task_failure')
+@celery_app_v2.task(bind=True, name='record_sub_task_failure')
 def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, task_slug=None):
     tb = _traceback_from_errback_args(*args)
     task_id = self.request.parent_id
@@ -602,7 +602,7 @@ def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, ta
         )
 
 
-@celery_app.task(bind=True, name='chord_error_callback')
+@celery_app_v2.task(bind=True, name='chord_error_callback')
 def chord_error_callback(self, analysis_id):
     unfinished_statuses = [AnalysisTaskStatus.status_choices.QUEUED, AnalysisTaskStatus.status_choices.STARTED]
     ids_to_revoke = AnalysisTaskStatus.objects.filter(
@@ -621,7 +621,7 @@ def chord_error_callback(self, analysis_id):
     )
 
 
-@celery_app.task(name='handle_task_failure')
+@celery_app_v2.task(name='handle_task_failure')
 def handle_task_failure(
     *args,
     analysis_id=None,
@@ -676,7 +676,7 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
         mark_task_as_queued(analysis_id, slug, headers['id'], timezone.now().timestamp())
 
 
-@celery_app.task(name='mark_task_as_queued')
+@celery_app_v2.task(name='mark_task_as_queued')
 def mark_task_as_queued(analysis_id, slug, task_id, dt):
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
@@ -688,7 +688,7 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
     )
 
 
-@celery_app.task(name='subtask_error_log')
+@celery_app_v2.task(name='subtask_error_log')
 def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
@@ -703,7 +703,7 @@ def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
     )
 
 
-@celery_app.task(name='set_task_status')
+@celery_app_v2.task(name='set_task_status')
 def set_task_status(analysis_pk, task_status, dt):
     try:
         from .models import Analysis
@@ -717,7 +717,7 @@ def set_task_status(analysis_pk, task_status, dt):
         logger.exception(str(e))
 
 
-@celery_app.task(name='update_task_id')
+@celery_app_v2.task(name='update_task_id')
 def update_task_id(task_update_list):
     for task in task_update_list:
         task_id, analysis_id, slug = task

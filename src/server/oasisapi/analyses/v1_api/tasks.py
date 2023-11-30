@@ -31,7 +31,7 @@ from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
 
-from ..celery import celery_app
+from ...celery_app import celery_app_v1
 from ....conf import celeryconf as celery_conf
 logger = get_task_logger(__name__)
 
@@ -275,7 +275,7 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 
-@celery_app.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
+@celery_app_v1.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
@@ -336,7 +336,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
             raise e
 
 
-@celery_app.task(name='set_task_status')
+@celery_app_v1.task(name='set_task_status')
 def set_task_status(analysis_pk, task_status):
     try:
         from .models import Analysis
@@ -350,7 +350,7 @@ def set_task_status(analysis_pk, task_status):
         logger.exception(str(e))
 
 
-@celery_app.task(name='record_run_analysis_result', base=LogTaskError)
+@celery_app_v1.task(name='record_run_analysis_result', base=LogTaskError)
 def record_run_analysis_result(res, analysis_pk, initiator_pk):
     output_location, traceback_location, log_location, return_code = res
     logger.info('output_location: {}, log_location: {}, traceback_location: {}, status: {}, analysis_pk: {}, initiator_pk: {}'.format(
@@ -376,7 +376,7 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
     analysis.save()
 
 
-@celery_app.task(name='record_generate_input_result', base=LogTaskError)
+@celery_app_v1.task(name='record_generate_input_result', base=LogTaskError)
 def record_generate_input_result(result, analysis_pk, initiator_pk):
     logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
         result, analysis_pk, initiator_pk))
@@ -436,7 +436,7 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     analysis.save()
 
 
-@celery_app.task(name='record_run_analysis_failure')
+@celery_app_v1.task(name='record_run_analysis_failure')
 def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
     logger.warning('"run_analysis_success" is deprecated and should only be used to process tasks already on the queue.')
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
@@ -470,7 +470,7 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
         logger.exception(str(e))
 
 
-@celery_app.task(name='record_generate_input_failure')
+@celery_app_v1.task(name='record_generate_input_failure')
 def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}'.format(
         analysis_pk, initiator_pk, traceback))
@@ -499,7 +499,7 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
 ## --- Deprecated tasks ---------------------------------------------------- ##
 
 
-@celery_app.task(name='run_analysis_success')
+@celery_app_v1.task(name='run_analysis_success')
 def run_analysis_success(output_location, analysis_pk, initiator_pk):
     logger.warning('"run_analysis_success" is deprecated and should only be used to process tasks already on the queue.')
 
@@ -530,7 +530,7 @@ def run_analysis_success(output_location, analysis_pk, initiator_pk):
         logger.exception(str(e))
 
 
-@celery_app.task(name='generate_input_success')
+@celery_app_v1.task(name='generate_input_success')
 def generate_input_success(result, analysis_pk, initiator_pk):
     logger.warning('"generate_input_success" is deprecated and should only be used to process tasks already on the queue.')
 
