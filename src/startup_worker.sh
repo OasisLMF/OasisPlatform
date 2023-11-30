@@ -31,5 +31,15 @@ else
       WORKER_CONCURRENCY='--concurrency '$OASIS_CELERY_CONCURRENCY
 fi
 
+# Oasis API version 
+if [ -z "$OASIS_API_VER" ]
+      API_VER='-v2'
+else
+      API_VER='-'$OASIS_API_VER
+fi
+
+### Note add check to make sure value is either 'v1' or 'v2'
+
+
 # Start new worker on init
-celery --app src.model_execution_worker.distributed_tasks worker $WORKER_CONCURRENCY --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}" ${OASIS_CELERY_EXTRA_ARGS} |& tee -a /var/log/oasis/worker.log
+celery --app src.model_execution_worker.distributed_tasks worker $WORKER_CONCURRENCY --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}${API_VER}" ${OASIS_CELERY_EXTRA_ARGS} |& tee -a /var/log/oasis/worker.log
