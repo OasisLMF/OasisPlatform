@@ -44,12 +44,11 @@ from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
 
-from .models import AnalysisTaskStatus
+from ..models import AnalysisTaskStatus, Analysis
 from .task_controller import get_analysis_task_controller
 from ...celery_app_v2 import celery_app_v2
 from src.server.oasisapi.files.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
-from .models import Analysis
 
 
 logger = get_task_logger(__name__)

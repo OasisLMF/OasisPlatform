@@ -9,7 +9,7 @@ from celery.canvas import Signature, chain
 from django.contrib.auth.models import User
 
 from src.conf.iniconf import settings
-from ..files.models import file_storage_link
+from ...files.models import file_storage_link
 
 if TYPE_CHECKING:
     from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
