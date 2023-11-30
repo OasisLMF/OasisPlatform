@@ -237,7 +237,7 @@ class LogTaskError(Task):
         if self.name in ['record_run_analysis_result', 'record_generate_input_result']:
             _, analysis_pk, initiator_pk = args
 
-            from .models import Analysis
+            from ..models import Analysis
             initiator = get_user_model().objects.get(pk=initiator_pk)
             analysis = Analysis.objects.get(pk=analysis_pk)
             random_filename = '{}.txt'.format(uuid.uuid4().hex)
@@ -404,7 +404,7 @@ def cancel_subtasks(self, analysis_pk):
     logger.info(i.reserved())
     """
 
-    from .models import Analysis
+    from ..models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     _now = timezone.now()
 
@@ -427,7 +427,7 @@ def cancel_subtasks(self, analysis_pk):
 
 @celery_app_v2.task(name='start_input_generation_task', **celery_conf.worker_task_kwargs)
 def start_input_generation_task(analysis_pk, initiator_pk, loc_lines):
-    from .models import Analysis
+    from ..models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_inputs(analysis, initiator, loc_lines)
@@ -436,7 +436,7 @@ def start_input_generation_task(analysis_pk, initiator_pk, loc_lines):
 
 @celery_app_v2.task(name='start_loss_generation_task')
 def start_loss_generation_task(analysis_pk, initiator_pk, events_total):
-    from .models import Analysis
+    from ..models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_losses(analysis, initiator, events_total)
@@ -445,7 +445,7 @@ def start_loss_generation_task(analysis_pk, initiator_pk, events_total):
 
 @celery_app_v2.task(name='start_input_and_loss_generation_task')
 def start_input_and_loss_generation_task(analysis_pk, initiator_pk):
-    from .models import Analysis
+    from ..models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
 
@@ -499,7 +499,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
 
 @celery_app_v2.task(bind=True, name='record_losses_files')
 def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=None, **kwargs):
-    from .models import Analysis
+    from ..models import Analysis
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id, dt=datetime.now().timestamp())
 
@@ -633,7 +633,7 @@ def handle_task_failure(
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, run_data_uuid: {}, failure_status: {}'.format(
         analysis_id, initiator_id, tb, run_data_uuid, failure_status))
     try:
-        from .models import Analysis
+        from ..models import Analysis
 
         analysis = Analysis.objects.get(pk=analysis_id)
         analysis.status = failure_status
@@ -705,7 +705,7 @@ def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
 @celery_app_v2.task(name='set_task_status')
 def set_task_status(analysis_pk, task_status, dt):
     try:
-        from .models import Analysis
+        from ..models import Analysis
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = task_status
         analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
