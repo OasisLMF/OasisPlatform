@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db.models import Count
 from kombu import Connection
 
-from src.server.oasisapi.celery_app import celery_app
+from src.server.oasisapi.celery_app_v2 import celery_app_v2
 
 QueueInfo = Dict[str, int]
 
@@ -29,7 +29,7 @@ def _get_broker_queue_names():
         #
         # TODO: figure out how to get this to work for memory broker
         #
-        return (celery_app.conf.task_default_routing_key, )
+        return (celery_app_v2.conf.task_default_routing_key, )
 
     raise NotImplementedError('Support for your broker is not yet supported')
 
@@ -41,7 +41,7 @@ def _get_active_queues():
         #
         return {}
 
-    return celery_app.control.inspect().active_queues()
+    return celery_app_v2.control.inspect().active_queues()
 
 
 def get_queues_info() -> List[QueueInfo]:

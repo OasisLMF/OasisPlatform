@@ -14,7 +14,8 @@ from model_utils.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 
-from src.server.oasisapi.celery_app import celery_app
+from src.server.oasisapi.celery_app_v1 import celery_app_v1
+from src.server.oasisapi.celery_app_v2 import celery_app_v2
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
     TaskStatusMessageAnalysisItem, build_task_status_message
 from ..analysis_models.models import AnalysisModel
@@ -372,7 +373,7 @@ class Analysis(TimeStampedModel):
 
     @property
     def run_analysis_signature(self):
-        return celery_app.signature(
+        return celery_app_v2.signature(
             'start_loss_generation_task',
             options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
         )
@@ -384,7 +385,7 @@ class Analysis(TimeStampedModel):
         self.save()
 
         task = self.run_analysis_signature
-        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+        task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
             'analysis_id': self.pk,
             'initiator_id': initiator.pk,
             'traceback_property': 'run_traceback_file',
@@ -406,7 +407,7 @@ class Analysis(TimeStampedModel):
 
     @property
     def start_input_and_loss_generation_signature(self):
-        return celery_app.signature(
+        return celery_app_v2.signature(
             'start_input_and_loss_generation_task',
             options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')}
         )
@@ -444,7 +445,7 @@ class Analysis(TimeStampedModel):
         self.input_generation_traceback_file_id = None
 
         task = self.start_input_and_loss_generation_signature
-        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+        task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
             'analysis_id': self.pk,
             'initiator_id': initiator.pk,
             'traceback_property': 'input_generation_traceback_file',
@@ -489,7 +490,7 @@ class Analysis(TimeStampedModel):
 
     @property
     def generate_input_signature(self):
-        return celery_app.signature(
+        return celery_app_v2.signature(
             'start_input_generation_task',
             options={
                 'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
@@ -498,7 +499,7 @@ class Analysis(TimeStampedModel):
 
     @property
     def cancel_subtasks_signature(self):
-        return celery_app.signature(
+        return celery_app_v2.signature(
             'cancel_subtasks',
             options={
                 'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
@@ -548,7 +549,7 @@ class Analysis(TimeStampedModel):
         self.save()
 
         task = self.generate_input_signature
-        task.on_error(celery_app.signature('handle_task_failure', kwargs={
+        task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
             'analysis_id': self.pk,
             'initiator_id': initiator.pk,
             'traceback_property': 'input_generation_traceback_file',
