@@ -110,7 +110,7 @@ services:
    environment:
      <<: *shared-env
    volumes: *shared-volumes
-  worker:
+  worker_v1:
     restart: always
     image: coreoasis/model_worker:dev
     build:
@@ -124,7 +124,26 @@ services:
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
      OASIS_MODEL_VERSION_ID: 1
-     OASIS_MODEL_NUM_ANALYSIS_CHUNKS: 8
+     OASIS_API_VERSION: v1
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - ./src/model_execution_worker:/home/worker/src/model_execution_worker
+     - filestore-OasisData:/shared-fs:rw
+  worker_v2:
+    restart: always
+    image: coreoasis/model_worker:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.model_worker
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *shared-env
+     OASIS_MODEL_SUPPLIER_ID: OasisLMF
+     OASIS_MODEL_ID: PiWind
+     OASIS_MODEL_VERSION_ID: 1
+     OASIS_API_VERSION: v2
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ./src/model_execution_worker:/home/worker/src/model_execution_worker
