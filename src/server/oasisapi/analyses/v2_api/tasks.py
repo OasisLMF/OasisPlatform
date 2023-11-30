@@ -10,8 +10,8 @@ from tempfile import TemporaryFile
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-from ....conf import celeryconf as celery_conf
-from ....conf.iniconf import settings as worker_settings
+from .....conf import celeryconf_v2 as celery_conf
+from .....conf.iniconf import settings as worker_settings
 
 from botocore.exceptions import ClientError as S3_ClientError
 from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError

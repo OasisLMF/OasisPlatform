@@ -27,7 +27,7 @@ from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
-from ..conf import celeryconf as celery_conf
+from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore

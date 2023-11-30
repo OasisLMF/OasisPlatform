@@ -27,7 +27,7 @@ from oasislmf.utils.status import OASIS_TASK_STATUS
 from oasislmf import __version__ as mdk_version
 from pathlib2 import Path
 
-from ..conf import celeryconf as celery_conf
+from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 

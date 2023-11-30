@@ -1,6 +1,6 @@
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageAnalysisItem, \
     TaskStatusMessageItem, build_task_status_message
-from ..queues.utils import filter_queues_info
+from ...queues.utils import filter_queues_info
 
 
 def task_updated(instance, *args, **kwargs):

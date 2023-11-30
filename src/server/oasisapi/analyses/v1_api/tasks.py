@@ -32,7 +32,7 @@ from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
 
 from ...celery_app import celery_app_v1
-from ....conf import celeryconf as celery_conf
+from .....conf import celeryconf_v1 as celery_conf
 logger = get_task_logger(__name__)
 
 
