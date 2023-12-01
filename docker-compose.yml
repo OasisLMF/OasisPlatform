@@ -63,7 +63,7 @@ services:
    volumes:
      - filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
-  worker-monitor_v1:
+  v1-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
    command: [celery, -A, src.server.oasisapi.celery_app_v1, worker, --loglevel=INFO,]
@@ -73,7 +73,7 @@ services:
      - broker
    environment:
      <<: *shared-env
-  worker-monitor_v2:
+  v2-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
    command: [celery, -A, src.server.oasisapi.celery_app_v2, worker, --loglevel=INFO,  -Q, celery-v2]
@@ -86,7 +86,7 @@ services:
    volumes:
      - filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
-  task-controller_v2:
+  v2-task-controller:
    restart: always
    image: coreoasis/api_server:dev
    command: [celery, -A, src.server.oasisapi.celery_app_v2, worker, --loglevel=INFO, -Q, task-controller]
@@ -110,7 +110,7 @@ services:
    environment:
      <<: *shared-env
    volumes: *shared-volumes
-  worker_v1:
+  v1-worker:
     restart: always
     image: coreoasis/model_worker:dev
     build:
@@ -129,7 +129,7 @@ services:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ./src/model_execution_worker:/home/worker/src/model_execution_worker
      - filestore-OasisData:/shared-fs:rw
-  worker_v2:
+  v2-worker:
     restart: always
     image: coreoasis/model_worker:dev
     build:

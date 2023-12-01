@@ -43,7 +43,7 @@ RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 
 app = Celery()
-app.config_from_object(celery_conf)
+app.config_from_object(celery_conf, namespace='CELERY_V2')
 
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
@@ -257,6 +257,7 @@ def register_worker(sender, **k):
         signature(
             'run_register_worker',
             args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
+            queue='celery-v2',
         ).delay()
 
     # Required ENV

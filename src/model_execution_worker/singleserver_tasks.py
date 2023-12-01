@@ -7,6 +7,7 @@ import os
 import sys
 import shutil
 import subprocess
+import time
 
 import fasteners
 import tempfile
@@ -44,7 +45,7 @@ LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 app = Celery()
-app.config_from_object(celery_conf)
+app.config_from_object(celery_conf, namespace='CELERY_V1')
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
@@ -172,19 +173,16 @@ def check_worker_lost(task, analysis_pk):
         )
     task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
 
-
 # When a worker connects send a task to the worker-monitor to register a new model
 @worker_ready.connect
 def register_worker(sender, **k):
+    time.sleep(1)  # Workaround, pause for 1 sec to makesure log messages are printed
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
     m_version = get_worker_versions()
-    m_conf = get_json(get_oasislmf_config_path(m_id))
-
     logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
-    logging.info('oasislmf config: {}'.format(m_conf))
 
     # Check for 'DISABLE_WORKER_REG' before sending task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
@@ -198,7 +196,8 @@ def register_worker(sender, **k):
 
         signature(
             'run_register_worker',
-            args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
+            args=(m_supplier, m_name, m_id, m_settings, m_version),
+            queue='celery'
         ).delay()
 
     # Required ENV

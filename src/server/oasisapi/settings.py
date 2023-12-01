@@ -19,6 +19,7 @@ from rest_framework.reverse import reverse_lazy
 
 from ...common.shared import set_aws_log_level
 from ...conf import iniconf  # noqa
+from ...conf.celeryconf_v1 import *  # noqa
 from ...conf.celeryconf_v2 import *  # noqa
 from ...common.shared import set_aws_log_level, set_azure_log_level
 
@@ -91,6 +92,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.files',
     'src.server.oasisapi.portfolios',
     'src.server.oasisapi.analyses',
+    'src.server.oasisapi.analyses.v1_api',
     'src.server.oasisapi.analyses.v2_api',
     'src.server.oasisapi.analysis_models',
     'src.server.oasisapi.data_files',
