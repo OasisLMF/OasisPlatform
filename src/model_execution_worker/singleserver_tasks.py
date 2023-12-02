@@ -45,7 +45,8 @@ LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 app = Celery()
-app.config_from_object(celery_conf, namespace='CELERY_V1')
+app.config_from_object(celery_conf)
+print(app._conf)
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 

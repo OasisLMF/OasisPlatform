@@ -17,12 +17,10 @@ import ssl
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
 
-from ...common.shared import set_aws_log_level
-from ...conf import iniconf  # noqa
-from ...conf.celeryconf_v1 import *  # noqa
-from ...conf.celeryconf_v2 import *  # noqa
-from ...common.shared import set_aws_log_level, set_azure_log_level
-
+from ....common.shared import set_aws_log_level
+from ....conf import iniconf  # noqa
+from ....common.shared import set_aws_log_level, set_azure_log_level
+from ....conf.base import *
 
 IN_TEST = 'test' in sys.argv
 

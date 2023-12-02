@@ -4,8 +4,11 @@ import urllib
 
 from src.conf.iniconf import settings
 
+# Default Queue Name
+CELERY_DEFAULT_QUEUE = "celery-v2"
+
 #: Celery config - ignore result?
-CELERY_V2_IGNORE_RESULT = False
+CELERY_IGNORE_RESULT = False
 
 #: Celery config - IP address of the server running RabbitMQ and Celery
 BROKER_URL = settings.get(
@@ -37,29 +40,23 @@ else:
         SSL_MODE=settings.get('celery', 'db_ssl_mode', fallback='?sslmode=prefer'),
     )
 
-
-CELERY_V2_RESULT_BACKEND = CELERY_RESULT_BACKEND
-CELERY_V2_RESULTS_DB_BACKEND = CELERY_RESULTS_DB_BACKEND
-CELERY_V2_BROKER_URL = BROKER_URL
-
-
 #: Celery config - AMQP task result expiration time
-CELERY_V2_AMQP_TASK_RESULT_EXPIRES = 1000
+CELERY_AMQP_TASK_RESULT_EXPIRES = 1000
 
 #: Celery config - task serializer
-CELERY_V2_TASK_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
 
 #: Celery config - result serializer
-CELERY_V2_RESULT_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
 #: Celery config - accept content type
-CELERY_V2_ACCEPT_CONTENT = ['json']
+CELERY_ACCEPT_CONTENT = ['json']
 
 #: Celery config - timezone (default == UTC)
-# CELERY_V2_TIMEZONE = 'Europe/London'
+# CELERY_TIMEZONE = 'Europe/London'
 
 #: Celery config - enable UTC
-CELERY_V2_ENABLE_UTC = True
+CELERY_ENABLE_UTC = True
 
 #: Celery config - concurrency
 # CELERYD_CONCURRENCY = 1
@@ -72,19 +69,17 @@ CELERYD_PREFETCH_MULTIPLIER = 1
 
 # setup queues so that tasks aren't removed from the queue until
 # complete and reschedule if the task worker goes offline
-CELERY_V2_ACKS_LATE = True
-CELERY_V2_REJECT_ON_WORKER_LOST = True
+CELERY_ACKS_LATE = True
+CELERY_REJECT_ON_WORKER_LOST = True
 
-CELERY_V2_TASK_QUEUES = (Broadcast('model-worker-broadcast'), )
+CELERY_TASK_QUEUES = (Broadcast('model-worker-broadcast'), )
 
 # Highest priority available
-#CELERY_V2_QUEUE_MAX_PRIORITY = 10
+CELERY_QUEUE_MAX_PRIORITY = 10
 
 # Set to make internal and subtasks inherit priority
-#CELERY_V2_INHERIT_PARENT_PRIORITY = True
+CELERY_INHERIT_PARENT_PRIORITY = True
 
-# Default Queue Name
-#CELERY_V2_DEFAULT_QUEUE = "celery-v2"
 
 # setup the beat schedule
 def crontab_from_string(s):
@@ -110,15 +105,3 @@ worker_task_kwargs = {
     'max_retries': 2,               # The task will be run max_retries + 1 times
     'default_retry_delay': 6,       # A small delay to recover from temporary bad states
 }
-
-
-
-
-# Highest priority available
-CELERY_V2_QUEUE_MAX_PRIORITY = 10
-
-# Set to make internal and subtasks inherit priority
-CELERY_V2_INHERIT_PARENT_PRIORITY = True
-
-# Default Queue Name
-CELERY_V2_DEFAULT_QUEUE = "celery-v2"

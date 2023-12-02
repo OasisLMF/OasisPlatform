@@ -7,8 +7,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import views, status
 from rest_framework.response import Response
 
-from ..celery_app_v1 import celery_app_v1
-from ..celery_app_v2 import celery_app_v2
+from ..celery_app_v1 import v1 as celery_app_v1
+from ..celery_app_v2 import v2 as celery_app_v2
 from ..schemas.custom_swagger import HEALTHCHECK
 
 
