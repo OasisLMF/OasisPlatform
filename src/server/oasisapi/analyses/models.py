@@ -27,7 +27,6 @@ from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
 from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
-#celery_app_v1.conf.update(CELERY_QUEUE_MAX_PRIORITY=None)
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):

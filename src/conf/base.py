@@ -1,8 +1,6 @@
-from celery.schedules import crontab
-from kombu.common import Broadcast
 import urllib
-
 from src.conf.iniconf import settings
+
 #: Celery config - IP address of the server running RabbitMQ and Celery
 BROKER_URL = settings.get(
     'celery',
