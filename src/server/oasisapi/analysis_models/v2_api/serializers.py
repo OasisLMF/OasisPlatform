@@ -18,6 +18,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     scaling_configuration = serializers.SerializerMethodField()
     chunking_configuration = serializers.SerializerMethodField()
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    namespace = 'v2-models'
 
     class Meta:
         ref_name = "v2_" + __qualname__.split('.')[0]
@@ -57,27 +58,27 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_resource_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_resources_file_url(request=request)
+        return instance.get_absolute_resources_file_url(request=request, namespace=self.namespace)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_settings(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_settings_url(request=request)
+        return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_versions(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_versions_url(request=request)
+        return instance.get_absolute_versions_url(request=request, namespace=self.namespace)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_scaling_configuration(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_scaling_configuration_url(request=request)
+        return instance.get_absolute_scaling_configuration_url(request=request, namespace=self.namespace)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_chunking_configuration(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_chunking_configuration_url(request=request)
+        return instance.get_absolute_chunking_configuration_url(request=request, namespace=self.namespace)
 
 
 class TemplateSerializer(serializers.ModelSerializer):

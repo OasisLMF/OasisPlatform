@@ -27,7 +27,7 @@ from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
 from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
-celery_app_v1.conf.update(CELERY_QUEUE_MAX_PRIORITY=None)
+#celery_app_v1.conf.update(CELERY_QUEUE_MAX_PRIORITY=None)
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -129,11 +129,13 @@ class AnalysisTaskStatus(models.Model):
             ('analysis', 'slug',)
         )
 
-    def get_output_log_url(self, request=None):
-        return reverse('analysis-task-status-output-log', kwargs={'pk': self.pk}, request=request)
+    def get_output_log_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
+        return reverse(f'{override_ns}analysis-task-status-output-log', kwargs={'pk': self.pk}, request=request)
 
-    def get_error_log_url(self, request=None):
-        return reverse('analysis-task-status-error-log', kwargs={'pk': self.pk}, request=request)
+    def get_error_log_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
+        return reverse(f'{override_ns}analysis-task-status-error-log', kwargs={'pk': self.pk}, request=request)
 
 
 class Analysis(TimeStampedModel):
@@ -197,7 +199,7 @@ class Analysis(TimeStampedModel):
     def __str__(self):
         return self.name
 
-    def _update_namespace(self, request=None):
+    def _update_ns(self, request=None):
         """ WORKAROUND - this is needed for when a copy request is issued
                          from the portfolio view '/{ver}/portfolios/{id}/create_analysis/'
 
@@ -206,7 +208,6 @@ class Analysis(TimeStampedModel):
         """
         if not request:
             return None
-
         ns_ver, ns_view = request.version.split('-')
         if ns_view != 'analyses':
             request.version = f'{ns_ver}-analyses'
@@ -214,84 +215,83 @@ class Analysis(TimeStampedModel):
 
     def get_absolute_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-detail', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-detail', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_run_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-run', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-run', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_cancel_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-cancel', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-cancel', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_cancel_analysis_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-cancel-analysis-run', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-cancel-analysis-run', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_generate_inputs_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-generate-inputs', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-generate-inputs', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_cancel_inputs_generation_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-cancel-generate-inputs', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-cancel-generate-inputs', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_copy_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-copy', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-copy', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_settings_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-settings-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-settings-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_settings_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-settings', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-settings', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_input_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-input-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-input-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_lookup_errors_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-lookup-errors-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-lookup-errors-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_lookup_success_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-lookup-success-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-lookup-success-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_lookup_validation_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-lookup-validation-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-lookup-validation-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_summary_levels_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-summary-levels-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-summary-levels-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_input_generation_traceback_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-input-generation-traceback-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-input-generation-traceback-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_output_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-output-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-output-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_run_traceback_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-run-traceback-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-run-traceback-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_run_log_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-run-log-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-run-log-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_storage_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        request = self._update_namespace(request)
-        return reverse(f'{override_ns}analysis-storage-links', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-storage-links', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_subtask_list_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-sub-task-list', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-sub-task-list', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_groups(self):
         groups = []
@@ -342,7 +342,7 @@ class Analysis(TimeStampedModel):
         scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
         settings_file = file_storage_link(self.settings_file)
         complex_data_files = self.create_complex_model_data_file_dicts()
-        
+
         from celery import signature
 
         return signature(
@@ -350,23 +350,6 @@ class Analysis(TimeStampedModel):
             args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
             queue=self.model.queue_name,
         )
-
-#    @property
-#    def v1_record_generate_input_result(self):
-#        return celery_app_v1.signature(
-#            'record_generate_input_result',
-#            args=(self.pk, initiator.pk),
-#        )
-#
-#    @property
-#    def v1_record_run_analysis_result(self):
-#        return celery_app_v1.signature(
-#            'record_run_analysis_result',
-#            args=(self.pk, initiator.pk),
-#        )
-
-
-
 
     # --- V2 task signatures ------------------------------------------------ #
 

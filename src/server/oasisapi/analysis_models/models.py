@@ -114,7 +114,7 @@ class SettingsTemplate(TimeStampedModel):
 
     def get_absolute_settings_template_url(self, model_pk, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=request)
+        return reverse(f'{override_ns}models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=self._update_ns(request))
 
 
 class AnalysisModel(TimeStampedModel):
@@ -146,6 +146,20 @@ class AnalysisModel(TimeStampedModel):
     def __str__(self):
         return '{}-{}-{}'.format(self.supplier_id, self.model_id, self.version_id)
 
+    def _update_ns(self, request=None):
+        """ WORKAROUND - this is needed for when a copy request is issued
+                         from the portfolio view '/{ver}/portfolios/{id}/create_analysis/'
+
+                         The inncorrect namespace '{ver}-portfolios' is inherited from the
+                         original request. This needs to be replaced with '{ver}-analyses'
+        """
+        if not request:
+            return None
+        ns_ver, ns_view = request.version.split('-')
+        if ns_view != 'models':
+            request.version = f'{ns_ver}-models'
+        return request
+
     @property
     def queue_name(self):
         return str(self)
@@ -176,23 +190,23 @@ class AnalysisModel(TimeStampedModel):
 
     def get_absolute_resources_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-model-resource-file', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-model-resource-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_versions_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-model-versions', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-model-versions', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_settings_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}model-settings', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}model-settings', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_scaling_configuration_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-model-scaling-configuration', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-model-scaling-configuration', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
     def get_absolute_chunking_configuration_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
 
 class QueueModelAssociation(models.Model):
