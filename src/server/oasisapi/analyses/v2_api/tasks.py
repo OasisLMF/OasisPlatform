@@ -33,7 +33,6 @@ from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
 
-from src.conf.iniconf import settings
 from botocore.exceptions import ClientError as S3_ClientError
 from tempfile import TemporaryFile
 from urllib.request import urlopen
@@ -297,7 +296,7 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 
-@celery_app_v2.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
+@celery_app_v2.task(name='run_register_worker_v2', **celery_conf.worker_task_kwargs)
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
@@ -702,7 +701,7 @@ def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
     )
 
 
-@celery_app_v2.task(name='set_task_status')
+@celery_app_v2.task(name='set_task_status_v2')
 def set_task_status(analysis_pk, task_status, dt):
     try:
         from ..models import Analysis

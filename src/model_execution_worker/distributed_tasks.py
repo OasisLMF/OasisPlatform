@@ -44,7 +44,7 @@ TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/t
 
 app = Celery()
 app.config_from_object(celery_conf)
-print(app._conf)
+#print(app._conf)
 
 
 logging.info("Started worker")
@@ -197,7 +197,7 @@ def notify_api_status(analysis_pk, task_status):
         task_status
     ))
     signature(
-        'set_task_status',
+        'set_task_status_v2',
         args=(analysis_pk, task_status, datetime.now().timestamp()),
         queue='celery-v2'
     ).delay()
@@ -257,7 +257,7 @@ def register_worker(sender, **k):
         logging.info('settings: {}'.format(m_settings))
 
         signature(
-            'run_register_worker',
+            'run_register_worker_v2',
             args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
             queue='celery-v2',
         ).delay()
