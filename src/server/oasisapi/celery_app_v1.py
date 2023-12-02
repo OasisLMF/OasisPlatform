@@ -8,4 +8,4 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'src.server.oasisapi.settings.v1
 v1 = Celery('v1', include=['src.server.oasisapi.analyses.v1_api'])
 v1.config_from_object('django.conf:settings')
 v1.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
-#print(v1._conf)
+v1.conf.update(CELERY_QUEUE_MAX_PRIORITY=None)

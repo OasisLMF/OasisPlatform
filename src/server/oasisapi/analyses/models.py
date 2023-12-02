@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 
 from celery.result import AsyncResult
-from django.conf import settings
+from django.conf import settings as django_settings
 from django.core.files.base import File
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -27,6 +27,7 @@ from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
 
 from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
+celery_app_v1.conf.update(CELERY_QUEUE_MAX_PRIORITY=None)
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -152,7 +153,7 @@ class Analysis(TimeStampedModel):
 
     input_generation_traceback_file_id = None
 
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
+    creator = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
     model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)
@@ -479,7 +480,8 @@ class Analysis(TimeStampedModel):
                 'initiator_id': initiator.pk,
                 'traceback_property': 'run_traceback_file',
                 'failure_status': Analysis.status_choices.RUN_ERROR,
-            }))
+            }, queue='celery-v2'))
+
             task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
 
         else:
