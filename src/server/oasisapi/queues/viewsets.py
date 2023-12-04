@@ -29,7 +29,7 @@ class WebsocketViewSet(viewsets.ViewSet):
         To print the websocket directly use the following:
         ```
         pip install websocket_client
-        ./manage.py ws_echo --url ws://localhost:8001/ws/v1/queue-status/
+        ./manage.py ws_echo --url ws://localhost:8001/ws/v2/queue-status/
         ```
         """
         return Response(build_all_queue_status_message())

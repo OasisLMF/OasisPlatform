@@ -72,6 +72,12 @@ urlpatterns += [
     url(r'^v1/', include('src.server.oasisapi.data_files.v1_api.urls', namespace='v1-files')),
 ]
 
+#from rest_framework_nested import routers
+#api_router = routers.DefaultRouter()
+#api_router.include_root_view = False
+#api_router.register('queue', QueueViewSet, basename='queue')
+#api_router.register('queue-status', WebsocketViewSet, basename='queue')
+
 # API v2 Routes
 urlpatterns += [
     url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
@@ -79,6 +85,7 @@ urlpatterns += [
     url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
     url(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-files')),
     url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
+#    url(r'^(?P<version>[^/]+)/', include(api_router.urls)),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
