@@ -76,8 +76,8 @@ class AnalysisRun(WebTestMixin, TestCase):
                 sig_res = Mock()
                 sig_res.delay.return_value = res_factory(task_id)
 
-                with patch('src.server.oasisapi.analyses.models.Analysis.run_analysis_signature', PropertyMock(return_value=sig_res)):
-                    analysis.run(initiator)
+                with patch('src.server.oasisapi.analyses.models.Analysis.v1_run_analysis_signature', PropertyMock(return_value=sig_res)):
+                    analysis.run(initiator, version='v1')
 
                     sig_res.link.assert_called_once_with(record_run_analysis_result.s(analysis.pk, initiator.pk))
                     sig_res.link_error.assert_called_once_with(
@@ -100,23 +100,23 @@ class AnalysisRun(WebTestMixin, TestCase):
         initiator = fake_user()
 
         sig_res = Mock()
-        with patch('src.server.oasisapi.analyses.models.Analysis.run_analysis_signature', PropertyMock(return_value=sig_res)):
+        with patch('src.server.oasisapi.analyses.models.Analysis.v1_run_analysis_signature', PropertyMock(return_value=sig_res)):
             analysis = fake_analysis(status=status, run_task_id=task_id)
 
             with self.assertRaises(ValidationError) as ex:
-                analysis.run(initiator)
+                analysis.run(initiator, version='v1')
 
             self.assertEqual(
                 {'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 
-    def test_run_analysis_signature_is_correct(self):
+    def test_v1_run_analysis_signature_is_correct(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 analysis = fake_analysis(input_file=fake_related_file(), settings_file=fake_related_file())
 
-                sig = analysis.run_analysis_signature
+                sig = analysis.v1_run_analysis_signature
 
                 self.assertEqual(sig.task, 'run_analysis')
                 self.assertEqual(sig.args, (analysis.id, analysis.input_file.file.name, analysis.settings_file.file.name, []))
@@ -177,8 +177,8 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig_res = Mock()
                 sig_res.delay.return_value = res_factory(task_id)
 
-                with patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=sig_res)):
-                    analysis.generate_inputs(initiator)
+                with patch('src.server.oasisapi.analyses.models.Analysis.v1_generate_input_signature', PropertyMock(return_value=sig_res)):
+                    analysis.generate_inputs(initiator, version='v1')
 
                     sig_res.link.assert_called_once_with(record_generate_input_result.s(analysis.pk, initiator.pk))
                     sig_res.link_error.assert_called_once_with(
@@ -200,11 +200,11 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 initiator = fake_user()
 
                 sig_res = Mock()
-                with patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=sig_res)):
+                with patch('src.server.oasisapi.analyses.models.Analysis.v1_generate_input_signature', PropertyMock(return_value=sig_res)):
                     analysis = fake_analysis(status=status, run_task_id=task_id, portfolio=fake_portfolio(location_file=fake_related_file()))
 
                     with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator)
+                        analysis.generate_inputs(initiator, version='v1')
 
                     self.assertEqual({'status': [
                         'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
@@ -220,23 +220,23 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 initiator = fake_user()
 
                 sig_res = Mock()
-                with patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=sig_res)):
+                with patch('src.server.oasisapi.analyses.models.Analysis.v1_generate_input_signature', PropertyMock(return_value=sig_res)):
                     analysis = fake_analysis(status=Analysis.status_choices.NEW, run_task_id=task_id)
 
                     with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator)
+                        analysis.generate_inputs(initiator, version='v1')
 
                     self.assertEqual({'portfolio': ['"location_file" must not be null']}, ex.exception.detail)
 
                     self.assertEqual(Analysis.status_choices.NEW, analysis.status)
                     self.assertFalse(res_factory.revoke_called)
 
-    def test_generate_input_signature_is_correct(self):
+    def test_v1_generate_input_signature_is_correct(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 analysis = fake_analysis(portfolio=fake_portfolio(location_file=fake_related_file()))
 
-                sig = analysis.generate_input_signature
+                sig = analysis.v1_generate_input_signature
 
                 self.assertEqual(sig.task, 'generate_input')
                 self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))

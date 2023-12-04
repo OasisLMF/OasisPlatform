@@ -273,7 +273,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 }
             )
 
-            run_mock.assert_called_once_with(analysis, user)
+            run_mock.assert_called_once_with(analysis, user, version='v1')
 
 
 class AnalysisCancel(WebTestMixin, TestCase):
@@ -345,7 +345,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 }
             )
 
-            generate_inputs_mock.assert_called_once_with(analysis, user)
+            generate_inputs_mock.assert_called_once_with(analysis, user, version='v1')
 
 
 class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
