@@ -23,6 +23,20 @@ x-shared-env: &shared-env
   OASIS_CELERY_DB_PORT: 5432
   OASIS_INPUT_GENERATION_CONTROLLER_QUEUE: task-controller
   OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE: task-controller
+
+x-oasis-env-v1: &oasis-env-v1
+  OASIS_DEBUG: ${DEBUG:-0}
+  OASIS_RABBIT_HOST: broker
+  OASIS_RABBIT_PORT: 5672
+  OASIS_RABBIT_USER: rabbit
+  OASIS_RABBIT_PASS: rabbit
+  OASIS_CELERY_DB_ENGINE: db+postgresql+psycopg2
+  OASIS_CELERY_DB_HOST: celery-db
+  OASIS_CELERY_DB_PASS: password
+  OASIS_CELERY_DB_USER: celery
+  OASIS_CELERY_DB_NAME: celery
+  OASIS_CELERY_DB_PORT: 5432
+
 x-volumes: &shared-volumes
   - filestore-OasisData:/shared-fs:rw
 services:
@@ -110,6 +124,21 @@ services:
    environment:
      <<: *shared-env
    volumes: *shared-volumes
+  stable-worker:
+    restart: always
+    image: coreoasis/model_worker:1.28.4
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *oasis-env-v1
+     OASIS_MODEL_DATA_DIRECTORY: /home/worker/model
+     OASIS_MODEL_SUPPLIER_ID: OasisLMF
+     OASIS_MODEL_ID: PiWind
+     OASIS_MODEL_VERSION_ID: '1.28.4'
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - filestore-OasisData:/shared-fs:rw
   v1-worker:
     restart: always
     image: coreoasis/model_worker:dev
