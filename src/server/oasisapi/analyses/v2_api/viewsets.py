@@ -53,6 +53,22 @@ class AnalysisFilter(TimeStampedFilter):
         field_name='status',
         label=_('Status in')
     )
+    run_mode = filters.ChoiceFilter(
+        help_text=_('Filter results by results in the current analysis status, one of [{}]'.format(
+            ', '.join(Analysis.run_mode_choices._db_values))
+        ),
+        choices=Analysis.run_mode_choices,
+    )
+    run_mode__in = CsvMultipleChoiceFilter(
+        help_text=_(
+            'Filter results by results where the current analysis status '
+            'is one of a given set (provide multiple parameters or comma separated list), '
+            'from [{}]'.format(', '.join(Analysis.run_mode_choices._db_values))
+        ),
+        choices=Analysis.run_mode_choices,
+        field_name='run_mode',
+        label=_('Run mode in')
+    )
     model = NumberFilter(
         help_text=_('Filter results by the id of the model the analysis belongs to'),
         field_name='model'

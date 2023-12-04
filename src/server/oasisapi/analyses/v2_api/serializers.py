@@ -66,6 +66,7 @@ class AnalysisListSerializer(serializers.Serializer):
     portfolio = serializers.IntegerField(source='portfolio_id', read_only=True)
     model = serializers.IntegerField(source='model_id', read_only=True)
     status = serializers.CharField(read_only=True)
+    run_mode = serializers.CharField(read_only=True)
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
@@ -226,6 +227,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'portfolio',
             'model',
             'status',
+            'run_mode',
             'task_started',
             'task_finished',
             'complex_model_data_files',

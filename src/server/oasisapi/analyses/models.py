@@ -151,6 +151,10 @@ class Analysis(TimeStampedModel):
         ('RUN_CANCELLED', 'Run cancelled'),
         ('RUN_ERROR', 'Run error'),
     )
+    run_mode_choices = Choices(
+        ('V1', 'Single-Instance Execution'),
+        ('V2', 'Distributed Execution'),
+    )
 
     input_generation_traceback_file_id = None
 
@@ -160,7 +164,10 @@ class Analysis(TimeStampedModel):
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values),
                               choices=status_choices, default=status_choices.NEW, editable=False)
+    run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),
+                              choices=run_mode_choices, default=None, editable=False, null=True)
     task_started = models.DateTimeField(editable=False, null=True, default=None)
+
     task_finished = models.DateTimeField(editable=False, null=True, default=None)
     run_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
@@ -342,9 +349,7 @@ class Analysis(TimeStampedModel):
         settings_file = file_storage_link(self.settings_file)
         complex_data_files = self.create_complex_model_data_file_dicts()
 
-        from celery import signature
-
-        return signature(
+        return celery_app_v1.signature(
             'generate_input',
             args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
             queue=self.model.queue_name,
@@ -453,6 +458,7 @@ class Analysis(TimeStampedModel):
                 celery_app_v1.signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
             )
             self.status = self.status_choices.RUN_QUEUED
+            self.run_mode = self.run_mode_choices.V1
             task_id = task.delay().id
 
         elif version.startswith('v2'): # V2 task dispatch
@@ -463,12 +469,13 @@ class Analysis(TimeStampedModel):
                 'traceback_property': 'run_traceback_file',
                 'failure_status': Analysis.status_choices.RUN_ERROR,
             }, queue='celery-v2'))
-
+            self.run_mode = self.run_mode_choices.V2
             task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
 
         else:
-            pass
-            # bad request
+            raise ValidationError(detail={'version':
+                [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
+            })
 
         self.run_task_id = task_id
         self.task_started = timezone.now()
@@ -522,6 +529,7 @@ class Analysis(TimeStampedModel):
             'traceback_property': 'input_generation_traceback_file',
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
+        self.run_mode = self.run_mode_choices.V2
         task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
 
         self.generate_inputs_task_id = task_id
@@ -608,6 +616,7 @@ class Analysis(TimeStampedModel):
             task.link_error(
                 celery_app_v1.signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
             )
+            self.run_mode = self.run_mode_choices.V1
             self.status = self.status_choices.INPUTS_GENERATION_QUEUED
             task_id = task.delay().id
 
@@ -619,10 +628,12 @@ class Analysis(TimeStampedModel):
                 'traceback_property': 'input_generation_traceback_file',
                 'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
             }))
+            self.run_mode = self.run_mode_choices.V2
             task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
         else:
-            pass
-            # return bad request
+            raise ValidationError(detail={'version':
+                [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
+            })
 
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
@@ -656,17 +667,27 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
-        # Kill the task controller job incase its still on queue
-        AsyncResult(self.run_task_id).revoke(
-            signal='SIGKILL',
-            terminate=True,
-        )
 
-        # Send Kill chain call to worker-controller
-        cancel_tasks = self.v2_cancel_subtasks_signature
-        task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
+        # Terminate V2 Execution
+        if self.run_mode is self.run_mode_choices.V2:
+            # Kill the task controller job incase its still on queue
+            AsyncResult(self.run_task_id).revoke(
+                signal='SIGKILL',
+                terminate=True,
+            )
+            # Send Kill chain call to worker-controller
+            cancel_tasks = self.v2_cancel_subtasks_signature
+            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
+
+        # Terminate V1 Execution -- assume this option if not set
+        else:
+            AsyncResult(self.run_task_id).revoke(
+                signal='SIGTERM',
+                terminate=True,
+            )
 
         self.status = self.status_choices.RUN_CANCELLED
+        self.run_mode = None
         self.task_finished = timezone.now()
         self.save()
 
@@ -678,17 +699,26 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
-        # Kill the task controller job incase its still on queue
-        AsyncResult(self.generate_inputs_task_id).revoke(
-            signal='SIGKILL',
-            terminate=True,
-        )
+        # Terminate V2 Execution
+        if self.run_mode is self.run_mode_choices.V2:
+            # Kill the task controller job incase its still on queue
+            AsyncResult(self.generate_inputs_task_id).revoke(
+                signal='SIGKILL',
+                terminate=True,
+            )
+            # Send Kill chain call to worker-controller
+            cancel_tasks = self.v2_cancel_subtasks_signature
+            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
 
-        # Send Kill chain call to worker-controller
-        cancel_tasks = self.v2_cancel_subtasks_signature
-        task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
+        # Terminate V1 Execution -- assume this option if not set
+        else:
+            AsyncResult(self.generate_inputs_task_id).revoke(
+                signal='SIGTERM',
+                terminate=True,
+            )
 
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
+        self.run_mode = None
         self.task_finished = timezone.now()
         self.save()
 
