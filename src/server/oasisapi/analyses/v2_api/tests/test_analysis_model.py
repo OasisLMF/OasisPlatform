@@ -243,7 +243,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 task_obj.id = task_id
                 mock_task = MagicMock(return_value=task_obj)
 
-                with patch('src.server.oasisapi.analyses.models.celery_app.send_task', new=mock_task):
+                with patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task):
                     analysis.run(initiator)
                     mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, 1),
                                                       {}, queue='celery', link_error=ANY, priority=4)
@@ -307,7 +307,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 task_obj = type('', (), {})()
                 task_obj.id = task_id
                 mock_task = MagicMock(return_value=task_obj)
-                with patch('src.server.oasisapi.analyses.models.celery_app.send_task', new=mock_task):
+                with patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task):
                     analysis.generate_inputs(initiator)
                     mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk,
                                                       4), {}, queue='celery', link_error=ANY, priority=4)

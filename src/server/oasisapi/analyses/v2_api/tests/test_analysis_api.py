@@ -108,6 +108,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                 analysis.output_file = fake_related_file()
                 analysis.run_traceback_file = fake_related_file()
                 analysis.run_log_file = fake_related_file()
+                analysis.run_mode = Analysis.run_mode_choices.V2
                 analysis.save()
 
                 response = self.app.get(
@@ -135,6 +136,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'input_generation_traceback_file': response.request.application_url + analysis.get_absolute_input_generation_traceback_file_url(namespace=NAMESPACE),
                     'output_file': response.request.application_url + analysis.get_absolute_output_file_url(namespace=NAMESPACE),
                     'run_log_file': response.request.application_url + analysis.get_absolute_run_log_file_url(namespace=NAMESPACE),
+                    'run_mode': Analysis.run_mode_choices.V2,
                     'run_traceback_file': response.request.application_url + analysis.get_absolute_run_traceback_file_url(namespace=NAMESPACE),
                     'status': Analysis.status_choices.NEW,
                     'status_count': {'CANCELLED': 0,
@@ -210,6 +212,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'input_generation_traceback_file': None,
                     'output_file': None,
                     'run_log_file': None,
+                    'run_mode': None,
                     'run_traceback_file': None,
                     'status': 'NEW',
                     'status_count': {'CANCELLED': 0,
@@ -695,7 +698,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 }
             )
 
-            run_mock.assert_called_once_with(analysis, user)
+            run_mock.assert_called_once_with(analysis, user, version='v2')
 
     def test_user_is_not_in_same_model_group___run_is_denied(self):
         user = fake_user()
@@ -803,7 +806,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 }
             )
 
-            generate_inputs_mock.assert_called_once_with(analysis, user)
+            generate_inputs_mock.assert_called_once_with(analysis, user, version='v2')
 
     def test_user_is_not_in_same_model_group___run_is_denied(self):
         user = fake_user()
