@@ -66,7 +66,7 @@ spec:
 {{- include "h.channelLayerVars" . | indent 12 }}
             - name: OASIS_DEBUG
               value: "1"
-          command: [ "celery", "-A", "src.server.oasisapi.celery_app", "worker", "--loglevel=INFO" ]
+          command: [ "celery", "-A", "src.server.oasisapi.celery_app_v2", "worker", "--loglevel=INFO", "-Q", "celery-v2" ]
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
@@ -77,13 +77,13 @@ spec:
 {{- end }}
           startupProbe:
             exec:
-              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "inspect", "ping"]
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 30
           livenessProbe:
             exec:
-              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "inspect", "ping"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -204,7 +204,7 @@ spec:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: celery-beat
-          command: ["celery", "-A", "src.server.oasisapi.celery_app", "beat", "--loglevel=DEBUG"]
+          command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "beat", "--loglevel=DEBUG"]
           env:
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
@@ -218,13 +218,13 @@ spec:
 {{- end }}
           startupProbe:
             exec:
-              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "inspect", "ping"]
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 30
           livenessProbe:
             exec:
-              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "inspect", "ping"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -268,7 +268,7 @@ spec:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: main
-          command: ["celery", "-A", "src.server.oasisapi.celery_app", "worker", "--loglevel=INFO", "-Q", "task-controller"]
+          command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "worker", "--loglevel=INFO", "-Q", "task-controller"]
           env:
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
@@ -284,13 +284,13 @@ spec:
 {{- end }}
           startupProbe:
             exec:
-              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "inspect", "ping"]
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 30
           livenessProbe:
             exec:
-              command: ["celery", "-A", "src.server.oasisapi.celery_app", "inspect", "ping"]
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "inspect", "ping"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
