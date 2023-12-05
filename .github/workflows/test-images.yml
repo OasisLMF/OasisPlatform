@@ -227,7 +227,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_15 }}
       worker_api_ver: 'v1'
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_15 }}"
 
   stable_compatibility_23:
@@ -243,7 +243,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_23 }}
       worker_api_ver: 'v1'
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_23 }}"
 
   stable_compatibility_27:
@@ -259,7 +259,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_27 }}
       worker_api_ver: 'v1'
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_27 }}"
 
   stable_compatibility_28:
@@ -275,5 +275,5 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_28 }}
       worker_api_ver: 'v1'
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "${{ needs.setup.outputs.pytest_opts }}
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_28 }}"
