@@ -130,34 +130,55 @@ jobs:
           echo "deb_worker_img=$deb_worker_img" >> $GITHUB_OUTPUT
           echo "deb_worker_tag=$deb_worker_tag" >> $GITHUB_OUTPUT
 
-  worker_all_checks:
+  all_checks_v1:
     name: PiWind all checks 
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    #uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@feature/api2-support-both-workers-CI
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      worker_api_ver: 'v1'  
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml "
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
+      storage_suffix: '-all-checks'
+
+  all_checks_v2:
+    name: PiWind all checks 
+    secrets: inherit
+    needs: [setup]
+    #uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@feature/api2-support-both-workers-CI
+    with:
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: ${{ needs.setup.outputs.build_worker_img }}
+      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      worker_api_ver: 'v2'  
+      debug_mode: 1
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
       storage_suffix: '-all-checks'
 
   worker_debian:
     name: Worker Debian
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    #uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@feature/api2-support-both-workers-CI
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_deb_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_deb_worker_tag }}
+      worker_api_ver: 'v2'  
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-worker-debian'
 
 #  server_compatibility:
