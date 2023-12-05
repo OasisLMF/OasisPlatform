@@ -359,7 +359,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                                      analysis.get_absolute_output_file_url(namespace=ANALYSES_NAMESPACE))
                     self.assertEqual(response.json['run_traceback_file'], response.request.application_url +
                                      analysis.get_absolute_run_traceback_file_url(namespace=ANALYSES_NAMESPACE))
-                    generate_mock.assert_called_once_with(analysis, user)
+                    generate_mock.assert_called_once_with(analysis, user, version='v2')
 
 
 class PortfolioAccountsFile(WebTestMixin, TestCase):

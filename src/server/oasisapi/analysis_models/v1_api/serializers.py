@@ -11,6 +11,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     resource_file = serializers.SerializerMethodField()
     settings = serializers.SerializerMethodField()
     versions = serializers.SerializerMethodField()
+    ns = 'v1-models'
 
     class Meta:
         ref_name = "v1_" + __qualname__.split('.')[0]
@@ -37,17 +38,17 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_resource_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_resources_file_url(request=request)
+        return instance.get_absolute_resources_file_url(request=request, namespace=self.ns)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_settings(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_settings_url(request=request)
+        return instance.get_absolute_settings_url(request=request, namespace=self.ns)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_versions(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_versions_url(request=request)
+        return instance.get_absolute_versions_url(request=request, namespace=self.ns)
 
 
 class TemplateSerializer(serializers.ModelSerializer):

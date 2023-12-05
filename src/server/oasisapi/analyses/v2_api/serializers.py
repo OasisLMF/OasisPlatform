@@ -206,6 +206,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     run_traceback_file = serializers.SerializerMethodField()
     run_log_file = serializers.SerializerMethodField()
     storage_links = serializers.SerializerMethodField()
+    ns = 'v2-analyses'
 
     # Groups - inherited from portfolio
     groups = serializers.SerializerMethodField(read_only=True)
@@ -256,62 +257,62 @@ class AnalysisSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_input_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_input_file_url(request=request) if instance.input_file_id else None
+        return instance.get_absolute_input_file_url(request=request, namespace=self.ns) if instance.input_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_settings_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_settings_file_url(request=request) if instance.settings_file_id else None
+        return instance.get_absolute_settings_file_url(request=request, namespace=self.ns) if instance.settings_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_settings(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_settings_url(request=request) if instance.settings_file_id else None
+        return instance.get_absolute_settings_url(request=request, namespace=self.ns) if instance.settings_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_lookup_errors_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_lookup_errors_file_url(request=request) if instance.lookup_errors_file_id else None
+        return instance.get_absolute_lookup_errors_file_url(request=request, namespace=self.ns) if instance.lookup_errors_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_lookup_success_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_lookup_success_file_url(request=request) if instance.lookup_success_file_id else None
+        return instance.get_absolute_lookup_success_file_url(request=request, namespace=self.ns) if instance.lookup_success_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_lookup_validation_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_lookup_validation_file_url(request=request) if instance.lookup_validation_file_id else None
+        return instance.get_absolute_lookup_validation_file_url(request=request, namespace=self.ns) if instance.lookup_validation_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_summary_levels_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_summary_levels_file_url(request=request) if instance.summary_levels_file_id else None
+        return instance.get_absolute_summary_levels_file_url(request=request, namespace=self.ns) if instance.summary_levels_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_input_generation_traceback_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_input_generation_traceback_file_url(request=request) if instance.input_generation_traceback_file_id else None
+        return instance.get_absolute_input_generation_traceback_file_url(request=request, namespace=self.ns) if instance.input_generation_traceback_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_output_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_output_file_url(request=request) if instance.output_file_id else None
+        return instance.get_absolute_output_file_url(request=request, namespace=self.ns) if instance.output_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_run_traceback_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_run_traceback_file_url(request=request) if instance.run_traceback_file_id else None
+        return instance.get_absolute_run_traceback_file_url(request=request, namespace=self.ns) if instance.run_traceback_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_run_log_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_run_log_file_url(request=request) if instance.run_log_file_id else None
+        return instance.get_absolute_run_log_file_url(request=request, namespace=self.ns) if instance.run_log_file_id else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_storage_links(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_storage_url(request=request)
+        return instance.get_absolute_storage_url(request=request, namespace=self.ns)
 
     @swagger_serializer_method(serializer_or_field=GroupNameSerializer)
     def get_groups(self, instance):
@@ -320,7 +321,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_sub_task_list(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_subtask_list_url(request=request)
+        return instance.get_absolute_subtask_list_url(request=request, namespace=self.ns)
 
     @swagger_serializer_method(serializer_or_field=serializers.IntegerField)
     def get_sub_task_count(self, instance):
