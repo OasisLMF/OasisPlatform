@@ -45,8 +45,6 @@ RUN if [ ! -z "$ods_tools_branch" ] ; then \
 
 # Copy startup script + server config
 COPY ./src/startup_worker.sh ./startup.sh
-COPY ./src/startup_tester.sh ./runtest
-COPY ./src/startup_tester_S3.sh ./runtest_S3
 COPY ./conf.ini ./
 COPY ./src/__init__.py ./src/
 COPY ./src/common ./src/common/
@@ -54,6 +52,5 @@ COPY ./src/conf ./src/conf/
 COPY ./src/model_execution_worker/ ./src/model_execution_worker/
 COPY ./src/utils/ ./src/utils/
 COPY ./src/utils/worker_bashrc /home/worker/.bashrc
-COPY ./tests/integration /home/worker/tests/integration
 
 ENTRYPOINT ./startup.sh
