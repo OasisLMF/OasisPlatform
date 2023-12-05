@@ -101,24 +101,6 @@ jobs:
           stable_1_28=$( ./scripts/find_latest.sh -j 1 -i 28 )
           echo "stable_28=$stable_1_28" >> $GITHUB_OUTPUT
 
-
-      - name: Load latest release tag
-        id: released_images
-        run: |
-          # Find the latest release tag only from current branch
-          if [[ "${{ github.ref_name }}" == backports/ ]]; then
-            tag=$( ./scripts/find_release.sh -p "${{ env.pre_release }}")
-            echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
-          # Find tags release accross all branches, limited to matching semver
-          elif [[ -z "${{ inputs.last_release }}" ]]; then
-            tag=$( ./scripts/find_latest.sh -j "${{ env.semver_major }}" )
-            #tag=$( ./scripts/find_latest.sh -j "${{ env.semver_major }}" -i "${{ env.semver_minor }}" )
-            echo "prev_release_tag=$tag" >> $GITHUB_OUTPUT
-          # Don't search, use the given input
-          else
-            echo "prev_release_tag=${{ inputs.last_release }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Select PiWind branch
         id: piwind
         run: |
