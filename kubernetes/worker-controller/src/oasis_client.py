@@ -97,7 +97,7 @@ class OasisClient:
             'model_id': model_id,
             'version_id': model_version_id
         }
-        models = await self._get('/v1/models/', params)
+        models = await self._get('/v2/models/', params)
 
         for model in models:
             if model['supplier_id'] == supplier_id and model['model_id'] == model_id and model['version_id'] == model_version_id:
@@ -113,7 +113,7 @@ class OasisClient:
 
         await self.authenticate_if_needed()
 
-        model = await self._get(f'/v1/models/{model_id}/scaling_configuration/')
+        model = await self._get(f'/v2/models/{model_id}/scaling_configuration/')
 
         return model
 
