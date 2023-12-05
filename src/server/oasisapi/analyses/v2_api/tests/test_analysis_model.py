@@ -180,8 +180,8 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
                 res_factory = FakeAsyncResultFactory(target_task_id=task_gen_id)
                 task_sig.apply_async.return_value = res_factory(task_gen_id)
 
-                with patch('src.server.oasisapi.analyses.models.Analysis.start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
-                    analysis.generate_and_run(initiator)
+                with patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
+                    analysis.generate_and_run(initiator, version='v2')
 
                     task_sig.on_error.assert_called_once()
                     task_sig.apply_async.assert_called_with(
@@ -205,11 +205,11 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
         task_sig = Mock()
         task_sig.delay.return_value = res_factory(task_id)
 
-        with patch('src.server.oasisapi.analyses.models.Analysis.start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
+        with patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
             analysis = fake_analysis(status=status, run_task_id=task_id)
 
             with self.assertRaises(ValidationError) as ex:
-                analysis.generate_and_run(initiator)
+                analysis.generate_and_run(initiator, version='v2')
 
             self.maxDiff = None
             self.assertEqual({
@@ -244,9 +244,9 @@ class AnalysisRun(WebTestMixin, TestCase):
                 mock_task = MagicMock(return_value=task_obj)
 
                 with patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task):
-                    analysis.run(initiator)
+                    analysis.run(initiator, version='v2')
                     mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, 1),
-                                                      {}, queue='celery', link_error=ANY, priority=4)
+                                                      {}, queue='celery-v2', link_error=ANY, priority=4)
 
     @given(
         status=sampled_from([
@@ -263,11 +263,11 @@ class AnalysisRun(WebTestMixin, TestCase):
         initiator = fake_user()
 
         sig_res = Mock()
-        with patch('src.server.oasisapi.analyses.models.Analysis.run_analysis_signature', PropertyMock(return_value=sig_res)):
+        with patch('src.server.oasisapi.analyses.models.Analysis.v2_run_analysis_signature', PropertyMock(return_value=sig_res)):
             analysis = fake_analysis(status=status, run_task_id=task_id)
 
             with self.assertRaises(ValidationError) as ex:
-                analysis.run(initiator)
+                analysis.run(initiator, version='v2')
 
             self.assertEqual(
                 {'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
@@ -279,12 +279,12 @@ class AnalysisRun(WebTestMixin, TestCase):
             with override_settings(MEDIA_ROOT=d):
                 analysis = fake_analysis(input_file=fake_related_file(), settings_file=fake_related_file())
 
-                sig = analysis.run_analysis_signature
+                sig = analysis.v2_run_analysis_signature
 
                 self.assertEqual(sig.task, 'start_loss_generation_task')
                 self.assertEqual(
                     sig.options['queue'],
-                    iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                    iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
 
 
@@ -308,9 +308,9 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 task_obj.id = task_id
                 mock_task = MagicMock(return_value=task_obj)
                 with patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task):
-                    analysis.generate_inputs(initiator)
+                    analysis.generate_inputs(initiator, version='v2')
                     mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk,
-                                                      4), {}, queue='celery', link_error=ANY, priority=4)
+                                                      4), {}, queue='celery-v2', link_error=ANY, priority=4)
 
     @given(
         status=sampled_from([
@@ -326,11 +326,11 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 initiator = fake_user()
 
                 sig_res = Mock()
-                with patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=sig_res)):
+                with patch('src.server.oasisapi.analyses.models.Analysis.v2_generate_input_signature', PropertyMock(return_value=sig_res)):
                     analysis = fake_analysis(status=status, run_task_id=task_id, portfolio=fake_portfolio(location_file=fake_related_file()))
 
                     with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator)
+                        analysis.generate_inputs(initiator, version='v2')
 
                     self.assertEqual({'status': [
                         'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
@@ -346,11 +346,11 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 initiator = fake_user()
 
                 sig_res = Mock()
-                with patch('src.server.oasisapi.analyses.models.Analysis.generate_input_signature', PropertyMock(return_value=sig_res)):
+                with patch('src.server.oasisapi.analyses.models.Analysis.v2_generate_input_signature', PropertyMock(return_value=sig_res)):
                     analysis = fake_analysis(status=Analysis.status_choices.NEW, run_task_id=task_id)
 
                     with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator)
+                        analysis.generate_inputs(initiator, version='v2')
 
                     self.assertEqual({'portfolio': ['"location_file" must not be null']}, ex.exception.detail)
 
@@ -362,10 +362,10 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
             with override_settings(MEDIA_ROOT=d):
                 analysis = fake_analysis(portfolio=fake_portfolio(location_file=fake_related_file()))
 
-                sig = analysis.generate_input_signature
+                sig = analysis.v2_generate_input_signature
 
                 self.assertEqual(sig.task, 'start_input_generation_task')
                 self.assertEqual(
                     sig.options['queue'],
-                    iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery')
+                    iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
