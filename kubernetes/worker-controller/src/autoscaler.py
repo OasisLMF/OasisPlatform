@@ -178,7 +178,7 @@ class AutoScaler:
             queue_name = entry['queue']['name']
 
             # Check for pending analyses
-            if (queue_name not in ['celery', 'task-controller']):
+            if (queue_name not in ['celery', 'celery-v2', 'task-controller']):
                 queued_count = entry['queue']['queued_count']
 
                 if (queued_count > 0) and not analyses_list:
