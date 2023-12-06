@@ -17,7 +17,7 @@ on:
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
         required: false
-        default: 'CRITICAL'
+        default: 'CRITICAL,HIGH'
       ignore_unfixed:
         description: 'Include unfixed vulnerabilities in scan [true,false]'
         required: false
@@ -27,7 +27,7 @@ on:
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for, [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]'
         required: false
-        default: 'CRITICAL'
+        default: 'CRITICAL,HIGH'
         type: string
       ignore_unfixed:
         description: 'Include unfixed vulnerabilities in scan [true,false]'

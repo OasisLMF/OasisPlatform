@@ -11,7 +11,7 @@ asgiref==3.3.2
     #   channels
     #   daphne
     #   django
-attrs==20.3.0
+attrs==23.1.0
     # via
     #   automat
     #   jsonschema
@@ -31,9 +31,9 @@ botocore==1.19.63
     #   s3transfer
 celery==5.2.7
     # via -r requirements-server.in
-certifi==2023.5.7
+certifi==2023.7.22
     # via requests
-cffi==1.14.5
+cffi==1.15.1
     # via cryptography
 chainmap==1.0.3
     # via -r requirements-server.in
@@ -65,7 +65,7 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==3.3.2
+cryptography==41.0.6
     # via
     #   autobahn
     #   pyopenssl
@@ -74,7 +74,7 @@ daphne==3.0.1
     # via
     #   -r requirements-server.in
     #   channels
-django==3.2.19
+django==3.2.23
     # via
     #   -r requirements-server.in
     #   channels
@@ -104,6 +104,8 @@ djangorestframework-simplejwt==4.8.0
     # via -r requirements-server.in
 drf-yasg==1.20.0
     # via -r requirements-server.in
+greenlet==3.0.1
+    # via sqlalchemy
 hyperlink==21.0.0
     # via
     #   autobahn
@@ -113,7 +115,7 @@ idna==2.10
     #   hyperlink
     #   requests
     #   twisted
-incremental==17.5.0
+incremental==22.10.0
     # via twisted
 inflection==0.5.1
     # via drf-yasg
@@ -135,6 +137,8 @@ markdown==3.3.3
     # via -r requirements-server.in
 markupsafe==1.1.1
     # via jinja2
+mysqlclient==2.1.1
+    # via -r requirements-server.in
 packaging==20.4
     # via drf-yasg
 pathlib2==2.3.5
@@ -151,13 +155,11 @@ pyasn1-modules==0.2.8
     # via service-identity
 pycparser==2.20
     # via cffi
-pyhamcrest==2.0.2
-    # via twisted
 pyjwt==2.7.0
     # via djangorestframework-simplejwt
-pymysql==0.10.1
+pymysql==1.0.3
     # via -r requirements-server.in
-pyopenssl==20.0.1
+pyopenssl==23.3.0
     # via twisted
 pyparsing==2.4.7
     # via packaging
@@ -169,7 +171,7 @@ pytz==2023.3
     # via
     #   celery
     #   django
-requests==2.30.0
+requests==2.31.0
     # via coreapi
 ruamel-yaml==0.16.12
     # via drf-yasg
@@ -181,30 +183,30 @@ six==1.15.0
     # via
     #   automat
     #   click-repl
-    #   cryptography
     #   jsonschema
     #   packaging
     #   pathlib2
     #   prompt-toolkit
-    #   pyopenssl
     #   python-dateutil
-sqlalchemy==1.3.20
+sqlalchemy==1.4.48
     # via -r requirements-server.in
 sqlparse==0.4.4
     # via
     #   django
     #   django-debug-toolbar
-twisted[tls]==20.3.0
+twisted[tls]==23.10.0rc1
     # via
     #   daphne
     #   twisted
 txaio==20.12.1
     # via autobahn
+typing-extensions==4.8.0
+    # via twisted
 uritemplate==3.0.1
     # via
     #   coreapi
     #   drf-yasg
-urllib3==1.26.15
+urllib3==1.26.18
     # via
     #   botocore
     #   requests

@@ -5,6 +5,7 @@ celery
 chainmap
 channels
 pymysql
+mysqlclient
 jsonpickle
 jsonschema
 configparser

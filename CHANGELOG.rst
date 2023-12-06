@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.15.31`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.30...1.15.31
+
 * [#854](https://github.com/OasisLMF/OasisPlatform/pull/854) - Update CI 1.15
 .. _`1.15.30`:  https://github.com/OasisLMF/OasisPlatform/compare/1.15.29...1.15.30
 
