@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.23.21`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.20...1.23.21
+
 .. _`1.23.20`:  https://github.com/OasisLMF/OasisPlatform/compare/1.23.19...1.23.20
 
 `1.23.19`_
