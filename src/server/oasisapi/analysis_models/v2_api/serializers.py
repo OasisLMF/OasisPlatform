@@ -37,6 +37,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'scaling_configuration',
             'chunking_configuration',
             'groups',
+            'run_mode',
         )
 
     def validate(self, attrs):

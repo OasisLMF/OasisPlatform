@@ -27,6 +27,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'resource_file',
             'settings',
             'versions',
+            'run_mode',
         )
 
     def create(self, validated_data):

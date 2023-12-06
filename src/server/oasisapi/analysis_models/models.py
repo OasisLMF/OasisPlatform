@@ -118,6 +118,12 @@ class SettingsTemplate(TimeStampedModel):
 
 
 class AnalysisModel(TimeStampedModel):
+    run_mode_choices = Choices(
+        ('BOTH', 'Works on both Execution modes'),
+        ('V1', 'Available for Single-Instance Execution'),
+        ('V2', 'Available for Distributed Execution'),
+    )
+
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
     version_id = models.CharField(max_length=255, help_text=_('The version ID for the model.'))
@@ -131,6 +137,9 @@ class AnalysisModel(TimeStampedModel):
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     oasislmf_config = models.TextField(default='')
     deleted = models.BooleanField(default=False, editable=False)
+    run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),
+                              choices=run_mode_choices, default=run_mode_choices.BOTH, null=True, help_text=_('Execution modes Available, v1 = Single-Instance, v2 = Distributed Execution'))
+    
 
     scaling_options = models.OneToOneField(ModelScalingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
     chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)

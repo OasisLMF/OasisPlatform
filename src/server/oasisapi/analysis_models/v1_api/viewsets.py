@@ -180,7 +180,8 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
     Partially updates the specified model (only provided fields are updated)
     """
 
-    queryset = AnalysisModel.objects.all()
+    #queryset = AnalysisModel.objects.all()
+    queryset = AnalysisModel.objects.exclude(run_mode='V2')
     serializer_class = AnalysisModelSerializer
     filterset_class = AnalysisModelFilter
     # lookup_field = 'id'
