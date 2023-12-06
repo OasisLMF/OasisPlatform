@@ -26,12 +26,14 @@ from celery import signals
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.db import transaction
 from django.db.models import When, Case, Value, F
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
+
 
 from botocore.exceptions import ClientError as S3_ClientError
 from tempfile import TemporaryFile
@@ -46,8 +48,6 @@ from src.server.oasisapi.files.upload import wait_for_blob_copy
 from ..models import AnalysisTaskStatus, Analysis
 from .task_controller import get_analysis_task_controller
 from ...celery_app_v2 import v2 as celery_app_v2
-from src.server.oasisapi.files.views import handle_json_data
-from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 
 
 logger = get_task_logger(__name__)
@@ -295,8 +295,6 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
-
-from django.db import transaction
 
 @transaction.atomic
 @celery_app_v2.task(name='run_register_worker_v2', **celery_conf.worker_task_kwargs)

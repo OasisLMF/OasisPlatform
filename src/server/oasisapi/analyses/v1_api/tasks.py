@@ -18,6 +18,7 @@ from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
+from django.db import transaction
 
 from botocore.exceptions import ClientError as S3_ClientError
 from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError
@@ -274,7 +275,6 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
-from django.db import transaction
 
 @transaction.atomic
 @celery_app_v1.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
@@ -306,35 +306,12 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
         # Update model settings file
         if m_settings:
             try:
-                
-
-
-                #request = HttpRequest()
-                #request.data = {**m_settings}
-                #request.method = 'post'
-                #request.version = 'v1'
-                #request.user = model.creator
-                #handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
-
-
-
-
-                json_serializer = ModelParametersSerializer()
-                data = json_serializer.validate(m_settings)
-                random_filename = '{}.json'.format(uuid.uuid4().hex)
-                
-
-                with TemporaryFile() as tmp_file:
-                    tmp_file.write(data.encode('utf-8'))
-                    settings_file = RelatedFile.objects.create(
-                        file=File(tmp_file, name=random_filename),
-                        filename=f'v1_auto_register__model_settings.json',
-                        content_type='application/json',
-                        creator=model.creator,
-                    )
-                    settings_file.save()
-                    model.resource_file = settings_file
-                    model.save()
+                request = HttpRequest()
+                request.data = {**m_settings}
+                request.method = 'post'
+                request.version = 'v1'
+                request.user = model.creator
+                handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
 
                 logger.info('Updated model settings')
             except Exception as e:

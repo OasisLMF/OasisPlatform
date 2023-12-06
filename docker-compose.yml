@@ -87,6 +87,9 @@ services:
      - broker
    environment:
      <<: *shared-env
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v2-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
