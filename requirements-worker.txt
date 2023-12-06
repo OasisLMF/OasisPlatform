@@ -143,7 +143,7 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0
     # via cookiecutter
-requests==2.30.0
+requests==2.31.0
     # via
     #   cookiecutter
     #   oasislmf
@@ -177,7 +177,7 @@ toml==0.10.2
     # via pytest
 tqdm==4.51.0
     # via oasislmf
-urllib3==1.26.15
+urllib3==1.26.18
     # via
     #   botocore
     #   requests

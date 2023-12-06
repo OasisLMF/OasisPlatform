@@ -21,7 +21,7 @@ asgiref==3.6.0
     #   django
 asttokens==2.2.1
     # via stack-data
-attrs==20.3.0
+attrs==23.1.0
     # via
     #   automat
     #   hypothesis
@@ -112,7 +112,7 @@ coverage==5.3
     # via
     #   -r requirements.in
     #   pytest-cov
-cryptography==3.3.2
+cryptography==41.0.6
     # via
     #   autobahn
     #   pyopenssl
@@ -187,7 +187,7 @@ idna==2.10
     #   hyperlink
     #   requests
     #   twisted
-incremental==17.5.0
+incremental==22.10.0
     # via twisted
 inflection==0.5.1
     # via drf-yasg
@@ -302,15 +302,13 @@ pyflakes==2.2.0
     # via flake8
 pygments==2.15.1
     # via ipython
-pyhamcrest==2.0.2
-    # via twisted
 pyjwt==2.7.0
     # via djangorestframework-simplejwt
 pymysql==0.10.1
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyopenssl==19.1.0
+pyopenssl==23.3.0
     # via
     #   -r requirements.in
     #   twisted
@@ -343,7 +341,7 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0
     # via cookiecutter
-requests==2.30.0
+requests==2.31.0
     # via
     #   -r requirements.in
     #   cookiecutter
@@ -370,13 +368,11 @@ six==1.15.0
     #   asttokens
     #   automat
     #   click-repl
-    #   cryptography
     #   fasteners
     #   jsonschema
     #   packaging
     #   pathlib2
     #   pip-tools
-    #   pyopenssl
     #   python-dateutil
     #   tox
     #   virtualenv
@@ -411,17 +407,19 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==20.3.0
+twisted[tls]==23.10.0rc1
     # via
     #   daphne
     #   twisted
 txaio==21.2.1
     # via autobahn
+typing-extensions==4.8.0
+    # via twisted
 uritemplate==3.0.1
     # via
     #   coreapi
     #   drf-yasg
-urllib3==1.26.15
+urllib3==1.26.18
     # via
     #   botocore
     #   requests
