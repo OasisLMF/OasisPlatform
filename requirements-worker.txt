@@ -168,7 +168,7 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0
     # via cookiecutter
-requests==2.30.0
+requests==2.31.0
     # via
     #   cookiecutter
     #   oasislmf
