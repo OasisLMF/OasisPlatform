@@ -296,6 +296,9 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
 
+from django.db import transaction
+
+@transaction.atomic
 @celery_app_v2.task(name='run_register_worker_v2', **celery_conf.worker_task_kwargs)
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
@@ -328,6 +331,7 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
                 request = HttpRequest()
                 request.data = {**m_settings}
                 request.method = 'post'
+                request.version = 'v2'
                 request.user = model.creator
                 handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
                 logger.info('Updated model settings')
@@ -347,11 +351,12 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
                 model.ver_ktools = m_version['ktools']
                 model.ver_oasislmf = m_version['oasislmf']
                 model.ver_platform = m_version['platform']
-                model.save()
                 logger.info('Updated model versions')
             except Exception as e:
                 logger.info('Failed to set model veriosns:')
                 logger.exception(str(e))
+
+        model.save()
 
     # Log unhandled execptions
     except Exception as e:

@@ -274,7 +274,9 @@ def log_worker_monitor(sender, **k):
     logger.info('AWS_SHARED_BUCKET: {}'.format(settings.AWS_SHARED_BUCKET))
     logger.info('AWS_IS_GZIPPED: {}'.format(settings.AWS_IS_GZIPPED))
 
+from django.db import transaction
 
+@transaction.atomic
 @celery_app_v1.task(name='run_register_worker', **celery_conf.worker_task_kwargs)
 def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
@@ -304,11 +306,36 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
         # Update model settings file
         if m_settings:
             try:
-                request = HttpRequest()
-                request.data = {**m_settings}
-                request.method = 'post'
-                request.user = model.creator
-                handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
+                
+
+
+                #request = HttpRequest()
+                #request.data = {**m_settings}
+                #request.method = 'post'
+                #request.version = 'v1'
+                #request.user = model.creator
+                #handle_json_data(model, 'resource_file', request, ModelParametersSerializer)
+
+
+
+
+                json_serializer = ModelParametersSerializer()
+                data = json_serializer.validate(m_settings)
+                random_filename = '{}.json'.format(uuid.uuid4().hex)
+                
+
+                with TemporaryFile() as tmp_file:
+                    tmp_file.write(data.encode('utf-8'))
+                    settings_file = RelatedFile.objects.create(
+                        file=File(tmp_file, name=random_filename),
+                        filename=f'v1_auto_register__model_settings.json',
+                        content_type='application/json',
+                        creator=model.creator,
+                    )
+                    settings_file.save()
+                    model.resource_file = settings_file
+                    model.save()
+
                 logger.info('Updated model settings')
             except Exception as e:
                 logger.info('Failed to update model settings:')
@@ -322,12 +349,12 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version):
                 model.ver_ktools = m_version['ktools']
                 model.ver_oasislmf = m_version['oasislmf']
                 model.ver_platform = m_version['platform']
-                model.save()
                 logger.info('Updated model versions')
             except Exception as e:
                 logger.info('Failed to set model veriosns:')
                 logger.exception(str(e))
 
+        model.save()
     # Log unhandled execptions
     except Exception as e:
         logger.exception(str(e))
