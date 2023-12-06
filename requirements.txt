@@ -119,7 +119,7 @@ coverage[toml]==7.2.5
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==41.0.4
+cryptography==41.0.6
     # via
     #   autobahn
     #   pyopenssl
@@ -128,7 +128,7 @@ daphne==4.0.0
     # via -r ./requirements-server.in
 distlib==0.3.6
     # via virtualenv
-django==3.2.22
+django==3.2.23
     # via
     #   -r ./requirements-server.in
     #   channels
@@ -303,7 +303,7 @@ psycopg2-binary==2.9.6
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyarrow==12.0.0
+pyarrow==14.0.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -364,7 +364,7 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0
     # via cookiecutter
-requests==2.30.0
+requests==2.31.0
     # via
     #   -r requirements.in
     #   cookiecutter
@@ -434,7 +434,7 @@ tox==4.5.1
     # via -r requirements.in
 tqdm==4.65.0
     # via oasislmf
-twisted[tls]==23.8.0
+twisted[tls]==23.10.0rc1
     # via
     #   -r ./requirements-server.in
     #   daphne

@@ -65,14 +65,14 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==41.0.4
+cryptography==41.0.6
     # via
     #   autobahn
     #   pyopenssl
     #   service-identity
 daphne==4.0.0
     # via -r requirements-server.in
-django==3.2.22
+django==3.2.23
     # via
     #   -r requirements-server.in
     #   channels
@@ -155,7 +155,7 @@ prompt-toolkit==3.0.38
     # via click-repl
 psycopg2-binary==2.9.6
     # via -r requirements-server.in
-pyarrow==12.0.0
+pyarrow==14.0.1
     # via -r requirements-server.in
 pyasn1==0.5.0
     # via
@@ -184,7 +184,7 @@ pytz==2023.3
     #   djangorestframework
     #   drf-yasg
     #   pandas
-requests==2.30.0
+requests==2.31.0
     # via coreapi
 ruamel-yaml==0.17.26
     # via drf-yasg
@@ -205,7 +205,7 @@ sqlalchemy==1.4.48
     # via -r requirements-server.in
 sqlparse==0.4.4
     # via django
-twisted[tls]==23.8.0
+twisted[tls]==23.10.0rc1
     # via
     #   -r requirements-server.in
     #   daphne
