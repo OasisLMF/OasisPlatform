@@ -43,7 +43,7 @@ COPY ./src/conf /var/www/oasis/src/conf
 COPY ./VERSION /var/www/oasis/VERSION
 
 COPY ./model_resource.json /var/www/oasis/src/server/static/model_resource.json
-RUN OASIS_API_SECRET_KEY=supersecret python manage.py collectstatic --noinput
+RUN OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
 ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
 
 EXPOSE 8000
