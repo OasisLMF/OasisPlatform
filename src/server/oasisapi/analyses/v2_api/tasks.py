@@ -354,8 +354,13 @@ def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf)
                 logger.info('Failed to set model veriosns:')
                 logger.exception(str(e))
 
-        model.save()
+        # check current value of run_mode -> Set to V2 if null, if 'V1' set to both
+        if not model.run_mode:
+            model.run_mode = model.run_mode_choices.V2
+        elif model.run_mode == model.run_mode_choices.V1:
+            model.run_mode = model.run_mode_choices.BOTH
 
+        model.save()
     # Log unhandled execptions
     except Exception as e:
         logger.exception(str(e))

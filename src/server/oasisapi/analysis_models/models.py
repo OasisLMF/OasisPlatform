@@ -138,7 +138,7 @@ class AnalysisModel(TimeStampedModel):
     oasislmf_config = models.TextField(default='')
     deleted = models.BooleanField(default=False, editable=False)
     run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),
-                              choices=run_mode_choices, default=run_mode_choices.BOTH, null=True, help_text=_('Execution modes Available, v1 = Single-Instance, v2 = Distributed Execution'))
+                              choices=run_mode_choices, default=None, null=True, help_text=_('Execution modes Available, v1 = Single-Instance, v2 = Distributed Execution'))
     
 
     scaling_options = models.OneToOneField(ModelScalingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
