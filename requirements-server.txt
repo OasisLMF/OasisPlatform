@@ -104,6 +104,8 @@ djangorestframework-simplejwt==4.8.0
     # via -r requirements-server.in
 drf-yasg==1.20.0
     # via -r requirements-server.in
+greenlet==3.0.1
+    # via sqlalchemy
 hyperlink==21.0.0
     # via
     #   autobahn
@@ -135,6 +137,8 @@ markdown==3.3.3
     # via -r requirements-server.in
 markupsafe==1.1.1
     # via jinja2
+mysqlclient==2.1.1
+    # via -r requirements-server.in
 packaging==20.4
     # via drf-yasg
 pathlib2==2.3.5
@@ -153,7 +157,7 @@ pycparser==2.20
     # via cffi
 pyjwt==2.7.0
     # via djangorestframework-simplejwt
-pymysql==0.10.1
+pymysql==1.0.3
     # via -r requirements-server.in
 pyopenssl==23.3.0
     # via twisted
@@ -184,7 +188,7 @@ six==1.15.0
     #   pathlib2
     #   prompt-toolkit
     #   python-dateutil
-sqlalchemy==1.3.20
+sqlalchemy==1.4.48
     # via -r requirements-server.in
 sqlparse==0.4.4
     # via
