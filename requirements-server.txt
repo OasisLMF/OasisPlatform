@@ -33,7 +33,7 @@ celery==5.2.7
     # via -r requirements-server.in
 certifi==2023.5.7
     # via requests
-cffi==1.14.5
+cffi==1.15.1
     # via cryptography
 chainmap==1.0.3
     # via -r requirements-server.in

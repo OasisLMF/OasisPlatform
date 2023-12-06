@@ -64,7 +64,7 @@ certifi==2023.5.7
     # via
     #   oasislmf
     #   requests
-cffi==1.14.3
+cffi==1.15.1
     # via cryptography
 chainmap==1.0.3
     # via
