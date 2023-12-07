@@ -33,19 +33,19 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: oasis-worker-monitor
+  name: oasis-v1-worker-monitor
   labels:
     {{- include "h.labels" . | nindent 4}}
 spec:
   selector:
     matchLabels:
-      app: oasis-worker-monitor
+      app: oasis-v1-worker-monitor
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: oasis-worker-monitor
+        app: oasis-v1-worker-monitor
         {{- include "h.labels" . | nindent 8}}
       annotations:
         checksum/oasis-server: {{ toJson .Values.oasisServer | sha256sum }}
@@ -58,7 +58,82 @@ spec:
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
-          name: oasis-worker-monitor
+          name: oasis-v1-worker-monitor
+          env:
+{{- include "h.serverDbVars" . | indent 12}}
+{{- include "h.celeryDbVars" . | indent 12}}
+{{- include "h.brokerVars" . | indent 12 }}
+{{- include "h.channelLayerVars" . | indent 12 }}
+            - name: OASIS_DEBUG
+              value: "1"
+          command: [ "celery", "-A", "src.server.oasisapi.celery_app_v1", "worker", "--loglevel=INFO", "-Q", "celery" ]
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+{{- if (.Values.azure).secretProvider }}
+            - name: azure-secret-provider
+              mountPath: "/mnt/azure-secrets-store"
+              readOnly: true
+{{- end }}
+          startupProbe:
+            exec:
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_12", "inspect", "ping"]
+            timeoutSeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_v1", "inspect", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+{{- if ((.Values.volumes.host).sharedFs) }}
+        - name: shared-fs-persistent-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.host.sharedFs.name }}
+{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
+        - name: shared-fs-persistent-storage
+{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
+{{- if (.Values.azure).secretProvider }}
+        - name: azure-secret-provider
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+{{- end }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oasis-v2-worker-monitor
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: oasis-v2-worker-monitor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: oasis-v2-worker-monitor
+        {{- include "h.labels" . | nindent 8}}
+      annotations:
+        checksum/oasis-server: {{ toJson .Values.oasisServer | sha256sum }}
+        checksum/{{ .Values.databases.oasis_db.name }}: versions{{ toJson .Values.databases.oasis_db | sha256sum }}
+        checksum/{{ .Values.databases.celery_db.name }}: versions{{ toJson .Values.databases.celery_db | sha256sum }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
+      containers:
+        - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
+          name: oasis-v2-worker-monitor
           env:
 {{- include "h.serverDbVars" . | indent 12}}
 {{- include "h.celeryDbVars" . | indent 12}}
