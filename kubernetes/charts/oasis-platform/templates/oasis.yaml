@@ -77,7 +77,7 @@ spec:
 {{- end }}
           startupProbe:
             exec:
-              command: ["celery", "-A", "src.server.oasisapi.celery_app_12", "inspect", "ping"]
+              command: ["celery", "-A", "src.server.oasisapi.celery_app_v1", "inspect", "ping"]
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 30
