@@ -13,8 +13,12 @@ MODEL_SETTINGS_FILE="$OASIS_MODEL_DATA_DIRECTORY/model_settings.json"
 CHUNKING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/chunking_configuration.json"
 SCALING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/scaling_configuration.json"
 
+OASIS_API_VERSION="v2" ## Default
+#OASIS_API_VERSION=
+
 echo
 echo "=== Register model ==="
+echo "API version      : $OASIS_API_VERSION"
 echo "Supplier ID      : $OASIS_MODEL_SUPPLIER_ID"
 echo "Model ID         : $OASIS_MODEL_ID"
 echo "Model version ID : $OASIS_MODEL_VERSION_ID"
@@ -81,7 +85,7 @@ if [ -n "$MODEL_ID" ]; then
 else
   echo "Model not found - registers it"
 
-  MODEL_ID=$(curlf -X POST "${BASE_URL}/v1/models/" -H "Content-Type: application/json" \
+  MODEL_ID=$(curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/" -H "Content-Type: application/json" \
     -d "{${MODEL_JSON_ID_ATTRIBUTES}"} | jq .id)
   echo "Created with id $MODEL_ID"
 
@@ -93,19 +97,19 @@ if [ -n "$OASIS_MODEL_GROUPS" ]; then
 
   GROUPS_JSON="{${MODEL_JSON_ID_ATTRIBUTES}, \"groups\": [\"$(echo $OASIS_MODEL_GROUPS | sed 's/,/","/g')\"]}"
 fi
-curlf -X PATCH "${BASE_URL}/v1/models/${MODEL_ID}/" -H "Content-Type: application/json" -d "$GROUPS_JSON" | jq .
+curlf -X PATCH "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/" -H "Content-Type: application/json" -d "$GROUPS_JSON" | jq .
 
 echo "Uploading model settings"
-curlf -X POST "${BASE_URL}/v1/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
+curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
 
 if [ -f "$CHUNKING_CONFIGURATION_FILE" ]; then
   echo "Uploading chunking configuration"
-  curlf -X POST "${BASE_URL}/v1/models/${MODEL_ID}/chunking_configuration/" -H "Content-Type: application/json" -d @${CHUNKING_CONFIGURATION_FILE} | jq .
+  curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/chunking_configuration/" -H "Content-Type: application/json" -d @${CHUNKING_CONFIGURATION_FILE} | jq .
 fi
 
 if [ -f "$SCALING_CONFIGURATION_FILE" ]; then
   echo "Uploading scaling configuration"
-  curlf -X POST "${BASE_URL}/v1/models/${MODEL_ID}/scaling_configuration/" -H "Content-Type: application/json" -d @${SCALING_CONFIGURATION_FILE} | jq .
+  curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/scaling_configuration/" -H "Content-Type: application/json" -d @${SCALING_CONFIGURATION_FILE} | jq .
 fi
 
 echo "Finished"
