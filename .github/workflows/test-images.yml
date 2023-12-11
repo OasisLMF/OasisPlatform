@@ -1,12 +1,11 @@
 name: Platform Image Tests
 
 on:
+  pull_request:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+      - stable**  
   workflow_dispatch:
     inputs:
       last_release:
