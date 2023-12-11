@@ -147,6 +147,7 @@ spec:
       volumes:
 {{- if ((.Values.volumes.host).sharedFs) }}
         - name: shared-fs-persistent-storage
+          readonly: true
           persistentVolumeClaim:
             claimName: {{ .Values.volumes.host.sharedFs.name }}
 {{- else if ((.Values.volumes.azureFiles).sharedFs) }}

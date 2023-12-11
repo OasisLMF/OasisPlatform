@@ -16,7 +16,7 @@ spec:
       app: {{ $name }}
   strategy:
     type: Recreate
-  replicas: 0
+  replicas: 1
   template:
     metadata:
       labels:
@@ -33,6 +33,7 @@ spec:
       containers:
         - image: {{ .image }}:{{ .version }}
           {{- if .imagePullPolicy }}
+          readOnlyRootFilesystem: true
           imagePullPolicy: {{ .imagePullPolicy }}
           {{- end }}
           name: worker
