@@ -13,9 +13,6 @@ MODEL_SETTINGS_FILE="$OASIS_MODEL_DATA_DIRECTORY/model_settings.json"
 CHUNKING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/chunking_configuration.json"
 SCALING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/scaling_configuration.json"
 
-OASIS_API_VERSION="v2" ## Default
-#OASIS_API_VERSION=
-
 echo
 echo "=== Register model ==="
 echo "API version      : $OASIS_API_VERSION"
@@ -26,7 +23,7 @@ echo "Model path       : $OASIS_MODEL_DATA_DIRECTORY"
 echo "Model groups     : $OASIS_MODEL_GROUPS"
 echo
 
-if [ -z "$OASIS_MODEL_SUPPLIER_ID" ] || [ -z "$OASIS_MODEL_ID" ] || [ -z "$OASIS_MODEL_VERSION_ID" ] || [ -z "$OASIS_MODEL_DATA_DIRECTORY" ]; then
+if [ -z "$OASIS_MODEL_SUPPLIER_ID" ] || [ -z "$OASIS_MODEL_ID" ] || [ -z "$OASIS_MODEL_VERSION_ID" ] || [ -z "$OASIS_MODEL_DATA_DIRECTORY" ] || [ -z "$OASIS_API_VERSION" ]; then
   echo "Missing required model env var(s)"
   exit 1
 fi

@@ -26,6 +26,7 @@ workers:
     supplierId: OasisLMF
     modelId: PiWind
     modelVersionId: "1"
+    apiVersion: "v2"
     image: coreoasis/model_worker
     version: dev
     imagePullPolicy: Never
@@ -38,8 +39,6 @@ workers:
         value: "1"
       - name: OASIS_MODEL_DATA_DIRECTORY
         value: /home/worker/model
-      - name: OASIS_API_VERSION
-        value: "v2"
     volumes: # Volume defined in modelVolumes
 #      - name: name of volume defined in modelVolumes.
 #        type: Type of volume, set 'model-data' for model data mounts. Any other value for additional mounts
