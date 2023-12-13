@@ -1,5 +1,3 @@
-import urllib
-from src.conf.iniconf import settings
 from .base import *
 
 # Default Queue Name

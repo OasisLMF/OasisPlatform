@@ -21,7 +21,7 @@ from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 from celery.platforms import signals
 
-from oasislmf.utils.data import get_json
+# from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.log import oasis_log
 from oasislmf.utils.status import OASIS_TASK_STATUS

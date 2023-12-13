@@ -9,11 +9,12 @@ from celery.exceptions import Retry
 from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis.strategies import text, integers
-from mock import patch, Mock, ANY
+from mock import patch, Mock
+# from mock import ANY
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
-from src.model_execution_worker.storage_manager import MissingInputsException
+# from src.model_execution_worker.storage_manager import MissingInputsException
 from src.model_execution_worker.singleserver_tasks import start_analysis, InvalidInputsException, \
     start_analysis_task, get_oasislmf_config_path
 
