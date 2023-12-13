@@ -46,7 +46,7 @@ ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 app = Celery()
 app.config_from_object(celery_conf)
-#print(app._conf)
+# print(app._conf)
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 
@@ -175,6 +175,8 @@ def check_worker_lost(task, analysis_pk):
     task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
 
 # When a worker connects send a task to the worker-monitor to register a new model
+
+
 @worker_ready.connect
 def register_worker(sender, **k):
     time.sleep(1)  # Workaround, pause for 1 sec to makesure log messages are printed

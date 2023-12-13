@@ -2,7 +2,7 @@ from celery.schedules import crontab
 from kombu.common import Broadcast
 
 from src.conf.iniconf import settings
-from .base import *  
+from .base import *
 
 # Default Queue Name
 CELERY_DEFAULT_QUEUE = "celery-v2"
@@ -47,6 +47,8 @@ CELERY_QUEUE_MAX_PRIORITY = 10
 CELERY_INHERIT_PARENT_PRIORITY = True
 
 # setup the beat schedule
+
+
 def crontab_from_string(s):
     minute, hour, day_of_week, day_of_month, month_of_year = s.split(' ')
     return crontab(
@@ -56,6 +58,7 @@ def crontab_from_string(s):
         day_of_month=day_of_month,
         month_of_year=month_of_year,
     )
+
 
 CELERYBEAT_SCHEDULE = {
     'send_queue_status_digest': {

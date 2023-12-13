@@ -165,7 +165,7 @@ class Analysis(TimeStampedModel):
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values),
                               choices=status_choices, default=status_choices.NEW, editable=False)
     run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),
-                              choices=run_mode_choices, default=None, editable=False, null=True)
+                                choices=run_mode_choices, default=None, editable=False, null=True)
     task_started = models.DateTimeField(editable=False, null=True, default=None)
 
     task_finished = models.DateTimeField(editable=False, null=True, default=None)
@@ -389,7 +389,6 @@ class Analysis(TimeStampedModel):
             }
         )
 
-
     def validate_run(self):
         valid_choices = [
             self.status_choices.READY,
@@ -444,7 +443,6 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
-
     def run(self, initiator, version):
         self.validate_run()
         events_total = self.get_num_events()
@@ -461,7 +459,7 @@ class Analysis(TimeStampedModel):
             self.run_mode = self.run_mode_choices.V1
             task_id = task.delay().id
 
-        elif version.startswith('v2'): # V2 task dispatch
+        elif version.startswith('v2'):  # V2 task dispatch
             task = self.v2_run_analysis_signature
             task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
                 'analysis_id': self.pk,
@@ -474,8 +472,8 @@ class Analysis(TimeStampedModel):
 
         else:
             raise ValidationError(detail={'version':
-                [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
-            })
+                                          [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
+                                          })
 
         self.run_task_id = task_id
         self.task_started = timezone.now()
@@ -488,7 +486,6 @@ class Analysis(TimeStampedModel):
             self.save()
         if errors:
             raise ValidationError(detail=errors)
-
 
     def generate_and_run(self, initiator, version):
         valid_choices = [
@@ -567,7 +564,6 @@ class Analysis(TimeStampedModel):
             self.task_finished = _now
             self.save()
 
-
     def generate_inputs(self, initiator, version):
         valid_choices = [
             self.status_choices.NEW,
@@ -632,8 +628,8 @@ class Analysis(TimeStampedModel):
             task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
         else:
             raise ValidationError(detail={'version':
-                [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
-            })
+                                          [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
+                                          })
 
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
@@ -666,7 +662,6 @@ class Analysis(TimeStampedModel):
         ]
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
-
 
         # Terminate V2 Execution
         if self.run_mode is self.run_mode_choices.V2:

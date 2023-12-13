@@ -1,6 +1,6 @@
 import urllib
 from src.conf.iniconf import settings
-from .base import * 
+from .base import *
 
 # Default Queue Name
 CELERY_DEFAULT_QUEUE = "celery"
