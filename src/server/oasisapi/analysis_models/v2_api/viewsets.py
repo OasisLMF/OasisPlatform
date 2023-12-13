@@ -191,7 +191,10 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     serializer_class = AnalysisModelSerializer
     filterset_class = AnalysisModelFilter
     group_access_model = AnalysisModel
-    queryset = AnalysisModel.objects.exclude(run_mode='V1')
+
+    def get_queryset(self):
+        queryset = super(AnalysisModelViewSet, self).get_queryset()
+        return queryset.exclude(run_mode='V1')
 
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:
