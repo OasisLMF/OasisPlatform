@@ -209,7 +209,7 @@ spec:
           env:
             {{- include "h.serverApiVars" . | nindent 12}}
             - name: API_VERSION
-              value: v1
+              value: v2
             - name: OASIS_ENVIRONMENT
               value: oasis_localhost
             - name: API_SHARE_FILEPATH
