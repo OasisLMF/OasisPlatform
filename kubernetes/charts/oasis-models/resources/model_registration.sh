@@ -5,10 +5,11 @@
 #
 # Script compatible with sh and not bash
 
+set -x 
 set -e
 set -o pipefail
 
-BASE_URL="http://${OASIS_SERVER_HOST}:${OASIS_SERVER_PORT}"
+BASE_URL="http://${OASIS_SERVER_HOST}:${OASIS_SERVER_PORT}/api"
 MODEL_SETTINGS_FILE="$OASIS_MODEL_DATA_DIRECTORY/model_settings.json"
 CHUNKING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/chunking_configuration.json"
 SCALING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/scaling_configuration.json"
