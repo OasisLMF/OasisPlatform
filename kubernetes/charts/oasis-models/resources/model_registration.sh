@@ -99,7 +99,7 @@ curlf -X PATCH "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/" -H "Conten
 echo "Uploading model settings"
 curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
 
-if [ "$OASIS_API_VERSION" -eq "v2" ]; then 
+if [[ "$OASIS_API_VERSION" == "v2" ]]; then 
     if [ -f "$CHUNKING_CONFIGURATION_FILE" ]; then
       echo "Uploading chunking configuration"
       curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/chunking_configuration/" -H "Content-Type: application/json" -d @${CHUNKING_CONFIGURATION_FILE} | jq .
