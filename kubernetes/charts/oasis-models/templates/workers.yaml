@@ -37,6 +37,8 @@ spec:
           {{- end }}
           name: worker
           env:
+            - name: OASIS_API_VERSION
+              value: {{ $worker.apiVersion }}
             {{- include "h.modelEnvs" . | indent 12 }}
             {{- include "h.brokerVars" $root | indent 12 }}
             {{- include "h.celeryDbVars" $root | indent 12}}
