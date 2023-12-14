@@ -81,13 +81,13 @@ api_urlpatterns += [
     url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
 ]
 
-urlpatterns = [static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)]
+urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.URL_SUB_PATH:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns = [url(r'^api/', include(api_urlpatterns))]
+    urlpatterns += [url(r'^api/', include(api_urlpatterns))]
 else:
     urlpatterns += static(settings.STATIC_DEBUG_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns = [url(r'^', include(api_urlpatterns))]
+    urlpatterns += [url(r'^', include(api_urlpatterns))]
 
 if settings.DEBUG_TOOLBAR:
     urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))
