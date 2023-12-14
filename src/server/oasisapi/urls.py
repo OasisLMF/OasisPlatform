@@ -57,7 +57,7 @@ schema_view = get_schema_view(
 )
 
 # Base Routes (no version)
-urlpatterns = [
+api_urlpatterns = [
     url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
     url(r'^', include('src.server.oasisapi.base_urls')),
@@ -65,7 +65,7 @@ urlpatterns = [
 
 
 # API v1 Routes
-urlpatterns += [
+api_urlpatterns += [
     url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls', namespace='v1-models')),
     url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls', namespace='v1-portfolios')),
     url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls', namespace='v1-analyses')),
@@ -73,7 +73,7 @@ urlpatterns += [
 ]
 
 # API v2 Routes
-urlpatterns += [
+api_urlpatterns += [
     url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
     url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls', namespace='v2-analyses')),
     url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
@@ -81,12 +81,13 @@ urlpatterns += [
     url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns = [static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)]
 if settings.URL_SUB_PATH:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns = [url(r'^api/', include(urlpatterns))] + urlpatterns
+    urlpatterns = [url(r'^api/', include(api_urlpatterns))]
 else:
     urlpatterns += static(settings.STATIC_DEBUG_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns = [url(r'^', include(api_urlpatterns))]
 
 if settings.DEBUG_TOOLBAR:
     urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))
