@@ -15,7 +15,7 @@ class OasisClient:
     A simple client for the Oasis API. Takes care of the access token and supports searching for models.
     """
 
-    def __init__(self, http_host, http_port, ws_host, ws_port, secure, username, password):
+    def __init__(self, http_host, http_port, http_subpath, ws_host, ws_port, secure, username, password):
         """
         :param http_host: Oasis API hostname.
         :param http_port: Oasis API port.
@@ -25,17 +25,21 @@ class OasisClient:
         :param username: Username for API authentication.
         :param password: Password for API authentication.
         """
-        self.host = http_host
-        self.port = http_port
         self.ws_host = ws_host
         self.ws_port = ws_port
-
         self.secure = secure
-        self.http_host = ('https://' if secure else 'http://') + f'{http_host}' + (f':{http_port}' if http_port else '')
+
+        api_proto = 'https://' if secure else 'http://'
+        api_host = http_host
+        api_port = f':{http_port}' if http_port else ''
+        api_path = f'/{http_subpath}' if http_subpath else ''
+        self.http_host = f'{api_proto}{api_host}{api_port}{api_path}'
+
         self.username = username
         self.password = password
         self.access_token = None
         self.token_expire_time = None
+        print('Connecting to: ' + self.http_host)
 
     def is_authenticated(self) -> bool:
         """
