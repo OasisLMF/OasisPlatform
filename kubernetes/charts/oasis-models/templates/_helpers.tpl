@@ -144,6 +144,20 @@ Variables for a broker client
     configMapKeyRef:
       name: {{ .Values.databases.broker.name }}
       key: uri
+- name:  OASIS_RABBIT_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.databases.broker.name }}
+      key: host
+- name:  OASIS_RABBIT_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: {{ .Values.databases.broker.name }}
+      key: port
+- name:  OASIS_RABBIT_USER
+  value: rabbit
+- name:  OASIS_RABBIT_PASS
+  value: rabbit
 {{- end }}
 
 {{/*
