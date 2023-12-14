@@ -1,6 +1,6 @@
 {{- $root := . -}}
 {{- range $k, $worker := .Values.workers }}
-{{- $name := printf "worker-%s-%s-%s-v2" $worker.supplierId $worker.modelId $worker.modelVersionId | lower }}
+{{- $name := printf "worker-%s-%s-%s-%s" $worker.supplierId $worker.modelId $worker.modelVersionId $worker.apiVersion | lower }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
