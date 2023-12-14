@@ -5,7 +5,7 @@
 #
 # Script compatible with sh and not bash
 
-set -x 
+#set -x 
 set -e
 set -o pipefail
 
