@@ -75,7 +75,7 @@ spec:
 {{- end }}
       volumes:
         - name: shared-fs-persistent-storage
-#{{- if (($root.Values.volumes.host).sharedFs) }}
+{{- if (($root.Values.volumes.host).sharedFs) }}
           persistentVolumeClaim:
             claimName: {{ $root.Values.volumes.host.sharedFs.name }}
 {{- else if (($root.Values.volumes.azureFiles).sharedFs) }}
