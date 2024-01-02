@@ -50,7 +50,7 @@ spec:
       annotations:
         checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisWebsocket | sha256sum }}
     spec:
-      automountServiceAccountToken: false
+      #automountServiceAccountToken: false
       {{- include "h.affinity" . | nindent 6 }}
       serviceAccountName: {{ $workerControllerServiceAccountName }}
       initContainers:

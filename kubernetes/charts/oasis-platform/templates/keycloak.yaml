@@ -174,7 +174,7 @@ spec:
 
       volumes:
         - name: realm-config
-          readOnly: true
+          #readOnly: true
           configMap:
             name: {{ $realmSecretName }}
 {{- if (.Values.azure).secretProvider }}
