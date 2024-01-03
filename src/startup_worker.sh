@@ -35,7 +35,7 @@ fi
 case "$OASIS_API_VERSION" in
     "v1")
       API_VER=''
-      TASK_FILE='src.model_execution_worker.singleserver_tasks'
+      TASK_FILE='src.model_execution_worker.tasks'
     ;;
     "v2")
       API_VER='-v2'

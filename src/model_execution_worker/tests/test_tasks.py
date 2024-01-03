@@ -15,7 +15,7 @@ from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher, settings
 # from src.model_execution_worker.storage_manager import MissingInputsException
-from src.model_execution_worker.singleserver_tasks import start_analysis, InvalidInputsException, \
+from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, \
     start_analysis_task, get_oasislmf_config_path
 
 
@@ -106,9 +106,9 @@ class StartAnalysis(TestCase):
                     yield run_dir
 
                 with patch('subprocess.Popen', Mock(return_value=cmd_instance)) as cmd_mock, \
-                        patch('src.model_execution_worker.singleserver_tasks.get_worker_versions', Mock(return_value='')), \
-                        patch('src.model_execution_worker.singleserver_tasks.filestore.compress') as tarfile, \
-                        patch('src.model_execution_worker.singleserver_tasks.TemporaryDir', fake_run_dir):
+                        patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
+                        patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
+                        patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
                     output_location, log_location, error_location, returncode = start_analysis(
                         os.path.join(media_root, 'analysis_settings.json'),
@@ -130,17 +130,17 @@ class StartAnalysisTask(TestCase):
     @given(pk=integers(), location=text(), analysis_settings_path=text())
     def test_lock_is_not_acquireable___retry_esception_is_raised(self, pk, location, analysis_settings_path):
         with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)), \
-                patch('src.model_execution_worker.singleserver_tasks.check_worker_lost', Mock(return_value='')), \
-                patch('src.model_execution_worker.singleserver_tasks.notify_api_status') as api_notify:
+                patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
+                patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
 
             with self.assertRaises(Retry):
                 start_analysis_task(pk, location, analysis_settings_path)
 
     @given(pk=integers(), location=text(), analysis_settings_path=text())
     def test_lock_is_acquireable___start_analysis_is_ran(self, pk, location, analysis_settings_path):
-        with patch('src.model_execution_worker.singleserver_tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
-                patch('src.model_execution_worker.singleserver_tasks.check_worker_lost', Mock(return_value='')), \
-                patch('src.model_execution_worker.singleserver_tasks.notify_api_status') as api_notify:
+        with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
+                patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
+                patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
 
             start_analysis_task.update_state = Mock()
             start_analysis_task(pk, location, analysis_settings_path)
