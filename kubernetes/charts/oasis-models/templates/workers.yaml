@@ -42,6 +42,21 @@ spec:
             {{- include "h.modelEnvs" . | indent 12 }}
             {{- include "h.brokerVars" $root | indent 12 }}
             {{- include "h.celeryDbVars" $root | indent 12}}
+{{- if eq $worker.apiVersion "v1" }}            
+          startupProbe:
+            exec:
+              command: ["celery", "-A", "src.model_execution_worker.tasks", "inspect", "ping"]
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: ["celery", "-A", "src.model_execution_worker.tasks", "inspect", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 60
+            failureThreshold: 15
+{{- else }}
           startupProbe:
             exec:
               command: ["celery", "-A", "src.model_execution_worker.distributed_tasks", "inspect", "ping"]
@@ -55,6 +70,7 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 60
             failureThreshold: 15
+{{- end }}
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
