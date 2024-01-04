@@ -76,7 +76,10 @@ MODEL_ID=$(curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X GET \
   tr '[:upper:]' '[:lower:]')\") and (.model_id | ascii_downcase == \"$(echo ${OASIS_MODEL_ID} | \
   tr '[:upper:]' '[:lower:]')\") and (.version_id == \"$(echo ${OASIS_MODEL_VERSION_ID} | tr '[:upper:]' '[:lower:]')\")) | .id")
 
-MODEL_JSON_ID_ATTRIBUTES="\"supplier_id\": \"${OASIS_MODEL_SUPPLIER_ID}\",\"model_id\": \"${OASIS_MODEL_ID}\",\"version_id\": \"${OASIS_MODEL_VERSION_ID}\""
+
+#MODEL_RUN_MODE=$(echo ${OASIS_API_VERSION} | tr '[:lower:]' '[:upper:]')   # set model to run in only one API version
+MODEL_RUN_MODE='BOTH'                                                       # set model to run in any API version 
+MODEL_JSON_ID_ATTRIBUTES="\"supplier_id\": \"${OASIS_MODEL_SUPPLIER_ID}\",\"model_id\": \"${OASIS_MODEL_ID}\",\"version_id\": \"${OASIS_MODEL_VERSION_ID}\",\"run_mode\": \"${MODEL_RUN_MODE}\""
 
 if [ -n "$MODEL_ID" ]; then
   echo "Model exists with id $MODEL_ID"
