@@ -56,7 +56,6 @@ class AutoScaler:
 
         model_states_with_wd = await self._filter_model_states_with_wd(model_states)
         prioritized_models = self._clear_unprioritized_models(model_states_with_wd)
-
         await self._scale_models(prioritized_models)
 
     def _aggregate_model_states(self, analyses: []) -> dict:
@@ -229,6 +228,7 @@ class AutoScaler:
         :param prioritized_models: A dict of model names and their states.
         """
         workers_total = 0
+        logging.debug('Scaling: %s', prioritized_models)
 
         for model, state, wd in prioritized_models:
             workers_min = wd.auto_scaling.get('worker_count_min', 0) if wd.auto_scaling else 0

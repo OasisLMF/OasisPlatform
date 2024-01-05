@@ -98,8 +98,8 @@ class WorkerDeployments:
         """
 
         split = name_id.split('-')
-        if len(split) == 3:
-            return self.get_worker_deployment(split[0], split[1], split[2])
+        if len(split) == 4:
+            return self.get_worker_deployment(split[0], split[1], split[2], split[3])
 
     async def delete(self, name):
         """
