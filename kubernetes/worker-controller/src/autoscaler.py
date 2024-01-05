@@ -55,7 +55,9 @@ class AutoScaler:
         logging.debug('Model statuses: %s', model_states)
 
         model_states_with_wd = await self._filter_model_states_with_wd(model_states)
-        prioritized_models = self._clear_unprioritized_models(model_states_with_wd)
+        v2_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v2')
+        prioritized_models = self._clear_unprioritized_models(v2_models)
+
         await self._scale_models(prioritized_models)
 
     def _aggregate_model_states(self, analyses: []) -> dict:
@@ -296,6 +298,20 @@ class AutoScaler:
                     result.append((model, ModelState(tasks=0, analyses=0, priority=1), wd))
 
             return result
+
+    def _filter_models_by_api_version(self, model_states_with_wd, api_version):
+        """
+        Select model deployments matching an API version
+
+        :param model_states_with_wd: List of (model, model state, WorkerDeployment)
+        :param api_version: String of either `v1` or `v2`
+        :return: Models as input model_states_with_wd, but filtered by deployment version
+        """
+        result = []
+        for model, state, wd in model_states_with_wd:
+            if wd.api_version == api_version.lower():
+                result.append((model, state, wd), )
+        return result
 
     async def _filter_model_states_with_wd(self, model_states):
         """
