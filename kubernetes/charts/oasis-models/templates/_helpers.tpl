@@ -26,6 +26,7 @@ oasislmf/type: worker
 oasislmf/supplier-id: {{ .supplierId | quote }}
 oasislmf/model-id: {{ .modelId | quote }}
 oasislmf/model-version-id: {{ .modelVersionId | quote }}
+oasislmf/api-version: {{ .apiVersion | quote }}
 {{- end }}
 
 {{/*
