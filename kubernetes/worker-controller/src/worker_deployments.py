@@ -16,7 +16,7 @@ class WorkerDeployment:
         self.supplier_id = supplier_id
         self.model_id = model_id
         self.model_version_id = model_version_id
-        self.api_version = model_version_id
+        self.api_version = api_version
         self.oasis_model_id: int = None
         self.replicas: int = None
         self.auto_scaling = None
