@@ -20,9 +20,9 @@ class TestAutoscaler(unittest.TestCase):
 
     def test_parse_queue_status(self):
 
-        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1')
-        wd2 = WorkerDeployment('worker-oasislmf-piwind-2', 'oasislmf', 'piwind', '2')
-        wd3 = WorkerDeployment('worker-oasislmf-piwind-3', 'oasislmf', 'piwind', '3')
+        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1', 'v2')
+        wd2 = WorkerDeployment('worker-oasislmf-piwind-2', 'oasislmf', 'piwind', '2', 'v2')
+        wd3 = WorkerDeployment('worker-oasislmf-piwind-3', 'oasislmf', 'piwind', '3', 'v2')
         wd1.replicas = 0
         wd2.replicas = 2
         wd3.replicas = 1
@@ -76,8 +76,8 @@ class TestAutoscaler(unittest.TestCase):
 
     def test_model_status_prio(self):
 
-        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1')
-        wd2 = WorkerDeployment('worker-oasislmf-piwind-2', 'oasislmf', 'piwind', '2')
+        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1', 'v2')
+        wd2 = WorkerDeployment('worker-oasislmf-piwind-2', 'oasislmf', 'piwind', '2', 'v2')
         wd1.replicas = 0
         wd2.replicas = 2
 
@@ -174,7 +174,7 @@ class TestAutoscaler(unittest.TestCase):
         autoscaler = AutoScaler(None, None, oasis_client, None, None, True, False)
         autoscaler._scale_deployment = AsyncMock()
 
-        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1')
+        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1', 'v2')
         wd1.auto_scaling = {
             'scaling_strategy': 'FIXED_WORKERS',
             'worker_count_fixed': 2
@@ -195,7 +195,7 @@ class TestAutoscaler(unittest.TestCase):
 
         autoscaler = AutoScaler(None, None, None, None, None, False, True)
 
-        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1')
+        wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1', 'v2')
         wd1.auto_scaling = {
             'scaling_strategy': 'FIXED_WORKERS',
             'worker_count_fixed': 2

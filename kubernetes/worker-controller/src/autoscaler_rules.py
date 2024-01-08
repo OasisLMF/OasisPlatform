@@ -18,8 +18,8 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState)
     """
 
     strategy = autoscaling_setting.get('scaling_strategy')
-    worker_count_min = int(autoscaling_setting.get('worker_count_min'))
-    worker_count_max = int(get_req_setting(autoscaling_setting, 'worker_count_max'))
+    worker_count_min = int(autoscaling_setting.get('worker_count_min', 0))
+    worker_count_max = int(autoscaling_setting.get('worker_count_max', 100))
 
     if strategy:
         if strategy == 'FIXED_WORKERS':
