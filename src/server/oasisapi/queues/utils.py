@@ -16,12 +16,12 @@ def _get_queue_consumers(queue_name):
         name, message_count, consumers = chan.queue_declare(queue=queue_name, passive=True)
         return consumers
 
+
 def _get_queue_message_count(queue_name):
     with celery_app_v2.pool.acquire(block=True) as conn:
         chan = conn.channel()
         name, message_count, consumers = chan.queue_declare(queue=queue_name, passive=True)
         return message_count
-
 
 
 def _add_to_dict(d, k, v):
