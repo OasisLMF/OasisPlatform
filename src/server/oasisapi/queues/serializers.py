@@ -19,7 +19,8 @@ class QueueSerializer(serializers.Serializer):
 
     @swagger_serializer_method(serializer_or_field=AnalysisModelSerializer(many=True))
     def get_models(self, instance, *args, **kwargs):
-        models = [m for m in AnalysisModel.objects.all() if str(m) == instance['name']]
+        queue_name = instance['name'].removesuffix('-v2')
+        models = [m for m in AnalysisModel.objects.all() if str(m) == queue_name]
         return AnalysisModelSerializer(instance=models, many=True).data
 
 

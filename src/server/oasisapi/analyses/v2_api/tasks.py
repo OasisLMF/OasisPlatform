@@ -298,7 +298,7 @@ def log_worker_monitor(sender, **k):
 
 @transaction.atomic
 @celery_app_v2.task(name='run_register_worker_v2', **celery_conf.worker_task_kwargs)
-def run_register_worker(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
+def run_register_worker_v2(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
         from django.contrib.auth.models import User
