@@ -9,9 +9,10 @@ from src.server.oasisapi.analyses.v2_api.serializers import AnalysisSerializerWe
 class QueueSerializer(serializers.Serializer):
     name = serializers.CharField()
     pending_count = serializers.IntegerField()
-    worker_count = serializers.IntegerField()
     queued_count = serializers.IntegerField()
     running_count = serializers.IntegerField()
+    queue_message_count = serializers.IntegerField()
+    worker_count = serializers.IntegerField()
     models = serializers.SerializerMethodField()
 
     class Meta:
