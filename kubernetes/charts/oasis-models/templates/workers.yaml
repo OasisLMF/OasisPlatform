@@ -33,7 +33,8 @@ spec:
       containers:
         - image: {{ .image }}:{{ .version }}
           {{- if .imagePullPolicy }}
-          #readOnlyRootFilesystem: true
+          securityContext:
+            readOnlyRootFilesystem: true
           imagePullPolicy: {{ .imagePullPolicy }}
           {{- end }}
           name: worker
