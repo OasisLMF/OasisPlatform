@@ -9,18 +9,6 @@ from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 
 QueueInfo = Dict[str, int]
 
-"""  DELETE THIS 
-with celery_app.pool.acquire(block=True) as conn:
-conn = celery_app.pool.acquire(block=True)
-chan = conn.channel()
-chan.queue_declare(queue="OasisLMF-PiWind-1.28.4", passive=True)
-#queue_declare_ok_t(queue='OasisLMF-PiWind-1.28.4', message_count=1, consumer_count=0)
-name, jobs, consumers = chan.queue_declare(queue="OasisLMF-PiWind-1.28.4", passive=True)
-
-
-amqp.exceptions.NotFound: Queue.declare: (404) NOT_FOUND - no queue 'OasisLMF-PiWind-1.28.12' in vhost '/'
-"""
-
 
 def _get_queue_consumers(queue_name):
     with celery_app_v2.pool.acquire(block=True) as conn:
@@ -60,16 +48,6 @@ def _get_broker_queue_names():
     raise NotImplementedError('Support for your broker is not yet supported')
 
 
-#def _get_active_queues():
-#    if settings.BROKER_URL.startswith('memory://'):
-#        #
-#        # TODO: figure out how to get this to work for memory broker
-#        #
-#        return {}
-#
-#    return celery_app_v2.control.inspect().active_queues()
-
-
 def get_queues_info() -> List[QueueInfo]:
     """
     Gets a list of dictionaries containing information about the queues in the system.
@@ -84,8 +62,7 @@ def get_queues_info() -> List[QueueInfo]:
     """
     from src.server.oasisapi.analyses.models import AnalysisTaskStatus
 
-    # setup an entry for every element in the broker (this will include
-    # queues with no workers yet)
+    # setup an entry for every element in the broker
     res = [
         {
             'name': q,
@@ -95,32 +72,6 @@ def get_queues_info() -> List[QueueInfo]:
             'worker_count': _get_queue_consumers(q),
         } for q in _get_broker_queue_names()
     ]
-
-    #res = [
-    #    {
-    #        'name': q,
-    #        'pending_count': 0,
-    #        'queued_count': 0,
-    #        'running_count': 0,
-    #        'worker_count': 0,
-    #    } for q in _get_broker_queue_names()
-    #]
-    #
-    ## increment the number of workers available for each queue
-    #queues = _get_active_queues()
-    #if queues:
-    #    for worker in queues.values():
-    #        for queue in worker:
-    #            try:
-    #                next(r for r in res if r['name'] == queue['routing_key'])['worker_count'] += 1
-    #            except StopIteration:
-    #                # in case there are workers around still for inactive queues add it here
-    #                res.append({
-    #                    'name': queue['routing_key'],
-    #                    'queued_count': 0,
-    #                    'running_count': 0,
-    #                    'worker_count': 1,
-    #                })
 
     # get the stats of the running and queued tasks
     pending = reduce(
