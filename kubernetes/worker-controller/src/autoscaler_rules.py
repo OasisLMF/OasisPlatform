@@ -39,9 +39,9 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState,
             worker_count_min,
         )
 
-    # Queue clear scale down to zero
+    # Scale down to Minimum worker count
     if not analysis_in_progress:
-        return 0
+        return worker_count_min
 
     # Run a fixed set of workers when analysis is on queue
     elif strategy == 'FIXED_WORKERS':
