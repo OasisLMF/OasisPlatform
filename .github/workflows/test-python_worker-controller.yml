@@ -39,7 +39,7 @@ jobs:
     - name: Run Pytest
       run: |
         cd kubernetes/worker-controller/src
-        pytest
+        python -m pytest -v
 
 #    - name: Generate Report
 #      uses: dorny/test-reporter@v1
