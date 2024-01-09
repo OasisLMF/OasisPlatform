@@ -1,0 +1,51 @@
+name: Python Tests - Worker Controller
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  unittest:
+    env:
+      JUNIT_REPORT: pytest_worker-controller_report.xml
+      PLAT_BRANCH: ${{ github.ref }}
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Branch selection (remote trigger)
+      if: inputs.platform_branch != ''
+      run: echo "PLAT_BRANCH=${{ inputs.platform_branch }}" >> $GITHUB_ENV
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        repository: OasisLMF/OasisPlatform
+        ref: ${{ env.PLAT_BRANCH }}
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: |
+        pip install pytest
+        pip install -r kubernetes/worker-controller/src/requirements.txt
+
+    - name: Run Pytest
+      run: |
+        cd kubernetes/worker-controller/src
+        pytest
+
+#    - name: Generate Report
+#      uses: dorny/test-reporter@v1
+#      if: success() || failure()    # run this step even if previous step failed
+#      with:
+#        name: Pytest Results             # Name of the check run which will be created
+#        path: ${{ env.JUNIT_REPORT }}    # Path to test results
+#        reporter: java-junit             # Format of test results
+#        fail-on-error: 'false'
