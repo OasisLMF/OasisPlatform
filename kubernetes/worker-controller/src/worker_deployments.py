@@ -11,7 +11,7 @@ class WorkerDeployment:
     is actually not a part of the worker deployment in the cluster, it comes from the API, but kept here anyway.
     """
 
-    def __init__(self, name: str, supplier_id: str, model_id: str, model_version_id: str, api_version: str):
+    def __init__(self, name: str, supplier_id: str, model_id: str, model_version_id: str, api_version: str = None):
         self.name = name
         self.supplier_id = supplier_id
         self.model_id = model_id
@@ -22,6 +22,8 @@ class WorkerDeployment:
         self.auto_scaling = None
 
     def id_string(self):
+        if self.api_version is None:
+            return f'{self.supplier_id}-{self.model_id}-{self.model_version_id}'.lower()
         return f'{self.supplier_id}-{self.model_id}-{self.model_version_id}-{self.api_version}'.lower()
 
 
@@ -71,7 +73,7 @@ class WorkerDeployments:
 
         wd.replicas = replicas
 
-    def get_worker_deployment(self, supplier_id, model_id, model_version_id, api_version) -> WorkerDeployment:
+    def get_worker_deployment(self, supplier_id, model_id, model_version_id, api_version=None) -> WorkerDeployment:
         """
         Return the WorkerDeployment for the given supplier, model and version.
 
@@ -81,13 +83,23 @@ class WorkerDeployments:
         :param api_version: Worker API type 'v1' / 'v2'
         :return: A WorkerDeployment or None if not found.
         """
+        # Check API version for match
+        if api_version is not None:
+            for wd in self.worker_deployments:
+                if all([wd.supplier_id.lower() == supplier_id.lower(),
+                        wd.model_id.lower() == model_id.lower(),
+                        wd.model_version_id.lower() == model_version_id.lower(),
+                        wd.api_version.lower() == api_version.lower()]):
+                    return wd
 
-        for wd in self.worker_deployments:
-            if all([wd.supplier_id.lower() == supplier_id.lower(),
-                    wd.model_id.lower() == model_id.lower(),
-                    wd.model_version_id.lower() == model_version_id.lower(),
-                    wd.api_version.lower() == api_version.lower()]):
-                return wd
+        # return any matching model (ignore API version)
+        else:
+            for wd in self.worker_deployments:
+                if all([wd.supplier_id.lower() == supplier_id.lower(),
+                        wd.model_id.lower() == model_id.lower(),
+                        wd.model_version_id.lower() == model_version_id.lower()]):
+                    return wd
+
 
     async def get_worker_deployment_by_name_id(self, name_id: str) -> WorkerDeployment:
         """
@@ -96,8 +108,9 @@ class WorkerDeployments:
         :param name_id: String with format <supplier>-<model>-<version>
         :return: A WorkerDeployment or None if not found.
         """
-
         split = name_id.split('-')
+        if len(split) == 3:
+            return self.get_worker_deployment(split[0], split[1], split[2])
         if len(split) == 4:
             return self.get_worker_deployment(split[0], split[1], split[2], split[3])
 
