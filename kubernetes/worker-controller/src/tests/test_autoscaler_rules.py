@@ -20,7 +20,9 @@ class TestScalingRules(unittest.TestCase):
             'scaling_strategy': 'FIXED_WORKERS',
             'worker_count_fixed': 5
         }
-        state = {}
+        state = {
+            'analyses': 3
+        }
         desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
 
         self.assertEqual(5, desired_replicas)
@@ -31,7 +33,7 @@ class TestScalingRules(unittest.TestCase):
             'scaling_strategy': 'FIXED_WORKERS'
         }
         state = {}
-        self.assertRaises(ValueError, lambda: autoscaler_rules.get_desired_worker_count(as_conf, state))
+        self.assertRaises(ValueError, lambda: autoscaler_rules.get_desired_worker_count(as_conf, state, never_shutdown_fixed_workers=True))
 
     def test_queue_load_correct(self):
 
@@ -131,7 +133,6 @@ class TestScalingRules(unittest.TestCase):
 
         as_conf = {
             'scaling_strategy': 'DYNAMIC_TASKS',
-
         }
         state = {}
         self.assertRaises(ValueError, lambda: autoscaler_rules.get_desired_worker_count(as_conf, state))

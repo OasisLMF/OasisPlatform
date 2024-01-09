@@ -20,7 +20,6 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState,
 
     strategy = autoscaling_setting.get('scaling_strategy')
     worker_count_min = int(autoscaling_setting.get('worker_count_min', 0))
-    worker_count_max = int(autoscaling_setting.get('worker_count_max', 100))
     analysis_in_progress = any([
         model_state.get('tasks', 0) > 0,
         model_state.get('analyses', 0) > 0
@@ -30,6 +29,10 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState,
     if not strategy:
         raise ValueError(f'No valid auto scaling configuration for model: {autoscaling_setting}')
 
+    if strategy in ['QUEUE_LOAD', 'DYNAMIC_TASKS']:
+        worker_count_max = get_req_setting(autoscaling_setting, 'worker_count_max')
+
+
     # Debugging model (keep all fixed workers alive)
     if strategy == 'FIXED_WORKERS' and never_shutdown_fixed_workers:
         return max(
@@ -38,14 +41,14 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState,
         )
 
     # Queue clear scale down to zero
-    elif not analysis_in_progress:
+    if not analysis_in_progress:
         return 0
 
     # Run a fixed set of workers when analysis is on queue
     elif strategy == 'FIXED_WORKERS':
         count = int(get_req_setting(autoscaling_setting, 'worker_count_fixed'))
         return max(
-            min(count, worker_count_max),
+            count,
             worker_count_min,
         )
 

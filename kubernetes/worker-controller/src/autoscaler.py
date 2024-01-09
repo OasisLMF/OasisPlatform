@@ -104,7 +104,7 @@ class AutoScaler:
         :param limit: None or maximum value of total number of replicas/workers for this model deployment.
         :return: Number of replicas set on deployment
         """
-    
+
         try:
             desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state, self.never_shutdown_fixed_workers)
             if limit is not None and desired_replicas > limit:
