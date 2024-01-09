@@ -34,7 +34,7 @@ jobs:
         python-version: '3.10'
     - run: |
         pip install pytest
-        pip install -r kubernetes/worker-controller/src/requirements.txt
+        pip install -r kubernetes/worker-controller/requirements.txt
 
     - name: Run Pytest
       run: |
