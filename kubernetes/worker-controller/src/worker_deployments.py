@@ -100,7 +100,6 @@ class WorkerDeployments:
                         wd.model_version_id.lower() == model_version_id.lower()]):
                     return wd
 
-
     async def get_worker_deployment_by_name_id(self, name_id: str) -> WorkerDeployment:
         """
         Get WorkerDeployment by concatenated name id with format <supplier>-<model>-<version>.

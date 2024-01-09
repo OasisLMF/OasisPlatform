@@ -32,7 +32,6 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState,
     if strategy in ['QUEUE_LOAD', 'DYNAMIC_TASKS']:
         worker_count_max = get_req_setting(autoscaling_setting, 'worker_count_max')
 
-
     # Debugging model (keep all fixed workers alive)
     if strategy == 'FIXED_WORKERS' and never_shutdown_fixed_workers:
         return max(
