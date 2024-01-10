@@ -208,7 +208,7 @@ spec:
           name: {{ .Values.oasisUI.name }}
           env:
             - name: API_IP
-              value: server:8000/api/
+              value: oasis-server:8000/api/
             - name: API_VERSION
               value: v2
             - name: OASIS_ENVIRONMENT
