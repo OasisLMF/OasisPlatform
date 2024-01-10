@@ -23,13 +23,13 @@ class WebsocketViewSet(viewsets.ViewSet):
     def list(self, request, *args, **kwargs):
         """
         This endpoint documents the schema for the WebSocket used for async status updates at
-        `ws://<SERVER_IP>:<SERVER_PORT>/ws/v1/queue-status/`
+        `ws://<SERVER_IP>:<SERVER_PORT>/ws/v2/queue-status/`
 
         Issuing a GET call returns the current state returned from the WebSocket.
         To print the websocket directly use the following:
         ```
         pip install websocket_client
-        ./manage.py ws_echo --url ws://localhost:8001/ws/v1/queue-status/
+        ./manage.py ws_echo --url ws://localhost:8001/ws/v2/queue-status/
         ```
         """
         return Response(build_all_queue_status_message())

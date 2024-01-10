@@ -78,6 +78,8 @@ spec:
               value: {{ .Values.oasisServer.name }}
             - name: OASIS_API_PORT
               value: {{ .Values.oasisServer.port | quote }}
+            - name: OASIS_API_SUBPATH
+              value: "api"
             - name: OASIS_WEBSOCKET_HOST
               value: {{ .Values.oasisWebsocket.name }}
             - name: OASIS_WEBSOCKET_PORT

@@ -26,6 +26,7 @@ workers:
     supplierId: OasisLMF
     modelId: PiWind
     modelVersionId: "1"
+    apiVersion: "v2"
     image: coreoasis/model_worker
     version: dev
     imagePullPolicy: Never
