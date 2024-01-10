@@ -25,6 +25,8 @@ spec:
       containers:
         - name: flower
           image: {{ .Values.monitoringImages.flower.image }}:{{- .Values.monitoringImages.flower.version }}
+          securityContext:
+            readOnlyRootFilesystem: true
           imagePullPolicy: IfNotPresent
           command: [ "celery" ]
           args: [ "flower", "--broker_api=http://guest:guest@broker:6379" ]

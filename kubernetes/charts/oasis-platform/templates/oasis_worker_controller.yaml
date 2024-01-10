@@ -57,6 +57,8 @@ spec:
       {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisWebsocket.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.worker_controller.image }}:{{ .Values.images.oasis.worker_controller.version }}
+        securityContext:
+          readOnlyRootFilesystem: true
           imagePullPolicy: {{ .Values.images.oasis.worker_controller.imagePullPolicy }}
           name: main
           env:

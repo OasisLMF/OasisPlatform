@@ -202,6 +202,8 @@ spec:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.channel_layer.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
+          securityContext:
+            readOnlyRootFilesystem: true
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: celery-beat
           command: ["celery", "-A", "src.server.oasisapi.celery_app", "beat", "--loglevel=DEBUG"]

@@ -94,6 +94,8 @@ spec:
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
+          securityContext:
+            readOnlyRootFilesystem: true
           args: [
             "start-dev", 
             "--import-realm",
