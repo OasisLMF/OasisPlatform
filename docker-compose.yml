@@ -5,7 +5,7 @@ volumes:
   filestore-OasisData:
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
-  OASIS_URL_SUB_PATH: 0
+  OASIS_URL_SUB_PATH: 1
   OASIS_CELERY_BROKER_URL: "amqp://rabbit:rabbit@broker:5672"
   #OASIS_CELERY_BROKER_URL: "redis://broker:6379"
   OASIS_SERVER_DB_HOST: server-db
@@ -40,7 +40,7 @@ x-oasis-env-v1: &oasis-env-v1
 x-volumes: &shared-volumes
   - filestore-OasisData:/shared-fs:rw
 services:
-  server_http:
+  server:
    restart: always
    image: coreoasis/api_server:dev
    command: ["./wsgi/run-wsgi.sh"]
@@ -230,3 +230,14 @@ services:
     image: redis:5.0.7
     ports:
       - 6379:6379
+  user-interface:
+    restart: always
+    image: coreoasis/oasisui_app:${VERS_UI:-latest}
+    container_name: oasisui_app
+    environment:
+     - API_IP=server:8000/api/
+     - API_VERSION=v2
+     - API_SHARE_FILEPATH=./downloads
+     - OASIS_ENVIRONMENT=oasis_localhost
+    ports:
+     - 8080:3838
