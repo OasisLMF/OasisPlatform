@@ -27,7 +27,6 @@ class TestScalingRules(unittest.TestCase):
 
         self.assertEqual(5, desired_replicas)
 
-
     def test_min_workers_correct(self):
 
         as_conf = {
