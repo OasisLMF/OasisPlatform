@@ -207,7 +207,8 @@ spec:
         - image: {{ .Values.images.oasis.ui.image }}:{{ .Values.images.oasis.ui.version }}
           name: {{ .Values.oasisUI.name }}
           env:
-            {{- include "h.serverApiVars" . | nindent 12}}
+            - name: API_IP
+              value: server:8000/api/
             - name: API_VERSION
               value: v2
             - name: OASIS_ENVIRONMENT
