@@ -107,10 +107,10 @@ class AutoScaler:
 
         try:
             desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state, self.never_shutdown_fixed_workers)
-
             if limit is not None and desired_replicas > limit:
                 desired_replicas = limit
         except ValueError as e:
+            desired_replicas = 0
             logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
 
         if desired_replicas > 0 and wd.name in self.cleanup_deployments:

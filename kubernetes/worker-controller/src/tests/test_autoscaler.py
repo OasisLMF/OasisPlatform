@@ -193,8 +193,6 @@ class TestAutoscaler(unittest.TestCase):
 
     def test_never_shutdown_fixed_workers(self):
 
-        autoscaler = AutoScaler(None, None, None, None, None, False, True)
-
         wd1 = WorkerDeployment('worker-oasislmf-piwind-1', 'oasislmf', 'piwind', '1')
         wd1.auto_scaling = {
             'scaling_strategy': 'FIXED_WORKERS',
@@ -203,10 +201,12 @@ class TestAutoscaler(unittest.TestCase):
         wd1.replicas = 2
         model_state = ModelState(tasks=10, analyses=2, priority=5)
 
-        desired_replicas = asyncio.run(autoscaler._scale_deployment(wd1, True, model_state, 10))
+        autoscaler = AutoScaler(None, None, None, None, None, False, never_shutdown_fixed_workers=True)
+        desired_replicas = asyncio.run(autoscaler._scale_deployment(wd1, model_state, 10))
         self.assertEqual(2, desired_replicas)
 
-        desired_replicas = asyncio.run(autoscaler._scale_deployment(wd1, False, model_state, 10))
+        autoscaler = AutoScaler(None, None, None, None, None, False, never_shutdown_fixed_workers=False)
+        desired_replicas = asyncio.run(autoscaler._scale_deployment(wd1, model_state, 10))
         self.assertEqual(2, desired_replicas)
 
 
