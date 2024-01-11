@@ -72,7 +72,6 @@ def get_desired_worker_count(autoscaling_setting: dict, model_state: ModelState,
         raise ValueError(f'Unsupported scaling strategy: {strategy}')
 
 
-
 def get_req_setting(autoscaling_setting: dict, name: str):
     """
     Return the value of name in the auto_scaling setting. If not found, raise exception.
