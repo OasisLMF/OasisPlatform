@@ -137,6 +137,23 @@ class AnalysisTaskStatus(models.Model):
         return reverse(f'{override_ns}analysis-task-status-error-log', kwargs={'pk': self.pk}, request=request)
 
 
+
+class AnalysisChunkingOptions(models.Model):
+    chunking_types = Choices(
+        ('FIXED_CHUNKS', 'Fixed run partion sizes'),
+        ('DYNAMIC_CHUNKS', 'Distribute runs based on input size'),
+    )
+    lookup_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values),
+                                       choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
+    loss_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values),
+                                     choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
+    dynamic_locations_per_lookup = models.PositiveIntegerField(default=10000, null=False)
+    dynamic_events_per_analysis = models.PositiveIntegerField(default=1, null=False)
+    dynamic_chunks_max = models.PositiveIntegerField(default=200, null=False)
+    fixed_analysis_chunks = models.PositiveSmallIntegerField(default=1, null=True)
+    fixed_lookup_chunks = models.PositiveSmallIntegerField(default=1, null=True)
+
+
 class Analysis(TimeStampedModel):
     status_choices = Choices(
         ('NEW', 'New'),
@@ -197,6 +214,8 @@ class Analysis(TimeStampedModel):
                                                default=None, related_name='lookup_validation_file_analyses')
     summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                             default=None, related_name='summary_levels_file_analyses')
+
+    chunking_options = models.OneToOneField(AnalysisChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
 
     class Meta:
         ordering = ['id']
@@ -765,6 +784,22 @@ class Analysis(TimeStampedModel):
         new_instance.lookup_validation_file = None
         new_instance.summary_levels_file = None
         return new_instance
+
+
+
+@receiver(post_save, sender=Analysis)
+def create_default_scaling_options(sender, instance, **kwargs):
+    """ Copy the chunking options set in attached model on creation 
+    """
+    pass
+    #if instance.chunking_options is None:
+    #    instance.chunking_options = ModelChunkingOptions()
+    #    instance.chunking_options.save()
+    #    instance.save()
+    #if instance.scaling_options is None:
+    #    instance.scaling_options = ModelScalingOptions()
+    #    instance.scaling_options.save()
+    #    instance.save()
 
 
 @receiver(post_delete, sender=Analysis)
