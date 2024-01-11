@@ -12,6 +12,7 @@ class QueueSerializer(serializers.Serializer):
     worker_count = serializers.IntegerField()
     queued_count = serializers.IntegerField()
     running_count = serializers.IntegerField()
+    queue_message_count = serializers.IntegerField()
     models = serializers.SerializerMethodField()
 
     @swagger_serializer_method(serializer_or_field=AnalysisModelSerializer)

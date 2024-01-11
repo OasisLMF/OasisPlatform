@@ -6,9 +6,6 @@ on:
       - main
       - stable**
   pull_request:
-    branches:
-      - main
-      - stable**
   schedule:
     - cron:  '0 */6 * * *' # Run scan every 6 hours
 

@@ -1,4 +1,4 @@
-name: Platform Python Tests
+name: Python Tests - Platform API
 
 on:
   push:
@@ -6,9 +6,6 @@ on:
       - main
       - stable**
   pull_request:
-    branches:
-      - main
-      - stable**
   workflow_dispatch:
     inputs:
       ods_branch:
