@@ -93,7 +93,7 @@ class AutoScaler:
 
         return model_states
 
-    async def _scale_deployment(self, wd: WorkerDeployment, analysis_in_progress: bool, model_state: ModelState, limit: int) -> int:
+    async def _scale_deployment(self, wd: WorkerDeployment, model_state: ModelState, limit: int) -> int:
         """
         Update a worker deployments number of replicas, based on what autoscaler_rules returns as desired number
         of replicas (if changed since laste time).
@@ -105,31 +105,19 @@ class AutoScaler:
         :return: Number of replicas set on deployment
         """
 
-        desired_replicas = wd.auto_scaling.get('worker_count_min', 0)  # Set to min value of workers (always running)
-        is_fixed_strategy = wd.auto_scaling.get('scaling_strategy') == 'FIXED_WORKERS' and self.never_shutdown_fixed_workers
+        try:
+            desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state, self.never_shutdown_fixed_workers)
 
-        if analysis_in_progress or is_fixed_strategy:
-
-            if analysis_in_progress:
-                logging.debug('Analysis for model %s is running', wd.name)
-            if is_fixed_strategy:
-                logging.debug('Model %s is set to "FIXED_WORKERS"', wd.name)
-
-            try:
-                desired_replicas = autoscaler_rules.get_desired_worker_count(wd.auto_scaling, model_state)
-
-                if limit is not None and desired_replicas > limit:
-                    desired_replicas = limit
-            except ValueError as e:
-                logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
+            if limit is not None and desired_replicas > limit:
+                desired_replicas = limit
+        except ValueError as e:
+            logging.error('Could not calculate desired replicas count for model %s: %s', wd.id_string(), str(e))
 
         if desired_replicas > 0 and wd.name in self.cleanup_deployments:
-
             if wd.name in self.cleanup_deployments:
                 self.cleanup_deployments.remove(wd.name)
 
         if wd.replicas != desired_replicas:
-
             if desired_replicas > 0:
                 await self.cluster.set_replicas(wd.name, desired_replicas)
             else:
@@ -138,10 +126,8 @@ class AutoScaler:
                     self.cleanup_timer = None
 
                 self.cleanup_deployments.add(wd.name)
-
                 loop = asyncio.get_event_loop()
                 self.cleanup_timer = loop.call_later(20, self._cleanup)
-
                 return wd.replicas
 
         return desired_replicas
@@ -249,7 +235,7 @@ class AutoScaler:
                 analysis_in_progress = state.get('tasks', 0) > 0
                 replicas_limit = self.limit - workers_total if self.limit else None
 
-                workers_created = await self._scale_deployment(wd, analysis_in_progress, state, replicas_limit)
+                workers_created = await self._scale_deployment(wd, state, replicas_limit)
                 workers_total += workers_created
             else:
                 logging.warning('No auto scaling setting found for model %s', wd.id_string())
