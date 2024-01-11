@@ -20,9 +20,31 @@ class TestScalingRules(unittest.TestCase):
             'scaling_strategy': 'FIXED_WORKERS',
             'worker_count_fixed': 5
         }
-        state = {}
+        state = {
+            'analyses': 3
+        }
         desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
 
+        self.assertEqual(5, desired_replicas)
+
+    def test_min_workers_correct(self):
+        as_conf = {
+            'scaling_strategy': 'FIXED_WORKERS',
+            'worker_count_fixed': 5,
+            'worker_count_min': 3
+        }
+        state = {}
+        desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
+        self.assertEqual(3, desired_replicas)
+
+    def test_min_workers__scale_up_correct(self):
+        as_conf = {
+            'scaling_strategy': 'FIXED_WORKERS',
+            'worker_count_fixed': 5,
+            'worker_count_min': 1
+        }
+        state = {'analyses': 1}
+        desired_replicas = autoscaler_rules.get_desired_worker_count(as_conf, state)
         self.assertEqual(5, desired_replicas)
 
     def test_fixed_incorrect_missing_size(self):
@@ -31,7 +53,7 @@ class TestScalingRules(unittest.TestCase):
             'scaling_strategy': 'FIXED_WORKERS'
         }
         state = {}
-        self.assertRaises(ValueError, lambda: autoscaler_rules.get_desired_worker_count(as_conf, state))
+        self.assertRaises(ValueError, lambda: autoscaler_rules.get_desired_worker_count(as_conf, state, never_shutdown_fixed_workers=True))
 
     def test_queue_load_correct(self):
 
