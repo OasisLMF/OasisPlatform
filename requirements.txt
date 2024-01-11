@@ -314,7 +314,9 @@ mysqlclient==2.1.1
 natsort==8.3.1
     # via -r ./requirements-worker.in
 numba==0.56.4
-    # via oasislmf
+    # via
+    #   oasislmf
+    #   ods-tools
 numexpr==2.8.4
     # via oasislmf
 numpy==1.22.4
@@ -328,11 +330,11 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.1
+oasislmf[extra]==1.28.5
     # via
     #   -r ./requirements-worker.in
     #   oasislmf
-ods-tools==3.1.0
+ods-tools==3.1.4
     # via
     #   -r ./requirements-server.in
     #   oasislmf
