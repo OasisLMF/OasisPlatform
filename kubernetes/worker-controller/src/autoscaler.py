@@ -165,7 +165,9 @@ class AutoScaler:
 
             # Check for pending analyses
             if (queue_name not in ['celery', 'task-controller']):
-                queued_count = entry['queue']['queued_count']
+                queued_task_count = entry.get('queue', {}).get('queued_count', 0) # sub-task queued (API DB status)
+                queue_message_count = entry.get('queue', {}).get('queue_message_count', 0) # queue has messages
+                queued_count = max(queued_task_count, queue_message_count)
 
                 if (queued_count > 0) and not analyses_list:
                     # a task is queued, but no analyses are running.
