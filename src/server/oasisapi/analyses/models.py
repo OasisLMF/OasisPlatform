@@ -138,7 +138,6 @@ class AnalysisTaskStatus(models.Model):
         return reverse(f'{override_ns}analysis-task-status-error-log', kwargs={'pk': self.pk}, request=request)
 
 
-
 class Analysis(TimeStampedModel):
     status_choices = Choices(
         ('NEW', 'New'),
@@ -776,8 +775,8 @@ class Analysis(TimeStampedModel):
 
 
 # Not needed, check for both in the controller
-#@receiver(post_save, sender=Analysis)
-#def create_default_scaling_options(sender, instance, **kwargs):
+# @receiver(post_save, sender=Analysis)
+# def create_default_scaling_options(sender, instance, **kwargs):
 #    """ Copy the chunking options set in attached model on creation
 #    """
 #    if instance.chunking_options == None:
@@ -809,6 +808,7 @@ def delete_connected_files(sender, instance, **kwargs):
         obj_ref = getattr(instance, ref)
         if obj_ref:
             obj_ref.delete()
+
 
 @receiver(post_delete, sender=AnalysisTaskStatus)
 def delete_connected_task_logs(sender, instance, **kwargs):

@@ -29,10 +29,10 @@ def activate_model(modeladmin, request, queryset):
 class CatModelAdmin(admin.ModelAdmin):
     actions = [delete_hard, activate_model]
     list_display = [
-        'model_id', 
-        'supplier_id', 
-        'version_id', 
-        'creator', 
+        'model_id',
+        'supplier_id',
+        'version_id',
+        'creator',
         'deleted'
     ]
 
@@ -47,22 +47,23 @@ class CatModelAdmin(admin.ModelAdmin):
 @admin.register(SettingsTemplate)
 class SettingsTemplateAdmin(admin.ModelAdmin):
     list_display = [
-        'file', 
-        'name', 
+        'file',
+        'name',
         'creator'
     ]
 
-    
+
 @admin.register(ModelScalingOptions)
 class ModelScalingOptionsAdmin(admin.ModelAdmin):
     list_display = [
-        'scaling_types', 
-        'scaling_strategy', 
-        'worker_count_fixed', 
-        'worker_count_max', 
-        'worker_count_min', 
+        'scaling_types',
+        'scaling_strategy',
+        'worker_count_fixed',
+        'worker_count_max',
+        'worker_count_min',
         'chunks_per_worker',
     ]
+
 
 @admin.register(ModelChunkingOptions)
 class ModelChunkingTemplateAdmin(admin.ModelAdmin):

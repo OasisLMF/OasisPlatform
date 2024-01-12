@@ -17,7 +17,7 @@ from ..models import Analysis, AnalysisTaskStatus
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
     AnalysisStorageSerializer, AnalysisListSerializer
 from ...analysis_models.models import AnalysisModel
-from ...analysis_models.v2_api.serializers import  ModelChunkingConfigSerializer
+from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
 from ...files.serializers import RelatedFileSerializer
 from ...files.views import handle_related_file, handle_json_data

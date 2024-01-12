@@ -391,7 +391,7 @@ class Controller:
 
     @classmethod
     def _get_inputs_generation_chunks(cls, analysis, loc_lines):
-        #loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
+        # loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
 
         # Get options
         if analysis.chunking_options is not None:
