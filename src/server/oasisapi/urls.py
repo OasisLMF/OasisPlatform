@@ -73,13 +73,14 @@ api_urlpatterns += [
 ]
 
 # API v2 Routes
-api_urlpatterns += [
-    url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
-    url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls', namespace='v2-analyses')),
-    url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
-    url(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-files')),
-    url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
-]
+if not settings.DISABLE_V2_API:
+    api_urlpatterns += [
+        url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
+        url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls', namespace='v2-analyses')),
+        url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
+        url(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-files')),
+        url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
+    ]
 
 urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.URL_SUB_PATH:
