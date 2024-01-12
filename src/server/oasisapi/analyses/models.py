@@ -1,12 +1,11 @@
 from __future__ import absolute_import, print_function
 
 from celery.result import AsyncResult
-from copy import deepcopy
 from django.conf import settings as django_settings
 from django.core.files.base import File
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _

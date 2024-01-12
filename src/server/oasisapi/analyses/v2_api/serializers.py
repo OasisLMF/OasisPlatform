@@ -9,7 +9,6 @@ from ..models import Analysis, AnalysisTaskStatus
 from ...files.models import file_storage_link
 from ...permissions.group_auth import verify_and_get_groups, validate_data_files
 
-from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...schemas.serializers import (
     GroupNameSerializer,
     QueueNameSerializer,
