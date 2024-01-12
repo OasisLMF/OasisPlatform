@@ -1,11 +1,12 @@
 from __future__ import absolute_import, print_function
 
 from celery.result import AsyncResult
+from copy import deepcopy
 from django.conf import settings as django_settings
 from django.core.files.base import File
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -18,7 +19,7 @@ from src.server.oasisapi.celery_app_v1 import v1 as celery_app_v1
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
     TaskStatusMessageAnalysisItem, build_task_status_message
-from ..analysis_models.models import AnalysisModel
+from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
 from ..data_files.models import DataFile
 from ..files.models import RelatedFile, file_storage_link
 from ..portfolios.models import Portfolio
@@ -138,22 +139,6 @@ class AnalysisTaskStatus(models.Model):
 
 
 
-class AnalysisChunkingOptions(models.Model):
-    chunking_types = Choices(
-        ('FIXED_CHUNKS', 'Fixed run partion sizes'),
-        ('DYNAMIC_CHUNKS', 'Distribute runs based on input size'),
-    )
-    lookup_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values),
-                                       choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
-    loss_strategy = models.CharField(max_length=max(len(c) for c in chunking_types._db_values),
-                                     choices=chunking_types, default=chunking_types.FIXED_CHUNKS, editable=True)
-    dynamic_locations_per_lookup = models.PositiveIntegerField(default=10000, null=False)
-    dynamic_events_per_analysis = models.PositiveIntegerField(default=1, null=False)
-    dynamic_chunks_max = models.PositiveIntegerField(default=200, null=False)
-    fixed_analysis_chunks = models.PositiveSmallIntegerField(default=1, null=True)
-    fixed_lookup_chunks = models.PositiveSmallIntegerField(default=1, null=True)
-
-
 class Analysis(TimeStampedModel):
     status_choices = Choices(
         ('NEW', 'New'),
@@ -215,7 +200,7 @@ class Analysis(TimeStampedModel):
     summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                             default=None, related_name='summary_levels_file_analyses')
 
-    chunking_options = models.OneToOneField(AnalysisChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
+    chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
 
     class Meta:
         ordering = ['id']
@@ -789,24 +774,21 @@ class Analysis(TimeStampedModel):
 
 @receiver(post_save, sender=Analysis)
 def create_default_scaling_options(sender, instance, **kwargs):
-    """ Copy the chunking options set in attached model on creation 
+    """ Copy the chunking options set in attached model on creation
     """
-    pass
-    #if instance.chunking_options is None:
-    #    instance.chunking_options = ModelChunkingOptions()
-    #    instance.chunking_options.save()
-    #    instance.save()
-    #if instance.scaling_options is None:
-    #    instance.scaling_options = ModelScalingOptions()
-    #    instance.scaling_options.save()
-    #    instance.save()
+    if instance.chunking_options == None:
+        default_chunking = deepcopy(instance.model.chunking_options)
+        default_chunking.pk = None
+        default_chunking.save()
+        instance.chunking_options = default_chunking
+        instance.save()
 
 
 @receiver(post_delete, sender=Analysis)
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [
+    for_removal = [
         'settings_file',
         'input_file',
         'input_generation_traceback_file',
@@ -817,8 +799,22 @@ def delete_connected_files(sender, instance, **kwargs):
         'lookup_success_file',
         'lookup_validation_file',
         'summary_levels_file',
+        'chunking_options',
     ]
-    for ref in files_for_removal:
-        file_ref = getattr(instance, ref)
-        if file_ref:
-            file_ref.delete()
+    for ref in for_removal:
+        obj_ref = getattr(instance, ref)
+        if obj_ref:
+            obj_ref.delete()
+
+@receiver(post_delete, sender=AnalysisTaskStatus)
+def delete_connected_task_logs(sender, instance, **kwargs):
+    """ Post delete handler to clear out any dangaling log files
+    """
+    for_removal = [
+        'output_log',
+        'error_log',
+    ]
+    for ref in for_removal:
+        obj_ref = getattr(instance, ref)
+        if obj_ref:
+            obj_ref.delete()
