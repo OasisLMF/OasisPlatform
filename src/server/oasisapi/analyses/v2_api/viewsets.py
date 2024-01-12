@@ -17,6 +17,7 @@ from ..models import Analysis, AnalysisTaskStatus
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
     AnalysisStorageSerializer, AnalysisListSerializer
 from ...analysis_models.models import AnalysisModel
+from ...analysis_models.v2_api.serializers import  ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
 from ...files.serializers import RelatedFileSerializer
 from ...files.views import handle_related_file, handle_json_data
@@ -268,6 +269,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
             return AnalysisStorageSerializer
         elif self.action in self.file_action_types_with_settings_file:
             return RelatedFileSerializer
+        elif self.action in ['chunking_configuration']:
+            return ModelChunkingConfigSerializer
         else:
             return Serializer
 
@@ -542,6 +545,19 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         sub_task_queryset = self.get_object().sub_task_statuses.filter(**filters)
         context = {'request': request}
         serializer = AnalysisTaskStatusSerializer(sub_task_queryset, many=True, context=context)
+        return Response(serializer.data)
+
+    @action(methods=['get', 'post'], detail=True)
+    def chunking_configuration(self, request, pk=None, version=None):
+        method = request.method.lower()
+        obj = self.get_object()
+        if method == 'get':
+            serializer = self.get_serializer(obj.chunking_options)
+        else:
+            serializer = self.get_serializer(obj.chunking_options, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            obj.chunking_options = serializer.save()
+            obj.save()
         return Response(serializer.data)
 
 

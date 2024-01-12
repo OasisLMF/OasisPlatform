@@ -303,6 +303,10 @@ class Analysis(TimeStampedModel):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}analysis-sub-task-list', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
+    def get_absolute_chunking_configuration_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-chunking-configuration', kwargs={'pk': self.pk}, request=self._update_ns(request))
+
     def get_groups(self):
         groups = []
         portfolio_groups = self.portfolio.groups.all()
@@ -771,17 +775,17 @@ class Analysis(TimeStampedModel):
         return new_instance
 
 
-
-@receiver(post_save, sender=Analysis)
-def create_default_scaling_options(sender, instance, **kwargs):
-    """ Copy the chunking options set in attached model on creation
-    """
-    if instance.chunking_options == None:
-        default_chunking = deepcopy(instance.model.chunking_options)
-        default_chunking.pk = None
-        default_chunking.save()
-        instance.chunking_options = default_chunking
-        instance.save()
+# Not needed, check for both in the controller
+#@receiver(post_save, sender=Analysis)
+#def create_default_scaling_options(sender, instance, **kwargs):
+#    """ Copy the chunking options set in attached model on creation
+#    """
+#    if instance.chunking_options == None:
+#        default_chunking = deepcopy(instance.model.chunking_options)
+#        default_chunking.pk = None
+#        default_chunking.save()
+#        instance.chunking_options = default_chunking
+#        instance.save()
 
 
 @receiver(post_delete, sender=Analysis)
