@@ -313,11 +313,19 @@ class Analysis(TimeStampedModel):
         return groups
 
     def get_num_events(self):
-        selected_strat = self.model.chunking_options.loss_strategy
-        dynamic_strat = self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
-        if selected_strat != dynamic_strat:
-            return 1
 
+        # Select Chunking opts
+        if self.chunking_options is None
+            chunking_options = self.model.chunking_options
+        else:
+            chunking_options = self.chunking_options
+
+        # Esc if not DYNAMIC
+        DYNAMIC_CHUNKS = chunking_options.chunking_types.DYNAMIC_CHUNKS
+        if chunking_options.loss_strategy != DYNAMIC_CHUNKS:
+            return None
+
+        # Return num of selected User events from settings
         analysis_settings = self.settings_file.read_json()
         model_settings = self.model.resource_file.read_json()
         user_selected_events = analysis_settings.get('event_ids', [])
@@ -325,6 +333,7 @@ class Analysis(TimeStampedModel):
         if len(user_selected_events) > 1:
             return len(user_selected_events)
 
+        # Read event_set_size for model settings
         event_set_options = model_settings.get('model_settings', {}).get('event_set').get('options', [])
         event_set_sizes = {e['id']: e['number_of_events'] for e in event_set_options if 'number_of_events' in e}
         if selected_event_set not in event_set_sizes:
@@ -418,8 +427,15 @@ class Analysis(TimeStampedModel):
         if not self.input_file:
             errors['input_file'] = ['Must not be null']
 
+
+        # Get chunking options
+        if self.chunking_options is None
+            chunking_options = self.model.chunking_options
+        else:
+            chunking_options = self.chunking_options
+
         # Valadation for dyanmic loss chunks
-        if self.model.chunking_options.loss_strategy == self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS:
+        if chunking_options.loss_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
             if not self.model.resource_file:
                 errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
             elif self.settings_file:
