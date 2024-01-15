@@ -550,18 +550,18 @@ class Controller:
             chunking_options = analysis.model.chunking_options  # Use defaults set on model
 
         # fetch number of event chunks
+        logging.info(f'loss_strategy: {chunking_options.loss_strategy}')
         if chunking_options.loss_strategy == 'FIXED_CHUNKS':
             num_chunks = chunking_options.fixed_analysis_chunks
         elif chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
             events_per_chunk = chunking_options.dynamic_events_per_analysis
             num_chunks = min(ceil(events_total / events_per_chunk), chunking_options.dynamic_chunks_max)
 
-        logging.info(f'loss_strategy: {chunking_options.loss_strategy}')
-        logging.info(f'dynamic_events_per_analysis: {chunking_options.dynamic_events_per_analysis}')
-        logging.info(f'events_total: {events_total}')
-        logging.info(f'events_per_chunk: {events_per_chunk}')
-        logging.info(f'dynamic_chunks_max: {chunking_options.dynamic_chunks_max}')
-        logging.info(f'ceil(events_total / events_per_chunk): {ceil(events_total / events_per_chunk)}')
+            logging.info(f'dynamic_events_per_analysis: {chunking_options.dynamic_events_per_analysis}')
+            logging.info(f'events_total: {events_total}')
+            logging.info(f'events_per_chunk: {events_per_chunk}')
+            logging.info(f'dynamic_chunks_max: {chunking_options.dynamic_chunks_max}')
+            logging.info(f'ceil(events_total / events_per_chunk): {ceil(events_total / events_per_chunk)}')
 
         return num_chunks
 
