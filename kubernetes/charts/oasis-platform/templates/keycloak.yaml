@@ -94,8 +94,6 @@ spec:
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
-          securityContext:
-            readOnlyRootFilesystem: true
           args: [
             "start-dev", 
             "--import-realm",
@@ -173,10 +171,12 @@ spec:
             - name: realm-config
               mountPath: /opt/keycloak/data/import/oasis-realm.json
               subPath: oasis
+            - name: keycloak-temp
+              mountPath: /tmp
 
       volumes:
         - name: realm-config
-          #readOnly: true
+          readOnly: true
           configMap:
             name: {{ $realmSecretName }}
 {{- if (.Values.azure).secretProvider }}
@@ -186,4 +186,6 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: "azure-secret-provider"
-{{- end }}
+{{- end }}          
+        - name: keycloak-temp
+          emptyDir: {}

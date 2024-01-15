@@ -6,6 +6,7 @@ kind: ServiceAccount
 metadata:
   namespace: {{ .Release.Namespace }}
   name: {{ $workerControllerServiceAccountName }}
+automountServiceAccountToken: false
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -50,15 +51,15 @@ spec:
       annotations:
         checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisWebsocket | sha256sum }}
     spec:
-      #automountServiceAccountToken: false
+      automountServiceAccountToken: true
       {{- include "h.affinity" . | nindent 6 }}
       serviceAccountName: {{ $workerControllerServiceAccountName }}
       initContainers:
       {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisWebsocket.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.worker_controller.image }}:{{ .Values.images.oasis.worker_controller.version }}
-        securityContext:
-          readOnlyRootFilesystem: true
+          securityContext:
+            readOnlyRootFilesystem: true
           imagePullPolicy: {{ .Values.images.oasis.worker_controller.imagePullPolicy }}
           name: main
           env:
