@@ -156,6 +156,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'task_finished': None,
                     'groups': [],
                     'analysis_chunks': None,
+                    'chunking_configuration': 'http://testserver/v2/analyses/1/chunking_configuration/',
                     'lookup_chunks': None,
                     'priority': 4,
                 }, response.json)
@@ -233,6 +234,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'task_started': None,
                     'task_finished': None,
                     'analysis_chunks': None,
+                    'chunking_configuration': 'http://testserver/v2/analyses/1/chunking_configuration/',
                     'lookup_chunks': None,
                     'priority': 4,
                 }, response.json)

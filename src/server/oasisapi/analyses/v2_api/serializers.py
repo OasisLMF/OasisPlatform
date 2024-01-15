@@ -9,7 +9,6 @@ from ..models import Analysis, AnalysisTaskStatus
 from ...files.models import file_storage_link
 from ...permissions.group_auth import verify_and_get_groups, validate_data_files
 
-
 from ...schemas.serializers import (
     GroupNameSerializer,
     QueueNameSerializer,
@@ -95,6 +94,7 @@ class AnalysisListSerializer(serializers.Serializer):
     run_traceback_file = serializers.SerializerMethodField(read_only=True)
     run_log_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
+    chunking_configuration = serializers.SerializerMethodField(read_only=True)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_input_file(self, instance):
@@ -156,6 +156,11 @@ class AnalysisListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_chunking_configuration(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_chunking_configuration_url(request=request)
+
     @swagger_serializer_method(serializer_or_field=GroupNameSerializer)
     def get_groups(self, instance):
         return instance.get_groups()
@@ -206,6 +211,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     run_traceback_file = serializers.SerializerMethodField()
     run_log_file = serializers.SerializerMethodField()
     storage_links = serializers.SerializerMethodField()
+    chunking_configuration = serializers.SerializerMethodField()
     ns = 'v2-analyses'
 
     # Groups - inherited from portfolio
@@ -244,6 +250,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'run_traceback_file',
             'run_log_file',
             'storage_links',
+            'chunking_configuration',
             'lookup_chunks',
             'analysis_chunks',
             'sub_task_count',
@@ -313,6 +320,11 @@ class AnalysisSerializer(serializers.ModelSerializer):
     def get_storage_links(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request, namespace=self.ns)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_chunking_configuration(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_chunking_configuration_url(request=request, namespace=self.ns)
 
     @swagger_serializer_method(serializer_or_field=GroupNameSerializer)
     def get_groups(self, instance):

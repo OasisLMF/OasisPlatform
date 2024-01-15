@@ -25,10 +25,10 @@ if [[ -z $OASIS_MODEL_DATA_DIR ]]; then
 fi
 
 ## init minikube
-minikube delete
-minikube config set cpus 12
-minikube config set memory 16000
-minikube start
+# minikube delete
+# minikube config set cpus 12
+# minikube config set memory 16000
+# minikube start
 
 # build images
 eval $(minikube docker-env)
