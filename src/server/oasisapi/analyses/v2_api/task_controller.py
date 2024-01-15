@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 import logging
 
+
 class TaskParams:
     def __init__(self, *args, **kwargs):
         self.args = args

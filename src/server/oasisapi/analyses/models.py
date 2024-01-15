@@ -315,7 +315,7 @@ class Analysis(TimeStampedModel):
     def get_num_events(self):
 
         # Select Chunking opts
-        if self.chunking_options is None
+        if self.chunking_options is None:
             chunking_options = self.model.chunking_options
         else:
             chunking_options = self.chunking_options
@@ -427,9 +427,8 @@ class Analysis(TimeStampedModel):
         if not self.input_file:
             errors['input_file'] = ['Must not be null']
 
-
         # Get chunking options
-        if self.chunking_options is None
+        if self.chunking_options is None:
             chunking_options = self.model.chunking_options
         else:
             chunking_options = self.chunking_options
@@ -787,19 +786,6 @@ class Analysis(TimeStampedModel):
         new_instance.lookup_validation_file = None
         new_instance.summary_levels_file = None
         return new_instance
-
-
-# Not needed, check for both in the controller
-# @receiver(post_save, sender=Analysis)
-# def create_default_scaling_options(sender, instance, **kwargs):
-#    """ Copy the chunking options set in attached model on creation
-#    """
-#    if instance.chunking_options == None:
-#        default_chunking = deepcopy(instance.model.chunking_options)
-#        default_chunking.pk = None
-#        default_chunking.save()
-#        instance.chunking_options = default_chunking
-#        instance.save()
 
 
 @receiver(post_delete, sender=Analysis)
