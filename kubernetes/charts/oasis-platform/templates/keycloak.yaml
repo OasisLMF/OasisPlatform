@@ -94,6 +94,8 @@ spec:
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
+          securityContext:
+            readOnlyRootfilesystem: true
           args: [
             "start-dev", 
             "--import-realm",
@@ -172,7 +174,7 @@ spec:
               mountPath: /opt/keycloak/data/import/oasis-realm.json
               subPath: oasis
             - name: keycloak-temp
-              mountPath: /tmp
+              mountPath: /opt/keycloak/data/tmp
 
       volumes:
         - name: realm-config
