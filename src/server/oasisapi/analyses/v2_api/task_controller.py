@@ -14,8 +14,6 @@ from ...files.models import file_storage_link
 if TYPE_CHECKING:
     from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
 
-import logging
-
 
 class TaskParams:
     def __init__(self, *args, **kwargs):
