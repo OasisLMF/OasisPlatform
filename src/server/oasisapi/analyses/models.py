@@ -18,7 +18,7 @@ from src.server.oasisapi.celery_app_v1 import v1 as celery_app_v1
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
     TaskStatusMessageAnalysisItem, build_task_status_message
-from ..analysis_models.models import AnalysisModel
+from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
 from ..data_files.models import DataFile
 from ..files.models import RelatedFile, file_storage_link
 from ..portfolios.models import Portfolio
@@ -198,6 +198,8 @@ class Analysis(TimeStampedModel):
     summary_levels_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                             default=None, related_name='summary_levels_file_analyses')
 
+    chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
+
     class Meta:
         ordering = ['id']
         verbose_name_plural = 'analyses'
@@ -299,6 +301,10 @@ class Analysis(TimeStampedModel):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}analysis-sub-task-list', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
+    def get_absolute_chunking_configuration_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-chunking-configuration', kwargs={'pk': self.pk}, request=self._update_ns(request))
+
     def get_groups(self):
         groups = []
         portfolio_groups = self.portfolio.groups.all()
@@ -307,11 +313,19 @@ class Analysis(TimeStampedModel):
         return groups
 
     def get_num_events(self):
-        selected_strat = self.model.chunking_options.loss_strategy
-        dynamic_strat = self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
-        if selected_strat != dynamic_strat:
-            return 1
 
+        # Select Chunking opts
+        if self.chunking_options is None:
+            chunking_options = self.model.chunking_options
+        else:
+            chunking_options = self.chunking_options
+
+        # Esc if not DYNAMIC
+        DYNAMIC_CHUNKS = chunking_options.chunking_types.DYNAMIC_CHUNKS
+        if chunking_options.loss_strategy != DYNAMIC_CHUNKS:
+            return None
+
+        # Return num of selected User events from settings
         analysis_settings = self.settings_file.read_json()
         model_settings = self.model.resource_file.read_json()
         user_selected_events = analysis_settings.get('event_ids', [])
@@ -319,6 +333,7 @@ class Analysis(TimeStampedModel):
         if len(user_selected_events) > 1:
             return len(user_selected_events)
 
+        # Read event_set_size for model settings
         event_set_options = model_settings.get('model_settings', {}).get('event_set').get('options', [])
         event_set_sizes = {e['id']: e['number_of_events'] for e in event_set_options if 'number_of_events' in e}
         if selected_event_set not in event_set_sizes:
@@ -412,8 +427,14 @@ class Analysis(TimeStampedModel):
         if not self.input_file:
             errors['input_file'] = ['Must not be null']
 
+        # Get chunking options
+        if self.chunking_options is None:
+            chunking_options = self.model.chunking_options
+        else:
+            chunking_options = self.chunking_options
+
         # Valadation for dyanmic loss chunks
-        if self.model.chunking_options.loss_strategy == self.model.chunking_options.chunking_types.DYNAMIC_CHUNKS:
+        if chunking_options.loss_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
             if not self.model.resource_file:
                 errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
             elif self.settings_file:
@@ -771,7 +792,7 @@ class Analysis(TimeStampedModel):
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [
+    for_removal = [
         'settings_file',
         'input_file',
         'input_generation_traceback_file',
@@ -782,8 +803,23 @@ def delete_connected_files(sender, instance, **kwargs):
         'lookup_success_file',
         'lookup_validation_file',
         'summary_levels_file',
+        'chunking_options',
     ]
-    for ref in files_for_removal:
-        file_ref = getattr(instance, ref)
-        if file_ref:
-            file_ref.delete()
+    for ref in for_removal:
+        obj_ref = getattr(instance, ref)
+        if obj_ref:
+            obj_ref.delete()
+
+
+@receiver(post_delete, sender=AnalysisTaskStatus)
+def delete_connected_task_logs(sender, instance, **kwargs):
+    """ Post delete handler to clear out any dangaling log files
+    """
+    for_removal = [
+        'output_log',
+        'error_log',
+    ]
+    for ref in for_removal:
+        obj_ref = getattr(instance, ref)
+        if obj_ref:
+            obj_ref.delete()

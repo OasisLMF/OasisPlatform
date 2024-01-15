@@ -369,11 +369,7 @@ class Controller:
         from src.server.oasisapi.analyses.models import Analysis
 
         # fetch the number of lookup chunks and store in analysis
-        if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
-            num_chunks = min(analysis.model.chunking_options.fixed_lookup_chunks, loc_lines)
-        elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
-            loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
-            num_chunks = min(ceil(loc_lines / loc_lines_per_chunk), analysis.model.chunking_options.dynamic_chunks_max)
+        num_chunks = cls._get_inputs_generation_chunks(analysis, loc_lines)
 
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
@@ -394,13 +390,22 @@ class Controller:
         return chain
 
     @classmethod
-    def _get_inputs_generation_chunks(cls, analysis):
-        if analysis.model.chunking_options.lookup_strategy == 'FIXED_CHUNKS':
-            num_chunks = analysis.model.chunking_options.fixed_lookup_chunks
-        elif analysis.model.chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
-            loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
-            loc_lines_per_chunk = analysis.model.chunking_options.dynamic_locations_per_lookup
-            num_chunks = ceil(loc_lines / loc_lines_per_chunk)
+    def _get_inputs_generation_chunks(cls, analysis, loc_lines):
+        # loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
+
+        # Get options
+        if analysis.chunking_options is not None:
+            chunking_options = analysis.chunking_options        # Use options from Analysis
+        else:
+            chunking_options = analysis.model.chunking_options  # Use defaults set on model
+
+        # Set chunks
+        if chunking_options.lookup_strategy == 'FIXED_CHUNKS':
+            num_chunks = min(chunking_options.fixed_lookup_chunks, loc_lines)
+        elif chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
+            loc_lines_per_chunk = chunking_options.dynamic_locations_per_lookup
+            num_chunks = min(ceil(loc_lines / loc_lines_per_chunk), chunking_options.dynamic_chunks_max)
+
         return num_chunks
 
     @classmethod
@@ -512,13 +517,7 @@ class Controller:
         """
         from src.server.oasisapi.analyses.models import Analysis
 
-        # fetch number of event chunks
-        if analysis.model.chunking_options.loss_strategy == 'FIXED_CHUNKS':
-            num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
-        elif analysis.model.chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
-            events_per_chunk = analysis.model.chunking_options.dynamic_events_per_analysis
-            num_chunks = min(ceil(events_total / events_per_chunk), analysis.model.chunking_options.dynamic_chunks_max)
-
+        num_chunks = cls._get_loss_generation_chunks(analysis, events_total)
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
 
@@ -538,11 +537,20 @@ class Controller:
         return chain
 
     @classmethod
-    def _get_loss_generation_chunks(cls, analysis):
-        if analysis.model.chunking_options.loss_strategy == 'FIXED_CHUNKS':
-            num_chunks = analysis.model.chunking_options.fixed_analysis_chunks
-        elif analysis.model.chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
-            raise notimplementederror("FEATURE NOT AVALIBLE -- need event set size from worker")
+    def _get_loss_generation_chunks(cls, analysis, events_total):
+        # Get options
+        if analysis.chunking_options is not None:
+            chunking_options = analysis.chunking_options        # Use options from Analysis
+        else:
+            chunking_options = analysis.model.chunking_options  # Use defaults set on model
+
+        # fetch number of event chunks
+        if chunking_options.loss_strategy == 'FIXED_CHUNKS':
+            num_chunks = chunking_options.fixed_analysis_chunks
+        elif chunking_options.loss_strategy == 'DYNAMIC_CHUNKS':
+            events_per_chunk = chunking_options.dynamic_events_per_analysis
+            num_chunks = min(ceil(events_total / events_per_chunk), chunking_options.dynamic_chunks_max)
+
         return num_chunks
 
     @classmethod

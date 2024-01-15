@@ -1005,18 +1005,9 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
 @app.task(bind=True, name='generate_losses_chunk', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None, **kwargs):
-
-    if num_chunks == 1:
-        # Run multiple ktools pipes (based on cpu cores)
-        current_chunk_id = None
-        max_chunk_id = -1
-        work_dir = 'work'
-
-    else:
-        # Run a single ktools pipe
-        current_chunk_id = chunk_idx + 1
-        max_chunk_id = num_chunks
-        work_dir = f'{current_chunk_id}.work'
+    current_chunk_id = chunk_idx + 1
+    max_chunk_id = num_chunks
+    work_dir = f'{current_chunk_id}.work'
 
     chunk_params = {
         **params,
