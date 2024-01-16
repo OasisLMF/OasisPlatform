@@ -990,6 +990,12 @@ def prepare_losses_generation_params(
     params = OasisManager()._params_generate_losses(**run_params)
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
+
+    # needed incase input_data is missing on another node
+    input_tar_generate_and_run = run_params.get('input-location_generate-and-run')
+    if input_tar_generate_and_run:
+        params['input-location_generate-and-run'] = input_tar_generate_and_run
+
     return params
 
 
