@@ -554,6 +554,7 @@ class Analysis(TimeStampedModel):
         self.lookup_validation_file = None
         self.summary_levels_file = None
         self.input_generation_traceback_file_id = None
+        self.input_file = None
 
         task = self.v2_start_input_and_loss_generation_signature
         task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
@@ -640,6 +641,7 @@ class Analysis(TimeStampedModel):
         self.lookup_validation_file = None
         self.summary_levels_file = None
         self.input_generation_traceback_file_id = None
+        self.input_file = None
         self.save()
 
         if version.startswith('v1'):
