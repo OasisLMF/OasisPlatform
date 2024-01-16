@@ -18,7 +18,7 @@ from ods_tools.oed.exposure import OedExposure
 class Portfolio(TimeStampedModel):
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
-    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+    groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
 
     accounts_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                       default=None, related_name='accounts_file_portfolios')
