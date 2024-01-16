@@ -836,7 +836,7 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
             filestore.delete_file(params.get('pre_scope_file'))
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
-    return params
+    return {}
 
 
 # --- loss generation tasks ------------------------------------------------ #
