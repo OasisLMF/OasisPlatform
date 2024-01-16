@@ -530,6 +530,21 @@ class Analysis(TimeStampedModel):
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
 
+        # get loc lines (replace with func?)
+        try:
+            loc_lines = self.portfolio.location_file_len()
+        except Exception as e:
+            raise ValidationError(f"Failed to read location file size for chunking: {e}")
+        if not isinstance(loc_lines, int):
+            errors['portfolio'] = [
+                f'Failed to read "location_file" size, content_type={self.portfolio.location_file.content_type} might not be supported']
+        else:
+            if loc_lines < 1:
+                errors['portfolio'] = ['"location_file" must at least one row']
+
+        # get events
+        events_total = self.get_num_events()
+
         # Raise for error
         self.raise_validate_errors(errors)
 
@@ -548,7 +563,7 @@ class Analysis(TimeStampedModel):
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
         self.run_mode = self.run_mode_choices.V2
-        task_id = task.apply_async(args=[self.pk, initiator.pk], priority=self.priority).id
+        task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines, events_total], priority=self.priority).id
 
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
