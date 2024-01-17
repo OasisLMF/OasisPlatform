@@ -529,16 +529,12 @@ class Analysis(TimeStampedModel):
             errors['settings_file'] = ['Must not be null']
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
-
-        # get loc lines (replace with func?)
-        try:
-            loc_lines = self.portfolio.location_file_len()
-        except Exception as e:
-            raise ValidationError(f"Failed to read location file size for chunking: {e}")
-        if not isinstance(loc_lines, int):
-            errors['portfolio'] = [
-                f'Failed to read "location_file" size, content_type={self.portfolio.location_file.content_type} might not be supported']
         else:
+            # get loc lines
+            try:
+                loc_lines = self.portfolio.location_file_len()
+            except Exception as e:
+                errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
             if loc_lines < 1:
                 errors['portfolio'] = ['"location_file" must at least one row']
 
@@ -624,14 +620,10 @@ class Analysis(TimeStampedModel):
             try:
                 loc_lines = self.portfolio.location_file_len()
             except Exception as e:
-                raise ValidationError(f"Failed to read location file size for chunking: {e}")
-            if not isinstance(loc_lines, int):
-                errors['portfolio'] = [
-                    f'Failed to read "location_file" size, content_type={self.portfolio.location_file.content_type} might not be supported']
+                errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
+            if loc_lines < 1:
+                errors['portfolio'] = ['"location_file" must at least one row']
 
-            else:
-                if loc_lines < 1:
-                    errors['portfolio'] = ['"location_file" must at least one row']
         if errors:
             raise ValidationError(errors)
 
