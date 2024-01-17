@@ -10,33 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        #migrations.RemoveField(
-        #    model_name='analysismodel',
-        #    name='ver_ktools',
-        #),
-        #migrations.RemoveField(
-        #    model_name='analysismodel',
-        #    name='ver_oasislmf',
-        #),
-        #migrations.RemoveField(
-        #    model_name='analysismodel',
-        #    name='ver_platform',
-        #),
-        #migrations.AddField(
-        #    model_name='analysismodel',
-        #    name='v1_ver_ktools',
-        #    field=models.CharField(default=None, help_text='V1 worker, ktools version.', max_length=255, null=True),
-        #),
-        #migrations.AddField(
-        #    model_name='analysismodel',
-        #    name='v1_ver_oasislmf',
-        #    field=models.CharField(default=None, help_text='V1 worker, oasislmf version.', max_length=255, null=True),
-        #),
-        #migrations.AddField(
-        #    model_name='analysismodel',
-        #    name='v1_ver_platform',
-        #    field=models.CharField(default=None, help_text='V1 worker, platform version.', max_length=255, null=True),
-        #),
         migrations.RenameField(
             model_name='analysismodel',
             old_name='ver_ktools',
