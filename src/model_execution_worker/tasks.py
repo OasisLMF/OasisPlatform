@@ -187,9 +187,10 @@ def register_worker(sender, **k):
     logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
 
-    # Check for 'DISABLE_WORKER_REG' before sending task to API
+    # Check for 'DISABLE_WORKER_REG' and only Post version info (skip model settings) 
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
-        logging.info(('Worker auto-registration DISABLED: to enable:\n'
+        m_settings = None
+        logging.info(('Worker auto-registration settings DISABLED: to enable:\n'
                       '  set DISABLE_WORKER_REG=False in conf.ini or\n'
                       '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
     else:
@@ -197,11 +198,12 @@ def register_worker(sender, **k):
         m_settings = get_model_settings()
         logging.info('settings: {}'.format(m_settings))
 
-        signature(
-            'run_register_worker',
-            args=(m_supplier, m_name, m_id, m_settings, m_version),
-            queue='celery'
-        ).delay()
+    # Send Worker Info 
+    signature(
+        'run_register_worker',
+        args=(m_supplier, m_name, m_id, m_settings, m_version),
+        queue='celery'
+    ).delay()
 
     # Required ENV
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
