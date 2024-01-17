@@ -974,6 +974,7 @@ def prepare_losses_generation_params(
     loss_path_vars = [
         'model_data_dir',
         'model_settings_json',
+        'post_analysis_module',
     ]
 
     for path_val in loss_path_vars:
@@ -987,7 +988,10 @@ def prepare_losses_generation_params(
         else:
             run_params[path_val] = None
 
-    params = OasisManager()._params_generate_losses(**run_params)
+    gen_losses_params = OasisManager()._params_generate_losses(**run_params)
+    post_hook_params = OasisManager()._params_post_analysis(**run_params)
+    params = {**gen_losses_params, **post_hook_params}
+
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
 
@@ -1057,8 +1061,10 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
             merge_dirs(d, abs_work_dir)
 
     OasisManager().generate_losses_output(**res)
-    res['bash_trace'] = ""
+    if res.get('post_analysis_module', None):
+        OasisManager().post_analysis(**res)
 
+    res['bash_trace'] = ""
     return {
         **res,
         'output_location': filestore.put(os.path.join(res['model_run_dir'], 'output'), arcname='output'),
