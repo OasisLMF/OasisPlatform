@@ -133,12 +133,12 @@ class AnalysisModel(TimeStampedModel):
     data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
     template_files = models.ManyToManyField(SettingsTemplate, blank=True, related_name='analyses_model_settings_template')
 
-    # V1 worker version info 
+    # V1 worker version info
     v1_ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('V1 worker, ktools version.'))
     v1_ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('V1 worker, oasislmf version.'))
     v1_ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('V1 worker, platform version.'))
 
-    ## V2 worker version info 
+    # V2 worker version info
     v2_ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('V2 worker, ktools version.'))
     v2_ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('V2 worker, oasislmf version.'))
     v2_ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('V2 worker, platform version.'))

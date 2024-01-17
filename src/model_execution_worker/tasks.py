@@ -187,7 +187,7 @@ def register_worker(sender, **k):
     logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logging.info('versions: {}'.format(m_version))
 
-    # Check for 'DISABLE_WORKER_REG' and only Post version info (skip model settings) 
+    # Check for 'DISABLE_WORKER_REG' and only Post version info (skip model settings)
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
         m_settings = None
         logging.info(('Worker auto-registration settings DISABLED: to enable:\n'
@@ -198,7 +198,7 @@ def register_worker(sender, **k):
         m_settings = get_model_settings()
         logging.info('settings: {}'.format(m_settings))
 
-    # Send Worker Info 
+    # Send Worker Info
     signature(
         'run_register_worker',
         args=(m_supplier, m_name, m_id, m_settings, m_version),
