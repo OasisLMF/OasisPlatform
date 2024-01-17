@@ -129,7 +129,7 @@ class AnalysisModel(TimeStampedModel):
     version_id = models.CharField(max_length=255, help_text=_('The version ID for the model.'))
     resource_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, null=True, default=None, related_name='analysis_model_resource_file')
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+    groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
     data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
     template_files = models.ManyToManyField(SettingsTemplate, blank=True, related_name='analyses_model_settings_template')
     ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))

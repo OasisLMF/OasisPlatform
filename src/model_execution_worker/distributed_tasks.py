@@ -836,7 +836,7 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
             filestore.delete_file(params.get('pre_scope_file'))
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
-    return params
+    return {'input-location_generate-and-run': params.get('output_location')}
 
 
 # --- loss generation tasks ------------------------------------------------ #
@@ -904,7 +904,11 @@ def loss_generation_task(fn):
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], 'user-data'))
         params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
+        # case for 'generate_and_run'
+        if params.get('input-location_generate-and-run'):
+            kwargs['input_location'] = params.get('input-location_generate-and-run')
         input_location = kwargs.get('input_location')
+
         if input_location:
             maybe_extract_tar(
                 input_location,
@@ -986,6 +990,12 @@ def prepare_losses_generation_params(
     params = OasisManager()._params_generate_losses(**run_params)
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
+
+    # needed incase input_data is missing on another node
+    input_tar_generate_and_run = run_params.get('input-location_generate-and-run')
+    if input_tar_generate_and_run:
+        params['input-location_generate-and-run'] = input_tar_generate_and_run
+
     return params
 
 

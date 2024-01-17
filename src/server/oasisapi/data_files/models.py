@@ -33,7 +33,7 @@ class DataFile(TimeStampedModel):
         default=None,
         related_name="content_data_file"
     )
-    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+    groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
 
     class Meta:
         ordering = ['id']

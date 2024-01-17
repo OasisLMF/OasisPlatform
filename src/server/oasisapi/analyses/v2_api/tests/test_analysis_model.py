@@ -182,10 +182,12 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
 
                 with patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
                     analysis.generate_and_run(initiator, version='v2')
+                    loc_lines = 4
+                    events = None
 
                     task_sig.on_error.assert_called_once()
                     task_sig.apply_async.assert_called_with(
-                        args=[analysis.pk, initiator.pk],
+                        args=[analysis.pk, initiator.pk, loc_lines, events],
                         priority=4
                     )
 

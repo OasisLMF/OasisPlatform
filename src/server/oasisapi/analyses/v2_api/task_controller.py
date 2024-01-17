@@ -554,7 +554,7 @@ class Controller:
         return num_chunks
 
     @classmethod
-    def generate_input_and_losses(cls, analysis: 'Analysis', initiator: User):
+    def generate_input_and_losses(cls, analysis: 'Analysis', initiator: User, loc_lines: int, events_total: int):
         """
         Starts the input generation chain
 
@@ -575,9 +575,9 @@ class Controller:
         from src.server.oasisapi.analyses.models import Analysis
 
         # fetch the number of lookup chunks and store in analysis
-        input_num_chunks = cls._get_inputs_generation_chunks(analysis)
+        input_num_chunks = cls._get_inputs_generation_chunks(analysis, loc_lines)
         # fetch number of event chunks
-        loss_num_chunks = cls._get_loss_generation_chunks(analysis)
+        loss_num_chunks = cls._get_loss_generation_chunks(analysis, events_total)
 
         input_run_data_uuid = uuid.uuid4().hex
         loss_run_data_uuid = uuid.uuid4().hex
