@@ -188,7 +188,7 @@ def register_worker(sender, **k):
     if settings.getboolean('worker', 'DISABLE_WORKER_SETTINGS_REG', fallback=False):
         m_settings = None
         logging.info(('Worker settings registration DISABLED: to enable:\n'
-                      '  set DISABLE_WORKER_SETTINGS_REG=False in conf.ini or\n' 
+                      '  set DISABLE_WORKER_SETTINGS_REG=False in conf.ini or\n'
                       '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
     else:
         m_settings = get_model_settings()
