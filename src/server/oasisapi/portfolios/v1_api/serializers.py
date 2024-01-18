@@ -294,7 +294,6 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             else:
                 return self.inferr_content_type(stored_filename)
 
-
     def update(self, instance, validated_data):
         files_for_removal = list()
 
