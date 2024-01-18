@@ -245,23 +245,28 @@ def register_worker(sender, **k):
     logging.info('settings: {}'.format(m_settings))
     logging.info('oasislmf config: {}'.format(m_conf))
 
-    # Check for 'DISABLE_WORKER_REG' and only Post version info (skip model settings)
-    if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
+    # skip adding model settings on register
+    if settings.getboolean('worker', 'DISABLE_WORKER_SETTINGS_REG', fallback=False):
         m_settings = None
-        logging.info(('Worker auto-registration settings DISABLED: to enable:\n'
-                      '  set DISABLE_WORKER_REG=False in conf.ini or\n'
+        logging.info(('Worker settings registration DISABLED: to enable:\n'
+                      '  set DISABLE_WORKER_SETTINGS_REG=False in conf.ini or\n'
                       '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
     else:
-        logging.info('Auto registrating with the Oasis API:')
         m_settings = get_model_settings()
         logging.info('settings: {}'.format(m_settings))
 
     # Send Worker Info
-    signature(
-        'run_register_worker_v2',
-        args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
-        queue='celery-v2',
-    ).delay()
+    if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
+        logging.info(('Worker auto-registration settings DISABLED: to enable:\n'
+                      '  set DISABLE_WORKER_REG=False in conf.ini or\n'
+                      '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
+    else:    
+        logging.info('Auto registrating with the Oasis API:')
+        signature(
+            'run_register_worker_v2',
+            args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
+            queue='celery-v2',
+        ).delay()
 
     # Required ENV
     logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
