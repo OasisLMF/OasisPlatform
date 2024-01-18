@@ -180,7 +180,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
       storage_suffix: '-all-checks'
 
-  storage_s3:
+  storage_s3_v1:
     name: Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
@@ -193,7 +193,23 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v1'
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      storage_suffix: '_s3'
+
+  storage_s3_v2:
+    name: Storage Compatibility (S3)
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    with:
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: ${{ needs.setup.outputs.build_worker_img }}
+      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      worker_api_ver: 'v2'
+      debug_mode: 1
+      pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '_s3'
 
   worker_debian:
