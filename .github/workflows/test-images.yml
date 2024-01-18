@@ -181,7 +181,7 @@ jobs:
       storage_suffix: '-all-checks'
 
   storage_s3_v1:
-    name: Storage Compatibility (S3)
+    name: V1 Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -197,7 +197,7 @@ jobs:
       storage_suffix: '_s3'
 
   storage_s3_v2:
-    name: Storage Compatibility (S3)
+    name: V2 Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
