@@ -323,11 +323,11 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             elif hasattr(default_storage, 'azure_container'):
                 # https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-copy?tabs=python
                 new_file_name = default_storage.get_alternative_name(old_file_name, '')
-                new_blobname = path.basename(new_file_name)
+                new_blobname = '/'.join([default_storage.location, path.basename(new_file_name)])
 
                 # Copies a blob asynchronously.
                 source_blob = default_storage.client.get_blob_client(old_file_name)
-                dest_blob = default_storage.client.get_blob_client(new_file_name)
+                dest_blob = default_storage.client.get_blob_client(new_blobname)
 
                 try:
                     lease = BlobLeaseClient(source_blob)
@@ -340,9 +340,9 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     lease.break_lease()
                     raise e
 
-                stored_blob = default_storage.open(new_blobname)
+                stored_blob = default_storage.open(new_file_name)
                 new_related_file = RelatedFile.objects.create(
-                    file=File(stored_blob, name=new_blobname),
+                    file=File(stored_blob, name=new_file_name),
                     filename=fname,
                     content_type=content_type,
                     creator=self.context['request'].user,

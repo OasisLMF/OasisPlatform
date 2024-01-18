@@ -324,13 +324,14 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
         files_for_removal = list()
         user = self.context['request'].user
         for field in validated_data:
-            content_type = self.get_content_type(validated_data[field])
+            old_file_name = validated_data[field]
+            content_type = self.get_content_type(old_file_name)
+            fname = path.basename(old_file_name)
+            new_file_name = default_storage.get_alternative_name(fname, '')
 
             # S3 storage - File copy needed
             if hasattr(default_storage, 'bucket'):
-                fname = path.basename(validated_data[field])
                 new_file = ContentFile(b'')
-                new_file.name = default_storage.get_alternative_name(fname, '')
                 new_related_file = RelatedFile.objects.create(
                     file=new_file,
                     filename=fname,
@@ -347,12 +348,11 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
 
             elif hasattr(default_storage, 'azure_container'):
                 # https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-copy?tabs=python
-                fname = path.basename(validated_data[field])
-                new_file_name = default_storage.get_alternative_name(validated_data[field], '')
+                new_file_name = default_storage.get_alternative_name(old_file_name, '')
                 new_blobname = '/'.join([default_storage.location, path.basename(new_file_name)])
 
                 # Copies a blob asynchronously.
-                source_blob = default_storage.client.get_blob_client(validated_data[field])
+                source_blob = default_storage.client.get_blob_client(old_file_name)
                 dest_blob = default_storage.client.get_blob_client(new_blobname)
 
                 try:
@@ -371,17 +371,17 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     file=File(stored_blob, name=new_file_name),
                     filename=fname,
                     content_type=content_type,
-                    creator=self.context['request'].user,
+                    creator=user,
                     store_as_filename=True,
                 )
 
             # Shared-fs
             else:
-                stored_file = default_storage.open(validated_data[field])
-                new_file = File(stored_file, name=validated_data[field])
+                stored_file = default_storage.open(old_file_name)
+                new_file = File(stored_file, name=new_file_name)
                 new_related_file = RelatedFile.objects.create(
                     file=new_file,
-                    filename=validated_data[field],
+                    filename=fname,
                     content_type=content_type,
                     creator=user,
                     store_as_filename=True,
