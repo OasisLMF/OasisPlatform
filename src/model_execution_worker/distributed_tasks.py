@@ -260,7 +260,7 @@ def register_worker(sender, **k):
         logging.info(('Worker auto-registration settings DISABLED: to enable:\n'
                       '  set DISABLE_WORKER_REG=False in conf.ini or\n'
                       '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
-    else:    
+    else:
         logging.info('Auto registrating with the Oasis API:')
         signature(
             'run_register_worker_v2',
