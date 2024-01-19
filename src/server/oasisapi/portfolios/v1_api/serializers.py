@@ -1,4 +1,6 @@
 from os import path
+import mimetypes
+
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -260,29 +262,51 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
         return super(PortfolioStorageSerializer, self).validate(attrs)
 
+    def inferr_content_type(self, stored_filename):
+        inferred_type = mimetypes.MimeTypes().guess_type(stored_filename)[0]
+        if not inferred_type and stored_filename.lower().endswith('parquet'):
+            # mimetypes dosn't work for parquet so handle that here
+            inferred_type = 'application/octet-stream'
+        if not inferred_type:
+            inferred_type = default_storage.default_content_type
+        return inferred_type
+
     def get_content_type(self, stored_filename):
         try:  # fetch content_type stored in Django's DB
             return RelatedFile.objects.get(file=path.basename(stored_filename)).content_type
         except ObjectDoesNotExist:
-            try:  # Find content_type from S3 Object header
-                object_header = default_storage.connection.meta.client.head_object(
-                    Bucket=default_storage.bucket_name,
-                    Key=stored_filename)
-                return object_header['ContentType']
-            except ClientError:
-                # fallback to the default content_type
-                return default_storage.default_content_type
+            # Find content_type from S3 Object header
+            if hasattr(default_storage, 'bucket'):
+                try:
+                    object_header = default_storage.connection.meta.client.head_object(
+                        Bucket=default_storage.bucket_name,
+                        Key=stored_filename)
+                    return object_header['ContentType']
+                except S3_ClientError:
+                    return self.inferr_content_type(stored_filename)
+
+            #  Find content_type from Blob Storage
+            elif hasattr(default_storage, 'azure_container'):
+                blob_client = default_storage.client.get_blob_client(stored_filename)
+                blob_properties = blob_client.get_blob_properties()
+                return blob_properties.content_settings.content_type
+
+            else:
+                return self.inferr_content_type(stored_filename)
 
     def update(self, instance, validated_data):
         files_for_removal = list()
 
         for field in validated_data:
-            content_type = self.get_content_type(validated_data[field])
+            old_file_name = validated_data[field]
+            content_type = self.get_content_type(old_file_name)
+            fname = path.basename(old_file_name)
+            new_file_name = default_storage.get_alternative_name(fname, '')
+
             # S3 storage - File copy needed
             if hasattr(default_storage, 'bucket'):
-                fname = path.basename(validated_data[field])
                 new_file = ContentFile(b'')
-                new_file.name = default_storage.get_alternative_name(fname, '')
+                new_file.name = new_file_name
                 new_related_file = RelatedFile.objects.create(
                     file=new_file,
                     filename=fname,
@@ -292,18 +316,17 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                 )
                 bucket = default_storage.bucket
                 stored_file = default_storage.open(new_related_file.file.name)
-                stored_file.obj.copy({"Bucket": bucket.name, "Key": validated_data[field]})
+                stored_file.obj.copy({"Bucket": bucket.name, "Key": old_file_name})
                 stored_file.obj.wait_until_exists()
 
             elif hasattr(default_storage, 'azure_container'):
                 # https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-copy?tabs=python
-                fname = path.basename(validated_data[field])
-                new_file_name = default_storage.get_alternative_name(validated_data[field], '')
-                new_blobname = path.basename(new_file_name)
+                new_file_name = default_storage.get_alternative_name(old_file_name, '')
+                new_blobname = '/'.join([default_storage.location, path.basename(new_file_name)])
 
                 # Copies a blob asynchronously.
-                source_blob = default_storage.client.get_blob_client(validated_data[field])
-                dest_blob = default_storage.client.get_blob_client(new_file_name)
+                source_blob = default_storage.client.get_blob_client(old_file_name)
+                dest_blob = default_storage.client.get_blob_client(new_blobname)
 
                 try:
                     lease = BlobLeaseClient(source_blob)
@@ -316,9 +339,9 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     lease.break_lease()
                     raise e
 
-                stored_blob = default_storage.open(new_blobname)
+                stored_blob = default_storage.open(new_file_name)
                 new_related_file = RelatedFile.objects.create(
-                    file=File(stored_blob, name=new_blobname),
+                    file=File(stored_blob, name=new_file_name),
                     filename=fname,
                     content_type=content_type,
                     creator=self.context['request'].user,
@@ -327,11 +350,11 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
 
             # Shared-fs
             else:
-                stored_file = default_storage.open(validated_data[field])
-                new_file = File(stored_file, name=validated_data[field])
+                stored_file = default_storage.open(old_file_name)
+                new_file = File(stored_file, name=new_file_name)
                 new_related_file = RelatedFile.objects.create(
                     file=new_file,
-                    filename=validated_data[field],
+                    filename=fname,
                     content_type=content_type,
                     creator=self.context['request'].user,
                     store_as_filename=True,
