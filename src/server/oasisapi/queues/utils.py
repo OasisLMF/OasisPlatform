@@ -14,6 +14,7 @@ def _get_queue_consumers(queue_name):
     with celery_app_v2.pool.acquire(block=True) as conn:
         chan = conn.channel()
         name, message_count, consumers = chan.queue_declare(queue=queue_name, passive=True)
+        chan.close()
         return consumers
 
 
@@ -21,6 +22,7 @@ def _get_queue_message_count(queue_name):
     with celery_app_v2.pool.acquire(block=True) as conn:
         chan = conn.channel()
         name, message_count, consumers = chan.queue_declare(queue=queue_name, passive=True)
+        chan.close()
         return message_count
 
 
