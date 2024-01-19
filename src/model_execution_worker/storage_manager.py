@@ -204,9 +204,8 @@ class BaseStorageConnector(object):
         temp_dir = tempfile.TemporaryDirectory()
         try:
             temp_dir_path = temp_dir.__enter__()
-
-            if self._is_locally_stored(archive_fp):
-                local_archive_path = archive_fp
+            if os.path.isfile(archive_fp):
+                local_archive_path = os.path.abspath(archive_fp)
             else:
                 local_archive_path = self.get(
                     archive_fp,
