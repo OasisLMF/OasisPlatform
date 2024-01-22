@@ -346,9 +346,9 @@ def run_register_worker_v2(m_supplier, m_name, m_id, m_settings, m_version, m_co
         # Update model version info
         if m_version:
             try:
-                model.v2_ver_ktools = m_version['ktools']
-                model.v2_ver_oasislmf = m_version['oasislmf']
-                model.v2_ver_platform = m_version['platform']
+                model.ver_ktools = m_version['ktools']
+                model.ver_oasislmf = m_version['oasislmf']
+                model.ver_platform = m_version['platform']
                 logger.info('Updated model versions')
             except Exception as e:
                 logger.info('Failed to set model veriosns:')
