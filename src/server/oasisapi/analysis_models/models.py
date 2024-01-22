@@ -132,17 +132,9 @@ class AnalysisModel(TimeStampedModel):
     groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
     data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
     template_files = models.ManyToManyField(SettingsTemplate, blank=True, related_name='analyses_model_settings_template')
-
-    # V1 worker version info
-    v1_ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('V1 worker, ktools version.'))
-    v1_ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('V1 worker, oasislmf version.'))
-    v1_ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('V1 worker, platform version.'))
-
-    # V2 worker version info
-    v2_ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('V2 worker, ktools version.'))
-    v2_ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('V2 worker, oasislmf version.'))
-    v2_ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('V2 worker, platform version.'))
-
+    ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
+    ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
+    ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     oasislmf_config = models.TextField(default='')
     deleted = models.BooleanField(default=False, editable=False)
     run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),

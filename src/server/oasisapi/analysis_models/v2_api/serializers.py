@@ -155,9 +155,9 @@ class ModelVersionsSerializer(serializers.ModelSerializer):
         ref_name = "v2_" + __qualname__.split('.')[0]
         model = AnalysisModel
         fields = (
-            'v2_ver_ktools',
-            'v2_ver_oasislmf',
-            'v2_ver_platform',
+            'ver_ktools',
+            'ver_oasislmf',
+            'ver_platform',
         )
 
 
