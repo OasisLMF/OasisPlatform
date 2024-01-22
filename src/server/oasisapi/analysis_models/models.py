@@ -119,7 +119,6 @@ class SettingsTemplate(TimeStampedModel):
 
 class AnalysisModel(TimeStampedModel):
     run_mode_choices = Choices(
-        ('BOTH', 'Works on both Execution modes'),
         ('V1', 'Available for Single-Instance Execution'),
         ('V2', 'Available for Distributed Execution'),
     )
