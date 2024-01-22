@@ -470,12 +470,20 @@ class Analysis(TimeStampedModel):
             raise ValidationError({
                 'model': ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
             })
+        run_mode = run_mode_override if run_mode_override else self.model.run_mode
+        valid_run_modes = [
+            self.run_mode_choices.V1,
+            self.run_mode_choices.V2,
+        ]
+        if run_mode not in valid_run_modes:
+            raise ValidationError(
+                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
+            )
 
         events_total = self.get_num_events()
         self.status = self.status_choices.RUN_QUEUED
         self.save()
 
-        run_mode = run_mode_override if run_mode_override else self.model.run_mode
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_run_analysis_signature
             task.link(record_run_analysis_result.s(self.pk, initiator.pk))
@@ -632,6 +640,16 @@ class Analysis(TimeStampedModel):
         if errors:
             raise ValidationError(errors)
 
+        valid_run_modes = [
+            self.run_mode_choices.V1,
+            self.run_mode_choices.V2,
+        ]
+        run_mode = run_mode_override if run_mode_override else self.model.run_mode
+        if run_mode not in valid_run_modes:
+            raise ValidationError(
+                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
+            )
+
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
         self.lookup_success_file = None
@@ -641,7 +659,6 @@ class Analysis(TimeStampedModel):
         self.input_file = None
         self.save()
 
-        run_mode = run_mode_override if run_mode_override else self.model.run_mode
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_generate_input_signature
             task.link(record_generate_input_result.s(self.pk, initiator.pk))
