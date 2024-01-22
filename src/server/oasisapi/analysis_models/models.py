@@ -215,6 +215,14 @@ class AnalysisModel(TimeStampedModel):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
+    def update_run_mode(self, namespace=None):
+        if self.resource_file:
+            model_settings = self.resource_file.read_json()
+            run_mode = model_settings.get('model_run_mode', '').upper()
+            if run_mode in (self.run_mode_choices.V1, self.run_mode_choices.V2):
+                self.run_mode = run_mode
+                self.save(update_fields=["run_mode"])
+
 
 class QueueModelAssociation(models.Model):
     model = models.ForeignKey(AnalysisModel, null=False, on_delete=models.CASCADE, related_name='queue_associations')

@@ -192,9 +192,10 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     filterset_class = AnalysisModelFilter
     group_access_model = AnalysisModel
 
-    def get_queryset(self):
-        queryset = super(AnalysisModelViewSet, self).get_queryset()
-        return queryset.exclude(run_mode='V1')
+    # Don't filter v2 models by run_mode (show all models)
+    #def get_queryset(self):
+    #    queryset = super(AnalysisModelViewSet, self).get_queryset()
+    #    return queryset.exclude(run_mode='V1')
 
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:
@@ -422,25 +423,27 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
             serializer.save()
         return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'delete'], detail=True)
-    def resource_file(self, request, pk=None, version=None):
-        """
-        get:
-        Gets the models `resource_file` contents
+# Remove this option ?
 
-        delete:
-        Disassociates the moodels `resource_file` contents
-        """
-        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
-
-    @resource_file.mapping.post
-    def set_resource_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the models `resource_file` contents
-        """
-        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
+#    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+#    @action(methods=['get', 'delete'], detail=True)
+#    def resource_file(self, request, pk=None, version=None):
+#        """
+#        get:
+#        Gets the models `resource_file` contents
+#
+#        delete:
+#        Disassociates the moodels `resource_file` contents
+#        """
+#        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
+#
+#    @resource_file.mapping.post
+#    def set_resource_file(self, request, pk=None, version=None):
+#        """
+#        post:
+#        Sets the models `resource_file` contents
+#        """
+#        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
 
     @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
@@ -461,4 +464,10 @@ class ModelSettingsView(viewsets.ModelViewSet):
     @swagger_auto_schema(method='post', request_body=ModelParametersSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def model_settings(self, request, pk=None, version=None):
-        return handle_json_data(self.get_object(), 'resource_file', request, ModelParametersSerializer)
+        obj = self.get_object()
+        response = handle_json_data(obj, 'resource_file', request, ModelParametersSerializer)
+        # Update Model's execution mode if 'model_run_mode' is in model_settings.json
+        if request.method.lower() == 'post':
+            obj.update_run_mode()
+
+        return response
