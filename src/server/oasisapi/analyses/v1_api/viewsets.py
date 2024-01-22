@@ -215,7 +215,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         `RUN_ERROR`
         """
         obj = self.get_object()
-        obj.run(request.user, run_mode_override='v1')
+        obj.run(request.user, run_mode_override='V1')
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
@@ -247,7 +247,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
-        obj.generate_inputs(request.user, run_mode_override='v1')
+        obj.generate_inputs(request.user, run_mode_override='V1')
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
