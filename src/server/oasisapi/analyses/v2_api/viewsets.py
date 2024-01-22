@@ -32,6 +32,7 @@ from ...schemas.custom_swagger import (
     SUBTASK_SLUG_PARAM,
 )
 
+
 class AnalysisFilter(TimeStampedFilter):
     name = filters.CharFilter(
         help_text=_('Filter results by case insensitive names equal to the given string'),
