@@ -8,7 +8,7 @@ from ...analyses.models import Analysis
 
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
-    resource_file = serializers.SerializerMethodField()
+    #resource_file = serializers.SerializerMethodField()
     settings = serializers.SerializerMethodField()
     versions = serializers.SerializerMethodField()
     ns = 'v1-models'
@@ -24,7 +24,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'created',
             'modified',
             'data_files',
-            'resource_file',
+#            'resource_file',
             'settings',
             'versions',
             'run_mode',
@@ -36,10 +36,10 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             data['creator'] = self.context.get('request').user
         return super(AnalysisModelSerializer, self).create(data)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
-    def get_resource_file(self, instance):
-        request = self.context.get('request')
-        return instance.get_absolute_resources_file_url(request=request, namespace=self.ns)
+#    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+#    def get_resource_file(self, instance):
+#        request = self.context.get('request')
+#        return instance.get_absolute_resources_file_url(request=request, namespace=self.ns)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_settings(self, instance):

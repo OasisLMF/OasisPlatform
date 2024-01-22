@@ -469,5 +469,4 @@ class ModelSettingsView(viewsets.ModelViewSet):
         # Update Model's execution mode if 'model_run_mode' is in model_settings.json
         if request.method.lower() == 'post':
             obj.update_run_mode()
-
         return response
