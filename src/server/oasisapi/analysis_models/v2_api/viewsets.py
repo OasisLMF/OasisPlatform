@@ -23,10 +23,9 @@ from .serializers import (
 
 from ...data_files.v2_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter
-from ...files.views import handle_related_file, handle_json_data
+from ...files.views import handle_json_data
 from ...files.serializers import RelatedFileSerializer
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
-from ...schemas.custom_swagger import FILE_RESPONSE
 from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 
 
@@ -417,28 +416,6 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
         return Response(serializer.data)
-
-# Remove this option ?
-
-#    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-#    @action(methods=['get', 'delete'], detail=True)
-#    def resource_file(self, request, pk=None, version=None):
-#        """
-#        get:
-#        Gets the models `resource_file` contents
-#
-#        delete:
-#        Disassociates the moodels `resource_file` contents
-#        """
-#        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
-#
-#    @resource_file.mapping.post
-#    def set_resource_file(self, request, pk=None, version=None):
-#        """
-#        post:
-#        Sets the models `resource_file` contents
-#        """
-#        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
 
     @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
