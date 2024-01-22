@@ -464,13 +464,19 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
-    def run(self, initiator, version):
+    def run(self, initiator, run_mode_override=None):
         self.validate_run()
+        if (self.model.run_mode is None) and (run_mode_override is None):
+            raise ValidationError({
+                'model': ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
+            })
+
         events_total = self.get_num_events()
         self.status = self.status_choices.RUN_QUEUED
         self.save()
 
-        if version.startswith('v1'):
+        run_mode = run_mode_override if run_mode_override else self.model.run_mode
+        if run_mode == self.run_mode_choices.V1:
             task = self.v1_run_analysis_signature
             task.link(record_run_analysis_result.s(self.pk, initiator.pk))
             task.link_error(
@@ -480,7 +486,7 @@ class Analysis(TimeStampedModel):
             self.run_mode = self.run_mode_choices.V1
             task_id = task.delay().id
 
-        elif version.startswith('v2'):  # V2 task dispatch
+        elif run_mode == self.run_mode_choices.V2:
             task = self.v2_run_analysis_signature
             task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
                 'analysis_id': self.pk,
@@ -490,11 +496,6 @@ class Analysis(TimeStampedModel):
             }, queue='celery-v2'))
             self.run_mode = self.run_mode_choices.V2
             task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
-
-        else:
-            raise ValidationError(detail={'version':
-                                          [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
-                                          })
 
         self.run_task_id = task_id
         self.task_started = timezone.now()
@@ -525,6 +526,8 @@ class Analysis(TimeStampedModel):
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        if self.model.run_mode != self.model.run_mode_choices.V2:
+            errors['model'] = ['Model pk "{}" - Unsuppored Operation, "run_mode" must be "V2", not "{}"'.format(self.model.id, self.model.run_mode)]
         if not self.settings_file:
             errors['settings_file'] = ['Must not be null']
         if not self.portfolio.location_file:
@@ -597,7 +600,7 @@ class Analysis(TimeStampedModel):
             self.task_finished = _now
             self.save()
 
-    def generate_inputs(self, initiator, version):
+    def generate_inputs(self, initiator, run_mode_override=None):
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
@@ -613,6 +616,8 @@ class Analysis(TimeStampedModel):
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        if (self.model.run_mode is None) and (run_mode_override is None):
+            errors['model'] = ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
 
         if not self.portfolio.location_file:
             errors['portfolio'] = ['"location_file" must not be null']
@@ -636,7 +641,8 @@ class Analysis(TimeStampedModel):
         self.input_file = None
         self.save()
 
-        if version.startswith('v1'):
+        run_mode = run_mode_override if run_mode_override else self.model.run_mode
+        if run_mode == self.run_mode_choices.V1:
             task = self.v1_generate_input_signature
             task.link(record_generate_input_result.s(self.pk, initiator.pk))
             task.link_error(
@@ -646,7 +652,7 @@ class Analysis(TimeStampedModel):
             self.status = self.status_choices.INPUTS_GENERATION_QUEUED
             task_id = task.delay().id
 
-        elif version.startswith('v2'):
+        elif run_mode == self.run_mode_choices.V2:
             task = self.v2_generate_input_signature
             task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
                 'analysis_id': self.pk,
@@ -656,10 +662,6 @@ class Analysis(TimeStampedModel):
             }))
             self.run_mode = self.run_mode_choices.V2
             task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
-        else:
-            raise ValidationError(detail={'version':
-                                          [f"Request version must be either 'v1' or 'v2', received: '{version}'"]
-                                          })
 
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()

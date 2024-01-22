@@ -24,9 +24,13 @@ from ...files.views import handle_related_file, handle_json_data
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups
 from ...portfolios.models import Portfolio
-from ...schemas.custom_swagger import FILE_RESPONSE, SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM
 from ...schemas.serializers import AnalysisSettingsSerializer
-
+from ...schemas.custom_swagger import (
+    FILE_RESPONSE,
+    RUN_MODE_PARAM,
+    SUBTASK_STATUS_PARAM,
+    SUBTASK_SLUG_PARAM,
+)
 
 class AnalysisFilter(TimeStampedFilter):
     name = filters.CharFilter(
@@ -281,7 +285,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisSerializer}, manual_parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
@@ -290,8 +294,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         `RUN_ERROR`
         """
         obj = self.get_object()
+        run_mode_override = request.GET.get('run_mode_override', None)
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        obj.run(request.user, version='v2')
+        obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
@@ -330,7 +335,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.cancel_analysis()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisSerializer}, manual_parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def generate_inputs(self, request, pk=None, version=None):
         """
@@ -338,8 +343,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
+        run_mode_override = request.GET.get('run_mode_override', None)
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        obj.generate_inputs(request.user, version='v2')
+        obj.generate_inputs(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
