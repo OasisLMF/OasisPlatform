@@ -77,7 +77,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 sig_res.delay.return_value = res_factory(task_id)
 
                 with patch('src.server.oasisapi.analyses.models.Analysis.v1_run_analysis_signature', PropertyMock(return_value=sig_res)):
-                    analysis.run(initiator, version='v1')
+                    analysis.run(initiator, run_mode_override='V1')
 
                     sig_res.link.assert_called_once_with(record_run_analysis_result.s(analysis.pk, initiator.pk))
                     sig_res.link_error.assert_called_once_with(
@@ -104,7 +104,7 @@ class AnalysisRun(WebTestMixin, TestCase):
             analysis = fake_analysis(status=status, run_task_id=task_id)
 
             with self.assertRaises(ValidationError) as ex:
-                analysis.run(initiator, version='v1')
+                analysis.run(initiator, run_mode_override='V1')
 
             self.assertEqual(
                 {'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
@@ -178,7 +178,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig_res.delay.return_value = res_factory(task_id)
 
                 with patch('src.server.oasisapi.analyses.models.Analysis.v1_generate_input_signature', PropertyMock(return_value=sig_res)):
-                    analysis.generate_inputs(initiator, version='v1')
+                    analysis.generate_inputs(initiator, run_mode_override='V1')
 
                     sig_res.link.assert_called_once_with(record_generate_input_result.s(analysis.pk, initiator.pk))
                     sig_res.link_error.assert_called_once_with(
@@ -204,7 +204,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     analysis = fake_analysis(status=status, run_task_id=task_id, portfolio=fake_portfolio(location_file=fake_related_file()))
 
                     with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator, version='v1')
+                        analysis.generate_inputs(initiator, run_mode_override='V1')
 
                     self.assertEqual({'status': [
                         'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
@@ -224,7 +224,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     analysis = fake_analysis(status=Analysis.status_choices.NEW, run_task_id=task_id)
 
                     with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator, version='v1')
+                        analysis.generate_inputs(initiator, run_mode_override='V1')
 
                     self.assertEqual({'portfolio': ['"location_file" must not be null']}, ex.exception.detail)
 
