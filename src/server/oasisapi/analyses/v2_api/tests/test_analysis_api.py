@@ -1116,7 +1116,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
         user = fake_user()
         analysis = fake_analysis()
         new_model = fake_analysis_model()
-        new_model.run_mode = model.run_mode_choices.V2
+        new_model.run_mode = new_model.run_mode_choices.V2
         new_model.save()
 
         response = self.app.post(
