@@ -242,7 +242,7 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertEqual(
-            '{"model":["Model pk \'2\' - Unsuppored Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
+            '{"model":["Model pk \'2\' - Unsupported Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
             response.text,
         )
 
@@ -305,7 +305,7 @@ class AnalysisRun(WebTestMixin, TestCase):
             )
             self.assertEqual(400, response.status_code)
             self.assertEqual(
-                '{"model":["Model pk 1\' - Unsuppored Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
+                '{"model":["Model pk 1\' - Unsupported Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
                 response.text
             )
 
@@ -415,7 +415,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
             )
             self.assertEqual(400, response.status_code)
             self.assertEqual(
-                '{"model":["Model pk 1\' - Unsuppored Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
+                '{"model":["Model pk 1\' - Unsupported Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
                 response.text
             )
 

@@ -535,7 +535,7 @@ class Analysis(TimeStampedModel):
         if self.model.deleted:
             errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
         if self.model.run_mode != self.model.run_mode_choices.V2:
-            errors['model'] = ['Model pk "{}" - Unsuppored Operation, "run_mode" must be "V2", not "{}"'.format(self.model.id, self.model.run_mode)]
+            errors['model'] = ['Model pk "{}" - Unsupported Operation, "run_mode" must be "V2", not "{}"'.format(self.model.id, self.model.run_mode)]
         if not self.settings_file:
             errors['settings_file'] = ['Must not be null']
         if not self.portfolio.location_file:

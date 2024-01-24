@@ -254,7 +254,7 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
 
             self.maxDiff = None
             self.assertEqual({
-                'model': ['Model pk "1" - Unsuppored Operation, "run_mode" must be "V2", not "V1"'],
+                'model': ['Model pk "1" - Unsupported Operation, "run_mode" must be "V2", not "V1"'],
                 'portfolio': ['"location_file" must not be null'],
                 'settings_file': ['Must not be null'],
                 'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],

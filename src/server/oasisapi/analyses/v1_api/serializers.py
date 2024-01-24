@@ -219,7 +219,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
                 raise ValidationError({'model': ["Model pk '{}' - has been deleted.".format(attrs['model'].id)]})
             if attrs['model'].run_mode != attrs['model'].run_mode_choices.V1:
                 raise ValidationError({
-                    'model': ["Model pk '{}' - Unsuppored Operation, 'run_mode' must be 'V1', not '{}'".format(
+                    'model': ["Model pk '{}' - Unsupported Operation, 'run_mode' must be 'V1', not '{}'".format(
                         attrs['model'].id,
                         attrs['model'].run_mode,
                     )]
