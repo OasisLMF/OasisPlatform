@@ -460,6 +460,11 @@ class Analysis(TimeStampedModel):
             self.save()
             raise ValidationError(detail=errors)
 
+    def validate_run_mode_match(self, expected_run_mode):
+        if self.model.run_mode != self.model.run_mode_choices.V2:
+            errors['model'] = ['Model pk "{}" - Unsuppored Operation, "run_mode" must be "V2", not "{}"'.format(self.model.id, self.model.run_mode)]
+
+
     def run_callback(self, body):
         self.status = self.status_choices.RUN_STARTED
         self.save()
