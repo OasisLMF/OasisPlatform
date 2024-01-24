@@ -469,13 +469,6 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 )
 
                 response = self.app.get(
-                    settings_url,
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                )
-
-                response = self.app.get(
                     reverse(f'{NAMESPACE}:analysis-model-detail', kwargs={'pk': models.id}),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
