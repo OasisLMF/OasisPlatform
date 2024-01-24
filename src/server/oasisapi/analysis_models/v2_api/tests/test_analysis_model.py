@@ -8,7 +8,7 @@ from django.urls import reverse
 from django_webtest import WebTest, WebTestMixin
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
-from hypothesis.strategies import text
+from hypothesis.strategies import text, sampled_from
 from rest_framework_simplejwt.tokens import AccessToken
 
 from .fakes import fake_analysis_model
@@ -440,3 +440,45 @@ class ModelSettingsJson(WebTestMixin, TestCase):
                 self.assertDictEqual.__self__.maxDiff = None
                 self.assertDictEqual(json.loads(response.body), json_data)
                 self.assertEqual(response.content_type, 'application/json')
+
+    @given(
+        run_mode_requested=sampled_from([
+            AnalysisModel.run_mode_choices.V1,
+            AnalysisModel.run_mode_choices.V2,
+        ])
+    )
+    def test_settings_json_is_uploaded___run_mode_is_set(self, run_mode_requested):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                models = fake_analysis_model()
+                json_data = {
+                    "model_run_mode": run_mode_requested,
+                    "model_settings": {},
+                    "lookup_settings": {}
+                }
+
+                settings_url = reverse(f'{NAMESPACE}:model-settings', kwargs={'pk': models.pk})
+                self.app.post(
+                    settings_url,
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=json.dumps(json_data),
+                    content_type='application/json'
+                )
+
+                response = self.app.get(
+                    settings_url,
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                response = self.app.get(
+                    reverse(f'{NAMESPACE}:analysis-model-detail', kwargs={'pk': models.id}),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+                self.assertEqual(run_mode_requested, response.json.get('run_mode'))
