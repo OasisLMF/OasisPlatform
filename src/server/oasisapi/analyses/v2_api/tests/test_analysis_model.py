@@ -177,11 +177,14 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
                 task_sig = Mock()
                 task_chain = Mock()
 
+                analysis.model.run_mode = analysis.model.run_mode_choices.V2
+                analysis.model.save()
+
                 res_factory = FakeAsyncResultFactory(target_task_id=task_gen_id)
                 task_sig.apply_async.return_value = res_factory(task_gen_id)
 
                 with patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
-                    analysis.generate_and_run(initiator, version='v2')
+                    analysis.generate_and_run(initiator)
                     loc_lines = 4
                     events = None
 
@@ -209,12 +212,49 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
 
         with patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
             analysis = fake_analysis(status=status, run_task_id=task_id)
+            analysis.model.run_mode = analysis.model.run_mode_choices.V2
+            analysis.model.save()
 
             with self.assertRaises(ValidationError) as ex:
-                analysis.generate_and_run(initiator, version='v2')
+                analysis.generate_and_run(initiator)
 
             self.maxDiff = None
             self.assertEqual({
+                'portfolio': ['"location_file" must not be null'],
+                'settings_file': ['Must not be null'],
+                'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
+            }, ex.exception.detail)
+
+            self.assertEqual(status, analysis.status)
+            self.assertFalse(res_factory.revoke_called)
+
+    @given(
+        status=sampled_from([
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED,
+            Analysis.status_choices.INPUTS_GENERATION_STARTED,
+            Analysis.status_choices.RUN_QUEUED,
+            Analysis.status_choices.RUN_STARTED,
+        ]),
+        task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters),
+    )
+    def test_state_is_running_or_generating_inputs___run_mode_invalid__validation_error_raised(self, status, task_id):
+        res_factory = FakeAsyncResultFactory(target_task_id=task_id)
+        initiator = fake_user()
+
+        task_sig = Mock()
+        task_sig.delay.return_value = res_factory(task_id)
+
+        with patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
+            analysis = fake_analysis(status=status, run_task_id=task_id)
+            analysis.model.run_mode = analysis.model.run_mode_choices.V1
+            analysis.model.save()
+
+            with self.assertRaises(ValidationError) as ex:
+                analysis.generate_and_run(initiator)
+
+            self.maxDiff = None
+            self.assertEqual({
+                'model': ['Model pk "1" - Unsuppored Operation, "run_mode" must be "V2", not "V1"'],
                 'portfolio': ['"location_file" must not be null'],
                 'settings_file': ['Must not be null'],
                 'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
@@ -246,7 +286,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 mock_task = MagicMock(return_value=task_obj)
 
                 with patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task):
-                    analysis.run(initiator, version='v2')
+                    analysis.run(initiator, run_mode_override='V2')
                     mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, None),
                                                       {}, queue='celery-v2', link_error=ANY, priority=4)
 
@@ -269,7 +309,7 @@ class AnalysisRun(WebTestMixin, TestCase):
             analysis = fake_analysis(status=status, run_task_id=task_id)
 
             with self.assertRaises(ValidationError) as ex:
-                analysis.run(initiator, version='v2')
+                analysis.run(initiator, run_mode_override='V2')
 
             self.assertEqual(
                 {'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
@@ -310,7 +350,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 task_obj.id = task_id
                 mock_task = MagicMock(return_value=task_obj)
                 with patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task):
-                    analysis.generate_inputs(initiator, version='v2')
+                    analysis.generate_inputs(initiator, run_mode_override='V2')
                     mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk,
                                                       4), {}, queue='celery-v2', link_error=ANY, priority=4)
 
@@ -332,7 +372,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     analysis = fake_analysis(status=status, run_task_id=task_id, portfolio=fake_portfolio(location_file=fake_related_file()))
 
                     with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator, version='v2')
+                        analysis.generate_inputs(initiator, run_mode_override='V2')
 
                     self.assertEqual({'status': [
                         'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
@@ -352,7 +392,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     analysis = fake_analysis(status=Analysis.status_choices.NEW, run_task_id=task_id)
 
                     with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator, version='v2')
+                        analysis.generate_inputs(initiator, run_mode_override='V2')
 
                     self.assertEqual({'portfolio': ['"location_file" must not be null']}, ex.exception.detail)
 

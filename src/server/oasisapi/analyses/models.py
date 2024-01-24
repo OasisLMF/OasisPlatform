@@ -517,7 +517,7 @@ class Analysis(TimeStampedModel):
         if errors:
             raise ValidationError(detail=errors)
 
-    def generate_and_run(self, initiator, version):
+    def generate_and_run(self, initiator):
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,

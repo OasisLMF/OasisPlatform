@@ -310,7 +310,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         obj = self.get_object()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        obj.generate_and_run(request.user, run_mode_override='V2')
+        obj.generate_and_run(request.user)
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})

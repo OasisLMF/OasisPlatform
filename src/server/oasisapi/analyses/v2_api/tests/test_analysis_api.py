@@ -98,7 +98,6 @@ class AnalysisApi(WebTestMixin, TestCase):
                 )
                 self.assertEqual(400, response.status_code)
 
-
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
     def test_cleaned_name_portfolio_and_model_are_present___object_is_created(self, name):
         with TemporaryDirectory() as d:
@@ -741,7 +740,6 @@ class AnalysisRun(WebTestMixin, TestCase):
             )
 
             run_mock.assert_called_once_with(analysis, user, run_mode_override=None)
-
 
     def test_user_is_authenticated_object_exists___run_is_called__with_override(self):
         with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True) as run_mock:

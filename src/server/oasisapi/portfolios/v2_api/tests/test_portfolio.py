@@ -305,6 +305,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
 
                     user = fake_user()
                     model = fake_analysis_model()
+                    model.run_mode = model.run_mode_choices.V2
                     portfolio = fake_portfolio(location_file=fake_related_file())
 
                     response = self.app.post(
@@ -328,7 +329,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
                     analysis.run_traceback_file = fake_related_file()
                     analysis.save()
 
-                    ANALYSES_NAMESPACE = 'v1-analyses'
+                    ANALYSES_NAMESPACE = 'v2-analyses'
                     response = self.app.get(
                         analysis.get_absolute_url(namespace=ANALYSES_NAMESPACE),
                         headers={
