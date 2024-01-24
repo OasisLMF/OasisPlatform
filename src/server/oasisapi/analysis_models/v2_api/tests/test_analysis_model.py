@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTest, WebTestMixin
-from hypothesis import given, settings, reproduce_failure
+from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, sampled_from
 from rest_framework_simplejwt.tokens import AccessToken

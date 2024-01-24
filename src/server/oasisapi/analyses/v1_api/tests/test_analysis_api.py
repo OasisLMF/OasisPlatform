@@ -223,7 +223,6 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         self.assertEqual(400, response.status_code)
 
-
     def test_model_run_mode_is_not_V1___response_is_400(self):
         user = fake_user()
         analysis = fake_analysis()
@@ -246,7 +245,6 @@ class AnalysisApi(WebTestMixin, TestCase):
             '{"model":["Model pk \'2\' - Unsuppored Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
             response.text,
         )
-
 
     def test_model_does_exist___response_is_200(self):
         user = fake_user()
@@ -307,7 +305,7 @@ class AnalysisRun(WebTestMixin, TestCase):
             )
             self.assertEqual(400, response.status_code)
             self.assertEqual(
-                '{"model":["Model pk 1\' - Unsuppored Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}', 
+                '{"model":["Model pk 1\' - Unsuppored Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
                 response.text
             )
 
@@ -326,6 +324,7 @@ class AnalysisRun(WebTestMixin, TestCase):
             )
 
             run_mock.assert_called_once_with(analysis, user)
+
 
 class AnalysisCancel(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -400,7 +399,6 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
 
             generate_inputs_mock.assert_called_once_with(analysis, user)
 
-
     def test_model_run_mode_not_V1___response_is_400(self):
         with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True) as generate_inputs_mock:
             user = fake_user()
@@ -417,7 +415,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
             )
             self.assertEqual(400, response.status_code)
             self.assertEqual(
-                '{"model":["Model pk 1\' - Unsuppored Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}', 
+                '{"model":["Model pk 1\' - Unsuppored Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
                 response.text
             )
 

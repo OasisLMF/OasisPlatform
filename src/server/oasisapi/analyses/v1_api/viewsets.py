@@ -219,7 +219,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             obj.raise_validate_errors(
                 {'model': [f"Model pk {obj.model.id}' - Unsuppored Operation, 'run_mode' must be 'V1', not '{obj.model.run_mode}'"]}
             )
-        else:    
+        else:
             obj.run(request.user)
             return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -252,12 +252,12 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
-        # Check run_mode == V1 before dispatch 
+        # Check run_mode == V1 before dispatch
         if obj.model.run_mode != obj.model.run_mode_choices.V1:
             obj.raise_validate_errors(
                 {'model': [f"Model pk {obj.model.id}' - Unsuppored Operation, 'run_mode' must be 'V1', not '{obj.model.run_mode}'"]}
             )
-        else:    
+        else:
             obj.generate_inputs(request.user)
             return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
