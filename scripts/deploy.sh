@@ -35,6 +35,6 @@ if [[ $(docker volume ls | grep OasisData -c) -gt 1 ]]; then
 fi
 
 set -e
-docker build -f Dockerfile.api_server --build-arg ods_tools_branch=feature/85-add-run-mode-setting -t coreoasis/api_server:dev .
-docker build -f Dockerfile.model_worker --build-arg ods_tools_branch=feature/85-add-run-mode-setting -t coreoasis/model_worker:dev .
+docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
+docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
 docker-compose up -d
