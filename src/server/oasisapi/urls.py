@@ -58,9 +58,7 @@ schema_view = get_schema_view(
 
 # Base Routes (no version)
 api_urlpatterns = [
-    #url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    url(r'^v2/swagger(v2.json|v2.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
-    url(r'^v1/swagger(v1.json|v1.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
+    url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
     url(r'^', include('src.server.oasisapi.base_urls')),
 ]
