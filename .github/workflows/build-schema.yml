@@ -21,7 +21,7 @@ on:
 
 jobs:
   ods_tools:
-    if: inputs.ods_branch != ''
+    #if: inputs.ods_branch != ''
     uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@main
     secrets: inherit
     with:
