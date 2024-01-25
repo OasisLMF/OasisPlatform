@@ -37,7 +37,7 @@ spec:
           {{- end }}
           name: worker
           env:
-            - name: OASIS_API_VERSION
+            - name: OASIS_RUN_MODE
               value: {{ $worker.apiVersion }}
             {{- include "h.modelEnvs" . | indent 12 }}
             {{- include "h.brokerVars" $root | indent 12 }}

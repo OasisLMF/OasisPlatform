@@ -27,8 +27,8 @@ fi
 
 
 # Oasis select API version
-SELECT_API_VERSION=$(echo "$OASIS_API_VERSION" | tr '[:upper:]' '[:lower:]')
-case "$SELECT_API_VERSION" in
+SELECT_RUN_MODE=$(echo "$OASIS_RUN_MODE" | tr '[:upper:]' '[:lower:]')
+case "$SELECT_RUN_MODE" in
     "v1")
       API_VER=''
       TASK_FILE='src.model_execution_worker.tasks'
@@ -39,8 +39,8 @@ case "$SELECT_API_VERSION" in
     ;;
     *)
         echo "Invalid value for api version:"
-        echo " Set 'OASIS_API_VERSION=v1'  For Single server execution"
-        echo " Set 'OASIS_API_VERSION=v2'  For Distributed execution"
+        echo " Set 'OASIS_RUN_MODE=v1'  For Single server execution"
+        echo " Set 'OASIS_RUN_MODE=v2'  For Distributed execution"
         exit 1
     ;;
 esac
