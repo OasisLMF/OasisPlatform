@@ -50,22 +50,15 @@ api_info = openapi.Info(
     description=api_info_description,
 )
 
-schema_view = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
 
-# Base Routes (no version)
-api_urlpatterns = [
-    url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
-    url(r'^', include('src.server.oasisapi.base_urls')),
-]
+from django.views.generic import TemplateView
+import json
+
+from drf_yasg.generators import OpenAPISchemaGenerator
 
 
 # API v1 Routes
-api_urlpatterns += [
+api_v1_urlpatterns = [
     url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls', namespace='v1-models')),
     url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls', namespace='v1-portfolios')),
     url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls', namespace='v1-analyses')),
@@ -74,13 +67,49 @@ api_urlpatterns += [
 
 # API v2 Routes
 if not settings.DISABLE_V2_API:
-    api_urlpatterns += [
+    api_v2_urlpatterns = [
         url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
         url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls', namespace='v2-analyses')),
         url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
         url(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-files')),
         url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
     ]
+
+
+schema_view = get_schema_view(
+    api_info,
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+
+
+schema_view_v1 = get_schema_view(
+    api_info,
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+    patterns=api_v1_urlpatterns,
+)
+schema_view_v2 = get_schema_view(
+    api_info,
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+    patterns=api_v2_urlpatterns,
+)
+
+
+# Base Routes (no version)
+api_urlpatterns = [
+    url(r'^(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json-v1'),
+    #url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
+    url(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui'),
+    url(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui'),
+    #path(r'^$', TemplateView.as_view(template_name='swagger_ui_custom.html'), name='swagger-ui'),
+    url(r'^', include('src.server.oasisapi.base_urls')),
+]
+api_urlpatterns += api_v1_urlpatterns
+api_urlpatterns += api_v2_urlpatterns
+
 
 urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.URL_SUB_PATH:

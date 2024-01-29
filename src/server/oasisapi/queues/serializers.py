@@ -15,8 +15,8 @@ class QueueSerializer(serializers.Serializer):
     worker_count = serializers.IntegerField()
     models = serializers.SerializerMethodField()
 
-    class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+    # class Meta:
+        # ref_name = __qualname__.split('.')[0] + 'V2'
 
     @swagger_serializer_method(serializer_or_field=AnalysisModelSerializer(many=True))
     def get_models(self, instance, *args, **kwargs):
@@ -29,8 +29,8 @@ class WebsocketAnalysesSerializer(serializers.Serializer):
     analysis = serializers.SerializerMethodField()
     updated_tasks = serializers.SerializerMethodField()
 
-    class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+    # class Meta:
+        # ref_name = __qualname__.split('.')[0] + 'V2'
 
     @swagger_serializer_method(serializer_or_field=AnalysisSerializerWebSocket())
     def get_analysis(self, instance, *args, **kwargs):
@@ -45,8 +45,8 @@ class WebsocketContentSerializer(serializers.Serializer):
     queue = serializers.SerializerMethodField()
     analyses = serializers.SerializerMethodField()
 
-    class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+    # class Meta:
+        # ref_name = __qualname__.split('.')[0] + 'V2'
 
     @swagger_serializer_method(serializer_or_field=QueueSerializer)
     def get_queue(self, instance, *args, **kwargs):
@@ -66,8 +66,8 @@ class WebsocketSerializer(serializers.Serializer):
     status = serializers.CharField()
     content = serializers.SerializerMethodField()
 
-    class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+    # class Meta:
+        # ref_name = __qualname__.split('.')[0] + 'V2'
 
     @swagger_serializer_method(serializer_or_field=WebsocketContentSerializer(many=True))
     def get_content(self, instance, *args, **kwargs):

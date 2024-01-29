@@ -22,7 +22,7 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     error_log = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+        # ref_name = __qualname__.split('.')[0] + 'V2'
         model = AnalysisTaskStatus
         fields = (
             'id',
@@ -54,8 +54,8 @@ class AnalysisListSerializer(serializers.Serializer):
     """ Read Only Analyses Deserializer for efficiently returning a list of all
         Analyses from DB
     """
-    class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+    # class Meta:
+        # ref_name = __qualname__.split('.')[0] + 'V2'
 
     # model fields
     created = serializers.DateTimeField(read_only=True)
@@ -224,7 +224,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
     status_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+        # ref_name = __qualname__.split('.')[0] + 'V2'
         model = Analysis
         fields = (
             'created',
@@ -409,8 +409,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
 class AnalysisSerializerWebSocket(serializers.Serializer):
     """ Minimal Analysis Infomation needed to send via WebSocket
     """
-    class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+    # class Meta:
+        # ref_name = __qualname__.split('.')[0] + 'V2'
 
     # model fields
     name = serializers.CharField(read_only=True)
@@ -468,7 +468,7 @@ class AnalysisStorageSerializer(serializers.ModelSerializer):
     summary_levels_file = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name = "v2_" + __qualname__.split('.')[0]
+        # ref_name = __qualname__.split('.')[0] + 'V2'
         model = Analysis
         fields = (
             'settings_file',
