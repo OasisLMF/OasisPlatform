@@ -34,6 +34,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IS_UNITTEST = sys.argv[0].endswith('pytest')
 IS_TESTSERVER = len(sys.argv) >= 2 and sys.argv[1] == 'runserver'
+IS_SWAGGER_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'generate_swagger'
 
 if IS_UNITTEST or IS_TESTSERVER:
     # Always set Debug mode when in dev environment
@@ -49,6 +50,17 @@ else:
     DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
     URL_SUB_PATH = iniconf.settings.getboolean('server', 'URL_SUB_PATH', fallback=True)
     CONSOLE_DEBUG = False
+
+
+# Generate All
+DEFAULT_GENERATOR_CLASS = 'drf_yasg.generators.OpenAPISchemaGenerator'          # Generate All
+if IS_SWAGGER_GEN:
+    # generate only V1 endpoints
+    if iniconf.settings.getboolean('server', 'GEN_SWAGGER_V1', fallback=False):
+        DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV1'
+    # generate only V2 endpoints
+    if iniconf.settings.getboolean('server', 'GEN_SWAGGER_V2', fallback=False):
+        DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV2'
 
 # Django 3.2 - the default pri-key field changed to 'BigAutoField.',
 # https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
@@ -192,10 +204,6 @@ AUTH_PASSWORD_VALIDATORS = []
 API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
 
 
-DEFAULT_GENERATOR_CLASS = 'drf_yasg.generators.OpenAPISchemaGenerator'          # Generate All 
-DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV1'  # generate only V1 endpoints
-DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV2'  # generate only V2 endpoints
-
 if API_AUTH_TYPE == 'keycloak':
 
     INSTALLED_APPS += (
@@ -215,7 +223,7 @@ if API_AUTH_TYPE == 'keycloak':
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False
 
- 
+
 
 
     SWAGGER_SETTINGS = {
