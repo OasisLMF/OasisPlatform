@@ -31,7 +31,7 @@ jobs:
     if: ${{ ! failure() || ! cancelled() }}
     needs: ods_tools
     env:
-      SCHEMA_ALL: 'reports/openapi-schema-all.json'
+      SCHEMA_ALL: 'reports/openapi-schema.json'
       SCHEMA_V1: 'reports/openapi-schema-v1.json'
       SCHEMA_V2: 'reports/openapi-schema-v2.json'
     runs-on: ubuntu-22.04
@@ -59,13 +59,13 @@ jobs:
         pip uninstall ods-tools -y
         pip install ${{ needs.ods_tools.outputs.whl_filename }}
 
-    - name: Generate OpenAPI (all)
+    - name: Generate OpenAPI
       run: |
         test -d $(dirname ${{ env.SCHEMA_ALL }}) || mkdir -p $(dirname ${{ env.SCHEMA_ALL }})
         python ./manage.py migrate
         python ./manage.py generate_swagger ${{ env.SCHEMA_ALL }}
 
-    - name: Generate OpenAPI (v1)
+    - name: Generate OpenAPI (only v1)
       run: |
         test -d $(dirname ${{ env.SCHEMA_V1 }}) || mkdir -p $(dirname ${{ env.SCHEMA_V1 }})
         python ./manage.py migrate
@@ -73,7 +73,7 @@ jobs:
       env:
         OASIS_GEN_SWAGGER_V1: 1
 
-    - name: Generate OpenAPI (v2)
+    - name: Generate OpenAPI (only v2)
       run: |
         test -d $(dirname ${{ env.SCHEMA_V2 }}) || mkdir -p $(dirname ${{ env.SCHEMA_V2 }})
         python ./manage.py migrate
@@ -81,21 +81,21 @@ jobs:
       env:
         OASIS_GEN_SWAGGER_V2: 1
 
-    - name: Store OpenAPI schema (all)
+    - name: Store OpenAPI schema
       uses: actions/upload-artifact@v3
       with:
         name: openapi-schema
         path: ${{ env.SCHEMA_ALL }}
         retention-days: 3
 
-    - name: Store OpenAPI schema (v1)
+    - name: Store OpenAPI schema (only v1)
       uses: actions/upload-artifact@v3
       with:
         name: openapi-schema-v1
         path: ${{ env.SCHEMA_V1 }}
         retention-days: 3
 
-    - name: Store OpenAPI schema (v2)
+    - name: Store OpenAPI schema (only v2)
       uses: actions/upload-artifact@v3
       with:
         name: openapi-schema-v2
