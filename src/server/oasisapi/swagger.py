@@ -1,8 +1,7 @@
-__all__ = [                                                                                                                    
+__all__ = [
     'CustomGeneratorClassV1',
     'CustomGeneratorClassV2',
-]      
-
+]
 
 from drf_yasg.generators import OpenAPISchemaGenerator
 from django.conf.urls import include, url
@@ -29,19 +28,20 @@ api_v2_urlpatterns = [
 class CustomGeneratorClassV1(OpenAPISchemaGenerator):
     def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
         super().__init__(
-            info=info, 
-            version='v1', 
-            url=url, 
-            patterns=api_v1_urlpatterns, 
+            info=info,
+            version='v1',
+            url=url,
+            patterns=api_v1_urlpatterns,
             urlconf=urlconf
         )
+
 
 class CustomGeneratorClassV2(OpenAPISchemaGenerator):
     def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
         super().__init__(
-            info=info, 
-            version='v2', 
-            url=url, 
-            patterns=api_v2_urlpatterns, 
+            info=info,
+            version='v2',
+            url=url,
+            patterns=api_v2_urlpatterns,
             urlconf=urlconf
         )

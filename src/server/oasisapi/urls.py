@@ -6,11 +6,11 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from .swagger import (
-    api_v1_urlpatterns, 
+    api_v1_urlpatterns,
     api_v2_urlpatterns,
     CustomGeneratorClassV1,
     CustomGeneratorClassV2,
-)    
+)
 
 if settings.DEBUG_TOOLBAR:
     from django.urls import path
@@ -21,9 +21,6 @@ api_info_description = """
 # Workflow
 The general workflow is as follows
 """
-
-
-
 
 if settings.API_AUTH_TYPE == 'keycloak':
     api_info_description += """
@@ -58,36 +55,35 @@ api_info = openapi.Info(
     default_version='v2',
     description=api_info_description,
 )
-
-
-schema_view = get_schema_view(
+schema_view_all = get_schema_view(
     api_info,
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
-
 schema_view_v1 = get_schema_view(
     api_info,
     public=True,
     permission_classes=(permissions.AllowAny,),
-    patterns=api_v1_urlpatterns,
+    generator_class=CustomGeneratorClassV1,
 )
 schema_view_v2 = get_schema_view(
     api_info,
     public=True,
     permission_classes=(permissions.AllowAny,),
-    patterns=api_v2_urlpatterns,
+    generator_class=CustomGeneratorClassV2,
 )
 
-
-# Base Routes (no version)
 api_urlpatterns = [
-    url(r'^(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json-v1'),
-    #url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
-    url(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui'),
-    url(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui'),
-    #path(r'^$', TemplateView.as_view(template_name='swagger_ui_custom.html'), name='swagger-ui'),
+    # Main Swagger page
+    url(r'^(?P<format>\.json|\.yaml)$', schema_view_all.without_ui(cache_timeout=0), name='schema-json'),
+    url(r'^$', schema_view_all.with_ui('swagger', cache_timeout=0), name='schema-ui'),
+    # V1 only swagger endpoints
+    url(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui-v1'),
+    url(r'^v1/(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json'),
+    # V2 only swagger endpoints
+    url(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui-v2'),
+    url(r'^v2/(?P<format>\.json|\.yaml)$', schema_view_v2.without_ui(cache_timeout=0), name='schema-json'),
+    # basic urls (auth, server info)
     url(r'^', include('src.server.oasisapi.base_urls')),
 ]
 api_urlpatterns += api_v1_urlpatterns

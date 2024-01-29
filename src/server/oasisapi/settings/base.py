@@ -192,8 +192,6 @@ REST_FRAMEWORK = {
     ),
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
-#    'DEFAULT_VERSION': 'v2',
-    'ALLOWED_VERSIONS': ['v1', 'v2'],
 }
 
 # Password validation
@@ -222,9 +220,6 @@ if API_AUTH_TYPE == 'keycloak':
 
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False
-
-
-
 
     SWAGGER_SETTINGS = {
         'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,

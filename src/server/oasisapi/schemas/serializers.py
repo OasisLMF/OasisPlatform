@@ -125,9 +125,6 @@ class TaskCountSerializer(serializers.Serializer):
     CANCELLED = serializers.IntegerField()
     ERROR = serializers.IntegerField()
 
-    # class Meta:
-    #   ref_name = __qualname__.split('.')[0] + 'V2'
-
     def create(self, validated_data):
         raise NotImplementedError()
 
