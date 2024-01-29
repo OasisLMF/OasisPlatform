@@ -31,7 +31,9 @@ jobs:
     if: ${{ ! failure() || ! cancelled() }}
     needs: ods_tools
     env:
-      SCHEMA: 'reports/openapi-schema.json'
+      SCHEMA_ALL: 'reports/openapi-schema-all.json'
+      SCHEMA_V1: 'reports/openapi-schema-v1.json'
+      SCHEMA_V2: 'reports/openapi-schema-v2.json'
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
@@ -57,17 +59,47 @@ jobs:
         pip uninstall ods-tools -y
         pip install ${{ needs.ods_tools.outputs.whl_filename }}
 
-    - name: Generate OpenAPI
+    - name: Generate OpenAPI (all)
       run: |
-        test -d $(dirname ${{ env.SCHEMA }}) || mkdir -p $(dirname ${{ env.SCHEMA }})
+        test -d $(dirname ${{ env.SCHEMA_ALL }}) || mkdir -p $(dirname ${{ env.SCHEMA_ALL }})
         python ./manage.py migrate
-        python ./manage.py generate_swagger ${{ env.SCHEMA }}
+        python ./manage.py generate_swagger ${{ env.SCHEMA_ALL }}
 
-    - name: Store OpenAPI schema
+    - name: Generate OpenAPI (v1)
+      run: |
+        test -d $(dirname ${{ env.SCHEMA_V1 }}) || mkdir -p $(dirname ${{ env.SCHEMA_V1 }})
+        python ./manage.py migrate
+        python ./manage.py generate_swagger ${{ env.SCHEMA_V1 }}
+      env:
+        OASIS_GEN_SWAGGER_V1: 1
+
+    - name: Generate OpenAPI (v2)
+      run: |
+        test -d $(dirname ${{ env.SCHEMA_V2 }}) || mkdir -p $(dirname ${{ env.SCHEMA_V2 }})
+        python ./manage.py migrate
+        python ./manage.py generate_swagger ${{ env.SCHEMA_V2 }}
+      env:
+        OASIS_GEN_SWAGGER_V2: 1
+
+    - name: Store OpenAPI schema (all)
       uses: actions/upload-artifact@v3
       with:
         name: openapi-schema
-        path: ${{ env.SCHEMA }}
+        path: ${{ env.SCHEMA_ALL }}
+        retention-days: 3
+
+    - name: Store OpenAPI schema (v1)
+      uses: actions/upload-artifact@v3
+      with:
+        name: openapi-schema-v1
+        path: ${{ env.SCHEMA_V1 }}
+        retention-days: 3
+
+    - name: Store OpenAPI schema (v2)
+      uses: actions/upload-artifact@v3
+      with:
+        name: openapi-schema-v2
+        path: ${{ env.SCHEMA_V2 }}
         retention-days: 3
 
     - name: Test Schema
