@@ -22,6 +22,7 @@ from ....conf import iniconf  # noqa
 from ....common.shared import set_aws_log_level, set_azure_log_level
 from ....conf.base import *
 
+
 IN_TEST = 'test' in sys.argv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -188,8 +189,12 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
 AUTH_PASSWORD_VALIDATORS = []
-
 API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
+
+
+DEFAULT_GENERATOR_CLASS = 'drf_yasg.generators.OpenAPISchemaGenerator'          # Generate All 
+DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV1'  # generate only V1 endpoints
+DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV2'  # generate only V2 endpoints
 
 if API_AUTH_TYPE == 'keycloak':
 
@@ -210,7 +215,11 @@ if API_AUTH_TYPE == 'keycloak':
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False
 
+ 
+
+
     SWAGGER_SETTINGS = {
+        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
         'USE_SESSION_AUTH': False,
         'SECURITY_DEFINITIONS': {
             "keycloak": {
@@ -237,6 +246,7 @@ else:
     }
 
     SWAGGER_SETTINGS = {
+        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
         'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
         'LOGIN_URL': reverse_lazy('rest_framework:login'),
         'LOGOUT_URL': reverse_lazy('rest_framework:logout'),

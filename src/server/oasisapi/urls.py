@@ -4,7 +4,13 @@ from django.conf.urls.static import static
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-# from rest_framework_nested import routers
+
+from .swagger import (
+    api_v1_urlpatterns, 
+    api_v2_urlpatterns,
+    CustomGeneratorClassV1,
+    CustomGeneratorClassV2,
+)    
 
 if settings.DEBUG_TOOLBAR:
     from django.urls import path
@@ -15,6 +21,9 @@ api_info_description = """
 # Workflow
 The general workflow is as follows
 """
+
+
+
 
 if settings.API_AUTH_TYPE == 'keycloak':
     api_info_description += """
@@ -51,37 +60,11 @@ api_info = openapi.Info(
 )
 
 
-from django.views.generic import TemplateView
-import json
-
-from drf_yasg.generators import OpenAPISchemaGenerator
-
-
-# API v1 Routes
-api_v1_urlpatterns = [
-    url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls', namespace='v1-models')),
-    url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls', namespace='v1-portfolios')),
-    url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls', namespace='v1-analyses')),
-    url(r'^v1/', include('src.server.oasisapi.data_files.v1_api.urls', namespace='v1-files')),
-]
-
-# API v2 Routes
-if not settings.DISABLE_V2_API:
-    api_v2_urlpatterns = [
-        url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
-        url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls', namespace='v2-analyses')),
-        url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
-        url(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-files')),
-        url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
-    ]
-
-
 schema_view = get_schema_view(
     api_info,
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
-
 
 schema_view_v1 = get_schema_view(
     api_info,
@@ -108,8 +91,8 @@ api_urlpatterns = [
     url(r'^', include('src.server.oasisapi.base_urls')),
 ]
 api_urlpatterns += api_v1_urlpatterns
-api_urlpatterns += api_v2_urlpatterns
-
+if not settings.DISABLE_V2_API:
+    api_urlpatterns += api_v2_urlpatterns
 
 urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.URL_SUB_PATH:
