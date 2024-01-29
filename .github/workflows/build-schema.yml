@@ -32,8 +32,8 @@ jobs:
     needs: ods_tools
     env:
       SCHEMA_ALL: 'reports/openapi-schema.json'
-      SCHEMA_V1: 'reports/openapi-schema-v1.json'
-      SCHEMA_V2: 'reports/openapi-schema-v2.json'
+      SCHEMA_V1: 'reports/v1-openapi-schema.json'
+      SCHEMA_V2: 'reports/v2-openapi-schema.json'
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
@@ -91,14 +91,14 @@ jobs:
     - name: Store OpenAPI schema (only v1)
       uses: actions/upload-artifact@v3
       with:
-        name: openapi-schema-v1
+        name: v1-openapi-schema
         path: ${{ env.SCHEMA_V1 }}
         retention-days: 3
 
     - name: Store OpenAPI schema (only v2)
       uses: actions/upload-artifact@v3
       with:
-        name: openapi-schema-v2
+        name: v2-openapi-schema
         path: ${{ env.SCHEMA_V2 }}
         retention-days: 3
 
