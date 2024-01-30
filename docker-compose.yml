@@ -5,7 +5,7 @@ volumes:
   filestore-OasisData:
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
-  OASIS_URL_SUB_PATH: 1
+  OASIS_URL_SUB_PATH: 0
   OASIS_CELERY_BROKER_URL: "amqp://rabbit:rabbit@broker:5672"
   #OASIS_CELERY_BROKER_URL: "redis://broker:6379"
   OASIS_SERVER_DB_HOST: server-db
@@ -155,7 +155,7 @@ services:
      <<: *shared-env
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
-     OASIS_MODEL_VERSION_ID: 1
+     OASIS_MODEL_VERSION_ID: 'v1'
      OASIS_API_VERSION: v1
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
@@ -174,7 +174,7 @@ services:
      <<: *shared-env
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
-     OASIS_MODEL_VERSION_ID: 1
+     OASIS_MODEL_VERSION_ID: 'v2'
      OASIS_API_VERSION: v2
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw

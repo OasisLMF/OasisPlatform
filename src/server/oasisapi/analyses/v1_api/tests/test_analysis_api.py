@@ -85,8 +85,10 @@ class AnalysisApi(WebTestMixin, TestCase):
             with override_settings(MEDIA_ROOT=d):
                 self.maxDiff = None
                 user = fake_user()
-                model = fake_analysis_model()
                 portfolio = fake_portfolio(location_file=fake_related_file())
+                model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V1
+                model.save()
 
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),
@@ -151,6 +153,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                 self.maxDiff = None
                 user = fake_user()
                 model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V1
+                model.save()
                 portfolio = fake_portfolio(location_file=fake_related_file())
 
                 response = self.app.post(
@@ -219,10 +223,12 @@ class AnalysisApi(WebTestMixin, TestCase):
 
         self.assertEqual(400, response.status_code)
 
-    def test_model_does_exist___response_is_200(self):
+    def test_model_run_mode_is_not_V1___response_is_400(self):
         user = fake_user()
         analysis = fake_analysis()
         model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
 
         response = self.app.patch(
             analysis.get_absolute_url(namespace=NAMESPACE),
@@ -232,6 +238,28 @@ class AnalysisApi(WebTestMixin, TestCase):
             params=json.dumps({'model': model.pk}),
             content_type='application/json',
             expect_errors=True,
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(
+            '{"model":["Model pk \'2\' - Unsupported Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
+            response.text,
+        )
+
+    def test_model_does_exist___response_is_200(self):
+        user = fake_user()
+        analysis = fake_analysis()
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V1
+        model.save()
+
+        response = self.app.patch(
+            analysis.get_absolute_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'model': model.pk}),
+            content_type='application/json',
         )
 
         analysis.refresh_from_db()
@@ -261,10 +289,32 @@ class AnalysisRun(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
+    def test_run_mode_is_not_V1___responce_is_400(self):
+        with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True) as run_mock:
+            user = fake_user()
+            analysis = fake_analysis()
+            analysis.model.run_mode = analysis.model.run_mode_choices.V2
+            analysis.model.save()
+
+            response = self.app.post(
+                analysis.get_absolute_run_url(namespace=NAMESPACE),
+                expect_errors=True,
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
+            self.assertEqual(400, response.status_code)
+            self.assertEqual(
+                '{"model":["Model pk 1\' - Unsupported Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
+                response.text
+            )
+
     def test_user_is_authenticated_object_exists___run_is_called(self):
         with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True) as run_mock:
             user = fake_user()
             analysis = fake_analysis()
+            analysis.model.run_mode = analysis.model.run_mode_choices.V1
+            analysis.model.save()
 
             self.app.post(
                 analysis.get_absolute_run_url(namespace=NAMESPACE),
@@ -273,7 +323,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 }
             )
 
-            run_mock.assert_called_once_with(analysis, user, version='v1')
+            run_mock.assert_called_once_with(analysis, user)
 
 
 class AnalysisCancel(WebTestMixin, TestCase):
@@ -337,6 +387,8 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
         with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True) as generate_inputs_mock:
             user = fake_user()
             analysis = fake_analysis()
+            analysis.model.run_mode = analysis.model.run_mode_choices.V1
+            analysis.model.save()
 
             self.app.post(
                 analysis.get_absolute_generate_inputs_url(namespace=NAMESPACE),
@@ -345,7 +397,27 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 }
             )
 
-            generate_inputs_mock.assert_called_once_with(analysis, user, version='v1')
+            generate_inputs_mock.assert_called_once_with(analysis, user)
+
+    def test_model_run_mode_not_V1___response_is_400(self):
+        with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True) as generate_inputs_mock:
+            user = fake_user()
+            analysis = fake_analysis()
+            analysis.model.run_mode = analysis.model.run_mode_choices.V2
+            analysis.model.save()
+
+            response = self.app.post(
+                analysis.get_absolute_generate_inputs_url(namespace=NAMESPACE),
+                expect_errors=True,
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
+            self.assertEqual(400, response.status_code)
+            self.assertEqual(
+                '{"model":["Model pk 1\' - Unsupported Operation, \'run_mode\' must be \'V1\', not \'V2\'"]}',
+                response.text
+            )
 
 
 class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
@@ -549,6 +621,8 @@ class AnalysisCopy(WebTestMixin, TestCase):
         user = fake_user()
         analysis = fake_analysis()
         new_model = fake_analysis_model()
+        new_model.run_mode = new_model.run_mode_choices.V1
+        new_model.save()
 
         response = self.app.post(
             analysis.get_absolute_copy_url(namespace=NAMESPACE),

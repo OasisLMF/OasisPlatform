@@ -79,12 +79,34 @@ class AnalysisApi(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
+    def test_cleaned_name_portfolio_and_model_are_present___run_mode_null_response_is_400(self, name):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                self.maxDiff = None
+                user = fake_user()
+                model = fake_analysis_model()
+                portfolio = fake_portfolio(location_file=fake_related_file())
+
+                response = self.app.post(
+                    reverse(f'{NAMESPACE}:analysis-list'),
+                    expect_errors=True,
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+                    content_type='application/json'
+                )
+                self.assertEqual(400, response.status_code)
+
+    @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
     def test_cleaned_name_portfolio_and_model_are_present___object_is_created(self, name):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 self.maxDiff = None
                 user = fake_user()
                 model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V2
+                model.save()
                 portfolio = fake_portfolio(location_file=fake_related_file())
 
                 response = self.app.post(
@@ -170,6 +192,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                 self.maxDiff = None
                 user = fake_user()
                 model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V2
+                model.save()
                 portfolio = fake_portfolio(location_file=fake_related_file())
 
                 response = self.app.post(
@@ -260,6 +284,8 @@ class AnalysisApi(WebTestMixin, TestCase):
         user = fake_user()
         analysis = fake_analysis()
         model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
 
         response = self.app.patch(
             analysis.get_absolute_url(namespace=NAMESPACE),
@@ -285,6 +311,8 @@ class AnalysisApi(WebTestMixin, TestCase):
         user = fake_user()
         group = add_fake_group(user, group_name)
         model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
         portfolio = fake_portfolio(location_file=fake_related_file())
 
         # Deny due to not in the same group as model
@@ -368,6 +396,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         group3.save()
 
         model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V1
         model.groups.add(group1)
         model.groups.add(group2)
         model.groups.add(group3)
@@ -446,6 +475,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         user2 = fake_user()
 
         model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
         model.groups.add(group1)
         model.save()
 
@@ -490,6 +520,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         user_without_group = fake_user()
 
         model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V1
         model.save()
 
         portfolio1 = fake_portfolio(location_file=fake_related_file())
@@ -543,6 +574,7 @@ class AnalysisApi(WebTestMixin, TestCase):
         user_without_group = fake_user()
 
         model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
         model.save()
 
         portfolio1 = fake_portfolio(location_file=fake_related_file())
@@ -610,6 +642,9 @@ class AnalysisApi(WebTestMixin, TestCase):
     def test_create_no_priority___successfully_set_default(self, name):
 
         portfolio = fake_portfolio(location_file=fake_related_file())
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
 
         # Create an analysis
         response = self.app.post(
@@ -617,7 +652,7 @@ class AnalysisApi(WebTestMixin, TestCase):
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
             },
-            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': fake_analysis_model().pk}),
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
             content_type='application/json',
         )
         self.assertEqual(201, response.status_code)
@@ -634,13 +669,17 @@ class AnalysisApi(WebTestMixin, TestCase):
         user.save()
         portfolio = fake_portfolio(location_file=fake_related_file())
 
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
+
         # Create an analysis
         response = self.app.post(
             reverse(f'{NAMESPACE}:analysis-list'),
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
-            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': fake_analysis_model().pk, 'priority': 1}),
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk, 'priority': 1}),
             content_type='application/json',
         )
         self.assertEqual(201, response.status_code)
@@ -700,7 +739,21 @@ class AnalysisRun(WebTestMixin, TestCase):
                 }
             )
 
-            run_mock.assert_called_once_with(analysis, user, version='v2')
+            run_mock.assert_called_once_with(analysis, user, run_mode_override=None)
+
+    def test_user_is_authenticated_object_exists___run_is_called__with_override(self):
+        with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True) as run_mock:
+            user = fake_user()
+            analysis = fake_analysis()
+            url_param = '?run_mode_override=V2'
+
+            self.app.post(
+                analysis.get_absolute_run_url(namespace=NAMESPACE) + url_param,
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
+            run_mock.assert_called_once_with(analysis, user, run_mode_override='V2')
 
     def test_user_is_not_in_same_model_group___run_is_denied(self):
         user = fake_user()
@@ -807,8 +860,21 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                 }
             )
+            generate_inputs_mock.assert_called_once_with(analysis, user, run_mode_override=None)
 
-            generate_inputs_mock.assert_called_once_with(analysis, user, version='v2')
+    def test_user_is_authenticated_object_exists___generate_inputs_is_called__with_override(self):
+        with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True) as generate_inputs_mock:
+            user = fake_user()
+            analysis = fake_analysis()
+            url_param = '?run_mode_override=V1'
+
+            self.app.post(
+                analysis.get_absolute_generate_inputs_url(namespace=NAMESPACE) + url_param,
+                headers={
+                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
+            generate_inputs_mock.assert_called_once_with(analysis, user, run_mode_override='V1')
 
     def test_user_is_not_in_same_model_group___run_is_denied(self):
         user = fake_user()
@@ -1048,6 +1114,8 @@ class AnalysisCopy(WebTestMixin, TestCase):
         user = fake_user()
         analysis = fake_analysis()
         new_model = fake_analysis_model()
+        new_model.run_mode = new_model.run_mode_choices.V2
+        new_model.save()
 
         response = self.app.post(
             analysis.get_absolute_copy_url(namespace=NAMESPACE),

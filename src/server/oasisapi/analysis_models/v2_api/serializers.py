@@ -12,7 +12,6 @@ from ...permissions.group_auth import validate_and_update_groups, validate_data_
 
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
-    resource_file = serializers.SerializerMethodField()
     settings = serializers.SerializerMethodField()
     versions = serializers.SerializerMethodField()
     scaling_configuration = serializers.SerializerMethodField()
@@ -31,7 +30,6 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'created',
             'modified',
             'data_files',
-            'resource_file',
             'settings',
             'versions',
             'scaling_configuration',
@@ -55,11 +53,6 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         if 'request' in self.context:
             data['creator'] = self.context.get('request').user
         return super(AnalysisModelSerializer, self).create(data)
-
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
-    def get_resource_file(self, instance):
-        request = self.context.get('request')
-        return instance.get_absolute_resources_file_url(request=request, namespace=self.namespace)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_settings(self, instance):

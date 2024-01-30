@@ -215,8 +215,13 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         `RUN_ERROR`
         """
         obj = self.get_object()
-        obj.run(request.user, version='v1')
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        if obj.model.run_mode != obj.model.run_mode_choices.V1:
+            obj.raise_validate_errors(
+                {'model': [f"Model pk {obj.model.id}' - Unsupported Operation, 'run_mode' must be 'V1', not '{obj.model.run_mode}'"]}
+            )
+        else:
+            obj.run(request.user)
+            return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
@@ -247,8 +252,14 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
-        obj.generate_inputs(request.user, version='v1')
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        # Check run_mode == V1 before dispatch
+        if obj.model.run_mode != obj.model.run_mode_choices.V1:
+            obj.raise_validate_errors(
+                {'model': [f"Model pk {obj.model.id}' - Unsupported Operation, 'run_mode' must be 'V1', not '{obj.model.run_mode}'"]}
+            )
+        else:
+            obj.generate_inputs(request.user)
+            return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)

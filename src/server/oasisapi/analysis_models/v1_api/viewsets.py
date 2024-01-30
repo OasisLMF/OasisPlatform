@@ -16,9 +16,8 @@ from .serializers import AnalysisModelSerializer, ModelVersionsSerializer, Creat
 
 from ...data_files.v1_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter
-from ...files.views import handle_related_file, handle_json_data
+from ...files.views import handle_json_data
 from ...files.serializers import RelatedFileSerializer
-from ...schemas.custom_swagger import FILE_RESPONSE
 from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 
 
@@ -226,26 +225,6 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         return Response(ModelVersionsSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @action(methods=['get', 'delete'], detail=True)
-    def resource_file(self, request, pk=None, version=None):
-        """
-        get:
-        Gets the models `resource_file` contents
-
-        delete:
-        Disassociates the moodels `resource_file` contents
-        """
-        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
-
-    @resource_file.mapping.post
-    def set_resource_file(self, request, pk=None, version=None):
-        """
-        post:
-        Sets the models `resource_file` contents
-        """
-        return handle_related_file(self.get_object(), 'resource_file', request, ['application/json'])
-
     @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
@@ -265,4 +244,9 @@ class ModelSettingsView(viewsets.ModelViewSet):
     @swagger_auto_schema(method='post', request_body=ModelParametersSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def model_settings(self, request, pk=None, version=None):
-        return handle_json_data(self.get_object(), 'resource_file', request, ModelParametersSerializer)
+        obj = self.get_object()
+        response = handle_json_data(obj, 'resource_file', request, ModelParametersSerializer)
+        # Update Model's execution mode if 'model_run_mode' is in model_settings.json
+        if request.method.lower() == 'post':
+            obj.update_run_mode()
+        return response

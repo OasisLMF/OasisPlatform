@@ -132,7 +132,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data, portfolio=portfolio, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
         analysis = serializer.create(serializer.validated_data)
-        analysis.generate_inputs(request.user, version='v1')
+        analysis.generate_inputs(request.user, run_mode_override='V1')
 
         return Response(
             AnalysisSerializer(instance=analysis, context=self.get_serializer_context()).data,

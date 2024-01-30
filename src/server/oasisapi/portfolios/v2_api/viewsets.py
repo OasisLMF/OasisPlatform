@@ -141,7 +141,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         if 'groups' in validated_data:
             del validated_data['groups']
         analysis = serializer.create(serializer.validated_data)
-        analysis.generate_inputs(request.user, version='v2')
+        analysis.generate_inputs(request.user)
 
         return Response(
             AnalysisSerializer(instance=analysis, context=self.get_serializer_context()).data,

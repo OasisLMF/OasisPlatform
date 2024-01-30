@@ -16,7 +16,7 @@ SCALING_CONFIGURATION_FILE="$OASIS_MODEL_DATA_DIRECTORY/scaling_configuration.js
 
 echo
 echo "=== Register model ==="
-echo "API version      : $OASIS_API_VERSION"
+echo "Run mode version      : $OASIS_RUN_MODE"
 echo "Supplier ID      : $OASIS_MODEL_SUPPLIER_ID"
 echo "Model ID         : $OASIS_MODEL_ID"
 echo "Model version ID : $OASIS_MODEL_VERSION_ID"
@@ -24,7 +24,7 @@ echo "Model path       : $OASIS_MODEL_DATA_DIRECTORY"
 echo "Model groups     : $OASIS_MODEL_GROUPS"
 echo
 
-if [ -z "$OASIS_MODEL_SUPPLIER_ID" ] || [ -z "$OASIS_MODEL_ID" ] || [ -z "$OASIS_MODEL_VERSION_ID" ] || [ -z "$OASIS_MODEL_DATA_DIRECTORY" ] || [ -z "$OASIS_API_VERSION" ]; then
+if [ -z "$OASIS_MODEL_SUPPLIER_ID" ] || [ -z "$OASIS_MODEL_ID" ] || [ -z "$OASIS_MODEL_VERSION_ID" ] || [ -z "$OASIS_MODEL_DATA_DIRECTORY" ] || [ -z "$OASIS_RUN_MODE" ]; then
   echo "Missing required model env var(s)"
   exit 1
 fi
@@ -77,8 +77,7 @@ MODEL_ID=$(curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -X GET \
   tr '[:upper:]' '[:lower:]')\") and (.version_id == \"$(echo ${OASIS_MODEL_VERSION_ID} | tr '[:upper:]' '[:lower:]')\")) | .id")
 
 
-#MODEL_RUN_MODE=$(echo ${OASIS_API_VERSION} | tr '[:lower:]' '[:upper:]')   # set model to run in only one API version
-MODEL_RUN_MODE='BOTH'                                                       # set model to run in any API version 
+MODEL_RUN_MODE=$(echo ${OASIS_RUN_MODE} | tr '[:lower:]' '[:upper:]')   # set model's execution workflow
 MODEL_JSON_ID_ATTRIBUTES="\"supplier_id\": \"${OASIS_MODEL_SUPPLIER_ID}\",\"model_id\": \"${OASIS_MODEL_ID}\",\"version_id\": \"${OASIS_MODEL_VERSION_ID}\",\"run_mode\": \"${MODEL_RUN_MODE}\""
 
 if [ -n "$MODEL_ID" ]; then
@@ -86,7 +85,7 @@ if [ -n "$MODEL_ID" ]; then
 else
   echo "Model not found - registers it"
 
-  MODEL_ID=$(curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/" -H "Content-Type: application/json" \
+  MODEL_ID=$(curlf -X POST "${BASE_URL}/${OASIS_RUN_MODE}/models/" -H "Content-Type: application/json" \
     -d "{${MODEL_JSON_ID_ATTRIBUTES}"} | jq .id)
   echo "Created with id $MODEL_ID"
 
@@ -98,20 +97,20 @@ if [ -n "$OASIS_MODEL_GROUPS" ]; then
 
   GROUPS_JSON="{${MODEL_JSON_ID_ATTRIBUTES}, \"groups\": [\"$(echo $OASIS_MODEL_GROUPS | sed 's/,/","/g')\"]}"
 fi
-curlf -X PATCH "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/" -H "Content-Type: application/json" -d "$GROUPS_JSON" | jq .
+curlf -X PATCH "${BASE_URL}/${OASIS_RUN_MODE}/models/${MODEL_ID}/" -H "Content-Type: application/json" -d "$GROUPS_JSON" | jq .
 
 echo "Uploading model settings"
-curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
+curlf -X POST "${BASE_URL}/${OASIS_RUN_MODE}/models/${MODEL_ID}/settings/" -H "Content-Type: application/json" -d @${MODEL_SETTINGS_FILE} | jq .
 
-if [[ "$OASIS_API_VERSION" == "v2" ]]; then 
+if [[ "$OASIS_RUN_MODE" == "v2" ]]; then 
     if [ -f "$CHUNKING_CONFIGURATION_FILE" ]; then
       echo "Uploading chunking configuration"
-      curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/chunking_configuration/" -H "Content-Type: application/json" -d @${CHUNKING_CONFIGURATION_FILE} | jq .
+      curlf -X POST "${BASE_URL}/${OASIS_RUN_MODE}/models/${MODEL_ID}/chunking_configuration/" -H "Content-Type: application/json" -d @${CHUNKING_CONFIGURATION_FILE} | jq .
     fi
 
     if [ -f "$SCALING_CONFIGURATION_FILE" ]; then
       echo "Uploading scaling configuration"
-      curlf -X POST "${BASE_URL}/${OASIS_API_VERSION}/models/${MODEL_ID}/scaling_configuration/" -H "Content-Type: application/json" -d @${SCALING_CONFIGURATION_FILE} | jq .
+      curlf -X POST "${BASE_URL}/${OASIS_RUN_MODE}/models/${MODEL_ID}/scaling_configuration/" -H "Content-Type: application/json" -d @${SCALING_CONFIGURATION_FILE} | jq .
     fi
 fi 
 

@@ -34,7 +34,7 @@ spec:
             {{- include "h.oasisServerEnvs" $root | indent 12 }}
             {{- $index = 0 -}}
             {{- range $name, $worker := .Values.workers }}
-            - name: OASIS_API_VERSION_{{ $index }}
+            - name: OASIS_RUN_MODE_{{ $index }}
               value: {{ .apiVersion | quote}}
             - name: OASIS_MODEL_SUPPLIER_ID_{{ $index }}
               value: {{ .supplierId | quote}}

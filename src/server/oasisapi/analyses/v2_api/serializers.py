@@ -395,8 +395,14 @@ class AnalysisSerializer(serializers.ModelSerializer):
         # check that model isn't soft-deleted
         if attrs.get('model'):
             if attrs['model'].deleted:
-                error = {'model': ["Model pk \"{}\" - has been deleted.".format(attrs['model'].id)]}
-                raise ValidationError(detail=error)
+                raise ValidationError({
+                    'model': ["Model pk \"{}\" - has been deleted.".format(attrs['model'].id)]
+                })
+            if attrs['model'].run_mode is None:
+                raise ValidationError({
+                    'model': ["Model pk \"{}\" - 'run_mode' must not be null".format(attrs['model'].id)]
+                })
+
         return attrs
 
 
