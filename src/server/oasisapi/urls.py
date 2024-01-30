@@ -4,7 +4,13 @@ from django.conf.urls.static import static
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-# from rest_framework_nested import routers
+
+from .swagger import (
+    api_v1_urlpatterns,
+    api_v2_urlpatterns,
+    CustomGeneratorClassV1,
+    CustomGeneratorClassV2,
+)
 
 if settings.DEBUG_TOOLBAR:
     from django.urls import path
@@ -49,38 +55,40 @@ api_info = openapi.Info(
     default_version='v2',
     description=api_info_description,
 )
-
-schema_view = get_schema_view(
+schema_view_all = get_schema_view(
     api_info,
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
+schema_view_v1 = get_schema_view(
+    api_info,
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+    generator_class=CustomGeneratorClassV1,
+)
+schema_view_v2 = get_schema_view(
+    api_info,
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+    generator_class=CustomGeneratorClassV2,
+)
 
-# Base Routes (no version)
 api_urlpatterns = [
-    url(r'^(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    url(r'^$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-ui'),
+    # Main Swagger page
+    url(r'^(?P<format>\.json|\.yaml)$', schema_view_all.without_ui(cache_timeout=0), name='schema-json'),
+    url(r'^$', schema_view_all.with_ui('swagger', cache_timeout=0), name='schema-ui'),
+    # V1 only swagger endpoints
+    url(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui-v1'),
+    url(r'^v1/(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json'),
+    # V2 only swagger endpoints
+    url(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui-v2'),
+    url(r'^v2/(?P<format>\.json|\.yaml)$', schema_view_v2.without_ui(cache_timeout=0), name='schema-json'),
+    # basic urls (auth, server info)
     url(r'^', include('src.server.oasisapi.base_urls')),
 ]
-
-
-# API v1 Routes
-api_urlpatterns += [
-    url(r'^v1/', include('src.server.oasisapi.analysis_models.v1_api.urls', namespace='v1-models')),
-    url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls', namespace='v1-portfolios')),
-    url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls', namespace='v1-analyses')),
-    url(r'^v1/', include('src.server.oasisapi.data_files.v1_api.urls', namespace='v1-files')),
-]
-
-# API v2 Routes
+api_urlpatterns += api_v1_urlpatterns
 if not settings.DISABLE_V2_API:
-    api_urlpatterns += [
-        url(r'^v2/', include('src.server.oasisapi.analysis_models.v2_api.urls', namespace='v2-models')),
-        url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls', namespace='v2-analyses')),
-        url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
-        url(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-files')),
-        url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
-    ]
+    api_urlpatterns += api_v2_urlpatterns
 
 urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.URL_SUB_PATH:

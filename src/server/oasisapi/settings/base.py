@@ -22,6 +22,7 @@ from ....conf import iniconf  # noqa
 from ....common.shared import set_aws_log_level, set_azure_log_level
 from ....conf.base import *
 
+
 IN_TEST = 'test' in sys.argv
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -33,6 +34,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IS_UNITTEST = sys.argv[0].endswith('pytest')
 IS_TESTSERVER = len(sys.argv) >= 2 and sys.argv[1] == 'runserver'
+IS_SWAGGER_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'generate_swagger'
 
 if IS_UNITTEST or IS_TESTSERVER:
     # Always set Debug mode when in dev environment
@@ -48,6 +50,17 @@ else:
     DEBUG_TOOLBAR = iniconf.settings.getboolean('server', 'debug_toolbar', fallback=False)
     URL_SUB_PATH = iniconf.settings.getboolean('server', 'URL_SUB_PATH', fallback=True)
     CONSOLE_DEBUG = False
+
+
+# Generate All
+DEFAULT_GENERATOR_CLASS = 'drf_yasg.generators.OpenAPISchemaGenerator'          # Generate All
+if IS_SWAGGER_GEN:
+    # generate only V1 endpoints
+    if iniconf.settings.getboolean('server', 'GEN_SWAGGER_V1', fallback=False):
+        DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV1'
+    # generate only V2 endpoints
+    if iniconf.settings.getboolean('server', 'GEN_SWAGGER_V2', fallback=False):
+        DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV2'
 
 # Django 3.2 - the default pri-key field changed to 'BigAutoField.',
 # https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
@@ -79,12 +92,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    #    'django_extensions',
-    'django_filters',
-    'rest_framework',
-    'drf_yasg',
-    'channels',
-    'storages',
 
     'src.server.oasisapi.oidc',
     'src.server.oasisapi.files',
@@ -96,6 +103,15 @@ INSTALLED_APPS = [
     'src.server.oasisapi.info',
     'src.server.oasisapi.queues',
     'django_cleanup.apps.CleanupConfig',
+
+
+    #    'django_extensions',
+    'django_filters',
+    'rest_framework',
+    'drf_yasg',
+    'channels',
+    'storages',
+
 
 ]
 
@@ -183,8 +199,8 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
 AUTH_PASSWORD_VALIDATORS = []
-
 API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
+
 
 if API_AUTH_TYPE == 'keycloak':
 
@@ -206,6 +222,7 @@ if API_AUTH_TYPE == 'keycloak':
     OIDC_VERIFY_SSL = False
 
     SWAGGER_SETTINGS = {
+        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
         'USE_SESSION_AUTH': False,
         'SECURITY_DEFINITIONS': {
             "keycloak": {
@@ -232,6 +249,7 @@ else:
     }
 
     SWAGGER_SETTINGS = {
+        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
         'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
         'LOGIN_URL': reverse_lazy('rest_framework:login'),
         'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
