@@ -156,7 +156,7 @@ services:
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
      OASIS_MODEL_VERSION_ID: 'v1'
-     OASIS_API_VERSION: v1
+     OASIS_RUN_MODE: v1
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ./src/model_execution_worker:/home/worker/src/model_execution_worker
@@ -175,7 +175,7 @@ services:
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
      OASIS_MODEL_VERSION_ID: 'v2'
-     OASIS_API_VERSION: v2
+     OASIS_RUN_MODE: v2
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ./src/model_execution_worker:/home/worker/src/model_execution_worker
