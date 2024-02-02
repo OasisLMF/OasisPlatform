@@ -1,3 +1,4 @@
+import urllib
 from src.conf.iniconf import settings
 
 #: Celery config - ignore result?
@@ -21,8 +22,8 @@ if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
 else:
     CELERY_RESULT_BACKEND = '{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'.format(
         DB_ENGINE=settings.get('celery', 'db_engine'),
-        DB_USER=settings.get('celery', 'db_user'),
-        DB_PASS=settings.get('celery', 'db_pass'),
+        DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
+        DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
         DB_HOST=settings.get('celery', 'db_host'),
         DB_PORT=settings.get('celery', 'db_port'),
         DB_NAME=settings.get('celery', 'db_name', fallback='celery'),
