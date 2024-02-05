@@ -92,7 +92,7 @@ cryptography==41.0.2
     #   service-identity
 daphne==2.5.0
     # via channels
-django==3.2.20
+django==3.2.23
     # via
     #   channels
     #   django-celery-results
@@ -119,7 +119,9 @@ django-model-utils==4.3.1
 django-request-logging==0.7.5
     # via -r requirements-server.in
 django-storages[azure]==1.13.2
-    # via -r requirements-server.in
+    # via
+    #   -r requirements-server.in
+    #   django-storages
 djangorestframework==3.14.0
     # via
     #   -r requirements-server.in
@@ -177,6 +179,8 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.3.0
     # via celery
+llvmlite==0.41.1
+    # via numba
 markdown==3.4.3
     # via -r requirements-server.in
 markupsafe==2.1.2
@@ -187,11 +191,14 @@ msgpack==0.6.2
     # via channels-redis
 mysqlclient==2.1.1
     # via -r requirements-server.in
+numba==0.58.1
+    # via ods-tools
 numpy==1.24.2
     # via
+    #   numba
     #   pandas
     #   pyarrow
-ods-tools==3.1.0
+ods-tools==3.1.4
     # via -r requirements-server.in
 packaging==23.0
     # via
@@ -207,7 +214,7 @@ prompt-toolkit==3.0.38
     # via click-repl
 psycopg2-binary==2.9.6
     # via -r requirements-server.in
-pyarrow==11.0.0
+pyarrow==14.0.1
     # via -r requirements-server.in
 pyasn1==0.4.8
     # via
@@ -273,7 +280,9 @@ sqlparse==0.4.4
     #   django
     #   django-debug-toolbar
 twisted[tls]==22.10.0
-    # via daphne
+    # via
+    #   daphne
+    #   twisted
 txaio==23.1.1
     # via autobahn
 typing-extensions==4.5.0

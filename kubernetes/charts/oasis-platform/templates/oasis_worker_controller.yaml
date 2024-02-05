@@ -75,11 +75,20 @@ spec:
             - name: OASIS_NEVER_SHUTDOWN_FIXED_WORKERS
               value: "{{ .Values.workerController.neverShutdownFixedWorkers }}"
             - name: OASIS_API_HOST
-              value: {{ .Values.oasisWebsocket.name }}
+              value: {{ .Values.oasisServer.name }}
             - name: OASIS_API_PORT
+              value: {{ .Values.oasisServer.port | quote }}
+            - name: OASIS_API_SUBPATH
+              value: "api"
+            - name: OASIS_WEBSOCKET_HOST
+              value: {{ .Values.oasisWebsocket.name }}
+            - name: OASIS_WEBSOCKET_PORT
               value: {{ .Values.oasisWebsocket.port | quote }}
             - name: OASIS_CLUSTER_NAMESPACE
               value: {{ .Release.Namespace | quote }}
+            - name: OASIS_LOGLEVEL
+              value: "{{ .Values.workerController.logLevel }}"
+
             {{- with .Values.workerController.totalWorkerLimit }}
             - name: OASIS_TOTAL_WORKER_LIMIT
               value: {{ . | quote }}

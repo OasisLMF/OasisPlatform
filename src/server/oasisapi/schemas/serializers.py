@@ -3,6 +3,10 @@ __all__ = [
     'InputFileSerializer',
     'AnalysisSettingsSerializer',
     'ModelParametersSerializer',
+    'GroupNameSerializer',
+    'QueueNameSerializer',
+    'TaskCountSerializer',
+    'TaskErrorSerializer',
 ]
 
 import json
@@ -15,6 +19,11 @@ from jsonschema.exceptions import SchemaError as JSONSchemaError
 
 from ods_tools.oed.setting_schema import ModelSettingSchema, AnalysisSettingSchema
 from ods_tools.oed.common import OdsException
+
+
+TaskErrorSerializer = serializers.ListField(child=serializers.IntegerField())
+GroupNameSerializer = serializers.ListField(child=serializers.CharField())
+QueueNameSerializer = serializers.ListField(child=serializers.CharField())
 
 
 class TokenObtainPairResponseSerializer(serializers.Serializer):
@@ -62,6 +71,23 @@ class InputFileSerializer(serializers.Serializer):
     converted_uri = serializers.URLField()
     converted_stored = serializers.CharField()
     conversion_state = serializers.CharField()
+
+    def create(self, validated_data):
+        raise NotImplementedError()
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError()
+
+
+class TaskCountSerializer(serializers.Serializer):
+    TOTAL_IN_QUEUE = serializers.IntegerField()
+    TOTAL = serializers.IntegerField()
+    PENDING = serializers.IntegerField()
+    QUEUED = serializers.IntegerField()
+    STARTED = serializers.IntegerField()
+    COMPLETED = serializers.IntegerField()
+    CANCELLED = serializers.IntegerField()
+    ERROR = serializers.IntegerField()
 
     def create(self, validated_data):
         raise NotImplementedError()

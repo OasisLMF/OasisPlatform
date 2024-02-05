@@ -1,10 +1,13 @@
 import asyncio
 import json
-from urllib.parse import urljoin
 
 import aiohttp
 import time
 from aiohttp import ClientResponse
+
+
+def urljoin(*args):
+    return '/'.join(s.strip('/') for s in args) + '/'
 
 
 class OasisClient:
@@ -12,22 +15,31 @@ class OasisClient:
     A simple client for the Oasis API. Takes care of the access token and supports searching for models.
     """
 
-    def __init__(self, host, port, secure, username, password):
+    def __init__(self, http_host, http_port, http_subpath, ws_host, ws_port, secure, username, password):
         """
-        :param host: Oasis API hostname.
-        :param port: Oasis API port.
+        :param http_host: Oasis API hostname.
+        :param http_port: Oasis API port.
+        :param ws_host: Oasis Websocket hostname.
+        :param ws_port: Oasis Websocket port.
         :param secure: Use secure connection.
         :param username: Username for API authentication.
         :param password: Password for API authentication.
         """
-        self.host = host
-        self.port = port
+        self.ws_host = ws_host
+        self.ws_port = ws_port
         self.secure = secure
-        self.http_host = ('https://' if secure else 'http://') + f'{host}:{port}'
+
+        api_proto = 'https://' if secure else 'http://'
+        api_host = http_host
+        api_port = f':{http_port}' if http_port else ''
+        api_path = f'/{http_subpath}' if http_subpath else ''
+        self.http_host = f'{api_proto}{api_host}{api_port}{api_path}'
+
         self.username = username
         self.password = password
         self.access_token = None
         self.token_expire_time = None
+        print('Connecting to: ' + self.http_host)
 
     def is_authenticated(self) -> bool:
         """
@@ -47,9 +59,7 @@ class OasisClient:
             params = {'username': self.username, 'password': self.password}
 
             async with session.post(urljoin(self.http_host, '/access_token/'), data=params) as response:
-
                 data = await self.parse_answer(response)
-
                 self.access_token = data['access_token']
                 self.token_expire_time = time.time() + round(data['expires_in'] / 2)
 
@@ -91,7 +101,7 @@ class OasisClient:
             'model_id': model_id,
             'version_id': model_version_id
         }
-        models = await self._get('/v1/models/', params)
+        models = await self._get('/v2/models/', params)
 
         for model in models:
             if model['supplier_id'] == supplier_id and model['model_id'] == model_id and model['version_id'] == model_version_id:
@@ -107,7 +117,7 @@ class OasisClient:
 
         await self.authenticate_if_needed()
 
-        model = await self._get(f'/v1/models/{model_id}/scaling_configuration/')
+        model = await self._get(f'/v2/models/{model_id}/scaling_configuration/')
 
         return model
 

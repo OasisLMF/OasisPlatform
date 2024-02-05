@@ -367,12 +367,31 @@ jobs:
         name: openapi-schema
         path: ${{ github.workspace }}/
 
+    - name: Download API schema (v1)
+      uses: actions/download-artifact@v3
+      with:
+        name: v1-openapi-schema
+        path: ${{ github.workspace }}/
+
+    - name: Download API schema (v2)
+      uses: actions/download-artifact@v3
+      with:
+        name: v2-openapi-schema
+        path: ${{ github.workspace }}/
+
     - name: Name API schema
       id: api_schema
       run: |
         schema_filename="openapi-schema-${{ env.release_tag }}.json"
+        v1_schema_filename="v1-openapi-schema-${{ env.release_tag }}.json"
+        v2_schema_filename="v2-openapi-schema-${{ env.release_tag }}.json"
+
         mv openapi-schema.json  $schema_filename
-        echo "filename=$schema_filename" >> $GITHUB_OUTPUT
+        mv v1-openapi-schema.json  $v1_schema_filename
+        mv v2-openapi-schema.json  $v2_schema_filename
+        echo "filename_all=$schema_filename" >> $GITHUB_OUTPUT
+        echo "filename_v1=$v1_schema_filename" >> $GITHUB_OUTPUT
+        echo "filename_v2=$v2_schema_filename" >> $GITHUB_OUTPUT
 
     # --- Create Changelog --- #
     - name: Tag Release
@@ -464,17 +483,38 @@ jobs:
         prerelease: ${{ env.pre_release }}
 
     # --- Attach build assest --- #
-    - name: Upload Schema
+    - name: Upload Schema (base)
       id: upload-source-release-asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/${{ steps.api_schema.outputs.filename }}
-        asset_name: ${{ steps.api_schema.outputs.filename }}
+        asset_path: ${{ github.workspace }}/${{ steps.api_schema.outputs.filename_all }}
+        asset_name: ${{ steps.api_schema.outputs.filename_all }}
         asset_content_type: application/json
 
+    - name: Upload Schema (v1)
+      id: upload-source-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/${{ steps.api_schema.outputs.filename_v1 }}
+        asset_name: ${{ steps.api_schema.outputs.filename_v1 }}
+        asset_content_type: application/json
+
+    - name: Upload Schema (v2)
+      id: upload-source-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/${{ steps.api_schema.outputs.filename_v2 }}
+        asset_name: ${{ steps.api_schema.outputs.filename_v2 }}
+        asset_content_type: application/json
     # --- Slack notify --- #
     - name: slack message vars
       id: slack_vars

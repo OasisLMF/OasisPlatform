@@ -51,6 +51,7 @@ class ModelScalingOptions(models.Model):
                                         choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
     worker_count_fixed = models.PositiveSmallIntegerField(default=1, null=False)
     worker_count_max = models.PositiveSmallIntegerField(default=10, null=False)
+    worker_count_min = models.PositiveSmallIntegerField(default=0, null=False)
     chunks_per_worker = models.PositiveIntegerField(default=10, null=False)
 
 
@@ -111,17 +112,23 @@ class SettingsTemplate(TimeStampedModel):
         else:
             return None
 
-    def get_absolute_settings_template_url(self, model_pk, request=None):
-        return reverse('models-setting_templates-content', kwargs={'version': 'v1', 'pk': self.pk, 'models_pk': model_pk}, request=request)
+    def get_absolute_settings_template_url(self, model_pk, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=self._update_ns(request))
 
 
 class AnalysisModel(TimeStampedModel):
+    run_mode_choices = Choices(
+        ('V1', 'Available for Single-Instance Execution'),
+        ('V2', 'Available for Distributed Execution'),
+    )
+
     supplier_id = models.CharField(max_length=255, help_text=_('The supplier ID for the model.'))
     model_id = models.CharField(max_length=255, help_text=_('The model ID for the model.'))
     version_id = models.CharField(max_length=255, help_text=_('The version ID for the model.'))
     resource_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, null=True, default=None, related_name='analysis_model_resource_file')
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+    groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
     data_files = models.ManyToManyField(DataFile, blank=True, related_name='analyses_model_data_files')
     template_files = models.ManyToManyField(SettingsTemplate, blank=True, related_name='analyses_model_settings_template')
     ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
@@ -129,6 +136,8 @@ class AnalysisModel(TimeStampedModel):
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
     oasislmf_config = models.TextField(default='')
     deleted = models.BooleanField(default=False, editable=False)
+    run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),
+                                choices=run_mode_choices, default=None, null=True, help_text=_('Execution modes Available, v1 = Single-Instance, v2 = Distributed Execution'))
 
     scaling_options = models.OneToOneField(ModelScalingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
     chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
@@ -143,6 +152,20 @@ class AnalysisModel(TimeStampedModel):
 
     def __str__(self):
         return '{}-{}-{}'.format(self.supplier_id, self.model_id, self.version_id)
+
+    def _update_ns(self, request=None):
+        """ WORKAROUND - this is needed for when a copy request is issued
+                         from the portfolio view '/{ver}/portfolios/{id}/create_analysis/'
+
+                         The inncorrect namespace '{ver}-portfolios' is inherited from the
+                         original request. This needs to be replaced with '{ver}-analyses'
+        """
+        if not request:
+            return None
+        ns_ver, ns_view = request.version.split('-')
+        if ns_view != 'models':
+            request.version = f'{ns_ver}-models'
+        return request
 
     @property
     def queue_name(self):
@@ -172,20 +195,33 @@ class AnalysisModel(TimeStampedModel):
                 pass
         self.save()
 
-    def get_absolute_resources_file_url(self, request=None):
-        return reverse('analysis-model-resource-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_resources_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-model-resource-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_versions_url(self, request=None):
-        return reverse('analysis-model-versions', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_versions_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-model-versions', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_settings_url(self, request=None):
-        return reverse('model-settings', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_settings_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}model-settings', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_scaling_configuration_url(self, request=None):
-        return reverse('analysis-model-scaling-configuration', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_scaling_configuration_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-model-scaling-configuration', kwargs={'pk': self.pk}, request=self._update_ns(request))
 
-    def get_absolute_chunking_configuration_url(self, request=None):
-        return reverse('analysis-model-chunking-configuration', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_chunking_configuration_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-model-chunking-configuration', kwargs={'pk': self.pk}, request=self._update_ns(request))
+
+    def update_run_mode(self, namespace=None):
+        if self.resource_file:
+            model_settings = self.resource_file.read_json()
+            run_mode = model_settings.get('model_run_mode', '').upper()
+            if run_mode in (self.run_mode_choices.V1, self.run_mode_choices.V2):
+                self.run_mode = run_mode
+                self.save(update_fields=["run_mode"])
 
 
 class QueueModelAssociation(models.Model):

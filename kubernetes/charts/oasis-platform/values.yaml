@@ -9,7 +9,7 @@ images:
       imagePullPolicy: Never
     ui:
       image: coreoasis/oasisui_app
-      version: 1.11.6
+      version: 1.11.7
     worker_controller:
       image: coreoasis/worker_controller
       version: dev
@@ -181,7 +181,7 @@ oasisServer:
     - name: OASIS_DEBUG
       value: "1"
     - name: OASIS_PORTFOLIO_UPLOAD_VALIDATION
-      value: "1"
+      value: "0"
 
 # Oasis API host, port and credentials (for Websocket connections)
 oasisWebsocket:
@@ -210,6 +210,9 @@ workerController:
 
   # Debug option - This prevents workers for a model set to FIXED_WORKERS to be scaled to 0. They will always be started.
   neverShutdownFixedWorkers: false
+
+  # Set Log level, Warning - setting 'DEBUG' will cause instability under high load do not set this in production
+  logLevel: 'INFO'
 
   # Settings related to prioritized runs
   priority:

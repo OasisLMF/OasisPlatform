@@ -346,7 +346,7 @@ class ReleaseNotesBuilder(object):
         plat_header.append(f'* [coreoasis/oasisui_proxy:{t_ui}](https://hub.docker.com/r/coreoasis/oasisui_proxy/tags?name={t_ui})\n')
         plat_header.append('## Components\n')
         plat_header.append(f'* [oasislmf {t_lmf}](https://github.com/OasisLMF/OasisLMF/releases/tag/{t_lmf})\n')
-        plat_header.append(f'* [ods-tools {t_ods}](https://github.com/OasisLMF/OasisLMF/releases/tag/{t_ods})\n')
+        plat_header.append(f'* [ods-tools {t_ods}](https://github.com/OasisLMF/ODS_Tools/releases/tag/{t_ods})\n')
         plat_header.append(f'* [ktools {t_ktools}](https://github.com/OasisLMF/ktools/releases/tag/{t_ktools})\n')
         plat_header.append(f'* [Oasis UI {t_ui}](https://github.com/OasisLMF/OasisUI/releases/tag/{t_ui})\n')
         plat_header.append('\n')
@@ -427,7 +427,7 @@ def check_rate_limit(github_token):
 
 
 @cli.command()
-@click.option('--repo', type=click.Choice(['ktools', 'OasisLMF', 'OasisPlatform', 'OasisUI'], case_sensitive=True), required=True)
+@click.option('--repo', type=click.STRING, required=True, help="Oasislmf Repo name case sensitive, ['ktools', 'OasisLMF', 'OasisUI' ..]")
 @click.option('--output-path', type=click.Path(exists=False), default='./CHANGELOG.rst', help='changelog output path')
 @click.option('--local-repo-path', type=click.Path(exists=False), default=None, help=' Path to local git repository, used to skip clone step (optional) ')
 @click.option('--from-tag', required=True, help='Github tag to track changes from')
@@ -473,7 +473,7 @@ def build_changelog(repo, from_tag, to_tag, github_token, output_path, apply_mil
 
 
 @cli.command()
-@click.option('--repo', type=click.Choice(['ktools', 'OasisLMF', 'OasisUI'], case_sensitive=True), required=True)
+@click.option('--repo', type=click.STRING, required=True, help="Oasislmf Repo name case sensitive, ['ktools', 'OasisLMF', 'OasisUI' ..]")
 @click.option('--output-path', type=click.Path(exists=False), default='./RELEASE.md', help='Release notes output path')
 @click.option('--local-repo-path', type=click.Path(exists=False), default=None, help=' Path to local git repository, used to skip clone step (optional) ')
 @click.option('--from-tag', required=True, help='Github tag to track changes from')

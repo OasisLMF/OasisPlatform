@@ -26,6 +26,7 @@ spec:
   {{- end }}
   rules:
     - host: {{ .Values.ingress.uiHostname }}
+
       http:
         paths:
           - path: /
@@ -49,3 +50,10 @@ spec:
                 name: oasis-server
                 port:
                   number: 8000
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: oasis-websocket
+                port:
+                  number: 8001

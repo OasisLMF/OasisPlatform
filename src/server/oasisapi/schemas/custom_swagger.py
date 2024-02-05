@@ -3,6 +3,7 @@ __all__ = [
     'HEALTHCHECK',
     'TOKEN_REFRESH_HEADER',
     'FILE_FORMAT_PARAM',
+    'RUN_MODE_PARAM',
     'SUBTASK_STATUS_PARAM',
     'SUBTASK_SLUG_PARAM',
     'FILE_VALIDATION_PARAM',
@@ -69,6 +70,15 @@ FILE_FORMAT_PARAM = openapi.Parameter(
     description="File format returned, default is `csv`",
     type=openapi.TYPE_STRING,
     enum=['csv', 'parquet']
+)
+
+RUN_MODE_PARAM = openapi.Parameter(
+    'run_mode_override',
+    openapi.IN_QUERY,
+    required=False,
+    description="Override task run_mode, `V1 = Single server` or `V2 = distributed`",
+    type=openapi.TYPE_STRING,
+    enum=['V1', 'V2']
 )
 
 SUBTASK_STATUS_PARAM = openapi.Parameter(

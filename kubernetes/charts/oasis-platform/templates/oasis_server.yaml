@@ -132,18 +132,14 @@ spec:
               readOnly: true
 {{- end }}
           startupProbe:
-            httpGet:
-              path: /healthcheck/
+            tcpSocket:
               port: {{.Values.oasisWebsocket.port}}
-              scheme: HTTP
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 30
           livenessProbe:
-            httpGet:
-              path: /healthcheck/
+            tcpSocket:
               port: {{.Values.oasisWebsocket.port}}
-              scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10

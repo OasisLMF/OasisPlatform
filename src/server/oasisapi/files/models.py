@@ -135,7 +135,7 @@ class RelatedFile(TimeStampedModel):
     filename = models.CharField(max_length=255, editable=False, default="", blank=True)
     content_type = models.CharField(max_length=255)
     store_as_filename = models.BooleanField(default=False, blank=True, null=True)
-    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+    groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
     oed_validated = models.BooleanField(default=False, editable=False)
 
     mapping_file = models.ForeignKey(MappingFile, blank=True, default=None, null=True, on_delete=models.CASCADE, related_name="mapped_files")
@@ -167,11 +167,17 @@ class RelatedFile(TimeStampedModel):
         self.file.seek(0)
         return json.loads(self.file.read(*args, **kwargs).decode("utf-8"))
 
-    def start_conversion(self, mapping_file):
-        from src.server.oasisapi.files.tasks import run_file_conversion
+    def start_conversion(self, mapping_file, version="v2"):
+        from src.server.oasisapi.files.v1_api.tasks import run_file_conversion as v1_run
+        from src.server.oasisapi.files.v2_api.tasks import run_file_conversion as v2_run
+
+        task = {
+            "v1": v1_run,
+            "v2": v2_run,
+        }.get(version, v2_run)
 
         self.mapping_file = mapping_file
         self.conversion_state = RelatedFile.ConversionState.PENDING
         self.save()
 
-        run_file_conversion.delay(self.id)
+        task.delay(self.id)
