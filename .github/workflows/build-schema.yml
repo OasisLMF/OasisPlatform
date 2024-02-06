@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-      - stable**  
+      - stable**
   workflow_dispatch:
     inputs:
       ods_branch:
@@ -22,7 +22,7 @@ on:
 
 jobs:
   ods_tools:
-    #if: inputs.ods_branch != ''
+    if: ${{ github.event_name != 'workflow_dispatch' }}
     uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@main
     secrets: inherit
     with:

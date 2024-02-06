@@ -495,7 +495,7 @@ jobs:
         asset_content_type: application/json
 
     - name: Upload Schema (v1)
-      id: upload-source-release-asset
+      id: upload-source-release-asset-v1
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
@@ -506,7 +506,7 @@ jobs:
         asset_content_type: application/json
 
     - name: Upload Schema (v2)
-      id: upload-source-release-asset
+      id: upload-source-release-asset-v2
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
