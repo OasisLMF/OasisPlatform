@@ -98,7 +98,7 @@ if settings.URL_SUB_PATH:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += [url(r'^api/', include(api_urlpatterns))]
 else:
-    urlpatterns += static(settings.static_debug_url, document_root=settings.static_root)
+    urlpatterns += static(settings.STATIC_DEBUG_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += [url(r'^', include(api_urlpatterns))]
 
 
