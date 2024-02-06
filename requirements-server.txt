@@ -24,7 +24,7 @@ attrs==22.2.0
     #   jsonschema
     #   service-identity
     #   twisted
-autobahn==23.1.2
+autobahn==23.6.2
     # via daphne
 automat==22.10.0
     # via twisted
@@ -44,7 +44,7 @@ celery==5.3.0
     # via
     #   -r requirements-server.in
     #   django-celery-results
-certifi==2022.12.7
+certifi==2023.7.22
     # via requests
 cffi==1.15.1
     # via cryptography
@@ -82,7 +82,9 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==40.0.1
+cramjam==2.8.1
+    # via fastparquet
+cryptography==41.0.2
     # via
     #   autobahn
     #   azure-storage-blob
@@ -92,7 +94,7 @@ cryptography==40.0.1
     #   service-identity
 daphne==2.5.0
     # via channels
-django==3.2.20
+django==3.2.23
     # via
     #   channels
     #   django-celery-results
@@ -119,7 +121,9 @@ django-model-utils==4.3.1
 django-request-logging==0.7.5
     # via -r requirements-server.in
 django-storages[azure]==1.13.2
-    # via -r requirements-server.in
+    # via
+    #   -r requirements-server.in
+    #   django-storages
 djangorestframework==3.14.0
     # via
     #   -r requirements-server.in
@@ -132,6 +136,12 @@ drf-nested-routers==0.93.4
     # via -r requirements-server.in
 drf-yasg==1.21.5
     # via -r requirements-server.in
+fastparquet==2023.10.1
+    # via oasis-data-manager
+fsspec==2024.2.0
+    # via
+    #   fastparquet
+    #   oasis-data-manager
 greenlet==2.0.2
     # via sqlalchemy
 gunicorn==20.1.0
@@ -177,6 +187,8 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.3.0
     # via celery
+llvmlite==0.41.1
+    # via numba
 markdown==3.4.3
     # via -r requirements-server.in
 markupsafe==2.1.2
@@ -187,19 +199,28 @@ msgpack==0.6.2
     # via channels-redis
 mysqlclient==2.1.1
     # via -r requirements-server.in
+numba==0.58.0
+    # via ods-tools
 numpy==1.24.2
     # via
+    #   fastparquet
+    #   numba
     #   pandas
     #   pyarrow
-ods-tools==3.1.0
+oasis-data-manager==0.1.1
+    # via ods-tools
+ods-tools==3.2.0
     # via -r requirements-server.in
 packaging==23.0
     # via
     #   drf-yasg
+    #   fastparquet
     #   ods-tools
 pandas==1.5.3
     # via
     #   -r requirements-server.in
+    #   fastparquet
+    #   oasis-data-manager
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-server.in
@@ -207,7 +228,7 @@ prompt-toolkit==3.0.38
     # via click-repl
 psycopg2-binary==2.9.6
     # via -r requirements-server.in
-pyarrow==11.0.0
+pyarrow==14.0.1
     # via -r requirements-server.in
 pyasn1==0.4.8
     # via
@@ -221,7 +242,7 @@ pyjwt==2.6.0
     # via djangorestframework-simplejwt
 pymysql==1.1.0
     # via -r requirements-server.in
-pyopenssl==23.1.1
+pyopenssl==23.2.0
     # via
     #   josepy
     #   twisted
@@ -273,13 +294,18 @@ sqlparse==0.4.4
     #   django
     #   django-debug-toolbar
 twisted[tls]==22.10.0
-    # via daphne
+    # via
+    #   daphne
+    #   twisted
 txaio==23.1.1
     # via autobahn
+typing==3.7.4.3
+    # via oasis-data-manager
 typing-extensions==4.5.0
     # via
     #   azure-core
     #   azure-storage-blob
+    #   oasis-data-manager
     #   twisted
 tzdata==2023.3
     # via celery

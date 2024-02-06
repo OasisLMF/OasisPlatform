@@ -7,12 +7,15 @@ from ..views import HealthcheckView
 
 
 class Healthcheck(WebTest):
-    def test_user_is_not_authenticated___response_is_ok(self):
-        with patch.object(HealthcheckView, 'celery_is_ok', return_value=True) as mock_method:
-            response = self.app.get(reverse('healthcheck'))
-            self.assertEqual(200, response.status_code)
 
-    def test_user_is_authenticated___response_is_ok(self):
-        with patch.object(HealthcheckView, 'celery_is_ok', return_value=True) as mock_method:
-            response = self.app.get(reverse('healthcheck'), user=fake_user())
-            self.assertEqual(200, response.status_code)
+    @patch.object(HealthcheckView, 'celery_v1_is_ok', return_value=True)
+    @patch.object(HealthcheckView, 'celery_v2_is_ok', return_value=True)
+    def test_user_is_not_authenticated___response_is_ok(self, mock_celery_v1, mock_celery_v2):
+        response = self.app.get(reverse('healthcheck'))
+        self.assertEqual(200, response.status_code)
+
+    @patch.object(HealthcheckView, 'celery_v1_is_ok', return_value=True)
+    @patch.object(HealthcheckView, 'celery_v2_is_ok', return_value=True)
+    def test_user_is_authenticated___response_is_ok(self, mock_celery_v1, mock_celery_v2):
+        response = self.app.get(reverse('healthcheck'), user=fake_user())
+        self.assertEqual(200, response.status_code)

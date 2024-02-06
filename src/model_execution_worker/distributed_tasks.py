@@ -27,7 +27,7 @@ from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
-from ..conf import celeryconf as celery_conf
+from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
@@ -44,6 +44,8 @@ TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/t
 
 app = Celery()
 app.config_from_object(celery_conf)
+# print(app._conf)
+
 
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
@@ -195,9 +197,9 @@ def notify_api_status(analysis_pk, task_status):
         task_status
     ))
     signature(
-        'set_task_status',
+        'set_task_status_v2',
         args=(analysis_pk, task_status, datetime.now().timestamp()),
-        queue='celery'
+        queue='celery-v2'
     ).delay()
 
 
@@ -255,8 +257,9 @@ def register_worker(sender, **k):
         logging.info('settings: {}'.format(m_settings))
 
         signature(
-            'run_register_worker',
+            'run_register_worker_v2',
             args=(m_supplier, m_name, m_id, m_settings, m_version, m_conf),
+            queue='celery-v2',
         ).delay()
 
     # Required ENV
@@ -479,6 +482,7 @@ def keys_generation_task(fn):
         params.setdefault('target_dir', params['root_run_dir'])
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], 'user-data'))
         params.setdefault('lookup_complex_config_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
+        params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
         # Generate keys files
         params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
@@ -521,6 +525,7 @@ def keys_generation_task(fn):
             maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
         else:
             params['lookup_complex_config_json'] = None
+            params['analysis_settings_json'] = None
         if complex_data_files:
             maybe_prepare_complex_data_files(complex_data_files, params['user_data_dir'])
         else:
@@ -831,7 +836,7 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
             filestore.delete_file(params.get('pre_scope_file'))
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
-    return params
+    return {'input-location_generate-and-run': params.get('output_location')}
 
 
 # --- loss generation tasks ------------------------------------------------ #
@@ -899,7 +904,11 @@ def loss_generation_task(fn):
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], 'user-data'))
         params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
+        # case for 'generate_and_run'
+        if params.get('input-location_generate-and-run'):
+            kwargs['input_location'] = params.get('input-location_generate-and-run')
         input_location = kwargs.get('input_location')
+
         if input_location:
             maybe_extract_tar(
                 input_location,
@@ -965,6 +974,7 @@ def prepare_losses_generation_params(
     loss_path_vars = [
         'model_data_dir',
         'model_settings_json',
+        'post_analysis_module',
     ]
 
     for path_val in loss_path_vars:
@@ -978,9 +988,18 @@ def prepare_losses_generation_params(
         else:
             run_params[path_val] = None
 
-    params = OasisManager()._params_generate_losses(**run_params)
+    gen_losses_params = OasisManager()._params_generate_losses(**run_params)
+    post_hook_params = OasisManager()._params_post_analysis(**run_params)
+    params = {**gen_losses_params, **post_hook_params}
+
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
+
+    # needed incase input_data is missing on another node
+    input_tar_generate_and_run = run_params.get('input-location_generate-and-run')
+    if input_tar_generate_and_run:
+        params['input-location_generate-and-run'] = input_tar_generate_and_run
+
     return params
 
 
@@ -1006,7 +1025,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         current_chunk_id = None
         max_chunk_id = -1
         work_dir = 'work'
-
     else:
         # Run a single ktools pipe
         current_chunk_id = chunk_idx + 1
@@ -1051,8 +1069,10 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
             merge_dirs(d, abs_work_dir)
 
     OasisManager().generate_losses_output(**res)
-    res['bash_trace'] = ""
+    if res.get('post_analysis_module', None):
+        OasisManager().post_analysis(**res)
 
+    res['bash_trace'] = ""
     return {
         **res,
         'output_location': filestore.put(os.path.join(res['model_run_dir'], 'output'), arcname='output'),

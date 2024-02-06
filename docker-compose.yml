@@ -23,10 +23,24 @@ x-shared-env: &shared-env
   OASIS_CELERY_DB_PORT: 5432
   OASIS_INPUT_GENERATION_CONTROLLER_QUEUE: task-controller
   OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE: task-controller
+
+x-oasis-env-v1: &oasis-env-v1
+  OASIS_DEBUG: ${DEBUG:-0}
+  OASIS_RABBIT_HOST: broker
+  OASIS_RABBIT_PORT: 5672
+  OASIS_RABBIT_USER: rabbit
+  OASIS_RABBIT_PASS: rabbit
+  OASIS_CELERY_DB_ENGINE: db+postgresql+psycopg2
+  OASIS_CELERY_DB_HOST: celery-db
+  OASIS_CELERY_DB_PASS: password
+  OASIS_CELERY_DB_USER: celery
+  OASIS_CELERY_DB_NAME: celery
+  OASIS_CELERY_DB_PORT: 5432
+
 x-volumes: &shared-volumes
   - filestore-OasisData:/shared-fs:rw
 services:
-  server_http:
+  server:
    restart: always
    image: coreoasis/api_server:dev
    command: ["./wsgi/run-wsgi.sh"]
@@ -47,7 +61,7 @@ services:
      OASIS_ADMIN_PASS: password
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
+     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   server_websocket:
    restart: always
    image: coreoasis/api_server:dev
@@ -62,11 +76,37 @@ services:
      <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
-  worker-monitor:
+     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+  v1-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
-   command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO]
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v1', worker, --loglevel=INFO,]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+  v2-worker-monitor:
+   restart: always
+   image: coreoasis/api_server:dev
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v2', worker, --loglevel=INFO,  -Q, celery-v2]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+   volumes:
+     - filestore-OasisData:/shared-fs:rw
+     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+  v2-task-controller:
+   restart: always
+   image: coreoasis/api_server:dev
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v2', worker, --loglevel=INFO, -Q, task-controller]
    links:
      - server-db
      - celery-db
@@ -76,23 +116,10 @@ services:
    volumes:
      - filestore-OasisData:/shared-fs:rw
      - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
-  task-controller:
+  celery-beat_v2:
    restart: always
    image: coreoasis/api_server:dev
-   command: [celery, -A, src.server.oasisapi.celery_app, worker, --loglevel=INFO, -Q, task-controller]
-   links:
-     - server-db
-     - celery-db
-     - broker
-   environment:
-     <<: *shared-env
-   volumes:
-     - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
-  celery-beat:
-   restart: always
-   image: coreoasis/api_server:dev
-   command: [celery, -A, src.server.oasisapi.celery_app, beat, --loglevel=INFO]
+   command: [celery, -A, src.server.oasisapi.celery_app_v2, beat, --loglevel=INFO]
    links:
      - server-db
      - celery-db
@@ -100,7 +127,22 @@ services:
    environment:
      <<: *shared-env
    volumes: *shared-volumes
-  worker:
+  stable-worker:
+    restart: always
+    image: coreoasis/model_worker:1.28.4
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *oasis-env-v1
+     OASIS_MODEL_DATA_DIRECTORY: /home/worker/model
+     OASIS_MODEL_SUPPLIER_ID: OasisLMF
+     OASIS_MODEL_ID: PiWind
+     OASIS_MODEL_VERSION_ID: '1.28.4'
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - filestore-OasisData:/shared-fs:rw
+  v1-worker:
     restart: always
     image: coreoasis/model_worker:dev
     build:
@@ -113,8 +155,27 @@ services:
      <<: *shared-env
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
-     OASIS_MODEL_VERSION_ID: 1
-     OASIS_MODEL_NUM_ANALYSIS_CHUNKS: 8
+     OASIS_MODEL_VERSION_ID: 'v1'
+     OASIS_RUN_MODE: v1
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - ./src/model_execution_worker:/home/worker/src/model_execution_worker
+     - filestore-OasisData:/shared-fs:rw
+  v2-worker:
+    restart: always
+    image: coreoasis/model_worker:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.model_worker
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *shared-env
+     OASIS_MODEL_SUPPLIER_ID: OasisLMF
+     OASIS_MODEL_ID: PiWind
+     OASIS_MODEL_VERSION_ID: 'v2'
+     OASIS_RUN_MODE: v2
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ./src/model_execution_worker:/home/worker/src/model_execution_worker
@@ -169,3 +230,14 @@ services:
     image: redis:5.0.7
     ports:
       - 6379:6379
+  user-interface:
+    restart: always
+    image: coreoasis/oasisui_app:${VERS_UI:-latest}
+    container_name: oasisui_app
+    environment:
+     - API_IP=server:8000/api/
+     - API_VERSION=v2
+     - API_SHARE_FILEPATH=./downloads
+     - OASIS_ENVIRONMENT=oasis_localhost
+    ports:
+     - 8080:3838

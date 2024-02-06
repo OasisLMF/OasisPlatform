@@ -33,7 +33,7 @@ attrs==22.2.0
     #   pytest
     #   service-identity
     #   twisted
-autobahn==23.1.2
+autobahn==23.6.2
     # via daphne
 automat==22.10.0
     # via twisted
@@ -74,7 +74,7 @@ celery==5.3.0
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
     #   django-celery-results
-certifi==2022.12.7
+certifi==2023.7.22
     # via
     #   fiona
     #   pyproj
@@ -137,7 +137,7 @@ coverage[toml]==7.2.2
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==40.0.1
+cryptography==41.0.2
     # via
     #   autobahn
     #   azure-storage-blob
@@ -153,7 +153,7 @@ decorator==5.1.1
     #   ipython
 distlib==0.3.6
     # via virtualenv
-django==3.2.20
+django==3.2.23
     # via
     #   channels
     #   django-celery-results
@@ -183,7 +183,9 @@ django-model-utils==4.3.1
 django-request-logging==0.7.5
     # via -r ./requirements-server.in
 django-storages[azure]==1.13.2
-    # via -r ./requirements-server.in
+    # via
+    #   -r ./requirements-server.in
+    #   django-storages
 django-webtest==1.9.10
     # via -r requirements.in
 djangorestframework==3.14.0
@@ -209,7 +211,9 @@ fasteners==0.18
     #   -r ./requirements-worker.in
     #   -r requirements.in
 fastparquet==2023.2.0
-    # via oasislmf
+    # via
+    #   oasis-data-manager
+    #   oasislmf
 filelock==3.10.7
     # via
     #   -r ./requirements-worker.in
@@ -224,7 +228,9 @@ forex-python==1.8
 freezegun==1.2.2
     # via -r requirements.in
 fsspec==2023.3.0
-    # via fastparquet
+    # via
+    #   fastparquet
+    #   oasis-data-manager
 geopandas==0.12.2
     # via oasislmf
 greenlet==2.0.2
@@ -285,7 +291,7 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.3.0
     # via celery
-llvmlite==0.39.1
+llvmlite==0.41.1
     # via numba
 markdown==3.4.3
     # via -r ./requirements-server.in
@@ -311,8 +317,10 @@ mysqlclient==2.1.1
     # via -r ./requirements-server.in
 natsort==8.3.1
     # via -r ./requirements-worker.in
-numba==0.56.4
-    # via oasislmf
+numba==0.58.0
+    # via
+    #   oasislmf
+    #   ods-tools
 numexpr==2.8.4
     # via oasislmf
 numpy==1.22.4
@@ -326,9 +334,15 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.1
-    # via -r ./requirements-worker.in
-ods-tools==3.1.0
+oasis-data-manager==0.1.1
+    # via
+    #   oasislmf
+    #   ods-tools
+oasislmf[extra]==2.3.0
+    # via
+    #   -r ./requirements-worker.in
+    #   oasislmf
+ods-tools==3.2.0
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -347,6 +361,7 @@ pandas==1.5.3
     #   -r ./requirements-server.in
     #   fastparquet
     #   geopandas
+    #   oasis-data-manager
     #   oasislmf
     #   ods-tools
 parso==0.8.3
@@ -381,7 +396,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyarrow==11.0.0
+pyarrow==14.0.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -405,7 +420,7 @@ pymysql==1.1.0
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyopenssl==23.1.1
+pyopenssl==23.2.0
     # via
     #   -r requirements.in
     #   josepy
@@ -534,13 +549,18 @@ traitlets==5.9.0
     #   ipython
     #   matplotlib-inline
 twisted[tls]==22.10.0
-    # via daphne
+    # via
+    #   daphne
+    #   twisted
 txaio==23.1.1
     # via autobahn
+typing==3.7.4.3
+    # via oasis-data-manager
 typing-extensions==4.5.0
     # via
     #   azure-core
     #   azure-storage-blob
+    #   oasis-data-manager
     #   twisted
 tzdata==2023.3
     # via celery

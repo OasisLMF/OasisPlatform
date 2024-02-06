@@ -3,7 +3,7 @@
 set -e
 
 PWP=$1
-MODEL_PATHS="meta-data/model_settings.json oasislmf.json model_data/ keys_data/ tests/"
+MODEL_PATHS="meta-data/model_settings.json oasislmf.json model_data/ keys_data/ tests/ meta-data/"
 OPTIONAL_MODEL_FILES="meta-data/chunking_configuration.json meta-data/scaling_configuration.json"
 OASIS_CLUSTER_NAMESPACE="${OASIS_CLUSTER_NAMESPACE:-default}"
 

@@ -178,7 +178,7 @@ class BaseStorageConnector(object):
             raise MissingInputsException(fpath)
 
     def filepath(self, reference):
-        """ return the absolute filepath 
+        """ return the absolute filepath
         """
         fpath = os.path.join(
             self.media_root,
@@ -204,11 +204,15 @@ class BaseStorageConnector(object):
         temp_dir = tempfile.TemporaryDirectory()
         try:
             temp_dir_path = temp_dir.__enter__()
-            local_archive_path = self.get(
-                archive_fp,
-                os.path.join(temp_dir_path, os.path.basename(archive_fp)),
-                subdir=storage_subdir
-            )
+            if os.path.isfile(archive_fp):
+                local_archive_path = os.path.abspath(archive_fp)
+            else:
+                local_archive_path = self.get(
+                    archive_fp,
+                    os.path.join(temp_dir_path, os.path.basename(archive_fp)),
+                    subdir=storage_subdir
+                )
+
             with tarfile.open(local_archive_path) as f:
                 f.extractall(directory)
         finally:

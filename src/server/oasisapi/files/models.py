@@ -87,7 +87,7 @@ class RelatedFile(TimeStampedModel):
     content_type = models.CharField(max_length=255)
     objects = RelatedFileManager()  # ARCH2020 -- Is this actually used??
     store_as_filename = models.BooleanField(default=False, blank=True, null=True)
-    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+    groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
     oed_validated = models.BooleanField(default=False, editable=False)
 
     def __str__(self):

@@ -18,7 +18,7 @@ from ods_tools.oed.exposure import OedExposure
 class Portfolio(TimeStampedModel):
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
-    groups = models.ManyToManyField(Group, blank=True, null=False, default=None, help_text='Groups allowed to access this object')
+    groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
 
     accounts_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                       default=None, related_name='accounts_file_portfolios')
@@ -35,26 +35,33 @@ class Portfolio(TimeStampedModel):
     def __str__(self):
         return self.name
 
-    def get_absolute_url(self, request=None):
-        return reverse('portfolio-detail', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-detail', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_create_analysis_url(self, request=None):
-        return reverse('portfolio-create-analysis', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_create_analysis_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-create-analysis', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_accounts_file_url(self, request=None):
-        return reverse('portfolio-accounts-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_accounts_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-accounts-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_location_file_url(self, request=None):
-        return reverse('portfolio-location-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_location_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-location-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_reinsurance_info_file_url(self, request=None):
-        return reverse('portfolio-reinsurance-info-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_reinsurance_info_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-reinsurance-info-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_reinsurance_scope_file_url(self, request=None):
-        return reverse('portfolio-reinsurance-scope-file', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_reinsurance_scope_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-reinsurance-scope-file', kwargs={'pk': self.pk}, request=request)
 
-    def get_absolute_storage_url(self, request=None):
-        return reverse('portfolio-storage-links', kwargs={'version': 'v1', 'pk': self.pk}, request=request)
+    def get_absolute_storage_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-storage-links', kwargs={'pk': self.pk}, request=request)
 
     def location_file_len(self):
         csv_compression_types = {
@@ -84,13 +91,20 @@ class Portfolio(TimeStampedModel):
                 file_ref.save()
 
     def run_oed_validation(self):
-        portfolio_exposure = OedExposure(
-            location=getattr(self.location_file, 'file', None),
-            account=getattr(self.accounts_file, 'file', None),
-            ri_info=getattr(self.reinsurance_info_file, 'file', None),
-            ri_scope=getattr(self.reinsurance_scope_file, 'file', None),
-            validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
-        validation_errors = portfolio_exposure.check()
+        try:
+            portfolio_exposure = OedExposure(
+                location=getattr(self.location_file, 'file', None),
+                account=getattr(self.accounts_file, 'file', None),
+                ri_info=getattr(self.reinsurance_info_file, 'file', None),
+                ri_scope=getattr(self.reinsurance_scope_file, 'file', None),
+                validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
+            validation_errors = portfolio_exposure.check()
+        except Exception as e:
+            raise ValidationError({
+                'error': 'Failed to validate portfolio',
+                'detail': str(e),
+                'exception': type(e).__name__
+            })
 
         # Set validation fields to true or raise exception
         if validation_errors:
