@@ -16,19 +16,19 @@ images:
       imagePullPolicy: Never
   postgres:
     image: postgres
-    version: 15.3-alpine3.18
+    version: 15-alpine3.18
   mysql:
     image: mysql
     version: 8.0.33
   keycloak:
     image: quay.io/keycloak/keycloak
-    version: 22.0.0
+    version: 23.0.6-0
   init:
     image: busybox
     version: 1.28
   redis:
     image: redis
-    version: 7.0.11-alpine3.18
+    version: 7-alpine3.18
   rabbitmq:
     image: rabbitmq
     version: 3.11-management-alpine

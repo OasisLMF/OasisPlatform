@@ -82,6 +82,8 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
+cramjam==2.8.1
+    # via fastparquet
 cryptography==41.0.2
     # via
     #   autobahn
@@ -134,6 +136,12 @@ drf-nested-routers==0.93.4
     # via -r requirements-server.in
 drf-yasg==1.21.5
     # via -r requirements-server.in
+fastparquet==2023.10.1
+    # via oasis-data-manager
+fsspec==2024.2.0
+    # via
+    #   fastparquet
+    #   oasis-data-manager
 greenlet==2.0.2
     # via sqlalchemy
 gunicorn==20.1.0
@@ -191,22 +199,28 @@ msgpack==0.6.2
     # via channels-redis
 mysqlclient==2.1.1
     # via -r requirements-server.in
-numba==0.58.1
+numba==0.58.0
     # via ods-tools
 numpy==1.24.2
     # via
+    #   fastparquet
     #   numba
     #   pandas
     #   pyarrow
-ods-tools==3.1.4
+oasis-data-manager==0.1.1
+    # via ods-tools
+ods-tools==3.2.0
     # via -r requirements-server.in
 packaging==23.0
     # via
     #   drf-yasg
+    #   fastparquet
     #   ods-tools
 pandas==1.5.3
     # via
     #   -r requirements-server.in
+    #   fastparquet
+    #   oasis-data-manager
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-server.in
@@ -285,10 +299,13 @@ twisted[tls]==22.10.0
     #   twisted
 txaio==23.1.1
     # via autobahn
+typing==3.7.4.3
+    # via oasis-data-manager
 typing-extensions==4.5.0
     # via
     #   azure-core
     #   azure-storage-blob
+    #   oasis-data-manager
     #   twisted
 tzdata==2023.3
     # via celery

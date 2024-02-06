@@ -79,7 +79,9 @@ exceptiongroup==1.1.1
 fasteners==0.18
     # via -r requirements-worker.in
 fastparquet==2023.2.0
-    # via oasislmf
+    # via
+    #   oasis-data-manager
+    #   oasislmf
 filelock==3.10.7
     # via -r requirements-worker.in
 fiona==1.9.2
@@ -87,7 +89,9 @@ fiona==1.9.2
 forex-python==1.8
     # via oasislmf
 fsspec==2023.3.0
-    # via fastparquet
+    # via
+    #   fastparquet
+    #   oasis-data-manager
 geopandas==0.12.2
     # via oasislmf
 greenlet==2.0.2
@@ -112,7 +116,7 @@ jsonschema==4.17.3
     # via ods-tools
 kombu==5.3.0
     # via celery
-llvmlite==0.39.1
+llvmlite==0.41.1
     # via numba
 msgpack==1.0.5
     # via oasislmf
@@ -120,7 +124,7 @@ munch==2.5.0
     # via fiona
 natsort==8.3.1
     # via -r requirements-worker.in
-numba==0.56.4
+numba==0.58.0
     # via
     #   oasislmf
     #   ods-tools
@@ -137,11 +141,15 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.5
+oasis-data-manager==0.1.1
+    # via
+    #   oasislmf
+    #   ods-tools
+oasislmf[extra]==2.3.0
     # via
     #   -r requirements-worker.in
     #   oasislmf
-ods-tools==3.1.4
+ods-tools==3.2.0
     # via oasislmf
 packaging==23.0
     # via
@@ -153,6 +161,7 @@ pandas==1.5.3
     # via
     #   fastparquet
     #   geopandas
+    #   oasis-data-manager
     #   oasislmf
     #   ods-tools
 pathlib2==2.3.7.post1
@@ -233,10 +242,13 @@ tomli==2.0.1
     # via pytest
 tqdm==4.65.0
     # via oasislmf
+typing==3.7.4.3
+    # via oasis-data-manager
 typing-extensions==4.5.0
     # via
     #   azure-core
     #   azure-storage-blob
+    #   oasis-data-manager
 tzdata==2023.3
     # via celery
 urllib3==1.26.15
@@ -250,6 +262,3 @@ vine==5.0.0
     #   kombu
 wcwidth==0.2.6
     # via prompt-toolkit
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

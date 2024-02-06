@@ -94,16 +94,22 @@ spec:
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
-          args: [
-            #"start-dev",  # --- Development mode --- # 
-            "start",
-            "--import-realm",
-            "--http-relative-path /auth",
-            "--proxy edge",
-            "--hostname-strict=false"]
+          args: ["start", "--import-realm"]
           ports:
             - containerPort: {{ .Values.keycloak.port }}
           env:
+            - name: KC_LOGLEVEL
+              value: DEBUG
+            - name: PROXY_ADDRESS_FORWARDING
+              value: "true"
+            - name: KC_PROXY
+              value: "edge"
+            - name: KC_IMPORT
+              value: "/opt/keycloak/data/import/oasis-realm.json"
+            - name: KC_HTTP_RELATIVE_PATH
+              value: "/auth"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
             - name: KC_PROXY_ADDRESS_FORWARDING
               value: "true"
             - name: KC_DB
@@ -147,12 +153,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.keycloak.name }}
                   key: password
-            - name: KC_LOGLEVEL
-              value: DEBUG
-            - name: PROXY_ADDRESS_FORWARDING
-              value: "true"
-            - name: KC_IMPORT
-              value: "/opt/keycloak/data/import/oasis-realm.json"
           startupProbe:
             httpGet:
               path: /auth/realms/master
