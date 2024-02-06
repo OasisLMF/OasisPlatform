@@ -81,6 +81,8 @@ spec:
               {{- end }}
               mountPath: {{ .mountPath }}
             {{- end }}
+            - name: celery-temp
+              mountPath: /tmp
 {{- if .registryCredentials }}
       imagePullSecrets:
         - name: {{ .registryCredentials }}
@@ -113,6 +115,8 @@ spec:
             {{- end }}
           {{- end }}
         {{- end }}
+        - name: celery-temp
+          emptyDir: {}
 {{- if ($root.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
