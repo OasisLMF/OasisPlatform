@@ -5,6 +5,7 @@ __all__ = [
 
 from drf_yasg.generators import OpenAPISchemaGenerator
 from django.conf.urls import include, url
+from django.conf import settings
 
 
 # API v1 Routes
@@ -24,6 +25,13 @@ api_v2_urlpatterns = [
     url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
 ]
 
+if settings.URL_SUB_PATH:
+    swagger_v1_urlpatterns = [url(r'^api/', include(api_v1_urlpatterns))]
+    swagger_v2_urlpatterns = [url(r'^api/', include(api_v2_urlpatterns))]
+else:
+    swagger_v1_urlpatterns = api_v1_urlpatterns
+    swagger_v2_urlpatterns = api_v2_urlpatterns
+
 
 class CustomGeneratorClassV1(OpenAPISchemaGenerator):
     def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
@@ -31,7 +39,7 @@ class CustomGeneratorClassV1(OpenAPISchemaGenerator):
             info=info,
             version='v1',
             url=url,
-            patterns=api_v1_urlpatterns,
+            patterns=swagger_v1_urlpatterns,
             urlconf=urlconf
         )
 
@@ -42,6 +50,6 @@ class CustomGeneratorClassV2(OpenAPISchemaGenerator):
             info=info,
             version='v2',
             url=url,
-            patterns=api_v2_urlpatterns,
+            patterns=swagger_v2_urlpatterns,
             urlconf=urlconf
         )

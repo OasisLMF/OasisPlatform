@@ -50,6 +50,7 @@ api_info_description += """
 7. Run the analysis (post to `/analyses/<pk>/run/`)
 8. Get the outputs (get `/analyses/<pk>/output_file/`)"""
 
+
 api_info = openapi.Info(
     title="Oasis Platform",
     default_version='v2',
@@ -66,12 +67,14 @@ schema_view_v1 = get_schema_view(
     permission_classes=(permissions.AllowAny,),
     generator_class=CustomGeneratorClassV1,
 )
+
 schema_view_v2 = get_schema_view(
     api_info,
     public=True,
     permission_classes=(permissions.AllowAny,),
     generator_class=CustomGeneratorClassV2,
 )
+
 
 api_urlpatterns = [
     # Main Swagger page
@@ -95,8 +98,9 @@ if settings.URL_SUB_PATH:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += [url(r'^api/', include(api_urlpatterns))]
 else:
-    urlpatterns += static(settings.STATIC_DEBUG_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.static_debug_url, document_root=settings.static_root)
     urlpatterns += [url(r'^', include(api_urlpatterns))]
+
 
 if settings.DEBUG_TOOLBAR:
     urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))
