@@ -199,7 +199,7 @@ msgpack==0.6.2
     # via channels-redis
 mysqlclient==2.1.1
     # via -r requirements-server.in
-numba==0.58.1
+numba==0.58.0
     # via ods-tools
 numpy==1.24.2
     # via
