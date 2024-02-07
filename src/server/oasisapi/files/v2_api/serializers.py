@@ -214,6 +214,6 @@ class NestedRelatedFileSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
 
         try:
-            return self.analyses.get_absolute_output_file_sql_url(request=request, file_pk=instance.id, namespace="v2-files")
+            return self.analyses.get_absolute_output_file_sql_url(request=request, file_pk=instance.id, namespace="v2-analyses")
         except:
             return None

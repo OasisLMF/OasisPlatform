@@ -1938,7 +1938,7 @@ class AnalysisOutputFileListSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(len(response.json), 2)
-        self.assertEqual(response.json[0]["sql"], f"/v1/analyses/{analysis.pk}/output_file_sql/{related_file_one.pk}/")
+        self.assertEqual(response.json[0]["sql"], f"/v2/analyses/{analysis.pk}/output_file_sql/{related_file_one.pk}/")
 
 
 @override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
@@ -1948,15 +1948,17 @@ class AnalysisOutputFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCas
         related_file_one = fake_related_file()
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
-        with self.assertRaises(NoReverseMatch):
-            self.app.post_json(
-                analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-files"),
-                expect_errors=True,
-                headers={
-                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                },
-                params={"sql": "SELECT * FROM table"},
-            )
+        res = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table"},
+        )
+
+        self.assertEqual(res.body, b"SQL not supported")
+        self.assertEqual(res.status_code, 400)
 
 
 @override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
@@ -1965,7 +1967,7 @@ class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         related_file_one = fake_related_file()
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
-        response = self.app.post(analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-files"), expect_errors=True)
+        response = self.app.post(analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"), expect_errors=True)
         self.assertIn(response.status_code, [401, 403])
 
     def test_sql_is_empty___response_is_400(self):
@@ -1974,7 +1976,7 @@ class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
         response = self.app.post_json(
-            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-files"),
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -1989,7 +1991,7 @@ class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
         response = self.app.post_json(
-            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-files"),
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -2005,7 +2007,7 @@ class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
         response = self.app.post_json(
-            analysis.get_absolute_output_file_sql_url(related_file_one.pk + 2, namespace="v2-files"),
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk + 2, namespace="v2-analyses"),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -2021,7 +2023,7 @@ class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
         response = self.app.post_json(
-            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-files"),
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"),
             expect_errors=True,
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -2037,7 +2039,7 @@ class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
         response = self.app.post_json(
-            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-files") + "?file_format=csv",
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses") + "?file_format=csv",
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -2055,7 +2057,7 @@ class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
         response = self.app.post_json(
-            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-files") + "?file_format=parquet",
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses") + "?file_format=parquet",
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -2073,7 +2075,7 @@ class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
 
         response = self.app.post_json(
-            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-files") + "?file_format=json",
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses") + "?file_format=json",
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },

@@ -3,6 +3,8 @@ import logging
 from functools import wraps
 
 from django.conf import settings
+from django.http import HttpResponseBadRequest
+from rest_framework.response import Response
 
 logger = logging.getLogger('root')
 
@@ -14,15 +16,16 @@ def requires_sql_reader(func):
     """
     @wraps(func)
     def _func(*args, **kwargs):
+        try:
+            module, klass = settings.DEFAULT_READER_ENGINE.rsplit('.', 1)
+            reader_module = importlib.import_module(module)
+            reader_class = getattr(reader_module, klass)
+
+            if not hasattr(reader_class, 'apply_sql'):
+                return HttpResponseBadRequest(content='SQL not supported')
+        except (ModuleNotFoundError, AttributeError):
+            return HttpResponseBadRequest(content='SQL not supported')
+
         return func(*args, **kwargs)
 
-    try:
-        module, klass = settings.DEFAULT_READER_ENGINE.rsplit('.', 1)
-        reader_module = importlib.import_module(module)
-        reader_class = getattr(reader_module, klass)
-
-        if hasattr(reader_class, 'apply_sql'):
-            return _func
-    except (ModuleNotFoundError, AttributeError):
-        logger.warning('Incorrectly configured DEFAULT_READER_ENGINE, SQL endpoints disabled.')
-    return None
+    return _func
