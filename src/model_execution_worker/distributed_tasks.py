@@ -33,6 +33,9 @@ from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 from .storage_manager import BaseStorageConnector
 
+# testing
+import random
+
 '''
 Celery task wrapper for Oasis ktools calculation.
 '''
@@ -684,6 +687,12 @@ def prepare_keys_file_chunk(
             multiproc_num_cores=params.get('lookup_num_processes', -1),
             multiproc_num_partitions=params.get('lookup_num_chunks', -1),
         )
+
+        # mimic chunk lost
+        if random.randrange(0,2):
+            logging.info('--- Keys chunk lost ---')
+            os._exit(1)
+
 
         # Store chunks
         storage_subdir = f'{run_data_uuid}/oasis-files'
