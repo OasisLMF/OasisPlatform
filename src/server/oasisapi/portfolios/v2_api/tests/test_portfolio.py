@@ -11,7 +11,7 @@ from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.core.files.base import ContentFile
 from django.test import override_settings
-from django.urls import reverse, NoReverseMatch, clear_url_caches
+from django.urls import reverse, clear_url_caches
 from django_webtest import WebTestMixin
 from django.conf import settings as django_settings
 from hypothesis import given, settings
@@ -1611,7 +1611,7 @@ class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
                     },
                     params={"sql": "SELECT x FROM table"},
                 )
-        
+
                 self.assertEqual(res.body, b"SQL not supported")
                 self.assertEqual(res.status_code, 400)
 

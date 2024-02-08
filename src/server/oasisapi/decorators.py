@@ -4,7 +4,6 @@ from functools import wraps
 
 from django.conf import settings
 from django.http import HttpResponseBadRequest
-from rest_framework.response import Response
 
 logger = logging.getLogger('root')
 

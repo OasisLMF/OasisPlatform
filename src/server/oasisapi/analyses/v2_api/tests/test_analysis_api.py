@@ -8,7 +8,7 @@ import pandas as pd
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
-from django.urls import reverse, NoReverseMatch, clear_url_caches
+from django.urls import reverse, clear_url_caches
 from django_webtest import WebTestMixin
 from django.conf import settings as django_settings
 from hypothesis import given, settings
