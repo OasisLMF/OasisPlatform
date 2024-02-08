@@ -38,7 +38,7 @@ def _serialize_input_file(file_obj, abs_uri, request):
             "converted_uri": abs_uri + "?converted" if converted else None,
             "converted_stored": str(file_obj.converted_file) if converted else None,
             "conversion_state": file_obj.conversion_state,
-            "conversion_log_fie": file_obj.get_absolute_conversion_log_file_url(request),
+            "conversion_log_fie": file_obj.get_absolute_conversion_log_file_url(request, namespace="v2-files"),
         }
 
 
@@ -60,7 +60,7 @@ class PortfolioListSerializer(serializers.Serializer):
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_storage_links(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_storage_url(request=request)
+        return instance.get_absolute_storage_url(request=request, namespace="v2-portfolios")
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
     def get_location_file(self, instance):
@@ -138,7 +138,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_storage_links(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_storage_url(request=request)
+        return instance.get_absolute_storage_url(request=request, namespace="v2-portfolios")
 
     def get_groups(self, instance):
         groups = []

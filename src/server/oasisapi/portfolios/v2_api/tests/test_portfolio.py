@@ -165,7 +165,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_stored': None,
                         'converted_uri': None,
                     },
-                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url()
+                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE)
                 }, response.json)
 
     @given(group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
@@ -190,7 +190,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                 portfolio.save()
 
                 response = self.app.get(
-                    portfolio.get_absolute_url(),
+                    portfolio.get_absolute_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -204,16 +204,16 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'modified': portfolio.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'groups': [group_name],
                     'accounts_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                         "name": portfolio.accounts_file.filename,
                         "stored": str(portfolio.accounts_file.file),
-                        'conversion_log_fie': response.request.application_url + f"/v1/files/{portfolio.accounts_file.id}/conversion_log_file/",
+                        'conversion_log_fie': response.request.application_url + f"/v2/files/{portfolio.accounts_file.id}/conversion_log_file/",
                         'conversion_state': 'DONE',
                         'converted_stored': str(portfolio.accounts_file.converted_file),
-                        'converted_uri': response.request.application_url + portfolio.get_absolute_accounts_file_url() + "?converted",
+                        'converted_uri': response.request.application_url + portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE) + "?converted",
                     },
                     'location_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                         "name": portfolio.location_file.filename,
                         "stored": str(portfolio.location_file.file),
                         'conversion_log_fie': None,
@@ -222,7 +222,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_uri': None,
                     },
                     'reinsurance_info_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                         "name": portfolio.reinsurance_info_file.filename,
                         "stored": str(portfolio.reinsurance_info_file.file),
                         'conversion_log_fie': None,
@@ -231,7 +231,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_uri': None,
                     },
                     'reinsurance_scope_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                         "name": portfolio.reinsurance_scope_file.filename,
                         "stored": str(portfolio.reinsurance_scope_file.file),
                         'conversion_log_fie': None,
@@ -239,7 +239,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_stored': None,
                         'converted_uri': None,
                     },
-                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url()
+                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE)
                 }, response.json)
 
     @given(group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
@@ -264,7 +264,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                 portfolio.save()
 
                 response = self.app.get(
-                    portfolio.get_absolute_url(),
+                    portfolio.get_absolute_url(namespace=NAMESPACE),
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
@@ -278,16 +278,16 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'modified': portfolio.modified.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                     'groups': [group_name],
                     'accounts_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_accounts_file_url(namespace=NAMESPACE),
                         "name": portfolio.accounts_file.filename,
                         "stored": str(portfolio.accounts_file.file),
-                        'conversion_log_fie': response.request.application_url + f"/v1/files/{portfolio.accounts_file.id}/conversion_log_file/",
+                        'conversion_log_fie': response.request.application_url + f"/v2/files/{portfolio.accounts_file.id}/conversion_log_file/",
                         'conversion_state': 'ERROR',
                         'converted_stored': None,
                         'converted_uri': None,
                     },
                     'location_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_location_file_url(namespace=NAMESPACE),
                         "name": portfolio.location_file.filename,
                         "stored": str(portfolio.location_file.file),
                         'conversion_log_fie': None,
@@ -296,7 +296,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_uri': None,
                     },
                     'reinsurance_info_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_info_file_url(namespace=NAMESPACE),
                         "name": portfolio.reinsurance_info_file.filename,
                         "stored": str(portfolio.reinsurance_info_file.file),
                         'conversion_log_fie': None,
@@ -305,7 +305,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_uri': None,
                     },
                     'reinsurance_scope_file': {
-                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(),
+                        "uri": response.request.application_url + portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
                         "name": portfolio.reinsurance_scope_file.filename,
                         "stored": str(portfolio.reinsurance_scope_file.file),
                         'conversion_log_fie': None,
@@ -1581,8 +1581,8 @@ class PortfolioValidation(WebTestMixin, TestCase):
 
 class ResetUrlMixin:
     def setUp(self) -> None:
-        import src.server.oasisapi.portfolios.viewsets
-        reload(src.server.oasisapi.portfolios.viewsets)
+        import src.server.oasisapi.portfolios.v2_api.viewsets
+        reload(src.server.oasisapi.portfolios.v2_api.viewsets)
         if django_settings.ROOT_URLCONF in sys.modules:
             reload(sys.modules[django_settings.ROOT_URLCONF])
         clear_url_caches()
@@ -1597,21 +1597,23 @@ class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
         'get_absolute_reinsurance_scope_file_sql_url',
     ]
 
-    def test_endpoint_disabled___raises_no_reverse_match(self):
+    def test_endpoint_disabled___response_is_bad_request(self):
         user = fake_user()
         portfolio = fake_portfolio()
 
-        with self.assertRaises(NoReverseMatch):
-            for url in self.urls:
-                with self.subTest():
-                    self.app.post_json(
-                        getattr(portfolio, url)(),
-                        expect_errors=True,
-                        headers={
-                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                        },
-                        params={"sql": "SELECT x FROM table"},
-                    )
+        for url in self.urls:
+            with self.subTest():
+                res = self.app.post_json(
+                    getattr(portfolio, url)(namespace=NAMESPACE),
+                    expect_errors=True,
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params={"sql": "SELECT x FROM table"},
+                )
+        
+                self.assertEqual(res.body, b"SQL not supported")
+                self.assertEqual(res.status_code, 400)
 
 
 @override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
@@ -1628,7 +1630,7 @@ class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
 
         for url in self.urls:
             with self.subTest():
-                response = self.app.post(getattr(portfolio, url)(), expect_errors=True)
+                response = self.app.post(getattr(portfolio, url)(namespace=NAMESPACE), expect_errors=True)
                 self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
@@ -1638,7 +1640,7 @@ class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         for url in self.urls:
             with self.subTest():
                 response = self.app.post_json(
-                    getattr(portfolio, url)().replace(str(portfolio.pk), str(portfolio.pk + 1)),
+                    getattr(portfolio, url)(namespace=NAMESPACE).replace(str(portfolio.pk), str(portfolio.pk + 1)),
                     expect_errors=True,
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -1654,7 +1656,7 @@ class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         for url in self.urls:
             with self.subTest():
                 response = self.app.post_json(
-                    getattr(portfolio, url)(),
+                    getattr(portfolio, url)(namespace=NAMESPACE),
                     expect_errors=True,
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -1681,7 +1683,7 @@ class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         for url in self.urls:
             with self.subTest():
                 response = self.app.post_json(
-                    getattr(portfolio, url)(),
+                    getattr(portfolio, url)(namespace=NAMESPACE),
                     expect_errors=True,
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -1709,7 +1711,7 @@ class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         for url in self.urls:
             with self.subTest():
                 response = self.app.post_json(
-                    getattr(portfolio, url)(),
+                    getattr(portfolio, url)(namespace=NAMESPACE),
                     expect_errors=True,
                     headers={
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
@@ -1727,7 +1729,7 @@ class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post_json(
-            portfolio.get_absolute_location_file_sql_url() + "?file_format=csv",
+            portfolio.get_absolute_location_file_sql_url(namespace=NAMESPACE) + "?file_format=csv",
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1747,7 +1749,7 @@ class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post_json(
-            portfolio.get_absolute_location_file_sql_url() + "?file_format=parquet",
+            portfolio.get_absolute_location_file_sql_url(namespace=NAMESPACE) + "?file_format=parquet",
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },
@@ -1767,7 +1769,7 @@ class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         user = fake_user()
 
         response = self.app.post_json(
-            portfolio.get_absolute_location_file_sql_url() + "?file_format=json",
+            portfolio.get_absolute_location_file_sql_url(namespace=NAMESPACE) + "?file_format=json",
             headers={
                 'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
             },

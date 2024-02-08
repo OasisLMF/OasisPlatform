@@ -185,7 +185,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ['create', 'options', 'update', 'partial_update', 'retrieve']:
-            return super(AnalysisViewSet, self).get_serializer_class()
+            return super().get_serializer_class()
         elif self.action in ['list']:
             return AnalysisListSerializer
         elif self.action == 'copy':

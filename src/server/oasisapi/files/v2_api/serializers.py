@@ -58,17 +58,17 @@ class MappingFileSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_file(self, instance: MappingFile):
         request = self.context.get('request')
-        return instance.get_absolute_conversion_file_url(request)
+        return instance.get_absolute_conversion_file_url(request, namespace="v2-files")
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_input_validation_file(self, instance: MappingFile):
         request = self.context.get('request')
-        return instance.get_absolute_input_validation_file_url(request)
+        return instance.get_absolute_input_validation_file_url(request, namespace="v2-files")
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_output_validation_file(self, instance: MappingFile):
         request = self.context.get('request')
-        return instance.get_absolute_output_validation_file_url(request)
+        return instance.get_absolute_output_validation_file_url(request, namespace="v2-files")
 
 
 class ConvertSerializer(serializers.Serializer):

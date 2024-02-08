@@ -1892,14 +1892,16 @@ class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, Tes
         user = fake_user()
         analysis = fake_analysis()
 
-        with self.assertRaises(NoReverseMatch):
-            res = self.app.get(
-                analysis.get_absolute_output_file_list_url(),
-                expect_errors=True,
-                headers={
-                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                }
-            )
+        res = self.app.get(
+            analysis.get_absolute_output_file_list_url(namespace=NAMESPACE),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(res.body, b"SQL not supported")
+        self.assertEqual(res.status_code, 400)
 
 
 @override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
