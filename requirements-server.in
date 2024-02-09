@@ -22,6 +22,7 @@ jsonschema
 markdown
 mozilla_django_oidc
 ods_tools
+oasis-data-manager[extra]
 pandas
 pathlib2
 psycopg2-binary

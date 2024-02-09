@@ -1067,7 +1067,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             "path": settings.get(
                 'worker',
                 'default_reader_engine',
-                fallback='lot3.df_reader.reader.OasisPandasReader'
+                fallback='oasis_data_manager.df_reader.reader.OasisPandasReader'
             ),
             "options": settings.get(
                 'worker.default_reader_engine_options',

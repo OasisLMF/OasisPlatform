@@ -1,5 +1,6 @@
 #-e git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf[extra]
 oasislmf[extra]>=1.26.5
+oasis-data-manager[extra]
 azure-core>=1.21.1
 azure-storage-blob>=12.9.0
 billiard

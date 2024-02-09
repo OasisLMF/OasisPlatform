@@ -107,7 +107,7 @@ class StartAnalysis(TestCase):
 
                 with patch('subprocess.Popen', Mock(return_value=cmd_instance)) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
-                        patch('lot3.filestore.backends.base.BaseStorage.compress') as tarfile, \
+                        patch('oasis_data_manager.filestore.backends.base.BaseStorage.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
                     output_location, log_location, error_location, returncode = start_analysis(
@@ -124,7 +124,7 @@ class StartAnalysis(TestCase):
                                                       '--df-engine', mock.ANY
                                                       ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
                     assert re.match(
-                        r'\'\{"path": "lot3.df_reader.reader.OasisPandasReader", "options": \{.*\}\}\'',
+                        r'\'\{"path": "oasis_data_manager.df_reader.reader.OasisPandasReader", "options": \{.*\}\}\'',
                         cmd_mock.call_args[0][0][14],
                     )
                     tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')

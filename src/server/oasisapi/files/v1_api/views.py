@@ -7,8 +7,8 @@ from django.http import StreamingHttpResponse, Http404, QueryDict
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
-from lot3.df_reader.config import get_df_reader
-from lot3.df_reader.exceptions import InvalidSQLException
+from oasis_data_manager.df_reader.config import get_df_reader
+from oasis_data_manager.df_reader.exceptions import InvalidSQLException
 from ..models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups

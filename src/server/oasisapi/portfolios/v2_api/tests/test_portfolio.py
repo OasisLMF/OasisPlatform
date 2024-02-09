@@ -1588,7 +1588,7 @@ class ResetUrlMixin:
         clear_url_caches()
 
 
-@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
 class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
     urls = [
         'get_absolute_accounts_file_sql_url',
@@ -1616,7 +1616,7 @@ class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
                 self.assertEqual(res.status_code, 400)
 
 
-@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
 class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
     urls = [
         'get_absolute_accounts_file_sql_url',

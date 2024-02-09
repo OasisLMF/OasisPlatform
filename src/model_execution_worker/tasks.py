@@ -392,7 +392,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
                 "path": settings.get(
                     'worker',
                     'default_reader_engine',
-                    fallback='lot3.df_reader.reader.OasisPandasReader'
+                    fallback='oasis_data_manager.df_reader.reader.OasisPandasReader'
                 ),
                 "options": settings.get(
                     'worker.default_reader_engine_options',

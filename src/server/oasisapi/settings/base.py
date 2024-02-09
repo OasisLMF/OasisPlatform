@@ -17,7 +17,7 @@ import ssl
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
 
-from lot3.filestore.log import set_azure_log_level, set_aws_log_level
+from oasis_data_manager.filestore.log import set_azure_log_level, set_aws_log_level
 from ....conf import iniconf  # noqa
 from ....conf.base import *
 
@@ -521,4 +521,4 @@ DEFAULT_CONVERTER_RUNNER_OPTIONS = iniconf.settings.get(
     fallback={},
 )
 
-DEFAULT_READER_ENGINE = iniconf.settings.get('server', 'default_reader_engine', fallback='lot3.df_reader.reader.OasisPandasReader')
+DEFAULT_READER_ENGINE = iniconf.settings.get('server', 'default_reader_engine', fallback='oasis_data_manager.df_reader.reader.OasisPandasReader')

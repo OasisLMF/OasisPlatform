@@ -1,11 +1,11 @@
 import logging
 from typing import Union
 
-from lot3.errors import OasisException
-from lot3.filestore.backends.aws_s3 import AwsS3Storage
-from lot3.filestore.backends.azure_abfs import AzureABFSStorage
-from lot3.filestore.backends.local import LocalStorage
-from lot3.filestore.backends.base import BaseStorage
+from oasis_data_manager.errors import OasisException
+from oasis_data_manager.filestore.backends.aws_s3 import AwsS3Storage
+from oasis_data_manager.filestore.backends.azure_abfs import AzureABFSStorage
+from oasis_data_manager.filestore.backends.local import LocalStorage
+from oasis_data_manager.filestore.backends.base import BaseStorage
 
 
 def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorage | None]:

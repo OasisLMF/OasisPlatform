@@ -1886,7 +1886,7 @@ class ResetUrlMixin:
         clear_url_caches()
 
 
-@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
 class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
     def test_endpoint_disabled___raises_no_reverse_match(self):
         user = fake_user()
@@ -1904,7 +1904,7 @@ class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, Tes
         self.assertEqual(res.status_code, 400)
 
 
-@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
 class AnalysisOutputFileListSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
@@ -1943,7 +1943,7 @@ class AnalysisOutputFileListSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         self.assertEqual(response.json[0]["sql"], f"/v2/analyses/{analysis.pk}/output_file_sql/{related_file_one.pk}/")
 
 
-@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisPandasReader')
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
 class AnalysisOutputFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
     def test_endpoint_disabled___raises_no_reverse_match(self):
         user = fake_user()
@@ -1963,7 +1963,7 @@ class AnalysisOutputFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCas
         self.assertEqual(res.status_code, 400)
 
 
-@override_settings(DEFAULT_READER_ENGINE='lot3.df_reader.reader.OasisDaskReader')
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
 class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         related_file_one = fake_related_file()
