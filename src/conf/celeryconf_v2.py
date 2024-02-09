@@ -37,7 +37,7 @@ CELERYD_PREFETCH_MULTIPLIER = 1
 # setup queues so that tasks aren't removed from the queue until
 # complete and reschedule if the task worker goes offline
 CELERY_ACKS_LATE = True
-CELERY_REJECT_ON_WORKER_LOST = True
+CELERY_REJECT_ON_WORKER_LOST = False
 CELERY_TASK_QUEUES = (Broadcast('model-worker-broadcast'), )
 
 # Highest priority available
@@ -68,7 +68,6 @@ CELERYBEAT_SCHEDULE = {
 }
 
 worker_task_kwargs = {
-    'task_reject_on_worker_lost': True,
     'autoretry_for': (Exception,),
     'max_retries': 2,               # The task will be run max_retries + 1 times
     'default_retry_delay': 6,       # A small delay to recover from temporary bad states

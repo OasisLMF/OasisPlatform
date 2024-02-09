@@ -32,7 +32,6 @@ CELERYD_CONCURRENCY = 1
 CELERYD_PREFETCH_MULTIPLIER = 1
 
 worker_task_kwargs = {
-    'task_reject_on_worker_lost': True,
     'autoretry_for': (Exception,),
     'max_retries': 2,               # The task will be run max_retries + 1 times
     'default_retry_delay': 6,       # A small delay to recover from temporary bad states

@@ -14,7 +14,10 @@ from datetime import datetime
 import fasteners
 import filelock
 import pandas as pd
-from celery import Celery, signature
+#import celery
+from celery import Celery, Task, signature
+from celery.worker.request import Request as CeleryRequest
+from celery.exceptions import WorkerLostError, Retry
 from celery.signals import (before_task_publish, task_failure, task_revoked,
                             worker_ready)
 from natsort import natsorted
@@ -33,6 +36,9 @@ from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 from .storage_manager import BaseStorageConnector
 
+
+
+from billiard.einfo import ExceptionWithTraceback
 # testing
 import random
 
@@ -45,10 +51,48 @@ ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 
-app = Celery()
-app.config_from_object(celery_conf)
-# print(app._conf)
+#celery_conf.worker_task_kwargs['autoretry_for'] = (Exception, WorkerLostError)
 
+class CustomRequest(CeleryRequest):
+    """ Using 'reject_on_worker_lost=True' to re-queue a task on `WorkerLostError` results
+        in an infinite loop if the task OOM errors each try.
+
+        so instead this overrides 'on_failure' to call the standard `on_retry` call like if an
+        exception occurs
+
+        src: https://docs.celeryq.dev/en/stable/_modules/celery/worker/request.html#Request
+    """
+    def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
+        #@from celery.contrib import rdb; rdb.set_trace()
+        exc = exc_info.exception
+
+        #if isinstance(exc, ExceptionWithTraceback):
+        #    exc = exc.exc
+
+        if isinstance(exc, WorkerLostError):
+            return self.on_retry(exc_info)
+            exc_info = Retry(message='worker lost')
+            exc_info.exception = exc
+            ##return self.retry(exc=exc)
+
+
+        super().on_failure(exc_info, send_failed_event, return_ok)  # Call the base class method
+
+# Monkey patch
+#celery.worker.request.Request = CustomErrorHandler
+
+class FailureWorkerRetry(Task):
+    Request = CustomRequest
+
+app = Celery(task_cls=FailureWorkerRetry)
+app.config_from_object(celery_conf)
+
+
+
+#app.request = CustomErrorHandler
+#from celery.contrib import rdb; rdb.set_trace()
+
+logging.info(dir(app))
 
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
@@ -643,6 +687,7 @@ def pre_analysis_hook(self,
     return params
 
 
+
 @app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def prepare_keys_file_chunk(
@@ -689,7 +734,7 @@ def prepare_keys_file_chunk(
         )
 
         # mimic chunk lost
-        if random.randrange(0,2):
+        if random.randrange(0,3):
             logging.info('--- Keys chunk lost ---')
             os._exit(1)
 
@@ -1144,22 +1189,23 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     task_args = sender.request.kwargs
 
     # Store output log
-    task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
-    if os.path.isfile(task_log_file):
-        signature('subtask_error_log').delay(
-            task_args.get('analysis_id'),
-            task_args.get('initiator_id'),
-            task_args.get('slug'),
-            task_id,
-            filestore.put(task_log_file)
-        )
+    if task_args:
+        task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
+        if os.path.isfile(task_log_file):
+            signature('subtask_error_log').delay(
+                task_args.get('analysis_id'),
+                task_args.get('initiator_id'),
+                task_args.get('slug'),
+                task_id,
+                filestore.put(task_log_file)
+            )
 
-    # Wipe worker's remote data storage
-    keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
-    dir_remote_data = task_params.get('storage_subdir')
-    if not keep_remote_data:
-        logging.info(f"deleting remote data, {dir_remote_data}")
-        filestore.delete_dir(dir_remote_data)
+        # Wipe worker's remote data storage
+        keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
+        dir_remote_data = task_params.get('storage_subdir')
+        if not keep_remote_data:
+            logging.info(f"deleting remote data, {dir_remote_data}")
+            filestore.delete_dir(dir_remote_data)
 
 
 @before_task_publish.connect
@@ -1173,3 +1219,8 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
 
     if analysis_id and slug:
         signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
+
+
+
+
+
