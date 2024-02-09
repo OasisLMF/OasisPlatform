@@ -211,7 +211,9 @@ fasteners==0.18
     #   -r ./requirements-worker.in
     #   -r requirements.in
 fastparquet==2023.2.0
-    # via oasislmf
+    # via
+    #   oasis-data-manager
+    #   oasislmf
 filelock==3.10.7
     # via
     #   -r ./requirements-worker.in
@@ -226,7 +228,9 @@ forex-python==1.8
 freezegun==1.2.2
     # via -r requirements.in
 fsspec==2023.3.0
-    # via fastparquet
+    # via
+    #   fastparquet
+    #   oasis-data-manager
 geopandas==0.12.2
     # via oasislmf
 greenlet==2.0.2
@@ -287,7 +291,7 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.3.0
     # via celery
-llvmlite==0.40.1
+llvmlite==0.41.1
     # via numba
 markdown==3.4.3
     # via -r ./requirements-server.in
@@ -313,7 +317,7 @@ mysqlclient==2.1.1
     # via -r ./requirements-server.in
 natsort==8.3.1
     # via -r ./requirements-worker.in
-numba==1.25.2
+numba==0.58.0
     # via
     #   oasislmf
     #   ods-tools
@@ -330,11 +334,15 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.5
+oasis-data-manager==0.1.1
+    # via
+    #   oasislmf
+    #   ods-tools
+oasislmf[extra]==2.3.0
     # via
     #   -r ./requirements-worker.in
     #   oasislmf
-ods-tools==3.1.4
+ods-tools==3.2.0
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -353,6 +361,7 @@ pandas==1.5.3
     #   -r ./requirements-server.in
     #   fastparquet
     #   geopandas
+    #   oasis-data-manager
     #   oasislmf
     #   ods-tools
 parso==0.8.3
@@ -545,10 +554,13 @@ twisted[tls]==22.10.0
     #   twisted
 txaio==23.1.1
     # via autobahn
+typing==3.7.4.3
+    # via oasis-data-manager
 typing-extensions==4.5.0
     # via
     #   azure-core
     #   azure-storage-blob
+    #   oasis-data-manager
     #   twisted
 tzdata==2023.3
     # via celery

@@ -96,7 +96,7 @@ jobs:
     env:
       pre_release: ${{ inputs.pre_release == '' && 'false' || inputs.pre_release }}
       push_latest: ${{ inputs.push_latest == '' && 'false' || inputs.push_latest }}
-      latest_tag: '2-latest'
+      latest_tag: 'latest'
 
       release_tag: ${{ inputs.release_tag }}
       prev_release_tag: ${{ inputs.prev_release_tag }}
@@ -495,7 +495,7 @@ jobs:
         asset_content_type: application/json
 
     - name: Upload Schema (v1)
-      id: upload-source-release-asset
+      id: upload-source-release-asset-v1
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
@@ -506,7 +506,7 @@ jobs:
         asset_content_type: application/json
 
     - name: Upload Schema (v2)
-      id: upload-source-release-asset
+      id: upload-source-release-asset-v2
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
