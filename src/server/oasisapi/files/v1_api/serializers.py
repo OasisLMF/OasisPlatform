@@ -45,7 +45,7 @@ class MappingFileSerializer(serializers.ModelSerializer):
     output_validation_file = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name = None
+        ref_name = __qualname__.split('.')[0] + 'V1'
         model = MappingFile
         fields = (
             'name',
@@ -74,6 +74,10 @@ class MappingFileSerializer(serializers.ModelSerializer):
 class ConvertSerializer(serializers.Serializer):
     mapping_file = serializers.CharField()
 
+    class Meta:
+        ref_name = __qualname__.split('.')[0] + 'V1' 
+
+
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 
@@ -81,7 +85,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
     mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
 
     class Meta:
-        ref_name = None
+        ref_name = __qualname__.split('.')[0] + 'V1'
         model = RelatedFile
         fields = (
             'created',
@@ -178,6 +182,9 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 class FileSQLSerializer(serializers.Serializer):
     sql = serializers.CharField()
 
+    class Meta:
+        ref_name = __qualname__.split('.')[0] + 'V1'
+
     def validate_sql(self, value):
         # for purposes of validation, lowercase the sql, return the original
         sql_to_validate = value.lower()
@@ -195,7 +202,7 @@ class NestedRelatedFileSerializer(serializers.ModelSerializer):
     sql = serializers.SerializerMethodField()
 
     class Meta:
-        ref_name = None
+        ref_name = __qualname__.split('.')[0] + 'V1'
         model = RelatedFile
         fields = (
             'id',
