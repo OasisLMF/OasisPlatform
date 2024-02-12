@@ -16,6 +16,7 @@ class CustomRequest(CeleryRequest):
 
         src: https://docs.celeryq.dev/en/stable/_modules/celery/worker/request.html#Request
     """
+
     def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
         """Handler called if the task raised an exception."""
         exc = exc_info.exception
