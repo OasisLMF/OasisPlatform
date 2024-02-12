@@ -40,5 +40,5 @@ class CustomRequest(CeleryRequest):
         super().on_failure(exc_info, send_failed_event, return_ok)
 
 
-class FailureWorkerRetry(Task):
+class WorkerLostRetry(Task):
     Request = CustomRequest

@@ -14,7 +14,6 @@ from datetime import datetime
 import fasteners
 import filelock
 import pandas as pd
-#import celery
 from celery import Celery, signature
 from celery.signals import (before_task_publish, task_failure, task_revoked,
                             worker_ready)
@@ -33,11 +32,7 @@ from ..conf.iniconf import settings
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 from .storage_manager import BaseStorageConnector
-from .celery_request_handler import FailureWorkerRetry
-
-
-# testing
-import random
+from .celery_request_handler import WorkerLostRetry
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -48,10 +43,10 @@ ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 
-app = Celery(task_cls=FailureWorkerRetry)
+app = Celery(task_cls=WorkerLostRetry)
 app.config_from_object(celery_conf)
+# print(app._conf)
 
-logging.info(dir(app))
 
 logging.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
@@ -646,7 +641,6 @@ def pre_analysis_hook(self,
     return params
 
 
-
 @app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def prepare_keys_file_chunk(
@@ -691,12 +685,6 @@ def prepare_keys_file_chunk(
             multiproc_num_cores=params.get('lookup_num_processes', -1),
             multiproc_num_partitions=params.get('lookup_num_chunks', -1),
         )
-
-        # mimic chunk lost
-        os._exit(1)
-        if random.randrange(0,4):
-            logging.info('--- Keys chunk lost ---')
-
 
         # Store chunks
         storage_subdir = f'{run_data_uuid}/oasis-files'
@@ -1148,23 +1136,23 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     task_args = sender.request.kwargs
 
     # Store output log
-    if task_args:
-        task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
-        if os.path.isfile(task_log_file):
-            signature('subtask_error_log').delay(
-                task_args.get('analysis_id'),
-                task_args.get('initiator_id'),
-                task_args.get('slug'),
-                task_id,
-                filestore.put(task_log_file)
-            )
+    task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
+    if os.path.isfile(task_log_file):
+        signature('subtask_error_log').delay(
+            task_args.get('analysis_id'),
+            task_args.get('initiator_id'),
+            task_args.get('slug'),
+            task_id,
+            filestore.put(task_log_file)
+        )
 
-        # Wipe worker's remote data storage
-        keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
-        dir_remote_data = task_params.get('storage_subdir')
-        if not keep_remote_data:
-            logging.info(f"deleting remote data, {dir_remote_data}")
-            filestore.delete_dir(dir_remote_data)
+    # Wipe worker's remote data storage
+    keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
+    dir_remote_data = task_params.get('storage_subdir')
+    if not keep_remote_data:
+        logging.info(f"deleting remote data, {dir_remote_data}")
+        filestore.delete_dir(dir_remote_data)
+
 
 @before_task_publish.connect
 def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
@@ -1177,8 +1165,3 @@ def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
 
     if analysis_id and slug:
         signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
-
-
-
-
-
