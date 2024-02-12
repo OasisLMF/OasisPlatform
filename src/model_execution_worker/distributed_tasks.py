@@ -15,9 +15,7 @@ import fasteners
 import filelock
 import pandas as pd
 #import celery
-from celery import Celery, Task, signature
-from celery.worker.request import Request as CeleryRequest
-from celery.exceptions import WorkerLostError, Retry
+from celery import Celery, signature
 from celery.signals import (before_task_publish, task_failure, task_revoked,
                             worker_ready)
 from natsort import natsorted
@@ -696,9 +694,8 @@ def prepare_keys_file_chunk(
 
         # mimic chunk lost
         os._exit(1)
-        if random.randrange(0,3):
+        if random.randrange(0,4):
             logging.info('--- Keys chunk lost ---')
-            os._exit(1)
 
 
         # Store chunks
