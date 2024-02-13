@@ -238,21 +238,60 @@ def findkeys(node, kv):
             for x in findkeys(j, kv):
                 yield x
 
+
+def check_task_redelivered(task):
+    """ Safe guard to check if task has been attempted on worker
+    and was redelivered.
+
+    If 'OASIS_FAIL_ON_REDELIVERED=True' attempt the task 3 times
+    then give up and mark it as failed. This is to prevent a worker
+    crashing with OOM repeatedly failing on the same sub-task
+    """
+    fail_on_redelivered = True # replace with ENV var
+
+    if fail_on_redelivered:
+        redelivered = task.request.delivery_info.get('redelivered')
+        state = task.AsyncResult(task.request.id).state
+        logging.info('-----------------------')
+        logging.info(f'retires: {task.request.retries}')
+        logging.info(f"redelivered: {redelivered}")
+        logging.info(f"state: {state}")
+        logging.info(f'max_retries: {task.max_retries}')
+        logging.info('-----------------------')
+
+        if redelivered:
+            # test fail on first retry
+            # task.app.control.revoke(task.request.id, terminate=True)
+            logging.info('task requeue detected - retry 1')
+            task.update_state(state='RETRY')
+        if state == 'RETRY':
+            logging.info('task requeue detected - retry 2')
+            task.update_state(state='REVOKED')
+        if redelivered and state == 'REVOKED':
+            logging.error('task requeue detected - aborting task')
+            task.app.control.revoke(task.request.id, terminate=True)
+
+
+
 # https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
 @task_revoked.connect
 def revoked_handler(*args, **kwargs):
-    # Break the chain
-    # from celery.contrib import rdb; rdb.set_trace()
     request = kwargs.get('request')
     sender = kwargs.get('sender')
+
+    is_input_gen_task = 'keys_generation_task' in sender.__wrapped__.__func__.__qualname__
+    is_loss_gen_task =  'loss_generation_task' in sender.__wrapped__.__func__.__qualname__
+
+    if is_input_gen_task:
+        ANALYSIS_STATUS = 'INPUTS_GENERATION_ERROR'
+    elif is_loss_gen_task:
+        ANALYSIS_STATUS = 'RUN_ERROR'
+
     if request.chain:
         for ch in request.chain:
             analysis_id = set(findkeys(ch, 'analysis_id')).pop()
-            notify_api_status(analysis_id, 'INPUTS_GENERATION_ERROR')
+            notify_api_status(analysis_id, ANALYSIS_STATUS)
 
-            # Todo 1: detect the correcct error status based on sender
-            #      2: test task revoked when cancellation is sent from API
-            #      3:
             for task_id in list(findkeys(ch, 'task_id')):
                 logging.info(f'Revoking: {task_id}')
                 app.control.revoke(task_id, terminate=True)
@@ -571,28 +610,7 @@ def keys_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_params(params, kwargs)
-
-
-            fail_on_redelivered = True
-            redelivered = self.request.delivery_info.get('redelivered')
-            state = self.AsyncResult(self.request.id).state
-            logging.info('-----------------------')
-            logging.info(f'retires: {self.request.retries}')
-            logging.info(f"redelivered: {redelivered}")
-            logging.info(f"state: {state}")
-            logging.info(f'max_retries: {self.max_retries}')
-            logging.info('-----------------------')
-
-            if redelivered:
-                self.update_state(state='RETRY')
-            if state == 'RETRY':
-                self.update_state(state='REVOKED')
-
-
-            from celery.contrib import rdb; rdb.set_trace()
-            if fail_on_redelivered and redelivered and state == 'REVOKED':
-                logging.error('task requeue detected - aborting task')
-                self.app.control.revoke(self.request.id, terminate=True)
+            check_task_redelivered(self)
             return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
@@ -998,6 +1016,7 @@ def loss_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_params(params, kwargs)
+            check_task_redelivered(self)
             return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
 
     return run
