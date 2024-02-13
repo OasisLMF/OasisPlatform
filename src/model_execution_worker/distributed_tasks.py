@@ -247,16 +247,16 @@ def revoked_handler(*args, **kwargs):
     sender = kwargs.get('sender')
     if request.chain:
         for ch in request.chain:
-            analysis_id = set(findkeys(chain, 'analysis_id')).pop()
+            analysis_id = set(findkeys(ch, 'analysis_id')).pop()
             notify_api_status(analysis_id, 'INPUTS_GENERATION_ERROR')
 
             # Todo 1: detect the correcct error status based on sender
             #      2: test task revoked when cancellation is sent from API
+            #      3:
             for task_id in list(findkeys(ch, 'task_id')):
                 logging.info(f'Revoking: {task_id}')
                 app.control.revoke(task_id, terminate=True)
         request.chain[:] = []
-    raise Terminated('Task revoked')
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
