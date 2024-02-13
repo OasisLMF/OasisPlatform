@@ -15,6 +15,7 @@ import fasteners
 import filelock
 import pandas as pd
 from celery import Celery, signature
+from celery.exceptions import Terminated, TaskRevokedError
 from celery.signals import (before_task_publish, task_failure, task_revoked,
                             worker_ready)
 from natsort import natsorted
@@ -34,10 +35,6 @@ from .backends.azure_storage import AzureObjectStore
 from .storage_manager import BaseStorageConnector
 from .celery_request_handler import WorkerLostRetry
 
-
-
-import redis
-redis_client = redis.StrictRedis(host=celery_conf.BROKER_URL)
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -229,12 +226,37 @@ def load_location_data(loc_filepath):
         return exposure.location.dataframe
 
 
+def findkeys(node, kv):
+    if isinstance(node, list):
+        for i in node:
+            for x in findkeys(i, kv):
+               yield x
+    elif isinstance(node, dict):
+        if kv in node:
+            yield node[kv]
+        for j in node.values():
+            for x in findkeys(j, kv):
+                yield x
+
 # https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
 @task_revoked.connect
 def revoked_handler(*args, **kwargs):
     # Break the chain
+    # from celery.contrib import rdb; rdb.set_trace()
     request = kwargs.get('request')
-    request.chain[:] = []
+    sender = kwargs.get('sender')
+    if request.chain:
+        for ch in request.chain:
+            analysis_id = set(findkeys(chain, 'analysis_id')).pop()
+            notify_api_status(analysis_id, 'INPUTS_GENERATION_ERROR')
+
+            # Todo 1: detect the correcct error status based on sender
+            #      2: test task revoked when cancellation is sent from API
+            for task_id in list(findkeys(ch, 'task_id')):
+                logging.info(f'Revoking: {task_id}')
+                app.control.revoke(task_id, terminate=True)
+        request.chain[:] = []
+    raise Terminated('Task revoked')
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -551,16 +573,24 @@ def keys_generation_task(fn):
             log_params(params, kwargs)
 
 
+            fail_on_redelivered = True
             redelivered = self.request.delivery_info.get('redelivered')
+            state = self.AsyncResult(self.request.id).state
             logging.info('-----------------------')
             logging.info(f'retires: {self.request.retries}')
             logging.info(f"redelivered: {redelivered}")
+            logging.info(f"state: {state}")
             logging.info(f'max_retries: {self.max_retries}')
             logging.info('-----------------------')
 
-            fail_on_redelivered = True
+            if redelivered:
+                self.update_state(state='RETRY')
+            if state == 'RETRY':
+                self.update_state(state='REVOKED')
 
-            if fail_on_redelivered and redelivered:
+
+            from celery.contrib import rdb; rdb.set_trace()
+            if fail_on_redelivered and redelivered and state == 'REVOKED':
                 logging.error('task requeue detected - aborting task')
                 self.app.control.revoke(self.request.id, terminate=True)
             return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
