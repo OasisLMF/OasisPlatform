@@ -34,6 +34,11 @@ from .backends.azure_storage import AzureObjectStore
 from .storage_manager import BaseStorageConnector
 from .celery_request_handler import WorkerLostRetry
 
+
+
+import redis
+redis_client = redis.StrictRedis(host=celery_conf.BROKER_URL)
+
 '''
 Celery task wrapper for Oasis ktools calculation.
 '''
@@ -544,6 +549,20 @@ def keys_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_params(params, kwargs)
+
+
+            redelivered = self.request.delivery_info.get('redelivered')
+            logging.info('-----------------------')
+            logging.info(f'retires: {self.request.retries}')
+            logging.info(f"redelivered: {redelivered}")
+            logging.info(f'max_retries: {self.max_retries}')
+            logging.info('-----------------------')
+
+            fail_on_redelivered = True
+
+            if fail_on_redelivered and redelivered:
+                logging.error('task requeue detected - aborting task')
+                self.app.control.revoke(self.request.id, terminate=True)
             return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
