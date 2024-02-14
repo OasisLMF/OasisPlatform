@@ -230,7 +230,7 @@ def findkeys(node, kv):
     if isinstance(node, list):
         for i in node:
             for x in findkeys(i, kv):
-               yield x
+                yield x
     elif isinstance(node, dict):
         if kv in node:
             yield node[kv]
@@ -247,17 +247,17 @@ def check_task_redelivered(task, analysis_id, error_state):
     then give up and mark it as failed. This is to prevent a worker
     crashing with OOM repeatedly failing on the same sub-task
     """
-    fail_on_redelivered = True # replace with ENV var
+    fail_on_redelivered = True  # replace with ENV var
 
     if fail_on_redelivered:
         redelivered = task.request.delivery_info.get('redelivered')
         state = task.AsyncResult(task.request.id).state
-        #logging.info('-----------------------')
-        #logging.info(f'retires: {task.request.retries}')
-        #logging.info(f"redelivered: {redelivered}")
-        #logging.info(f"state: {state}")
-        #logging.info(f'max_retries: {task.max_retries}')
-        #logging.info('-----------------------')
+        # logging.info('-----------------------')
+        # logging.info(f'retires: {task.request.retries}')
+        # logging.info(f"redelivered: {redelivered}")
+        # logging.info(f"state: {state}")
+        # logging.info(f'max_retries: {task.max_retries}')
+        # logging.info('-----------------------')
 
         if redelivered:
             logging.info('task requeue detected - retry 1')

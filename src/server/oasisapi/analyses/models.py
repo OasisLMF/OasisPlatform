@@ -688,7 +688,7 @@ class Analysis(TimeStampedModel):
 
         # Terminate V2 Execution
         if self.run_mode is self.run_mode_choices.V2:
-            #self.cancel_subtasks()
+            # self.cancel_subtasks()
             AsyncResult(self.run_task_id).revoke(
                 signal='SIGKILL',
                 terminate=True,
@@ -716,7 +716,7 @@ class Analysis(TimeStampedModel):
 
         # Terminate V2 Execution
         if self.run_mode is self.run_mode_choices.V2:
-            #self.cancel_subtasks()
+            # self.cancel_subtasks()
             AsyncResult(self.generate_inputs_task_id).revoke(
                 signal='SIGKILL',
                 terminate=True,
