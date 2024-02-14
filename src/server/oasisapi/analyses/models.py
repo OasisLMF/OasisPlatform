@@ -686,20 +686,10 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
-        # Terminate V2 Execution
-        if self.run_mode is self.run_mode_choices.V2:
-            AsyncResult(self.run_task_id).revoke(
-                signal='SIGKILL',
-                terminate=True,
-            )
-
-        # Terminate V1 Execution -- assume this option if not set
-        else:
-            AsyncResult(self.run_task_id).revoke(
-                signal='SIGTERM',
-                terminate=True,
-            )
-
+        AsyncResult(self.run_task_id).revoke(
+            signal='SIGKILL',
+            terminate=True,
+        )
         self.status = self.status_choices.RUN_CANCELLED
         self.run_mode = None
         self.task_finished = timezone.now()
@@ -713,20 +703,10 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
-        # Terminate V2 Execution
-        if self.run_mode is self.run_mode_choices.V2:
-            AsyncResult(self.generate_inputs_task_id).revoke(
-                signal='SIGKILL',
-                terminate=True,
-            )
-
-        # Terminate V1 Execution -- assume this option if not set
-        else:
-            AsyncResult(self.generate_inputs_task_id).revoke(
-                signal='SIGTERM',
-                terminate=True,
-            )
-
+        AsyncResult(self.generate_inputs_task_id).revoke(
+            signal='SIGKILL',
+            terminate=True,
+        )
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         self.run_mode = None
         self.task_finished = timezone.now()
