@@ -252,6 +252,7 @@ def check_task_redelivered(task, analysis_id, error_state):
         redelivered = task.request.delivery_info.get('redelivered')
         state = task.AsyncResult(task.request.id).state
         logging.debug('--- check_task_redelivered ---')
+        logging.debug(f'name: {task.__name__}')
         logging.debug(f"redelivered: {redelivered}")
         logging.debug(f"state: {state}")
 
