@@ -687,7 +687,7 @@ class Analysis(TimeStampedModel):
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
         AsyncResult(self.run_task_id).revoke(
-            signal='SIGKILL',
+            signal='SIGTERM',
             terminate=True,
         )
         self.status = self.status_choices.RUN_CANCELLED
@@ -704,7 +704,7 @@ class Analysis(TimeStampedModel):
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
         AsyncResult(self.generate_inputs_task_id).revoke(
-            signal='SIGKILL',
+            signal='SIGTERM',
             terminate=True,
         )
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
