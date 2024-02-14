@@ -15,7 +15,6 @@ import fasteners
 import filelock
 import pandas as pd
 from celery import Celery, signature
-from celery.exceptions import Terminated, TaskRevokedError
 from celery.signals import (before_task_publish, task_failure, task_revoked,
                             worker_ready)
 from natsort import natsorted
