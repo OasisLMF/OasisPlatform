@@ -251,11 +251,9 @@ def check_task_redelivered(task, analysis_id, error_state):
     if FAIL_ON_REDELIVERY:
         redelivered = task.request.delivery_info.get('redelivered')
         state = task.AsyncResult(task.request.id).state
-        logging.debug('-----------------------')
-        logging.debug(f'retires: {task.request.retries}')
+        logging.debug('--- check_task_redelivered ---')
         logging.debug(f"redelivered: {redelivered}")
         logging.debug(f"state: {state}")
-        logging.debug(f'max_retries: {task.max_retries}')
 
         if redelivered:
             logging.info('task requeue detected - retry 1')
