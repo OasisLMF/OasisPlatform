@@ -423,10 +423,10 @@ def cancel_subtasks(self, analysis_pk):
     for subtask in subtask_qs:
         task_id = subtask.task_id
         status = subtask.status
-        logger.info(f'subtask revoked: analysis_id={analysis_pk}, task_id={task_id}, status={status}')
         if task_id:
-            self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
             self.update_state(task_id=task_id, state='REVOKED')
+            self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
+            logger.info(f'subtask revoked: analysis_id={analysis_pk}, task_id={task_id}, status={status}')
     subtask_qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
 
 

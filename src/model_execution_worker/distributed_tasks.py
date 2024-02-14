@@ -239,7 +239,7 @@ def findkeys(node, kv):
                 yield x
 
 
-def check_task_redelivered(task):
+def check_task_redelivered(task, analysis_id, error_state):
     """ Safe guard to check if task has been attempted on worker
     and was redelivered.
 
@@ -252,16 +252,14 @@ def check_task_redelivered(task):
     if fail_on_redelivered:
         redelivered = task.request.delivery_info.get('redelivered')
         state = task.AsyncResult(task.request.id).state
-        logging.info('-----------------------')
-        logging.info(f'retires: {task.request.retries}')
-        logging.info(f"redelivered: {redelivered}")
-        logging.info(f"state: {state}")
-        logging.info(f'max_retries: {task.max_retries}')
-        logging.info('-----------------------')
+        #logging.info('-----------------------')
+        #logging.info(f'retires: {task.request.retries}')
+        #logging.info(f"redelivered: {redelivered}")
+        #logging.info(f"state: {state}")
+        #logging.info(f'max_retries: {task.max_retries}')
+        #logging.info('-----------------------')
 
         if redelivered:
-            # test fail on first retry
-            # task.app.control.revoke(task.request.id, terminate=True)
             logging.info('task requeue detected - retry 1')
             task.update_state(state='RETRY')
         if state == 'RETRY':
@@ -269,8 +267,8 @@ def check_task_redelivered(task):
             task.update_state(state='REVOKED')
         if redelivered and state == 'REVOKED':
             logging.error('task requeue detected - aborting task')
+            notify_api_status(analysis_id, error_state)
             task.app.control.revoke(task.request.id, terminate=True)
-
 
 
 # https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
@@ -279,23 +277,14 @@ def revoked_handler(*args, **kwargs):
     request = kwargs.get('request')
     sender = kwargs.get('sender')
 
-    is_input_gen_task = 'keys_generation_task' in sender.__wrapped__.__func__.__qualname__
-    is_loss_gen_task =  'loss_generation_task' in sender.__wrapped__.__func__.__qualname__
-
-    if is_input_gen_task:
-        ANALYSIS_STATUS = 'INPUTS_GENERATION_ERROR'
-    elif is_loss_gen_task:
-        ANALYSIS_STATUS = 'RUN_ERROR'
-
     if request.chain:
         for ch in request.chain:
-            analysis_id = set(findkeys(ch, 'analysis_id')).pop()
-            notify_api_status(analysis_id, ANALYSIS_STATUS)
-
             for task_id in list(findkeys(ch, 'task_id')):
                 logging.info(f'Revoking: {task_id}')
                 app.control.revoke(task_id, terminate=True)
         request.chain[:] = []
+    else:
+        app.control.revoke(request.id, terminate=True)
 
 
 # When a worker connects send a task to the worker-monitor to register a new model
@@ -610,7 +599,7 @@ def keys_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_params(params, kwargs)
-            check_task_redelivered(self)
+            check_task_redelivered(self, analysis_id=analysis_id, error_state='INPUTS_GENERATION_ERROR')
             return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
@@ -1016,7 +1005,7 @@ def loss_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_params(params, kwargs)
-            check_task_redelivered(self)
+            check_task_redelivered(self, analysis_id=analysis_id, error_state='RUN_ERROR')
             return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
 
     return run

@@ -578,35 +578,9 @@ class Analysis(TimeStampedModel):
         self.task_finished = None
         self.save()
 
-    def cancel(self):
-        _now = timezone.now()
-
-        # cleanup the the sub tasks
-        qs = self.sub_task_statuses.filter(
-            status__in=[
-                AnalysisTaskStatus.status_choices.PENDING,
-                AnalysisTaskStatus.status_choices.QUEUED,
-                AnalysisTaskStatus.status_choices.STARTED]
-        )
-
-        for task_id in qs.values_list('task_id', flat=True):
-            if task_id:
-                AsyncResult(task_id).revoke(signal='SIGKILL', terminate=True)
-
-        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
-
-        # set the status on the analysis
-        status_map = {
-            Analysis.status_choices.INPUTS_GENERATION_STARTED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
-            Analysis.status_choices.INPUTS_GENERATION_QUEUED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
-            Analysis.status_choices.RUN_QUEUED: Analysis.status_choices.RUN_CANCELLED,
-            Analysis.status_choices.RUN_STARTED: Analysis.status_choices.RUN_CANCELLED,
-        }
-
-        if self.status in status_map:
-            self.status = status_map[self.status]
-            self.task_finished = _now
-            self.save()
+    def cancel_subtasks(self):
+        cancel_tasks = self.v2_cancel_subtasks_signature
+        task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
         valid_choices = [
@@ -714,14 +688,11 @@ class Analysis(TimeStampedModel):
 
         # Terminate V2 Execution
         if self.run_mode is self.run_mode_choices.V2:
-            # Kill the task controller job incase its still on queue
+            #self.cancel_subtasks()
             AsyncResult(self.run_task_id).revoke(
                 signal='SIGKILL',
                 terminate=True,
             )
-            # Send Kill chain call to worker-controller
-            cancel_tasks = self.v2_cancel_subtasks_signature
-            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
 
         # Terminate V1 Execution -- assume this option if not set
         else:
@@ -745,14 +716,11 @@ class Analysis(TimeStampedModel):
 
         # Terminate V2 Execution
         if self.run_mode is self.run_mode_choices.V2:
-            # Kill the task controller job incase its still on queue
+            #self.cancel_subtasks()
             AsyncResult(self.generate_inputs_task_id).revoke(
                 signal='SIGKILL',
                 terminate=True,
             )
-            # Send Kill chain call to worker-controller
-            cancel_tasks = self.v2_cancel_subtasks_signature
-            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
 
         # Terminate V1 Execution -- assume this option if not set
         else:
