@@ -29,6 +29,8 @@ from src.server.oasisapi.auth.tests.fakes import fake_user, add_fake_group
 from src.server.oasisapi.portfolios.models import Portfolio
 from .fakes import fake_portfolio
 
+import pytest
+
 # Override default deadline for all tests to 10s
 settings.register_profile("ci", deadline=1000.0)
 settings.load_profile("ci")
@@ -168,6 +170,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE)
                 }, response.json)
 
+    @pytest.mark.skip(reason="LOT3 DISABLE")
     @given(group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
     def test_portfolio_files_have_conversions___conversion_urls_are_present(self, group_name):
         self.maxDiff = None
@@ -242,6 +245,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE)
                 }, response.json)
 
+    @pytest.mark.skip(reason="LOT3 DISABLE")
     @given(group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
     def test_portfolio_files_have_failed_conversions___conversion_urls_are_not_present(self, group_name):
         self.maxDiff = None
@@ -1590,6 +1594,8 @@ class ResetUrlMixin:
 
 @override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
 class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    __test__ = False # LOT3 DISABLE
+
     urls = [
         'get_absolute_accounts_file_sql_url',
         'get_absolute_location_file_sql_url',
@@ -1618,6 +1624,8 @@ class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
 
 @override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
 class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
+    __test__ = False # LOT3 DISABLE
+
     urls = [
         'get_absolute_accounts_file_sql_url',
         'get_absolute_location_file_sql_url',

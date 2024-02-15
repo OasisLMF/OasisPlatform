@@ -11,12 +11,19 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django.utils.timezone import now
 
-from converter.config import Config
-from converter.controller import Controller
 from ..models import RelatedFile
 from ...celery_app_v1 import v1 as celery_app
 from .....common.filestore.filestore import get_filestore
 from .....conf import celeryconf_v1 as celery_conf
+
+# Temp workaround until OpenDataTransform
+# is ready
+try:
+    from converter.config import Config
+    from converter.controller import Controller
+except ImportError:
+    Config = None
+    Controller = None
 
 logger = get_task_logger(__name__)
 

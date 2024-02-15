@@ -14,7 +14,7 @@ api_v1_urlpatterns = [
     url(r'^v1/', include('src.server.oasisapi.portfolios.v1_api.urls', namespace='v1-portfolios')),
     url(r'^v1/', include('src.server.oasisapi.analyses.v1_api.urls', namespace='v1-analyses')),
     url(r'^v1/', include('src.server.oasisapi.data_files.v1_api.urls', namespace='v1-data-files')),
-    url(r'^v1/', include('src.server.oasisapi.files.v1_api.urls', namespace='v1-files')),
+    # url(r'^v1/', include('src.server.oasisapi.files.v1_api.urls', namespace='v1-files')), LOT3 DISABLE
 ]
 
 # API v2 Routes
@@ -23,7 +23,7 @@ api_v2_urlpatterns = [
     url(r'^v2/', include('src.server.oasisapi.analyses.v2_api.urls', namespace='v2-analyses')),
     url(r'^v2/', include('src.server.oasisapi.portfolios.v2_api.urls', namespace='v2-portfolios')),
     url(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-data-files')),
-    url(r'^v2/', include('src.server.oasisapi.files.v2_api.urls', namespace='v2-files')),
+    # url(r'^v2/', include('src.server.oasisapi.files.v2_api.urls', namespace='v2-files')), LOT3 DISABLE
     url(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
 ]
 

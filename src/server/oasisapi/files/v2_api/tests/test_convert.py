@@ -12,6 +12,9 @@ from src.server.oasisapi.auth.tests.fakes import fake_user, fake_group
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.v2_api.tests.fakes import fake_mapping_file, fake_related_file
 
+import pytest
+pytest.skip(allow_module_level=True)
+
 
 class FileConversion(WebTestMixin, TestCase):
     csrf_checks = False

@@ -277,16 +277,17 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-    @requires_sql_reader
-    @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @action(methods=['post'], url_path=r'(?P<file>\w+)/sql', detail=True)
-    def file_sql(self, request, *args, **kwargs):
-        """
-        post:
-        Gets the sql for  `<>_file` contents
-        """
-        serializer = self.get_serializer(self.get_object(), data=request.data)
-        serializer.is_valid(raise_exception=True)
-        sql = serializer.validated_data.get("sql")
+    # LOT3 DISABLE
+    # @requires_sql_reader
+    # @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
+    # @action(methods=['post'], url_path=r'(?P<file>\w+)/sql', detail=True)
+    # def file_sql(self, request, *args, **kwargs):
+    #     """
+    #     post:
+    #     Gets the sql for  `<>_file` contents
+    #     """
+    #     serializer = self.get_serializer(self.get_object(), data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     sql = serializer.validated_data.get("sql")
 
-        return handle_related_file_sql(self.get_object(), kwargs["file"], request, sql)
+    #     return handle_related_file_sql(self.get_object(), kwargs["file"], request, sql)
