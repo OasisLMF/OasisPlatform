@@ -15,6 +15,17 @@ RUN if [ ! -z "$oasislmf_branch" ] ; then \
     pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisLMF.git@${oasislmf_branch}#egg=oasislmf[extra]; \
   fi
 
+
+
+## TESTING ONLY -- remove before merge
+# https://github.com/OasisLMF/OasisLMF/commit/a7660c99c10cdbffb7283490e5625efa1570e408
+RUN apt update \ 
+  && apt install -y git \
+  && pip uninstall oasislmf -y \
+  && pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisLMF.git@a7660c99c10cdbffb7283490e5625efa1570e408#egg=oasislmf[extra]
+
+
+
 # Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
 ARG ods_tools_branch
 RUN if [ ! -z "$ods_tools_branch" ] ; then \
