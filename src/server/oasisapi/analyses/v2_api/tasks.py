@@ -581,6 +581,25 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
     )
 
 
+@celery_app_v2.task(bind=True, name='set_subtask_status')
+def set_subtask_status(self, analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(error_msg.encode('utf-8'))
+        AnalysisTaskStatus.objects.filter(
+            slug=task_slug,
+            analysis_id=analysis_id,
+        ).update(
+            status=subtask_status,
+            end_time=timezone.now(),
+            error_log=RelatedFile.objects.create(
+                file=File(tmp_file, name='{}.log'.format(uuid.uuid4())),
+                filename='{}-error.log'.format(self.request.id),
+                content_type='text/plain',
+                creator_id=initiator_id,
+            )
+        )
+
+
 @celery_app_v2.task(bind=True, name='record_sub_task_failure')
 def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, task_slug=None):
     tb = _traceback_from_errback_args(*args)
