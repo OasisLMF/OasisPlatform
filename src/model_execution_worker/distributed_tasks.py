@@ -280,9 +280,10 @@ def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_sta
 def revoked_handler(*args, **kwargs):
     request = kwargs.get('request')
     analysis_id = request.kwargs.get('analysis_id', None)
+    task_controller_queue = settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
 
     if analysis_id:
-        signature('cancel_subtasks', args=[analysis_id], queue='task-controller').delay()
+        signature('cancel_subtasks', args=[analysis_id], queue=task_controller_queue).delay()
     else:
         app.control.revoke(request.id, terminate=True)
     if request.chain:
