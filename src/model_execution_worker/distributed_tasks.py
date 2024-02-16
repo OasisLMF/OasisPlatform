@@ -236,19 +236,6 @@ def load_location_data(loc_filepath):
         return exposure.location.dataframe
 
 
-def findkeys(node, kv):
-    if isinstance(node, list):
-        for i in node:
-            for x in findkeys(i, kv):
-                yield x
-    elif isinstance(node, dict):
-        if kv in node:
-            yield node[kv]
-        for j in node.values():
-            for x in findkeys(j, kv):
-                yield x
-
-
 def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_state):
     """ Safe guard to check if task has been attempted on worker
     and was redelivered.
@@ -260,13 +247,13 @@ def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_sta
     if FAIL_ON_REDELIVERY:
         redelivered = task.request.delivery_info.get('redelivered')
         state = task.AsyncResult(task.request.id).state
-        logging.info('--- check_task_redelivered ---')
-        logging.info(f'task: {task_slug}')
-        logging.info(f"redelivered: {redelivered}")
-        logging.info(f"state: {state}")
+        logging.debug('--- check_task_redelivered ---')
+        logging.debug(f'task: {task_slug}')
+        logging.debug(f"redelivered: {redelivered}")
+        logging.debug(f"state: {state}")
 
         if redelivered and state == 'REVOKED':
-            logging.error('task requeue detected - aborting task')
+            logging.error('ERROR: task requeued three times - aborting task')
             notify_subtask_status(
                 analysis_id=analysis_id,
                 initiator_id=initiator_id,
@@ -277,14 +264,12 @@ def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_sta
             notify_api_status(analysis_id, error_state)
             task.app.control.revoke(task.request.id, terminate=True)
             return
-
         if state == 'RETRY':
-            logging.info('task requeue detected - retry 2')
+            logging.info('WARNING: task requeue detected - retry 2')
             task.update_state(state='REVOKED')
             return
-
         if redelivered:
-            logging.info('task requeue detected - retry 1')
+            logging.info('WARNING: task requeue detected - retry 1')
             task.update_state(state='RETRY')
             return
 
@@ -294,19 +279,18 @@ def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_sta
 @task_revoked.connect
 def revoked_handler(*args, **kwargs):
     request = kwargs.get('request')
-    sender = kwargs.get('sender')
+    analysis_id = request.kwargs.get('analysis_id', None)
 
-    if request.chain:
-        for ch in request.chain:
-            for task_id in list(findkeys(ch, 'task_id')):
-                logging.info(f'Revoking: {task_id}')
-                app.control.revoke(task_id, terminate=True)
-        request.chain[:] = []
+    if analysis_id:
+        signature('cancel_subtasks', args=[analysis_id], queue='task-controller').delay()
     else:
         app.control.revoke(request.id, terminate=True)
-
+    if request.chain:
+        request.chain[:] = []
 
 # When a worker connects send a task to the worker-monitor to register a new model
+
+
 @worker_ready.connect
 def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
