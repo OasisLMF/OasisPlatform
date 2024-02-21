@@ -423,10 +423,10 @@ def cancel_subtasks(self, analysis_pk):
     for subtask in subtask_qs:
         task_id = subtask.task_id
         status = subtask.status
-        logger.info(f'subtask revoked: analysis_id={analysis_pk}, task_id={task_id}, status={status}')
         if task_id:
-            self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
             self.update_state(task_id=task_id, state='REVOKED')
+            self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
+            logger.info(f'subtask revoked: analysis_id={analysis_pk}, task_id={task_id}, status={status}')
     subtask_qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
 
 
@@ -579,6 +579,25 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
             creator_id=initiator_id,
         )
     )
+
+
+@celery_app_v2.task(bind=True, name='set_subtask_status')
+def set_subtask_status(self, analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(error_msg.encode('utf-8'))
+        AnalysisTaskStatus.objects.filter(
+            slug=task_slug,
+            analysis_id=analysis_id,
+        ).update(
+            status=subtask_status,
+            end_time=timezone.now(),
+            error_log=RelatedFile.objects.create(
+                file=File(tmp_file, name='{}.log'.format(uuid.uuid4())),
+                filename='{}-error.log'.format(self.request.id),
+                content_type='text/plain',
+                creator_id=initiator_id,
+            )
+        )
 
 
 @celery_app_v2.task(bind=True, name='record_sub_task_failure')

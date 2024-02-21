@@ -376,14 +376,14 @@ class Analysis(TimeStampedModel):
     def v2_run_analysis_signature(self):
         return celery_app_v2.signature(
             'start_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')}
+            options={'queue': iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')}
         )
 
     @property
     def v2_start_input_and_loss_generation_signature(self):
         return celery_app_v2.signature(
             'start_input_and_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')}
+            options={'queue': iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')}
         )
 
     @property
@@ -391,7 +391,7 @@ class Analysis(TimeStampedModel):
         return celery_app_v2.signature(
             'cancel_subtasks',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
+                'queue': iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
             }
         )
 
@@ -400,7 +400,7 @@ class Analysis(TimeStampedModel):
         return celery_app_v2.signature(
             'start_input_generation_task',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
+                'queue': iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
             }
         )
 
@@ -578,35 +578,9 @@ class Analysis(TimeStampedModel):
         self.task_finished = None
         self.save()
 
-    def cancel(self):
-        _now = timezone.now()
-
-        # cleanup the the sub tasks
-        qs = self.sub_task_statuses.filter(
-            status__in=[
-                AnalysisTaskStatus.status_choices.PENDING,
-                AnalysisTaskStatus.status_choices.QUEUED,
-                AnalysisTaskStatus.status_choices.STARTED]
-        )
-
-        for task_id in qs.values_list('task_id', flat=True):
-            if task_id:
-                AsyncResult(task_id).revoke(signal='SIGKILL', terminate=True)
-
-        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
-
-        # set the status on the analysis
-        status_map = {
-            Analysis.status_choices.INPUTS_GENERATION_STARTED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
-            Analysis.status_choices.INPUTS_GENERATION_QUEUED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
-            Analysis.status_choices.RUN_QUEUED: Analysis.status_choices.RUN_CANCELLED,
-            Analysis.status_choices.RUN_STARTED: Analysis.status_choices.RUN_CANCELLED,
-        }
-
-        if self.status in status_map:
-            self.status = status_map[self.status]
-            self.task_finished = _now
-            self.save()
+    def cancel_subtasks(self):
+        cancel_tasks = self.v2_cancel_subtasks_signature
+        task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
         valid_choices = [
@@ -712,24 +686,10 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
-        # Terminate V2 Execution
-        if self.run_mode is self.run_mode_choices.V2:
-            # Kill the task controller job incase its still on queue
-            AsyncResult(self.run_task_id).revoke(
-                signal='SIGKILL',
-                terminate=True,
-            )
-            # Send Kill chain call to worker-controller
-            cancel_tasks = self.v2_cancel_subtasks_signature
-            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
-
-        # Terminate V1 Execution -- assume this option if not set
-        else:
-            AsyncResult(self.run_task_id).revoke(
-                signal='SIGTERM',
-                terminate=True,
-            )
-
+        AsyncResult(self.run_task_id).revoke(
+            signal='SIGTERM',
+            terminate=True,
+        )
         self.status = self.status_choices.RUN_CANCELLED
         self.run_mode = None
         self.task_finished = timezone.now()
@@ -743,24 +703,10 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
-        # Terminate V2 Execution
-        if self.run_mode is self.run_mode_choices.V2:
-            # Kill the task controller job incase its still on queue
-            AsyncResult(self.generate_inputs_task_id).revoke(
-                signal='SIGKILL',
-                terminate=True,
-            )
-            # Send Kill chain call to worker-controller
-            cancel_tasks = self.v2_cancel_subtasks_signature
-            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
-
-        # Terminate V1 Execution -- assume this option if not set
-        else:
-            AsyncResult(self.generate_inputs_task_id).revoke(
-                signal='SIGTERM',
-                terminate=True,
-            )
-
+        AsyncResult(self.generate_inputs_task_id).revoke(
+            signal='SIGTERM',
+            terminate=True,
+        )
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         self.run_mode = None
         self.task_finished = timezone.now()
