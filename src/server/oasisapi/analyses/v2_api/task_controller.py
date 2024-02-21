@@ -231,8 +231,8 @@ class Controller:
             traceback_property,
             failure_status,
         )
-        c.delay({}, priority=analysis.priority)
-        return c
+        task = c.delay({}, priority=analysis.priority)
+        return c, task
 
     @classmethod
     def get_generate_inputs_queue(cls, analysis: 'Analysis', initiator: User) -> str:
@@ -374,11 +374,7 @@ class Controller:
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
 
-        # Add chunk info to analysis
-        analysis.lookup_chunks = num_chunks
-        analysis.save()
-
-        chain = cls._start(
+        chain, task = cls._start(
             analysis,
             initiator,
             tasks,
@@ -387,6 +383,11 @@ class Controller:
             'input_generation_traceback_file',
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
         )
+
+        # update analysis
+        analysis.lookup_chunks = num_chunks
+        analysis.generate_inputs_task_id = task.id
+        analysis.save()
         return chain
 
     @classmethod
@@ -521,11 +522,7 @@ class Controller:
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
 
-        # add chunk info to analysis
-        analysis.analysis_chunks = num_chunks
-        analysis.save()
-
-        chain = cls._start(
+        chain, task = cls._start(
             analysis,
             initiator,
             tasks,
@@ -534,6 +531,10 @@ class Controller:
             'run_traceback_file',
             Analysis.status_choices.RUN_ERROR,
         )
+        # update analysis
+        analysis.analysis_chunks = num_chunks
+        analysis.run_task_id = task.id
+        analysis.save()
         return chain
 
     @classmethod
@@ -614,13 +615,7 @@ class Controller:
             'run_traceback_file',
             Analysis.status_choices.RUN_ERROR)
 
-        # task = input_chain.delay({}, priority=analysis.priority, link=[loss_chain])
-        # task = chain(input_chain, loss_chain).apply_async(priority=analysis.priority)
         task = chain(input_chain, loss_chain).delay({}, priority=analysis.priority, ignore_result=True)
-        # task = input_chain.link(loss_chain).delay({}, priority=analysis.priority)
-        # NO
-        # task = input_chain.apply_async(link=[loss_chain()])
-        # task = input_chain.apply_async(args={}, kwargs={}, priority=analysis.pk) #, link=[loss_chain])
 
         analysis.generate_inputs_task_id = task.id
         analysis.run_task_id = task.id

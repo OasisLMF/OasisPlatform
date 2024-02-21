@@ -32,6 +32,8 @@ from ..conf.iniconf import settings
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 from .storage_manager import BaseStorageConnector
+from .celery_request_handler import WorkerLostRetry
+
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -41,8 +43,10 @@ LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
+FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback=True)
 
-app = Celery()
+
+app = Celery(task_cls=WorkerLostRetry)
 app.config_from_object(celery_conf)
 # print(app._conf)
 
@@ -203,6 +207,15 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
+def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
+    logging.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
+    signature(
+        'set_subtask_status',
+        args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),
+        queue='celery-v2'
+    ).delay()
+
+
 def load_location_data(loc_filepath):
     """ Returns location file as DataFrame
 
@@ -223,15 +236,62 @@ def load_location_data(loc_filepath):
         return exposure.location.dataframe
 
 
+def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_state):
+    """ Safe guard to check if task has been attempted on worker
+    and was redelivered.
+
+    If 'OASIS_FAIL_ON_REDELIVERED=True' attempt the task 3 times
+    then give up and mark it as failed. This is to prevent a worker
+    crashing with OOM repeatedly failing on the same sub-task
+    """
+    if FAIL_ON_REDELIVERY:
+        redelivered = task.request.delivery_info.get('redelivered')
+        state = task.AsyncResult(task.request.id).state
+        logging.debug('--- check_task_redelivered ---')
+        logging.debug(f'task: {task_slug}')
+        logging.debug(f"redelivered: {redelivered}")
+        logging.debug(f"state: {state}")
+
+        if redelivered and state == 'REVOKED':
+            logging.error('ERROR: task requeued three times - aborting task')
+            notify_subtask_status(
+                analysis_id=analysis_id,
+                initiator_id=initiator_id,
+                task_slug=task_slug,
+                subtask_status='ERROR',
+                error_msg='Task failed on third redelivery, possible out of memory error'
+            )
+            notify_api_status(analysis_id, error_state)
+            task.app.control.revoke(task.request.id, terminate=True)
+            return
+        if state == 'RETRY':
+            logging.info('WARNING: task requeue detected - retry 2')
+            task.update_state(state='REVOKED')
+            return
+        if redelivered:
+            logging.info('WARNING: task requeue detected - retry 1')
+            task.update_state(state='RETRY')
+            return
+
 # https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
+
+
 @task_revoked.connect
 def revoked_handler(*args, **kwargs):
-    # Break the chain
     request = kwargs.get('request')
-    request.chain[:] = []
+    analysis_id = request.kwargs.get('analysis_id', None)
+    task_controller_queue = settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
 
+    if analysis_id:
+        signature('cancel_subtasks', args=[analysis_id], queue=task_controller_queue).delay()
+    else:
+        app.control.revoke(request.id, terminate=True)
+    if request.chain:
+        request.chain[:] = []
 
 # When a worker connects send a task to the worker-monitor to register a new model
+
+
 @worker_ready.connect
 def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
@@ -294,6 +354,7 @@ def register_worker(sender, **k):
     logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
     logging.info("TASK_LOG_DIR: {}".format(settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')))
+    logging.info("FAIL_ON_REDELIVERY: {}".format(settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback='True')))
 
     # Log Env variables
     if debug_worker:
@@ -543,6 +604,13 @@ def keys_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_params(params, kwargs)
+            check_task_redelivered(self,
+                                   analysis_id=analysis_id,
+                                   initiator_id=kwargs.get('initiator_id'),
+                                   task_slug=kwargs.get('slug'),
+                                   error_state='INPUTS_GENERATION_ERROR'
+                                   )
+
             return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
 
     return run
@@ -948,6 +1016,12 @@ def loss_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_params(params, kwargs)
+            check_task_redelivered(self,
+                                   analysis_id=analysis_id,
+                                   initiator_id=kwargs.get('initiator_id'),
+                                   task_slug=kwargs.get('slug'),
+                                   error_state='RUN_ERROR'
+                                   )
             return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
 
     return run
