@@ -1227,14 +1227,14 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         filestore.delete_dir(dir_remote_data)
 
 
-@before_task_publish.connect
-def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
-    """
-    This receiver is replicated on the server side as it needs to be called from the
-    queueing thread to be triggered
-    """
-    analysis_id = body[1].get('analysis_id')
-    slug = body[1].get('slug')
-
-    if analysis_id and slug:
-        signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
+#@before_task_publish.connect
+#def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
+#    """
+#    This receiver is replicated on the server side as it needs to be called from the
+#    queueing thread to be triggered
+#    """
+#    analysis_id = body[1].get('analysis_id')
+#    slug = body[1].get('slug')
+#
+#    if analysis_id and slug:
+#        signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
