@@ -222,6 +222,7 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
         }
         for key in compatibility_field_map:
             if key not in data:
-                data[key] = data[compatibility_field_map[key]['updated_to']]
+                if compatibility_field_map[key]['updated_to'] in data:
+                    data[key] = data[compatibility_field_map[key]['updated_to']]
 
         return super(AnalysisSettingsSerializer, self).validate_json(data)
