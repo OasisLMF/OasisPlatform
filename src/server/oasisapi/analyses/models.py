@@ -491,15 +491,11 @@ class Analysis(TimeStampedModel):
             }, queue='celery-v2'))
             self.run_mode = self.run_mode_choices.V2
             task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
+            # Set sub-tasks as queued
+            dt_now = timezone.now()
+            qs = AnalysisTaskStatus.objects.filter(analysis_id=self.pk)
+            qs.update(queue_time=dt_now, status=AnalysisTaskStatus.status_choices.QUEUED)
 
-            # TEST 
-            AnalysisTaskStatus.objects.filter(
-                analysis_id=self.pk,
-            ).update(
-                status=AnalysisTaskStatus.status_choices.QUEUED,
-                queue_time=timezone.now(),
-            )
-            
 
         self.run_task_id = task_id
         self.status = self.status_choices.RUN_QUEUED
@@ -569,17 +565,13 @@ class Analysis(TimeStampedModel):
         }))
         self.run_mode = self.run_mode_choices.V2
         task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines, events_total], priority=self.priority).id
-
-        # TEST 
-        AnalysisTaskStatus.objects.filter(
-            analysis_id=self.pk,
-        ).update(
-            status=AnalysisTaskStatus.status_choices.QUEUED,
-            queue_time=timezone.now(),
-        )
+        # Set sub-tasks as queued
+        dt_now = timezone.now()
+        qs = AnalysisTaskStatus.objects.filter(analysis_id=self.pk)
+        qs.update(queue_time=dt_now, status=AnalysisTaskStatus.status_choices.QUEUED)
 
         self.generate_inputs_task_id = task_id
-        self.task_started = timezone.now()
+        self.task_started = dt_now
         self.task_finished = None
         self.save()
 
@@ -658,17 +650,13 @@ class Analysis(TimeStampedModel):
             }))
             self.run_mode = self.run_mode_choices.V2
             task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
-
-            # TEST 
-            AnalysisTaskStatus.objects.filter(
-                analysis_id=self.pk,
-            ).update(
-                status=AnalysisTaskStatus.status_choices.QUEUED,
-                queue_time=timezone.now(),
-            )
+            # Set sub-tasks as queued
+            dt_now = timezone.now()
+            qs = AnalysisTaskStatus.objects.filter(analysis_id=self.pk)
+            qs.update(queue_time=dt_now, status=AnalysisTaskStatus.status_choices.QUEUED)
 
         self.generate_inputs_task_id = task_id
-        self.task_started = timezone.now()
+        self.task_started = dt_now
         self.task_finished = None
         self.save()
 
