@@ -404,97 +404,84 @@ class Analysis(TimeStampedModel):
             }
         )
 
-    def validate_run(self):
+    def run_callback(self, body):
+        self.status = self.status_choices.RUN_STARTED
+        self.save()
+
+    def run(self, initiator, run_mode_override=None):
         valid_choices = [
             self.status_choices.READY,
             self.status_choices.RUN_COMPLETED,
             self.status_choices.RUN_ERROR,
             self.status_choices.RUN_CANCELLED,
         ]
-
         if self.status not in valid_choices:
             raise ValidationError(
-                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
-            )
-
-        errors = {}
-        if self.model.deleted:
-            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-
-        if not self.settings_file:
-            errors['analysis_settings_file'] = ['Must not be null']
-
-        if not self.input_file:
-            errors['input_file'] = ['Must not be null']
-
-        # Get chunking options
-        if self.chunking_options is None:
-            chunking_options = self.model.chunking_options
-        else:
-            chunking_options = self.chunking_options
-
-        # Valadation for dyanmic loss chunks
-        if chunking_options.loss_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
-            if not self.model.resource_file:
-                errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
-            elif self.settings_file:
-                # cross check model and analysis settings if not given a set of events
-                model_settings = self.model.resource_file.read_json()
-                analysis_settings = self.settings_file.read_json()
-                if not analysis_settings.get('event_ids'):
-                    events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
-                    events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
-                    events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
-
-                    if not events_selected:
-                        errors['analysis_settings_file'] = ['event_set, Must not be null for Dynamic chunking']
-                    if not events_options:
-                        errors['model_settings_file'] = ['event_set, No options given in Model settings']
-                    if not events_matched:
-                        errors['settings_files'] = [f"selected event_set '{events_selected}' from analysis_settings not found in model_settings"]
-                    elif not events_matched[0].get('number_of_events'):
-                        errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
-
-        if errors:
-            self.status = self.status_choices.RUN_ERROR
-            self.save()
-            raise ValidationError(detail=errors)
-
-    def run_callback(self, body):
-        self.status = self.status_choices.RUN_STARTED
-        self.save()
-
-    def run(self, initiator, run_mode_override=None):
-        self.validate_run()
+                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]})
         if (self.model.run_mode is None) and (run_mode_override is None):
             raise ValidationError({
-                'model': ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
-            })
+                'model': ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]})
+
         run_mode = run_mode_override if run_mode_override else self.model.run_mode
         valid_run_modes = [
             self.run_mode_choices.V1,
             self.run_mode_choices.V2,
         ]
         if run_mode not in valid_run_modes:
-            raise ValidationError(
-                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
-            )
+            raise ValidationError({'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]})
 
-        events_total = self.get_num_events()
-        self.status = self.status_choices.RUN_QUEUED
-        self.save()
+        errors = {}
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        if not self.settings_file:
+            errors['analysis_settings_file'] = ['Must not be null']
+        if not self.input_file:
+            errors['input_file'] = ['Must not be null']
 
+        # Valadation for dyanmic loss chunks
+        if run_mode == self.run_mode_choices.V2:
+            if self.chunking_options is None:
+                chunking_options = self.model.chunking_options
+            else:
+                chunking_options = self.chunking_options
+
+            if chunking_options.loss_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
+                if not self.model.resource_file:
+                    errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
+                elif self.settings_file:
+                    # cross check model and analysis settings if not given a set of events
+                    model_settings = self.model.resource_file.read_json()
+                    analysis_settings = self.settings_file.read_json()
+                    if not analysis_settings.get('event_ids'):
+                        events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
+                        events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
+                        events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
+                        if not events_selected:
+                            errors['analysis_settings_file'] = ['event_set, Must not be null for Dynamic chunking']
+                        if not events_options:
+                            errors['model_settings_file'] = ['event_set, No options given in Model settings']
+                        if not events_matched:
+                            errors['settings_files'] = [f"selected event_set '{events_selected}' from analysis_settings not found in model_settings"]
+                        elif not events_matched[0].get('number_of_events'):
+                            errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
+
+        if errors:
+            self.status = self.status_choices.RUN_ERROR
+            self.save()
+            raise ValidationError(detail=errors)
+
+        # Start V1 run
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_run_analysis_signature
             task.link(record_run_analysis_result.s(self.pk, initiator.pk))
             task.link_error(
                 celery_app_v1.signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
             )
-            self.status = self.status_choices.RUN_QUEUED
             self.run_mode = self.run_mode_choices.V1
             task_id = task.delay().id
-
+        # Start V2 run
         elif run_mode == self.run_mode_choices.V2:
+            events_total = self.get_num_events()
             task = self.v2_run_analysis_signature
             task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
                 'analysis_id': self.pk,
@@ -506,6 +493,7 @@ class Analysis(TimeStampedModel):
             task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
 
         self.run_task_id = task_id
+        self.status = self.status_choices.RUN_QUEUED
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
