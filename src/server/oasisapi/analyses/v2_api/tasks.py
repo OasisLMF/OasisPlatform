@@ -740,6 +740,7 @@ def set_task_status(analysis_pk, task_status, dt):
 @celery_app_v2.task(name='update_task_id')
 def update_task_id(task_update_list):
     dt_now = timezone.now()
+    _, analysis_id, _ = task_update_list[0]
     # Set all pending tasks to queued (only update PENDING to avoid overwriting valid 'STARTED' or 'COMPLETE'
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,

@@ -65,12 +65,12 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
 
         self._send_socket_messages(statuses)
 
-    def update(self, **kwargs):
-        res = super().update(**kwargs)
+    #def update(self, **kwargs):
+    #    res = super().update(**kwargs)
 
-        self._send_socket_messages(self)
+    #    self._send_socket_messages(self)
 
-        return res
+    #    return res
 
 
 class AnalysisTaskStatus(models.Model):
