@@ -687,8 +687,8 @@ def handle_task_failure(
         )
 
 
-#@before_task_publish.connect
-#def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
+# @before_task_publish.connect
+# def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
 #    analysis_id = body[1].get('analysis_id')
 #    slug = body[1].get('slug')
 #

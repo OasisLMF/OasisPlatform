@@ -65,7 +65,8 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
 
         self._send_socket_messages(statuses)
 
-    #def update(self, **kwargs):
+    # This generates too much WS traffic disableing message per sub-task update
+    # def update(self, **kwargs):
     #    res = super().update(**kwargs)
 
     #    self._send_socket_messages(self)
