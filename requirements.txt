@@ -137,7 +137,7 @@ coverage[toml]==7.2.2
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==41.0.2
+cryptography==42.0.4
     # via
     #   autobahn
     #   azure-storage-blob
@@ -183,9 +183,7 @@ django-model-utils==4.3.1
 django-request-logging==0.7.5
     # via -r ./requirements-server.in
 django-storages[azure]==1.13.2
-    # via
-    #   -r ./requirements-server.in
-    #   django-storages
+    # via -r ./requirements-server.in
 django-webtest==1.9.10
     # via -r requirements.in
 djangorestframework==3.14.0
@@ -339,9 +337,7 @@ oasis-data-manager==0.1.1
     #   oasislmf
     #   ods-tools
 oasislmf[extra]==2.3.0
-    # via
-    #   -r ./requirements-worker.in
-    #   oasislmf
+    # via -r ./requirements-worker.in
 ods-tools==3.2.0
     # via
     #   -r ./requirements-server.in
@@ -420,7 +416,7 @@ pymysql==1.1.0
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyopenssl==23.2.0
+pyopenssl==24.0.0
     # via
     #   -r requirements.in
     #   josepy
@@ -549,9 +545,7 @@ traitlets==5.9.0
     #   ipython
     #   matplotlib-inline
 twisted[tls]==22.10.0
-    # via
-    #   daphne
-    #   twisted
+    # via daphne
 txaio==23.1.1
     # via autobahn
 typing==3.7.4.3

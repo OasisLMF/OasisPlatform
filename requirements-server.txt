@@ -84,7 +84,7 @@ coreschema==0.0.4
     #   drf-yasg
 cramjam==2.8.1
     # via fastparquet
-cryptography==41.0.2
+cryptography==42.0.4
     # via
     #   autobahn
     #   azure-storage-blob
@@ -121,9 +121,7 @@ django-model-utils==4.3.1
 django-request-logging==0.7.5
     # via -r requirements-server.in
 django-storages[azure]==1.13.2
-    # via
-    #   -r requirements-server.in
-    #   django-storages
+    # via -r requirements-server.in
 djangorestframework==3.14.0
     # via
     #   -r requirements-server.in
@@ -242,7 +240,7 @@ pyjwt==2.6.0
     # via djangorestframework-simplejwt
 pymysql==1.1.0
     # via -r requirements-server.in
-pyopenssl==23.2.0
+pyopenssl==24.0.0
     # via
     #   josepy
     #   twisted
@@ -294,9 +292,7 @@ sqlparse==0.4.4
     #   django
     #   django-debug-toolbar
 twisted[tls]==22.10.0
-    # via
-    #   daphne
-    #   twisted
+    # via daphne
 txaio==23.1.1
     # via autobahn
 typing==3.7.4.3
