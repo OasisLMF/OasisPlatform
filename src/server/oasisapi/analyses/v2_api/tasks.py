@@ -687,15 +687,6 @@ def handle_task_failure(
         )
 
 
-# @before_task_publish.connect
-# def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
-#    analysis_id = body[1].get('analysis_id')
-#    slug = body[1].get('slug')
-#
-#    if analysis_id and slug:
-#        mark_task_as_queued(analysis_id, slug, headers['id'], timezone.now().timestamp())
-
-
 @celery_app_v2.task(name='mark_task_as_queued')
 def mark_task_as_queued(analysis_id, slug, task_id, dt):
     AnalysisTaskStatus.objects.filter(
