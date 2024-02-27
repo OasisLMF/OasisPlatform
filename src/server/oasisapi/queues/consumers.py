@@ -93,8 +93,8 @@ def build_all_queue_status_message(analysis_filter=None, message_type='queue_sta
         queue_names = analyses.values_list('sub_task_statuses__queue_name', flat=True).distinct()
     else:
         analyses = Analysis.objects.filter(status__in=[
-            Analysis.status_choices.INPUTS_GENERATION_QUEUED, 
-            Analysis.status_choices.INPUTS_GENERATION_STARTED, 
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED,
+            Analysis.status_choices.INPUTS_GENERATION_STARTED,
             Analysis.status_choices.RUN_QUEUED,
             Analysis.status_choices.RUN_STARTED,
         ])

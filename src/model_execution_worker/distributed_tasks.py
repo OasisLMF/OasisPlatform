@@ -15,8 +15,7 @@ import fasteners
 import filelock
 import pandas as pd
 from celery import Celery, signature
-from celery.signals import (before_task_publish, task_failure, task_revoked,
-                            worker_ready)
+from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager

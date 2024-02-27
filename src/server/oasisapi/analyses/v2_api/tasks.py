@@ -19,7 +19,6 @@ from azure.storage.blob import BlobLeaseClient
 from celery import Task
 from celery import signals
 from celery.result import AsyncResult
-from celery.signals import before_task_publish
 from celery.utils.log import get_task_logger
 from celery import Task
 from celery import signals
