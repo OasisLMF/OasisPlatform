@@ -34,7 +34,6 @@ from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
 
-
 from botocore.exceptions import ClientError as S3_ClientError
 from tempfile import TemporaryFile
 from urllib.request import urlopen
@@ -741,14 +740,16 @@ def set_task_status(analysis_pk, task_status, dt):
 @celery_app_v2.task(name='update_task_id')
 def update_task_id(task_update_list):
     dt_now = timezone.now()
-    status =  AnalysisTaskStatus.status_choices.QUEUED
-    for task in task_update_list:
-        task_id, analysis_id, slug = task
-        AnalysisTaskStatus.objects.filter(
-            analysis_id=analysis_id,
-            slug=slug,
-        ).update(
-            task_id=task_id,
-            status=status,
-            queue_time=dt_now,
-        )
+    # Set all pending tasks to queued (only update PENDING to avoid overwriting valid 'STARTED' or 'COMPLETE'
+    AnalysisTaskStatus.objects.filter(
+        analysis_id=analysis_id,
+        status__in=[AnalysisTaskStatus.status_choices.PENDING],
+    ).update(status=AnalysisTaskStatus.status_choices.QUEUED)
+
+    with transaction.atomic():
+        for task in task_update_list:
+            task_id, analysis_id, slug = task
+            AnalysisTaskStatus.objects.filter(
+                analysis_id=analysis_id,
+                slug=slug,
+            ).update(task_id=task_id, queue_time=dt_now)
