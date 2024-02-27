@@ -740,9 +740,15 @@ def set_task_status(analysis_pk, task_status, dt):
 
 @celery_app_v2.task(name='update_task_id')
 def update_task_id(task_update_list):
+    dt_now = timezone.now()
+    status =  AnalysisTaskStatus.status_choices.QUEUED
     for task in task_update_list:
         task_id, analysis_id, slug = task
         AnalysisTaskStatus.objects.filter(
             analysis_id=analysis_id,
             slug=slug,
-        ).update(task_id=task_id)
+        ).update(
+            task_id=task_id,
+            status=status,
+            queue_time=dt_now,
+        )
