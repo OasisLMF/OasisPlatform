@@ -55,6 +55,14 @@ def wrap_message_content(message_type, content, status=ContentStatus.SUCCESS):
     }
 
 
+def find_model_from_queue_name(queue_name):
+    from src.server.oasisapi.analysis_models.models import AnalysisModel
+    for m in AnalysisModel.objects.all():
+        if m.queue_name == queue_name:
+            return m.id
+    return None
+
+
 def build_task_status_message(items: List[TaskStatusMessageItem], message_type='queue_status.updated'):
     from src.server.oasisapi.analyses.v2_api.serializers import AnalysisSerializerWebSocket, AnalysisTaskStatusSerializer
     from src.server.oasisapi.queues.serializers import QueueSerializer
@@ -92,23 +100,34 @@ def build_all_queue_status_message(analysis_filter=None, message_type='queue_sta
         analyses = Analysis.objects.filter(**analysis_filter)
         queue_names = analyses.values_list('sub_task_statuses__queue_name', flat=True).distinct()
     else:
-        analyses = Analysis.objects.filter(status__in=[Analysis.status_choices.INPUTS_GENERATION_STARTED, Analysis.status_choices.RUN_STARTED])
+        analyses = Analysis.objects.filter(status__in=[
+            Analysis.status_choices.INPUTS_GENERATION_QUEUED,
+            Analysis.status_choices.INPUTS_GENERATION_STARTED,
+            Analysis.status_choices.RUN_QUEUED,
+            Analysis.status_choices.RUN_STARTED,
+        ])
         queue_names = None
 
     # filter queues with some nodes or activity
     all_queues = filter_queues_info(queue_names)
-    active_queues = list(q for q in all_queues if (q['worker_count'] or q['pending_count'] or q['running_count'] or q['queued_count']))
+    active_queues = list(q for q in all_queues if (q['worker_count'] or q['pending_count']
+                         or q['running_count'] or q['queued_count'] or q['queue_message_count']))
 
     status_message = []
+
     for q in active_queues:
+        model_id = find_model_from_queue_name(q['name'])
+        if model_id:
+            qs_analyses = analyses.filter(**{'model': model_id}).distinct()
+        else:
+            qs_analyses = analyses.filter(**{'sub_task_statuses__queue_name': q['name'], }).distinct()
+
         status_message.append(TaskStatusMessageItem(
             queue=q,
             analyses=[TaskStatusMessageAnalysisItem(
                 analysis=a,
                 updated_tasks=[]
-            ) for a in analyses.filter(**{
-                'sub_task_statuses__queue_name': q['name'],
-            }).distinct()]
+            ) for a in qs_analyses]
         ))
 
     return build_task_status_message(status_message, message_type=message_type)

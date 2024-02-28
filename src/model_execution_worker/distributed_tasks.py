@@ -15,8 +15,7 @@ import fasteners
 import filelock
 import pandas as pd
 from celery import Celery, signature
-from celery.signals import (before_task_publish, task_failure, task_revoked,
-                            worker_ready)
+from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
 from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
@@ -1225,16 +1224,3 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     if not keep_remote_data:
         logging.info(f"deleting remote data, {dir_remote_data}")
         filestore.delete_dir(dir_remote_data)
-
-
-@before_task_publish.connect
-def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
-    """
-    This receiver is replicated on the server side as it needs to be called from the
-    queueing thread to be triggered
-    """
-    analysis_id = body[1].get('analysis_id')
-    slug = body[1].get('slug')
-
-    if analysis_id and slug:
-        signature('mark_task_as_queued').delay(analysis_id, slug, headers['id'], datetime.now().timestamp())
