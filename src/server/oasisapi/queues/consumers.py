@@ -62,6 +62,7 @@ def find_model_from_queue_name(queue_name):
             return m.id
     return None
 
+
 def build_task_status_message(items: List[TaskStatusMessageItem], message_type='queue_status.updated'):
     from src.server.oasisapi.analyses.v2_api.serializers import AnalysisSerializerWebSocket, AnalysisTaskStatusSerializer
     from src.server.oasisapi.queues.serializers import QueueSerializer
@@ -109,7 +110,8 @@ def build_all_queue_status_message(analysis_filter=None, message_type='queue_sta
 
     # filter queues with some nodes or activity
     all_queues = filter_queues_info(queue_names)
-    active_queues = list(q for q in all_queues if (q['worker_count'] or q['pending_count'] or q['running_count'] or q['queued_count'] or q['queue_message_count']))
+    active_queues = list(q for q in all_queues if (q['worker_count'] or q['pending_count']
+                         or q['running_count'] or q['queued_count'] or q['queue_message_count']))
 
     status_message = []
 
@@ -118,8 +120,7 @@ def build_all_queue_status_message(analysis_filter=None, message_type='queue_sta
         if model_id:
             qs_analyses = analyses.filter(**{'model': model_id}).distinct()
         else:
-            qs_analyses = analyses.filter(**{'sub_task_statuses__queue_name': q['name'],}).distinct()
-
+            qs_analyses = analyses.filter(**{'sub_task_statuses__queue_name': q['name'], }).distinct()
 
         status_message.append(TaskStatusMessageItem(
             queue=q,
