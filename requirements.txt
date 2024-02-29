@@ -352,7 +352,7 @@ packaging==23.0
     #   pyproject-api
     #   pytest
     #   tox
-pandas==2.2.1
+pandas==2.0.3
     # via
     #   -r ./requirements-server.in
     #   fastparquet
