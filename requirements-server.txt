@@ -214,7 +214,7 @@ packaging==23.0
     #   drf-yasg
     #   fastparquet
     #   ods-tools
-pandas==1.5.3
+pandas==2.0.3
     # via
     #   -r requirements-server.in
     #   fastparquet
@@ -304,7 +304,9 @@ typing-extensions==4.5.0
     #   oasis-data-manager
     #   twisted
 tzdata==2023.3
-    # via celery
+    # via
+    #   celery
+    #   pandas
 uritemplate==4.1.1
     # via
     #   coreapi
