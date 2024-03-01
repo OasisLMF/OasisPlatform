@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.6`_
+ ---------
+* [#962](https://github.com/OasisLMF/OasisPlatform/pull/962) - Remove pip from 2nd stage server build
+* [#939](https://github.com/OasisLMF/OasisPlatform/pull/939) - Fix Azure support for workers (platform 1)
+* [#987](https://github.com/OasisLMF/OasisPlatform/pull/987) - Fixed CVE issues 1.28.8
+* [#935](https://github.com/OasisLMF/OasisPlatform/pull/935) - Release 1.28.5
+.. _`1.28.6`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.5...1.28.6
+
 .. _`1.28.5`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.4...1.28.5
 
 .. _`1.28.4`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.3...1.28.4
