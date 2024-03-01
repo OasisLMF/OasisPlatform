@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.1`_
+ ---------
+* [#623, #797, #967](https://github.com/OasisLMF/OasisPlatform/pull/975) - Fix OOM worker retires infinite loop
+* [#980](https://github.com/OasisLMF/OasisPlatform/pull/981) - Error when linking S3 object to portfolio
+* [#982](https://github.com/OasisLMF/OasisPlatform/pull/982) - Fix run validation for V1 models
+* [#978, #932, #869](https://github.com/OasisLMF/OasisPlatform/pull/983) - Fixes for websocket stability
+* [#985](https://github.com/OasisLMF/OasisPlatform/pull/986) - Issue with pandas 2.x.x and v2 key generation 
+.. _`2.3.1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.0...2.3.1
+
 `2.3.0`_
  ---------
 * [#898](https://github.com/OasisLMF/OasisPlatform/pull/898) - Fix ods-tools changelog call
