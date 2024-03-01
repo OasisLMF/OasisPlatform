@@ -71,7 +71,7 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==41.0.6
+cryptography==42.0.4
     # via
     #   autobahn
     #   azure-storage-blob
@@ -198,7 +198,7 @@ pyjwt==2.6.0
     # via djangorestframework-simplejwt
 pymysql==1.1.0
     # via -r requirements-server.in
-pyopenssl==23.2.0
+pyopenssl==24.0.0
     # via twisted
 pyrsistent==0.19.3
     # via jsonschema

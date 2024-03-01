@@ -68,7 +68,7 @@ configparser==5.3.0
     # via -r requirements-worker.in
 cramjam==2.6.2
     # via fastparquet
-cryptography==41.0.6
+cryptography==42.0.4
     # via azure-storage-blob
 exceptiongroup==1.1.1
     # via pytest
