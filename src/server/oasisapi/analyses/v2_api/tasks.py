@@ -19,7 +19,6 @@ from azure.storage.blob import BlobLeaseClient
 from celery import Task
 from celery import signals
 from celery.result import AsyncResult
-from celery.signals import before_task_publish
 from celery.utils.log import get_task_logger
 from celery import Task
 from celery import signals
@@ -33,7 +32,6 @@ from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
-
 
 from botocore.exceptions import ClientError as S3_ClientError
 from tempfile import TemporaryFile
@@ -423,10 +421,10 @@ def cancel_subtasks(self, analysis_pk):
     for subtask in subtask_qs:
         task_id = subtask.task_id
         status = subtask.status
-        logger.info(f'subtask revoked: analysis_id={analysis_pk}, task_id={task_id}, status={status}')
         if task_id:
-            self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
             self.update_state(task_id=task_id, state='REVOKED')
+            self.app.control.revoke(task_id, terminate=True, signal='SIGTERM')
+            logger.info(f'subtask revoked: analysis_id={analysis_pk}, task_id={task_id}, status={status}')
     subtask_qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
 
 
@@ -581,6 +579,25 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
     )
 
 
+@celery_app_v2.task(bind=True, name='set_subtask_status')
+def set_subtask_status(self, analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(error_msg.encode('utf-8'))
+        AnalysisTaskStatus.objects.filter(
+            slug=task_slug,
+            analysis_id=analysis_id,
+        ).update(
+            status=subtask_status,
+            end_time=timezone.now(),
+            error_log=RelatedFile.objects.create(
+                file=File(tmp_file, name='{}.log'.format(uuid.uuid4())),
+                filename='{}-error.log'.format(self.request.id),
+                content_type='text/plain',
+                creator_id=initiator_id,
+            )
+        )
+
+
 @celery_app_v2.task(bind=True, name='record_sub_task_failure')
 def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, task_slug=None):
     tb = _traceback_from_errback_args(*args)
@@ -669,15 +686,6 @@ def handle_task_failure(
         )
 
 
-@before_task_publish.connect
-def mark_task_as_queued_receiver(*args, headers=None, body=None, **kwargs):
-    analysis_id = body[1].get('analysis_id')
-    slug = body[1].get('slug')
-
-    if analysis_id and slug:
-        mark_task_as_queued(analysis_id, slug, headers['id'], timezone.now().timestamp())
-
-
 @celery_app_v2.task(name='mark_task_as_queued')
 def mark_task_as_queued(analysis_id, slug, task_id, dt):
     AnalysisTaskStatus.objects.filter(
@@ -721,9 +729,18 @@ def set_task_status(analysis_pk, task_status, dt):
 
 @celery_app_v2.task(name='update_task_id')
 def update_task_id(task_update_list):
-    for task in task_update_list:
-        task_id, analysis_id, slug = task
-        AnalysisTaskStatus.objects.filter(
-            analysis_id=analysis_id,
-            slug=slug,
-        ).update(task_id=task_id)
+    dt_now = timezone.now()
+    _, analysis_id, _ = task_update_list[0]
+    # Set all pending tasks to queued (only update PENDING to avoid overwriting valid 'STARTED' or 'COMPLETE'
+    AnalysisTaskStatus.objects.filter(
+        analysis_id=analysis_id,
+        status__in=[AnalysisTaskStatus.status_choices.PENDING],
+    ).update(status=AnalysisTaskStatus.status_choices.QUEUED)
+
+    with transaction.atomic():
+        for task in task_update_list:
+            task_id, analysis_id, slug = task
+            AnalysisTaskStatus.objects.filter(
+                analysis_id=analysis_id,
+                slug=slug,
+            ).update(task_id=task_id, queue_time=dt_now)

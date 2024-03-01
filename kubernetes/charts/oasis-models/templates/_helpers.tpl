@@ -177,9 +177,7 @@ Variables for a channel layer client
       name: {{ .Values.databases.channel_layer.name }}
       key: password
 {{- end }}
-- name: OASIS_INPUT_GENERATION_CONTROLLER_QUEUE
-  value: task-controller
-- name: OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE
+- name: OASIS_TASK_CONTROLLER_QUEUE
   value: task-controller
 {{- end }}
 

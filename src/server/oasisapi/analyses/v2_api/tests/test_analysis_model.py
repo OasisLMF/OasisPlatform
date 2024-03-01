@@ -326,7 +326,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                 self.assertEqual(sig.task, 'start_loss_generation_task')
                 self.assertEqual(
                     sig.options['queue'],
-                    iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
+                    iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
 
 
@@ -409,5 +409,5 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 self.assertEqual(sig.task, 'start_input_generation_task')
                 self.assertEqual(
                     sig.options['queue'],
-                    iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
+                    iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
