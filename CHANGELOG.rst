@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.27.8`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.7...1.27.8
+
 .. _`1.27.7`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.6...1.27.7
 
 `1.27.6`_
