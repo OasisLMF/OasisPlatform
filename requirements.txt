@@ -336,9 +336,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.0
+oasislmf[extra]==2.3.1
     # via -r ./requirements-worker.in
-ods-tools==3.2.0
+ods-tools==3.2.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
