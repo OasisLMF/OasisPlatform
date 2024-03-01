@@ -207,7 +207,7 @@ numpy==1.24.2
     #   pyarrow
 oasis-data-manager==0.1.1
     # via ods-tools
-ods-tools==3.2.0
+ods-tools==3.2.1
     # via -r requirements-server.in
 packaging==23.0
     # via
