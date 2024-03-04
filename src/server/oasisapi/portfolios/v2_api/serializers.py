@@ -321,6 +321,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             # S3 storage - File copy needed
             if hasattr(default_storage, 'bucket'):
                 new_file = ContentFile(b'')
+                new_file.name = new_file_name
                 new_related_file = RelatedFile.objects.create(
                     file=new_file,
                     filename=fname,

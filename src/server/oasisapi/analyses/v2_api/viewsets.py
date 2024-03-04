@@ -325,6 +325,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         obj = self.get_object()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
+        obj.cancel_subtasks()
         obj.cancel_any()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -336,6 +337,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         obj = self.get_object()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
+        obj.cancel_subtasks()
         obj.cancel_analysis()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -360,6 +362,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         obj = self.get_object()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
+        obj.cancel_subtasks()
         obj.cancel_generate_inputs()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 

@@ -137,7 +137,7 @@ coreschema==0.0.4
     #   drf-yasg
 cramjam==2.8.1
     # via fastparquet
-cryptography==41.0.2
+cryptography==42.0.4
     # via
     #   autobahn
     #   azure-identity
@@ -192,9 +192,7 @@ django-model-utils==4.3.1
 django-request-logging==0.7.5
     # via -r requirements-server.in
 django-storages[azure]==1.13.2
-    # via
-    #   -r requirements-server.in
-    #   django-storages
+    # via -r requirements-server.in
 djangorestframework==3.14.0
     # via
     #   -r requirements-server.in
@@ -324,13 +322,9 @@ numpy==1.24.2
     #   numba
     #   pandas
     #   pyarrow
-    #   pyogrio
-    #   shapely
 oasis-data-manager[extra]==0.1.1
-    # via
-    #   -r requirements-server.in
-    #   ods-tools
-ods-tools==3.2.0
+    # via ods-tools
+ods-tools==3.2.1
     # via -r requirements-server.in
 packaging==23.0
     # via
@@ -342,8 +336,7 @@ packaging==23.0
     #   geopandas
     #   msal-extensions
     #   ods-tools
-    #   pyogrio
-pandas==1.5.3
+pandas==2.0.3
     # via
     #   -r requirements-server.in
     #   dask
@@ -388,7 +381,7 @@ pymysql==1.1.0
     # via -r requirements-server.in
 pyogrio==0.7.2
     # via oasis-data-manager
-pyopenssl==23.2.0
+pyopenssl==24.0.0
     # via
     #   josepy
     #   twisted
@@ -470,9 +463,7 @@ toolz==0.12.1
 tornado==6.4
     # via distributed
 twisted[tls]==22.10.0
-    # via
-    #   daphne
-    #   twisted
+    # via daphne
 txaio==23.1.1
     # via autobahn
 typing==3.7.4.3

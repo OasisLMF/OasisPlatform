@@ -1,6 +1,46 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.1`_
+ ---------
+* [#623, #797, #967](https://github.com/OasisLMF/OasisPlatform/pull/975) - Fix OOM worker retires infinite loop
+* [#980](https://github.com/OasisLMF/OasisPlatform/pull/981) - Error when linking S3 object to portfolio
+* [#982](https://github.com/OasisLMF/OasisPlatform/pull/982) - Fix run validation for V1 models
+* [#978, #932, #869](https://github.com/OasisLMF/OasisPlatform/pull/983) - Fixes for websocket stability
+* [#985](https://github.com/OasisLMF/OasisPlatform/pull/986) - Issue with pandas 2.x.x and v2 key generation 
+.. _`2.3.1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.0...2.3.1
+
+`2.3.0`_
+ ---------
+* [#898](https://github.com/OasisLMF/OasisPlatform/pull/898) - Fix ods-tools changelog call
+* [#869](https://github.com/OasisLMF/OasisPlatform/pull/899) - Worker Controller crashing under heavy load 
+* [#897](https://github.com/OasisLMF/OasisPlatform/pull/906) - Collected WebSocket bug fixes
+* [#912](https://github.com/OasisLMF/OasisPlatform/pull/912) - Fix syntax in flower chart template
+* [#913](https://github.com/OasisLMF/OasisPlatform/pull/914) - Add ENV var to disable http in websocket pod
+* [#918](https://github.com/OasisLMF/OasisPlatform/pull/918) - Fix worker_count_max assigment
+* [#920](https://github.com/OasisLMF/OasisPlatform/pull/921) - ODS Tools link in release notes points to OasisLMF repo
+* [#929](https://github.com/OasisLMF/OasisPlatform/pull/930) - Platform 2 - Keycloak DB reset on restart or redeployment. 
+* [#893](https://github.com/OasisLMF/OasisPlatform/pull/931) - Support Platform 1 workers on the v2 server 
+* [#942](https://github.com/OasisLMF/OasisPlatform/pull/942) - Updated Package Requirements: oasislmf==1.28.5 ods-tools==3.1.4
+* [#928, #681](https://github.com/OasisLMF/OasisPlatform/pull/944) - Added chunking options to analysis level
+* [#905, #786](https://github.com/OasisLMF/OasisPlatform/pull/945) - Fixed generate and run endpoint 
+* [#818](https://github.com/OasisLMF/OasisPlatform/pull/818) - Update/remote trig python tests
+* [#910](https://github.com/OasisLMF/OasisPlatform/pull/947) - Add post analysis hook to platform 2 workflow 
+* [#890](https://github.com/OasisLMF/OasisPlatform/pull/948) - Fetch a model's versions when auto-registration is disabled 
+* [#903](https://github.com/OasisLMF/OasisPlatform/pull/950) - File linking OED from sub-directories fails to link inside workers   
+* [#953](https://github.com/OasisLMF/OasisPlatform/pull/954) - Platform 2.1.3 - No free channel ids error
+* [#955](https://github.com/OasisLMF/OasisPlatform/pull/955) - Revert "Always post model version info on worker startup (platform 2)…
+* [#951](https://github.com/OasisLMF/OasisPlatform/pull/956) - Allow 'single instance' execution from v2 api 
+* [#952](https://github.com/OasisLMF/OasisPlatform/pull/957) - Cleaner split between v1 and v2 OpenAPI schemas
+* [#960](https://github.com/OasisLMF/OasisPlatform/pull/960) - Update external images & python packages (2.3.0 release)
+* [#961](https://github.com/OasisLMF/OasisPlatform/pull/963) - Remove the python3-pip from production server images 
+* [#966](https://github.com/OasisLMF/OasisPlatform/pull/966) - Fix broken swagger calls when SUB_PATH_URL=True 
+* [#968](https://github.com/OasisLMF/OasisPlatform/pull/968) - Fix model registration script for v1 workers 
+* [#857](https://github.com/OasisLMF/OasisPlatform/pull/857) - Release 2.2.1 (staging)
+* [#872](https://github.com/OasisLMF/OasisPlatform/pull/882) - Investigate flower error in monitoring chart 
+* [#871](https://github.com/OasisLMF/OasisPlatform/pull/883) - Handle exceptions from OedExposure on file Upload 
+* [#702](https://github.com/OasisLMF/OasisPlatform/pull/886) - Fix worker controller stablility 
+.. _`2.3.0`:  https://github.com/OasisLMF/OasisPlatform/compare/2.2.1...2.3.0
 
 `2.2.1`_
  ---------

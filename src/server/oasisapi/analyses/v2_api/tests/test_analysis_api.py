@@ -800,19 +800,20 @@ class AnalysisCancel(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    def test_user_is_authenticated_object_exists___cancel_is_called(self):
-        with patch('src.server.oasisapi.analyses.models.Analysis.cancel_analysis', autospec=True) as cancel_mock:
-            user = fake_user()
-            analysis = fake_analysis()
+    @patch('src.server.oasisapi.analyses.models.Analysis.cancel_analysis', autospec=True)
+    @patch('src.server.oasisapi.analyses.models.Analysis.cancel_subtasks', autospec=True)
+    def test_user_is_authenticated_object_exists___cancel_is_called(self, cancel_analysis_mock, cancel_subtasks_mock):
+        user = fake_user()
+        analysis = fake_analysis()
 
-            self.app.post(
-                analysis.get_absolute_cancel_analysis_url(namespace=NAMESPACE),
-                headers={
-                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                }
-            )
-
-            cancel_mock.assert_called_once_with(analysis)
+        self.app.post(
+            analysis.get_absolute_cancel_analysis_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+        cancel_analysis_mock.assert_called_once_with(analysis)
+        cancel_subtasks_mock.assert_called_once_with(analysis)
 
     def test_user_is_not_in_same_model_group___cancel_is_denied(self):
         user = fake_user()
@@ -921,19 +922,20 @@ class AnalysisCancelInputsGeneration(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    def test_user_is_authenticated_object_exists___generate_inputs_generation_is_called(self):
-        with patch('src.server.oasisapi.analyses.models.Analysis.cancel_generate_inputs', autospec=True) as cancel_generate_inputs:
-            user = fake_user()
-            analysis = fake_analysis()
+    @patch('src.server.oasisapi.analyses.models.Analysis.cancel_generate_inputs', autospec=True)
+    @patch('src.server.oasisapi.analyses.models.Analysis.cancel_subtasks', autospec=True)
+    def test_user_is_authenticated_object_exists___generate_inputs_generation_is_called(self, cancel_generate_mock, cancel_subtasks_mock):
+        user = fake_user()
+        analysis = fake_analysis()
 
-            self.app.post(
-                analysis.get_absolute_cancel_inputs_generation_url(namespace=NAMESPACE),
-                headers={
-                    'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                }
-            )
-
-            cancel_generate_inputs.assert_called_once_with(analysis)
+        self.app.post(
+            analysis.get_absolute_cancel_inputs_generation_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+        cancel_generate_mock.assert_called_once_with(analysis)
+        cancel_subtasks_mock.assert_called_once_with(analysis)
 
     def test_user_is_not_in_same_model_group___cancel_is_denied(self):
         user = fake_user()
@@ -1304,7 +1306,9 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                     "version": "3",
                     "analysis_tag": "test_analysis",
                     "model_supplier_id": "OasisIM",
+                    "module_supplier_id": "OasisIM",
                     "model_name_id": "1",
+                    "model_version_id": "1",
                     "number_of_samples": -1,
                     "gul_threshold": 0,
                     "model_settings": {
@@ -1352,7 +1356,9 @@ class AnalysisSettingsJson(WebTestMixin, TestCase):
                     "source_tag": "test_source",
                     "analysis_tag": "test_analysis",
                     "model_supplier_id": "OasisIM",
+                    "module_supplier_id": "OasisIM",
                     "model_name_id": "1",
+                    "model_version_id": "1",
                     "number_of_samples": 10,
                     "gul_threshold": 0,
                     "model_settings": {

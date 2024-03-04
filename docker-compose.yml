@@ -21,8 +21,7 @@ x-shared-env: &shared-env
   OASIS_CELERY_DB_USER: celery
   OASIS_CELERY_DB_NAME: celery
   OASIS_CELERY_DB_PORT: 5432
-  OASIS_INPUT_GENERATION_CONTROLLER_QUEUE: task-controller
-  OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE: task-controller
+  OASIS_TASK_CONTROLLER_QUEUE: task-controller
 
 x-oasis-env-v1: &oasis-env-v1
   OASIS_DEBUG: ${DEBUG:-0}

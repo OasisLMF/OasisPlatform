@@ -65,12 +65,13 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
 
         self._send_socket_messages(statuses)
 
-    def update(self, **kwargs):
-        res = super().update(**kwargs)
+    # This generates too much WS traffic disableing message per sub-task update
+    # def update(self, **kwargs):
+    #    res = super().update(**kwargs)
 
-        self._send_socket_messages(self)
+    #    self._send_socket_messages(self)
 
-        return res
+    #    return res
 
 
 class AnalysisTaskStatus(models.Model):
@@ -385,14 +386,14 @@ class Analysis(TimeStampedModel):
     def v2_run_analysis_signature(self):
         return celery_app_v2.signature(
             'start_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'LOSSES_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')}
+            options={'queue': iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')}
         )
 
     @property
     def v2_start_input_and_loss_generation_signature(self):
         return celery_app_v2.signature(
             'start_input_and_loss_generation_task',
-            options={'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')}
+            options={'queue': iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')}
         )
 
     @property
@@ -400,7 +401,7 @@ class Analysis(TimeStampedModel):
         return celery_app_v2.signature(
             'cancel_subtasks',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
+                'queue': iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
             }
         )
 
@@ -409,101 +410,88 @@ class Analysis(TimeStampedModel):
         return celery_app_v2.signature(
             'start_input_generation_task',
             options={
-                'queue': iniconf.settings.get('worker', 'INPUT_GENERATION_CONTROLLER_QUEUE', fallback='celery-v2')
+                'queue': iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
             }
         )
-
-    def validate_run(self):
-        valid_choices = [
-            self.status_choices.READY,
-            self.status_choices.RUN_COMPLETED,
-            self.status_choices.RUN_ERROR,
-            self.status_choices.RUN_CANCELLED,
-        ]
-
-        if self.status not in valid_choices:
-            raise ValidationError(
-                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]}
-            )
-
-        errors = {}
-        if self.model.deleted:
-            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-
-        if not self.settings_file:
-            errors['analysis_settings_file'] = ['Must not be null']
-
-        if not self.input_file:
-            errors['input_file'] = ['Must not be null']
-
-        # Get chunking options
-        if self.chunking_options is None:
-            chunking_options = self.model.chunking_options
-        else:
-            chunking_options = self.chunking_options
-
-        # Valadation for dyanmic loss chunks
-        if chunking_options.loss_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
-            if not self.model.resource_file:
-                errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
-            elif self.settings_file:
-                # cross check model and analysis settings if not given a set of events
-                model_settings = self.model.resource_file.read_json()
-                analysis_settings = self.settings_file.read_json()
-                if not analysis_settings.get('event_ids'):
-                    events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
-                    events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
-                    events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
-
-                    if not events_selected:
-                        errors['analysis_settings_file'] = ['event_set, Must not be null for Dynamic chunking']
-                    if not events_options:
-                        errors['model_settings_file'] = ['event_set, No options given in Model settings']
-                    if not events_matched:
-                        errors['settings_files'] = [f"selected event_set '{events_selected}' from analysis_settings not found in model_settings"]
-                    elif not events_matched[0].get('number_of_events'):
-                        errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
-
-        if errors:
-            self.status = self.status_choices.RUN_ERROR
-            self.save()
-            raise ValidationError(detail=errors)
 
     def run_callback(self, body):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
     def run(self, initiator, run_mode_override=None):
-        self.validate_run()
+        valid_choices = [
+            self.status_choices.READY,
+            self.status_choices.RUN_COMPLETED,
+            self.status_choices.RUN_ERROR,
+            self.status_choices.RUN_CANCELLED,
+        ]
+        if self.status not in valid_choices:
+            raise ValidationError(
+                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]})
         if (self.model.run_mode is None) and (run_mode_override is None):
             raise ValidationError({
-                'model': ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
-            })
+                'model': ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]})
+
         run_mode = run_mode_override if run_mode_override else self.model.run_mode
         valid_run_modes = [
             self.run_mode_choices.V1,
             self.run_mode_choices.V2,
         ]
         if run_mode not in valid_run_modes:
-            raise ValidationError(
-                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
-            )
+            raise ValidationError({'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]})
 
-        events_total = self.get_num_events()
-        self.status = self.status_choices.RUN_QUEUED
-        self.save()
+        errors = {}
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        if not self.settings_file:
+            errors['analysis_settings_file'] = ['Must not be null']
+        if not self.input_file:
+            errors['input_file'] = ['Must not be null']
 
+        # Valadation for dyanmic loss chunks
+        if run_mode == self.run_mode_choices.V2:
+            if self.chunking_options is None:
+                chunking_options = self.model.chunking_options
+            else:
+                chunking_options = self.chunking_options
+
+            if chunking_options.loss_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
+                if not self.model.resource_file:
+                    errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
+                elif self.settings_file:
+                    # cross check model and analysis settings if not given a set of events
+                    model_settings = self.model.resource_file.read_json()
+                    analysis_settings = self.settings_file.read_json()
+                    if not analysis_settings.get('event_ids'):
+                        events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
+                        events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
+                        events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
+                        if not events_selected:
+                            errors['analysis_settings_file'] = ['event_set, Must not be null for Dynamic chunking']
+                        if not events_options:
+                            errors['model_settings_file'] = ['event_set, No options given in Model settings']
+                        if not events_matched:
+                            errors['settings_files'] = [f"selected event_set '{events_selected}' from analysis_settings not found in model_settings"]
+                        elif not events_matched[0].get('number_of_events'):
+                            errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
+
+        if errors:
+            self.status = self.status_choices.RUN_ERROR
+            self.save()
+            raise ValidationError(detail=errors)
+
+        # Start V1 run
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_run_analysis_signature
             task.link(record_run_analysis_result.s(self.pk, initiator.pk))
             task.link_error(
                 celery_app_v1.signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
             )
-            self.status = self.status_choices.RUN_QUEUED
             self.run_mode = self.run_mode_choices.V1
             task_id = task.delay().id
-
+        # Start V2 run
         elif run_mode == self.run_mode_choices.V2:
+            events_total = self.get_num_events()
             task = self.v2_run_analysis_signature
             task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
                 'analysis_id': self.pk,
@@ -515,6 +503,7 @@ class Analysis(TimeStampedModel):
             task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
 
         self.run_task_id = task_id
+        self.status = self.status_choices.RUN_QUEUED
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
@@ -587,35 +576,9 @@ class Analysis(TimeStampedModel):
         self.task_finished = None
         self.save()
 
-    def cancel(self):
-        _now = timezone.now()
-
-        # cleanup the the sub tasks
-        qs = self.sub_task_statuses.filter(
-            status__in=[
-                AnalysisTaskStatus.status_choices.PENDING,
-                AnalysisTaskStatus.status_choices.QUEUED,
-                AnalysisTaskStatus.status_choices.STARTED]
-        )
-
-        for task_id in qs.values_list('task_id', flat=True):
-            if task_id:
-                AsyncResult(task_id).revoke(signal='SIGKILL', terminate=True)
-
-        qs.update(status=AnalysisTaskStatus.status_choices.CANCELLED, end_time=_now)
-
-        # set the status on the analysis
-        status_map = {
-            Analysis.status_choices.INPUTS_GENERATION_STARTED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
-            Analysis.status_choices.INPUTS_GENERATION_QUEUED: Analysis.status_choices.INPUTS_GENERATION_CANCELLED,
-            Analysis.status_choices.RUN_QUEUED: Analysis.status_choices.RUN_CANCELLED,
-            Analysis.status_choices.RUN_STARTED: Analysis.status_choices.RUN_CANCELLED,
-        }
-
-        if self.status in status_map:
-            self.status = status_map[self.status]
-            self.task_finished = _now
-            self.save()
+    def cancel_subtasks(self):
+        cancel_tasks = self.v2_cancel_subtasks_signature
+        task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
         valid_choices = [
@@ -721,24 +684,10 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
 
-        # Terminate V2 Execution
-        if self.run_mode is self.run_mode_choices.V2:
-            # Kill the task controller job incase its still on queue
-            AsyncResult(self.run_task_id).revoke(
-                signal='SIGKILL',
-                terminate=True,
-            )
-            # Send Kill chain call to worker-controller
-            cancel_tasks = self.v2_cancel_subtasks_signature
-            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
-
-        # Terminate V1 Execution -- assume this option if not set
-        else:
-            AsyncResult(self.run_task_id).revoke(
-                signal='SIGTERM',
-                terminate=True,
-            )
-
+        AsyncResult(self.run_task_id).revoke(
+            signal='SIGTERM',
+            terminate=True,
+        )
         self.status = self.status_choices.RUN_CANCELLED
         self.run_mode = None
         self.task_finished = timezone.now()
@@ -752,24 +701,10 @@ class Analysis(TimeStampedModel):
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
-        # Terminate V2 Execution
-        if self.run_mode is self.run_mode_choices.V2:
-            # Kill the task controller job incase its still on queue
-            AsyncResult(self.generate_inputs_task_id).revoke(
-                signal='SIGKILL',
-                terminate=True,
-            )
-            # Send Kill chain call to worker-controller
-            cancel_tasks = self.v2_cancel_subtasks_signature
-            task_id = cancel_tasks.apply_async(args=[self.pk], priority=10).id
-
-        # Terminate V1 Execution -- assume this option if not set
-        else:
-            AsyncResult(self.generate_inputs_task_id).revoke(
-                signal='SIGTERM',
-                terminate=True,
-            )
-
+        AsyncResult(self.generate_inputs_task_id).revoke(
+            signal='SIGTERM',
+            terminate=True,
+        )
         self.status = self.status_choices.INPUTS_GENERATION_CANCELLED
         self.run_mode = None
         self.task_finished = timezone.now()

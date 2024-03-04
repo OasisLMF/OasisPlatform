@@ -171,7 +171,7 @@ coverage[toml]==7.4.1
     #   pytest-cov
 cramjam==2.8.1
     # via fastparquet
-cryptography==42.0.2
+cryptography==42.0.4
     # via
     #   autobahn
     #   azure-identity
@@ -431,11 +431,9 @@ oasis-data-manager[extra]==0.1.1
     #   -r ./requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.0
-    # via
-    #   -r ./requirements-worker.in
-    #   oasislmf
-ods-tools==3.2.0
+oasislmf[extra]==2.3.1
+    # via -r ./requirements-worker.in
+ods-tools==3.2.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -455,7 +453,7 @@ packaging==23.2
     #   pyproject-api
     #   pytest
     #   tox
-pandas==2.2.0
+pandas==2.0.3
     # via
     #   -r ./requirements-server.in
     #   dask
