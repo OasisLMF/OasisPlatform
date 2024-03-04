@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
 from ..models import Portfolio
-from ...decorators import requires_sql_reader
+# from ...decorators import requires_sql_reader -- LOT3
 from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
@@ -23,7 +23,8 @@ from .serializers import (
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
 from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer
-from ...files.v1_api.views import handle_related_file, handle_related_file_sql
+from ...files.v2_api.views import handle_related_file
+# from ...files.v2_api.views import handle_related_file_sql -- LOT3
 from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM

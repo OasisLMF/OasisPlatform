@@ -75,8 +75,7 @@ class ConvertSerializer(serializers.Serializer):
     mapping_file = serializers.CharField()
 
     class Meta:
-        ref_name = __qualname__.split('.')[0] + 'V1' 
-
+        ref_name = __qualname__.split('.')[0] + 'V1'
 
 
 class RelatedFileSerializer(serializers.ModelSerializer):

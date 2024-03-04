@@ -1594,7 +1594,7 @@ class ResetUrlMixin:
 
 @override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
 class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
-    __test__ = False # LOT3 DISABLE
+    __test__ = False  # LOT3 DISABLE
 
     urls = [
         'get_absolute_accounts_file_sql_url',
@@ -1624,7 +1624,7 @@ class PortfolioFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
 
 @override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
 class PortfolioFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
-    __test__ = False # LOT3 DISABLE
+    __test__ = False  # LOT3 DISABLE
 
     urls = [
         'get_absolute_accounts_file_sql_url',
