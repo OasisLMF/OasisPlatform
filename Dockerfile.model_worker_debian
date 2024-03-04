@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.11-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends git vim libspatialindex-dev && rm -rf /var/lib/apt/lists/*
 RUN adduser  --home /home/worker --shell /bin/bash --disabled-password --gecos "" worker
