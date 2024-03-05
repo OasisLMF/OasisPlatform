@@ -73,7 +73,6 @@ def get_queues_info() -> List[QueueInfo]:
         ]
         chan.close()
 
-
     # get the stats of the running and queued tasks
     pending = reduce(
         lambda current, value: _add_to_dict(current, value['queue_name'], value['count']),
