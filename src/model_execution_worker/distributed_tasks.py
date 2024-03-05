@@ -48,6 +48,8 @@ FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallbac
 
 app = Celery(task_cls=WorkerLostRetry)
 app.config_from_object(celery_conf)
+filestore = get_filestore(settings)
+model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
 # print(app._conf)
 
 
@@ -282,7 +284,6 @@ def revoked_handler(*args, **kwargs):
 
 @worker_ready.connect
 def register_worker(sender, **k):
-    filestore = get_filestore(settings)
 
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
@@ -458,8 +459,6 @@ def update_all_tasks_ids(task_request):
 # --- input generation tasks ------------------------------------------------ #
 
 def keys_generation_task(fn):
-    filestore = get_filestore(settings)
-
     def maybe_prepare_complex_data_files(complex_data_files, user_data_dir):
         with filelock.FileLock(f'{user_data_dir}.lock'):
             if complex_data_files:
@@ -626,8 +625,6 @@ def prepare_input_generation_params(
     slug=None,
     **kwargs,
 ):
-    filestore = get_filestore(settings)
-
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
@@ -674,7 +671,6 @@ def pre_analysis_hook(self,
                       slug=None,
                       **kwargs
                       ):
-    filestore = get_filestore(settings)
 
     if params.get('exposure_pre_analysis_module'):
         with TemporaryDir() as hook_target_dir:
@@ -717,7 +713,6 @@ def prepare_keys_file_chunk(
     slug=None,
     **kwargs
 ):
-    filestore = get_filestore(settings)
 
     with TemporaryDir() as chunk_target_dir:
         chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx+1}')
@@ -774,7 +769,6 @@ def collect_keys(
     slug=None,
     **kwargs
 ):
-    filestore = get_filestore(settings)
 
     # Setup return params
     chunk_params = {**params[0]}
@@ -860,7 +854,6 @@ def collect_keys(
 @keys_generation_task
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     # Load Collected keys data
-    filestore = get_filestore(settings)
     filestore.extract(params['keys_data'], params['target_dir'], params['storage_subdir'])
     params['keys_data_csv'] = os.path.join(params['target_dir'], 'keys.csv')
     params['keys_errors_csv'] = os.path.join(params['target_dir'], 'keys-errors.csv')
@@ -885,8 +878,6 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
 @app.task(bind=True, name='cleanup_input_generation', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, **kwargs):
-    filestore = get_filestore(settings)
-
     # check for pre-analysis files and remove
 
     if not settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False):
@@ -914,7 +905,6 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
 
 def loss_generation_task(fn):
     def maybe_extract_tar(filestore_ref, dst, storage_subdir=''):
-        filestore = get_filestore(settings)
         logging.info(f'filestore_ref: {filestore_ref}')
         logging.info(f'dst: {dst}')
         with filelock.FileLock(f'{dst}.lock'):
@@ -934,7 +924,6 @@ def loss_generation_task(fn):
             logging.info(f'Failed to remove {user_data_dir}.lock')
 
     def maybe_fetch_analysis_settings(analysis_settings_file, analysis_settings_fp):
-        filestore = get_filestore(settings)
         with filelock.FileLock(f'{analysis_settings_fp}.lock'):
             if not Path(analysis_settings_fp).exists():
                 logging.info(f'analysis_settings_file: {analysis_settings_file}')
@@ -1041,8 +1030,6 @@ def prepare_losses_generation_params(
     num_chunks=None,
     **kwargs,
 ):
-    filestore = get_filestore(settings)
-
     notify_api_status(analysis_id, 'RUN_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
@@ -1086,11 +1073,8 @@ def prepare_losses_generation_params(
 @app.task(bind=True, name='prepare_losses_generation_directory', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def prepare_losses_generation_directory(self, params, analysis_id=None, slug=None, **kwargs):
-    filestore = get_filestore(settings)
-
     with tempfile.NamedTemporaryFile(mode="w+") as f:
         # build the config for the file store storage
-        model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
         if model_storage:
             config = model_storage.to_config()
             config["options"]["root_dir"] = os.path.join(
@@ -1118,8 +1102,6 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
 @app.task(bind=True, name='generate_losses_chunk', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None, **kwargs):
-    filestore = get_filestore(settings)
-
     if num_chunks == 1:
         # Run multiple ktools pipes (based on cpu cores)
         current_chunk_id = None
@@ -1170,8 +1152,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 @app.task(bind=True, name='generate_losses_output', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
-    filestore = get_filestore(settings)
-
     res = {**params[0]}
     abs_work_dir = os.path.join(res['model_run_dir'], 'work')
     Path(abs_work_dir).mkdir(exist_ok=True, parents=True)
@@ -1204,8 +1184,6 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
 @app.task(bind=True, name='cleanup_losses_generation', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwargs):
-    filestore = get_filestore(settings)
-
     if not settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False):
         # Delete local copy of run data
         shutil.rmtree(params['root_run_dir'], ignore_errors=True)
@@ -1233,8 +1211,6 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
         None.
 
     """
-    filestore = get_filestore(settings)
-
     for cmf in complex_model_files:
         stored_fn = cmf[STORED_FILENAME]
         orig_fn = cmf[ORIGINAL_FILENAME]
@@ -1255,8 +1231,6 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
 
 @task_failure.connect
 def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
-    filestore = get_filestore(settings)
-
     logging.info("Task error handler")
     task_params = kwargs.get('args')[0]
     task_args = sender.request.kwargs
