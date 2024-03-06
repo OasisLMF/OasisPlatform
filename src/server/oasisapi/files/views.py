@@ -113,28 +113,27 @@ def _json_write_to_file(parent, field, request, serializer):
 
     # create file object
     with open(json_serializer.filenmame, 'wb+') as f:
+        bytes_to_write = data.encode('utf-8')
+        file_size = len(bytes_to_write)
+        f.write(bytes_to_write)
+        f.seek(0)
         in_memory_file = UploadedFile(
             file=f,
             name=json_serializer.filenmame,
             content_type='application/json',
-            size=len(data.encode('utf-8')),
+            size=file_size,
             charset=None
         )
 
-    # wrap and re-open file
-    file_obj = QueryDict('', mutable=True)
-    file_obj.update({'file': in_memory_file})
-    file_obj['file'].open()
-    file_obj['file'].seek(0)
-    file_obj['file'].write(data.encode('utf-8'))
-    serializer = RelatedFileSerializer(
-        data=file_obj,
-        content_types='application/json',
-        context={'request': request}
-    )
-
-    serializer.is_valid(raise_exception=True)
-    instance = serializer.create(serializer.validated_data)
+        file_obj = QueryDict('', mutable=True)
+        file_obj.update({'file': in_memory_file})
+        serializer = RelatedFileSerializer(
+            data=file_obj,
+            content_types='application/json',
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.create(serializer.validated_data)
 
     # Check for exisiting file and delete
     _delete_related_file(parent, field, request.user)
