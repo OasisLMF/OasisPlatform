@@ -215,15 +215,6 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
-  flower:
-    restart: always
-    image: mher/flower:0.9.7
-    command: ['flower', '--broker=amqp://rabbit:rabbit@rabbit:5672', '--port=5555']
-    ports:
-      - 5555:5555
-    links:
-     - celery-db
-     - broker
   channel-layer:
     restart: always
     image: redis:5.0.7
@@ -240,3 +231,12 @@ services:
      - OASIS_ENVIRONMENT=oasis_localhost
     ports:
      - 8080:3838
+  portainer:
+   restart: always
+   image: portainer/portainer:latest
+   ports:
+     - 8002:8002
+     - 9000:9000
+   volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - ./portainer_data:/data portainer/portainer        
