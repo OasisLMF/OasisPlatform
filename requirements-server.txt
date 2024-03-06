@@ -196,7 +196,7 @@ mozilla-django-oidc==4.0.0
     # via -r requirements-server.in
 msgpack==0.6.2
     # via channels-redis
-mysqlclient==2.2.4
+mysqlclient==2.1.1
     # via -r requirements-server.in
 numba==0.59.0
     # via ods-tools
@@ -218,7 +218,7 @@ packaging==23.2
     #   fastparquet
     #   gunicorn
     #   ods-tools
-pandas==2.2.1
+pandas==1.5.3
     # via
     #   -r requirements-server.in
     #   fastparquet
@@ -311,9 +311,7 @@ typing-extensions==4.10.0
     #   sqlalchemy
     #   twisted
 tzdata==2024.1
-    # via
-    #   celery
-    #   pandas
+    # via celery
 uritemplate==4.1.1
     # via
     #   coreapi
