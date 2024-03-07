@@ -1,10 +1,12 @@
 import json
 import io
+from tempfile import TemporaryFile
 
-from django.core.files.uploadedfile import UploadedFile
-from django.http import StreamingHttpResponse, Http404, QueryDict
+from django.core.files import File
+from django.http import StreamingHttpResponse, Http404
 from rest_framework.response import Response
 
+from .models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ..permissions.group_auth import verify_user_is_in_obj_groups
 
@@ -112,28 +114,16 @@ def _json_write_to_file(parent, field, request, serializer):
     data = json_serializer.validate(request.data)
 
     # create file object
-    with open(json_serializer.filenmame, 'wb+') as f:
-        bytes_to_write = data.encode('utf-8')
-        file_size = len(bytes_to_write)
-        f.write(bytes_to_write)
-        f.seek(0)
-        in_memory_file = UploadedFile(
-            file=f,
-            name=json_serializer.filenmame,
-            content_type='application/json',
-            size=file_size,
-            charset=None
-        )
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(data.encode('utf-8'))
+        tmp_file.seek(0)
 
-        file_obj = QueryDict('', mutable=True)
-        file_obj.update({'file': in_memory_file})
-        serializer = RelatedFileSerializer(
-            data=file_obj,
-            content_types='application/json',
-            context={'request': request}
+        instance = RelatedFile.objects.create(
+            file=File(tmp_file, name=json_serializer.filename),
+            filename=json_serializer.filename,
+            content_type='application/json',
+            creator=request.user,
         )
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.create(serializer.validated_data)
 
     # Check for exisiting file and delete
     _delete_related_file(parent, field, request.user)
