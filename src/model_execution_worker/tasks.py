@@ -505,7 +505,6 @@ def generate_input(self,
     #logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
 
-    raise ValueError('test')
     # Check if this task was re-queued from a lost worker
     check_worker_lost(self, analysis_pk)
 
