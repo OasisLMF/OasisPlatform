@@ -348,7 +348,8 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
             output_location, traceback_location, log_location, return_code = start_analysis(
                 analysis_settings,
                 input_location,
-                complex_data_files=complex_data_files
+                complex_data_files=complex_data_files,
+                **kwargs
             )
 
         except Terminated:
@@ -360,7 +361,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
         return output_location, traceback_location, log_location, return_code
 
 
-def start_analysis(analysis_settings, input_location, complex_data_files=None):
+def start_analysis(analysis_settings, input_location, complex_data_files=None, **kwargs):
     """Run an analysis.
 
     Args:
@@ -381,16 +382,16 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
 
     # Setup Job cancellation handler
 
-    def analysis_cancel_handler(signum, frame):
-        logging.info('TASK CANCELLATION')
-        if proc is not None:
-            os.killpg(os.getpgid(proc.pid), 15)
-        raise Terminated("Cancellation request sent from API")
+    #def analysis_cancel_handler(signum, frame):
+    #    logging.info('TASK CANCELLATION')
+    #    if proc is not None:
+    #        os.killpg(os.getpgid(proc.pid), 15)
+    #    raise Terminated("Cancellation request sent from API")
 
-    proc = None  # Popen object for subpross runner
-    signals['SIGTERM'] = analysis_cancel_handler
+    #proc = None  # Popen object for subpross runner
+    #signals['SIGTERM'] = analysis_cancel_handler
 
-    config_path = get_oasislmf_config_path()
+
     tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
     filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
@@ -403,73 +404,72 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None):
 
         # Fetch generated inputs
         analysis_settings_file = filestore.get(analysis_settings, run_dir, required=True)
+        oasis_files_dir = os.path.join(run_dir, 'input')
         input_archive = filestore.get(input_location, run_dir, required=True)
         if not tarfile.is_tarfile(input_archive):
             raise InvalidInputsException(input_archive)
-
-        oasis_files_dir = os.path.join(run_dir, 'input')
         filestore.extract(input_archive, oasis_files_dir)
 
-        run_args = [
-            '--oasis-files-dir', oasis_files_dir,
-            '--config', config_path,
-            '--model-run-dir', run_dir,
-            '--analysis-settings-json', analysis_settings_file,
-            '--ktools-fifo-relative',
-            '--verbose'
-        ]
+        # oasislmf.json
+        config_path = get_oasislmf_config_path()
+        config = get_json(config_path)
+
+        # model settings
+        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
+        model_settings_file = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
+
+        task_params = {
+            'oasis_files_dir': oasis_files_dir,
+            'model_run_dir': run_dir,
+            'analysis_settings_json': analysis_settings_file,
+            'model_settings_json': model_settings_file,
+            'ktools_fifo_relative': True,
+            'verbose': debug_worker,
+        }
 
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
-            run_args += ['--user-data-dir', input_data_dir]
+            task_params['user_data_dir'] = input_data_dir
 
-        # check version and load model_settings for default samples if given
-        if version.parse(mdk_version) > version.parse("1.26.0"):
-            model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
-            if model_settings_fp and os.path.isfile(model_settings_fp):
-                run_args += ['--model-settings-json', model_settings_fp]
 
-        # Log MDK run command
-        args_list = run_args + [''] if (len(run_args) % 2) else run_args
-        mdk_args = [x for t in list(zip(*[iter(args_list)] * 2)) if (None not in t) and ('--model-run-dir' not in t) for x in t]
-        logging.info('run_directory: {}'.format(oasis_files_dir))
-        # logging.info('args_list: {}'.format(str(run_args)))
-        logging.info("\nExecuting: generate-losses")
-        if debug_worker:
-            logging.info("\nCLI command: \noasislmf model generate-losses {}".format(
-                " ".join([str(arg) for arg in mdk_args])
-            ))
-            logging.info(run_args)
+        run_params = {**config, **task_params}
+        loss_path_vars = [
+            'model_data_dir',
+            'model_settings_json',
+            'post_analysis_module',
+        ]
 
-        # Subprocess Execution
-        worker_env = os.environ.copy()
+        for path_val in loss_path_vars:
+            if run_params.get(path_val, False):
+                if not os.path.isabs(run_params[path_val]):
+                    abs_path_val = os.path.join(
+                        os.path.dirname(config_path),
+                        run_params[path_val]
+                    )
+                    run_params[path_val] = abs_path_val
+            else:
+                run_params[path_val] = None
 
-        proc = subprocess.Popen(
-            ['oasislmf', 'model', 'generate-losses'] + run_args,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=worker_env,
-            preexec_fn=os.setsid,   # run the program in a new session, assigning a new process group to it and its children.
-        )
-        stdout, stderr = proc.communicate()
+        params = {k: v for k, v in OasisManager()._params_generate_oasis_losses(**run_params).items() if v is not None}
 
         if debug_worker:
-            logging.info('stdout: {}'.format(stdout.decode()))
+            log_params(params, kwargs)
 
-        logging.info('stderr: {}'.format(stderr.decode()))
-        proc.terminate()
 
-        # Traceback file (stdout + stderr)
-        traceback_file = filestore.create_traceback(stdout.decode(), stderr.decode(), run_dir)
-        traceback_location = filestore.put(traceback_file)
+        # Run generate losses
+        OasisManager().generate_oasis_losses(**params)
 
         # Ktools log Tar file
+        traceback_location = filestore.put(kwargs['log_filename'])
         log_directory = os.path.join(run_dir, "log")
         log_location = filestore.put(log_directory, suffix=ARCHIVE_FILE_SUFFIX)
 
         # Results dir & analysis-settings
         output_directory = os.path.join(run_dir, "output")
         output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
-
-    return output_location, traceback_location, log_location, proc.returncode
+        exitcode = 0
+    
+    return output_location, traceback_location, log_location, exitcode
 
 
 @app.task(name='generate_input', bind=True, acks_late=True, throws=(Terminated,))
@@ -529,6 +529,9 @@ def generate_input(self,
         ri_scope_file = filestore.get(scope_file, oasis_files_dir)
         lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
 
+        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
+        model_settings_file = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
+
         task_params = {
             'oasis_files_dir': oasis_files_dir,
             'oed_location_csv': location_file,
@@ -537,13 +540,13 @@ def generate_input(self,
             'oed_scope_csv': ri_scope_file,
             'lookup_complex_config_json': lookup_settings_file,
             'analysis_settings_json': lookup_settings_file,
-            'model_settings_json': settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=''),
+            'model_settings_json': model_settings_file,
             'verbose': debug_worker,
         }
 
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
-            base_params['user_data_dir'] = input_data_dir
+            task_params['user_data_dir'] = input_data_dir
 
         config_path = get_oasislmf_config_path()
         config = get_json(config_path)
@@ -555,6 +558,8 @@ def generate_input(self,
             'model_version_csv',
             'lookup_module_path',
             'model_settings_json',
+            'model_data_dir',
+            'oasis_files_dir',
             'exposure_pre_analysis_module',
             'exposure_pre_analysis_setting_json',
         ]
@@ -567,7 +572,7 @@ def generate_input(self,
                     )
                     lookup_params[path_val] = abs_path_val
 
-        params = {k: v for k, v in OasisManager()._params_generate_files(**lookup_params).items() if v is not None}
+        params = {k: v for k, v in OasisManager()._params_generate_oasis_files(**lookup_params).items() if v is not None}
         if debug_worker:
             log_params(params, kwargs, exclude_keys = [
                 'profile_loc',
@@ -584,9 +589,10 @@ def generate_input(self,
             ])
 
         try:
-            generated_files = OasisManager().generate_files(**params)
+            generated_files = OasisManager().generate_oasis_files(**params)
             returncode = 0
-        except:
+        except Exception as e:
+            logging.error(e) 
             returncode = 1
 
         # Find Generated Files
