@@ -29,6 +29,7 @@ from pathlib2 import Path
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
+from .utils import LoggingTaskContext
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 from .storage_manager import BaseStorageConnector
@@ -70,33 +71,6 @@ elif selected_storage in ['azure']:
     filestore = AzureObjectStore(settings)
 else:
     raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
-
-
-class LoggingTaskContext:
-    """ Adds a file log handler to the root logger and pushes a copy all logs to
-        the 'log_filename'
-
-        Docs: https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
-    """
-
-    def __init__(self, logger, log_filename, level=None, close=True):
-        self.logger = logger
-        self.level = level
-        self.log_filename = log_filename
-        self.close = close
-        self.handler = logging.FileHandler(log_filename)
-
-    def __enter__(self):
-        if self.level:
-            self.handler.setLevel(self.level)
-        if self.handler:
-            self.logger.addHandler(self.handler)
-
-    def __exit__(self, et, ev, tb):
-        if self.handler:
-            self.logger.removeHandler(self.handler)
-        if self.handler and self.close:
-            self.handler.close()
 
 
 class TemporaryDir(object):
