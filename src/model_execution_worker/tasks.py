@@ -17,6 +17,7 @@ from contextlib import contextmanager, suppress
 from packaging import version
 
 from celery import Celery, signature
+from celery.utils.log import get_task_logger
 from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 from celery.platforms import signals
@@ -48,8 +49,12 @@ TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/t
 app = Celery()
 app.config_from_object(celery_conf)
 # print(app._conf)
-logging.info("Started worker")
+
+logger = get_task_logger(__name__)
+logger.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
+if debug_worker:
+    logger.setLevel('DEBUG')
 
 # Set storage manager
 selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
@@ -110,7 +115,7 @@ def get_oasislmf_config_path(model_id=None):
         return str(conf_path)
 
     # 5: warn and return fallback
-    logging.warning("WARNING: 'oasislmf.json' Configuration file not found")
+    logger.warning("WARNING: 'oasislmf.json' Configuration file not found")
     return str(Path(model_root, 'oasislmf.json'))
 
 
@@ -125,7 +130,7 @@ def get_model_settings():
             with open(settings_fp) as f:
                 settings_data = json.load(f)
     except Exception as e:
-        logging.error("Failed to load Model settings: {}".format(e))
+        logger.error("Failed to load Model settings: {}".format(e))
 
     return settings_data
 
@@ -168,7 +173,7 @@ def check_worker_lost(task, analysis_pk):
     so this should be viewed as a fallback option.
     """
     current_state = task.AsyncResult(task.request.id).state
-    logging.info(current_state)
+    logger.info(current_state)
     if current_state == RUNNING_TASK_STATUS:
         raise WorkerLostError(
             'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
@@ -185,18 +190,18 @@ def register_worker(sender, **k):
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
     m_version = get_worker_versions()
-    logging.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
-    logging.info('versions: {}'.format(m_version))
+    logger.info('Worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
+    logger.info('versions: {}'.format(m_version))
 
     # Check for 'DISABLE_WORKER_REG' before sending task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
-        logging.info(('Worker auto-registration DISABLED: to enable:\n'
+        logger.info(('Worker auto-registration DISABLED: to enable:\n'
                       '  set DISABLE_WORKER_REG=False in conf.ini or\n'
                       '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
     else:
-        logging.info('Auto registrating with the Oasis API:')
+        logger.info('Auto registrating with the Oasis API:')
         m_settings = get_model_settings()
-        logging.info('settings: {}'.format(m_settings))
+        logger.info('settings: {}'.format(m_settings))
 
         signature(
             'run_register_worker',
@@ -205,44 +210,44 @@ def register_worker(sender, **k):
         ).delay()
 
     # Required ENV
-    logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
-    logging.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS')))
-    logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
+    logger.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
+    logger.info("LOCK_TIMEOUT_IN_SECS: {}".format(settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS')))
+    logger.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 
     # Storage Mode
     selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
-    logging.info("STORAGE_MANAGER: {}".format(type(filestore)))
-    logging.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
+    logger.info("STORAGE_MANAGER: {}".format(type(filestore)))
+    logger.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
 
     if debug_worker:
-        logging.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
+        logger.info("MODEL_DATA_DIRECTORY: {}".format(settings.get('worker', 'MODEL_DATA_DIRECTORY', fallback='/home/worker/model')))
         if selected_storage in ['local-fs', 'shared-fs']:
-            logging.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
+            logger.info("MEDIA_ROOT: {}".format(settings.get('worker', 'MEDIA_ROOT')))
 
         elif selected_storage in ['aws-s3', 'aws', 's3']:
-            logging.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
-            logging.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
-            logging.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
-            logging.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
-            logging.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
-            logging.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
-            logging.info('AWS_LOG_LEVEL: {}'.format(settings.get('worker', 'AWS_LOG_LEVEL', fallback='None')))
+            logger.info("AWS_BUCKET_NAME: {}".format(settings.get('worker', 'AWS_BUCKET_NAME', fallback='None')))
+            logger.info("AWS_SHARED_BUCKET: {}".format(settings.get('worker', 'AWS_SHARED_BUCKET', fallback='None')))
+            logger.info("AWS_LOCATION: {}".format(settings.get('worker', 'AWS_LOCATION', fallback='None')))
+            logger.info("AWS_ACCESS_KEY_ID: {}".format(settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None')))
+            logger.info("AWS_QUERYSTRING_EXPIRE: {}".format(settings.get('worker', 'AWS_QUERYSTRING_EXPIRE', fallback='None')))
+            logger.info("AWS_QUERYSTRING_AUTH: {}".format(settings.get('worker', 'AWS_QUERYSTRING_AUTH', fallback='None')))
+            logger.info('AWS_LOG_LEVEL: {}'.format(settings.get('worker', 'AWS_LOG_LEVEL', fallback='None')))
 
     # Optional ENV
-    logging.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
-    logging.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
-    logging.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
-    logging.info("DEBUG: {}".format(settings.get('worker', 'DEBUG', fallback='False')))
-    logging.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
-    logging.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
+    logger.info("MODEL_SETTINGS_FILE: {}".format(settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='None')))
+    logger.info("DISABLE_WORKER_REG: {}".format(settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback='False')))
+    logger.info("KEEP_RUN_DIR: {}".format(settings.get('worker', 'KEEP_RUN_DIR', fallback='False')))
+    logger.info("DEBUG: {}".format(settings.get('worker', 'DEBUG', fallback='False')))
+    logger.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
+    logger.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
 
     # Log Env variables
     if debug_worker:
         # show all env variables and  override root log level
-        logging.info('ALL_OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
+        logger.info('ALL_OASIS_ENV_VARS:' + json.dumps({k: v for (k, v) in os.environ.items() if k.startswith('OASIS_')}, indent=4))
     else:
         # Limit Env variables to run only variables
-        logging.info('OASIS_ENV_VARS:' + json.dumps({
+        logger.info('OASIS_ENV_VARS:' + json.dumps({
             k: v for (k, v) in os.environ.items() if k.startswith('OASIS_') and not any(
                 substring in k for substring in [
                     'SERVER',
@@ -284,7 +289,7 @@ def get_lock():
 
 # Send notification back to the API Once task is read from Queue
 def notify_api_status(analysis_pk, task_status):
-    logging.info("Notify API: analysis_id={}, status={}".format(
+    logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
         task_status
     ))
@@ -305,7 +310,7 @@ def V1_task_logger(fn):
              'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
         }
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level='DEBUG'):
-            logging.info(f'====== {fn.__name__} '.ljust(90, '='))
+            logger.info(f'====== {fn.__name__} '.ljust(90, '='))
             return fn(self, analysis_pk, *args, **kwargs)
 
     return run
@@ -326,18 +331,18 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
     Returns:
         (string) The location of the outputs.
     """
-    logging.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
-    logging.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
+    logger.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
+    logger.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
         settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 
     with get_lock() as gotten:
         if not gotten:
-            logging.info("Failed to get resource lock - retry task")
+            logger.info("Failed to get resource lock - retry task")
             raise self.retry(
                 max_retries=None,
                 countdown=settings.getint('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS'))
 
-        logging.info("Acquired resource lock")
+        logger.info("Acquired resource lock")
 
         try:
             # Check if this task was re-queued from a lost worker
@@ -355,7 +360,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
         except Terminated:
             sys.exit('Task aborted')
         except Exception:
-            logging.exception("Model execution task failed.")
+            logger.exception("Model execution task failed.")
             raise
 
         return output_location, traceback_location, log_location, return_code
@@ -375,8 +380,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
     """
     # Check that the input archive exists and is valid
-    logging.info("args: {}".format(str(locals())))
-    logging.info(str(get_worker_versions()))
+    logger.info("args: {}".format(str(locals())))
+    logger.info(str(get_worker_versions()))
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
@@ -502,8 +507,8 @@ def generate_input(self,
         (tuple(str, str)) Paths to the outputs tar file and errors tar file.
 
     """
-    #logging.info("args: {}".format(str(locals())))
-    logging.info(str(get_worker_versions()))
+    #logger.info("args: {}".format(str(locals())))
+    logger.info(str(get_worker_versions()))
 
     # Check if this task was re-queued from a lost worker
     check_worker_lost(self, analysis_pk)
@@ -592,7 +597,7 @@ def generate_input(self,
             generated_files = OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:
-            logging.error(e) 
+            logger.error(e) 
             returncode = 1
 
         # Find Generated Files
@@ -659,10 +664,10 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
             from_path = filestore.get(stored_fn)
             to_path = os.path.join(run_directory, orig_fn)
             if os.name == 'nt':
-                logging.info(f'complex_model_file: copy {from_path} to {to_path}')
+                logger.info(f'complex_model_file: copy {from_path} to {to_path}')
                 shutil.copy(from_path, to_path)
             else:
-                logging.info(f'complex_model_file: link {from_path} to {to_path}')
+                logger.info(f'complex_model_file: link {from_path} to {to_path}')
                 os.symlink(from_path, to_path)
         else:
-            logging.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))
+            logger.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))
