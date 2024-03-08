@@ -299,13 +299,14 @@ def notify_api_status(analysis_pk, task_status):
 
 def V1_task_logger(fn):
 
-    def run(self, analysis_id, *args, **kwargs):
-        #from celery.contrib import rdb; rdb.set_trace()
-        kwargs['task_id'] = self.request.id
-        kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"analysis_{analysis_id}_{self.request.id}.log")
-        with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename']):
+    def run(self, analysis_pk, *args):
+        kwargs = {
+            'task_id': self.request.id,
+             'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
+        }
+        with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level='DEBUG'):
             logging.info(f'====== {fn.__name__} '.ljust(90, '='))
-            return fn(self, analysis_id, *args, **kwargs)
+            return fn(self, analysis_pk, *args, **kwargs)
 
     return run
 
@@ -501,9 +502,10 @@ def generate_input(self,
         (tuple(str, str)) Paths to the outputs tar file and errors tar file.
 
     """
-    logging.info("args: {}".format(str(locals())))
+    #logging.info("args: {}".format(str(locals())))
     logging.info(str(get_worker_versions()))
 
+    raise ValueError('test')
     # Check if this task was re-queued from a lost worker
     check_worker_lost(self, analysis_pk)
 
@@ -537,8 +539,7 @@ def generate_input(self,
             'lookup_complex_config_json': lookup_settings_file,
             'analysis_settings_json': lookup_settings_file,
             'model_settings_json': settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=''),
-            #'verbose': debug_worker,
-            'verbose': True,
+            'verbose': debug_worker,
         }
 
         if complex_data_files:
@@ -568,21 +569,20 @@ def generate_input(self,
                     lookup_params[path_val] = abs_path_val
 
         params = {k: v for k, v in OasisManager()._params_generate_files(**lookup_params).items() if v is not None}
-        log_params(params, kwargs, exclude_keys = [
-            'profile_loc',
-            'profile_loc_json',
-            'profile_acc',
-            'profile_fm_agg',
-            'profile_fm_agg_json',
+        if debug_worker:
+            log_params(params, kwargs, exclude_keys = [
+                'profile_loc',
+                'profile_loc_json',
+                'profile_acc',
+                'profile_fm_agg',
+                'profile_fm_agg_json',
 
-            'fm_aggregation_profile',
-            'accounts_profile',
-            'oed_hierarchy',
-            'exposure_profile',
-            'lookup_config',
-        ])
-        #from celery.contrib import rdb; rdb.set_trace()
-
+                'fm_aggregation_profile',
+                'accounts_profile',
+                'oed_hierarchy',
+                'exposure_profile',
+                'lookup_config',
+            ])
 
         try:
             generated_files = OasisManager().generate_files(**params)
@@ -621,7 +621,7 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
             record_task_name,
             args=(analysis_pk, initiator_pk, traceback),
             queue='celery'
-        ).delay({})
+        ).delay()
 
 
 def prepare_complex_model_file_inputs(complex_model_files, run_directory):
