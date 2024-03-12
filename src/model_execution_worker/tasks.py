@@ -5,31 +5,25 @@ import json
 import logging
 import os
 import sys
-import shutil
 import time
 
 import fasteners
 import tarfile
 
 from contextlib import contextmanager, suppress
-from packaging import version
 
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
-from celery.platforms import signals
 
 from oasislmf.manager import OasisManager
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
-from oasislmf import __version__ as mdk_version
-from pathlib2 import Path
 
 from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings
-from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
 from .storage_manager import BaseStorageConnector
 from .backends.aws_storage import AwsObjectStore
@@ -43,7 +37,6 @@ from .utils import (
     get_model_settings,
     get_worker_versions,
     InvalidInputsException,
-    MissingModelDataException,
     prepare_complex_model_file_inputs,
 )
 
@@ -57,13 +50,14 @@ RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 app = Celery()
 app.config_from_object(celery_conf)
-# print(app._conf)
 
 logger = get_task_logger(__name__)
 logger.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
-if debug_worker:
-    logging.getLogger().setLevel('DEBUG')
+
+# Quiet sub-loggers
+logging.getLogger('billiard').setLevel('INFO')
+logging.getLogger('numba').setLevel('INFO')
 
 # Set storage manager
 selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
@@ -119,11 +113,11 @@ def register_worker(sender, **k):
     # Check for 'DISABLE_WORKER_REG' before sending task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
         logger.info(('Worker auto-registration DISABLED: to enable:\n'
-                      '  set DISABLE_WORKER_REG=False in conf.ini or\n'
-                      '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
+                     '  set DISABLE_WORKER_REG=False in conf.ini or\n'
+                     '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
     else:
         logger.info('Auto registrating with the Oasis API:')
-        m_settings = get_model_settings()
+        m_settings = get_model_settings(settings)
         logger.info('settings: {}'.format(m_settings))
 
         signature(
@@ -218,7 +212,7 @@ def V1_task_logger(fn):
     def run(self, analysis_pk, *args):
         kwargs = {
             'task_id': self.request.id,
-             'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
+            'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
         }
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level='DEBUG'):
             logger.info(f'====== {fn.__name__} '.ljust(90, '='))
@@ -315,7 +309,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         filestore.extract(input_archive, oasis_files_dir)
 
         # oasislmf.json
-        config_path = get_oasislmf_config_path()
+        config_path = get_oasislmf_config_path(settings)
         config = get_json(config_path)
 
         # model settings
@@ -332,36 +326,16 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         }
 
         if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
+            prepare_complex_model_file_inputs(complex_data_files, input_data_dir, filestore)
             task_params['user_data_dir'] = input_data_dir
 
-
+        # Create and log params
         run_params = {**config, **task_params}
-        loss_path_vars = [
-            'model_data_dir',
-            'model_settings_json',
-            'post_analysis_module',
-        ]
-
-        for path_val in loss_path_vars:
-            if run_params.get(path_val, False):
-                if not os.path.isabs(run_params[path_val]):
-                    abs_path_val = os.path.join(
-                        os.path.dirname(config_path),
-                        run_params[path_val]
-                    )
-                    run_params[path_val] = abs_path_val
-            else:
-                run_params[path_val] = None
-
-        params = {k: v for k, v in OasisManager()._params_generate_oasis_losses(**run_params).items() if v is not None}
-
-        if debug_worker:
-            log_params(params, kwargs)
-
+        paths_to_absolute_paths(run_params)
+        log_params(run_params, kwargs)
 
         # Run generate losses
-        OasisManager().generate_oasis_losses(**params)
+        OasisManager().generate_oasis_losses(**run_params)
 
         # Ktools log Tar file
         traceback_location = filestore.put(kwargs['log_filename'])
@@ -406,7 +380,6 @@ def generate_input(self,
         (tuple(str, str)) Paths to the outputs tar file and errors tar file.
 
     """
-    #logger.info("args: {}".format(str(locals())))
     logger.info(str(get_worker_versions()))
 
     # Check if this task was re-queued from a lost worker
@@ -452,48 +425,25 @@ def generate_input(self,
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             task_params['user_data_dir'] = input_data_dir
 
-        config_path = get_oasislmf_config_path()
+        config_path = get_oasislmf_config_path(settings)
         config = get_json(config_path)
         lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **task_params}
-        # convert relative paths to Aboslute
-        lookup_path_vars = [
-            'lookup_data_dir',
-            'lookup_config_json',
-            'model_version_csv',
-            'lookup_module_path',
-            'model_settings_json',
-            'model_data_dir',
-            'oasis_files_dir',
-            'exposure_pre_analysis_module',
-            'exposure_pre_analysis_setting_json',
-        ]
-        for path_val in lookup_path_vars:
-            if lookup_params.get(path_val, False):
-                if not os.path.isabs(lookup_params[path_val]):
-                    abs_path_val = os.path.join(
-                        os.path.dirname(config_path),
-                        lookup_params[path_val]
-                    )
-                    lookup_params[path_val] = abs_path_val
-
-        params = {k: v for k, v in OasisManager()._params_generate_oasis_files(**lookup_params).items() if v is not None}
-        if debug_worker:
-            log_params(params, kwargs, exclude_keys = [
-                'profile_loc',
-                'profile_loc_json',
-                'profile_acc',
-                'profile_fm_agg',
-                'profile_fm_agg_json',
-
-                'fm_aggregation_profile',
-                'accounts_profile',
-                'oed_hierarchy',
-                'exposure_profile',
-                'lookup_config',
-            ])
+        paths_to_absolute_paths(lookup_params)
+        log_params(lookup_params, kwargs, exclude_keys=[
+            'profile_loc',
+            'profile_loc_json',
+            'profile_acc',
+            'profile_fm_agg',
+            'profile_fm_agg_json',
+            'fm_aggregation_profile',
+            'accounts_profile',
+            'oed_hierarchy',
+            'exposure_profile',
+            'lookup_config',
+        ])
 
         try:
-            generated_files = OasisManager().generate_oasis_files(**params)
+            OasisManager().generate_oasis_files(**lookup_params)
             returncode = 0
         except Exception as e:
             logger.error(e)

@@ -6,12 +6,8 @@ import logging
 import os
 import pathlib
 import shutil
-import subprocess
-import tempfile
-from contextlib import contextmanager
 from datetime import datetime
 
-import fasteners
 import filelock
 import pandas as pd
 import numpy as np
@@ -19,7 +15,6 @@ from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
-from oasislmf import __version__ as mdk_version
 from oasislmf.manager import OasisManager
 from oasislmf.model_preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
@@ -27,14 +22,23 @@ from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
-from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
-from .utils import LoggingTaskContext
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
 from .storage_manager import BaseStorageConnector
 from .celery_request_handler import WorkerLostRetry
+from .utils import (
+    LoggingTaskContext,
+    log_params,
+    paths_to_absolute_paths,
+    TemporaryDir,
+    get_oasislmf_config_path,
+    get_model_settings,
+    get_worker_versions,
+    merge_dirs,
+    prepare_complex_model_file_inputs,
+)
 
 
 '''
@@ -56,11 +60,10 @@ app.config_from_object(celery_conf)
 
 logger.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
-if debug_worker:
-    logging.getLogger().setLevel('INFO')
 
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
+logging.getLogger('numba').setLevel('INFO')
 
 # Set storage manager
 selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
@@ -72,102 +75,6 @@ elif selected_storage in ['azure']:
     filestore = AzureObjectStore(settings)
 else:
     raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
-
-
-class TemporaryDir(object):
-    """Context manager for mkdtemp() with option to persist"""
-
-    def __init__(self, persist=False, basedir=None):
-        self.persist = persist
-        self.basedir = basedir
-
-        if basedir:
-            os.makedirs(basedir, exist_ok=True)
-
-    def __enter__(self):
-        self.name = tempfile.mkdtemp(dir=self.basedir)
-        return self.name
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if not self.persist and os.path.isdir(self.name):
-            shutil.rmtree(self.name)
-
-
-def get_oasislmf_config_path(model_id=None):
-    """ Search for the oasislmf confiuration file
-    """
-    conf_path = None
-    model_root = settings.get('worker', 'model_data_directory', fallback='/home/worker/model')
-
-    # 1: Explicit location
-    conf_path = Path(settings.get('worker', 'oasislmf_config', fallback=""))
-    if conf_path.is_file():
-        return str(conf_path)
-
-    # 2: try 'model specific conf'
-    if model_id:
-        conf_path = Path(model_root, '{}-oasislmf.json'.format(model_id))
-        if conf_path.is_file():
-            return str(conf_path)
-
-    # 3: Try generic model conf
-    conf_path = Path(model_root, 'oasislmf.json')
-    if conf_path.is_file():
-        return str(conf_path)
-
-    # 4: check compatibility look for older model mount
-    conf_path = Path('/var/oasis', 'oasislmf.json')
-    if conf_path.is_file():
-        return str(conf_path)
-
-    # 5: warn and return fallback
-    logger.warning("WARNING: 'oasislmf.json' Configuration file not found")
-    return str(Path(model_root, 'oasislmf.json'))
-
-
-def merge_dirs(src_root, dst_root):
-    for root, dirs, files in os.walk(src_root):
-        for f in files:
-            src = os.path.join(root, f)
-            rel_dst = os.path.relpath(src, src_root)
-            abs_dst = os.path.join(dst_root, rel_dst)
-            Path(abs_dst).parent.mkdir(exist_ok=True, parents=True)
-            shutil.copy(os.path.join(root, f), abs_dst)
-
-
-def get_model_settings():
-    """ Read the settings file from the path OASIS_MODEL_SETTINGS
-        returning the contents as a python dicself.t (none if not found)
-    """
-    settings_data = None
-    settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)
-    try:
-        if os.path.isfile(settings_fp):
-            with open(settings_fp) as f:
-                settings_data = json.load(f)
-    except Exception as e:
-        logger.error("Failed to load Model settings: {}".format(e))
-
-    return settings_data
-
-
-def get_worker_versions():
-    """ Search and return the versions of Oasis components
-    """
-    ktool_ver_str = subprocess.getoutput('fmcalc -v')
-    plat_ver_file = '/home/worker/VERSION'
-
-    if os.path.isfile(plat_ver_file):
-        with open(plat_ver_file, 'r') as f:
-            plat_ver_str = f.read().strip()
-    else:
-        plat_ver_str = ""
-
-    return {
-        "oasislmf": mdk_version,
-        "ktools": ktool_ver_str,
-        "platform": plat_ver_str
-    }
 
 
 def notify_api_status(analysis_pk, task_status):
@@ -272,9 +179,9 @@ def register_worker(sender, **k):
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
-    m_settings = get_model_settings()
+    m_settings = get_model_settings(settings)
     m_version = get_worker_versions()
-    m_conf = get_json(get_oasislmf_config_path(m_id))
+    m_conf = get_json(get_oasislmf_config_path(settings, m_id))
     logger.info('register_worker: SUPPLIER_ID={}, MODEL_ID={}, VERSION_ID={}'.format(m_supplier, m_name, m_id))
     logger.info('versions: {}'.format(m_version))
     logger.info('settings: {}'.format(m_settings))
@@ -284,11 +191,11 @@ def register_worker(sender, **k):
     # unding task to API
     if settings.getboolean('worker', 'DISABLE_WORKER_REG', fallback=False):
         logger.info(('Worker auto-registration DISABLED: to enable:\n'
-                      '  set DISABLE_WORKER_REG=False in conf.ini or\n'
-                      '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
+                     '  set DISABLE_WORKER_REG=False in conf.ini or\n'
+                     '  set the envoritment variable OASIS_DISABLE_WORKER_REG=False'))
     else:
         logger.info('Auto registrating with the Oasis API:')
-        m_settings = get_model_settings()
+        m_settings = get_model_settings(settings)
         logger.info('settings: {}'.format(m_settings))
 
         signature(
@@ -357,33 +264,6 @@ def register_worker(sender, **k):
         os.rmdir(tmpdir)
 
 
-class InvalidInputsException(OasisException):
-    def __init__(self, input_archive):
-        super(InvalidInputsException, self).__init__('Inputs location not a tarfile: {}'.format(input_archive))
-
-
-class MissingModelDataException(OasisException):
-    def __init__(self, model_data_dir):
-        super(MissingModelDataException, self).__init__('Model data not found: {}'.format(model_data_dir))
-
-
-def get_oasislmf_config_path(model_id=None):
-    conf_var = settings.get('worker', 'oasislmf_config', fallback=None)
-    if not model_id:
-        model_id = settings.get('worker', 'model_id', fallback=None)
-
-    if conf_var:
-        return conf_var
-
-    if model_id:
-        model_root = settings.get('worker', 'model_data_directory', fallback='/var/oasis/')
-        model_specific_conf = Path(model_root, '{}-oasislmf.json'.format(model_id))
-        if model_specific_conf.exists():
-            return str(model_specific_conf)
-
-    return str(Path(model_root, 'oasislmf.json'))
-
-
 # Send notification back to the API Once task is read from Queue
 def notify_api_task_started(analysis_id, task_id, task_slug):
     logger.info("Notify API tasks has started: analysis_id={}, task_id={}, task_slug={}".format(
@@ -439,7 +319,7 @@ def keys_generation_task(fn):
                 user_data_path = Path(user_data_dir)
                 if not user_data_path.exists():
                     user_data_path.mkdir(parents=True, exist_ok=True)
-                    prepare_complex_model_file_inputs(complex_data_files, str(user_data_path))
+                    prepare_complex_model_file_inputs(complex_data_files, str(user_data_path), filestore)
         try:
             os.remove('{user_data_dir}.lock')
         except OSError:
@@ -476,7 +356,7 @@ def keys_generation_task(fn):
             logger.info(f'====== {slug} '.ljust(90, '='))
         notify_api_task_started(analysis_id, request_id, slug)
 
-    def log_params(params, kwargs):
+    def log_task_params(params, kwargs):
         exclude_keys = [
             'profile_loc',
             'profile_loc_json',
@@ -492,12 +372,8 @@ def keys_generation_task(fn):
         ]
         if isinstance(params, list):
             params = params[0]
-        print_params = {k: params[k] for k in set(list(params.keys())) - set(exclude_keys)}
         if debug_worker:
-            logger.info('keys_generation_task: \nparams={}, \nkwargs={}'.format(
-                json.dumps(print_params, indent=2),
-                json.dumps(kwargs, indent=2),
-            ))
+            log_params(params, kwargs, exclude_keys)
 
     def _prepare_directories(params, analysis_id, run_data_uuid, kwargs):
         params['storage_subdir'] = f'analysis-{analysis_id}_files-{run_data_uuid}'
@@ -568,7 +444,7 @@ def keys_generation_task(fn):
             else:
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
-            log_params(params, kwargs)
+            log_task_params(params, kwargs)
             check_task_redelivered(self,
                                    analysis_id=analysis_id,
                                    initiator_id=kwargs.get('initiator_id'),
@@ -603,28 +479,10 @@ def prepare_input_generation_params(
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
-    config_path = get_oasislmf_config_path(model_id)
+    config_path = get_oasislmf_config_path(settings, model_id)
     config = get_json(config_path)
     lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **params}
-
-    # convert relative paths to Aboslute
-    lookup_path_vars = [
-        'lookup_data_dir',
-        'lookup_config_json',
-        'model_version_csv',
-        'lookup_module_path',
-        'model_settings_json',
-        'exposure_pre_analysis_module',
-        'exposure_pre_analysis_setting_json',
-    ]
-    for path_val in lookup_path_vars:
-        if lookup_params.get(path_val, False):
-            if not os.path.isabs(lookup_params[path_val]):
-                abs_path_val = os.path.join(
-                    os.path.dirname(config_path),
-                    lookup_params[path_val]
-                )
-                lookup_params[path_val] = abs_path_val
+    paths_to_absolute_paths(lookup_params)
 
     gen_files_params = OasisManager()._params_generate_files(**lookup_params)
     pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
@@ -719,7 +577,6 @@ def prepare_keys_file_chunk(
         )
 
         # Store chunks
-        storage_subdir = f'{run_data_uuid}/oasis-files'
         params['chunk_keys'] = filestore.put(
             chunk_target_dir,
             filename=f'lookup-{chunk_idx+1}.tar.gz',
@@ -889,7 +746,7 @@ def loss_generation_task(fn):
                 user_data_path = Path(user_data_dir)
                 if not user_data_path.exists():
                     user_data_path.mkdir(parents=True, exist_ok=True)
-                    prepare_complex_model_file_inputs(complex_data_files, str(user_data_path))
+                    prepare_complex_model_file_inputs(complex_data_files, str(user_data_path), filestore)
         try:
             os.remove(f'{user_data_dir}.lock')
         except OSError:
@@ -912,17 +769,11 @@ def loss_generation_task(fn):
             logger.info(f'====== {slug} '.ljust(90, '='))
         notify_api_task_started(analysis_id, request_id, slug)
 
-    def log_params(params, kwargs):
-        exclude_keys = []
-
+    def log_task_params(params, kwargs):
         if isinstance(params, list):
             params = params[0]
-        print_params = {k: params[k] for k in set(list(params.keys())) - set(exclude_keys)}
         if debug_worker:
-            logger.info('loss_generation_task: \nparams={}, \nkwargs={}'.format(
-                json.dumps(print_params, indent=4),
-                json.dumps(kwargs, indent=4),
-            ))
+            log_params(params, kwargs)
 
     def _prepare_directories(params, analysis_id, run_data_uuid, kwargs):
         print(json.dumps(params, indent=4))
@@ -980,7 +831,7 @@ def loss_generation_task(fn):
             else:
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
-            log_params(params, kwargs)
+            log_task_params(params, kwargs)
             check_task_redelivered(self,
                                    analysis_id=analysis_id,
                                    initiator_id=kwargs.get('initiator_id'),
@@ -1006,26 +857,10 @@ def prepare_losses_generation_params(
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
-    config_path = get_oasislmf_config_path(model_id)
+    config_path = get_oasislmf_config_path(settings, model_id)
     config = get_json(config_path)
     run_params = {**config, **params}
-
-    loss_path_vars = [
-        'model_data_dir',
-        'model_settings_json',
-        'post_analysis_module',
-    ]
-
-    for path_val in loss_path_vars:
-        if run_params.get(path_val, False):
-            if not os.path.isabs(run_params[path_val]):
-                abs_path_val = os.path.join(
-                    os.path.dirname(config_path),
-                    run_params[path_val]
-                )
-                run_params[path_val] = abs_path_val
-        else:
-            run_params[path_val] = None
+    paths_to_absolute_paths(run_params)
 
     gen_losses_params = OasisManager()._params_generate_losses(**run_params)
     post_hook_params = OasisManager()._params_post_analysis(**run_params)
@@ -1130,41 +965,6 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
         filestore.delete_dir(params['storage_subdir'])
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return params
-
-
-def prepare_complex_model_file_inputs(complex_model_files, run_directory):
-    """Places the specified complex model files in the run_directory.
-
-    The unique upload filenames are converted back to the original upload names, so that the
-    names match any input configuration file.
-
-    On Linux, the files are symlinked, whereas on Windows the files are simply copied.
-
-    Args:
-        complex_model_files (list of complex_model_data_file): List of dicts giving the files
-            to make available.
-        run_directory (str): Model inputs directory to place the files in.
-
-    Returns:
-        None.
-
-    """
-    for cmf in complex_model_files:
-        stored_fn = cmf[STORED_FILENAME]
-        orig_fn = cmf[ORIGINAL_FILENAME]
-
-        if filestore._is_locally_stored(stored_fn):
-            # If refrence is local filepath check that it exisits and copy/symlink
-            from_path = filestore.filepath(stored_fn)
-            to_path = os.path.join(run_directory, orig_fn)
-            if os.name == 'nt':
-                shutil.copy(from_path, to_path)
-            else:
-                os.symlink(from_path, to_path)
-        else:
-            # If reference is a remote, then download the file & rename to 'original_filename'
-            fpath = filestore.get(stored_fn, run_directory)
-            shutil.move(fpath, os.path.join(run_directory, orig_fn))
 
 
 @task_failure.connect

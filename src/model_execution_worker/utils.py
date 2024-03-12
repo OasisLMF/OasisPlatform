@@ -18,6 +18,13 @@ import tempfile
 import shutil
 import subprocess
 
+from pathlib2 import Path
+from oasislmf import __version__ as mdk_version
+from oasislmf.utils.exceptions import OasisException
+
+from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
+
+
 class LoggingTaskContext:
     """ Adds a file log handler to the root logger and pushes a copy all logs to
         the 'log_filename'
@@ -87,7 +94,7 @@ class TemporaryDir(object):
             shutil.rmtree(self.name)
 
 
-def get_oasislmf_config_path(model_id=None):
+def get_oasislmf_config_path(settings, model_id=None):
     """ Search for the oasislmf confiuration file
     """
     conf_path = None
@@ -115,11 +122,11 @@ def get_oasislmf_config_path(model_id=None):
         return str(conf_path)
 
     # 5: warn and return fallback
-    logger.warning("WARNING: 'oasislmf.json' Configuration file not found")
+    logging.warning("WARNING: 'oasislmf.json' Configuration file not found")
     return str(Path(model_root, 'oasislmf.json'))
 
 
-def get_model_settings():
+def get_model_settings(settings):
     """ Read the settings file from the path OASIS_MODEL_SETTINGS
         returning the contents as a python dicself.t (none if not found)
     """
@@ -130,7 +137,7 @@ def get_model_settings():
             with open(settings_fp) as f:
                 settings_data = json.load(f)
     except Exception as e:
-        logger.error("Failed to load Model settings: {}".format(e))
+        logging.error("Failed to load Model settings: {}".format(e))
 
     return settings_data
 
@@ -164,7 +171,17 @@ class MissingModelDataException(OasisException):
         super(MissingModelDataException, self).__init__('Model data not found: {}'.format(model_data_path))
 
 
-def prepare_complex_model_file_inputs(complex_model_files, run_directory):
+def merge_dirs(src_root, dst_root):
+    for root, dirs, files in os.walk(src_root):
+        for f in files:
+            src = os.path.join(root, f)
+            rel_dst = os.path.relpath(src, src_root)
+            abs_dst = os.path.join(dst_root, rel_dst)
+            Path(abs_dst).parent.mkdir(exist_ok=True, parents=True)
+            shutil.copy(os.path.join(root, f), abs_dst)
+
+
+def prepare_complex_model_file_inputs(complex_model_files, run_directory, filestore):
     """Places the specified complex model files in the run_directory.
 
     The unique upload filenames are converted back to the original upload names, so that the
@@ -190,10 +207,10 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
             from_path = filestore.filepath(stored_fn)
             to_path = os.path.join(run_directory, orig_fn)
             if os.name == 'nt':
-                logger.info(f'complex_model_file: copy {from_path} to {to_path}')
+                logging.info(f'complex_model_file: copy {from_path} to {to_path}')
                 shutil.copy(from_path, to_path)
             else:
-                logger.info(f'complex_model_file: link {from_path} to {to_path}')
+                logging.info(f'complex_model_file: link {from_path} to {to_path}')
                 os.symlink(from_path, to_path)
         else:
             # If reference is a remote, then download the file & rename to 'original_filename'
