@@ -57,7 +57,7 @@ app.config_from_object(celery_conf)
 logger.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 if debug_worker:
-    logger.setLevel('DEBUG')
+    logging.getLogger().setLevel('INFO')
 
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
@@ -365,16 +365,6 @@ class InvalidInputsException(OasisException):
 class MissingModelDataException(OasisException):
     def __init__(self, model_data_dir):
         super(MissingModelDataException, self).__init__('Model data not found: {}'.format(model_data_dir))
-
-
-@contextmanager
-def get_lock():
-    lock = fasteners.InterProcessLock(settings.get('worker', 'LOCK_FILE'))
-    gotten = lock.acquire(blocking=False, timeout=settings.getfloat('worker', 'LOCK_TIMEOUT_IN_SECS'))
-    yield gotten
-
-    if gotten:
-        lock.release()
 
 
 def get_oasislmf_config_path(model_id=None):

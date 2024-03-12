@@ -6,11 +6,9 @@ import logging
 import os
 import sys
 import shutil
-import subprocess
 import time
 
 import fasteners
-import tempfile
 import tarfile
 
 from contextlib import contextmanager, suppress
@@ -33,10 +31,21 @@ from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings
 from ..common.data import STORED_FILENAME, ORIGINAL_FILENAME
 
-from .utils import LoggingTaskContext, log_params
 from .storage_manager import BaseStorageConnector
 from .backends.aws_storage import AwsObjectStore
 from .backends.azure_storage import AzureObjectStore
+from .utils import (
+    LoggingTaskContext,
+    log_params,
+    paths_to_absolute_paths,
+    TemporaryDir,
+    get_oasislmf_config_path,
+    get_model_settings,
+    get_worker_versions,
+    InvalidInputsException,
+    MissingModelDataException,
+    prepare_complex_model_file_inputs,
+)
 
 '''
 Celery task wrapper for Oasis ktools calculation.
@@ -54,7 +63,7 @@ logger = get_task_logger(__name__)
 logger.info("Started worker")
 debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 if debug_worker:
-    logger.setLevel('DEBUG')
+    logging.getLogger().setLevel('DEBUG')
 
 # Set storage manager
 selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
@@ -66,92 +75,6 @@ elif selected_storage in ['azure']:
     filestore = AzureObjectStore(settings)
 else:
     raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
-
-
-class TemporaryDir(object):
-    """Context manager for mkdtemp() with option to persist"""
-
-    def __init__(self, persist=False, basedir=None):
-        self.persist = persist
-        self.basedir = basedir
-
-        if basedir:
-            os.makedirs(basedir, exist_ok=True)
-
-    def __enter__(self):
-        self.name = tempfile.mkdtemp(dir=self.basedir)
-        return self.name
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if not self.persist and os.path.isdir(self.name):
-            shutil.rmtree(self.name)
-
-
-def get_oasislmf_config_path(model_id=None):
-    """ Search for the oasislmf confiuration file
-    """
-    conf_path = None
-    model_root = settings.get('worker', 'model_data_directory', fallback='/home/worker/model')
-
-    # 1: Explicit location
-    conf_path = Path(settings.get('worker', 'oasislmf_config', fallback=""))
-    if conf_path.is_file():
-        return str(conf_path)
-
-    # 2: try 'model specific conf'
-    if model_id:
-        conf_path = Path(model_root, '{}-oasislmf.json'.format(model_id))
-        if conf_path.is_file():
-            return str(conf_path)
-
-    # 3: Try generic model conf
-    conf_path = Path(model_root, 'oasislmf.json')
-    if conf_path.is_file():
-        return str(conf_path)
-
-    # 4: check compatibility look for older model mount
-    conf_path = Path('/var/oasis', 'oasislmf.json')
-    if conf_path.is_file():
-        return str(conf_path)
-
-    # 5: warn and return fallback
-    logger.warning("WARNING: 'oasislmf.json' Configuration file not found")
-    return str(Path(model_root, 'oasislmf.json'))
-
-
-def get_model_settings():
-    """ Read the settings file from the path OASIS_MODEL_SETTINGS
-        returning the contents as a python dicself.t (none if not found)
-    """
-    settings_data = None
-    settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback=None)
-    try:
-        if os.path.isfile(settings_fp):
-            with open(settings_fp) as f:
-                settings_data = json.load(f)
-    except Exception as e:
-        logger.error("Failed to load Model settings: {}".format(e))
-
-    return settings_data
-
-
-def get_worker_versions():
-    """ Search and return the versions of Oasis components
-    """
-    ktool_ver_str = subprocess.getoutput('fmcalc -v')
-    plat_ver_file = '/home/worker/VERSION'
-
-    if os.path.isfile(plat_ver_file):
-        with open(plat_ver_file, 'r') as f:
-            plat_ver_str = f.read().strip()
-    else:
-        plat_ver_str = ""
-
-    return {
-        "oasislmf": mdk_version,
-        "ktools": ktool_ver_str,
-        "platform": plat_ver_str
-    }
 
 
 def check_worker_lost(task, analysis_pk):
@@ -267,16 +190,6 @@ def register_worker(sender, **k):
         os.rmdir(tmpdir)
 
 
-class InvalidInputsException(OasisException):
-    def __init__(self, input_archive):
-        super(InvalidInputsException, self).__init__('Inputs location not a tarfile: {}'.format(input_archive))
-
-
-class MissingModelDataException(OasisException):
-    def __init__(self, model_data_path):
-        super(MissingModelDataException, self).__init__('Model data not found: {}'.format(model_data_path))
-
-
 @contextmanager
 def get_lock():
     lock = fasteners.InterProcessLock(settings.get('worker', 'LOCK_FILE'))
@@ -298,8 +211,6 @@ def notify_api_status(analysis_pk, task_status):
         args=(analysis_pk, task_status),
         queue='celery'
     ).delay()
-
-
 
 
 def V1_task_logger(fn):
@@ -385,18 +296,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
-    # Setup Job cancellation handler
-
-    #def analysis_cancel_handler(signum, frame):
-    #    logging.info('TASK CANCELLATION')
-    #    if proc is not None:
-    #        os.killpg(os.getpgid(proc.pid), 15)
-    #    raise Terminated("Cancellation request sent from API")
-
-    #proc = None  # Popen object for subpross runner
-    #signals['SIGTERM'] = analysis_cancel_handler
-
-
     tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
     filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
@@ -473,7 +372,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         output_directory = os.path.join(run_dir, "output")
         output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
         exitcode = 0
-    
+
     return output_location, traceback_location, log_location, exitcode
 
 
@@ -597,7 +496,7 @@ def generate_input(self,
             generated_files = OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:
-            logger.error(e) 
+            logger.error(e)
             returncode = 1
 
         # Find Generated Files
@@ -632,42 +531,3 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
             args=(analysis_pk, initiator_pk, traceback),
             queue='celery'
         ).delay()
-
-
-def prepare_complex_model_file_inputs(complex_model_files, run_directory):
-    """Places the specified complex model files in the run_directory.
-
-    The unique upload filenames are converted back to the original upload names, so that the
-    names match any input configuration file.
-
-    On Linux, the files are symlinked, whereas on Windows the files are simply copied.
-
-    Args:
-        complex_model_files (list of complex_model_data_file): List of dicts giving the files
-            to make available.
-        run_directory (str): Model inputs directory to place the files in.
-
-    Returns:
-        None.
-
-    """
-    for cmf in complex_model_files:
-        stored_fn = cmf[STORED_FILENAME]
-        orig_fn = cmf[ORIGINAL_FILENAME]
-
-        if filestore._is_valid_url(stored_fn):
-            # If reference is a URL, then download the file & rename to 'original_filename'
-            fpath = filestore.get(stored_fn, run_directory)
-            shutil.move(fpath, os.path.join(run_directory, orig_fn))
-        elif filestore._is_stored(stored_fn):
-            # If refrence is local filepath check that it exisits and copy/symlink
-            from_path = filestore.get(stored_fn)
-            to_path = os.path.join(run_directory, orig_fn)
-            if os.name == 'nt':
-                logger.info(f'complex_model_file: copy {from_path} to {to_path}')
-                shutil.copy(from_path, to_path)
-            else:
-                logger.info(f'complex_model_file: link {from_path} to {to_path}')
-                os.symlink(from_path, to_path)
-        else:
-            logger.info('WARNING: failed to get complex model file "{}"'.format(stored_fn))
