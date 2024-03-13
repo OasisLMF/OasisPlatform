@@ -331,11 +331,11 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Create and log params
         run_params = {**config, **task_params}
-        paths_to_absolute_paths(run_params)
-        log_params(run_params, kwargs)
+        params = paths_to_absolute_paths(run_params)
+        log_params(params, kwargs)
 
         # Run generate losses
-        OasisManager().generate_oasis_losses(**run_params)
+        OasisManager().generate_oasis_losses(**params)
 
         # Ktools log Tar file
         traceback_location = filestore.put(kwargs['log_filename'])
@@ -428,8 +428,8 @@ def generate_input(self,
         config_path = get_oasislmf_config_path(settings)
         config = get_json(config_path)
         lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **task_params}
-        paths_to_absolute_paths(lookup_params)
-        log_params(lookup_params, kwargs, exclude_keys=[
+        params = paths_to_absolute_paths(lookup_params)
+        log_params(params, kwargs, exclude_keys=[
             'profile_loc',
             'profile_loc_json',
             'profile_acc',
@@ -443,7 +443,7 @@ def generate_input(self,
         ])
 
         try:
-            OasisManager().generate_oasis_files(**lookup_params)
+            OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:
             logger.error(e)

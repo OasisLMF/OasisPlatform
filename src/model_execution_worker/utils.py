@@ -17,6 +17,7 @@ import os
 import tempfile
 import shutil
 import subprocess
+from copy import deepcopy
 
 from pathlib2 import Path
 from oasislmf import __version__ as mdk_version
@@ -66,13 +67,14 @@ def paths_to_absolute_paths(dictionary):
     if not isinstance(dictionary, dict):
         raise ValueError("Input must be a dictionary.")
 
+    params = deepcopy(dictionary)
     for key, value in dictionary.items():
         if isinstance(value, str) and os.path.exists(value):
             # If the value is a string and exists as a path, convert it to absolute path
-            dictionary[key] = os.path.abspath(value)
+            params[key] = os.path.abspath(value)
         elif value is None:
-            del dictionary[key]
-    return dictionary
+            del params[key]
+    return params
 
 
 class TemporaryDir(object):

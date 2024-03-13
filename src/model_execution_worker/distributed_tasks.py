@@ -482,11 +482,10 @@ def prepare_input_generation_params(
     config_path = get_oasislmf_config_path(settings, model_id)
     config = get_json(config_path)
     lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **params}
-    paths_to_absolute_paths(lookup_params)
 
     gen_files_params = OasisManager()._params_generate_files(**lookup_params)
     pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
-    params = {**gen_files_params, **pre_hook_params}
+    params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params})
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
@@ -549,12 +548,12 @@ def prepare_keys_file_chunk(
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
 
         _, lookup = OasisLookupFactory.create(
-            lookup_config_fp=params['lookup_config_json'],
-            model_keys_data_path=params['lookup_data_dir'],
-            model_version_file_path=params['model_version_csv'],
-            lookup_module_path=params['lookup_module_path'],
-            complex_lookup_config_fp=params['lookup_complex_config_json'],
-            user_data_dir=params['user_data_dir'],
+            lookup_config_fp=params.get('lookup_config_json', None),
+            model_keys_data_path=params.get('lookup_data_dir', None),
+            model_version_file_path=params.get('model_version_csv', None),
+            lookup_module_path=params.get('lookup_module_path', None),
+            complex_lookup_config_fp=params.get('lookup_complex_config_json', None),
+            user_data_dir=params.get('user_data_dir', None),
             output_directory=chunk_target_dir,
         )
 
@@ -860,11 +859,10 @@ def prepare_losses_generation_params(
     config_path = get_oasislmf_config_path(settings, model_id)
     config = get_json(config_path)
     run_params = {**config, **params}
-    paths_to_absolute_paths(run_params)
 
     gen_losses_params = OasisManager()._params_generate_losses(**run_params)
     post_hook_params = OasisManager()._params_post_analysis(**run_params)
-    params = {**gen_losses_params, **post_hook_params}
+    params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params})
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
