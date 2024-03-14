@@ -331,8 +331,9 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Create and log params
         run_params = {**config, **task_params}
-        params = paths_to_absolute_paths(run_params)
-        log_params(params, kwargs)
+        params = paths_to_absolute_paths(run_params, config_path)
+        if debug_worker:
+            log_params(params, kwargs)
 
         # Run generate losses
         OasisManager().generate_oasis_losses(**params)
@@ -428,19 +429,20 @@ def generate_input(self,
         config_path = get_oasislmf_config_path(settings)
         config = get_json(config_path)
         lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **task_params}
-        params = paths_to_absolute_paths(lookup_params)
-        log_params(params, kwargs, exclude_keys=[
-            'profile_loc',
-            'profile_loc_json',
-            'profile_acc',
-            'profile_fm_agg',
-            'profile_fm_agg_json',
-            'fm_aggregation_profile',
-            'accounts_profile',
-            'oed_hierarchy',
-            'exposure_profile',
-            'lookup_config',
-        ])
+        params = paths_to_absolute_paths(lookup_params, config_path)
+        if debug_worker:
+            log_params(params, kwargs, exclude_keys=[
+                'profile_loc',
+                'profile_loc_json',
+                'profile_acc',
+                'profile_fm_agg',
+                'profile_fm_agg_json',
+                'fm_aggregation_profile',
+                'accounts_profile',
+                'oed_hierarchy',
+                'exposure_profile',
+                'lookup_config',
+            ])
 
         try:
             OasisManager().generate_oasis_files(**params)
