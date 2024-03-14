@@ -658,10 +658,28 @@ def handle_task_failure(
         analysis = Analysis.objects.get(pk=analysis_id)
         analysis.status = failure_status
         analysis.task_finished = timezone.now()
+        #from celery.contrib import rdb; rdb.set_trace()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
         with TemporaryFile() as tmp_file:
-            tmp_file.write(tb.encode('utf-8'))
+            # write Traceback
+            if tb:
+                tmp_file.write('\n--- Trace Back ---'.encode('utf-8'))
+                tmp_file.write(tb.encode('utf-8'))
+
+            # Write Error logs
+            subtask_qs = analysis.sub_task_statuses.filter(
+                status__in=[AnalysisTaskStatus.status_choices.ERROR]
+            )
+            from celery.contrib import rdb; rdb.set_trace()
+            for subtask in subtask_qs:
+                if hasattr(subtask.error_log, 'read'):
+                    tmp_file.write(f'\n--- Subtask {subtask.id}, {subtask.slug} ---\n'.encode('utf-8'))
+                    if hasattr(subtask.output_log, 'read'):
+                        tmp_file.write(subtask.output_log.read())
+                    tmp_file.write(subtask.error_log.read())
+
+            tmp_file.seek(0)
             setattr(analysis, traceback_property, RelatedFile.objects.create(
                 file=File(tmp_file, name=random_filename),
                 filename=f'analysis_{analysis_id}_worker_traceback.txt',
