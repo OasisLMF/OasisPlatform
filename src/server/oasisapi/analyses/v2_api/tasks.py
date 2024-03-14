@@ -499,7 +499,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
         )
         for subtask in subtask_qs:
             if hasattr(subtask.output_log, 'read'):
-                tmp_file.write(f'\n--- Subtask {subtask.id}, {subtask.slug} ---\n'.encode('utf-8'))
+                tmp_file.write(f'\n=== {subtask.slug} ===\n'.encode('utf-8'))
                 tmp_file.write(subtask.output_log.read())
 
         tmp_file.seek(0)
@@ -526,12 +526,24 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
     analysis.task_finished = timezone.now()
 
     # Trace back file (stdout + stderr)
-    analysis.run_traceback_file = RelatedFile.objects.create_from_content(
-        result['bash_trace'].encode(),
-        'run_traceback.txt',
-        'text/plain',
-        initiator
-    )
+    random_filename = '{}.txt'.format(uuid.uuid4().hex)
+    with TemporaryFile() as tmp_file:
+        # Write Error logs
+        subtask_qs = analysis.sub_task_statuses.filter(
+            status__in=[AnalysisTaskStatus.status_choices.COMPLETED]
+        )
+        for subtask in subtask_qs:
+            if hasattr(subtask.output_log, 'read'):
+                tmp_file.write(f'\n=== {subtask.slug} ===\n'.encode('utf-8'))
+                tmp_file.write(subtask.output_log.read())
+
+        tmp_file.seek(0)
+        setattr(analysis, 'run_traceback_file', RelatedFile.objects.create(
+            file=File(tmp_file, name=random_filename),
+            filename=f'analysis_{analysis_id}_worker_traceback.txt',
+            content_type='text/plain',
+            creator=get_user_model().objects.get(pk=initiator_id),
+        ))
 
     # Store logs and output
     analysis.run_log_file = store_file(result['log_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
@@ -679,7 +691,7 @@ def handle_task_failure(
         with TemporaryFile() as tmp_file:
             # write Traceback
             if tb:
-                tmp_file.write('\n--- Trace Back ---'.encode('utf-8'))
+                tmp_file.write('\n=== Trace Back ===\n'.encode('utf-8'))
                 tmp_file.write(tb.encode('utf-8'))
 
             # Write Error logs
@@ -688,7 +700,7 @@ def handle_task_failure(
             )
             for subtask in subtask_qs:
                 if hasattr(subtask.error_log, 'read'):
-                    tmp_file.write(f'\n--- Subtask {subtask.id}, {subtask.slug} ---\n'.encode('utf-8'))
+                    tmp_file.write(f'\n=== {subtask.slug} ===\n'.encode('utf-8'))
                     if hasattr(subtask.output_log, 'read'):
                         tmp_file.write(subtask.output_log.read())
                     tmp_file.write(subtask.error_log.read())

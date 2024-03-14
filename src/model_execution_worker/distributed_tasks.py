@@ -944,7 +944,6 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     if res.get('post_analysis_module', None):
         OasisManager().post_analysis(**res)
 
-    res['bash_trace'] = ""
     return {
         **res,
         'output_location': filestore.put(os.path.join(res['model_run_dir'], 'output'), arcname='output'),
