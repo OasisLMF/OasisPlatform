@@ -490,9 +490,25 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator,
                                               filename=f'analysis_{analysis_id}_exposure_summary_levels.json')
 
-    # if log_location:
-    #    analysis.input_generation_traceback_file = store_file(log_location, 'text/plain', initiator)
-    #    logger.info(analysis.input_generation_traceback_file)
+    # group sub-task logs and write to trace file
+    random_filename = '{}.txt'.format(uuid.uuid4().hex)
+    with TemporaryFile() as tmp_file:
+        # Write Error logs
+        subtask_qs = analysis.sub_task_statuses.filter(
+            status__in=[AnalysisTaskStatus.status_choices.COMPLETED]
+        )
+        for subtask in subtask_qs:
+            if hasattr(subtask.output_log, 'read'):
+                tmp_file.write(f'\n--- Subtask {subtask.id}, {subtask.slug} ---\n'.encode('utf-8'))
+                tmp_file.write(subtask.output_log.read())
+
+        tmp_file.seek(0)
+        setattr(analysis, traceback_property, RelatedFile.objects.create(
+            file=File(tmp_file, name=random_filename),
+            filename=f'analysis_{analysis_id}_worker_traceback.txt',
+            content_type='text/plain',
+            creator=get_user_model().objects.get(pk=initiator_id),
+        ))
 
     analysis.save()
     return result
@@ -671,7 +687,6 @@ def handle_task_failure(
             subtask_qs = analysis.sub_task_statuses.filter(
                 status__in=[AnalysisTaskStatus.status_choices.ERROR]
             )
-            from celery.contrib import rdb; rdb.set_trace()
             for subtask in subtask_qs:
                 if hasattr(subtask.error_log, 'read'):
                     tmp_file.write(f'\n--- Subtask {subtask.id}, {subtask.slug} ---\n'.encode('utf-8'))
