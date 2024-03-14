@@ -485,7 +485,7 @@ def prepare_input_generation_params(
 
     gen_files_params = OasisManager()._params_generate_files(**lookup_params)
     pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
-    params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params})
+    params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params}, config_path)
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
@@ -862,7 +862,7 @@ def prepare_losses_generation_params(
 
     gen_losses_params = OasisManager()._params_generate_losses(**run_params)
     post_hook_params = OasisManager()._params_post_analysis(**run_params)
-    params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params})
+    params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params}, config_path)
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker

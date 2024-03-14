@@ -503,7 +503,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
                 tmp_file.write(subtask.output_log.read())
 
         tmp_file.seek(0)
-        setattr(analysis, traceback_property, RelatedFile.objects.create(
+        setattr(analysis, 'input_generation_traceback_file', RelatedFile.objects.create(
             file=File(tmp_file, name=random_filename),
             filename=f'analysis_{analysis_id}_worker_traceback.txt',
             content_type='text/plain',
@@ -674,7 +674,6 @@ def handle_task_failure(
         analysis = Analysis.objects.get(pk=analysis_id)
         analysis.status = failure_status
         analysis.task_finished = timezone.now()
-        #from celery.contrib import rdb; rdb.set_trace()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
         with TemporaryFile() as tmp_file:

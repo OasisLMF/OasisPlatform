@@ -63,15 +63,19 @@ def log_params(params, kwargs, exclude_keys=[]):
     ))
 
 
-def paths_to_absolute_paths(dictionary):
+def paths_to_absolute_paths(dictionary, config_path=''):
+    basedir = os.path.dirname(config_path)
     if not isinstance(dictionary, dict):
         raise ValueError("Input must be a dictionary.")
 
     params = deepcopy(dictionary)
     for key, value in dictionary.items():
-        if isinstance(value, str) and os.path.exists(value):
-            # If the value is a string and exists as a path, convert it to absolute path
-            params[key] = os.path.abspath(value)
+        # If the value is a string and exists as a path, convert it to absolute path
+        if isinstance(value, str):
+            path_value = os.path.join(basedir, value)
+            if os.path.exists(path_value):
+                params[key] = os.path.abspath(path_value)
+        # if value is 'None' remote it
         elif value is None:
             del params[key]
     return params
