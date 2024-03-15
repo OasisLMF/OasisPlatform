@@ -17,6 +17,7 @@ from celery.utils.log import get_task_logger
 from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 
+
 from oasislmf.manager import OasisManager
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
@@ -211,7 +212,6 @@ def V1_task_logger(fn):
 
     def run(self, analysis_pk, *args):
         kwargs = {
-            'task_id': self.request.id,
             'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
         }
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level='DEBUG'):
@@ -336,7 +336,12 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             log_params(params, kwargs)
 
         # Run generate losses
-        OasisManager().generate_oasis_losses(**params)
+        try:
+            OasisManager().generate_oasis_losses(**params)
+            returncode = 0
+        except Exception as e:
+            logger.info(f'Exception: {e.__class__}: {e}')
+            returncode = 1
 
         # Ktools log Tar file
         traceback_location = filestore.put(kwargs['log_filename'])
@@ -346,9 +351,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         # Results dir & analysis-settings
         output_directory = os.path.join(run_dir, "output")
         output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
-        exitcode = 0
 
-    return output_location, traceback_location, log_location, exitcode
+    return output_location, traceback_location, log_location, returncode
 
 
 @app.task(name='generate_input', bind=True, acks_late=True, throws=(Terminated,))
@@ -448,7 +452,7 @@ def generate_input(self,
             OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:
-            logger.error(e)
+            logger.info(f'Exception: {e.__class__}: {e}')
             returncode = 1
 
         # Find Generated Files
