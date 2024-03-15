@@ -1,5 +1,6 @@
 import os
 import subprocess
+import json
 import tarfile
 from unittest import TestCase
 from contextlib import contextmanager
@@ -82,6 +83,7 @@ class StartAnalysis(TestCase):
         with TemporaryDirectory() as media_root, \
                 TemporaryDirectory() as model_data_dir, \
                 TemporaryDirectory() as run_dir, \
+                TemporaryDirectory() as log_dir, \
                 TemporaryDirectory() as work_dir:
             with SettingsPatcher(
                     MODEL_SUPPLIER_ID='supplier',
@@ -94,35 +96,37 @@ class StartAnalysis(TestCase):
                 Path(media_root, 'analysis_settings.json').touch()
                 Path(run_dir, 'output').mkdir(parents=True)
                 Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
+                log_file = Path(log_dir, 'log-file.log').touch()
+
+                params = {
+                    "oasis_files_dir": os.path.join(run_dir, 'input'),
+                    "model_run_dir": run_dir,
+                    "ktools_fifo_relative": True,
+                    "verbose": False
+                }
+                with open(Path(model_data_dir, 'oasislmf.json'), 'w') as f:
+                    f.write(json.dumps(params))
 
                 cmd_instance = Mock()
-                # cmd_instance.stdout = b'output'
-                # cmd_instance.stderr = b'errors'
-                cmd_instance.returncode = 0
-                cmd_instance.communicate = Mock(return_value=(b'mock subprocess stdout', b'mock subprocess stderr'))
 
                 @contextmanager
                 def fake_run_dir(*args, **kwargs):
                     yield run_dir
 
-                with patch('subprocess.Popen', Mock(return_value=cmd_instance)) as cmd_mock, \
+                with patch('src.model_execution_worker.tasks.OasisManager', Mock(return_value=cmd_instance)) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
                         patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
+                        patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
+                    cmd_instance.generate_oasis_losses.return_value = "mocked result"  # Mock the return value
                     output_location, log_location, error_location, returncode = start_analysis(
                         os.path.join(media_root, 'analysis_settings.json'),
                         os.path.join(media_root, 'location.tar'),
+                        log_filename=log_file,
                     )
-                    test_env = os.environ.copy()
-                    cmd_mock.assert_called_once_with(['oasislmf', 'model', 'generate-losses',
-                                                      '--oasis-files-dir', os.path.join(run_dir, 'input'),
-                                                      '--config', get_oasislmf_config_path(settings.get('worker', 'model_id')),
-                                                      '--model-run-dir', run_dir,
-                                                      '--analysis-settings-json', os.path.join(media_root, 'analysis_settings.json'),
-                                                      '--ktools-fifo-relative',
-                                                      '--verbose',
-                                                      ], stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=test_env, preexec_fn=os.setsid)
+                    expected_params = {**params, **{"analysis_settings_json": os.path.join(media_root, 'analysis_settings.json')}}
+                    cmd_instance.generate_oasis_losses.assert_called_once_with(**expected_params)
                     tarfile.assert_called_once_with(os.path.join(media_root, output_location), os.path.join(run_dir, 'output'), 'output')
 
 
@@ -131,9 +135,9 @@ class StartAnalysisTask(TestCase):
     def test_lock_is_not_acquireable___retry_esception_is_raised(self, pk, location, analysis_settings_path):
         with TemporaryDirectory() as log_dir:
             with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)), \
-                 patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
-                 patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
-                 patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
+                    patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
+                    patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
+                    patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
 
                 with self.assertRaises(Retry):
                     start_analysis_task(pk, location, analysis_settings_path)
@@ -142,9 +146,9 @@ class StartAnalysisTask(TestCase):
     def test_lock_is_acquireable___start_analysis_is_ran(self, pk, location, analysis_settings_path):
         with TemporaryDirectory() as log_dir:
             with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
-                 patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
-                 patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
-                 patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
+                    patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
+                    patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
+                    patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
 
                 start_analysis_task.update_state = Mock()
                 start_analysis_task(pk, location, analysis_settings_path)
