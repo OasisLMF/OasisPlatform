@@ -36,6 +36,7 @@ class LoggingTaskContext:
     def __init__(self, logger, log_filename, level=None, close=True):
         self.logger = logger
         self.level = level
+        self.prev_level = logger.level
         self.log_filename = log_filename
         self.close = close
         self.handler = logging.FileHandler(log_filename)
@@ -43,10 +44,13 @@ class LoggingTaskContext:
     def __enter__(self):
         if self.level:
             self.handler.setLevel(self.level)
+            self.logger.setLevel(self.level)
         if self.handler:
             self.logger.addHandler(self.handler)
 
     def __exit__(self, et, ev, tb):
+        if self.level:
+            self.logger.setLevel(self.prev_level)
         if self.handler:
             self.logger.removeHandler(self.handler)
         if self.handler and self.close:
