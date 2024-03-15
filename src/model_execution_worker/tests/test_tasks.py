@@ -1,7 +1,6 @@
 import os
-import subprocess
-import json
 import tarfile
+import json
 from unittest import TestCase
 from contextlib import contextmanager
 
@@ -14,10 +13,10 @@ from mock import patch, Mock
 # from mock import ANY
 from pathlib2 import Path
 
-from src.conf.iniconf import SettingsPatcher, settings
+from src.conf.iniconf import SettingsPatcher
 # from src.model_execution_worker.storage_manager import MissingInputsException
 from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, \
-    start_analysis_task, get_oasislmf_config_path
+    start_analysis_task
 
 
 # from oasislmf.utils.status import OASIS_TASK_STATUS
