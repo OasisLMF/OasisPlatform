@@ -899,13 +899,11 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         current_chunk_id = None
         max_chunk_id = -1
         work_dir = 'work'
-        #log_dir = 'log'
     else:
         # Run a single ktools pipe
         current_chunk_id = chunk_idx + 1
         max_chunk_id = num_chunks
         work_dir = f'{current_chunk_id}.work'
-        #log_dir = os.path.join('log', str(current_chunk_id))
 
     chunk_params = {
         **params,
@@ -953,12 +951,14 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     OasisManager().generate_losses_output(**res)
     if res.get('post_analysis_module', None):
         OasisManager().post_analysis(**res)
-        
-    # collect run logs 
+
+    # collect run logs
     abs_log_dir = os.path.join(res['model_run_dir'], 'log')
     Path(abs_log_dir).mkdir(exist_ok=True, parents=True)
     for p in params:
-        filestore.extract(p['chunk_log_location'], os.path.join(abs_log_dir, f'{p["process_number"]}-chunk'), p['storage_subdir'])
+        with TemporaryDir() as d:
+            filestore.extract(p['chunk_log_location'], d, p['storage_subdir'])
+            merge_dirs(d, abs_log_dir)
 
     return {
         **res,
