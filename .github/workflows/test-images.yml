@@ -160,7 +160,6 @@ jobs:
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: "_worker-${{ needs.setup.outputs.release_tag }}"
 
-
   stable_compatibility_15:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_15 }})
     secrets: inherit
