@@ -505,7 +505,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
         tmp_file.seek(0)
         setattr(analysis, 'input_generation_traceback_file', RelatedFile.objects.create(
             file=File(tmp_file, name=random_filename),
-            filename=f'analysis_{analysis_id}_worker_traceback.txt',
+            filename=f'analysis_{analysis_id}_generation_traceback.txt',
             content_type='text/plain',
             creator=get_user_model().objects.get(pk=initiator_id),
         ))
@@ -540,7 +540,7 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
         tmp_file.seek(0)
         setattr(analysis, 'run_traceback_file', RelatedFile.objects.create(
             file=File(tmp_file, name=random_filename),
-            filename=f'analysis_{analysis_id}_worker_traceback.txt',
+            filename=f'analysis_{analysis_id}_run_traceback.txt',
             content_type='text/plain',
             creator=get_user_model().objects.get(pk=initiator_id),
         ))
