@@ -64,7 +64,6 @@ class OasisClient:
                 self.token_expire_time = time.time() + round(data['expires_in'] / 2)
 
     async def get_access_token(self) -> str:
-
         """
         Returns the access token - authentication will be made if there is none or it as expired.
 
