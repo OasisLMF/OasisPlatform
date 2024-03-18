@@ -899,11 +899,13 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         current_chunk_id = None
         max_chunk_id = -1
         work_dir = 'work'
+        #log_dir = 'log'
     else:
         # Run a single ktools pipe
         current_chunk_id = chunk_idx + 1
         max_chunk_id = num_chunks
         work_dir = f'{current_chunk_id}.work'
+        #log_dir = os.path.join('log', str(current_chunk_id))
 
     chunk_params = {
         **params,
@@ -911,6 +913,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         'max_process_id': max_chunk_id,
         'ktools_fifo_relative': True,
         'ktools_work_dir': os.path.join(params['model_run_dir'], work_dir),
+        'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
     OasisManager().generate_losses_partial(**chunk_params)
@@ -920,6 +923,11 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         'chunk_work_location': filestore.put(
             chunk_params['ktools_work_dir'],
             filename=f'work-{chunk_idx+1}.tar.gz',
+            subdir=params['storage_subdir']
+        ),
+        'chunk_log_location': filestore.put(
+            chunk_params['ktools_log_dir'],
+            filename=f'log-{chunk_idx+1}.tar.gz',
             subdir=params['storage_subdir']
         ),
         'ktools_work_dir': chunk_params['ktools_work_dir'],
@@ -933,22 +941,29 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
+    # collect run results
     abs_work_dir = os.path.join(res['model_run_dir'], 'work')
     Path(abs_work_dir).mkdir(exist_ok=True, parents=True)
-
-    # collect the run results
     for p in params:
         with TemporaryDir() as d:
             filestore.extract(p['chunk_work_location'], d, p['storage_subdir'])
             merge_dirs(d, abs_work_dir)
 
+    # Exec losses
     OasisManager().generate_losses_output(**res)
     if res.get('post_analysis_module', None):
         OasisManager().post_analysis(**res)
+        
+    # collect run logs 
+    abs_log_dir = os.path.join(res['model_run_dir'], 'log')
+    Path(abs_log_dir).mkdir(exist_ok=True, parents=True)
+    for p in params:
+        filestore.extract(p['chunk_log_location'], os.path.join(abs_log_dir, f'{p["process_number"]}-chunk'), p['storage_subdir'])
 
     return {
         **res,
         'output_location': filestore.put(os.path.join(res['model_run_dir'], 'output'), arcname='output'),
+        'run_logs': filestore.put(os.path.join(res['model_run_dir'], 'log'), arcname='logs'),
         'log_location': filestore.put(kwargs.get('log_filename')),
     }
 
