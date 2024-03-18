@@ -33,13 +33,14 @@ class LoggingTaskContext:
         Docs: https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
     """
 
-    def __init__(self, logger, log_filename, level=None, close=True):
+    def __init__(self, logger, log_filename, level=None, close=True, delete_on_exit=True):
         self.logger = logger
         self.level = level
         self.prev_level = logger.level
         self.log_filename = log_filename
         self.close = close
         self.handler = logging.FileHandler(log_filename)
+        self.delete_on_exit = delete_on_exit
 
     def __enter__(self):
         if self.level:
@@ -55,6 +56,8 @@ class LoggingTaskContext:
             self.logger.removeHandler(self.handler)
         if self.handler and self.close:
             self.handler.close()
+        if os.path.isfile(self.log_filename) and self.delete_on_exit:
+            os.remove(self.log_filename)
 
 
 def log_params(params, kwargs, exclude_keys=[]):
