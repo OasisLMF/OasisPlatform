@@ -128,7 +128,7 @@ class BaseStorageConnector(object):
             self.media_root,
             self._get_unique_filename(ext))
         self.logger.info('Store file: {} -> {}'.format(file_path, stored_fp))
-        return shutil.copy(file_path, stored_fp)
+        return shutil.copyfile(file_path, stored_fp)
 
     def _store_dir(self, directory_path, suffix=None, arcname=None):
         """ Compress and store a directory

@@ -619,7 +619,7 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory):
             to_path = os.path.join(run_directory, orig_fn)
             if os.name == 'nt':
                 logging.info(f'complex_model_file: copy {from_path} to {to_path}')
-                shutil.copy(from_path, to_path)
+                shutil.copyfile(from_path, to_path)
             else:
                 logging.info(f'complex_model_file: link {from_path} to {to_path}')
                 os.symlink(from_path, to_path)

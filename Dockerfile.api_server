@@ -11,7 +11,7 @@ RUN pip install --user --no-warn-script-location -r ./requirements-server.txt &&
 FROM ubuntu:22.04
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends python3 python3-pip curl libmariadbclient-dev-compat \
+ && apt-get install -y --no-install-recommends python3 python3-pkg-resources curl libmariadbclient-dev-compat \
  && rm -rf /var/lib/apt/lists/
 
 COPY --from=build-packages /root/.local /root/.local
