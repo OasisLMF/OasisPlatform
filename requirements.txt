@@ -119,7 +119,7 @@ coverage[toml]==7.2.5
     #   pytest-cov
 cramjam==2.6.2
     # via fastparquet
-cryptography==41.0.6
+cryptography==42.0.4
     # via
     #   autobahn
     #   pyopenssl
@@ -325,7 +325,7 @@ pymysql==1.0.3
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pyopenssl==23.2.0
+pyopenssl==24.0.0
     # via
     #   -r requirements.in
     #   twisted
