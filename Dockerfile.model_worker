@@ -53,7 +53,7 @@ COPY ./tests/integration /home/worker/tests/integration
 # Add required directories
 RUN mkdir -p /var/oasis && \
     mkdir -p /home/worker/model && \
-    mkdir -p /var/log/oasis && \
+    mkdir -p /var/log/oasis/tasks && \
     mkdir -p /shared-fs && \
     touch /var/log/oasis/worker.log && \
     chmod 777 /var/log/oasis/worker.log
