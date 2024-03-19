@@ -263,9 +263,7 @@ numpy==1.24.3
     #   scipy
     #   shapely
 oasislmf[extra]==1.23.20
-    # via
-    #   -r ./requirements-worker.in
-    #   oasislmf
+    # via -r ./requirements-worker.in
 ods-tools==2.3.2
     # via -r ./requirements-server.in
 packaging==23.1
