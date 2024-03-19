@@ -5,10 +5,12 @@ on:
     branches:
       - main-platform1
       - stable**
+      - release**
   pull_request:
     branches:
       - main-platform1
       - stable**
+      - release**
   workflow_dispatch:
     inputs:
       last_release:
@@ -86,21 +88,12 @@ jobs:
       - name: Select PiWind branch
         id: piwind
         run: |
-          # Select matching base branch on piwind
-          if [[ "${{ github.event_name }}" = "pull_request" ]]; then
-            BRANCH=${{ github.base_ref }}
-          elif [[ "${{ github.event_name }}" = "push" ]]; then
-            BRANCH=${{ github.ref_name }}
+          if [[ -z "${{ inputs.piwind_branch }}" ]]; then
+            BRANCH='stable/1.27.x'
           else
             BRANCH=${{ inputs.piwind_branch }}
           fi
-
-          #override 'main-platform1' -> 'main'
-          if [[ "$BRANCH" = 'main-platform1' ]]; then
-             BRANCH=main
-          fi
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-
 
       - name: Select Pytest Options
         id: pytest
