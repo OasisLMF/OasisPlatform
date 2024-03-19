@@ -325,7 +325,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
                     None,
                     fallback={}
                 ),
-            })
+            }),
             'verbose': debug_worker,
         }
 

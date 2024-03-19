@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 from oasis_data_manager.df_reader.config import get_df_reader
 from oasis_data_manager.df_reader.exceptions import InvalidSQLException
-from .models import RelatedFile
+from ..models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups
 

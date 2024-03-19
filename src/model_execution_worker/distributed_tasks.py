@@ -23,6 +23,7 @@ from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
+from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
 from .celery_request_handler import WorkerLostRetry
@@ -929,7 +930,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
                 None,
                 fallback={}
             ),
-        })
+        }),
         'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)

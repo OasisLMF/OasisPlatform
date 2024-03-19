@@ -396,6 +396,11 @@ LOGGING = {
             'level': 'WARNING',
             'propagate': False,
         },
+        'asyncio': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
     },
     'formatters': {
         'verbose': {
