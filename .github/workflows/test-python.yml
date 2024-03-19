@@ -5,10 +5,12 @@ on:
     branches:
       - main-platform1
       - stable**
+      - release**
   pull_request:
     branches:
       - main-platform1
       - stable**
+      - release**
 
   workflow_dispatch:
     inputs:
