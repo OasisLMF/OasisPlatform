@@ -103,20 +103,11 @@ jobs:
       - name: Select PiWind branch
         id: piwind
         run: |
-          # Select matching base branch on piwind
-          if [[ "${{ github.event_name }}" = "pull_request" ]]; then
-            BRANCH=${{ github.base_ref }}
-          elif [[ "${{ github.event_name }}" = "push" ]]; then
-            BRANCH=${{ github.ref_name }}
+          if [[ -z "${{ inputs.piwind_branch }}" ]]; then
+            BRANCH='stable/1.28.x'
           else
             BRANCH=${{ inputs.piwind_branch }}
           fi
-
-          #override 'main-platform1' -> 'main'
-          if [[ "$BRANCH" = 'main-platform1' ]]; then
-             BRANCH=main
-          fi
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
 
       - name: Select Pytest Options
@@ -153,7 +144,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      piwind_branch: ${{ needs.setup.outputs.release_tag }}
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
