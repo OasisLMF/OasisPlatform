@@ -1,15 +1,16 @@
 import json
 import io
+from tempfile import TemporaryFile
 
 from django.conf import settings
-from django.core.files.uploadedfile import UploadedFile
-from django.http import StreamingHttpResponse, Http404, QueryDict
+from django.core.files import File
+from django.http import StreamingHttpResponse, Http404
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 from oasis_data_manager.df_reader.config import get_df_reader
 from oasis_data_manager.df_reader.exceptions import InvalidSQLException
-from ..models import RelatedFile
+from .models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups
 
@@ -126,29 +127,16 @@ def _json_write_to_file(parent, field, request, serializer):
     data = json_serializer.validate(request.data)
 
     # create file object
-    with open(json_serializer.filenmame, 'wb+') as f:
-        in_memory_file = UploadedFile(
-            file=f,
-            name=json_serializer.filenmame,
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(data.encode('utf-8'))
+        tmp_file.seek(0)
+
+        instance = RelatedFile.objects.create(
+            file=File(tmp_file, name=json_serializer.filename),
+            filename=json_serializer.filename,
             content_type='application/json',
-            size=len(data.encode('utf-8')),
-            charset=None
+            creator=request.user,
         )
-
-    # wrap and re-open file
-    file_obj = QueryDict('', mutable=True)
-    file_obj.update({'file': in_memory_file})
-    file_obj['file'].open()
-    file_obj['file'].seek(0)
-    file_obj['file'].write(data.encode('utf-8'))
-    serializer = RelatedFileSerializer(
-        data=file_obj,
-        content_types='application/json',
-        context={'request': request}
-    )
-
-    serializer.is_valid(raise_exception=True)
-    instance = serializer.create(serializer.validated_data)
 
     # Check for exisiting file and delete
     _delete_related_file(parent, field, request.user)

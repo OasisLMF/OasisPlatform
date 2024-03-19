@@ -10,20 +10,14 @@ from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 QueueInfo = Dict[str, int]
 
 
-def _get_queue_consumers(queue_name):
-    with celery_app_v2.pool.acquire(block=True) as conn:
-        chan = conn.channel()
-        name, message_count, consumers = chan.queue_declare(queue=queue_name, passive=True)
-        chan.close()
-        return consumers
+def _get_queue_consumers(queue_name, channel):
+    name, message_count, consumers = channel.queue_declare(queue=queue_name, passive=True)
+    return consumers
 
 
-def _get_queue_message_count(queue_name):
-    with celery_app_v2.pool.acquire(block=True) as conn:
-        chan = conn.channel()
-        name, message_count, consumers = chan.queue_declare(queue=queue_name, passive=True)
-        chan.close()
-        return message_count
+def _get_queue_message_count(queue_name, channel):
+    name, message_count, consumers = channel.queue_declare(queue=queue_name, passive=True)
+    return message_count
 
 
 def _add_to_dict(d, k, v):
@@ -65,16 +59,19 @@ def get_queues_info() -> List[QueueInfo]:
     from src.server.oasisapi.analyses.models import AnalysisTaskStatus
 
     # setup an entry for every element in the broker
-    res = [
-        {
-            'name': q,
-            'pending_count': 0,
-            'queued_count': 0,
-            'running_count': 0,
-            'queue_message_count': _get_queue_message_count(q),
-            'worker_count': _get_queue_consumers(q),
-        } for q in _get_broker_queue_names()
-    ]
+    with celery_app_v2.pool.acquire(block=True) as conn:
+        chan = conn.channel()
+        res = [
+            {
+                'name': q,
+                'pending_count': 0,
+                'queued_count': 0,
+                'running_count': 0,
+                'queue_message_count': _get_queue_message_count(q, chan),
+                'worker_count': _get_queue_consumers(q, chan),
+            } for q in _get_broker_queue_names()
+        ]
+        chan.close()
 
     # get the stats of the running and queued tasks
     pending = reduce(

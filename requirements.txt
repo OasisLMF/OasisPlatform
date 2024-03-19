@@ -359,6 +359,7 @@ numexpr==2.9.0
     # via oasislmf
 numpy==1.25.2
     # via
+    #   -r requirements.in
     #   fastparquet
     #   numba
     #   numexpr
