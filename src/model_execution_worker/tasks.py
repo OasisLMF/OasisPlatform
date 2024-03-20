@@ -33,7 +33,6 @@ from .utils import (
     get_oasislmf_config_path,
     get_model_settings,
     get_worker_versions,
-    InvalidInputsException,
     prepare_complex_model_file_inputs,
 )
 
@@ -323,6 +322,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             'verbose': debug_worker,
         }
 
+        # Set model storage
         model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
         if model_storage:
             model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')
@@ -337,8 +337,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
                     **model_storage.to_config(),
                 }
                 json.dump(model_storage.to_config(), f)
-
-            run_args += ['--model-storage-json', model_storage_settings_file]
+            task_params['model_storage_json'] = model_storage_settings_file
 
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir, filestore)
