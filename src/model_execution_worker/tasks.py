@@ -20,7 +20,6 @@ from celery.exceptions import WorkerLostError, Terminated
 
 from oasislmf.manager import OasisManager
 from oasislmf.utils.data import get_json
-from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 
 from ..common.filestore.filestore import get_filestore
@@ -294,11 +293,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         # Fetch generated inputs
         analysis_settings_file = filestore.get(analysis_settings, run_dir, required=True)
         oasis_files_dir = os.path.join(run_dir, 'input')
-        input_archive = filestore.get(input_location, run_dir, required=True)
-        if not tarfile.is_tarfile(input_archive):
-            raise InvalidInputsException(input_archive)
-
-        filestore.extract(input_archive, oasis_files_dir)
+        filestore.extract(input_location, oasis_files_dir)
 
         # oasislmf.json
         config_path = get_oasislmf_config_path(settings)

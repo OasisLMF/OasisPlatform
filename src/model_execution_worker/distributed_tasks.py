@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import pathlib
+import tempfile
 import shutil
 from datetime import datetime
 
