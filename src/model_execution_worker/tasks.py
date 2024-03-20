@@ -46,6 +46,8 @@ RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 app = Celery()
 app.config_from_object(celery_conf)
+filestore = get_filestore(settings)
+model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
 
 logger = get_task_logger(__name__)
 logger.info("Started worker")
@@ -88,7 +90,6 @@ def check_worker_lost(task, analysis_pk):
 @worker_ready.connect
 def register_worker(sender, **k):
     time.sleep(1)  # Workaround, pause for 1 sec to makesure log messages are printed
-    filestore = get_filestore(settings)
 
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
@@ -271,8 +272,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         (string) The location of the outputs.
 
     """
-    filestore = get_filestore(settings)
-
     # Check that the input archive exists and is valid
     logger.info("args: {}".format(str(locals())))
     logger.info(str(get_worker_versions()))
@@ -327,15 +326,13 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         if model_storage:
             model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')
             with open(model_storage_settings_file, "w") as f:
-                config = {
-                    "root_dir": os.path.join(
-                        "/",
-                        analysis_settings["model_supplier_id"],
-                        analysis_settings["model_name_id"],
-                        analysis_settings["version"],
-                    ),
-                    **model_storage.to_config(),
-                }
+                config = model_storage.to_config()
+                config["options"]["root_dir"] = os.path.join(
+                    config["options"].get("root_dir", ""),
+                    settings.get("worker", "MODEL_SUPPLIER_ID"),
+                    settings.get("worker", "MODEL_ID"),
+                    settings.get("worker", "MODEL_VERSION_ID"),
+                )
                 json.dump(model_storage.to_config(), f)
             task_params['model_storage_json'] = model_storage_settings_file
 
@@ -399,7 +396,6 @@ def generate_input(self,
         (tuple(str, str)) Paths to the outputs tar file and errors tar file.
 
     """
-    filestore = get_filestore(settings)
     logging.info(str(get_worker_versions()))
 
     # Check if this task was re-queued from a lost worker
