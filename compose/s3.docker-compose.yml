@@ -8,6 +8,9 @@ volumes:
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
   OASIS_URL_SUB_PATH: 0
+  OASIS_KEEP_RUN_DIR: 1
+  OASIS_KEEP_LOCAL_DATA: 1
+  OASIS_KEEP_REMOTE_DATA: 1
   OASIS_CELERY_BROKER_URL: "amqp://rabbit:rabbit@broker:5672"
   #OASIS_CELERY_BROKER_URL: "redis://broker:6379"
   OASIS_SERVER_DB_HOST: server-db
