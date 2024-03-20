@@ -19,7 +19,6 @@ from natsort import natsorted
 from oasislmf.manager import OasisManager
 from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
-from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 

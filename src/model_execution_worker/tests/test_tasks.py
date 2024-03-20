@@ -1,9 +1,4 @@
 import os
-<<<<<<< HEAD
-import re
-import subprocess
-=======
->>>>>>> main
 import tarfile
 import json
 from unittest import TestCase
