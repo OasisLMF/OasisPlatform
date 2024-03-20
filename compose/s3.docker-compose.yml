@@ -78,7 +78,7 @@ services:
      OASIS_ADMIN_USER: admin
      OASIS_ADMIN_PASS: password
    volumes:
-     - ../src/server/oasisapi:/var/www/oasi../src/server/oasisapi
+     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   server_websocket:
    restart: always
    image: coreoasis/api_server:dev
@@ -92,7 +92,7 @@ services:
    environment:
      <<: *shared-env
    volumes:
-     - ../src/server/oasisapi:/var/www/oasi../src/server/oasisapi
+     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v1-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
@@ -104,7 +104,7 @@ services:
    environment:
      <<: *shared-env
    volumes:
-     - ../src/server/oasisapi:/var/www/oasi../src/server/oasisapi
+     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v2-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
@@ -116,7 +116,7 @@ services:
    environment:
      <<: *shared-env
    volumes:
-     - ../src/server/oasisapi:/var/www/oasi../src/server/oasisapi
+     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v2-task-controller:
    restart: always
    image: coreoasis/api_server:dev
@@ -128,7 +128,7 @@ services:
    environment:
      <<: *shared-env
    volumes:
-     - ../src/server/oasisapi/analyses:/var/www/oasi../src/server/oasisapi/analyses
+     - ../src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   celery-beat_v2:
    restart: always
    image: coreoasis/api_server:dev
@@ -170,7 +170,7 @@ services:
      OASIS_RUN_MODE: v1
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
-     - ../src/model_execution_worker:/home/worke../src/model_execution_worker
+     - ../src/model_execution_worker:/home/worker/src/model_execution_worker
   v2-worker:
     restart: always
     image: coreoasis/model_worker:dev
@@ -188,7 +188,7 @@ services:
      OASIS_RUN_MODE: v2
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
-     - ../src/model_execution_worker:/home/worke../src/model_execution_worker
+     - ../src/model_execution_worker:/home/worker/src/model_execution_worker
   server-db:
     restart: always
     image: postgres
