@@ -8,7 +8,6 @@ import sys
 import time
 
 import fasteners
-import tarfile
 
 from contextlib import contextmanager, suppress
 
