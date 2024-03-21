@@ -65,7 +65,6 @@ class Settings(ConfigParser):
                 v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
         )
 
-
     def get(self, section, option, global_env=True, **kwargs):
         if not option:
             section_env_prefix = 'OASIS_{}_'.format(self._section_to_env_prefix(section))
@@ -131,7 +130,7 @@ class Settings(ConfigParser):
 
 
 settings = Settings()
-settings_local = Settings(global_env=False) # only returns envs within a set section
+settings_local = Settings(global_env=False)  # only returns envs within a set section
 
 
 class SettingsPatcher(object):

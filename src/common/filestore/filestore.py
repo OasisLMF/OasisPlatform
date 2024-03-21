@@ -8,8 +8,8 @@ from oasis_data_manager.filestore.backends.local import LocalStorage
 from oasis_data_manager.filestore.backends.base import BaseStorage
 
 
-def get_filestore(settings, section='worker.model_storage', raise_error=True) -> Union[BaseStorage | None]:
-    selected_storage = settings.get(section, 'STORAGE_TYPE',  fallback="shared-fs").lower()
+def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorage | None]:
+    selected_storage = settings.get(section, 'STORAGE_TYPE', fallback="shared-fs").lower()
     if selected_storage in ['local-fs', 'shared-fs']:
         return LocalStorage(
             root_dir=settings.get(section, "MEDIA_ROOT"),
