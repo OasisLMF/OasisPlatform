@@ -32,6 +32,12 @@ x-shared-env: &shared-env
   OASIS_AWS_S3_ENDPOINT_URL: "http://localstack-s3:4572"
   OASIS_AWS_ACCESS_KEY_ID: foobar
   OASIS_AWS_SECRET_ACCESS_KEY: foobar
+  OASIS_WORKER_MODEL_DATA_STORAGE_TYPE: S3
+  OASIS_WORKER_MODEL_DATA_AWS_BUCKET_NAME: oasislmf-model-library-oasis-piwind
+  OASIS_WORKER_MODEL_DATA_AWS_ACCESS_KEY_ID: _ID_
+  OASIS_WORKER_MODEL_DATA_AWS_SECRET_ACCESS_KEY: _KEY_
+  OASIS_WORKER_MODEL_DATA_ROOT_DIR: model_data/
+
 
 x-oasis-env-v1: &oasis-env-v1
   OASIS_DEBUG: ${DEBUG:-0}
@@ -51,8 +57,15 @@ x-oasis-env-v1: &oasis-env-v1
   OASIS_AWS_ACCESS_KEY_ID: foobar
   OASIS_AWS_SECRET_ACCESS_KEY: foobar
 
-
 services:
+#  fileshare-s3:
+#    image: localstack-s3:latest
+#    build:
+#     context: .
+#     dockerfile: Dockerfile.localstack-s3
+#    ports:
+#      - "4566:4566"
+
   localstack-s3:
     image: localstack-s3:latest
     build:
@@ -60,6 +73,11 @@ services:
      dockerfile: Dockerfile.localstack-s3
     ports:
       - "4567-4599:4567-4599"
+    environment:
+      - DATA_DIR=/tmp/localstack/
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/tmp/localstack/:rw
+
 
   server:
    restart: always

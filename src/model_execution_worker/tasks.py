@@ -47,7 +47,7 @@ TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/t
 app = Celery()
 app.config_from_object(celery_conf)
 filestore = get_filestore(settings)
-model_storage = get_filestore(settings_local, "worker.model_storage", raise_error=False)
+model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 
 logger = get_task_logger(__name__)
 logger.info("Started worker")

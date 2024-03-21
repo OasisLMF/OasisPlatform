@@ -55,7 +55,7 @@ FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallbac
 app = Celery(task_cls=WorkerLostRetry)
 app.config_from_object(celery_conf)
 filestore = get_filestore(settings)
-model_storage = get_filestore(settings_local, "worker.model_storage", raise_error=False)
+model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 # print(app._conf)
 
 

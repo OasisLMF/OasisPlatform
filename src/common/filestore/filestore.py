@@ -16,7 +16,9 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
         )
     elif selected_storage in ['aws-s3', 'aws', 's3']:
+        
         return AwsS3Storage(
+            root_dir=settings.get(section, 'ROOT_DIR', fallback=""),
             bucket_name=settings.get(section, 'AWS_BUCKET_NAME'),
             access_key=settings.get(section, 'AWS_ACCESS_KEY_ID', fallback=None),
             secret_key=settings.get(section, 'AWS_SECRET_ACCESS_KEY', fallback=None),
@@ -58,6 +60,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
         )
     elif selected_storage in ['azure']:
         return AzureABFSStorage(
+            root_dir=settings.get(section, 'ROOT_DIR', fallback=""),
             account_name=settings.get(section, 'AZURE_ACCOUNT_NAME'),
             account_key=settings.get(section, 'AZURE_ACCOUNT_KEY'),
             azure_container=settings.get(section, 'AZURE_CONTAINER'),
