@@ -52,13 +52,13 @@ class Settings(ConfigParser):
 
     def _get_section_env_vars(self, section):
         section_env_prefix = 'OASIS_{}_'.format(self._section_to_env_prefix(section))
-        global_env_prefix = 'OASIS_'
+        # global_env_prefix = 'OASIS_'
 
         return ChainMap(
             {k.replace(section_env_prefix, ''):
                 v for k, v in os.environ.items() if k.startswith(section_env_prefix)},
-            {k.replace(global_env_prefix, ''):
-                v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
+            # {k.replace(global_env_prefix, ''):
+            #     v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
         )
 
     def get(self, section, option, **kwargs):
