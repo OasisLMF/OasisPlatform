@@ -34,9 +34,9 @@ def read_log_config(config_parser):
 
 
 class Settings(ConfigParser):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, global_env=True, **kwargs):
         kwargs.setdefault('default_section', 'default')
-
+        self.global_env = global_env
         super(Settings, self).__init__(*args, **kwargs)
 
         ini_files = [os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'conf.ini')]
@@ -52,16 +52,21 @@ class Settings(ConfigParser):
 
     def _get_section_env_vars(self, section):
         section_env_prefix = 'OASIS_{}_'.format(self._section_to_env_prefix(section))
-        # global_env_prefix = 'OASIS_'
+
+        if self.global_env:
+            global_env_prefix = 'OASIS_'
+        else:
+            global_env_prefix = section_env_prefix
 
         return ChainMap(
             {k.replace(section_env_prefix, ''):
                 v for k, v in os.environ.items() if k.startswith(section_env_prefix)},
-            # {k.replace(global_env_prefix, ''):
-            #     v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
+            {k.replace(global_env_prefix, ''):
+                v for k, v in os.environ.items() if k.startswith(global_env_prefix)},
         )
 
-    def get(self, section, option, **kwargs):
+
+    def get(self, section, option, global_env=True, **kwargs):
         if not option:
             section_env_prefix = 'OASIS_{}_'.format(self._section_to_env_prefix(section))
             from_env = {
@@ -126,6 +131,7 @@ class Settings(ConfigParser):
 
 
 settings = Settings()
+settings_local = Settings(global_env=False) # only returns envs within a set section
 
 
 class SettingsPatcher(object):

@@ -25,7 +25,7 @@ from pathlib2 import Path
 
 from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v2 as celery_conf
-from ..conf.iniconf import settings
+from ..conf.iniconf import settings, settings_local
 from .celery_request_handler import WorkerLostRetry
 from .utils import (
     LoggingTaskContext,
@@ -55,7 +55,7 @@ FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallbac
 app = Celery(task_cls=WorkerLostRetry)
 app.config_from_object(celery_conf)
 filestore = get_filestore(settings)
-model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
+model_storage = get_filestore(settings_local, "worker.model_storage", raise_error=False)
 # print(app._conf)
 
 

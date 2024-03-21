@@ -23,7 +23,7 @@ from oasislmf.utils.status import OASIS_TASK_STATUS
 
 from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v1 as celery_conf
-from ..conf.iniconf import settings
+from ..conf.iniconf import settings, settings_local
 
 from .utils import (
     LoggingTaskContext,
@@ -47,7 +47,7 @@ TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/t
 app = Celery()
 app.config_from_object(celery_conf)
 filestore = get_filestore(settings)
-model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
+model_storage = get_filestore(settings_local, "worker.model_storage", raise_error=False)
 
 logger = get_task_logger(__name__)
 logger.info("Started worker")
@@ -322,7 +322,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         }
 
         # Set model storage
-        model_storage = get_filestore(settings, "worker.model_storage", raise_error=False)
         if model_storage:
             model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')
             with open(model_storage_settings_file, "w") as f:
