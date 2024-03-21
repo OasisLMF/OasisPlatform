@@ -877,12 +877,12 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
         # build the config for the file store storage
         if model_storage:
             config = model_storage.to_config()
-            config["options"]["root_dir"] = os.path.join(
-                config["options"].get("root_dir", ""),
-                settings.get("worker", "MODEL_SUPPLIER_ID"),
-                settings.get("worker", "MODEL_ID"),
-                settings.get("worker", "MODEL_VERSION_ID"),
-            )
+            #config["options"]["root_dir"] = os.path.join(
+            #    config["options"].get("root_dir", ""),
+            #    settings.get("worker", "MODEL_SUPPLIER_ID"),
+            #    settings.get("worker", "MODEL_ID"),
+            #    settings.get("worker", "MODEL_VERSION_ID"),
+            #)
             json.dump(config, f)
             f.flush()
 
