@@ -332,7 +332,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
                 #    settings.get("worker", "MODEL_ID"),
                 #    settings.get("worker", "MODEL_VERSION_ID"),
                 #)
-                json.dump(model_storage.to_config(), f)
+                json.dump(model_storage.to_config(), f, indent=4)
             task_params['model_storage_json'] = model_storage_settings_file
 
         if complex_data_files:
@@ -344,6 +344,12 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         params = paths_to_absolute_paths(run_params, config_path)
         if debug_worker:
             log_params(params, kwargs)
+
+
+        # Store run settings
+        run_params_file = os.path.join(run_dir, 'oasislmf.json')
+        with open(run_params_file, "w") as f:
+            json.dump(params, f, indent=4)
 
         # Run generate losses
         try:
@@ -457,6 +463,11 @@ def generate_input(self,
                 'exposure_profile',
                 'lookup_config',
             ])
+
+        # Store run settings
+        run_params_file = os.path.join(oasis_files_dir, 'oasislmf.json')
+        with open(run_params_file, "w") as f:
+            json.dump(params, f, indent=4)
 
         try:
             OasisManager().generate_oasis_files(**params)
