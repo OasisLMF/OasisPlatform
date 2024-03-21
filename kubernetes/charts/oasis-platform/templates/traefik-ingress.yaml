@@ -25,6 +25,12 @@ data:
     namespace = ["default", "kube-system"]
     [providers.kubernetesCRD.ingressClass = "traefik"]
 
+    [certificatesResolvers.myresolver.acme]
+      email = "rodney.effah@oasislmf.org"
+      storage = "/data/acme/json"
+      [certificatesResolvers.myresolver.acme.dnsChallenge]
+        provider = "dnsProvider"
+
 ---
 
 apiVersion: v1
@@ -88,10 +94,10 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      apps: traefik-inngress-controller
+      app: traefik-ingress-controller
   template:
     metadata:
-      name: traefik-inngress-controller
+      name: traefik-ingress-controller
       labels:
         app: traefik-ingress-controller
     spec:
@@ -108,6 +114,9 @@ spec:
         - --ping=true
         - --providers.kubernertesCRD.namespaces=default,kube-system
         - --providers.kubernertesCRD.ingressClass=traefik
+        # - --certificatesresolvers.myresolver.acme.email=rodney.effah@oasislmf.org
+        # - --certificatesresolvers.myresolver.acme.storage=/data/acme.json
+        # - --certificatesresolvers.myresolver.acme.dnschallenge.provider=dnsProvider
         ports:
         - containerPort: 80
         - containerPort: 443
@@ -131,11 +140,29 @@ spec:
     app: traefik-ingress-controller
   ports:
   - protocol: TCP
-    port: 80
+    port: 8080
     targetPort: 80
-    name:
-  - protocol: TCP
-    port: 443
-    targetPort: 443
-    name:
+    name: oasis-ui
+  # - protocol: TCP
+  #   port: 443
+  #   targetPort: 443
+  #   name:
   type: LoadBalancer
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik-ingress-service
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: oasis-ui
+            port:
+              number: 8080
