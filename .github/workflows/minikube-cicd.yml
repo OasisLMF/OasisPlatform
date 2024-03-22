@@ -1,4 +1,4 @@
-name: Deploy Piwind Model
+name: Minikube CI/CD Test
 
 on:
   - pull_request
@@ -10,6 +10,14 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+
+      - name: Checkout Platform
+        uses: actions/checkout@v3
+        with:
+          path: ${{ env.dir_platform }}
+          repository: Oasislmf/OasisPlatform
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
       - name: Start minikube
         id: minikube
@@ -32,17 +40,6 @@ jobs:
           set +e
           echo -n "verifying images:"
           docker images
-
-      # - name: Deploy to minikube
-      #   run: 
-      #     kubectl apply -f deploy-to-minikube.yml
-
-      # - name: Test service URLs
-      #   run: |
-      #     minikube service list
-      #     minikube service <example> --url
-      #     echo "---opening the service---"
-      #     curl $(minikube service <example> --url)
 
       - name: Upload Piwind Data
         run: ./kubernetes/scripts/k8s/upload_piwind_model_data.sh $OASIS_MODEL_DATA_DIR
