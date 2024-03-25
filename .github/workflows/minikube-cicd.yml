@@ -65,5 +65,3 @@ jobs:
         run: |
           # Check if any pods are failing
           kubectl get pods
-
----
