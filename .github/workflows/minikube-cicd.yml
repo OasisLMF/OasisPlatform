@@ -1,4 +1,4 @@
-name: Minikube CI/CD Test
+name: Minikube CICD Test
 
 on:
   - pull_request
