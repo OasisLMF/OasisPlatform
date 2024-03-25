@@ -3,6 +3,9 @@ name: Minikube CICD Test
 on:
   - pull_request
 
+env:
+  dir_piwind: ${{ github.workspace }}/piwind
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -11,13 +14,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # - name: Checkout Platform
-      #   uses: actions/checkout@v3
-      #   with:
-      #     path: ${{ env.dir_platform }}
-      #     repository: Oasislmf/OasisPlatform
-      #     ref: ${{ github.ref_name }}
-      #     fetch-depth: 0
+      - name: Checkout Platform
+        uses: actions/checkout@v3
+        with:
+          path: ${{ env.dir_piwind }}
+          repository: Oasislmf/OasisPiwind
+          ref: main
+          fetch-depth: 0
 
       - name: Start minikube
         id: minikube
@@ -42,7 +45,7 @@ jobs:
           docker images
 
       - name: Upload Piwind Data
-        run: ./kubernetes/scripts/k8s/upload_piwind_model_data.sh $OASIS_MODEL_DATA_DIR
+        run: ./kubernetes/scripts/k8s/upload_piwind_model_data.sh ${{ env.dir_piwind }}
 
       - name: Update and Apply Helm Charts
         run: |
