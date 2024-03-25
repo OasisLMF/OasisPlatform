@@ -11,13 +11,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Checkout Platform
-        uses: actions/checkout@v3
-        with:
-          path: ${{ env.dir_platform }}
-          repository: Oasislmf/OasisPlatform
-          ref: ${{ github.ref_name }}
-          fetch-depth: 0
+      # - name: Checkout Platform
+      #   uses: actions/checkout@v3
+      #   with:
+      #     path: ${{ env.dir_platform }}
+      #     repository: Oasislmf/OasisPlatform
+      #     ref: ${{ github.ref_name }}
+      #     fetch-depth: 0
 
       - name: Start minikube
         id: minikube
