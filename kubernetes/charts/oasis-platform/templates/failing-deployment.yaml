@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fialing-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLables:
+      app: failing-app
+  template:
+    metadata:
+      labels:
+        apps: failing-app
+    spec:
+      containers:
+      - name: failing-container
+        image: non-existent-image:latest #This image does not exist
