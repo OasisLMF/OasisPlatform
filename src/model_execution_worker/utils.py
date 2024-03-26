@@ -104,7 +104,7 @@ class TemporaryDir(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         if not self.persist and os.path.isdir(self.name):
-            shutil.rmtree(self.name)
+            shutil.rmtree(self.name, ignore_errors=True)
 
 
 def get_oasislmf_config_path(settings, model_id=None):
