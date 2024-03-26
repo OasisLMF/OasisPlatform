@@ -691,7 +691,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     # clear out user-data,
     # these files should not be sorted in the generated inputs tar
     if params['user_data_dir'] is not None:
-        shutil.rmtree(params['user_data_dir'])
+        shutil.rmtree(params['user_data_dir'], ignore_errors=True)
 
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),

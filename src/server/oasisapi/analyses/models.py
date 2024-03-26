@@ -575,8 +575,9 @@ class Analysis(TimeStampedModel):
         self.save()
 
     def cancel_subtasks(self):
-        cancel_tasks = self.v2_cancel_subtasks_signature
-        task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
+        if self.run_mode == self.run_mode_choices.V2:
+            cancel_tasks = self.v2_cancel_subtasks_signature
+            task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
         valid_choices = [
