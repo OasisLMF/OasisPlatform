@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       labels:
-        apps: failing-app
+        app: failing-app
     spec:
       containers:
       - name: failing-container
