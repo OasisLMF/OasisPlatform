@@ -1,6 +1,17 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.2`_
+ ---------
+* [#993, #971, #784, #664, #798](https://github.com/OasisLMF/OasisPlatform/pull/994) - Logging fixes for workers 
+* [#995](https://github.com/OasisLMF/OasisPlatform/pull/996) - List analyses serializer returning Portfolio does not exist error 
+* [#1004](https://github.com/OasisLMF/OasisPlatform/pull/1004) - Fixes for task Cancellation Handling 
+* [#1005](https://github.com/OasisLMF/OasisPlatform/pull/1005) - Remove DB migration env on websocket
+* [#979](https://github.com/OasisLMF/OasisPlatform/pull/979) - Release 2.3.1
+* [#989](https://github.com/OasisLMF/OasisPlatform/pull/990) - Calling `queue` or `queue-status` invokes django channels from HTTP server
+* [#977](https://github.com/OasisLMF/OasisPlatform/pull/991) - Intermittent boto3 client error when sending json settings to S3 store   
+.. _`2.3.2`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.1...2.3.2
+
 `2.3.1`_
  ---------
 * [#623, #797, #967](https://github.com/OasisLMF/OasisPlatform/pull/975) - Fix OOM worker retires infinite loop
