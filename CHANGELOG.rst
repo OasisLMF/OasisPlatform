@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.9`_
+ ---------
+* [#993, #971, #784, #664, #798](https://github.com/OasisLMF/OasisPlatform/pull/994) - Logging fixes for workers 
+* [#798](https://github.com/OasisLMF/OasisPlatform/pull/998) - Lost analyses logs when a task fails from exit code - v1 workers
+* [#1004](https://github.com/OasisLMF/OasisPlatform/pull/1004) - Fixes for task Cancellation Handling 
+* [#984](https://github.com/OasisLMF/OasisPlatform/pull/984) - Release 1.27.8
+* [#988](https://github.com/OasisLMF/OasisPlatform/pull/988) - Fixed CVE issues 1.27.8
+.. _`1.27.9`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.8...1.27.9
+
 .. _`1.27.8`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.7...1.27.8
 
 .. _`1.27.7`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.6...1.27.7
