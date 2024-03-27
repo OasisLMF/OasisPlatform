@@ -5,10 +5,12 @@ on:
     branches:
       - main-platform1
       - stable**
+      - release**
   pull_request:
     branches:
       - main-platform1
       - stable**
+      - release**
   workflow_dispatch:
     inputs:
       last_release:
@@ -44,8 +46,8 @@ jobs:
       docker_push: true
       ignore_unfixed: true
       cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
-      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
+      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/1.28.x' || inputs.oasislmf_branch }}
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/3.1.x' || inputs.ods_branch }}
 
   setup:
     runs-on: ubuntu-latest
@@ -101,18 +103,10 @@ jobs:
       - name: Select PiWind branch
         id: piwind
         run: |
-          # Select matching base branch on piwind
-          if [[ "${{ github.event_name }}" = "pull_request" ]]; then
-            BRANCH=${{ github.base_ref }}
-          elif [[ "${{ github.event_name }}" = "push" ]]; then
-            BRANCH=${{ github.ref_name }}
+          if [[ -z "${{ inputs.piwind_branch }}" ]]; then
+            BRANCH='stable/1.28.x'
           else
             BRANCH=${{ inputs.piwind_branch }}
-          fi
-
-          #override 'main-platform1' -> 'main'
-          if [[ "$BRANCH" = 'main-platform1' ]]; then
-             BRANCH=main
           fi
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
@@ -151,7 +145,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      piwind_branch: ${{ needs.setup.outputs.release_tag }}
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
@@ -159,7 +153,6 @@ jobs:
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: "_worker-${{ needs.setup.outputs.release_tag }}"
-
 
   stable_compatibility_15:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_15 }})
