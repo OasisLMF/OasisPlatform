@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.7`_
+ ---------
+* [#993, #971, #784, #664, #798](https://github.com/OasisLMF/OasisPlatform/pull/994) - Logging fixes for workers 
+* [#798](https://github.com/OasisLMF/OasisPlatform/pull/997) - Lost analyses logs when a task fails from exit code - v1 workers
+* [#965](https://github.com/OasisLMF/OasisPlatform/pull/965) - Release 1.28.6
+* [#1004](https://github.com/OasisLMF/OasisPlatform/pull/1004) - Fixes for task Cancellation Handling 
+* [#987](https://github.com/OasisLMF/OasisPlatform/pull/987) - Fixed CVE issues 1.28.8
+.. _`1.28.7`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.6...1.28.7
+
 `1.28.6`_
  ---------
 * [#962](https://github.com/OasisLMF/OasisPlatform/pull/962) - Remove pip from 2nd stage server build
