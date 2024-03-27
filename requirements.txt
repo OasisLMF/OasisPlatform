@@ -198,7 +198,7 @@ drf-nested-routers==0.93.4
     # via -r ./requirements-server.in
 drf-yasg==1.21.5
     # via -r ./requirements-server.in
-exceptiongroup==1.1.1
+exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
@@ -289,6 +289,8 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.3.0
     # via celery
+lark==1.1.9
+    # via ods-tools
 llvmlite==0.41.1
     # via numba
 markdown==3.4.3
@@ -315,13 +317,15 @@ mysqlclient==2.1.1
     # via -r ./requirements-server.in
 natsort==8.3.1
     # via -r ./requirements-worker.in
+networkx==3.1
+    # via ods-tools
 numba==0.58.0
     # via
     #   oasislmf
     #   ods-tools
 numexpr==2.8.4
     # via oasislmf
-numpy==1.22.4
+numpy==1.25.2
     # via
     #   fastparquet
     #   numba
@@ -336,9 +340,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.1
+oasislmf[extra]==2.3.2
     # via -r ./requirements-worker.in
-ods-tools==3.2.1
+ods-tools==3.2.2
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -456,6 +460,8 @@ pytz==2023.3
     #   drf-yasg
     #   oasislmf
     #   pandas
+pyyaml==6.0.1
+    # via ods-tools
 redis==4.5.4
     # via
     #   -r ./requirements-server.in
@@ -475,7 +481,7 @@ rtree==1.0.1
     # via oasislmf
 ruamel-yaml==0.17.21
     # via drf-yasg
-ruamel-yaml-clib==0.2.7
+ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 s3transfer==0.6.0
     # via boto3

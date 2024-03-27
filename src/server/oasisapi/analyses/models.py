@@ -1,4 +1,5 @@
 from __future__ import absolute_import, print_function
+import logging
 
 from celery.result import AsyncResult
 from django.conf import settings as django_settings
@@ -308,7 +309,13 @@ class Analysis(TimeStampedModel):
 
     def get_groups(self):
         groups = []
-        portfolio_groups = self.portfolio.groups.all()
+        try:
+            portfolio_groups = self.portfolio.groups.all()
+        except Portfolio.DoesNotExist as e:
+            portfolio_groups = []
+            logger = logging.getLogger(__name__)
+            logger.exception(f"Analyses ID: {self.id} portfolio not found, {e}")
+
         for group in portfolio_groups:
             groups.append(group.name)
         return groups
@@ -568,8 +575,9 @@ class Analysis(TimeStampedModel):
         self.save()
 
     def cancel_subtasks(self):
-        cancel_tasks = self.v2_cancel_subtasks_signature
-        task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
+        if self.run_mode == self.run_mode_choices.V2:
+            cancel_tasks = self.v2_cancel_subtasks_signature
+            task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
         valid_choices = [

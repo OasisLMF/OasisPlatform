@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-      - stable**  
+      - stable**
   workflow_dispatch:
     inputs:
       last_release:
@@ -161,9 +161,9 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v1'
-      debug_mode: 1
+      debug_mode: 0
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
-      storage_suffix: '-all-checks'
+      storage_suffix: '-all-checks-v1'
 
   all_checks_v2:
     name: V2 all checks
@@ -177,9 +177,9 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v2'
-      debug_mode: 1
+      debug_mode: 0
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
-      storage_suffix: '-all-checks'
+      storage_suffix: '-all-checks-v2'
 
   storage_s3_v1:
     name: V1 Storage Compatibility (S3)
@@ -195,7 +195,7 @@ jobs:
       worker_api_ver: 'v1'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: '_s3'
+      storage_suffix: '_s3-v1'
 
   storage_s3_v2:
     name: V2 Storage Compatibility (S3)
@@ -211,7 +211,7 @@ jobs:
       worker_api_ver: 'v2'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: '_s3'
+      storage_suffix: '_s3-v2'
 
   worker_debian:
     name: Worker Debian
