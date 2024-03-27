@@ -1,9 +1,6 @@
 __all__ = [
-    'StorageLinkSerializer'
-    'LocFileSerializer',
-    'AccFileSerializer',
-    'ReinsInfoFileSerializer',
-    'ReinsScopeFileSerializer',
+    'StorageLinkSerializer',
+    'InputFileSerializer',
     'AnalysisSettingsSerializer',
     'ModelParametersSerializer',
     'GroupNameSerializer',
@@ -67,46 +64,13 @@ class StorageLinkSerializer(serializers.Serializer):
         raise NotImplementedError()
 
 
-class LocFileSerializer(serializers.Serializer):
+class InputFileSerializer(serializers.Serializer):
     uri = serializers.URLField()
     name = serializers.CharField()
     stored = serializers.CharField()
-
-    def create(self, validated_data):
-        raise NotImplementedError()
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError()
-
-
-class AccFileSerializer(serializers.Serializer):
-    uri = serializers.URLField()
-    name = serializers.CharField()
-    stored = serializers.CharField()
-
-    def create(self, validated_data):
-        raise NotImplementedError()
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError()
-
-
-class ReinsInfoFileSerializer(serializers.Serializer):
-    uri = serializers.URLField()
-    name = serializers.CharField()
-    stored = serializers.CharField()
-
-    def create(self, validated_data):
-        raise NotImplementedError()
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError()
-
-
-class ReinsScopeFileSerializer(serializers.Serializer):
-    uri = serializers.URLField()
-    name = serializers.CharField()
-    stored = serializers.CharField()
+    converted_uri = serializers.URLField()
+    converted_stored = serializers.CharField()
+    conversion_state = serializers.CharField()
 
     def create(self, validated_data):
         raise NotImplementedError()

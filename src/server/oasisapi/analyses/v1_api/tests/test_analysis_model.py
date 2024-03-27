@@ -11,7 +11,7 @@ from mock import patch, PropertyMock, Mock
 from rest_framework.exceptions import ValidationError
 
 from src.server.oasisapi.portfolios.v1_api.tests.fakes import fake_portfolio
-from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.auth.tests.fakes import fake_user
 from ...models import Analysis
 from ..tasks import record_run_analysis_result, record_generate_input_result

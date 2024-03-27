@@ -2,13 +2,17 @@ import json
 import io
 from tempfile import TemporaryFile
 
+from django.conf import settings
 from django.core.files import File
 from django.http import StreamingHttpResponse, Http404
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
-from .models import RelatedFile
+from oasis_data_manager.df_reader.config import get_df_reader
+from oasis_data_manager.df_reader.exceptions import InvalidSQLException
+from ..models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
-from ..permissions.group_auth import verify_user_is_in_obj_groups
+from ...permissions.group_auth import verify_user_is_in_obj_groups
 
 from ods_tools.oed.exposure import OedExposure
 
@@ -41,14 +45,23 @@ def _handle_get_related_file(parent, field, request):
     if not f:
         raise Http404()
 
-    verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to delete this file')
+    verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to read this file')
     file_format = request.GET.get('file_format', None)
-    download_name = f.filename if f.filename else f.file.name
+
+    if 'converted' in request.GET:
+        if not (f.converted_file and f.conversion_state == RelatedFile.ConversionState.DONE):
+            raise Http404()
+
+        download_name = f.converted_filename if f.converted_filename else f.converted_file.name
+        file_obj = f.converted_file
+    else:
+        download_name = f.filename if f.filename else f.file.name
+        file_obj = f.file
 
     # Parquet format requested and data stored as csv
     if file_format == 'parquet' and f.content_type == 'text/csv':
         exposure = OedExposure(**{
-            EXPOSURE_ARGS[field]: f.file,
+            EXPOSURE_ARGS[field]: file_obj,
         })
         output_buffer = io.BytesIO()
         exposure_data = getattr(exposure, EXPOSURE_ARGS[field])
@@ -62,7 +75,7 @@ def _handle_get_related_file(parent, field, request):
     # CSV format requested and data stored as Parquet
     if file_format == 'csv' and f.content_type == 'application/octet-stream':
         exposure = OedExposure(**{
-            EXPOSURE_ARGS[field]: f.file,
+            EXPOSURE_ARGS[field]: file_obj,
         })
         output_buffer = io.BytesIO()
         exposure_data = getattr(exposure, EXPOSURE_ARGS[field])
@@ -74,7 +87,7 @@ def _handle_get_related_file(parent, field, request):
         return response
 
     # Original Fallback method - Reutrn data 'as is'
-    response = StreamingHttpResponse(_get_chunked_content(f.file), content_type=f.content_type)
+    response = StreamingHttpResponse(_get_chunked_content(file_obj), content_type=f.content_type)
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(download_name)
     return response
 
@@ -165,3 +178,41 @@ def handle_json_data(parent, field, request, serializer):
         return _json_write_to_file(parent, field, request, serializer)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field, request)
+
+
+def handle_related_file_sql(parent, field, request, sql, m2m_file_pk=None):
+    requested_format = request.GET.get('file_format', None)
+    f = getattr(parent, field)
+
+    if m2m_file_pk:
+        try:
+            f = f.get(pk=m2m_file_pk)
+        except RelatedFile.DoesNotExist:
+            raise Http404
+
+    download_name = f.filename if f.filename else f.file.name
+
+    reader = get_df_reader({'filepath': f.file.path, 'engine': settings.DEFAULT_READER_ENGINE})
+
+    try:
+        df = reader.sql(sql).as_pandas()
+    except InvalidSQLException:
+        raise ValidationError('Invalid SQL provided.')
+
+    output_buffer = io.BytesIO()
+
+    if requested_format == 'parquet':
+        df.to_parquet(output_buffer, index=False)
+        content_type = 'application/octet-stream'
+    elif requested_format == 'json':
+        df.to_json(output_buffer, orient='table', index=False)
+        content_type = 'application/json'
+    else:
+        df.to_csv(output_buffer, index=False)
+        content_type = 'text/csv'
+
+    output_buffer.seek(0)
+    response = StreamingHttpResponse(output_buffer, content_type=content_type)
+    response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, f'.{requested_format}')
+
+    return response

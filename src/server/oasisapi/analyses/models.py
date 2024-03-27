@@ -181,6 +181,7 @@ class Analysis(TimeStampedModel):
     input_generation_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL,
                                                         blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
     output_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='output_file_analyses')
+    raw_output_files = models.ManyToManyField(RelatedFile, blank=True, related_name='raw_output_files_analyses')
     run_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True,
                                            default=None, related_name='run_traceback_file_analyses')
     run_log_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True,
@@ -278,6 +279,14 @@ class Analysis(TimeStampedModel):
     def get_absolute_summary_levels_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}analysis-summary-levels-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
+
+    def get_absolute_output_file_list_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-output-file-list', kwargs={'pk': self.pk}, request=request)
+
+    def get_absolute_output_file_sql_url(self, file_pk, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-output-file-sql', kwargs={'pk': self.pk, "file_pk": file_pk}, request=request)
 
     def get_absolute_input_generation_traceback_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
@@ -740,7 +749,7 @@ class Analysis(TimeStampedModel):
     def copy(self):
         new_instance = self
         new_instance.pk = None
-        new_instance.name = '{} - Copy'.format(new_instance.name)
+        new_instance.name = '{} - Copy'.format(new_instance.name[:248])
         new_instance.run_task_id = ''
         new_instance.generate_inputs_task_id = ''
         new_instance.status = self.status_choices.NEW

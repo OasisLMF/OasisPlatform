@@ -38,7 +38,7 @@ jobs:
         python-version: '3.10'
 
     - name: Install piptools
-      run: pip install pip-tools
+      run: pip install pip-tools setuptools-rust
 
     - name: Update Requirements files
       run: |

@@ -19,7 +19,7 @@ from .fakes import fake_data_file
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
 settings.load_profile("ci")
-NAMESPACE = 'v2-files'
+NAMESPACE = 'v2-data-files'
 
 
 class ComplexModelFilesApi(WebTestMixin, TestCase):

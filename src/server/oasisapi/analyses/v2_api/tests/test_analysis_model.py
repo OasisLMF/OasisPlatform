@@ -17,7 +17,7 @@ from unittest.mock import ANY, MagicMock
 
 from src.conf import iniconf
 from src.server.oasisapi.portfolios.v2_api.tests.fakes import fake_portfolio
-from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.auth.tests.fakes import fake_user
 # from ..models import AnalysisTaskStatus
 from ...models import Analysis

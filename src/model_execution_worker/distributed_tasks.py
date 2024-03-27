@@ -5,10 +5,12 @@ import json
 import logging
 import os
 import pathlib
+import tempfile
 import shutil
 from datetime import datetime
 
 import filelock
+import numpy as np
 import pandas as pd
 import numpy as np
 from celery import Celery, signature
@@ -16,17 +18,14 @@ from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
 from oasislmf.manager import OasisManager
-from oasislmf.model_preparation.lookup import OasisLookupFactory
+from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
-from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
+from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v2 as celery_conf
-from ..conf.iniconf import settings
-from .backends.aws_storage import AwsObjectStore
-from .backends.azure_storage import AzureObjectStore
-from .storage_manager import BaseStorageConnector
+from ..conf.iniconf import settings, settings_local
 from .celery_request_handler import WorkerLostRetry
 from .utils import (
     LoggingTaskContext,
@@ -55,6 +54,8 @@ FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallbac
 
 app = Celery(task_cls=WorkerLostRetry)
 app.config_from_object(celery_conf)
+filestore = get_filestore(settings)
+model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 # print(app._conf)
 
 
@@ -64,17 +65,6 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
-
-# Set storage manager
-selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
-if selected_storage in ['local-fs', 'shared-fs']:
-    filestore = BaseStorageConnector(settings)
-elif selected_storage in ['aws-s3', 'aws', 's3']:
-    filestore = AwsObjectStore(settings)
-elif selected_storage in ['azure']:
-    filestore = AzureObjectStore(settings)
-else:
-    raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
 
 
 def notify_api_status(analysis_pk, task_status):
@@ -176,6 +166,7 @@ def revoked_handler(*args, **kwargs):
 
 @worker_ready.connect
 def register_worker(sender, **k):
+
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
@@ -503,6 +494,7 @@ def pre_analysis_hook(self,
                       slug=None,
                       **kwargs
                       ):
+
     if params.get('exposure_pre_analysis_module'):
         with TemporaryDir() as hook_target_dir:
             params['oasis_files_dir'] = hook_target_dir
@@ -544,6 +536,7 @@ def prepare_keys_file_chunk(
     slug=None,
     **kwargs
 ):
+
     with TemporaryDir() as chunk_target_dir:
         chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx+1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
@@ -598,6 +591,7 @@ def collect_keys(
     slug=None,
     **kwargs
 ):
+
     # Setup return params
     chunk_params = {**params[0]}
     storage_subdir = chunk_params['storage_subdir']
@@ -706,7 +700,6 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
 @app.task(bind=True, name='cleanup_input_generation', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, **kwargs):
-
     # check for pre-analysis files and remove
 
     if not settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False):
@@ -880,20 +873,35 @@ def prepare_losses_generation_params(
 @app.task(bind=True, name='prepare_losses_generation_directory', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def prepare_losses_generation_directory(self, params, analysis_id=None, slug=None, **kwargs):
-    params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
-    params['run_location'] = filestore.put(
-        params['model_run_dir'],
-        filename='run_directory.tar.gz',
-        subdir=params['storage_subdir']
-    )
-    params['log_location'] = filestore.put(kwargs.get('log_filename'))
-    return params
+    with tempfile.NamedTemporaryFile(mode="w+") as f:
+        # build the config for the file store storage
+        if model_storage:
+            config = model_storage.to_config()
+            #config["options"]["root_dir"] = os.path.join(
+            #    config["options"].get("root_dir", ""),
+            #    settings.get("worker", "MODEL_SUPPLIER_ID"),
+            #    settings.get("worker", "MODEL_ID"),
+            #    settings.get("worker", "MODEL_VERSION_ID"),
+            #)
+            json.dump(config, f)
+            f.flush()
+
+        params['analysis_settings'] = OasisManager().generate_losses_dir(**{
+            **params,
+            "model_storage_json": f.name if model_storage else None,
+        })
+        params['run_location'] = filestore.put(
+            params['model_run_dir'],
+            filename='run_directory.tar.gz',
+            subdir=params['storage_subdir']
+        )
+        params['log_location'] = filestore.put(kwargs.get('log_filename'))
+        return params
 
 
 @app.task(bind=True, name='generate_losses_chunk', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None, **kwargs):
-
     if num_chunks == 1:
         # Run multiple ktools pipes (based on cpu cores)
         current_chunk_id = None
@@ -911,6 +919,18 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         'max_process_id': max_chunk_id,
         'ktools_fifo_relative': True,
         'ktools_work_dir': os.path.join(params['model_run_dir'], work_dir),
+        'df_engine': json.dumps({
+            "path": settings.get(
+                'worker',
+                'default_reader_engine',
+                fallback='oasis_data_manager.df_reader.reader.OasisPandasReader'
+            ),
+            "options": settings.get(
+                'worker.default_reader_engine_options',
+                None,
+                fallback={}
+            ),
+        }),
         'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
     }
     Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
@@ -960,11 +980,19 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
             filestore.extract(p['chunk_log_location'], d, p['storage_subdir'])
             merge_dirs(d, abs_log_dir)
 
+    output_dir = os.path.join(res['model_run_dir'], 'output')
+    logs_dir = os.path.join(res['model_run_dir'], 'log')
+    raw_output_files = list(filter(lambda f: f.endswith('.csv') or f.endswith('.parquet'), os.listdir(output_dir)))
+
     return {
         **res,
-        'output_location': filestore.put(os.path.join(res['model_run_dir'], 'output'), arcname='output'),
-        'run_logs': filestore.put(os.path.join(res['model_run_dir'], 'log'), arcname='logs'),
+        'output_location': filestore.put(output_dir, arcname='output'),
+        'run_logs': filestore.put(logs_dir, arcname='logs'),
         'log_location': filestore.put(kwargs.get('log_filename')),
+        'raw_output_locations': {
+            r: filestore.put(os.path.join(output_dir, r), arcname=f'output_{r}')
+            for r in raw_output_files
+        }
     }
 
 

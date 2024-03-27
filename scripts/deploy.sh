@@ -34,7 +34,32 @@ if [[ $(docker volume ls | grep OasisData -c) -gt 1 ]]; then
     docker volume ls | grep OasisData | awk 'BEGIN { FS = "[ \t\n]+" }{ print $2 }' | xargs -r docker volume rm
 fi
 
+
+# Install Oasis-Data-Manager from git branch (Optional) 'docker build --build-arg odm_branch=develop'
+# Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
+# Install MDK from git branch (Optional) 'docker build --build-arg oasislmf_branch=develop'
+
+ODM_BRANCH='fixes/platform-testing'
+ODS_BRANCH=''
+LMF_BRANCH='main'
+
+BUILD_ARGS_WORKER=''
+BUILD_ARGS_SERVER=''
+if [ ! -z $ODM_BRANCH ]; then
+    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg odm_branch=${ODM_BRANCH}"
+    BUILD_ARGS_SERVER="${BUILD_ARGS_SERVER} --build-arg odm_branch=${ODM_BRANCH}"
+fi
+
+if [ ! -z $ODS_BRANCH ]; then
+    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg ods_tools_branch=${ODS_BRANCH}"
+    BUILD_ARGS_SERVER="${BUILD_ARGS_SERVER} --build-arg ods_tools_branch=${ODS_BRANCH}"
+fi
+
+if [ ! -z $LMF_BRANCH ]; then
+    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg oasislmf_branch=${LMF_BRANCH}"
+fi 
+
 set -e
-docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
-docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
+docker build -f Dockerfile.api_server $BUILD_ARGS_SERVER -t coreoasis/api_server:dev .
+docker build -f Dockerfile.model_worker $BUILD_ARGS_WORKER -t coreoasis/model_worker:dev .
 docker-compose up -d

@@ -15,7 +15,7 @@ from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 from ods_tools.oed.exposure import OedExposure
 
-from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.analysis_models.v1_api.tests.fakes import fake_analysis_model
 from src.server.oasisapi.analyses.models import Analysis
 from src.server.oasisapi.auth.tests.fakes import fake_user

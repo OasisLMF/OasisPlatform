@@ -23,8 +23,8 @@ from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisSto
 from ...analysis_models.models import AnalysisModel
 from ...data_files.v1_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
-from ...files.views import handle_related_file, handle_json_data
-from ...files.serializers import RelatedFileSerializer
+from ...files.v1_api.views import handle_related_file, handle_json_data
+from ...files.v1_api.serializers import RelatedFileSerializer
 from ...schemas.custom_swagger import FILE_RESPONSE
 from ...schemas.serializers import AnalysisSettingsSerializer
 
@@ -185,7 +185,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ['create', 'options', 'update', 'partial_update', 'retrieve']:
-            return super(AnalysisViewSet, self).get_serializer_class()
+            return super().get_serializer_class()
         elif self.action in ['list']:
             return AnalysisListSerializer
         elif self.action == 'copy':
