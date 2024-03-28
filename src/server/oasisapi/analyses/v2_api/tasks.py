@@ -684,9 +684,7 @@ def handle_task_failure(
         from ..models import Analysis
 
         analysis = Analysis.objects.get(pk=analysis_id)
-        if analysis.status not in [analysis.status_choices.INPUTS_GENERATION_CANCELLED,
-                                   analysis.status_choices.RUN_CANCELLED]:
-            analysis.status = failure_status
+        analysis.status = failure_status
         analysis.task_finished = timezone.now()
 
         random_filename = '{}.txt'.format(uuid.uuid4().hex)
