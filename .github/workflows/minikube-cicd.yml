@@ -64,7 +64,7 @@ jobs:
 
       - name: Test Deployment Failure
         run: |
-          # Intentionally failiing the pods deployment for testing
+          ## Intentionally failiing the pods deployment for testing
           kubectl apply -f kubernetes/charts/oasis-platform/templates/failing-deployment.yaml
 
       
