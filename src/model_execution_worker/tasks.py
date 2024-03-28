@@ -18,7 +18,6 @@ from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 
 
-from oasislmf.manager import OasisManager
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -338,6 +337,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Run generate losses
         try:
+            from oasislmf.manager import OasisManager
             OasisManager().generate_oasis_losses(**params)
             returncode = 0
         except Exception as e:
@@ -450,6 +450,7 @@ def generate_input(self,
             ])
 
         try:
+            from oasislmf.manager import OasisManager
             OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:
