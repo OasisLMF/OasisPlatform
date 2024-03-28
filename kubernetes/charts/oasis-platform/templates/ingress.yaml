@@ -1,59 +1,59 @@
-{{ $name := printf "%s-oasis-ingress" .Release.Name | lower }}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ $name }}
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "X-Forwarded-For $http_x_forwarded_for";
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "86400"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "86400"
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-buffer-size: "64k"
-    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
-    {{- if eq .Values.ingress.tls.strategy "letsencrypt" }}
-    cert-manager.io/cluster-issuer: letsencrypt
-    {{- end }}
-spec:
-  {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") }}
-  tls:
-    - secretName: {{ .Values.ingress.tls.certificateSecret }}
-      hosts:
-        - {{ .Values.ingress.uiHostname }}
-  {{- else }}
-  tls: []
-  {{- end }}
-  rules:
-    - host: {{ .Values.ingress.uiHostname }}
+# {{ $name := printf "%s-oasis-ingress" .Release.Name | lower }}
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: {{ $name }}
+#   annotations:
+#     kubernetes.io/ingress.class: nginx
+#     nginx.ingress.kubernetes.io/configuration-snippet: |
+#       more_set_headers "X-Forwarded-For $http_x_forwarded_for";
+#     nginx.ingress.kubernetes.io/proxy-read-timeout: "86400"
+#     nginx.ingress.kubernetes.io/proxy-send-timeout: "86400"
+#     nginx.ingress.kubernetes.io/proxy-body-size: "0"
+#     nginx.ingress.kubernetes.io/proxy-buffer-size: "64k"
+#     nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+#     {{- if eq .Values.ingress.tls.strategy "letsencrypt" }}
+#     cert-manager.io/cluster-issuer: letsencrypt
+#     {{- end }}
+# spec:
+#   {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") }}
+#   tls:
+#     - secretName: {{ .Values.ingress.tls.certificateSecret }}
+#       hosts:
+#         - {{ .Values.ingress.uiHostname }}
+#   {{- else }}
+#   tls: []
+#   {{- end }}
+#   rules:
+#     - host: {{ .Values.ingress.uiHostname }}
 
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: oasis-ui
-                port:
-                  number: 8080
-          - path: /auth
-            pathType: Prefix
-            backend:
-              service:
-                name: keycloak
-                port:
-                  number: 8080
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: oasis-server
-                port:
-                  number: 8000
-          - path: /ws
-            pathType: Prefix
-            backend:
-              service:
-                name: oasis-websocket
-                port:
-                  number: 8001
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: oasis-ui
+#                 port:
+#                   number: 8080
+#           - path: /auth
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: keycloak
+#                 port:
+#                   number: 8080
+#           - path: /api
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: oasis-server
+#                 port:
+#                   number: 8000
+#           - path: /ws
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: oasis-websocket
+#                 port:
+#                   number: 8001

@@ -1,0 +1,75 @@
+name: Minikube CICD Test
+
+on:
+  - pull_request
+
+env:
+  dir_piwind: ${{ github.workspace }}/piwind
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Checkout Platform
+        uses: actions/checkout@v3
+        with:
+          path: ${{ env.dir_piwind }}
+          repository: Oasislmf/OasisPiwind
+          ref: main
+          fetch-depth: 0
+
+      - name: Start minikube
+        id: minikube
+        uses: medyagh/setup-minikube@master
+
+     
+      - name: Try the cluster
+        run: kubectl get pods -A
+
+      - name: Build Docker Image
+        run: |
+          set -e
+          export SHELL=/bin/bash
+          eval $(minikube -p minikube docker-env)
+          docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
+          docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
+          pushd kubernetes/worker-controller
+          docker build -t coreoasis/worker_controller:dev .
+          popd
+          set +e
+          echo -n "verifying images:"
+          docker images
+
+      - name: Upload Piwind Data
+        run: ./kubernetes/scripts/k8s/upload_piwind_model_data.sh ${{ env.dir_piwind }}
+
+      - name: Update and Apply Helm Charts
+        run: |
+          pushd kubernetes/charts
+          if ! helm status platform; then
+            helm install platform oasis-platform
+          else
+            helm upgrade platform oasis-platform
+          fi
+          if ! helm status models; then
+            helm install models oasis-models
+          else
+            helm upgrade models oasis-models
+          fi
+          popd
+
+      - name: Test Deployment Failure
+        run: |
+          # Intentionally failiing the pods deployment for testing
+          kubectl apply -f kubernetes/charts/oasis-platform/templates/failing-deployment.yaml
+
+      
+
+      - name: Check Pod Status
+        run: |
+          # Check if any pods are failing
+          kubectl get pods
