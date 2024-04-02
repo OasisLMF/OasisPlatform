@@ -11,3 +11,7 @@ dependencies:
   - name: ingress-nginx
     version: "4.0.6"
     repository: https://kubernetes.github.io/ingress-nginx
+
+maintainers:
+  - name: slashme101
+    email: slashme101@yahoo.com
