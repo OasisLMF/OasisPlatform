@@ -30,7 +30,7 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --target-branch feature/781-cicd_testing }}) 
+          changed=$(ct list-changed --target-branch feature/781-cicd_testing ) 
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi 
