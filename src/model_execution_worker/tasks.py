@@ -424,8 +424,7 @@ def generate_input(self,
             'lookup_complex_config_json': lookup_settings_file,
             'analysis_settings_json': lookup_settings_file,
             'model_settings_json': model_settings_file,
-            'verbose': debug_worker,
-            # 'lookup_multiprocessing': False,
+            'verbose': False,
         }
 
         if complex_data_files:
