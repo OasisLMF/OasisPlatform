@@ -7,7 +7,7 @@
 
 # Revert analysis_models
 python3 manage.py migrate analysis_models 0004_analysismodel_deleted
-python3 manage.py migrate analysis_models 0006_auto_20230724_1134  --fake
+python3 manage.py migrate analysis_models 0007_modelscalingoptions_worker_count_min  --fake
 
 # Revert analyses 
 python3 manage.py migrate analyses 0010_auto_20200224_1213
