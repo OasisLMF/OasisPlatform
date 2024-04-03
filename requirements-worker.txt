@@ -134,7 +134,7 @@ numba==0.58.0
     #   ods-tools
 numexpr==2.8.4
     # via oasislmf
-numpy==1.22.4
+numpy==1.25.2
     # via
     #   fastparquet
     #   numba
