@@ -826,7 +826,8 @@ def loss_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
-        log_level = 'DEBUG' if debug_worker else 'INFO'
+        # log_level = 'DEBUG' if debug_worker else 'INFO'
+        log_level = 'INFO'
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
             log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
             if isinstance(params, list):
