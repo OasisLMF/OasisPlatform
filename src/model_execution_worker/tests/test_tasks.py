@@ -112,7 +112,7 @@ class StartAnalysis(TestCase):
                 def fake_run_dir(*args, **kwargs):
                     yield run_dir
 
-                with patch('src.model_execution_worker.tasks.OasisManager', Mock(return_value=cmd_instance)) as cmd_mock, \
+                with patch('oasislmf.manager.OasisManager', Mock(return_value=cmd_instance)) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
                         patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
