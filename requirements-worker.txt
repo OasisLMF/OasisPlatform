@@ -159,7 +159,7 @@ packaging==23.0
     #   geopandas
     #   ods-tools
     #   pytest
-pandas==2.0.3
+pandas==2.1.4
     # via
     #   fastparquet
     #   geopandas
