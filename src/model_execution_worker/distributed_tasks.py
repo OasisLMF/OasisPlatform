@@ -488,7 +488,6 @@ def prepare_input_generation_params(
     params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params}, config_path)
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
-    params['verbose'] = debug_worker
     return params
 
 
@@ -865,7 +864,6 @@ def prepare_losses_generation_params(
     params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params}, config_path)
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
-    params['verbose'] = debug_worker
 
     # needed incase input_data is missing on another node
     input_tar_generate_and_run = run_params.get('input-location_generate-and-run')
