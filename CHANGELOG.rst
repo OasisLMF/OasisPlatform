@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.3`_
+ ---------
+* [#992](https://github.com/OasisLMF/OasisPlatform/pull/992) - Release 2.3.2
+* [#1018](https://github.com/OasisLMF/OasisPlatform/pull/1018) - Fix namespace issue when called from analysis serializer
+* [#1006](https://github.com/OasisLMF/OasisPlatform/pull/1007) - Migration Helper script needs fixing
+* [#1008](https://github.com/OasisLMF/OasisPlatform/pull/1015) - CI v1 worker test seems to get stuck at `6_case`
+.. _`2.3.3`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.2...2.3.3
+
 `2.3.2`_
  ---------
 * [#993, #971, #784, #664, #798](https://github.com/OasisLMF/OasisPlatform/pull/994) - Logging fixes for workers 

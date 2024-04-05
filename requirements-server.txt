@@ -203,7 +203,7 @@ networkx==3.1
     # via ods-tools
 numba==0.58.0
     # via ods-tools
-numpy==1.24.2
+numpy==1.25.2
     # via
     #   fastparquet
     #   numba
@@ -218,7 +218,7 @@ packaging==23.0
     #   drf-yasg
     #   fastparquet
     #   ods-tools
-pandas==2.0.3
+pandas==2.1.4
     # via
     #   -r requirements-server.in
     #   fastparquet

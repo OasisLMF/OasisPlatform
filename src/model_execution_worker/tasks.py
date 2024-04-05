@@ -18,7 +18,6 @@ from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 
 
-from oasislmf.manager import OasisManager
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -214,7 +213,8 @@ def V1_task_logger(fn):
         kwargs = {
             'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
         }
-        log_level = 'DEBUG' if debug_worker else 'INFO'
+        # log_level = 'DEBUG' if debug_worker else 'INFO'
+        log_level = 'INFO'
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
             logger.info(f'====== {fn.__name__} '.ljust(90, '='))
             return fn(self, analysis_pk, *args, **kwargs)
@@ -323,7 +323,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             'analysis_settings_json': analysis_settings_file,
             'model_settings_json': model_settings_file,
             'ktools_fifo_relative': True,
-            'verbose': debug_worker,
         }
 
         if complex_data_files:
@@ -338,6 +337,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Run generate losses
         try:
+            from oasislmf.manager import OasisManager
             OasisManager().generate_oasis_losses(**params)
             returncode = 0
         except Exception as e:
@@ -424,7 +424,6 @@ def generate_input(self,
             'lookup_complex_config_json': lookup_settings_file,
             'analysis_settings_json': lookup_settings_file,
             'model_settings_json': model_settings_file,
-            'verbose': debug_worker,
         }
 
         if complex_data_files:
@@ -450,6 +449,7 @@ def generate_input(self,
             ])
 
         try:
+            from oasislmf.manager import OasisManager
             OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:
