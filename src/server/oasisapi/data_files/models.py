@@ -42,11 +42,12 @@ class DataFile(TimeStampedModel):
         return 'DataFile_{}'.format(self.file)
 
     def _update_ns(self, request=None):
-        """ WORKAROUND - this is needed for when a copy request is issued
-                         from the portfolio view '/{ver}/portfolios/{id}/create_analysis/'
+        """ WORKAROUND
+        this is needed for when a list request is issued
+        from the analyses or analysis_model views '/{ver}/analyses/{id}/data_files/'
 
-                         The inncorrect namespace '{ver}-portfolios' is inherited from the
-                         original request. This needs to be replaced with '{ver}-analyses'
+        The inncorrect namespace '{ver}-analyses' is inherited from the
+        original request. This needs to be replaced with '{ver}-files'
         """
         if not request:
             return None
