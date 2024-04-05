@@ -41,6 +41,21 @@ class DataFile(TimeStampedModel):
     def __str__(self):
         return 'DataFile_{}'.format(self.file)
 
+    def _update_ns(self, request=None):
+        """ WORKAROUND
+        this is needed for when a list request is issued
+        from the analyses or analysis_model views '/{ver}/analyses/{id}/data_files/'
+
+        The inncorrect namespace '{ver}-analyses' is inherited from the
+        original request. This needs to be replaced with '{ver}-files'
+        """
+        if not request:
+            return None
+        ns_ver, ns_view = request.version.split('-')
+        if ns_view != 'files':
+            request.version = f'{ns_ver}-files'
+        return request
+
     def get_filename(self):
         if self.file:
             return self.file.filename
@@ -61,4 +76,4 @@ class DataFile(TimeStampedModel):
 
     def get_absolute_data_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}data-file-content', kwargs={'pk': self.pk}, request=request)
+        return reverse(f'{override_ns}data-file-content', kwargs={'pk': self.pk}, request=self._update_ns(request))
