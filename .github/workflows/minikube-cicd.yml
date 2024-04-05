@@ -30,14 +30,14 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --target-branch feature/781-cicd_testing ) 
+          changed=$(ct list-changed --target-branch ${{ github.ref }}) 
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi 
 
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct lint --target-branch £{{ github.event.repository.default-branch }}
+        run: ct lint --target-branch ${{ github.ref }}
 
       - name: Create kind cluster
         if: steps.list-changed.outputs.changed == 'true'
@@ -45,7 +45,7 @@ jobs:
 
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct install --target-branch ${{ github.event.repository.default_branch }}
+        run: ct install --target-branch ${{ github.ref }}
 
       - name: Checkout Platform
         uses: actions/checkout@v3
@@ -94,6 +94,11 @@ jobs:
             helm upgrade models oasis-models
           fi
           popd
+
+      - name: Helm Test
+        if: steps.list-changed.outputs.changed == 'true'
+        run: |
+            helm test <release-name>
 
       - name: Test Deployment Failure
         run: |
