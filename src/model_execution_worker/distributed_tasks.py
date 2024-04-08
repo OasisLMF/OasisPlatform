@@ -511,16 +511,25 @@ def pre_analysis_hook(self,
             pre_hook_output = OasisManager().exposure_pre_analysis(**params)
             files_modified = pre_hook_output.get('modified', {})
 
-            pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
-            pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
-            pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
-            pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
-
             # store updated files
+            pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
             params['pre_loc_file'] = filestore.put(pre_loc_fp, subdir=params['storage_subdir'])
-            params['pre_acc_file'] = filestore.put(pre_acc_fp, subdir=params['storage_subdir'])
-            params['pre_info_file'] = filestore.put(pre_info_fp, subdir=params['storage_subdir'])
-            params['pre_scope_file'] = filestore.put(pre_scope_fp, subdir=params['storage_subdir'])
+
+            if files_modified.get('account'):
+                pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
+                params['pre_acc_file'] = filestore.put(pre_acc_fp, subdir=params['storage_subdir'])
+
+            if files_modified.get('ri_info'):
+                pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
+                params['pre_info_file'] = filestore.put(pre_info_fp, subdir=params['storage_subdir'])
+
+            if files_modified.get('ri_scope'):
+                pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
+                params['pre_scope_file'] = filestore.put(pre_scope_fp, subdir=params['storage_subdir'])
+
+            # OED has been loaded and check in this step, disable check in file gen
+            # This is in case pre-exposure func has added non-standard cols to the file.
+            params['check_oed'] = False
 
         # remove any pre-loaded files (only affects this worker)
         oed_files = {v for k, v in params.items() if k.startswith('oed_') and isinstance(v, str)}
