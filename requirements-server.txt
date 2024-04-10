@@ -186,7 +186,9 @@ jsonschema-specifications==2023.12.1
     # via jsonschema
 kombu==5.3.5
     # via celery
-llvmlite==0.42.0
+lark==1.1.9
+    # via ods-tools
+llvmlite==0.41.1
     # via numba
 markdown==3.5.2
     # via -r requirements-server.in
@@ -198,19 +200,19 @@ msgpack==0.6.2
     # via channels-redis
 mysqlclient==2.1.1
     # via -r requirements-server.in
-numba==0.59.0
+networkx==3.1
     # via ods-tools
-numpy==1.26.4
+numba==0.58.0
+    # via ods-tools
+numpy==1.25.2
     # via
     #   fastparquet
     #   numba
     #   pandas
     #   pyarrow
 oasis-data-manager==0.1.2
-    # via
-    #   -r requirements-server.in
-    #   ods-tools
-ods-tools==3.2.1
+    # via ods-tools
+ods-tools==3.2.2
     # via -r requirements-server.in
 packaging==23.2
     # via
@@ -218,7 +220,7 @@ packaging==23.2
     #   fastparquet
     #   gunicorn
     #   ods-tools
-pandas==1.5.3
+pandas==2.1.4
     # via
     #   -r requirements-server.in
     #   fastparquet

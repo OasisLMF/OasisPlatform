@@ -456,17 +456,19 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.RUN_ERROR
         analysis.task_finished = timezone.now()
-        analysis.save()
 
-        random_filename = '{}.txt'.format(uuid.uuid4().hex)
-        with TemporaryFile() as tmp_file:
-            tmp_file.write(traceback.encode('utf-8'))
-            analysis.run_traceback_file = RelatedFile.objects.create(
-                file=File(tmp_file, name=random_filename),
-                filename=f'analysis_{analysis_pk}_run_traceback.txt',
-                content_type='text/plain',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
+        if traceback:
+            random_filename = '{}.txt'.format(uuid.uuid4().hex)
+            with TemporaryFile() as tmp_file:
+                tmp_file.write(traceback.encode('utf-8'))
+                analysis.run_traceback_file = RelatedFile.objects.create(
+                    file=File(tmp_file, name=random_filename),
+                    filename=f'analysis_{analysis_pk}_run_traceback.txt',
+                    content_type='text/plain',
+                    creator=get_user_model().objects.get(pk=initiator_pk),
+                )
+        else:
+            logging.error('Could not extract traceback')
 
         # remove the current command log file
         if analysis.run_log_file:
@@ -488,17 +490,19 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
         analysis = Analysis.objects.get(pk=analysis_pk)
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
         analysis.task_finished = timezone.now()
-        analysis.save()
 
-        random_filename = '{}.txt'.format(uuid.uuid4().hex)
-        with TemporaryFile() as tmp_file:
-            tmp_file.write(traceback.encode('utf-8'))
-            analysis.input_generation_traceback_file = RelatedFile.objects.create(
-                file=File(tmp_file, name=random_filename),
-                filename=f'analysis_{analysis_pk}_generation_traceback.txt',
-                content_type='text/plain',
-                creator=get_user_model().objects.get(pk=initiator_pk),
-            )
+        if traceback:
+            random_filename = '{}.txt'.format(uuid.uuid4().hex)
+            with TemporaryFile() as tmp_file:
+                tmp_file.write(traceback.encode('utf-8'))
+                analysis.input_generation_traceback_file = RelatedFile.objects.create(
+                    file=File(tmp_file, name=random_filename),
+                    filename=f'analysis_{analysis_pk}_generation_traceback.txt',
+                    content_type='text/plain',
+                    creator=get_user_model().objects.get(pk=initiator_pk),
+                )
+        else:
+            logging.error('Could not extract traceback')
 
         analysis.save()
     except Exception as e:

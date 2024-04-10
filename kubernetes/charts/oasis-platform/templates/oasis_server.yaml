@@ -99,8 +99,6 @@ spec:
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
             {{- include "h.channelLayerVars" . | indent 12 }}
-            - name: STARTUP_RUN_MIGRATIONS
-              value: "true"
             - name: OASIS_DEBUG
               value: "1"
             - name: OASIS_URL_SUB_PATH

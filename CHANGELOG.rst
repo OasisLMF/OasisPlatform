@@ -1,6 +1,25 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.3`_
+ ---------
+* [#992](https://github.com/OasisLMF/OasisPlatform/pull/992) - Release 2.3.2
+* [#1018](https://github.com/OasisLMF/OasisPlatform/pull/1018) - Fix namespace issue when called from analysis serializer
+* [#1006](https://github.com/OasisLMF/OasisPlatform/pull/1007) - Migration Helper script needs fixing
+* [#1008](https://github.com/OasisLMF/OasisPlatform/pull/1015) - CI v1 worker test seems to get stuck at `6_case`
+.. _`2.3.3`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.2...2.3.3
+
+`2.3.2`_
+ ---------
+* [#993, #971, #784, #664, #798](https://github.com/OasisLMF/OasisPlatform/pull/994) - Logging fixes for workers 
+* [#995](https://github.com/OasisLMF/OasisPlatform/pull/996) - List analyses serializer returning Portfolio does not exist error 
+* [#1004](https://github.com/OasisLMF/OasisPlatform/pull/1004) - Fixes for task Cancellation Handling 
+* [#1005](https://github.com/OasisLMF/OasisPlatform/pull/1005) - Remove DB migration env on websocket
+* [#979](https://github.com/OasisLMF/OasisPlatform/pull/979) - Release 2.3.1
+* [#989](https://github.com/OasisLMF/OasisPlatform/pull/990) - Calling `queue` or `queue-status` invokes django channels from HTTP server
+* [#977](https://github.com/OasisLMF/OasisPlatform/pull/991) - Intermittent boto3 client error when sending json settings to S3 store   
+.. _`2.3.2`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.1...2.3.2
+
 `2.3.1`_
  ---------
 * [#623, #797, #967](https://github.com/OasisLMF/OasisPlatform/pull/975) - Fix OOM worker retires infinite loop
