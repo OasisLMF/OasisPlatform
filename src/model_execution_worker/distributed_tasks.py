@@ -393,24 +393,20 @@ def keys_generation_task(fn):
         # Prepare 'generate-oasis-files' input files
         if loc_file:
             loc_extention = "".join(pathlib.Path(loc_file).suffixes)
-            loc_subdir = params.get('storage_subdir', '') if params.get('pre_loc_file') else ''
             params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'location{loc_extention}')
-            maybe_fetch_file(loc_file, params['oed_location_csv'], loc_subdir)
+            maybe_fetch_file(loc_file, params['oed_location_csv'])
         if acc_file:
             acc_extention = "".join(pathlib.Path(acc_file).suffixes)
-            acc_subdir = params.get('storage_subdir', '') if params.get('pre_acc_file') else ''
             params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'account{acc_extention}')
-            maybe_fetch_file(acc_file, params['oed_accounts_csv'], acc_subdir)
+            maybe_fetch_file(acc_file, params['oed_accounts_csv'])
         if info_file:
             info_extention = "".join(pathlib.Path(info_file).suffixes)
-            info_subdir = params.get('storage_subdir', '') if params.get('pre_info_file') else ''
             params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'reinsinfo{info_extention}')
-            maybe_fetch_file(info_file, params['oed_info_csv'], info_subdir)
+            maybe_fetch_file(info_file, params['oed_info_csv'])
         if scope_file:
             scope_extention = "".join(pathlib.Path(scope_file).suffixes)
-            scope_subdir = params.get('storage_subdir', '') if params.get('pre_scope_file') else ''
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
-            maybe_fetch_file(scope_file, params['oed_scope_csv'], scope_subdir)
+            maybe_fetch_file(scope_file, params['oed_scope_csv'])
 
         # Complex model lookup files
         if settings_file:
@@ -505,19 +501,32 @@ def pre_analysis_hook(self,
 
             # store updated files
             pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
-            params['pre_loc_file'] = filestore.put(pre_loc_fp, subdir=params['storage_subdir'])
-
+            params['pre_loc_file'] = filestore.put(
+                pre_loc_fp,
+                filename=os.path.basename(pre_loc_fp),
+                subdir=params['storage_subdir']
+            )
             if files_modified.get('account'):
                 pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
-                params['pre_acc_file'] = filestore.put(pre_acc_fp, subdir=params['storage_subdir'])
-
+                params['pre_acc_file'] = filestore.put(
+                    pre_acc_fp,
+                    filename=os.path.basename(pre_acc_fp),
+                    subdir=params['storage_subdir']
+                )
             if files_modified.get('ri_info'):
                 pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
-                params['pre_info_file'] = filestore.put(pre_info_fp, subdir=params['storage_subdir'])
-
+                params['pre_info_file'] = filestore.put(
+                    pre_info_fp,
+                    filename=os.path.basename(pre_info_fp),
+                    subdir=params['storage_subdir']
+                )
             if files_modified.get('ri_scope'):
                 pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
-                params['pre_scope_file'] = filestore.put(pre_scope_fp, subdir=params['storage_subdir'])
+                params['pre_scope_file'] = filestore.put(
+                    pre_scope_fp,
+                    filename=os.path.basename(pre_scope_fp),
+                    subdir=params['storage_subdir']
+                )
 
             # OED has been loaded and check in this step, disable check in file gen
             # This is in case pre-exposure func has added non-standard cols to the file.
