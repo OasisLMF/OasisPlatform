@@ -15,8 +15,8 @@ from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher
 # from src.model_execution_worker.storage_manager import MissingInputsException
-from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, \
-    start_analysis_task
+from src.model_execution_worker.utils import InvalidInputsException
+from src.model_execution_worker.tasks import start_analysis, start_analysis_task
 
 
 # from oasislmf.utils.status import OASIS_TASK_STATUS
