@@ -326,12 +326,12 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')
             with open(model_storage_settings_file, "w") as f:
                 config = model_storage.to_config()
-                #config["options"]["root_dir"] = os.path.join(
+                # config["options"]["root_dir"] = os.path.join(
                 #    config["options"].get("root_dir", ""),
                 #    settings.get("worker", "MODEL_SUPPLIER_ID"),
                 #    settings.get("worker", "MODEL_ID"),
                 #    settings.get("worker", "MODEL_VERSION_ID"),
-                #)
+                # )
                 json.dump(model_storage.to_config(), f, indent=4)
             task_params['model_storage_json'] = model_storage_settings_file
 
@@ -344,7 +344,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         params = paths_to_absolute_paths(run_params, config_path)
         if debug_worker:
             log_params(params, kwargs)
-
 
         # Store run settings
         run_params_file = os.path.join(run_dir, 'oasislmf.json')

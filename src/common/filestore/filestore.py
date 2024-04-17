@@ -16,7 +16,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
         )
     elif selected_storage in ['aws-s3', 'aws', 's3']:
-        
+
         return AwsS3Storage(
             root_dir=settings.get(section, 'ROOT_DIR', fallback=""),
             bucket_name=settings.get(section, 'AWS_BUCKET_NAME'),

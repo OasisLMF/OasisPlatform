@@ -904,12 +904,10 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
             f.flush()
         params['model_storage_json'] = f.name if model_storage else None
 
-
         # -- DEBUG Store run settings --
         run_params_file = os.path.join(params['root_run_dir'], 'oasislmf.json')
         with open(run_params_file, "w") as foo:
             json.dump(params, foo, indent=4)
-
 
         from oasislmf.manager import OasisManager
         params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
@@ -956,7 +954,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         }),
         'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
     }
-
 
     with tempfile.NamedTemporaryFile(mode="w+") as f:
         # build the config for the file store storage
