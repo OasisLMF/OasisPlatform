@@ -900,16 +900,8 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
         # build the config for the file store storage
         if model_storage:
             config = model_storage.to_config()
-            #config["options"]["root_dir"] = os.path.join(
-            #    config["options"].get("root_dir", ""),
-            #    settings.get("worker", "MODEL_SUPPLIER_ID"),
-            #    settings.get("worker", "MODEL_ID"),
-            #    settings.get("worker", "MODEL_VERSION_ID"),
-            #)
             json.dump(config, f)
             f.flush()
-
-        
         params['model_storage_json'] = f.name if model_storage else None
 
 
@@ -964,33 +956,45 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         }),
         'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
     }
-    Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
-    from oasislmf.manager import OasisManager
-    OasisManager().generate_losses_partial(**chunk_params)
 
-    return {
-        **params,
-        'chunk_work_location': filestore.put(
-            chunk_params['ktools_work_dir'],
-            filename=f'work-{chunk_idx+1}.tar.gz',
-            subdir=params['storage_subdir']
-        ),
-        'chunk_log_location': filestore.put(
-            chunk_params['ktools_log_dir'],
-            filename=f'log-{chunk_idx+1}.tar.gz',
-            subdir=params['storage_subdir']
-        ),
-        'ktools_work_dir': chunk_params['ktools_work_dir'],
-        'process_number': chunk_idx + 1,
-        'max_process_id': max_chunk_id,
-        'log_location': filestore.put(kwargs.get('log_filename')),
-    }
+
+    with tempfile.NamedTemporaryFile(mode="w+") as f:
+        # build the config for the file store storage
+        if model_storage:
+            config = model_storage.to_config()
+            json.dump(config, f)
+            f.flush()
+
+        chunk_params['model_storage_json'] = f.name if model_storage else None
+        Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
+        from oasislmf.manager import OasisManager
+        OasisManager().generate_losses_partial(**chunk_params)
+
+        return {
+            **params,
+            'chunk_work_location': filestore.put(
+                chunk_params['ktools_work_dir'],
+                filename=f'work-{chunk_idx+1}.tar.gz',
+                subdir=params['storage_subdir']
+            ),
+            'chunk_log_location': filestore.put(
+                chunk_params['ktools_log_dir'],
+                filename=f'log-{chunk_idx+1}.tar.gz',
+                subdir=params['storage_subdir']
+            ),
+            'ktools_work_dir': chunk_params['ktools_work_dir'],
+            'process_number': chunk_idx + 1,
+            'max_process_id': max_chunk_id,
+            'log_location': filestore.put(kwargs.get('log_filename')),
+        }
 
 
 @app.task(bind=True, name='generate_losses_output', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
+    res['model_storage_json'] = None
+
     # collect run results
     abs_work_dir = os.path.join(res['model_run_dir'], 'work')
     Path(abs_work_dir).mkdir(exist_ok=True, parents=True)
