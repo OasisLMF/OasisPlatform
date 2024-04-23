@@ -493,7 +493,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     # group sub-task logs and write to trace file
     random_filename = '{}.txt'.format(uuid.uuid4().hex)
     with TemporaryFile() as tmp_file:
-        # Write Error logs
+       # Write Error logs
         subtask_qs = analysis.sub_task_statuses.filter(
             status__in=[AnalysisTaskStatus.status_choices.COMPLETED]
         )
@@ -592,18 +592,12 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
         task_id=task_id,
         status=AnalysisTaskStatus.status_choices.COMPLETED,
         end_time=timezone.now(),
-        output_log=None if not log_location else RelatedFile.objects.create(
-            file=str(log_location),
-            filename='{}-output.log'.format(task_id),
-            content_type='text/plain',
-            creator_id=initiator_id,
+        output_log=None if not log_location else store_file(
+            log_location, 'text/plain', initiator_id, filename=f'{task_id}-output.log'
         ),
-        error_log=None if not error_location else RelatedFile.objects.create(
-            file=str(error_location),
-            filename='{}-error.log'.format(task_id),
-            content_type='text/plain',
-            creator_id=initiator_id,
-        )
+        error_log=None if not error_location else store_file(
+            error_location, 'text/plain', initiator_id, filename=f'{task_id}-error.log'
+        )    
     )
 
 
