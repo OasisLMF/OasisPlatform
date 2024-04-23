@@ -583,6 +583,7 @@ def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None, 
 def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task_slug=None):
     log_location = res.get('log_location')
     error_location = res.get('error_location')
+    initiator = get_user_model().objects.get(pk=initiator_id)
 
     task_id = self.request.parent_id
     AnalysisTaskStatus.objects.filter(
@@ -593,10 +594,10 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
         status=AnalysisTaskStatus.status_choices.COMPLETED,
         end_time=timezone.now(),
         output_log=None if not log_location else store_file(
-            log_location, 'text/plain', initiator_id, filename=f'{task_id}-output.log'
+            log_location, 'text/plain', initiator, filename=f'{task_id}-output.log'
         ),
         error_log=None if not error_location else store_file(
-            error_location, 'text/plain', initiator_id, filename=f'{task_id}-error.log'
+            error_location, 'text/plain', initiator, filename=f'{task_id}-error.log'
         )    
     )
 
