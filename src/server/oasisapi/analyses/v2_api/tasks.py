@@ -598,7 +598,7 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
         ),
         error_log=None if not error_location else store_file(
             error_location, 'text/plain', initiator, filename=f'{task_id}-error.log'
-        )    
+        )
     )
 
 
