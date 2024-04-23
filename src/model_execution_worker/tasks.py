@@ -45,7 +45,6 @@ RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 app = Celery()
 app.config_from_object(celery_conf)
-filestore = get_filestore(settings)
 model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 
 logger = get_task_logger(__name__)
@@ -120,7 +119,7 @@ def register_worker(sender, **k):
 
     # Storage Mode
     selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
-    logger.info("STORAGE_MANAGER: {}".format(type(filestore)))
+    #logger.info("STORAGE_MANAGER: {}".format(type(filestore)))
     logger.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
 
     if debug_worker:
@@ -273,6 +272,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
     """
     # Check that the input archive exists and is valid
+    filestore = get_filestore(settings)
     logger.info("args: {}".format(str(locals())))
     logger.info(str(get_worker_versions()))
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
@@ -408,7 +408,8 @@ def generate_input(self,
 
     # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
-    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
+    filestore = get_filestore(settings)
+    #filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
