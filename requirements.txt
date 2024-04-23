@@ -233,7 +233,7 @@ geopandas==0.12.2
     # via oasislmf
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==20.1.0
+gunicorn==22.0.0
     # via -r ./requirements-server.in
 hiredis==2.2.2
     # via aioredis
@@ -352,6 +352,7 @@ packaging==23.0
     #   drf-yasg
     #   fastparquet
     #   geopandas
+    #   gunicorn
     #   ods-tools
     #   pyproject-api
     #   pytest
@@ -521,7 +522,7 @@ sqlalchemy==1.4.47
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-sqlparse==0.4.4
+sqlparse==0.5.0
     # via
     #   django
     #   django-debug-toolbar
