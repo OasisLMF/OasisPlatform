@@ -546,7 +546,9 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
         ))
 
     # Store logs and output
-    analysis.run_log_file = store_file(result['run_logs'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+    if result.get('run_logs', None):
+        analysis.run_log_file = store_file(result['run_logs'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+
     analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
 
     analysis.save()
