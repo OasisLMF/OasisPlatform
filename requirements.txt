@@ -340,9 +340,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.2
+oasislmf[extra]==2.3.4
     # via -r ./requirements-worker.in
-ods-tools==3.2.2
+ods-tools==3.2.3
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -397,7 +397,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyarrow==14.0.1
+pyarrow==16.0.0
     # via
     #   -r ./requirements-server.in
     #   oasislmf
