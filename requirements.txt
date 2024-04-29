@@ -233,7 +233,7 @@ geopandas==0.12.2
     # via oasislmf
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==20.1.0
+gunicorn==22.0.0
     # via -r ./requirements-server.in
 hiredis==2.2.2
     # via aioredis
@@ -340,9 +340,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.2
+oasislmf[extra]==2.3.4
     # via -r ./requirements-worker.in
-ods-tools==3.2.2
+ods-tools==3.2.3
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -352,6 +352,7 @@ packaging==23.0
     #   drf-yasg
     #   fastparquet
     #   geopandas
+    #   gunicorn
     #   ods-tools
     #   pyproject-api
     #   pytest
@@ -396,7 +397,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyarrow==14.0.1
+pyarrow==16.0.0
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -521,7 +522,7 @@ sqlalchemy==1.4.47
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-sqlparse==0.4.4
+sqlparse==0.5.0
     # via
     #   django
     #   django-debug-toolbar

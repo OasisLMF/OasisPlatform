@@ -31,6 +31,7 @@ x-oasis-env: &server-env
   OASIS_AWS_S3_ENDPOINT_URL: "http://localstack-s3:4572"
   OASIS_AWS_ACCESS_KEY_ID: foobar
   OASIS_AWS_SECRET_ACCESS_KEY: foobar
+  OASIS_AWS_LOCATION: 'oasis/server'
 
 x-worker-env: &worker-env
   OASIS_DEBUG: 1
@@ -46,12 +47,13 @@ x-worker-env: &worker-env
   OASIS_RABBIT_PORT: 5672
   OASIS_RABBIT_USER: rabbit
   OASIS_RABBIT_PASS: rabbit
-  # S3 
+  # S3
   OASIS_STORAGE_TYPE: S3
   OASIS_AWS_BUCKET_NAME: example-bucket
   OASIS_AWS_S3_ENDPOINT_URL: "http://localstack-s3:4572"
   OASIS_AWS_ACCESS_KEY_ID: foobar
   OASIS_AWS_SECRET_ACCESS_KEY: foobar
+  OASIS_AWS_LOCATION: 'oasis/worker'
 
 services:
   localstack-s3:
@@ -125,9 +127,12 @@ services:
       - broker
     environment:
       <<: *server-env
-  worker:
+  v1-worker:
     restart: always
     image: ${WORKER_IMG:-coreoasis/model_worker}:${WORKER_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Dockerfile.model_worker
     links:
      - celery-db
      - broker:mybroker
@@ -135,10 +140,29 @@ services:
      <<: *worker-env
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
-     OASIS_MODEL_VERSION_ID: 1
-     OASIS_RUN_MODE: ${WORKER_API_VER:-v1}
+     OASIS_MODEL_VERSION_ID: 'v1'
+     OASIS_RUN_MODE: v1
     volumes:
-     - ../:/home/worker/model
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - ../src/model_execution_worker:/home/worker/src/model_execution_worker
+  v2-worker:
+    restart: always
+    image: ${WORKER_IMG:-coreoasis/model_worker}:${WORKER_TAG:-dev}
+    build:
+      context: .
+      dockerfile: Dockerfile.model_worker
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *worker-env
+     OASIS_MODEL_SUPPLIER_ID: OasisLMF
+     OASIS_MODEL_ID: PiWind
+     OASIS_MODEL_VERSION_ID: 'v2'
+     OASIS_RUN_MODE: v2
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - ../src/model_execution_worker:/home/worker/src/model_execution_worker
   server-db:
     restart: always
     image: postgres

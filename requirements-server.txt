@@ -142,7 +142,7 @@ fsspec==2024.2.0
     #   oasis-data-manager
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==20.1.0
+gunicorn==22.0.0
     # via -r requirements-server.in
 hiredis==2.2.2
     # via aioredis
@@ -211,12 +211,13 @@ numpy==1.25.2
     #   pyarrow
 oasis-data-manager==0.1.1
     # via ods-tools
-ods-tools==3.2.2
+ods-tools==3.2.3
     # via -r requirements-server.in
 packaging==23.0
     # via
     #   drf-yasg
     #   fastparquet
+    #   gunicorn
     #   ods-tools
 pandas==2.1.4
     # via
@@ -293,7 +294,7 @@ six==1.16.0
     #   service-identity
 sqlalchemy==1.4.47
     # via -r requirements-server.in
-sqlparse==0.4.4
+sqlparse==0.5.0
     # via
     #   django
     #   django-debug-toolbar
