@@ -149,9 +149,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.2
+oasislmf[extra]==2.3.4
     # via -r requirements-worker.in
-ods-tools==3.2.2
+ods-tools==3.2.3
     # via oasislmf
 packaging==23.0
     # via
@@ -174,7 +174,7 @@ prompt-toolkit==3.0.38
     # via click-repl
 psycopg2-binary==2.9.6
     # via -r requirements-worker.in
-pyarrow==14.0.1
+pyarrow==16.0.0
     # via oasislmf
 pycparser==2.21
     # via cffi
