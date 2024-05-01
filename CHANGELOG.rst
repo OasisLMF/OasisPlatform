@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.4`_
+ ---------
+* [#1023](https://github.com/OasisLMF/OasisPlatform/pull/1024) - Error reading sub-task logs from S3 when AWS_LOCATION is set
+* [#1025](https://github.com/OasisLMF/OasisPlatform/pull/1026) - V2 worker monitor - error when ktools logs are missing 
+* [#1016](https://github.com/OasisLMF/OasisPlatform/pull/1016) - Release 2.3.3 (patch release) 
+* [#1018](https://github.com/OasisLMF/OasisPlatform/pull/1018) - Fix namespace issue when called from analysis serializer
+* [#1019](https://github.com/OasisLMF/OasisPlatform/pull/1019) - Fix the pre-analysis hook file loading for V2 workers 
+.. _`2.3.4`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.3...2.3.4
+
 `2.3.3`_
  ---------
 * [#992](https://github.com/OasisLMF/OasisPlatform/pull/992) - Release 2.3.2
