@@ -119,7 +119,7 @@ def register_worker(sender, **k):
 
     # Storage Mode
     selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
-    #logger.info("STORAGE_MANAGER: {}".format(type(filestore)))
+    # logger.info("STORAGE_MANAGER: {}".format(type(filestore)))
     logger.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
 
     if debug_worker:
@@ -409,7 +409,7 @@ def generate_input(self,
     # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
     filestore = get_filestore(settings)
-    #filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
+    # filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
