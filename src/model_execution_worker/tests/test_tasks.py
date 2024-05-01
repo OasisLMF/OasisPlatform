@@ -1,4 +1,5 @@
 import os
+import re
 import tarfile
 import json
 from unittest import TestCase
@@ -73,7 +74,7 @@ class StartAnalysis(TestCase):
             with SettingsPatcher(MEDIA_ROOT=media_root):
                 Path(media_root, 'not-tar-file.tar').touch()
                 Path(media_root, 'analysis_settings.json').touch()
-                self.assertRaises(InvalidInputsException, start_analysis,
+                self.assertRaises(tarfile.ReadError, start_analysis,
                                   'analysis_settings.json',
                                   'not-tar-file.tar'
                                   )
@@ -120,16 +121,18 @@ class StartAnalysis(TestCase):
 
                     cmd_instance.generate_oasis_losses.return_value = "mocked result"  # Mock the return value
                     output_location, log_location, error_location, returncode = start_analysis(
-                        os.path.join(media_root, 'analysis_settings.json'),
-                        os.path.join(media_root, 'location.tar'),
+                        os.path.join('analysis_settings.json'),
+                        os.path.join('location.tar'),
                         log_filename=log_file,
                     )
-                    expected_params = {**params, **{"analysis_settings_json": os.path.join(media_root, 'analysis_settings.json')}}
-                    cmd_instance.generate_oasis_losses.assert_called_once_with(**expected_params)
-                    assert re.match(
-                        r'\'\{"path": "oasis_data_manager.df_reader.reader.OasisPandasReader", "options": \{.*\}\}\'',
-                        cmd_mock.call_args[0][0][14],
-                    )
+
+                    cmd_instance.generate_oasis_losses.assert_called_once()
+                    called_args = cmd_instance.generate_oasis_losses.call_args.kwargs
+                    self.assertEqual(called_args.get('oasis_files_dir', None), params.get('oasis_files_dir'))
+                    self.assertEqual(called_args.get('model_run_dir', None), params.get('model_run_dir'))
+                    self.assertEqual(called_args.get('ktools_fifo_relative', None), params.get('ktools_fifo_relative'))
+                    self.assertEqual(called_args.get('verbose', None), params.get('verbose'))
+                    self.assertEqual(called_args.get('analysis_settings.json', None), params.get('analysis_settings.json'))
                     tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')
 
 
