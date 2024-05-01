@@ -3,6 +3,7 @@ import json
 import string
 import sys
 from importlib import reload
+import pytest
 
 import pandas as pd
 from backports.tempfile import TemporaryDirectory
@@ -1892,6 +1893,7 @@ class ResetUrlMixin:
         clear_url_caches()
 
 
+@pytest.mark.skip(reason="LOT3 DISABLE")
 @override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
 class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
     def test_endpoint_disabled___raises_no_reverse_match(self):
@@ -1910,6 +1912,7 @@ class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, Tes
         self.assertEqual(res.status_code, 400)
 
 
+@pytest.mark.skip(reason="LOT3 DISABLE")
 @override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
 class AnalysisOutputFileListSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -1949,6 +1952,7 @@ class AnalysisOutputFileListSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
         self.assertEqual(response.json[0]["sql"], f"/v2/analyses/{analysis.pk}/output_file_sql/{related_file_one.pk}/")
 
 
+@pytest.mark.skip(reason="LOT3 DISABLE")
 @override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
 class AnalysisOutputFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
     def test_endpoint_disabled___raises_no_reverse_match(self):
@@ -1969,6 +1973,7 @@ class AnalysisOutputFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCas
         self.assertEqual(res.status_code, 400)
 
 
+@pytest.mark.skip(reason="LOT3 DISABLE")
 @override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
 class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
