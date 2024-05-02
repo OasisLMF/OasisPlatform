@@ -289,8 +289,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
     with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
 
         # Fetch generated inputs
-        analysis_settings_file = filestore.get(analysis_settings, run_dir, required=True)
         oasis_files_dir = os.path.join(run_dir, 'input')
+        analysis_settings_file = filestore.get(analysis_settings, os.path.join(run_dir, 'analysis_settings.json'), required=True)
         filestore.extract(input_location, oasis_files_dir)
 
         # oasislmf.json
@@ -421,17 +421,7 @@ def generate_input(self,
         tmp_input_dir = suppress()
 
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
-        task_params = {
-            'oasis_files_dir': oasis_files_dir,
-            # 'oed_location_csv': location_file,
-            # 'oed_accounts_csv': accounts_file,
-            # 'oed_info_csv': ri_info_file,
-            # 'oed_scope_csv': ri_scope_file,
-            # 'lookup_complex_config_json': lookup_settings_file,
-            # 'analysis_settings_json': lookup_settings_file,
-            # 'model_settings_json': model_settings_file,
-        }
-
+        task_params = {'oasis_files_dir': oasis_files_dir}
         model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
         task_params['model_settings_file'] = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
 
