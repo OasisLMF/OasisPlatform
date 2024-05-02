@@ -85,6 +85,7 @@ OasisPlatform Changelog
 * [#847](https://github.com/OasisLMF/OasisPlatform/pull/847) - Release 2.2.0
 .. _`2.2.1rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.2.0...2.2.1rc1
 
+
 `2.2.0`_
  ---------
 * [#725](https://github.com/OasisLMF/OasisPlatform/pull/843) - Queue priority for same job

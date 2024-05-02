@@ -28,7 +28,7 @@ from urllib.request import urlopen
 from urllib.parse import urlparse
 
 from src.server.oasisapi.files.models import RelatedFile
-from src.server.oasisapi.files.views import handle_json_data
+from src.server.oasisapi.files.v1_api.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
 

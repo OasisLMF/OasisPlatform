@@ -10,9 +10,8 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
-
 from ..models import Portfolio
-from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
+# from ...decorators import requires_sql_reader -- LOT3
 from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
@@ -21,12 +20,14 @@ from .serializers import (
     PortfolioListSerializer,
     PortfolioValidationSerializer
 )
+
 from ...analyses.v2_api.serializers import AnalysisSerializer
-from ...files.serializers import RelatedFileSerializer
-from ...files.views import handle_related_file
+from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer
+from ...files.v2_api.views import handle_related_file
+# from ...files.v2_api.views import handle_related_file_sql -- LOT3
 from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
-from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
+from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer
 
 
@@ -118,6 +119,8 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
         ]:
             return RelatedFileSerializer
+        elif self.action in ["file_sql"]:
+            return FileSQLSerializer
         else:
             return super(PortfolioViewSet, self).get_serializer_class()
 
@@ -274,3 +277,18 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    # LOT3 DISABLE
+    # @requires_sql_reader
+    # @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
+    # @action(methods=['post'], url_path=r'(?P<file>\w+)/sql', detail=True)
+    # def file_sql(self, request, *args, **kwargs):
+    #     """
+    #     post:
+    #     Gets the sql for  `<>_file` contents
+    #     """
+    #     serializer = self.get_serializer(self.get_object(), data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     sql = serializer.validated_data.get("sql")
+
+    #     return handle_related_file_sql(self.get_object(), kwargs["file"], request, sql)

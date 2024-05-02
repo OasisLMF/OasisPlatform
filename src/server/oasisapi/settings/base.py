@@ -17,9 +17,8 @@ import ssl
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.reverse import reverse_lazy
 
-from ....common.shared import set_aws_log_level
+from oasis_data_manager.filestore.log import set_azure_log_level, set_aws_log_level
 from ....conf import iniconf  # noqa
-from ....common.shared import set_aws_log_level, set_azure_log_level
 from ....conf.base import *
 
 
@@ -359,7 +358,7 @@ elif STORAGE_TYPE in AWS_S3:
     set_aws_log_level(AWS_LOG_LEVEL)
 
 elif STORAGE_TYPE in AZURE:
-    DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+    DEFAULT_FILE_STORAGE = 'storages.backends.azure_abfs.AzureStorage'
     set_azure_log_level(AZURE_LOG_LEVEL)
 
 else:
@@ -397,6 +396,11 @@ LOGGING = {
             'level': 'WARNING',
             'propagate': False,
         },
+        'asyncio': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
     },
     'formatters': {
         'verbose': {
@@ -408,7 +412,7 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
-        }
+        },
     },
 }
 if DEBUG:
@@ -497,3 +501,29 @@ To override this, that step will be skipped if 'FILE_UPLOAD_PERMISSIONS' is set 
 https://github.com/django/django/blob/main/django/core/files/storage.py#L337-L338
 """
 FILE_UPLOAD_PERMISSIONS = None
+
+DEFAULT_CONVERTER_CONNECTOR = iniconf.settings.get(
+    'server',
+    'converter_path',
+    fallback='converter.connector.pandas.pandas.PandasConnector',
+)
+
+DEFAULT_CONVERTER_CONNECTOR_OPTIONS = iniconf.settings.get(
+    'server.converter.connector',
+    '',
+    fallback={},
+)
+
+DEFAULT_CONVERTER_RUNNER = iniconf.settings.get(
+    'server',
+    'runner_path',
+    fallback='converter.runner.PandasRunner',
+)
+
+DEFAULT_CONVERTER_RUNNER_OPTIONS = iniconf.settings.get(
+    'server.converter.runner',
+    '',
+    fallback={},
+)
+
+DEFAULT_READER_ENGINE = iniconf.settings.get('server', 'default_reader_engine', fallback='oasis_data_manager.df_reader.reader.OasisPandasReader')

@@ -4,19 +4,18 @@ import json
 from unittest import TestCase
 from contextlib import contextmanager
 
+import mock
 from backports.tempfile import TemporaryDirectory
 from celery.exceptions import Retry
 from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis.strategies import text, integers
 from mock import patch, Mock
-# from mock import ANY
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher
 # from src.model_execution_worker.storage_manager import MissingInputsException
-from src.model_execution_worker.tasks import start_analysis, InvalidInputsException, \
-    start_analysis_task
+from src.model_execution_worker.tasks import start_analysis, start_analysis_task
 
 
 # from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -73,9 +72,9 @@ class StartAnalysis(TestCase):
             with SettingsPatcher(MEDIA_ROOT=media_root):
                 Path(media_root, 'not-tar-file.tar').touch()
                 Path(media_root, 'analysis_settings.json').touch()
-                self.assertRaises(InvalidInputsException, start_analysis,
-                                  os.path.join(media_root, 'analysis_settings.json'),
-                                  os.path.join(media_root, 'not-tar-file.tar')
+                self.assertRaises(tarfile.ReadError, start_analysis,
+                                  'analysis_settings.json',
+                                  'not-tar-file.tar'
                                   )
 
     def test_custom_model_runner_does_not_exist___generate_losses_is_called_output_files_are_tared_up(self):
@@ -114,19 +113,25 @@ class StartAnalysis(TestCase):
 
                 with patch('oasislmf.manager.OasisManager', Mock(return_value=cmd_instance)) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
-                        patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
+                        patch('oasis_data_manager.filestore.backends.base.BaseStorage.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
                     cmd_instance.generate_oasis_losses.return_value = "mocked result"  # Mock the return value
                     output_location, log_location, error_location, returncode = start_analysis(
-                        os.path.join(media_root, 'analysis_settings.json'),
-                        os.path.join(media_root, 'location.tar'),
+                        os.path.join('analysis_settings.json'),
+                        os.path.join('location.tar'),
                         log_filename=log_file,
                     )
-                    expected_params = {**params, **{"analysis_settings_json": os.path.join(media_root, 'analysis_settings.json')}}
-                    cmd_instance.generate_oasis_losses.assert_called_once_with(**expected_params)
-                    tarfile.assert_called_once_with(os.path.join(media_root, output_location), os.path.join(run_dir, 'output'), 'output')
+
+                    cmd_instance.generate_oasis_losses.assert_called_once()
+                    called_args = cmd_instance.generate_oasis_losses.call_args.kwargs
+                    self.assertEqual(called_args.get('oasis_files_dir', None), params.get('oasis_files_dir'))
+                    self.assertEqual(called_args.get('model_run_dir', None), params.get('model_run_dir'))
+                    self.assertEqual(called_args.get('ktools_fifo_relative', None), params.get('ktools_fifo_relative'))
+                    self.assertEqual(called_args.get('verbose', None), params.get('verbose'))
+                    self.assertEqual(called_args.get('analysis_settings.json', None), params.get('analysis_settings.json'))
+                    tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')
 
 
 class StartAnalysisTask(TestCase):

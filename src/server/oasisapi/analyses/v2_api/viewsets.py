@@ -19,8 +19,9 @@ from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTas
 from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
-from ...files.serializers import RelatedFileSerializer
-from ...files.views import handle_related_file, handle_json_data
+from ...decorators import requires_sql_reader
+from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer, NestedRelatedFileSerializer
+from ...files.v1_api.views import handle_related_file, handle_json_data, handle_related_file_sql
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups
 from ...portfolios.models import Portfolio
@@ -263,7 +264,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ['create', 'options', 'update', 'partial_update', 'retrieve']:
-            return super(AnalysisViewSet, self).get_serializer_class()
+            return super().get_serializer_class()
         elif self.action in ['list']:
             return AnalysisListSerializer
         elif self.action == 'copy':
@@ -274,6 +275,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
             return AnalysisStorageSerializer
         elif self.action in self.file_action_types_with_settings_file:
             return RelatedFileSerializer
+        elif self.action in ["output_file_sql"]:
+            return FileSQLSerializer
         elif self.action in ['chunking_configuration']:
             return ModelChunkingConfigSerializer
         else:
@@ -496,6 +499,31 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Disassociates the portfolios `output_file` contents
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @requires_sql_reader
+    @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
+    @action(methods=['get'], detail=True)
+    def output_file_list(self, request, *args, **kwargs):
+        """
+        get:
+        Gets the portfolios `output_file` as a list of raw files, which can have SQL applied.
+        """
+        serializer = NestedRelatedFileSerializer(self.get_object().raw_output_files.all(), analyses=self.get_object(), many=True)
+        return Response(serializer.data)
+
+    @requires_sql_reader
+    @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE})
+    @action(methods=['post'], url_path=r'output_file_sql/(?P<file_pk>\d+)', detail=True)
+    def output_file_sql(self, request, *args, file_pk=None, **kwargs):
+        """
+        get:
+        Gets the portfolios `output_file` contents, with applied sql SQL
+        """
+        serializer = self.get_serializer(self.get_object(), data=request.data)
+        serializer.is_valid(raise_exception=True)
+        sql = serializer.validated_data.get("sql")
+
+        return handle_related_file_sql(self.get_object(), "raw_output_files", request, sql, file_pk)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)

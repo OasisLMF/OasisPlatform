@@ -4,83 +4,107 @@
 #
 #    pip-compile requirements.in
 #
+adlfs==2024.2.0
+    # via -r ./requirements-worker.in
+aiobotocore==2.12.1
+    # via s3fs
+aiohttp==3.9.3
+    # via
+    #   adlfs
+    #   aiobotocore
+    #   s3fs
+aioitertools==0.11.0
+    # via aiobotocore
 aioredis==1.3.1
     # via channels-redis
-amqp==5.1.1
+aiosignal==1.3.1
+    # via aiohttp
+amqp==5.2.0
     # via kombu
-anytree==2.8.0
+anytree==2.12.1
     # via oasislmf
 argparsetree==0.0.6
     # via oasislmf
-asgiref==3.6.0
+asgiref==3.7.2
     # via
     #   channels
     #   channels-redis
     #   daphne
     #   django
-asttokens==2.2.1
+asttokens==2.4.1
     # via stack-data
-async-timeout==4.0.2
+async-timeout==4.0.3
     # via
+    #   aiohttp
     #   aioredis
     #   redis
-attrs==22.2.0
+attrs==23.2.0
     # via
+    #   aiohttp
     #   automat
     #   fiona
     #   hypothesis
     #   jsonschema
-    #   pytest
+    #   referencing
     #   service-identity
     #   twisted
 autobahn==23.6.2
     # via daphne
 automat==22.10.0
     # via twisted
-azure-core==1.26.3
+azure-core==1.30.1
     # via
     #   -r ./requirements-worker.in
+    #   adlfs
+    #   azure-identity
     #   azure-storage-blob
-azure-storage-blob==12.15.0
+    #   django-storages
+azure-datalake-store==0.0.53
+    # via adlfs
+azure-identity==1.15.0
+    # via adlfs
+azure-storage-blob==12.19.1
     # via
     #   -r ./requirements-worker.in
+    #   adlfs
     #   django-storages
-backcall==0.2.0
-    # via ipython
 backports-tempfile==1.0
     # via -r requirements.in
 backports-weakref==1.0.post1
     # via backports-tempfile
-beautifulsoup4==4.12.1
+beautifulsoup4==4.12.3
     # via webtest
-billiard==4.1.0
+billiard==4.2.0
     # via
     #   -r ./requirements-worker.in
     #   celery
-boto3==1.26.107
+boto3==1.34.51
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-botocore==1.29.107
+botocore==1.34.51
     # via
+    #   aiobotocore
     #   boto3
     #   s3transfer
-build==0.10.0
+build==1.1.1
     # via pip-tools
-cachetools==5.3.0
+cachetools==5.3.3
     # via tox
-celery==5.3.0
+celery==5.3.6
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
     #   django-celery-results
-certifi==2023.7.22
+certifi==2024.2.2
     # via
     #   fiona
     #   pyproj
     #   requests
-cffi==1.15.1
-    # via cryptography
+cffi==1.16.0
+    # via
+    #   azure-datalake-store
+    #   cryptography
 chainmap==1.0.3
     # via
     #   -r ./requirements-server.in
@@ -91,14 +115,14 @@ channels==2.4.0
     #   channels-redis
 channels-redis==2.4.2
     # via -r ./requirements-server.in
-chardet==5.1.0
+chardet==5.2.0
     # via
     #   oasislmf
     #   ods-tools
     #   tox
-charset-normalizer==3.1.0
+charset-normalizer==3.3.2
     # via requests
-click==8.1.3
+click==8.1.7
     # via
     #   celery
     #   click-didyoumean
@@ -113,36 +137,35 @@ click-plugins==1.1.1
     # via
     #   celery
     #   fiona
-click-repl==0.2.0
+click-repl==0.3.0
     # via celery
 cligj==0.7.2
     # via fiona
 colorama==0.4.6
     # via tox
-configparser==5.3.0
+configparser==6.0.1
     # via -r ./requirements-worker.in
-constantly==15.1.0
+constantly==23.10.4
     # via twisted
 coreapi==2.3.3
-    # via
-    #   -r ./requirements-server.in
-    #   drf-yasg
+    # via -r ./requirements-server.in
 coreschema==0.0.4
-    # via
-    #   coreapi
-    #   drf-yasg
-coverage[toml]==7.2.2
+    # via coreapi
+coverage[toml]==7.4.3
     # via
     #   -r requirements.in
     #   pytest-cov
-cramjam==2.6.2
+cramjam==2.8.2
     # via fastparquet
-cryptography==42.0.4
+cryptography==42.0.5
     # via
     #   autobahn
+    #   azure-identity
     #   azure-storage-blob
     #   josepy
     #   mozilla-django-oidc
+    #   msal
+    #   pyjwt
     #   pyopenssl
     #   service-identity
 daphne==2.5.0
@@ -151,9 +174,9 @@ decorator==5.1.1
     # via
     #   ipdb
     #   ipython
-distlib==0.3.6
+distlib==0.3.8
     # via virtualenv
-django==3.2.23
+django==3.2.25
     # via
     #   channels
     #   django-celery-results
@@ -168,23 +191,23 @@ django==3.2.23
     #   drf-yasg
     #   model-mommy
     #   mozilla-django-oidc
-django-celery-results==2.5.0
+django-celery-results==2.5.1
     # via -r ./requirements-server.in
-django-cleanup==7.0.0
+django-cleanup==8.1.0
     # via -r ./requirements-server.in
-django-debug-toolbar==4.0.0
+django-debug-toolbar==4.3.0
     # via
     #   -r ./requirements-server.in
     #   -r requirements.in
-django-filter==23.1
+django-filter==23.5
     # via -r ./requirements-server.in
-django-model-utils==4.3.1
+django-model-utils==4.4.0
     # via -r ./requirements-server.in
 django-request-logging==0.7.5
     # via -r ./requirements-server.in
-django-storages[azure]==1.13.2
+django-storages[azure]==1.14.2
     # via -r ./requirements-server.in
-django-webtest==1.9.10
+django-webtest==1.9.11
     # via -r requirements.in
 djangorestframework==3.14.0
     # via
@@ -192,50 +215,57 @@ djangorestframework==3.14.0
     #   djangorestframework-simplejwt
     #   drf-nested-routers
     #   drf-yasg
-djangorestframework-simplejwt==5.2.2
+djangorestframework-simplejwt==5.3.1
     # via -r ./requirements-server.in
-drf-nested-routers==0.93.4
+drf-nested-routers==0.93.5
     # via -r ./requirements-server.in
-drf-yasg==1.21.5
+drf-yasg==1.21.7
     # via -r ./requirements-server.in
 exceptiongroup==1.2.0
     # via
     #   hypothesis
+    #   ipython
     #   pytest
-executing==1.2.0
+executing==2.0.1
     # via stack-data
-fasteners==0.18
+fasteners==0.19
     # via
     #   -r ./requirements-worker.in
     #   -r requirements.in
-fastparquet==2023.2.0
+fastparquet==2024.2.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.10.7
+filelock==3.13.1
     # via
     #   -r ./requirements-worker.in
     #   tox
     #   virtualenv
-fiona==1.9.2
+fiona==1.9.5
     # via geopandas
-flake8==6.0.0
+flake8==7.0.0
     # via -r requirements.in
 forex-python==1.8
     # via oasislmf
-freezegun==1.2.2
+freezegun==1.4.0
     # via -r requirements.in
-fsspec==2023.3.0
+frozenlist==1.4.1
     # via
+    #   aiohttp
+    #   aiosignal
+fsspec==2024.2.0
+    # via
+    #   adlfs
     #   fastparquet
     #   oasis-data-manager
-geopandas==0.12.2
+    #   s3fs
+geopandas==0.14.3
     # via oasislmf
-greenlet==2.0.2
+greenlet==3.0.3
     # via sqlalchemy
 gunicorn==22.0.0
     # via -r ./requirements-server.in
-hiredis==2.2.2
+hiredis==2.3.2
     # via aioredis
 httplib2==0.22.0
     # via pyrabbit
@@ -243,13 +273,14 @@ hyperlink==21.0.0
     # via
     #   autobahn
     #   twisted
-hypothesis==6.70.2
+hypothesis==6.98.17
     # via -r requirements.in
-idna==3.4
+idna==3.6
     # via
     #   hyperlink
     #   requests
     #   twisted
+    #   yarl
 incremental==22.10.0
     # via twisted
 inflection==0.5.1
@@ -258,64 +289,75 @@ iniconfig==2.0.0
     # via pytest
 ipdb==0.13.13
     # via -r requirements.in
-ipython==8.12.0
+ipython==8.22.2
     # via ipdb
 isodate==0.6.1
     # via azure-storage-blob
 itypes==1.2.0
     # via coreapi
-jedi==0.18.2
+jedi==0.19.1
     # via ipython
-jinja2==3.1.2
+jinja2==3.1.3
     # via coreschema
 jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-joblib==1.2.0
+joblib==1.3.2
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
     #   scikit-learn
-josepy==1.13.0
+josepy==1.14.0
     # via mozilla-django-oidc
-jsonpickle==3.0.1
+jsonpickle==3.0.3
     # via -r ./requirements-server.in
 jsonref==1.1.0
     # via ods-tools
-jsonschema==4.17.3
+jsonschema==4.21.1
     # via
     #   -r ./requirements-server.in
     #   ods-tools
-kombu==5.3.0
+jsonschema-specifications==2023.12.1
+    # via jsonschema
+kombu==5.3.5
     # via celery
 lark==1.1.9
     # via ods-tools
 llvmlite==0.41.1
     # via numba
-markdown==3.4.3
+markdown==3.5.2
     # via -r ./requirements-server.in
-markupsafe==2.1.2
+markupsafe==2.1.5
     # via jinja2
 matplotlib-inline==0.1.6
     # via ipython
 mccabe==0.7.0
     # via flake8
-mock==5.0.1
+mock==5.1.0
     # via -r requirements.in
 model-mommy==2.0.0
     # via -r requirements.in
-mozilla-django-oidc==3.0.0
+mozilla-django-oidc==4.0.0
     # via -r ./requirements-server.in
+msal==1.27.0
+    # via
+    #   azure-datalake-store
+    #   azure-identity
+    #   msal-extensions
+msal-extensions==1.1.0
+    # via azure-identity
 msgpack==0.6.2
     # via
     #   channels-redis
     #   oasislmf
-munch==2.5.0
-    # via fiona
+multidict==6.0.5
+    # via
+    #   aiohttp
+    #   yarl
 mysqlclient==2.1.1
     # via -r ./requirements-server.in
-natsort==8.3.1
+natsort==8.4.0
     # via -r ./requirements-worker.in
 networkx==3.1
     # via ods-tools
@@ -323,7 +365,7 @@ numba==0.58.0
     # via
     #   oasislmf
     #   ods-tools
-numexpr==2.8.4
+numexpr==2.9.0
     # via oasislmf
 numpy==1.25.2
     # via
@@ -336,8 +378,10 @@ numpy==1.25.2
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.1.1
+oasis-data-manager==0.1.3
     # via
+    #   -r ./requirements-server.in
+    #   -r ./requirements-worker.in
     #   oasislmf
     #   ods-tools
 oasislmf[extra]==2.3.4
@@ -346,13 +390,14 @@ ods-tools==3.2.3
     # via
     #   -r ./requirements-server.in
     #   oasislmf
-packaging==23.0
+packaging==23.2
     # via
     #   build
     #   drf-yasg
     #   fastparquet
     #   geopandas
     #   gunicorn
+    #   msal-extensions
     #   ods-tools
     #   pyproject-api
     #   pytest
@@ -371,25 +416,25 @@ pathlib2==2.3.7.post1
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-pexpect==4.8.0
+pexpect==4.9.0
     # via ipython
-pickleshare==0.7.5
-    # via ipython
-pip-tools==6.12.3
+pip-tools==7.4.1
     # via -r requirements.in
-platformdirs==3.2.0
+platformdirs==4.2.0
     # via
     #   tox
     #   virtualenv
-pluggy==1.0.0
+pluggy==1.4.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.38
+portalocker==2.8.2
+    # via msal-extensions
+prompt-toolkit==3.0.43
     # via
     #   click-repl
     #   ipython
-psycopg2-binary==2.9.6
+psycopg2-binary==2.9.9
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -401,22 +446,24 @@ pyarrow==16.0.0
     # via
     #   -r ./requirements-server.in
     #   oasislmf
-pyasn1==0.4.8
+pyasn1==0.5.1
     # via
     #   pyasn1-modules
     #   service-identity
-pyasn1-modules==0.2.8
+pyasn1-modules==0.3.0
     # via service-identity
-pycodestyle==2.10.0
+pycodestyle==2.11.1
     # via flake8
 pycparser==2.21
     # via cffi
-pyflakes==3.0.1
+pyflakes==3.2.0
     # via flake8
-pygments==2.14.0
+pygments==2.17.2
     # via ipython
-pyjwt==2.6.0
-    # via djangorestframework-simplejwt
+pyjwt[crypto]==2.8.0
+    # via
+    #   djangorestframework-simplejwt
+    #   msal
 pymysql==1.1.0
     # via
     #   -r ./requirements-server.in
@@ -426,35 +473,35 @@ pyopenssl==24.0.0
     #   -r requirements.in
     #   josepy
     #   twisted
-pyparsing==3.0.9
+pyparsing==3.1.2
     # via httplib2
-pyproj==3.5.0
+pyproj==3.6.1
     # via geopandas
-pyproject-api==1.5.1
+pyproject-api==1.6.1
     # via tox
 pyproject-hooks==1.0.0
-    # via build
+    # via
+    #   build
+    #   pip-tools
 pyrabbit==1.1.0
     # via -r ./requirements-server.in
-pyrsistent==0.19.3
-    # via jsonschema
-pytest==7.2.2
+pytest==8.0.2
     # via
     #   -r ./requirements-worker.in
     #   -r requirements.in
     #   pytest-cov
     #   pytest-django
-pytest-cov==4.0.0
+pytest-cov==4.1.0
     # via -r requirements.in
-pytest-django==4.5.2
+pytest-django==4.8.0
     # via -r requirements.in
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   botocore
     #   celery
     #   freezegun
     #   pandas
-pytz==2023.3
+pytz==2024.1
     # via
     #   django
     #   djangorestframework
@@ -462,45 +509,55 @@ pytz==2023.3
     #   oasislmf
     #   pandas
 pyyaml==6.0.1
-    # via ods-tools
-redis==4.5.4
+    # via
+    #   drf-yasg
+    #   ods-tools
+redis==5.0.2
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-requests==2.28.2
+referencing==0.33.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
+requests==2.31.0
     # via
     #   -r requirements.in
     #   azure-core
+    #   azure-datalake-store
     #   coreapi
     #   forex-python
     #   mozilla-django-oidc
+    #   msal
     #   oasislmf
     #   requests-toolbelt
-requests-toolbelt==0.10.1
+requests-toolbelt==1.0.0
     # via oasislmf
-rtree==1.0.1
+rpds-py==0.18.0
+    # via
+    #   jsonschema
+    #   referencing
+rtree==1.2.0
     # via oasislmf
-ruamel-yaml==0.17.21
-    # via drf-yasg
-ruamel-yaml-clib==0.2.8
-    # via ruamel-yaml
-s3transfer==0.6.0
+s3fs==2024.2.0
+    # via -r ./requirements-worker.in
+s3transfer==0.10.0
     # via boto3
-scikit-learn==1.2.2
+scikit-learn==1.4.1.post1
     # via oasislmf
-scipy==1.10.1
+scipy==1.12.0
     # via
     #   oasislmf
     #   scikit-learn
-service-identity==21.1.0
+service-identity==24.1.0
     # via twisted
-shapely==2.0.1
+shapely==2.0.3
     # via
     #   geopandas
     #   oasislmf
 shutilwhich==1.1.0
     # via oasislmf
-simplejson==3.18.4
+simplejson==3.19.2
     # via forex-python
 six==1.16.0
     # via
@@ -508,17 +565,15 @@ six==1.16.0
     #   asttokens
     #   automat
     #   azure-core
-    #   click-repl
+    #   fiona
     #   isodate
-    #   munch
     #   pathlib2
     #   python-dateutil
-    #   service-identity
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.4
+soupsieve==2.5
     # via beautifulsoup4
-sqlalchemy==1.4.47
+sqlalchemy==2.0.28
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -526,44 +581,45 @@ sqlparse==0.5.0
     # via
     #   django
     #   django-debug-toolbar
-stack-data==0.6.2
+stack-data==0.6.3
     # via ipython
 tabulate==0.9.0
     # via oasislmf
-tblib==1.7.0
+tblib==3.0.0
     # via oasislmf
-threadpoolctl==3.1.0
+threadpoolctl==3.3.0
     # via scikit-learn
 tomli==2.0.1
     # via
     #   build
     #   coverage
     #   ipdb
+    #   pip-tools
     #   pyproject-api
     #   pyproject-hooks
     #   pytest
     #   tox
 tox==4.4.11
     # via -r requirements.in
-tqdm==4.65.0
+tqdm==4.66.2
     # via oasislmf
-traitlets==5.9.0
+traitlets==5.14.1
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==22.10.0
+twisted[tls]==24.3.0
     # via daphne
 txaio==23.1.1
     # via autobahn
-typing==3.7.4.3
-    # via oasis-data-manager
-typing-extensions==4.5.0
+typing-extensions==4.10.0
     # via
+    #   asgiref
     #   azure-core
     #   azure-storage-blob
     #   oasis-data-manager
+    #   sqlalchemy
     #   twisted
-tzdata==2023.3
+tzdata==2024.1
     # via
     #   celery
     #   pandas
@@ -571,30 +627,34 @@ uritemplate==4.1.1
     # via
     #   coreapi
     #   drf-yasg
-urllib3==1.26.15
+urllib3==2.0.7
     # via
     #   botocore
     #   requests
-vine==5.0.0
+vine==5.1.0
     # via
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.21.0
+virtualenv==20.25.1
     # via tox
-waitress==2.1.2
+waitress==3.0.0
     # via webtest
-wcwidth==0.2.6
+wcwidth==0.2.13
     # via prompt-toolkit
 webob==1.8.7
     # via webtest
 webtest==3.0.0
     # via django-webtest
-wheel==0.40.0
+wheel==0.42.0
     # via pip-tools
-whitenoise==6.4.0
+whitenoise==6.6.0
     # via -r ./requirements-server.in
-zope-interface==6.0
+wrapt==1.16.0
+    # via aiobotocore
+yarl==1.9.4
+    # via aiohttp
+zope-interface==6.2
     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:

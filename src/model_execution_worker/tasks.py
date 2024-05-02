@@ -4,11 +4,11 @@ import glob
 import json
 import logging
 import os
+import pathlib
 import sys
 import time
 
 import fasteners
-import tarfile
 
 from contextlib import contextmanager, suppress
 
@@ -19,15 +19,12 @@ from celery.exceptions import WorkerLostError, Terminated
 
 
 from oasislmf.utils.data import get_json
-from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 
+from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v1 as celery_conf
-from ..conf.iniconf import settings
+from ..conf.iniconf import settings, settings_local
 
-from .storage_manager import BaseStorageConnector
-from .backends.aws_storage import AwsObjectStore
-from .backends.azure_storage import AzureObjectStore
 from .utils import (
     LoggingTaskContext,
     log_params,
@@ -36,7 +33,6 @@ from .utils import (
     get_oasislmf_config_path,
     get_model_settings,
     get_worker_versions,
-    InvalidInputsException,
     prepare_complex_model_file_inputs,
 )
 
@@ -50,6 +46,7 @@ RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 app = Celery()
 app.config_from_object(celery_conf)
+model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 
 logger = get_task_logger(__name__)
 logger.info("Started worker")
@@ -58,17 +55,6 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
-
-# Set storage manager
-selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
-if selected_storage in ['local-fs', 'shared-fs']:
-    filestore = BaseStorageConnector(settings)
-elif selected_storage in ['aws-s3', 'aws', 's3']:
-    filestore = AwsObjectStore(settings)
-elif selected_storage in ['azure']:
-    filestore = AzureObjectStore(settings)
-else:
-    raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
 
 
 def check_worker_lost(task, analysis_pk):
@@ -103,6 +89,7 @@ def check_worker_lost(task, analysis_pk):
 @worker_ready.connect
 def register_worker(sender, **k):
     time.sleep(1)  # Workaround, pause for 1 sec to makesure log messages are printed
+
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
@@ -133,7 +120,7 @@ def register_worker(sender, **k):
 
     # Storage Mode
     selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
-    logger.info("STORAGE_MANAGER: {}".format(type(filestore)))
+    # logger.info("STORAGE_MANAGER: {}".format(type(filestore)))
     logger.info("STORAGE_TYPE: {}".format(settings.get('worker', 'STORAGE_TYPE', fallback='None')))
 
     if debug_worker:
@@ -286,13 +273,13 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
     """
     # Check that the input archive exists and is valid
+    filestore = get_filestore(settings)
     logger.info("args: {}".format(str(locals())))
     logger.info(str(get_worker_versions()))
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
     tmp_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
-    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
 
     if complex_data_files:
         tmp_input_dir = TemporaryDir(persist=tmpdir_persist, basedir=tmpdir_base)
@@ -302,12 +289,9 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
     with tmp_dir as run_dir, tmp_input_dir as input_data_dir:
 
         # Fetch generated inputs
-        analysis_settings_file = filestore.get(analysis_settings, run_dir, required=True)
         oasis_files_dir = os.path.join(run_dir, 'input')
-        input_archive = filestore.get(input_location, run_dir, required=True)
-        if not tarfile.is_tarfile(input_archive):
-            raise InvalidInputsException(input_archive)
-        filestore.extract(input_archive, oasis_files_dir)
+        analysis_settings_file = filestore.get(analysis_settings, os.path.join(run_dir, 'analysis_settings.json'), required=True)
+        filestore.extract(input_location, oasis_files_dir)
 
         # oasislmf.json
         config_path = get_oasislmf_config_path(settings)
@@ -323,7 +307,34 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             'analysis_settings_json': analysis_settings_file,
             'model_settings_json': model_settings_file,
             'ktools_fifo_relative': True,
+            'verbose': debug_worker,
+            # 'df_engine': json.dumps({
+            #     "path": settings.get(
+            #         'worker',
+            #         'default_reader_engine',
+            #         fallback='oasis_data_manager.df_reader.reader.OasisPandasReader'
+            #     ),
+            #     "options": settings.get(
+            #         'worker.default_reader_engine_options',
+            #         None,
+            #         fallback={}
+            #     ),
+            # }),
         }
+
+        # Set model storage
+        if model_storage:
+            model_storage_settings_file = os.path.join(run_dir, 'model_storage.json')
+            with open(model_storage_settings_file, "w") as f:
+                config = model_storage.to_config()
+                # config["options"]["root_dir"] = os.path.join(
+                #    config["options"].get("root_dir", ""),
+                #    settings.get("worker", "MODEL_SUPPLIER_ID"),
+                #    settings.get("worker", "MODEL_ID"),
+                #    settings.get("worker", "MODEL_VERSION_ID"),
+                # )
+                json.dump(model_storage.to_config(), f, indent=4)
+            task_params['model_storage_json'] = model_storage_settings_file
 
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir, filestore)
@@ -334,6 +345,11 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         params = paths_to_absolute_paths(run_params, config_path)
         if debug_worker:
             log_params(params, kwargs)
+
+        # Store run settings
+        run_params_file = os.path.join(run_dir, 'oasislmf.json')
+        with open(run_params_file, "w") as f:
+            json.dump(params, f, indent=4)
 
         # Run generate losses
         try:
@@ -386,14 +402,15 @@ def generate_input(self,
         (tuple(str, str)) Paths to the outputs tar file and errors tar file.
 
     """
-    logger.info(str(get_worker_versions()))
+    logging.info(str(get_worker_versions()))
 
     # Check if this task was re-queued from a lost worker
     check_worker_lost(self, analysis_pk)
 
     # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
-    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
+    filestore = get_filestore(settings)
+    # filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
@@ -404,28 +421,40 @@ def generate_input(self,
         tmp_input_dir = suppress()
 
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
+        task_params = {'oasis_files_dir': oasis_files_dir}
+        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
+        task_params['model_settings_file'] = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
 
         # Fetch input files
-        location_file = filestore.get(loc_file, oasis_files_dir, required=True)
-        accounts_file = filestore.get(acc_file, oasis_files_dir)
-        ri_info_file = filestore.get(info_file, oasis_files_dir)
-        ri_scope_file = filestore.get(scope_file, oasis_files_dir)
-        lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
-
-        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
-        model_settings_file = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
-
-        task_params = {
-            'oasis_files_dir': oasis_files_dir,
-            'oed_location_csv': location_file,
-            'oed_accounts_csv': accounts_file,
-            'oed_info_csv': ri_info_file,
-            'oed_scope_csv': ri_scope_file,
-            'lookup_complex_config_json': lookup_settings_file,
-            'analysis_settings_json': lookup_settings_file,
-            'model_settings_json': model_settings_file,
-        }
-
+        loc_extention = "".join(pathlib.Path(loc_file).suffixes)
+        task_params['oed_location_csv'] = filestore.get(
+            loc_file,
+            os.path.join(oasis_files_dir, f'location{loc_extention}'),
+            required=True
+        )
+        if acc_file:
+            acc_extention = "".join(pathlib.Path(acc_file).suffixes)
+            task_params['oed_accounts_csv'] = filestore.get(
+                acc_file,
+                os.path.join(oasis_files_dir, f'account{acc_extention}')
+            )
+        if info_file:
+            info_extention = "".join(pathlib.Path(info_file).suffixes)
+            task_params['oed_info_csv'] = filestore.get(
+                info_file,
+                os.path.join(oasis_files_dir, f'reinsinfo{info_extention}')
+            )
+        if scope_file:
+            scope_extention = "".join(pathlib.Path(scope_file).suffixes)
+            task_params['oed_scope_csv'] = filestore.get(
+                scope_file,
+                os.path.join(oasis_files_dir, f'reinsscope{scope_extention}')
+            )
+        if settings_file:
+            task_params['analysis_settings_json'] = task_params['lookup_complex_config_json'] = filestore.get(
+                settings_file,
+                os.path.join(oasis_files_dir, 'analysis_settings.json')
+            )
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             task_params['user_data_dir'] = input_data_dir
@@ -447,6 +476,12 @@ def generate_input(self,
                 'exposure_profile',
                 'lookup_config',
             ])
+
+        # Store run settings
+        if debug_worker:
+            run_params_file = os.path.join(oasis_files_dir, 'oasislmf.json')
+            with open(run_params_file, "w") as f:
+                json.dump(params, f, indent=4)
 
         try:
             from oasislmf.manager import OasisManager

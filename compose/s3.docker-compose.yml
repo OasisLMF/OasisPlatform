@@ -4,12 +4,15 @@ volumes:
   server-db-OasisData:
   celery-db-OasisData:
 
-x-oasis-env: &server-env
+
+x-shared-env: &shared-env
   OASIS_DEBUG: 1
   OASIS_URL_SUB_PATH: 0
-  OASIS_ADMIN_USER: admin
-  OASIS_ADMIN_PASS: password
+  OASIS_KEEP_RUN_DIR: 1
+  OASIS_KEEP_LOCAL_DATA: 1
+  OASIS_KEEP_REMOTE_DATA: 1
   OASIS_CELERY_BROKER_URL: "amqp://rabbit:rabbit@broker:5672"
+  #OASIS_CELERY_BROKER_URL: "redis://broker:6379"
   OASIS_SERVER_DB_HOST: server-db
   OASIS_SERVER_DB_PASS: oasis
   OASIS_SERVER_DB_USER: oasis
@@ -23,31 +26,32 @@ x-oasis-env: &server-env
   OASIS_CELERY_DB_USER: celery
   OASIS_CELERY_DB_NAME: celery
   OASIS_CELERY_DB_PORT: 5432
-  STARTUP_RUN_MIGRATIONS: 'true'
-  OASIS_INPUT_GENERATION_CONTROLLER_QUEUE: task-controller
-  OASIS_LOSSES_GENERATION_CONTROLLER_QUEUE: task-controller
+  OASIS_TASK_CONTROLLER_QUEUE: task-controller
   OASIS_STORAGE_TYPE: S3
   OASIS_AWS_BUCKET_NAME: example-bucket
   OASIS_AWS_S3_ENDPOINT_URL: "http://localstack-s3:4572"
   OASIS_AWS_ACCESS_KEY_ID: foobar
   OASIS_AWS_SECRET_ACCESS_KEY: foobar
   OASIS_AWS_LOCATION: 'oasis/server'
+  # OASIS_WORKER_MODEL_DATA_STORAGE_TYPE: S3
+  # OASIS_WORKER_MODEL_DATA_AWS_BUCKET_NAME: oasislmf-model-library-oasis-piwind
+  # OASIS_WORKER_MODEL_DATA_AWS_ACCESS_KEY_ID: _ID_
+  # OASIS_WORKER_MODEL_DATA_AWS_SECRET_ACCESS_KEY: _KEY_
+  # OASIS_WORKER_MODEL_DATA_ROOT_DIR: model_data/
 
-x-worker-env: &worker-env
-  OASIS_DEBUG: 1
-  OASIS_CELERY_BROKER_URL: "amqp://rabbit:rabbit@broker:5672"
+
+x-oasis-env-v1: &oasis-env-v1
+  OASIS_DEBUG: ${DEBUG:-0}
+  OASIS_RABBIT_HOST: broker
+  OASIS_RABBIT_PORT: 5672
+  OASIS_RABBIT_USER: rabbit
+  OASIS_RABBIT_PASS: rabbit
   OASIS_CELERY_DB_ENGINE: db+postgresql+psycopg2
   OASIS_CELERY_DB_HOST: celery-db
   OASIS_CELERY_DB_PASS: password
   OASIS_CELERY_DB_USER: celery
   OASIS_CELERY_DB_NAME: celery
   OASIS_CELERY_DB_PORT: 5432
-  # V1
-  OASIS_RABBIT_HOST: broker
-  OASIS_RABBIT_PORT: 5672
-  OASIS_RABBIT_USER: rabbit
-  OASIS_RABBIT_PASS: rabbit
-  # S3
   OASIS_STORAGE_TYPE: S3
   OASIS_AWS_BUCKET_NAME: example-bucket
   OASIS_AWS_S3_ENDPOINT_URL: "http://localstack-s3:4572"
@@ -57,79 +61,102 @@ x-worker-env: &worker-env
 
 services:
   localstack-s3:
+    restart: always
     image: localstack-s3:latest
     build:
      context: .
      dockerfile: Dockerfile.localstack-s3
     ports:
       - "4567-4599:4567-4599"
+    environment:
+      - DATA_DIR=/tmp/localstack/
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/tmp/localstack/:rw
 
   server:
-    restart: always
-    image: ${SERVER_IMG:-coreoasis/api_server}:${SERVER_TAG:-dev}
-    ports:
-      - 8000:8000
-    links:
-      - server-db
-      - celery-db
-      - broker
-    environment:
-      <<: *server-env
-  websocket:
-    restart: always
-    image: ${SERVER_IMG:-coreoasis/api_server}:${SERVER_TAG:-dev}
-    command: ["./asgi/run-asgi.sh"]
-    links:
-      - server-db
-      - celery-db
-      - broker
-    ports:
-      - 8001:8001
-    environment:
-      <<: *server-env
+   restart: always
+   image: coreoasis/api_server:dev
+   command: ["./wsgi/run-wsgi.sh"]
+   build:
+     context: .
+     dockerfile: Dockerfile.api_server
+   ports:
+     - 8000:8000
+     - 51970:51970
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+     STARTUP_RUN_MIGRATIONS: "true"
+     OASIS_ADMIN_USER: admin
+     OASIS_ADMIN_PASS: password
+   volumes:
+     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+  server_websocket:
+   restart: always
+   image: coreoasis/api_server:dev
+   command: ["./asgi/run-asgi.sh"]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   ports:
+     - 8001:8001
+   environment:
+     <<: *shared-env
+   volumes:
+     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v1-worker-monitor:
-    restart: always
-    image: ${SERVER_IMG:-coreoasis/api_server}:${SERVER_TAG:-dev}
-    command: [celery, -A, src.server.oasisapi.celery_app_v1, worker, --loglevel=INFO, -Q, celery]
-    links:
-      - server-db
-      - celery-db
-      - broker
-    environment:
-      <<: *server-env
+   restart: always
+   image: coreoasis/api_server:dev
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v1', worker, --loglevel=INFO,]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+   volumes:
+     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v2-worker-monitor:
-    restart: always
-    image: ${SERVER_IMG:-coreoasis/api_server}:${SERVER_TAG:-dev}
-    command: [celery, -A, src.server.oasisapi.celery_app_v2, worker, --loglevel=INFO, -Q, celery-v2]
-    links:
-      - server-db
-      - celery-db
-      - broker
-    environment:
-      <<: *server-env
-  task-controller:
-    restart: always
-    image: ${SERVER_IMG:-coreoasis/api_server}:${SERVER_TAG:-dev}
-    command: [celery, -A, src.server.oasisapi.celery_app_v2, worker, --loglevel=INFO, -Q, task-controller]
-    links:
-      - server-db
-      - celery-db
-      - broker
-    environment:
-      <<: *server-env
-  celery-beat:
-    restart: always
-    image: ${SERVER_IMG:-coreoasis/api_server}:${SERVER_TAG:-dev}
-    command: [celery, -A, src.server.oasisapi.celery_app_v2, beat, --loglevel=INFO]
-    links:
-      - server-db
-      - celery-db
-      - broker
-    environment:
-      <<: *server-env
+   restart: always
+   image: coreoasis/api_server:dev
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v2', worker, --loglevel=INFO,  -Q, celery-v2]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+   volumes:
+     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+  v2-task-controller:
+   restart: always
+   image: coreoasis/api_server:dev
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v2', worker, --loglevel=INFO, -Q, task-controller]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
+   volumes:
+     - ../src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
+  celery-beat_v2:
+   restart: always
+   image: coreoasis/api_server:dev
+   command: [celery, -A, src.server.oasisapi.celery_app_v2, beat, --loglevel=INFO]
+   links:
+     - server-db
+     - celery-db
+     - broker
+   environment:
+     <<: *shared-env
   v1-worker:
     restart: always
-    image: ${WORKER_IMG:-coreoasis/model_worker}:${WORKER_TAG:-dev}
+    image: coreoasis/model_worker:dev
     build:
       context: .
       dockerfile: Dockerfile.model_worker
@@ -137,7 +164,7 @@ services:
      - celery-db
      - broker:mybroker
     environment:
-     <<: *worker-env
+     <<: *shared-env
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
      OASIS_MODEL_VERSION_ID: 'v1'
@@ -147,7 +174,7 @@ services:
      - ../src/model_execution_worker:/home/worker/src/model_execution_worker
   v2-worker:
     restart: always
-    image: ${WORKER_IMG:-coreoasis/model_worker}:${WORKER_TAG:-dev}
+    image: coreoasis/model_worker:dev
     build:
       context: .
       dockerfile: Dockerfile.model_worker
@@ -155,7 +182,7 @@ services:
      - celery-db
      - broker:mybroker
     environment:
-     <<: *worker-env
+     <<: *shared-env
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
      OASIS_MODEL_VERSION_ID: 'v2'
@@ -163,6 +190,8 @@ services:
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ../src/model_execution_worker:/home/worker/src/model_execution_worker
+     # - /home/sam/repos/core/OasisDataManager/oasis_data_manager:/home/worker/.local/lib/python3.10/site-packages/oasis_data_manager/
+     # - /home/sam/repos/core/oasisLMF/oasislmf:/home/worker/.local/lib/python3.10/site-packages/oasislmf
   server-db:
     restart: always
     image: postgres
@@ -173,7 +202,7 @@ services:
     volumes:
       - server-db-OasisData:/var/lib/postgresql/data:rw
     ports:
-      - 33307:3306
+      - 33307:5432
   celery-db:
     restart: always
     image: postgres
@@ -199,4 +228,23 @@ services:
     image: redis:5.0.7
     ports:
       - 6379:6379
-
+  user-interface:
+    restart: always
+    image: coreoasis/oasisui_app:${VERS_UI:-latest}
+    container_name: oasisui_app
+    environment:
+     - API_IP=server:8000/api/
+     - API_VERSION=v2
+     - API_SHARE_FILEPATH=./downloads
+     - OASIS_ENVIRONMENT=oasis_localhost
+    ports:
+     - 8080:3838
+  portainer:
+   restart: always
+   image: portainer/portainer:latest
+   ports:
+     - 8002:8002
+     - 9000:9000
+   volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - ./portainer_data:/data portainer/portainer

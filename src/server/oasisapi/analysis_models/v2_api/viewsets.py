@@ -23,8 +23,8 @@ from .serializers import (
 
 from ...data_files.v2_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter
-from ...files.views import handle_json_data
-from ...files.serializers import RelatedFileSerializer
+from ...files.v1_api.views import handle_json_data
+from ...files.v2_api.serializers import RelatedFileSerializer
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 

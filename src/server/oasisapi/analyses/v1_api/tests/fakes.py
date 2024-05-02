@@ -2,7 +2,7 @@ import six
 from celery.states import STARTED
 from model_mommy import mommy
 
-from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.files.v2_api.tests.fakes import fake_related_file
 from ...models import Analysis
 
 

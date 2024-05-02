@@ -23,13 +23,22 @@ RUN if [ ! -z "$ods_tools_branch" ] ; then \
     pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}#egg=ods-tools; \
   fi
 
+# Install Oasis-Data-Manager from git branch (Optional) 'docker build --build-arg odm_branch=develop'
+ARG odm_branch
+RUN if [ ! -z "$odm_branch" ] ; then \
+    apt update && apt install -y git; \
+    pip uninstall oasis-data-manager -y; \
+    pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}#egg=oasis-data-manager; \
+  fi
+
+
 USER worker
 
 # ---- STAGE 2 ----
 FROM ubuntu:22.04
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends vim git python3 python3-pip libspatialindex-dev curl procps \
+ && apt-get install -y --no-install-recommends vim git  python3 python3-pip libspatialindex-dev curl procps \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy built python packages
@@ -66,5 +75,6 @@ ENV PATH=/home/worker/.local/bin:$PATH
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_ENV_OVERRIDE=true
+ENV OASIS_CHECK_MISSING_INPUTS=true
 
 ENTRYPOINT ./startup.sh
