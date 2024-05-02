@@ -32,11 +32,12 @@ x-shared-env: &shared-env
   OASIS_AWS_S3_ENDPOINT_URL: "http://localstack-s3:4572"
   OASIS_AWS_ACCESS_KEY_ID: foobar
   OASIS_AWS_SECRET_ACCESS_KEY: foobar
-  OASIS_WORKER_MODEL_DATA_STORAGE_TYPE: S3
-  OASIS_WORKER_MODEL_DATA_AWS_BUCKET_NAME: oasislmf-model-library-oasis-piwind
-  OASIS_WORKER_MODEL_DATA_AWS_ACCESS_KEY_ID: _ID_
-  OASIS_WORKER_MODEL_DATA_AWS_SECRET_ACCESS_KEY: _KEY_
-  OASIS_WORKER_MODEL_DATA_ROOT_DIR: model_data/
+  OASIS_AWS_LOCATION: 'oasis/server'
+  # OASIS_WORKER_MODEL_DATA_STORAGE_TYPE: S3
+  # OASIS_WORKER_MODEL_DATA_AWS_BUCKET_NAME: oasislmf-model-library-oasis-piwind
+  # OASIS_WORKER_MODEL_DATA_AWS_ACCESS_KEY_ID: _ID_
+  # OASIS_WORKER_MODEL_DATA_AWS_SECRET_ACCESS_KEY: _KEY_
+  # OASIS_WORKER_MODEL_DATA_ROOT_DIR: model_data/
 
 
 x-oasis-env-v1: &oasis-env-v1
@@ -56,6 +57,7 @@ x-oasis-env-v1: &oasis-env-v1
   OASIS_AWS_S3_ENDPOINT_URL: "http://localstack-s3:4572"
   OASIS_AWS_ACCESS_KEY_ID: foobar
   OASIS_AWS_SECRET_ACCESS_KEY: foobar
+  OASIS_AWS_LOCATION: 'oasis/worker'
 
 services:
   localstack-s3:
@@ -152,20 +154,6 @@ services:
      - broker
    environment:
      <<: *shared-env
-  stable-worker:
-    restart: always
-    image: coreoasis/model_worker:1.28.4
-    links:
-     - celery-db
-     - broker:mybroker
-    environment:
-     <<: *oasis-env-v1
-     OASIS_MODEL_DATA_DIRECTORY: /home/worker/model
-     OASIS_MODEL_SUPPLIER_ID: OasisLMF
-     OASIS_MODEL_ID: PiWind
-     OASIS_MODEL_VERSION_ID: '1.28.4'
-    volumes:
-     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
   v1-worker:
     restart: always
     image: coreoasis/model_worker:dev
@@ -202,8 +190,8 @@ services:
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ../src/model_execution_worker:/home/worker/src/model_execution_worker
-     - /home/sam/repos/core/OasisDataManager/oasis_data_manager:/home/worker/.local/lib/python3.10/site-packages/oasis_data_manager/  
-     - /home/sam/repos/core/oasisLMF/oasislmf:/home/worker/.local/lib/python3.10/site-packages/oasislmf  
+     # - /home/sam/repos/core/OasisDataManager/oasis_data_manager:/home/worker/.local/lib/python3.10/site-packages/oasis_data_manager/
+     # - /home/sam/repos/core/oasisLMF/oasislmf:/home/worker/.local/lib/python3.10/site-packages/oasislmf
   server-db:
     restart: always
     image: postgres

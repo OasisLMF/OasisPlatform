@@ -39,9 +39,9 @@ fi
 # Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
 # Install MDK from git branch (Optional) 'docker build --build-arg oasislmf_branch=develop'
 
-ODM_BRANCH='fixes/platform-testing'
+ODM_BRANCH=''
 ODS_BRANCH=''
-LMF_BRANCH='fix/platform-testing-lot3'
+LMF_BRANCH=''
 
 BUILD_ARGS_WORKER=''
 BUILD_ARGS_SERVER=''
@@ -57,9 +57,10 @@ fi
 
 if [ ! -z $LMF_BRANCH ]; then
     BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg oasislmf_branch=${LMF_BRANCH}"
-fi 
+fi
 
 set -e
 docker build -f Dockerfile.api_server $BUILD_ARGS_SERVER -t coreoasis/api_server:dev .
 docker build -f Dockerfile.model_worker $BUILD_ARGS_WORKER -t coreoasis/model_worker:dev .
-docker-compose -f compose/s3.docker-compose.yml up -d
+# docker-compose -f compose/s3.docker-compose.yml up -d
+docker-compose -f up -d
