@@ -1,9 +1,6 @@
 name: External Vulnerability Scanning
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - stable**
