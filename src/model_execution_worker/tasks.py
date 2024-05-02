@@ -4,6 +4,7 @@ import glob
 import json
 import logging
 import os
+import pathlib
 import sys
 import time
 
@@ -306,19 +307,19 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             'analysis_settings_json': analysis_settings_file,
             'model_settings_json': model_settings_file,
             'ktools_fifo_relative': True,
-            'df_engine': json.dumps({
-                "path": settings.get(
-                    'worker',
-                    'default_reader_engine',
-                    fallback='oasis_data_manager.df_reader.reader.OasisPandasReader'
-                ),
-                "options": settings.get(
-                    'worker.default_reader_engine_options',
-                    None,
-                    fallback={}
-                ),
-            }),
             'verbose': debug_worker,
+            # 'df_engine': json.dumps({
+            #     "path": settings.get(
+            #         'worker',
+            #         'default_reader_engine',
+            #         fallback='oasis_data_manager.df_reader.reader.OasisPandasReader'
+            #     ),
+            #     "options": settings.get(
+            #         'worker.default_reader_engine_options',
+            #         None,
+            #         fallback={}
+            #     ),
+            # }),
         }
 
         # Set model storage
@@ -420,28 +421,50 @@ def generate_input(self,
         tmp_input_dir = suppress()
 
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
-
-        # Fetch input files
-        location_file = filestore.get(loc_file, oasis_files_dir, required=True)
-        accounts_file = filestore.get(acc_file, oasis_files_dir)
-        ri_info_file = filestore.get(info_file, oasis_files_dir)
-        ri_scope_file = filestore.get(scope_file, oasis_files_dir)
-        lookup_settings_file = filestore.get(settings_file, oasis_files_dir)
-
-        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
-        model_settings_file = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
-
         task_params = {
             'oasis_files_dir': oasis_files_dir,
-            'oed_location_csv': location_file,
-            'oed_accounts_csv': accounts_file,
-            'oed_info_csv': ri_info_file,
-            'oed_scope_csv': ri_scope_file,
-            'lookup_complex_config_json': lookup_settings_file,
-            'analysis_settings_json': lookup_settings_file,
-            'model_settings_json': model_settings_file,
+            # 'oed_location_csv': location_file,
+            # 'oed_accounts_csv': accounts_file,
+            # 'oed_info_csv': ri_info_file,
+            # 'oed_scope_csv': ri_scope_file,
+            # 'lookup_complex_config_json': lookup_settings_file,
+            # 'analysis_settings_json': lookup_settings_file,
+            # 'model_settings_json': model_settings_file,
         }
 
+        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
+        task_params['model_settings_file'] = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
+
+        # Fetch input files
+        loc_extention = "".join(pathlib.Path(loc_file).suffixes)
+        task_params['oed_location_csv'] = filestore.get(
+            loc_file,
+            os.path.join(oasis_files_dir, f'location{loc_extention}'),
+            required=True
+        )
+        if acc_file:
+            acc_extention = "".join(pathlib.Path(acc_file).suffixes)
+            task_params['oed_accounts_csv'] = filestore.get(
+                acc_file,
+                os.path.join(oasis_files_dir, f'account{acc_extention}')
+            )
+        if info_file:
+            info_extention = "".join(pathlib.Path(info_file).suffixes)
+            task_params['oed_info_csv'] = filestore.get(
+                info_file,
+                os.path.join(oasis_files_dir, f'reinsinfo{info_extention}')
+            )
+        if scope_file:
+            scope_extention = "".join(pathlib.Path(scope_file).suffixes)
+            task_params['oed_scope_csv'] = filestore.get(
+                scope_file,
+                os.path.join(oasis_files_dir, f'reinsscope{scope_extention}')
+            )
+        if settings_file:
+            task_params['analysis_settings_json'] = task_params['lookup_complex_config_json'] = filestore.get(
+                settings_file,
+                os.path.join(oasis_files_dir, 'analysis_settings.json')
+            )
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
             task_params['user_data_dir'] = input_data_dir
@@ -465,9 +488,10 @@ def generate_input(self,
             ])
 
         # Store run settings
-        run_params_file = os.path.join(oasis_files_dir, 'oasislmf.json')
-        with open(run_params_file, "w") as f:
-            json.dump(params, f, indent=4)
+        if debug_worker:
+            run_params_file = os.path.join(oasis_files_dir, 'oasislmf.json')
+            with open(run_params_file, "w") as f:
+                json.dump(params, f, indent=4)
 
         try:
             from oasislmf.manager import OasisManager
