@@ -98,7 +98,7 @@ jobs:
       - name: Helm Test
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-            helm test <release-name>
+            helm test <release-name> # test
 
       - name: Test Deployment Failure
         run: |
