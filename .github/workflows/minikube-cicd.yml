@@ -96,11 +96,16 @@ jobs:
           popd
 
       - name: Helm Test
-        if: steps.list-changed.outputs.changed == 'true'
+        # if: steps.list-changed.outputs.changed == 'true'
         run: |
             helm test platform
 
       - name: Test Deployment Failure
         run: |
-          ## Intentionally failing the pods deployment for testing
-          kubectl apply -f kubernetes/charts/oasis-platform/templates/failing-deployment.yaml
+          POD_STATUS=$(kubectl get pods --namespace default --selector=app=my-app -o jsonpath='{.items[*].status.phase}')
+          if [[ $POD_STATUS =~ "Running" ; then
+            echo "Pods are running successfully."
+          else
+            echo "Pods are falling."
+            exit 1
+          fi
