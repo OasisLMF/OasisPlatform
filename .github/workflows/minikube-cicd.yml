@@ -98,9 +98,9 @@ jobs:
       - name: Helm Test
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-            helm test <release-name> # test
+            helm test platform
 
       - name: Test Deployment Failure
         run: |
-          ## Intentionally failiing the pods deployment for testing
+          ## Intentionally failing the pods deployment for testing
           kubectl apply -f kubernetes/charts/oasis-platform/templates/failing-deployment.yaml
