@@ -211,7 +211,9 @@ numpy==1.25.2
     #   pandas
     #   pyarrow
 oasis-data-manager==0.1.3
-    # via ods-tools
+    # via
+    #   -r requirements-server.in
+    #   ods-tools
 ods-tools==3.2.3
     # via -r requirements-server.in
 packaging==23.2
