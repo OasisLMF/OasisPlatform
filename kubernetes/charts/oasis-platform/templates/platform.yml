@@ -1,0 +1,82 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.platform.pv.name }}
+spec:
+  capacity:
+    storage: {{ .Values.platform.pv.capacity }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.platform.pv.accessModes | quote}}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: slow
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: /tmp
+    server: <server-addr>
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.platform.pvc.name }}
+spec:
+  accessModes:
+    - {{ .Values.platform.pv.accessModes | quote }}
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: {{ .Values.platform.pv.capacity }}
+  storageClassName: slow
+  selector:
+    matchLabels:
+      release: "stable"
+    matchExpressions:
+      - {key: environment, operator: In, values: [dev]}
+
+---
+# Substitute this within the Deployment
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: mypod
+spec:
+  containers:
+    - name: worker-container
+      image: <image>
+      volumeMounts:
+        - mountPath: {{ .Values.worker.volumeMounts.mountPath }}
+          name: model-data-volume
+  volumes:
+    - name: model-data-volume
+      persistentVolumeClaim:
+        claimName: {{ .Values.platform.pvc.name}}
+
+---
+# Chart.yml
+
+apiVersion: v2
+name: my-models-chart
+version: 0.1.0
+description: A helm chart for managing self-hosted models and shared volumes
+
+---
+# Values.yml
+
+platform:
+ # Define PV and PVC settings 
+  pv:
+    name: model-data-pv
+    capacity: 8Gi
+    accessModes:
+      - ReadWriteMany
+  pvc:
+    name: model-data-pvc
+
+worker:
+ # Define volume mount settings for worker deployment
+   volumeMounts:
+     - name: model-data-volume
