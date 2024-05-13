@@ -96,7 +96,7 @@ jobs:
           popd
 
       - name: Helm Test
-        # if: steps.list-changed.outputs.changed == 'true'
+        ## if: steps.list-changed.outputs.changed == 'true'
         run: |
             helm test platform
 
