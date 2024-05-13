@@ -4,10 +4,10 @@ volumes:
   celery-db-OasisData:
   filestore-OasisData:
 x-shared-env: &shared-env
-  OASIS_DEBUG: 1
-  OASIS_KEEP_RUN_DIR: 1
-  OASIS_KEEP_LOCAL_DATA: 1
-  OASIS_KEEP_REMOTE_DATA: 1
+  OASIS_DEBUG: 0
+  OASIS_KEEP_RUN_DIR: 0
+  OASIS_KEEP_LOCAL_DATA: 0
+  OASIS_KEEP_REMOTE_DATA: 0
   OASIS_URL_SUB_PATH: 0
   OASIS_CELERY_BROKER_URL: "amqp://rabbit:rabbit@broker:5672"
   #OASIS_CELERY_BROKER_URL: "redis://broker:6379"
@@ -63,7 +63,6 @@ services:
      OASIS_ADMIN_PASS: password
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   server_websocket:
    restart: always
    image: coreoasis/api_server:dev
@@ -78,7 +77,6 @@ services:
      <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v1-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
@@ -91,7 +89,6 @@ services:
      <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v2-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
@@ -104,7 +101,6 @@ services:
      <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi:/var/www/oasis/src/server/oasisapi
   v2-task-controller:
    restart: always
    image: coreoasis/api_server:dev
@@ -117,7 +113,6 @@ services:
      <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ./src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
   celery-beat_v2:
    restart: always
    image: coreoasis/api_server:dev
@@ -161,7 +156,6 @@ services:
      OASIS_RUN_MODE: v1
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
-     - ./src/model_execution_worker:/home/worker/src/model_execution_worker
      - filestore-OasisData:/shared-fs:rw
   v2-worker:
     restart: always
@@ -180,7 +174,6 @@ services:
      OASIS_RUN_MODE: v2
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
-     - ./src/model_execution_worker:/home/worker/src/model_execution_worker
      - filestore-OasisData:/shared-fs:rw
   server-db:
     restart: always
@@ -204,11 +197,6 @@ services:
       - celery-db-OasisData:/var/lib/postgresql/data:rw
     ports:
       - 33306:5432
-#  broker:
-#    restart: always
-#    image: redis:5.0.7
-#    ports:
-#      - 5672:6379
   broker:
     restart: always
     image: rabbitmq:3.8.14-management

@@ -4,7 +4,7 @@
 #
 #    pip-compile kubernetes/worker-controller/requirements.in
 #
-aiohttp==3.9.0
+aiohttp==3.9.4
     # via
     #   -r kubernetes/worker-controller/requirements.in
     #   kubernetes-asyncio

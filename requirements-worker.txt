@@ -8,7 +8,7 @@ adlfs==2024.2.0
     # via -r requirements-worker.in
 aiobotocore==2.12.1
     # via s3fs
-aiohttp==3.9.3
+aiohttp==3.9.4
     # via
     #   adlfs
     #   aiobotocore
