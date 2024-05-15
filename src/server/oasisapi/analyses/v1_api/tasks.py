@@ -381,7 +381,8 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
         analysis.run_log_file = store_file(log_location, 'application/gzip', initiator, filename=f'{task_id}_analysis_{analysis_pk}_logs.tar.gz')
     # record the error file
     if traceback_location:
-        analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator, filename=f'{task_id}_analysis_{analysis_pk}_run_traceback.txt')
+        analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator,
+                                                 filename=f'{task_id}_analysis_{analysis_pk}_run_traceback.txt')
     analysis.save()
 
 
@@ -403,7 +404,7 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
 
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
-    task_id = analysis.generate_inputs_task_id ## add check to make sure id is set??
+    task_id = analysis.generate_inputs_task_id  # add check to make sure id is set??
 
     # Remove previous output
     delete_prev_output(analysis, [

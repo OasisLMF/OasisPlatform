@@ -482,9 +482,12 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     initiator = get_user_model().objects.get(pk=initiator_id)
 
     analysis.status = Analysis.status_choices.READY
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'{analysis.generate_inputs_task_id}_analysis_{analysis_id}_inputs.tar.gz')
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, filename=f'{analysis.generate_inputs_task_id}_analysis_{analysis_id}_keys-errors.csv')
-    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'{analysis.generate_inputs_task_id}_analysis_{analysis_id}_gul_summary_map.csv')
+    analysis.input_file = store_file(input_location, 'application/gzip', initiator,
+                                     filename=f'{analysis.generate_inputs_task_id}_analysis_{analysis_id}_inputs.tar.gz')
+    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator,
+                                             filename=f'{analysis.generate_inputs_task_id}_analysis_{analysis_id}_keys-errors.csv')
+    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator,
+                                              filename=f'{analysis.generate_inputs_task_id}_analysis_{analysis_id}_gul_summary_map.csv')
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator,
                                                  filename=f'{analysis.generate_inputs_task_id}_analysis_{analysis_id}_exposure_summary_report.json')
     analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator,
@@ -547,9 +550,11 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     # Store logs and output
     if result.get('run_logs', None):
-        analysis.run_log_file = store_file(result['run_logs'], 'application/gzip', initiator, filename=f'{analysis.run_task_id}_analysis_{analysis_id}_logs.tar.gz')
+        analysis.run_log_file = store_file(result['run_logs'], 'application/gzip', initiator,
+                                           filename=f'{analysis.run_task_id}_analysis_{analysis_id}_logs.tar.gz')
 
-    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'{analysis.run_task_id}_analysis_{analysis_id}_output.tar.gz')
+    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator,
+                                      filename=f'{analysis.run_task_id}_analysis_{analysis_id}_output.tar.gz')
 
     # remove then store raw files.
     analysis.raw_output_files.all().delete()
