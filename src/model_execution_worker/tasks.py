@@ -456,7 +456,7 @@ def generate_input(self,
                 os.path.join(oasis_files_dir, 'analysis_settings.json')
             )
         if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
+            prepare_complex_model_file_inputs(complex_data_files, input_data_dir, filestore)
             task_params['user_data_dir'] = input_data_dir
 
         config_path = get_oasislmf_config_path(settings)
