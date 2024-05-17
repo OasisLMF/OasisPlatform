@@ -8,8 +8,51 @@ metadata:
     "helm.sh/hook": test
 spec:
   containers:
-    - name: wget
+    - name: test-container
       image: {{ .Values.images.init.image }}:{{ .Values.images.init.version }}
       command: ['sh']
-      args: ['-c', 'wget -O /dev/null {{ .Values.oasisServer.name }}:{{ .Values.oasisServer.port }} && wget -O /dev/null {{ .Values.oasisUI.name }}:{{ .Values.oasisUI.port }}']
+      args: 
+        - '-c'
+        - |
+          # Install necssary tools
+          apt-get update && apt-get install -y curl netcat && \
+
+          
+          # 'wget -O /dev/null {{ .Values.oasisServer.name }}:{{ .Values.oasisServer.port }} && wget -O /dev/null {{ .Values.oasisUI.name }}:{{ .Values.oasisUI.port }}'
+          
+          # Test Aosis UI
+          echo "Testing Oasis UI..." && \
+          UI_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" {{ .Values.oasisUI.name }}:{{ .Values.oasisUI.port }}) && \
+          if [ "$UI_RESPONSE" -ne 200 ]; then
+            echo "Oasis UI test failed"; \
+            exit 1; \
+          fi && \
+          echo "Oasis UI passed" && \
+
+          # Test API
+          echo "Testing API..." && \
+          API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" {{ .Values.oasisServer.name }}:{{ .Values.oasisServer.port }}/api/healthz) && \
+          if [ "$API_RESPONSE" -ne 200 ]; the \
+            echo "API test failed"; \
+            exit 1; \
+          fi && \
+          echo "API test passed" && \
+
+          #Test Authentication
+          echo "Testing Authentication..."
+          AUTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -d 'username=admin&password=password' {{ .Values.keycloak.name }}:{{ .Values.keycloak.port }}/auth/realms/master/protocol/openid-connect/token) && \
+          if [ "$AUTH_RESPONSE" -ne 200 ]; then \
+            echo "Authentication test failed"; \
+            exit 1; \
+          fi && \
+          echo "Authentication test passed" && \
+
+          # Test Websocket
+          echo "Testing Websocket..." && \
+          WEBSOCKET_TEST=$(echo -e "GET / HTTP/1.1\r\nHost: {{ .Values.oasisWebsocket.name }}:{{ .Values.oasisWebsocket.port }}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==\r\nSec-WebSocket-Version: 13\r\n\r\n" | nc {{ .Values.oasisWebsocket.name }} {{ Values.oasisWebsocket.port}} | grep "HTTP/1.1 101") && \
+          if [ -z "$WEBSOCKET_TEST" ]; then \
+            echo "Websocket test failed"; \
+            exit 1; \
+          fi && \
+          echo "Websocket test passed"
   restartPolicy: Never

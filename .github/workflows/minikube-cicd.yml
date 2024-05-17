@@ -79,7 +79,7 @@ jobs:
 
       - name: Upload Piwind Data
         run: ./kubernetes/scripts/k8s/upload_piwind_model_data.sh ${{ env.dir_piwind }}
-
+  
       - name: Update and Apply Helm Charts
         run: |
           pushd kubernetes/charts
@@ -109,3 +109,25 @@ jobs:
             echo "Pods are falling."
             exit 1
           fi
+
+      - name: Run PiWind
+        run: api.sh execute 5686282644 #[ls|generate|execute|run] <analysis id>
+
+
+      - name: Run Authentication Test
+        run: |
+          curl -X POST -d 'username=admin&password=password' http://<api>/authenticate
+
+      - name: Run Websocket Test
+        run: |
+
+      - name: Run API Test
+        run: |
+          curl http://<api>/api/resource -H 'Authorization: Bearer <TOKEN>'
+
+
+          wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/ci/GUL_analysis_settings.json
+          wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/inputs/SourceLocOEDPiWind10.csv
+          
+          pip install oasislmf
+          oasislmf api run --server-url <http://localhost:8000> --server-version v2 --model-id 3 --oed-location-csv SourceLocOEDPiWind10.csv --analysis-settings-json GUL_analysis_settings.json
