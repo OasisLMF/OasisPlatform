@@ -111,23 +111,24 @@ jobs:
           fi
 
       - name: Run PiWind
-        run: api.sh execute 5686282644 #[ls|generate|execute|run] <analysis id>
-
-
-      - name: Run Authentication Test
         run: |
-          curl -X POST -d 'username=admin&password=password' http://<api>/authenticate
-
-      - name: Run Websocket Test
-        run: |
-
-      - name: Run API Test
-        run: |
-          curl http://<api>/api/resource -H 'Authorization: Bearer <TOKEN>'
-
-
           wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/ci/GUL_analysis_settings.json
-          wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/inputs/SourceLocOEDPiWind10.csv
-          
+          wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/inputs/SourceLocEDPiWind10.csv
           pip install oasislmf
-          oasislmf api run --server-url <http://localhost:8000> --server-version v2 --model-id 3 --oed-location-csv SourceLocOEDPiWind10.csv --analysis-settings-json GUL_analysis_settings.json
+          oasislmf api run --server-url <http://localhost:8000> --server-version v2 --model-id 3 --oed-location-csv OurceLocEDPiWind10.csv --analysis-settings-json GUL_analysis_settings.json
+
+      - name: Test Authentication
+        run: |
+          curl -X POST http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
+          --user 'client_id:client_secret'\
+          -H 'content-type: application/x-www-form-urlencoded' \
+          -d 'grant_type=password&username=username&password=password' \
+          | grep -q 'access_token'
+
+      - name: Test WebSocket
+        run: |
+          nc -zc localhost 8001
+
+      - name: Test API
+        run: |
+          wget -O /dev/null http://localhost:8000/api/healthcheck
