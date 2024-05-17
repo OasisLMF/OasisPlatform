@@ -284,6 +284,9 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
     """
     # Check that the input archive exists and is valid
+    filestore = get_filestore(settings)
+    from oasislmf.manager import OasisManager
+
     logger.info("args: {}".format(str(locals())))
     logger.info(str(get_worker_versions()))
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
@@ -330,7 +333,10 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Create and log params
         run_params = {**config, **task_params}
-        params = paths_to_absolute_paths(run_params, config_path)
+        gen_losses_params = OasisManager()._params_generate_losses(**run_params)
+        post_hook_params = OasisManager()._params_post_analysis(**run_params)
+        params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params}, config_path)
+
         if debug_worker:
             log_params(params, kwargs)
 
@@ -391,7 +397,10 @@ def generate_input(self,
 
     # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
-    filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
+    filestore = get_filestore(settings)
+    from oasislmf.manager import OasisManager
+
+    # filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
@@ -432,7 +441,11 @@ def generate_input(self,
         config_path = get_oasislmf_config_path(settings)
         config = get_json(config_path)
         lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **task_params}
-        params = paths_to_absolute_paths(lookup_params, config_path)
+
+        gen_files_params = OasisManager()._params_generate_files(**lookup_params)
+        pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
+        params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params}, config_path)
+
         if debug_worker:
             log_params(params, kwargs, exclude_keys=[
                 'profile_loc',
