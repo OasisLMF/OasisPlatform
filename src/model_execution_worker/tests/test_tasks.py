@@ -111,21 +111,20 @@ class StartAnalysis(TestCase):
                 def fake_run_dir(*args, **kwargs):
                     yield run_dir
 
-                with patch('oasislmf.manager.OasisManager', Mock(return_value=cmd_instance)) as cmd_mock, \
+                with patch('oasislmf.manager.OasisManager.generate_oasis_losses', Mock(return_value='mocked result')) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
                         patch('oasis_data_manager.filestore.backends.base.BaseStorage.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
-                    cmd_instance.generate_oasis_losses.return_value = "mocked result"  # Mock the return value
                     output_location, log_location, error_location, returncode = start_analysis(
                         os.path.join('analysis_settings.json'),
                         os.path.join('location.tar'),
                         log_filename=log_file,
                     )
 
-                    cmd_instance.generate_oasis_losses.assert_called_once()
-                    called_args = cmd_instance.generate_oasis_losses.call_args.kwargs
+                    cmd_mock.assert_called_once()
+                    called_args = cmd_mock.call_args.kwargs
                     self.assertEqual(called_args.get('oasis_files_dir', None), params.get('oasis_files_dir'))
                     self.assertEqual(called_args.get('model_run_dir', None), params.get('model_run_dir'))
                     self.assertEqual(called_args.get('ktools_fifo_relative', None), params.get('ktools_fifo_relative'))
