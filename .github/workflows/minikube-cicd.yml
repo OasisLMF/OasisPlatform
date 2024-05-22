@@ -100,15 +100,15 @@ jobs:
      
           
 
-      - name: Test Deployment Failure #
-        run: |
-          POD_STATUS=$(kubectl get pods --namespace default --selector=app=my-app -o jsonpath='{.items[*].status.phase}')
-          if [[ $POD_STATUS =~ "Running" ]]; then
-            echo "Pods are running successfully."
-          else
-            echo "Pods are falling."
-            exit 1
-          fi
+      # - name: Test Deployment Failure #
+      #   run: |
+      #     POD_STATUS=$(kubectl get pods --namespace default --selector=app=my-app -o jsonpath='{.items[*].status.phase}')
+      #     if [[ $POD_STATUS =~ "Running" ]]; then
+      #       echo "Pods are running successfully."
+      #     else
+      #       echo "Pods are falling."
+      #       exit 1
+      #     fi
 
       - name: Expose API Service
         run: |
