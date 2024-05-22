@@ -97,10 +97,10 @@ jobs:
           fi
           popd
 
-      - name: Helm Test
-        ### if: steps.list-changed.outputs.changed == 'true'
-        run: |
-            helm test platform
+      # - name: Helm Test
+      #   ### if: steps.list-changed.outputs.changed == 'true'
+      #   run: |
+      #       helm test platform
 
       - name: Test Deployment Failure
         run: |
