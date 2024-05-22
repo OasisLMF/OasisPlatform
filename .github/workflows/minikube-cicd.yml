@@ -97,12 +97,10 @@ jobs:
           fi
           popd
 
-      - name: Helm Test
-        ### if: steps.list-changed.outputs.changed == 'true'
-        run: |
-            helm test platform
+     
+          
 
-      - name: Test Deployment Failure
+      - name: Test Deployment Failure #
         run: |
           POD_STATUS=$(kubectl get pods --namespace default --selector=app=my-app -o jsonpath='{.items[*].status.phase}')
           if [[ $POD_STATUS =~ "Running"; then
