@@ -58,6 +58,8 @@ jobs:
       - name: Start minikube
         id: minikube
         uses: medyagh/setup-minikube@master
+        with:
+          driver: docker
 
      
       - name: Try the cluster
@@ -110,12 +112,20 @@ jobs:
             exit 1
           fi
 
+      - name: Expose API Service
+        run: |
+          MINIKUBE_IP=$(minikube ip)
+          NODE_PORT=$(kubectl get service oasis-api -o jsonpath='{.spec.ports[0].nodePort}')
+          echo "Minikube IP: $MINIKUBE_IP"
+          echo "NodePort: $NODE_PORT"
+          echo "API URL: http://$MINIKUBE_IP:$NODE_PORT"
+
       - name: Run PiWind
         run: |
           wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/ci/GUL_analysis_settings.json
           wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/inputs/SourceLocEDPiWind10.csv
           pip install oasislmf
-          oasislmf api run --server-url <http://localhost:8000> --server-version v2 --model-id 3 --oed-location-csv OurceLocEDPiWind10.csv --analysis-settings-json GUL_analysis_settings.json
+          oasislmf api run --server-url https://ui.oasis.local/api --server-version v2 --model-id 3 --oed-location-csv OurceLocEDPiWind10.csv --analysis-settings-json GUL_analysis_settings.json
 
       - name: Test Authentication
         run: |

@@ -49,7 +49,7 @@ spec:
 
           # Test Websocket
           echo "Testing Websocket..." && \
-          WEBSOCKET_TEST=$(echo -e "GET / HTTP/1.1\r\nHost: oasis-websocket:{{ .Values.oasisWebsocket.port }}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==\r\nSec-WebSocket-Version: 13\r\n\r\n" | nc {{ .Values.oasisWebsocket.name }} {{ Values.oasisWebsocket.port}} | grep "HTTP/1.1 101") && \
+          WEBSOCKET_TEST=$(echo -e "GET / HTTP/1.1\r\nHost: {{ .Values.oasisWebsocket.name }}:{{ .Values.oasisWebsocket.port }}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==\r\nSec-WebSocket-Version: 13\r\n\r\n" | nc {{ .Values.oasisWebsocket.name }} {{ Values.oasisWebsocket.port}} | grep "HTTP/1.1 101") && \
           if [ -z "$WEBSOCKET_TEST" ]; then \
             echo "Websocket test failed"; \
             exit 1; \
