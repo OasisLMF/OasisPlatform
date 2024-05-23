@@ -98,6 +98,12 @@ spec:
           ports:
             - containerPort: {{ .Values.keycloak.port }}
           env:
+           {{- if (.Values.azure).secretProvider }}
+           {{- if hasKey .Values.azure.secretProvider.secrets "keycloak-cert" }}
+            - name: KC_DB_URL_PROPERTIES
+              value: "?sslmode=verify-full&sslcert=root.crt"
+           {{- end }}
+           {{- end }}
             - name: KC_LOGLEVEL
               value: DEBUG
             - name: PROXY_ADDRESS_FORWARDING
@@ -172,16 +178,34 @@ spec:
             - name: realm-config
               mountPath: /opt/keycloak/data/import/oasis-realm.json
               subPath: oasis
+            {{- if (.Values.azure).secretProvider }}
+            {{- if hasKey .Values.azure.secretProvider.secrets "keycloak-cert" }}
+            - name: azure-keycloak-cert
+              mountPath: /opt/keycloak/.postgresql/root.crt
+              subPath: keycloak-cert-file
+              readOnly: true
+            {{- end }}
+            {{- end }}
 
       volumes:
         - name: realm-config
           configMap:
             name: {{ $realmSecretName }}
-{{- if (.Values.azure).secretProvider }}
+    {{- if (.Values.azure).secretProvider }}
+      {{- if hasKey .Values.azure.secretProvider.secrets "keycloak-cert" }}
+        - name: azure-keycloak-cert
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secret-provider"
+              objectName: "keycloak-cert-file"
+              objectType: "secret"
+      {{- end }}
         - name: azure-secret-provider
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
               secretProviderClass: "azure-secret-provider"
-{{- end }}
+    {{- end }}
