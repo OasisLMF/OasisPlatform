@@ -88,7 +88,7 @@ def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, 
     ).delay()
 
 
-def load_location_data(loc_filepath):
+def load_location_data(loc_filepath, oed_schema_info=None):
     """ Returns location file as DataFrame
 
     Returns a DataFrame of Loaction data with 'loc_id' row assgined
@@ -103,7 +103,10 @@ def load_location_data(loc_filepath):
         from oasislmf.utils.data import prepare_location_df
         from ods_tools.oed.exposure import OedExposure
 
-        exposure = OedExposure(location=pathlib.Path(os.path.abspath(loc_filepath)))
+        exposure = OedExposure(
+            location=pathlib.Path(os.path.abspath(loc_filepath)),
+            oed_schema_info=oed_schema_info,
+        )
         exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
         return exposure.location.dataframe
 
@@ -467,7 +470,6 @@ def prepare_input_generation_params(
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
-    from celery.contrib import rdb; rdb.set_trace()
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(settings, model_id)
     config = config_strip_default_exposure(get_json(config_path))
@@ -573,8 +575,10 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        from celery.contrib import rdb; rdb.set_trace()
-        location_df = load_location_data(params['oed_location_csv'])
+        location_df = load_location_data(
+            loc_filepath=params['oed_location_csv'],
+            oed_schema_info=params.get('oed_schema_info', None)
+        )
         location_df = np.array_split(location_df, num_chunks)[chunk_idx]
         location_df.reset_index(drop=True, inplace=True)
 
