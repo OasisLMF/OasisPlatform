@@ -36,6 +36,7 @@ from .utils import (
     get_worker_versions,
     merge_dirs,
     prepare_complex_model_file_inputs,
+    config_strip_default_exposure,
 )
 
 
@@ -466,10 +467,11 @@ def prepare_input_generation_params(
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
+    from celery.contrib import rdb; rdb.set_trace()
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(settings, model_id)
-    config = get_json(config_path)
-    lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **params}
+    config = config_strip_default_exposure(get_json(config_path))
+    lookup_params = {**config, **params}
 
     from oasislmf.manager import OasisManager
     gen_files_params = OasisManager()._params_generate_files(**lookup_params)
@@ -571,6 +573,7 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
+        from celery.contrib import rdb; rdb.set_trace()
         location_df = load_location_data(params['oed_location_csv'])
         location_df = np.array_split(location_df, num_chunks)[chunk_idx]
         location_df.reset_index(drop=True, inplace=True)
@@ -874,7 +877,7 @@ def prepare_losses_generation_params(
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(settings, model_id)
-    config = get_json(config_path)
+    config = config_strip_default_exposure(get_json(config_path))
     run_params = {**config, **params}
 
     from oasislmf.manager import OasisManager

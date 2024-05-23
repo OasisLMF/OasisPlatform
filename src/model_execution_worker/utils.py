@@ -9,6 +9,7 @@ __all__ = [
     'InvalidInputsException',
     'MissingModelDataException',
     'prepare_complex_model_file_inputs',
+    'config_strip_default_exposure',
 ]
 
 import logging
@@ -87,6 +88,18 @@ def paths_to_absolute_paths(dictionary, config_path=''):
             del params[key]
     return params
 
+
+def config_strip_default_exposure(config):
+    """ Safeguard to make sure any 'oasislmf.json' files have platform default stripped out
+    """
+    exclude_list = [
+        'oed_location_csv',
+        'oed_accounts_csv',
+        'oed_info_csv',
+        'oed_scope_csv',
+        'analysis_settings_json'
+    ]
+    return {k: v for k, v in config.items() if k not in exclude_list}
 
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
