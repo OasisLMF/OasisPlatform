@@ -101,6 +101,7 @@ def config_strip_default_exposure(config):
     ]
     return {k: v for k, v in config.items() if k not in exclude_list}
 
+
 class TemporaryDir(object):
     """Context manager for mkdtemp() with option to persist"""
 
