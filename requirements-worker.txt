@@ -178,10 +178,6 @@ pyarrow==16.0.0
     # via oasislmf
 pycparser==2.21
     # via cffi
-pyjwt[crypto]==2.8.0
-    # via
-    #   msal
-    #   pyjwt
 pymysql==1.1.1
     # via -r requirements-worker.in
 pyproj==3.5.0
