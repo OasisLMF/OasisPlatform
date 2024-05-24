@@ -464,7 +464,7 @@ pyjwt[crypto]==2.8.0
     # via
     #   djangorestframework-simplejwt
     #   msal
-pymysql==1.1.0
+pymysql==1.1.1
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
