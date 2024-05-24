@@ -55,10 +55,11 @@ jobs:
       piwind_branch: ${{ steps.piwind.outputs.branch }}
 
       release_tag: ${{ steps.released_images.outputs.prev_release_tag }}
-      release_stable_15: ${{ steps.released_images.outputs.stable_15 }}
-      release_stable_23: ${{ steps.released_images.outputs.stable_23 }}
-      release_stable_27: ${{ steps.released_images.outputs.stable_27 }}
-      release_stable_28: ${{ steps.released_images.outputs.stable_28 }}
+      release_stable_1-15: ${{ steps.released_images.outputs.stable_1-15 }}
+      release_stable_1-23: ${{ steps.released_images.outputs.stable_1-23 }}
+      release_stable_1-27: ${{ steps.released_images.outputs.stable_1-27 }}
+      release_stable_1-28: ${{ steps.released_images.outputs.stable_1-28 }}
+      release_stable_2-3: ${{ steps.released_images.outputs.stable_2-3 }}
 
       build_server_img: ${{ steps.built_images.outputs.server_img }}
       build_server_tag: ${{ steps.built_images.outputs.server_tag }}
@@ -91,16 +92,19 @@ jobs:
 
           # Find latest LTS from each stable branch
           stable_1_15=$( ./scripts/find_latest.sh -j 1 -i 15 )
-          echo "stable_15=$stable_1_15" >> $GITHUB_OUTPUT
+          echo "stable_1-15=$stable_1_15" >> $GITHUB_OUTPUT
 
           stable_1_23=$( ./scripts/find_latest.sh -j 1 -i 23 )
-          echo "stable_23=$stable_1_23" >> $GITHUB_OUTPUT
+          echo "stable_1-23=$stable_1_23" >> $GITHUB_OUTPUT
 
           stable_1_27=$( ./scripts/find_latest.sh -j 1 -i 27 )
-          echo "stable_27=$stable_1_27" >> $GITHUB_OUTPUT
+          echo "stable_1-27=$stable_1_27" >> $GITHUB_OUTPUT
 
           stable_1_28=$( ./scripts/find_latest.sh -j 1 -i 28 )
-          echo "stable_28=$stable_1_28" >> $GITHUB_OUTPUT
+          echo "stable_1-28=$stable_1_28" >> $GITHUB_OUTPUT
+
+          stable_2_3=$( ./scripts/find_latest.sh -j 2 -i 3 )
+          echo "stable_2-3=$stable_2_3" >> $GITHUB_OUTPUT
 
       - name: Select PiWind branch
         id: piwind
@@ -229,8 +233,8 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-worker-debian'
 
-  stable_compatibility_15:
-    name: Test stable worker (${{ needs.setup.outputs.release_stable_15 }})
+  stable_compatibility_1-15:
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_1-15 }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -239,14 +243,14 @@ jobs:
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_15 }}
+      worker_tag: ${{ needs.setup.outputs.release_stable_1-15 }}
       worker_api_ver: 'v1'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_15 }}"
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-15 }}"
 
-  stable_compatibility_23:
-    name: Test stable worker (${{ needs.setup.outputs.release_stable_23 }})
+  stable_compatibility_1-23:
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_1-23 }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -255,14 +259,14 @@ jobs:
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_23 }}
+      worker_tag: ${{ needs.setup.outputs.release_stable_1-23 }}
       worker_api_ver: 'v1'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_23 }}"
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-23 }}"
 
-  stable_compatibility_27:
-    name: Test stable worker (${{ needs.setup.outputs.release_stable_27 }})
+  stable_compatibility_1-27:
+    name: Test stable worker (${{ needs.setup.outputs.release_stable_1-27 }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -271,14 +275,14 @@ jobs:
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_27 }}
+      worker_tag: ${{ needs.setup.outputs.release_stable_1-27 }}
       worker_api_ver: 'v1'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_27 }}"
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-27 }}"
 
-  stable_compatibility_28:
-    name: Test stable worker (${{ needs.setup.outputs.release_stable_28 }})
+  stable_compatibility_1-28:
+    name: test stable worker (${{ needs.setup.outputs.release_stable_1-28 }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
@@ -287,9 +291,25 @@ jobs:
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_28 }}
+      worker_tag: ${{ needs.setup.outputs.release_stable_1-28 }}
       worker_api_ver: 'v1'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_28 }}"
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-28 }}"
+
+  stable_compatibility_2-3:
+    name: test stable worker (${{ needs.setup.outputs.release_stable_2-3 }})
+    secrets: inherit
+    needs: [setup]
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    with:
+      piwind_branch: 'stable/2.3.x'
+      server_image: ${{ needs.setup.outputs.build_server_img }}
+      server_tag: ${{ needs.setup.outputs.build_server_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_2-3 }}
+      worker_api_ver: 'v2'
+      debug_mode: 1
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-3 }}"
 
