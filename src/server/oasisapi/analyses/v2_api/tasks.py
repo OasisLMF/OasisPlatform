@@ -553,11 +553,12 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     # remove then store raw files.
     analysis.raw_output_files.all().delete()
-    for name, put_location in result['raw_output_locations'].items():
-        content_type = 'application/octet-stream'
-        if name[-4:] == '.csv':
-            content_type = 'text/csv'
-        analysis.raw_output_files.add(store_file(put_location, content_type, initiator, filename=name))
+    if 'raw_output_locations' in result:
+        for name, put_location in result['raw_output_locations'].items():
+            content_type = 'application/octet-stream'
+            if name[-4:] == '.csv':
+                content_type = 'text/csv'
+            analysis.raw_output_files.add(store_file(put_location, content_type, initiator, filename=name))
 
     analysis.save()
     return result
