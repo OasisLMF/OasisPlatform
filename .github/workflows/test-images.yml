@@ -310,6 +310,6 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.release_stable_2-3 }}
       worker_api_ver: 'v2'
       debug_mode: 1
-      pytest_opts: "${{ needs.setup.outputs.pytest_opts }}"
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-3 }}"
 
