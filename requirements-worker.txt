@@ -236,7 +236,7 @@ pyjwt[crypto]==2.8.0
     # via
     #   msal
     #   pyjwt
-pymysql==1.1.0
+pymysql==1.1.1
     # via -r requirements-worker.in
 pyproj==3.6.1
     # via geopandas

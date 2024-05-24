@@ -246,7 +246,7 @@ pycparser==2.21
     # via cffi
 pyjwt==2.8.0
     # via djangorestframework-simplejwt
-pymysql==1.1.0
+pymysql==1.1.1
     # via -r requirements-server.in
 pyopenssl==24.0.0
     # via

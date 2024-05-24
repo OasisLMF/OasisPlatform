@@ -34,6 +34,7 @@ from .utils import (
     get_model_settings,
     get_worker_versions,
     prepare_complex_model_file_inputs,
+    config_strip_default_exposure,
 )
 
 '''
@@ -297,7 +298,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # oasislmf.json
         config_path = get_oasislmf_config_path(settings)
-        config = get_json(config_path)
+        config = config_strip_default_exposure(get_json(config_path))
 
         # model settings
         model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
@@ -466,8 +467,8 @@ def generate_input(self,
             task_params['user_data_dir'] = input_data_dir
 
         config_path = get_oasislmf_config_path(settings)
-        config = get_json(config_path)
-        lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **task_params}
+        config = config_strip_default_exposure(get_json(config_path))
+        lookup_params = {**config, **task_params}
 
         gen_files_params = OasisManager()._params_generate_files(**lookup_params)
         pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
