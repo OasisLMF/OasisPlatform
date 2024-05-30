@@ -199,7 +199,7 @@ geopandas==0.12.2
     # via oasislmf
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==20.1.0
+gunicorn==22.0.0
     # via -r ./requirements-server.in
 hyperlink==21.0.0
     # via
@@ -276,9 +276,9 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.7
+oasislmf[extra]==1.28.8
     # via -r ./requirements-worker.in
-ods-tools==3.1.4
+ods-tools==3.1.5
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -288,6 +288,7 @@ packaging==23.0
     #   drf-yasg
     #   fastparquet
     #   geopandas
+    #   gunicorn
     #   ods-tools
     #   pyproject-api
     #   pytest
@@ -337,7 +338,7 @@ pyflakes==3.0.1
     # via flake8
 pyjwt==2.6.0
     # via djangorestframework-simplejwt
-pymysql==1.1.0
+pymysql==1.1.1
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
@@ -428,7 +429,7 @@ sqlalchemy==2.0.5.post1
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
-sqlparse==0.4.4
+sqlparse==0.5.0
     # via
     #   django
     #   django-debug-toolbar
