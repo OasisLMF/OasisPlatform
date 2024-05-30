@@ -156,7 +156,7 @@ pyarrow==14.0.1
     # via oasislmf
 pycparser==2.21
     # via cffi
-pymysql==1.1.0
+pymysql==1.1.1
     # via -r requirements-worker.in
 pyproj==3.4.1
     # via geopandas
