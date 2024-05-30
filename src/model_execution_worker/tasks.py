@@ -17,7 +17,6 @@ from celery.utils.log import get_task_logger
 from celery.signals import worker_ready
 from celery.exceptions import WorkerLostError, Terminated
 
-from oasislmf.manager import OasisManager
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
