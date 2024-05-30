@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.8`_
+ ---------
+* [#1000](https://github.com/OasisLMF/OasisPlatform/pull/1000) - Release 1.28.7
+* [#1059](https://github.com/OasisLMF/OasisPlatform/pull/1059) - Backport 1.28.x -  Fixed missing call to param update method - V1 Workers (#1045)
+* [#1042](https://github.com/OasisLMF/OasisPlatform/pull/1045) - Check older paramter names are updated and working in 2.3.4  
+.. _`1.28.8`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.7...1.28.8
+
 `1.28.7`_
  ---------
 * [#993, #971, #784, #664, #798](https://github.com/OasisLMF/OasisPlatform/pull/994) - Logging fixes for workers 
