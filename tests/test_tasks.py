@@ -128,7 +128,7 @@ class StartAnalysis(TestCase):
                     self.assertEqual(called_args.get('ktools_fifo_relative', None), params.get('ktools_fifo_relative'))
                     self.assertEqual(called_args.get('verbose', None), params.get('verbose'))
                     self.assertEqual(called_args.get('analysis_settings.json', None), params.get('analysis_settings.json'))
-                    tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')
+                    tarfile.assert_called_once_with(ANY, os.path.join(run_dir, 'output'), 'output')
 
 
 class StartAnalysisTask(TestCase):

@@ -284,7 +284,6 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
     """
     # Check that the input archive exists and is valid
-    filestore = get_filestore(settings)
     from oasislmf.manager import OasisManager
 
     logger.info("args: {}".format(str(locals())))
@@ -397,7 +396,6 @@ def generate_input(self,
 
     # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
-    filestore = get_filestore(settings)
     from oasislmf.manager import OasisManager
 
     # filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
