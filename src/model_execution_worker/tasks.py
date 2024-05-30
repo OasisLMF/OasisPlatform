@@ -38,6 +38,7 @@ from .utils import (
     get_worker_versions,
     InvalidInputsException,
     prepare_complex_model_file_inputs,
+    config_strip_default_exposure,
 )
 
 '''
@@ -286,6 +287,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
     """
     # Check that the input archive exists and is valid
+    from oasislmf.manager import OasisManager
+
     logger.info("args: {}".format(str(locals())))
     logger.info(str(get_worker_versions()))
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
@@ -311,7 +314,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # oasislmf.json
         config_path = get_oasislmf_config_path(settings)
-        config = get_json(config_path)
+        config = config_strip_default_exposure(get_json(config_path))
 
         # model settings
         model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
@@ -331,13 +334,15 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Create and log params
         run_params = {**config, **task_params}
-        params = paths_to_absolute_paths(run_params, config_path)
+        gen_losses_params = OasisManager()._params_generate_losses(**run_params)
+        post_hook_params = OasisManager()._params_post_analysis(**run_params)
+        params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params}, config_path)
+
         if debug_worker:
             log_params(params, kwargs)
 
         # Run generate losses
         try:
-            from oasislmf.manager import OasisManager
             OasisManager().generate_oasis_losses(**params)
             returncode = 0
         except Exception as e:
@@ -394,6 +399,8 @@ def generate_input(self,
     # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
     filestore.media_root = settings.get('worker', 'MEDIA_ROOT')
+    from oasislmf.manager import OasisManager
+
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
@@ -427,13 +434,17 @@ def generate_input(self,
         }
 
         if complex_data_files:
-            prepare_complex_model_file_inputs(complex_data_files, input_data_dir)
+            prepare_complex_model_file_inputs(complex_data_files, input_data_dir, filestore)
             task_params['user_data_dir'] = input_data_dir
 
         config_path = get_oasislmf_config_path(settings)
-        config = get_json(config_path)
-        lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **task_params}
-        params = paths_to_absolute_paths(lookup_params, config_path)
+        config = config_strip_default_exposure(get_json(config_path))
+        lookup_params = {**config, **task_params}
+
+        gen_files_params = OasisManager()._params_generate_files(**lookup_params)
+        pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
+        params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params}, config_path)
+
         if debug_worker:
             log_params(params, kwargs, exclude_keys=[
                 'profile_loc',
@@ -449,7 +460,6 @@ def generate_input(self,
             ])
 
         try:
-            from oasislmf.manager import OasisManager
             OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:

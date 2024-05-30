@@ -10,7 +10,7 @@ from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis.strategies import text, integers
 from mock import patch, Mock
-# from mock import ANY
+from mock import ANY
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher
@@ -112,21 +112,26 @@ class StartAnalysis(TestCase):
                 def fake_run_dir(*args, **kwargs):
                     yield run_dir
 
-                with patch('oasislmf.manager.OasisManager', Mock(return_value=cmd_instance)) as cmd_mock, \
+                with patch('oasislmf.manager.OasisManager.generate_oasis_losses', Mock(return_value='mocked result')) as cmd_mock, \
                         patch('src.model_execution_worker.tasks.get_worker_versions', Mock(return_value='')), \
                         patch('src.model_execution_worker.tasks.filestore.compress') as tarfile, \
                         patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
-                    cmd_instance.generate_oasis_losses.return_value = "mocked result"  # Mock the return value
                     output_location, log_location, error_location, returncode = start_analysis(
                         os.path.join(media_root, 'analysis_settings.json'),
                         os.path.join(media_root, 'location.tar'),
                         log_filename=log_file,
                     )
-                    expected_params = {**params, **{"analysis_settings_json": os.path.join(media_root, 'analysis_settings.json')}}
-                    cmd_instance.generate_oasis_losses.assert_called_once_with(**expected_params)
-                    tarfile.assert_called_once_with(os.path.join(media_root, output_location), os.path.join(run_dir, 'output'), 'output')
+
+                    cmd_mock.assert_called_once()
+                    called_args = cmd_mock.call_args.kwargs
+                    self.assertEqual(called_args.get('oasis_files_dir', None), params.get('oasis_files_dir'))
+                    self.assertEqual(called_args.get('model_run_dir', None), params.get('model_run_dir'))
+                    self.assertEqual(called_args.get('ktools_fifo_relative', None), params.get('ktools_fifo_relative'))
+                    self.assertEqual(called_args.get('verbose', None), params.get('verbose'))
+                    self.assertEqual(called_args.get('analysis_settings.json', None), params.get('analysis_settings.json'))
+                    tarfile.assert_called_once_with(ANY, os.path.join(run_dir, 'output'), 'output')
 
 
 class StartAnalysisTask(TestCase):

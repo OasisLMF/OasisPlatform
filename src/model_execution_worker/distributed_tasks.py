@@ -37,6 +37,7 @@ from .utils import (
     get_worker_versions,
     merge_dirs,
     prepare_complex_model_file_inputs,
+    config_strip_default_exposure,
 )
 
 
@@ -97,7 +98,7 @@ def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, 
     ).delay()
 
 
-def load_location_data(loc_filepath):
+def load_location_data(loc_filepath, oed_schema_info=None):
     """ Returns location file as DataFrame
 
     Returns a DataFrame of Loaction data with 'loc_id' row assgined
@@ -112,7 +113,10 @@ def load_location_data(loc_filepath):
         from oasislmf.utils.data import prepare_location_df
         from ods_tools.oed.exposure import OedExposure
 
-        exposure = OedExposure(location=pathlib.Path(os.path.abspath(loc_filepath)))
+        exposure = OedExposure(
+            location=pathlib.Path(os.path.abspath(loc_filepath)),
+            oed_schema_info=oed_schema_info,
+        )
         exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
         return exposure.location.dataframe
 
@@ -481,8 +485,8 @@ def prepare_input_generation_params(
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(settings, model_id)
-    config = get_json(config_path)
-    lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **params}
+    config = config_strip_default_exposure(get_json(config_path))
+    lookup_params = {**config, **params}
 
     from oasislmf.manager import OasisManager
     gen_files_params = OasisManager()._params_generate_files(**lookup_params)
@@ -569,7 +573,10 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        location_df = load_location_data(params['oed_location_csv'])
+        location_df = load_location_data(
+            loc_filepath=params['oed_location_csv'],
+            oed_schema_info=params.get('oed_schema_info', None)
+        )
         location_df = np.array_split(location_df, num_chunks)[chunk_idx]
         location_df.reset_index(drop=True, inplace=True)
 
@@ -872,7 +879,7 @@ def prepare_losses_generation_params(
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(settings, model_id)
-    config = get_json(config_path)
+    config = config_strip_default_exposure(get_json(config_path))
     run_params = {**config, **params}
 
     from oasislmf.manager import OasisManager

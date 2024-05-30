@@ -1,6 +1,19 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.5`_
+ ---------
+* [#1058](https://github.com/OasisLMF/OasisPlatform/pull/1058) -  CI - Disable external docker images scanning 
+* [#1060](https://github.com/OasisLMF/OasisPlatform/pull/1060) - Set version 2.3.5
+* [#1040](https://github.com/OasisLMF/OasisPlatform/pull/1040) - Azure Postgres Flexible server support   
+* [#1038, #1039](https://github.com/OasisLMF/OasisPlatform/pull/1041) - Minor bug fixes for worker and server
+* [#1042](https://github.com/OasisLMF/OasisPlatform/pull/1045) - Check older paramter names are updated and working in 2.3.4  
+* [#1051](https://github.com/OasisLMF/OasisPlatform/pull/1051) - Fix running V2 workers with custom OED specification files
+* [#1020](https://github.com/OasisLMF/OasisPlatform/pull/1020) - Release 2.3.4 (staging)
+* [#1052](https://github.com/OasisLMF/OasisPlatform/pull/1054) - Lot3 - worker monitor compatibility fix needed 
+* [#1055](https://github.com/OasisLMF/OasisPlatform/pull/1055) - Fix failing unittest in release branch 2.3.5
+.. _`2.3.5`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.4...2.3.5
+
 `2.3.4`_
  ---------
 * [#1023](https://github.com/OasisLMF/OasisPlatform/pull/1024) - Error reading sub-task logs from S3 when AWS_LOCATION is set

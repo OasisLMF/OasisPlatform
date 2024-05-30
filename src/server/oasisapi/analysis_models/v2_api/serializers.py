@@ -229,7 +229,11 @@ class ModelScalingConfigSerializer(serializers.ModelSerializer):
 
         # Check that `worker_count_min` < `worker_count_max`
         m_id = self.context['request'].parser_context['kwargs']['pk']
-        current_val = ModelScalingOptions.objects.get(id=m_id)
+        try:
+            current_val = ModelScalingOptions.objects.get(id=m_id)
+        except ModelScalingOptions.DoesNotExist:
+            # create a default config object for validation
+            current_val = ModelScalingOptions()
 
         wrk_min = self.initial_data.get('worker_count_min', current_val.worker_count_min)
         wrk_max = self.initial_data.get('worker_count_max', current_val.worker_count_max)

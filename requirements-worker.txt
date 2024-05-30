@@ -149,9 +149,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.4
+oasislmf[extra]==2.3.5
     # via -r requirements-worker.in
-ods-tools==3.2.3
+ods-tools==3.2.4
     # via oasislmf
 packaging==23.0
     # via
@@ -178,7 +178,7 @@ pyarrow==16.0.0
     # via oasislmf
 pycparser==2.21
     # via cffi
-pymysql==1.1.0
+pymysql==1.1.1
     # via -r requirements-worker.in
 pyproj==3.5.0
     # via geopandas

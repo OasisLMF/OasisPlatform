@@ -340,9 +340,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.4
+oasislmf[extra]==2.3.5
     # via -r ./requirements-worker.in
-ods-tools==3.2.3
+ods-tools==3.2.4
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -415,9 +415,9 @@ pyflakes==3.0.1
     # via flake8
 pygments==2.14.0
     # via ipython
-pyjwt==2.6.0
+pyjwt==2.8.0
     # via djangorestframework-simplejwt
-pymysql==1.1.0
+pymysql==1.1.1
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
