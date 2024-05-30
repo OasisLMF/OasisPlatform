@@ -118,7 +118,7 @@ drf-yasg==1.21.5
     # via -r requirements-server.in
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==20.1.0
+gunicorn==22.0.0
     # via -r requirements-server.in
 hyperlink==21.0.0
     # via
@@ -173,6 +173,7 @@ ods-tools==3.1.4
 packaging==23.0
     # via
     #   drf-yasg
+    #   gunicorn
     #   ods-tools
 pandas==1.5.3
     # via
@@ -196,7 +197,7 @@ pycparser==2.21
     # via cffi
 pyjwt==2.6.0
     # via djangorestframework-simplejwt
-pymysql==1.1.0
+pymysql==1.1.1
     # via -r requirements-server.in
 pyopenssl==24.0.0
     # via twisted
@@ -236,7 +237,7 @@ six==1.16.0
     #   service-identity
 sqlalchemy==2.0.5.post1
     # via -r requirements-server.in
-sqlparse==0.4.4
+sqlparse==0.5.0
     # via
     #   django
     #   django-debug-toolbar
