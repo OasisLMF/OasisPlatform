@@ -535,12 +535,6 @@ def pre_analysis_hook(self,
             # OED has been loaded and check in this step, disable check in file gen
             # This is in case pre-exposure func has added non-standard cols to the file.
             params['check_oed'] = False
-
-        # remove any pre-loaded files (only affects this worker)
-        oed_files = {v for k, v in params.items() if k.startswith('oed_') and isinstance(v, str)}
-        for filepath in oed_files:
-            if Path(filepath).exists():
-                os.remove(filepath)
     else:
         logger.info('pre_analysis_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
