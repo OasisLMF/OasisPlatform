@@ -65,7 +65,7 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
         statuses = self.bulk_create(objs)
 
         send_task_status_message(build_all_queue_status_message())
-        #self._send_socket_messages(statuses)
+        # self._send_socket_messages(statuses)
 
     # This generates too much WS traffic disableing message per sub-task update
     # def update(self, **kwargs):
