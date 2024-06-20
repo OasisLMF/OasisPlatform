@@ -101,7 +101,7 @@ spec:
            {{- if (.Values.azure).secretProvider }}
            {{- if hasKey .Values.azure.secretProvider.secrets "keycloak-cert" }}
             - name: KC_DB_URL_PROPERTIES
-              value: "?sslmode=verify-full&sslcert=root.crt"
+              value: "?sslmode=require&sslcert=root.crt"
            {{- end }}
            {{- end }}
             - name: KC_LOGLEVEL
