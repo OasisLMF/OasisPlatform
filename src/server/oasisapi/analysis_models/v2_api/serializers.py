@@ -9,6 +9,7 @@ from ...analyses.models import Analysis
 
 from ..models import AnalysisModel, ModelScalingOptions, ModelChunkingOptions
 from ...permissions.group_auth import validate_and_update_groups, validate_data_files
+from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
@@ -17,6 +18,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     scaling_configuration = serializers.SerializerMethodField()
     chunking_configuration = serializers.SerializerMethodField()
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    settings = serializers.SerializerMethodField()
     namespace = 'v2-models'
 
     class Meta:
@@ -36,6 +38,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'groups',
             'run_mode',
         )
+        create_only_fields = ('settings',)
 
     def validate(self, attrs):
 
@@ -47,16 +50,34 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def to_internal_value(self, data):
+        import ipdb; ipdb.set_trace()
+        settings = data.get('settings', {})
+        data = super(AnalysisModelSerializer, self).to_internal_value(data)
+        if self.instance:
+            # update
+            for x in self.create_only_fields:
+                data.pop(x)
+        return data
+
+
     def create(self, validated_data):
         data = validated_data.copy()
         if 'request' in self.context:
             data['creator'] = self.context.get('request').user
         return super(AnalysisModelSerializer, self).create(data)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+
+    @swagger_serializer_method(serializer_or_field=ModelParametersSerializer)
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
+
+
+    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
+    #def get_settings(self, instance):
+    #    request = self.context.get('request')
+    #    return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_versions(self, instance):
