@@ -12,6 +12,43 @@ from ...permissions.group_auth import validate_and_update_groups, validate_data_
 from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 
 
+
+class AnalysisModelListSerializer(serializers.Serializer):
+    """ Read Only Model Deserializer for efficiently returning a list of all 
+        entries in DB
+    """
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    created = serializers.DateTimeField(read_only=True)
+    modified = serializers.DateTimeField(read_only=True)
+    settings = serializers.SerializerMethodField()
+    versions = serializers.SerializerMethodField()
+    scaling_configuration = serializers.SerializerMethodField()
+    chunking_configuration = serializers.SerializerMethodField()
+    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    settings = serializers.SerializerMethodField()
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_settings(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_versions(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_versions_url(request=request, namespace=self.namespace)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_scaling_configuration(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_scaling_configuration_url(request=request, namespace=self.namespace)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_chunking_configuration(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_chunking_configuration_url(request=request, namespace=self.namespace)
+
+
 class AnalysisModelSerializer(serializers.ModelSerializer):
     settings = serializers.SerializerMethodField()
     versions = serializers.SerializerMethodField()
