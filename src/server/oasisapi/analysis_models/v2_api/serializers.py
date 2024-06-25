@@ -35,7 +35,9 @@ class AnalysisModelListSerializer(serializers.Serializer):
         entries in DB
     """
     id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(read_only=True)
+    supplier_id = serializers.CharField(read_only=True)
+    model_id = serializers.CharField(read_only=True)
+    version_id = serializers.CharField(read_only=True)
     created = serializers.DateTimeField(read_only=True)
     modified = serializers.DateTimeField(read_only=True)
     settings = serializers.SerializerMethodField()
@@ -44,6 +46,7 @@ class AnalysisModelListSerializer(serializers.Serializer):
     chunking_configuration = serializers.SerializerMethodField()
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
     settings = serializers.SerializerMethodField()
+    namespace = 'v2-models'
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_settings(self, instance):
