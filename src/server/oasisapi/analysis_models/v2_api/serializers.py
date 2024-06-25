@@ -11,10 +11,27 @@ from ..models import AnalysisModel, ModelScalingOptions, ModelChunkingOptions
 from ...permissions.group_auth import validate_and_update_groups, validate_data_files
 from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 
+from django.core.files import File
+from tempfile import TemporaryFile
+from ...files.models import RelatedFile
+
+
+def create_settings_file(data, user, serializer):
+    json_serializer = serializer()
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(data.encode('utf-8'))
+        tmp_file.seek(0)
+
+        return RelatedFile.objects.create(
+            file=File(tmp_file, name=json_serializer.filename),
+            filename=json_serializer.filename,
+            content_type='application/json',
+            creator=user,
+        )
 
 
 class AnalysisModelListSerializer(serializers.Serializer):
-    """ Read Only Model Deserializer for efficiently returning a list of all 
+    """ Read Only Model Deserializer for efficiently returning a list of all
         entries in DB
     """
     id = serializers.IntegerField(read_only=True)
@@ -88,21 +105,24 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         return attrs
 
     def to_internal_value(self, data):
-        import ipdb; ipdb.set_trace()
         settings = data.get('settings', {})
         data = super(AnalysisModelSerializer, self).to_internal_value(data)
-        if self.instance:
-            # update
-            for x in self.create_only_fields:
-                data.pop(x)
+        data['settings'] = ModelParametersSerializer().validate_json(settings)
         return data
 
 
-    def create(self, validated_data):
+    def create(self, validated_data, settings=None):
         data = validated_data.copy()
+        data_settings = data.pop('settings', {})
         if 'request' in self.context:
             data['creator'] = self.context.get('request').user
-        return super(AnalysisModelSerializer, self).create(data)
+
+        obj_model = super(AnalysisModelSerializer, self).create(data)
+        if data_settings:
+            obj_model.resource_file = create_settings_file(data_settings, data['creator'], ModelParametersSerializer)
+            obj_model.save()
+
+        return obj_model
 
 
     @swagger_serializer_method(serializer_or_field=ModelParametersSerializer)
