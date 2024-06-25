@@ -110,19 +110,26 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         data['settings'] = ModelParametersSerializer().validate_json(settings)
         return data
 
-
-    def create(self, validated_data, settings=None):
+    def update(self, instance, validated_data):
         data = validated_data.copy()
-        data_settings = data.pop('settings', {})
+        settings = data.pop('settings', {})
+        if settings:
+            instance.resource_file = create_settings_file(settings, instance.creator, ModelParametersSerializer)
+
+        return super(AnalysisModelSerializer, self).update(instance, validated_data)
+
+    def create(self, validated_data):
+        data = validated_data.copy()
+        settings = data.pop('settings', {})
         if 'request' in self.context:
             data['creator'] = self.context.get('request').user
 
-        obj_model = super(AnalysisModelSerializer, self).create(data)
-        if data_settings:
-            obj_model.resource_file = create_settings_file(data_settings, data['creator'], ModelParametersSerializer)
-            obj_model.save()
+        instance = super(AnalysisModelSerializer, self).create(data)
+        if settings:
+            instance.resource_file = create_settings_file(settings, data['creator'], ModelParametersSerializer)
 
-        return obj_model
+        instance.save()
+        return instance
 
 
     @swagger_serializer_method(serializer_or_field=ModelParametersSerializer)
