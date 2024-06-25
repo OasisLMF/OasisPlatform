@@ -92,7 +92,6 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             'groups',
             'run_mode',
         )
-        create_only_fields = ('settings',)
 
     def validate(self, attrs):
 
@@ -134,17 +133,10 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
     @swagger_serializer_method(serializer_or_field=ModelParametersSerializer)
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
-
-
-    #@swagger_serializer_method(serializer_or_field=serializers.URLField)
-    #def get_settings(self, instance):
-    #    request = self.context.get('request')
-    #    return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_versions(self, instance):

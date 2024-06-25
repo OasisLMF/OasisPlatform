@@ -36,7 +36,6 @@ def create_settings_file(data, user):
         )
 
 
-
 class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     output_log = serializers.SerializerMethodField()
     error_log = serializers.SerializerMethodField()
