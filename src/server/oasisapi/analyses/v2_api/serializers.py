@@ -16,6 +16,26 @@ from ...schemas.serializers import (
     TaskErrorSerializer,
 )
 
+from ...schemas.serializers import AnalysisSettingsSerializer
+from django.core.files import File
+from tempfile import TemporaryFile
+from ...files.models import RelatedFile
+
+
+def create_settings_file(data, user):
+    json_serializer = AnalysisSettingsSerializer()
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(data.encode('utf-8'))
+        tmp_file.seek(0)
+
+        return RelatedFile.objects.create(
+            file=File(tmp_file, name=json_serializer.filename),
+            filename=json_serializer.filename,
+            content_type='application/json',
+            creator=user,
+        )
+
+
 
 class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     output_log = serializers.SerializerMethodField()
@@ -266,7 +286,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_settings_file_url(request=request, namespace=self.ns) if instance.settings_file_id else None
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @swagger_serializer_method(serializer_or_field=AnalysisSettingsSerializer)
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.ns) if instance.settings_file_id else None
@@ -378,7 +398,6 @@ class AnalysisSerializer(serializers.ModelSerializer):
 
         # Check that portfolio has a location file and user is allowed to use the portfolio
         if attrs.get('portfolio'):
-
             try:
                 verify_and_get_groups(user, attrs['portfolio'].groups.all())
             except ValidationError:
@@ -398,7 +417,36 @@ class AnalysisSerializer(serializers.ModelSerializer):
                     'model': ["Model pk \"{}\" - 'run_mode' must not be null".format(attrs['model'].id)]
                 })
 
+        # Validate analyses settings if given at create/update
+        if attrs.get('settings'):
+            attrs['settings'] = AnalysisSettingsSerializer().validate(attrs.get('settings'))
         return attrs
+
+    def to_internal_value(self, data):
+        settings = data.get('settings', {})
+        data = super(AnalysisSerializer, self).to_internal_value(data)
+        data['settings'] = AnalysisSettingsSerializer().to_internal_value(settings)
+        return data
+
+    def update(self, instance, validated_data):
+        data = validated_data.copy()
+        settings = data.pop('settings', {})
+        if settings:
+            instance.settings_file = create_settings_file(settings, instance.creator)
+        return super(AnalysisSerializer, self).update(instance, validated_data)
+
+    def create(self, validated_data):
+        data = validated_data.copy()
+        settings = data.pop('settings', {})
+        if 'request' in self.context:
+            data['creator'] = self.context.get('request').user
+
+        instance = super(AnalysisSerializer, self).create(data)
+        if settings:
+            instance.settings_file = create_settings_file(settings, data['creator'])
+
+        instance.save()
+        return instance
 
 
 class AnalysisSerializerWebSocket(serializers.Serializer):

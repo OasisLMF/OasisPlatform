@@ -9,15 +9,15 @@ from ...analyses.models import Analysis
 
 from ..models import AnalysisModel, ModelScalingOptions, ModelChunkingOptions
 from ...permissions.group_auth import validate_and_update_groups, validate_data_files
-from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 
+from ...schemas.serializers import ModelParametersSerializer
 from django.core.files import File
 from tempfile import TemporaryFile
 from ...files.models import RelatedFile
 
 
-def create_settings_file(data, user, serializer):
-    json_serializer = serializer()
+def create_settings_file(data, user):
+    json_serializer = ModelParametersSerializer()
     with TemporaryFile() as tmp_file:
         tmp_file.write(data.encode('utf-8'))
         tmp_file.seek(0)
@@ -102,19 +102,22 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         validate_and_update_groups(self.partial, user, attrs)
         validate_data_files(user, attrs.get('data_files'))
 
+        if attrs.get('settings'):
+            attrs['settings'] = ModelParametersSerializer().validate(attrs.get('settings'))
+
         return attrs
 
     def to_internal_value(self, data):
         settings = data.get('settings', {})
         data = super(AnalysisModelSerializer, self).to_internal_value(data)
-        data['settings'] = ModelParametersSerializer().validate_json(settings)
+        data['settings'] = ModelParametersSerializer().to_internal_value(settings)
         return data
 
     def update(self, instance, validated_data):
         data = validated_data.copy()
         settings = data.pop('settings', {})
         if settings:
-            instance.resource_file = create_settings_file(settings, instance.creator, ModelParametersSerializer)
+            instance.resource_file = create_settings_file(settings, instance.creator)
 
         return super(AnalysisModelSerializer, self).update(instance, validated_data)
 
@@ -126,7 +129,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
 
         instance = super(AnalysisModelSerializer, self).create(data)
         if settings:
-            instance.resource_file = create_settings_file(settings, data['creator'], ModelParametersSerializer)
+            instance.resource_file = create_settings_file(settings, data['creator'])
 
         instance.save()
         return instance
