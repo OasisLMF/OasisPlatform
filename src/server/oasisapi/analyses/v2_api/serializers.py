@@ -84,6 +84,7 @@ class AnalysisListSerializer(serializers.Serializer):
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    priority = serializers.IntegerField(read_only=True)
 
     # Groups - inherited from portfolio
     groups = serializers.SerializerMethodField(read_only=True)
