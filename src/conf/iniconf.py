@@ -38,12 +38,25 @@ class Settings(ConfigParser):
         super(Settings, self).__init__(*args, **kwargs)
 
         ini_files = [os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'conf.ini')]
-
         specified_ini = os.environ.get('OASIS_INI_PATH', None)
         if specified_ini and os.path.exists(specified_ini):
             ini_files.append(specified_ini)
-
         self.read(ini_files)
+
+        # make sure required sections exist
+        required_sections = [
+            'celery',
+            'server',
+            'worker',
+            'worker.model_data',
+            'worker.default_reader_engine_options'
+        ]
+        for sec in required_sections:
+            if not self.has_section(sec):
+                self.add_section(sec)
+
+    def _section_to_env_prefix(self, section):
+        return '_'.join(section.split('.')).upper()
 
     def _get_section_env_vars(self, section):
         section_env_prefix = 'OASIS_{}_'.format(section.upper())
