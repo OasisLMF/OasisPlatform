@@ -185,8 +185,6 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.3.0
     # via celery
-lark==1.1.9
-    # via ods-tools
 llvmlite==0.41.1
     # via numba
 markdown==3.4.3
@@ -199,8 +197,6 @@ msgpack==0.6.2
     # via channels-redis
 mysqlclient==2.1.1
     # via -r requirements-server.in
-networkx==3.1
-    # via ods-tools
 numba==0.58.0
     # via ods-tools
 numpy==1.25.2
@@ -211,7 +207,7 @@ numpy==1.25.2
     #   pyarrow
 oasis-data-manager==0.1.3
     # via ods-tools
-ods-tools==3.2.4
+ods-tools==3.2.5
     # via -r requirements-server.in
 packaging==23.0
     # via
@@ -266,8 +262,6 @@ pytz==2023.3
     #   djangorestframework
     #   drf-yasg
     #   pandas
-pyyaml==6.0.1
-    # via ods-tools
 redis==4.5.4
     # via -r requirements-server.in
 requests==2.28.2
