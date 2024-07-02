@@ -443,8 +443,11 @@ def keys_generation_task(fn):
                                    task_slug=kwargs.get('slug'),
                                    error_state='INPUTS_GENERATION_ERROR'
                                    )
-
-            return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+            try:
+                return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+            except Exception as error:
+                # fallback only needed if celery can't serialize the exception
+                logger.exception("Error occured in 'keys_generation_task':")
 
     return run
 
@@ -855,7 +858,11 @@ def loss_generation_task(fn):
                                    task_slug=kwargs.get('slug'),
                                    error_state='RUN_ERROR'
                                    )
-            return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+            try:
+                return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+            except Exception as error:
+                # fallback only needed if celery can't serialize the exception
+                logger.exception("Error occured in 'loss_generation_task':")
 
     return run
 
