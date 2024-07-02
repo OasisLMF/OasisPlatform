@@ -448,6 +448,7 @@ def keys_generation_task(fn):
             except Exception as error:
                 # fallback only needed if celery can't serialize the exception
                 logger.exception("Error occured in 'keys_generation_task':")
+                raise error
 
     return run
 
@@ -863,6 +864,7 @@ def loss_generation_task(fn):
             except Exception as error:
                 # fallback only needed if celery can't serialize the exception
                 logger.exception("Error occured in 'loss_generation_task':")
+                raise error
 
     return run
 
