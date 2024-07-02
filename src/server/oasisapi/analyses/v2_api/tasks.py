@@ -378,6 +378,10 @@ def _traceback_from_errback_args(*args):
             logging.error('Could not extract traceback')
             return ''
 
+    if tb is None:
+        logging.error('traceback returned is None')
+        return ''
+
     return tb
 
 
