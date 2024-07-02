@@ -1,6 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.6`_
+ ---------
+* [#1062](https://github.com/OasisLMF/OasisPlatform/pull/1062) - Fix autoscaling ramping down when new analysis run is triggered  
+* [#1066](https://github.com/OasisLMF/OasisPlatform/pull/1066) - Fix keycloak when running with Postgres Flexible server
+* [#1056](https://github.com/OasisLMF/OasisPlatform/pull/1067) - Passing analysis/model settings as a(n optional) parameter when creating a new analysis or model
+* [#1068](https://github.com/OasisLMF/OasisPlatform/pull/1069) - If conf.ini is missing a [celery] section OASIS_CELERY_BROKER_URL fails to load 
+* [#1072](https://github.com/OasisLMF/OasisPlatform/pull/1073) - Always mark Sub-tasks as error when hitting problems 
+* [#1044](https://github.com/OasisLMF/OasisPlatform/pull/1044) - Release 2.3.5 (30th May 2024)
+.. _`2.3.6`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.5...2.3.6
+
 `2.3.5`_
  ---------
 * [#1058](https://github.com/OasisLMF/OasisPlatform/pull/1058) -  CI - Disable external docker images scanning 
