@@ -262,9 +262,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         return super().get_queryset().select_related(*self.file_action_types).prefetch_related('complex_model_data_files')
 
     def get_serializer_class(self):
-        if self.action in ['create', 'options', 'update', 'partial_update', 'retrieve']:
+        if self.action in ['create', 'options', 'update', 'partial_update']:
             return super(AnalysisViewSet, self).get_serializer_class()
-        elif self.action in ['list']:
+        elif self.action in ['list', 'retrieve']:
             return AnalysisListSerializer
         elif self.action == 'copy':
             return AnalysisCopySerializer

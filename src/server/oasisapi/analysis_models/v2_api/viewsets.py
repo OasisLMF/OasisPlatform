@@ -14,6 +14,7 @@ from rest_framework.settings import api_settings
 from ..models import AnalysisModel, SettingsTemplate
 from .serializers import (
     AnalysisModelSerializer,
+    AnalysisModelListSerializer,
     ModelVersionsSerializer,
     CreateTemplateSerializer,
     TemplateSerializer,
@@ -194,6 +195,8 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:
             return RelatedFileSerializer
+        elif self.action in ['list', 'retrieve']:
+            return AnalysisModelListSerializer
         elif self.action in ['data_files']:
             return DataFileSerializer
         elif self.action in ['versions']:
