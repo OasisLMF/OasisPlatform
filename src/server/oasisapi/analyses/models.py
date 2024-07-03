@@ -18,7 +18,7 @@ from rest_framework.reverse import reverse
 from src.server.oasisapi.celery_app_v1 import v1 as celery_app_v1
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
-    TaskStatusMessageAnalysisItem, build_task_status_message
+    TaskStatusMessageAnalysisItem, build_task_status_message, build_all_queue_status_message
 from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
 from ..data_files.models import DataFile
 from ..files.models import RelatedFile, file_storage_link
@@ -64,7 +64,8 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
         """
         statuses = self.bulk_create(objs)
 
-        self._send_socket_messages(statuses)
+        send_task_status_message(build_all_queue_status_message())
+        # self._send_socket_messages(statuses)
 
     # This generates too much WS traffic disableing message per sub-task update
     # def update(self, **kwargs):

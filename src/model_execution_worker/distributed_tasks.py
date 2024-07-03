@@ -456,8 +456,12 @@ def keys_generation_task(fn):
                                    task_slug=kwargs.get('slug'),
                                    error_state='INPUTS_GENERATION_ERROR'
                                    )
-
-            return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+            try:
+                return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+            except Exception as error:
+                # fallback only needed if celery can't serialize the exception
+                logger.exception("Error occured in 'keys_generation_task':")
+                raise error
 
     return run
 
@@ -534,12 +538,6 @@ def pre_analysis_hook(self,
             # OED has been loaded and check in this step, disable check in file gen
             # This is in case pre-exposure func has added non-standard cols to the file.
             params['check_oed'] = False
-
-        # remove any pre-loaded files (only affects this worker)
-        oed_files = {v for k, v in params.items() if k.startswith('oed_') and isinstance(v, str)}
-        for filepath in oed_files:
-            if Path(filepath).exists():
-                os.remove(filepath)
     else:
         logger.info('pre_analysis_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -859,7 +857,12 @@ def loss_generation_task(fn):
                                    task_slug=kwargs.get('slug'),
                                    error_state='RUN_ERROR'
                                    )
-            return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+            try:
+                return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+            except Exception as error:
+                # fallback only needed if celery can't serialize the exception
+                logger.exception("Error occured in 'loss_generation_task':")
+                raise error
 
     return run
 
