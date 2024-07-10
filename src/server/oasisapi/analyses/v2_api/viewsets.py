@@ -182,7 +182,10 @@ class AnalysisTaskFilter(TimeStampedFilter):
 
 # https://stackoverflow.com/questions/62572389/django-drf-yasg-how-to-add-description-to-tags
 
-@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisSerializer(many=True)}))
+@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer(many=True)}))
+@method_decorator(name='create', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
+@method_decorator(name='update', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
 class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
