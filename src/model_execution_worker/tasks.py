@@ -362,7 +362,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             OasisManager().generate_oasis_losses(**params)
             returncode = 0
         except Exception as e:
-            logger.info(f'Exception: {e.__class__}: {e}')
+            logger.exception("Error occured in 'generate_oasis_losses':")
             returncode = 1
 
         # Ktools log Tar file
@@ -498,7 +498,7 @@ def generate_input(self,
             OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:
-            logger.info(f'Exception: {e.__class__}: {e}')
+            logger.exception("Error occured in 'generate_oasis_files':")
             returncode = 1
 
         # Find Generated Files
