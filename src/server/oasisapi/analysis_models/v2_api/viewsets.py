@@ -152,6 +152,10 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
         return handle_json_data(self.get_object(), 'file', request, AnalysisSettingsSerializer)
 
 
+@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisModelListSerializer(many=True)}))
+@method_decorator(name='create', decorator=swagger_auto_schema(responses={200: AnalysisModelListSerializer()}))
+@method_decorator(name='update', decorator=swagger_auto_schema(responses={200: AnalysisModelListSerializer()}))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(responses={200: AnalysisModelListSerializer()}))
 class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
