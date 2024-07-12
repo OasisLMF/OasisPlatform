@@ -252,7 +252,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
                          'cancel_analysis_run']
 
     # queryset = Analysis.objects.all().select_related(*file_action_types).prefetch_related('complex_model_data_files')
-    serializer_class = AnalysisSerializer
+    serializer_class = AnalysisListSerializer
     filterset_class = AnalysisFilter
 
     group_access_model = Analysis
@@ -266,9 +266,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ['create', 'options', 'update', 'partial_update']:
-            return super(AnalysisViewSet, self).get_serializer_class()
+            return AnalysisSerializer
         elif self.action in ['list', 'retrieve']:
-            return AnalysisListSerializer
+            return super(AnalysisViewSet, self).get_serializer_class()
         elif self.action == 'copy':
             return AnalysisCopySerializer
         elif self.action == 'data_files':
@@ -289,7 +289,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer}, manual_parameters=[RUN_MODE_PARAM])
+    @swagger_auto_schema(responses={200: AnalysisListSerializer}, manual_parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
@@ -301,9 +301,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         run_mode_override = request.GET.get('run_mode_override', None)
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.run(request.user, run_mode_override=run_mode_override)
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def generate_and_run(self, request, pk=None, version=None):
         """
@@ -314,9 +314,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj = self.get_object()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.generate_and_run(request.user)
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
@@ -327,9 +327,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_any()
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def cancel_analysis_run(self, request, pk=None, version=None):
         """
@@ -339,9 +339,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_analysis()
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer}, manual_parameters=[RUN_MODE_PARAM])
+    @swagger_auto_schema(responses={200: AnalysisListSerializer}, manual_parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def generate_inputs(self, request, pk=None, version=None):
         """
@@ -352,9 +352,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         run_mode_override = request.GET.get('run_mode_override', None)
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.generate_inputs(request.user, run_mode_override=run_mode_override)
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None, version=None):
         """
@@ -364,7 +364,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_generate_inputs()
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
     def copy(self, request, pk=None, version=None):
