@@ -705,6 +705,10 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     from oasislmf.manager import OasisManager
     OasisManager().generate_files(**params)
 
+    # Optional step (Post file generation Hook)
+    if params.get('post_file_gen_module', None):
+        OasisManager().post_file_gen(**params)
+
     # clear out user-data,
     # these files should not be sorted in the generated inputs tar
     if params['user_data_dir'] is not None:
@@ -906,6 +910,11 @@ def prepare_losses_generation_params(
 def prepare_losses_generation_directory(self, params, analysis_id=None, slug=None, **kwargs):
     from oasislmf.manager import OasisManager
     params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
+
+    # Optional step (Pre losses hook) --- Before or after 'generate_losses_dir' ??
+        if params.get('pre_loss_module', None):
+            OasisManager().pre_loss(**params)
+
     params['run_location'] = filestore.put(
         params['model_run_dir'],
         filename='run_directory.tar.gz',
