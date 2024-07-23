@@ -493,9 +493,8 @@ def prepare_input_generation_params(
     lookup_params = {**config, **params}
 
     from oasislmf.manager import OasisManager
-    gen_files_params = OasisManager()._params_generate_files(**lookup_params)
-    pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
-    params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params}, config_path)
+    gen_files_params = OasisManager()._params_generate_oasis_files(**lookup_params)
+    params = paths_to_absolute_paths({**gen_files_params}, config_path)
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
@@ -539,7 +538,7 @@ def pre_analysis_hook(self,
             # This is in case pre-exposure func has added non-standard cols to the file.
             params['check_oed'] = False
     else:
-        logger.info('pre_analysis_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
+        logger.info('pre_generation_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return params
 
@@ -707,6 +706,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
 
     # Optional step (Post file generation Hook)
     if params.get('post_file_gen_module', None):
+        logger.info(f"post_generation_hook: running {params.get('post_file_gen_module')}")
         OasisManager().post_file_gen(**params)
 
     # clear out user-data,
@@ -890,9 +890,8 @@ def prepare_losses_generation_params(
     run_params = {**config, **params}
 
     from oasislmf.manager import OasisManager
-    gen_losses_params = OasisManager()._params_generate_losses(**run_params)
-    post_hook_params = OasisManager()._params_post_analysis(**run_params)
-    params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params}, config_path)
+    gen_losses_params = OasisManager()._params_generate_oasis_losses(**run_params)
+    params = paths_to_absolute_paths({**gen_losses_params}, config_path)
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
@@ -912,8 +911,9 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
     params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
 
     # Optional step (Pre losses hook) --- Before or after 'generate_losses_dir' ??
-        if params.get('pre_loss_module', None):
-            OasisManager().pre_loss(**params)
+    if params.get('pre_loss_module', None):
+        logger.info(f"pre_losses_hook: running {params.get('pre_loss_module')}")
+        OasisManager().pre_loss(**params)
 
     params['run_location'] = filestore.put(
         params['model_run_dir'],
@@ -986,6 +986,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     from oasislmf.manager import OasisManager
     OasisManager().generate_losses_output(**res)
     if res.get('post_analysis_module', None):
+        logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
         OasisManager().post_analysis(**res)
 
     # collect run logs
