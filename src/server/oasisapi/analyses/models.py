@@ -514,6 +514,11 @@ class Analysis(TimeStampedModel):
         self.task_finished = None
         self.save()
 
+
+    def raise_validate_errors(self, errors):
+        raise ValidationError(detail=errors)
+
+
     def generate_and_run(self, initiator):
         valid_choices = [
             self.status_choices.NEW,
