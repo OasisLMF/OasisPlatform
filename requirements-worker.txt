@@ -115,7 +115,7 @@ fastparquet==2024.2.0
     #   oasislmf
 filelock==3.13.1
     # via -r requirements-worker.in
-fiona==1.10b1
+fiona==1.10b2
     # via geopandas
 forex-python==1.8
     # via oasislmf

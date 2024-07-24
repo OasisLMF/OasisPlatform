@@ -241,7 +241,7 @@ filelock==3.13.1
     #   -r ./requirements-worker.in
     #   tox
     #   virtualenv
-fiona==1.10b1
+fiona==1.10b2
     # via geopandas
 flake8==7.0.0
     # via -r requirements.in
