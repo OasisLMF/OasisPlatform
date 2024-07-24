@@ -484,8 +484,6 @@ class Analysis(TimeStampedModel):
                             errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
 
         if errors:
-            self.status = self.status_choices.RUN_ERROR
-            self.save()
             raise ValidationError(detail=errors)
 
         # Start V1 run
@@ -516,12 +514,8 @@ class Analysis(TimeStampedModel):
         self.task_finished = None
         self.save()
 
-    def raise_validate_errors(self, errors, error_state=None):
-        if error_state:
-            self.status = error_state
-            self.save()
-        if errors:
-            raise ValidationError(detail=errors)
+    def raise_validate_errors(self, errors):
+        raise ValidationError(detail=errors)
 
     def generate_and_run(self, initiator):
         valid_choices = [
@@ -559,7 +553,8 @@ class Analysis(TimeStampedModel):
         events_total = self.get_num_events()
 
         # Raise for error
-        self.raise_validate_errors(errors)
+        if errors:
+            raise ValidationError(detail=errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
