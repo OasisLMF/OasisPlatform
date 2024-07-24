@@ -115,7 +115,7 @@ fastparquet==2024.2.0
     #   oasislmf
 filelock==3.13.1
     # via -r requirements-worker.in
-fiona==1.9.5
+fiona==1.10b2
     # via geopandas
 forex-python==1.8
     # via oasislmf
@@ -297,7 +297,6 @@ six==1.16.0
     # via
     #   anytree
     #   azure-core
-    #   fiona
     #   isodate
     #   pathlib2
     #   python-dateutil
@@ -338,6 +337,3 @@ wrapt==1.16.0
     # via aiobotocore
 yarl==1.9.4
     # via aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
