@@ -241,7 +241,7 @@ filelock==3.13.1
     #   -r ./requirements-worker.in
     #   tox
     #   virtualenv
-fiona==1.9.5
+fiona==1.10b1
     # via geopandas
 flake8==7.0.0
     # via -r requirements.in
@@ -565,7 +565,6 @@ six==1.16.0
     #   asttokens
     #   automat
     #   azure-core
-    #   fiona
     #   isodate
     #   pathlib2
     #   python-dateutil
