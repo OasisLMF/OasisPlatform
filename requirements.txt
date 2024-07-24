@@ -217,7 +217,7 @@ filelock==3.10.7
     #   -r ./requirements-worker.in
     #   tox
     #   virtualenv
-fiona==1.9.2
+fiona==1.10b2
     # via geopandas
 flake8==6.0.0
     # via -r requirements.in
@@ -309,8 +309,6 @@ msgpack==0.6.2
     # via
     #   channels-redis
     #   oasislmf
-munch==2.5.0
-    # via fiona
 mysqlclient==2.1.1
     # via -r ./requirements-server.in
 natsort==8.3.1
@@ -504,7 +502,6 @@ six==1.16.0
     #   azure-core
     #   click-repl
     #   isodate
-    #   munch
     #   pathlib2
     #   python-dateutil
     #   service-identity
