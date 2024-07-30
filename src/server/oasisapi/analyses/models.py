@@ -467,7 +467,7 @@ class Analysis(TimeStampedModel):
                 if not self.model.resource_file:
                     errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
                 elif self.settings_file:
-                    # cross check model and analysis settings if not given a set of events
+                    # cross check model and analysisAnalysisTaskStatus settings if not given a set of events
                     model_settings = self.model.resource_file.read_json()
                     analysis_settings = self.settings_file.read_json()
                     if not analysis_settings.get('event_ids'):
@@ -516,6 +516,18 @@ class Analysis(TimeStampedModel):
 
     def raise_validate_errors(self, errors):
         raise ValidationError(detail=errors)
+
+    def has_active_subtasks(self):
+        """ Check if an analysis has sub-tasks in a queued/running state.
+            Return True if yes.
+        """
+        subtask_qs = self.sub_task_statuses.filter(
+            status__in=[
+                AnalysisTaskStatus.status_choices.PENDING,
+                AnalysisTaskStatus.status_choices.QUEUED,
+                AnalysisTaskStatus.status_choices.STARTED]
+        )
+        return (len(subtask_qs) > 0)
 
     def generate_and_run(self, initiator):
         valid_choices = [
@@ -664,11 +676,13 @@ class Analysis(TimeStampedModel):
     def cancel_any(self):
         INPUTS_GENERATION_STATES = [
             self.status_choices.INPUTS_GENERATION_QUEUED,
-            self.status_choices.INPUTS_GENERATION_STARTED
+            self.status_choices.INPUTS_GENERATION_STARTED,
+            self.status_choices.INPUTS_GENERATION_CANCELLED
         ]
         RUN_ANALYSIS_STATES = [
             self.status_choices.RUN_QUEUED,
-            self.status_choices.RUN_STARTED
+            self.status_choices.RUN_STARTED,
+            self.status_choices.RUN_CANCELLED
         ]
         valid_choices = INPUTS_GENERATION_STATES + RUN_ANALYSIS_STATES
         if self.status not in valid_choices:
@@ -683,7 +697,9 @@ class Analysis(TimeStampedModel):
     def cancel_analysis(self):
         valid_choices = [
             self.status_choices.RUN_QUEUED,
-            self.status_choices.RUN_STARTED
+            self.status_choices.RUN_STARTED,
+            self.status_choices.RUN_CANCELLED
+
         ]
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis execution is not running or queued']})
@@ -700,8 +716,10 @@ class Analysis(TimeStampedModel):
     def cancel_generate_inputs(self):
         valid_choices = [
             self.status_choices.INPUTS_GENERATION_QUEUED,
-            self.status_choices.INPUTS_GENERATION_STARTED
+            self.status_choices.INPUTS_GENERATION_STARTED,
+            self.status_choices.INPUTS_GENERATION_CANCELLED
         ]
+
         if self.status not in valid_choices:
             raise ValidationError({'status': ['Analysis input generation is not running or queued']})
 
