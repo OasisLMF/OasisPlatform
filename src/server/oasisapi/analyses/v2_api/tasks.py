@@ -774,10 +774,12 @@ def set_task_status(analysis_pk, task_status, dt):
     try:
         from ..models import Analysis
         analysis = Analysis.objects.get(pk=analysis_pk)
-        analysis.status = task_status
-        analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
-        analysis.save(update_fields=["status", "task_started"])
-        logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
+
+        if analysis.status not in [analysis.status_choices.INPUTS_GENERATION_CANCELLED, analysis.status_choices.RUN_CANCELLED]:
+            analysis.status = task_status
+            analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
+            analysis.save(update_fields=["status", "task_started"])
+        logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, analysis.status, analysis.task_started))
     except Exception as e:
         logger.error('Task Status Update: Failed')
         logger.exception(str(e))
@@ -800,3 +802,20 @@ def update_task_id(task_update_list):
                 analysis_id=analysis_id,
                 slug=slug,
             ).update(task_id=task_id, queue_time=dt_now)
+
+    # Fallback cancellation guard
+    #
+    # If an analysis is marked as cancelled and the monitor
+    # receives this job, then the analysis revoke call has failed.
+    #
+    # To prevent stray sub-tasks from running in the background we re-call the
+    # revoke now all the task id have been updated.
+    try:
+        from ..models import Analysis
+
+        analysis = Analysis.objects.get(pk=analysis_id)
+        if analysis.status in [analysis.status_choices.INPUTS_GENERATION_CANCELLED,
+                               analysis.status_choices.RUN_CANCELLED]:
+            cancel_subtasks(analysis_id)
+    except Exception as e:
+        logger.exception(str(e))
