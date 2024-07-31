@@ -437,8 +437,11 @@ def start_input_generation_task(analysis_pk, initiator_pk, loc_lines):
     from ..models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
-    get_analysis_task_controller().generate_inputs(analysis, initiator, loc_lines)
+    #analysis.generate_inputs_task_id = celery_app_v2.current_task.request.id
+    #from celery.contrib import rdb; rdb.set_trace()
+    chain = get_analysis_task_controller().generate_inputs(analysis, initiator, loc_lines)
     analysis.save()
+
 
 
 @celery_app_v2.task(name='start_loss_generation_task')
@@ -803,6 +806,7 @@ def update_task_id(task_update_list):
                 slug=slug,
             ).update(task_id=task_id, queue_time=dt_now)
 
+
     # Fallback cancellation guard
     #
     # If an analysis is marked as cancelled and the monitor
@@ -811,11 +815,12 @@ def update_task_id(task_update_list):
     # To prevent stray sub-tasks from running in the background we re-call the
     # revoke now all the task id have been updated.
     try:
+        #from celery.contrib import rdb; rdb.set_trace()
         from ..models import Analysis
 
         analysis = Analysis.objects.get(pk=analysis_id)
         if analysis.status in [analysis.status_choices.INPUTS_GENERATION_CANCELLED,
-                               analysis.status_choices.RUN_CANCELLED]:
+                                   analysis.status_choices.RUN_CANCELLED]:
             cancel_subtasks(analysis_id)
     except Exception as e:
         logger.exception(str(e))

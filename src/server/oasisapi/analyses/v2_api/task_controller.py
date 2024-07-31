@@ -384,6 +384,51 @@ class Controller:
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
         )
 
+        #from celery.contrib import rdb; rdb.set_trace()
+        # TEST CODE - extract the celery id for the first task in the chain and attach that to DB subtask object
+        *_, first_task_id = task._parents()  # the last task in the chain is the first on queue
+        first_task_obj = analysis.sub_task_statuses.get(slug="prepare-input-generation-params")
+        first_task_obj.task_id = first_task_id
+        first_task_obj.save()
+
+        """
+        [p.id for p in task._parents()]
+        ['55e44e47-db8e-4748-8e48-170a4a85b738', 'd3cb39a3-3a46-4559-b5d0-766cb8cd1a1a', 'd76a243f-b438-4b92-9374-a9d5200db5bc', 'adda2e52-0702-4724-b807-9a80eb8d7b8e', 'df4c84f8-f3f6-4080-9bc0-33063659a230', '0842a44a-bceb-46ac-b84a-5bd330d2c00c']
+         
+        --> last element matches the queued task waiting on model queue 
+
+        Exchange 	(AMQP default)
+        Routing Key 	OasisLMF-PiWind-v2-v2
+        Redelivered 	○
+        Properties 	
+        reply_to:	f2afd6c6-459c-3d9a-b747-4797ce4d4dd8
+        correlation_id:	0842a44a-bceb-46ac-b84a-5bd330d2c00c
+        priority:	4
+        delivery_mode:	2
+        headers:	
+        argsrepr:	({},)
+        eta:	undefined
+        expires:	undefined
+        group:	undefined
+        group_index:	undefined
+        id:	0842a44a-bceb-46ac-b84a-5bd330d2c00c
+        ignore_result:	false
+        kwargsrepr:	{'initiator_id': 1, 'analysis_id': 1, 'slug': 'prepare-input-generation-params', 'run_data_uuid': '706c3f4222414db8acd80da5efcd4387', 'loc_file': '0faa4908ed9246d2ac8254ca83a4d45d.csv', 'analysis_settings_file': 'f55bbb7034aa4fa3b8a652db581b6a58.json', 'complex_data_files': None, 'priority': 4}
+        lang:	py
+        origin:	gen106@69e57b9041f0
+        parent_id:	e607addb-4b01-4468-95f7-c86c5845d667
+        replaced_task_nesting:	0
+        retries:	0
+        root_id:	e607addb-4b01-4468-95f7-c86c5845d667
+        shadow:	undefined
+        stamped_headers:	undefined
+        stamps:	
+        task:	prepare_input_generation_params
+        timelimit:	undefined
+        undefined
+        """
+
+
         # update analysis
         analysis.lookup_chunks = num_chunks
         analysis.generate_inputs_task_id = task.id
