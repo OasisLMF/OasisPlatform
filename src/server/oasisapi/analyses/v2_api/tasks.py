@@ -437,11 +437,7 @@ def start_input_generation_task(analysis_pk, initiator_pk, loc_lines):
     from ..models import Analysis
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
-    #analysis.generate_inputs_task_id = celery_app_v2.current_task.request.id
-    #from celery.contrib import rdb; rdb.set_trace()
-    chain = get_analysis_task_controller().generate_inputs(analysis, initiator, loc_lines)
-    analysis.save()
-
+    get_analysis_task_controller().generate_inputs(analysis, initiator, loc_lines)
 
 
 @celery_app_v2.task(name='start_loss_generation_task')
@@ -450,7 +446,6 @@ def start_loss_generation_task(analysis_pk, initiator_pk, events_total):
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_losses(analysis, initiator, events_total)
-    analysis.save()
 
 
 @celery_app_v2.task(name='start_input_and_loss_generation_task')
@@ -459,8 +454,6 @@ def start_input_and_loss_generation_task(analysis_pk, initiator_pk, loc_lines, e
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_input_and_losses(analysis, initiator, loc_lines, events_total)
-    analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED
-    analysis.save()
 
 
 @celery_app_v2.task(bind=True, name='record_input_files')
@@ -777,9 +770,10 @@ def set_task_status(analysis_pk, task_status, dt):
     try:
         from ..models import Analysis
         analysis = Analysis.objects.get(pk=analysis_pk)
-        analysis.status = task_status
-        analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
-        analysis.save(update_fields=["status", "task_started"])
+        if analysis.status not in [analysis.status_choices.INPUTS_GENERATION_CANCELLED, analysis.status_choices.RUN_CANCELLED]:
+            analysis.status = task_status
+            analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
+            analysis.save(update_fields=["status", "task_started"])
         logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
     except Exception as e:
         logger.error('Task Status Update: Failed')

@@ -127,14 +127,14 @@ def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_sta
         logger.debug(f"redelivered: {redelivered}")
         logger.debug(f"state: {state}")
 
-        if redelivered and state == 'REVOKED':
-            logger.error('ERROR: task requeued three times - aborting task')
+        if state == 'REVOKED':
+            logger.error('ERROR: task requeued three times or cancelled - aborting task')
             notify_subtask_status(
                 analysis_id=analysis_id,
                 initiator_id=initiator_id,
                 task_slug=task_slug,
                 subtask_status='ERROR',
-                error_msg='Task failed on third redelivery, possible out of memory error'
+                error_msg='Task revoked, possible out of memory error or cancellation'
             )
             notify_api_status(analysis_id, error_state)
             task.app.control.revoke(task.request.id, terminate=True)
@@ -471,6 +471,8 @@ def prepare_input_generation_params(
     slug=None,
     **kwargs,
 ):
+    #from celery.contrib import rdb; rdb.set_trace()
+    
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
