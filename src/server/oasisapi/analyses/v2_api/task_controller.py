@@ -384,7 +384,7 @@ class Controller:
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
         )
 
-        # Update sub-task ids 
+        # Update sub-task ids
         celery_tasks_list = [task.id] + [t.id for t in task._parents()]
         for sub_t in analysis.sub_task_statuses.all():
             sub_t.task_id = celery_tasks_list.pop()
@@ -395,7 +395,7 @@ class Controller:
         analysis.lookup_chunks = num_chunks
         analysis.generate_inputs_task_id = task.id
         analysis.save(update_fields=[
-            "lookup_chunks", 
+            "lookup_chunks",
             "generate_inputs_task_id",
             "run_task_id"
         ])
@@ -543,14 +543,12 @@ class Controller:
             Analysis.status_choices.RUN_ERROR,
         )
 
-
         # Update sub-task ids
         celery_tasks_list = [task.id] + [t.id for t in task._parents()]
         for sub_t in analysis.sub_task_statuses.all():
             sub_t.task_id = celery_tasks_list.pop()
             sub_t.save()
             print(f'{sub_t.name} = {sub_t.task_id}')
-
 
         # update analysis
         analysis.analysis_chunks = num_chunks
@@ -617,7 +615,7 @@ class Controller:
 
         # Add chunk info to analysis
         analysis.lookup_chunks = input_num_chunks
-        analysis.analysis_chunks = loss_num_chunks 
+        analysis.analysis_chunks = loss_num_chunks
 
         from src.server.oasisapi.analyses.models import AnalysisTaskStatus
         analysis.sub_task_statuses.all().delete()
@@ -650,7 +648,7 @@ class Controller:
         analysis.generate_inputs_task_id = task.id
         analysis.run_task_id = task.id
         analysis.save(update_fields=[
-            "lookup_chunks", 
+            "lookup_chunks",
             "analysis_chunks",
             "generate_inputs_task_id",
             "run_task_id"

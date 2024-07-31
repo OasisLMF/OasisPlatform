@@ -471,8 +471,6 @@ def prepare_input_generation_params(
     slug=None,
     **kwargs,
 ):
-    #from celery.contrib import rdb; rdb.set_trace()
-    
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
