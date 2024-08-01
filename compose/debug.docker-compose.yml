@@ -82,7 +82,7 @@ services:
   v1-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
-   command: [celery, -A, 'src.server.oasisapi.celery_app_v1', worker, --loglevel=INFO,]
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v1', worker, --loglevel=DEBUG,]
    links:
      - server-db
      - celery-db
@@ -95,7 +95,7 @@ services:
   v2-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
-   command: [celery, -A, 'src.server.oasisapi.celery_app_v2', worker, --loglevel=INFO,  -Q, celery-v2]
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v2', worker, --loglevel=DEBUG,  -Q, celery-v2]
    links:
      - server-db
      - celery-db
@@ -108,7 +108,7 @@ services:
   v2-task-controller:
    restart: always
    image: coreoasis/api_server:dev
-   command: [celery, -A, 'src.server.oasisapi.celery_app_v2', worker, --loglevel=INFO, -Q, task-controller]
+   command: [celery, -A, 'src.server.oasisapi.celery_app_v2', worker, --loglevel=DEBUG, -Q, task-controller]
    links:
      - server-db
      - celery-db
@@ -121,7 +121,7 @@ services:
   celery-beat_v2:
    restart: always
    image: coreoasis/api_server:dev
-   command: [celery, -A, src.server.oasisapi.celery_app_v2, beat, --loglevel=INFO]
+   command: [celery, -A, src.server.oasisapi.celery_app_v2, beat, --loglevel=DEBUG]
    links:
      - server-db
      - celery-db
