@@ -281,7 +281,7 @@ idna==3.6
     #   requests
     #   twisted
     #   yarl
-incremental==22.10.0
+incremental==24.7.2
     # via twisted
 inflection==0.5.1
     # via drf-yasg
@@ -592,6 +592,7 @@ tomli==2.0.1
     # via
     #   build
     #   coverage
+    #   incremental
     #   ipdb
     #   pip-tools
     #   pyproject-api
@@ -606,7 +607,7 @@ traitlets==5.14.1
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==24.3.0
+twisted[tls]==24.7.0rc1
     # via daphne
 txaio==23.1.1
     # via autobahn
