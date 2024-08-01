@@ -415,9 +415,14 @@ class Controller:
         # Update sub-task ids
         celery_tasks_list = cls.extract_celery_task_ids(task)
         for sub_t in analysis.sub_task_statuses.all():
-            sub_t.task_id = celery_tasks_list.pop()
-            sub_t.save()
-            logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            try:
+                sub_t.task_id = celery_tasks_list.pop()
+                sub_t.save()
+                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            except Exception as e:
+                logger.exception('Failed to extract all task ids - continuing with execution')
+                logger.debug(task.status)
+                break
 
         # update analysis
         analysis.lookup_chunks = num_chunks
@@ -573,11 +578,17 @@ class Controller:
         logger.debug(f"'generate_losses' - canvas dispatched, analyses={analysis.pk}, run_uuid={run_data_uuid}")
 
         # Update sub-task ids
+        # from celery.contrib import rdb; rdb.set_trace()
         celery_tasks_list = cls.extract_celery_task_ids(task)
         for sub_t in analysis.sub_task_statuses.all():
-            sub_t.task_id = celery_tasks_list.pop()
-            sub_t.save()
-            logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            try:
+                sub_t.task_id = celery_tasks_list.pop()
+                sub_t.save()
+                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            except Exception as e:
+                logger.exception('Failed to extract all task ids - continuing with execution')
+                logger.debug(task.status)
+                break
 
         # update analysis
         analysis.analysis_chunks = num_chunks
@@ -672,9 +683,14 @@ class Controller:
         # Update sub-task ids
         celery_tasks_list = cls.extract_celery_task_ids(task)
         for sub_t in analysis.sub_task_statuses.all():
-            sub_t.task_id = celery_tasks_list.pop()
-            sub_t.save()
-            logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            try:
+                sub_t.task_id = celery_tasks_list.pop()
+                sub_t.save()
+                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            except Exception as e:
+                logger.exception('Failed to extract all task ids - continuing with execution')
+                logger.debug(task.status)
+                break
 
         analysis.generate_inputs_task_id = task.id
         analysis.run_task_id = task.id
