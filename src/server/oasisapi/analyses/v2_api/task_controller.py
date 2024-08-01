@@ -6,6 +6,7 @@ from typing import List, Type, TYPE_CHECKING, Tuple, Optional
 
 from celery import signature, chord
 from celery.canvas import Signature, chain
+from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 
 from src.conf.iniconf import settings
@@ -13,6 +14,8 @@ from ...files.models import file_storage_link
 
 if TYPE_CHECKING:
     from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
+
+logger = get_task_logger(__name__)
 
 
 class TaskParams:
@@ -383,13 +386,14 @@ class Controller:
             'input_generation_traceback_file',
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
         )
+        logger.debug(f"'generate_inputs' - canvas dispatched, analyses={analysis.pk}, run_uuid={run_data_uuid}")
 
         # Update sub-task ids
         celery_tasks_list = [task.id] + [t.id for t in task._parents()]
         for sub_t in analysis.sub_task_statuses.all():
             sub_t.task_id = celery_tasks_list.pop()
             sub_t.save()
-            print(f'{sub_t.name} = {sub_t.task_id}')
+            logger.debug(f'{sub_t.name} = {sub_t.task_id}')
 
         # update analysis
         analysis.lookup_chunks = num_chunks
@@ -542,13 +546,14 @@ class Controller:
             'run_traceback_file',
             Analysis.status_choices.RUN_ERROR,
         )
+        logger.debug(f"'generate_losses' - canvas dispatched, analyses={analysis.pk}, run_uuid={run_data_uuid}")
 
         # Update sub-task ids
         celery_tasks_list = [task.id] + [t.id for t in task._parents()]
         for sub_t in analysis.sub_task_statuses.all():
             sub_t.task_id = celery_tasks_list.pop()
             sub_t.save()
-            print(f'{sub_t.name} = {sub_t.task_id}')
+            logger.debug(f'{sub_t.name} = {sub_t.task_id}')
 
         # update analysis
         analysis.analysis_chunks = num_chunks
@@ -637,13 +642,15 @@ class Controller:
             Analysis.status_choices.RUN_ERROR)
 
         task = chain(input_chain, loss_chain).delay({}, priority=analysis.priority, ignore_result=True)
+        logger.debug(
+            f"'generate_input_and_losses' - canvas dispatched, analyses={analysis.pk}, input_run_uuid={input_run_data_uuid}, losses_run_uuid={loss_run_data_uuid},")
 
         # Update sub-task ids
         celery_tasks_list = [task.id] + [t.id for t in task._parents()]
         for sub_t in analysis.sub_task_statuses.all():
             sub_t.task_id = celery_tasks_list.pop()
             sub_t.save()
-            print(f'{sub_t.name} = {sub_t.task_id}')
+            logger.debug(f'{sub_t.name} = {sub_t.task_id}')
 
         analysis.generate_inputs_task_id = task.id
         analysis.run_task_id = task.id

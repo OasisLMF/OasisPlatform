@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import json
-import logging
 import os
 import uuid
 from datetime import datetime
@@ -375,11 +374,11 @@ def _traceback_from_errback_args(*args):
             failing_res = AsyncResult(args[0])
             tb = failing_res.traceback
         except ValueError:
-            logging.error('Could not extract traceback')
+            logger.error('Could not extract traceback')
             return ''
 
     if tb is None:
-        logging.error('traceback returned is None')
+        logger.error('traceback returned is None')
         return ''
 
     return tb
