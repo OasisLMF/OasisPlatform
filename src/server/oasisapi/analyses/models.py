@@ -477,6 +477,8 @@ class Analysis(TimeStampedModel):
         if errors:
             raise ValidationError(detail=errors)
 
+        self.status = self.status_choices.RUN_QUEUED
+        self.save()
         # Start V1 run
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_run_analysis_signature
@@ -500,7 +502,6 @@ class Analysis(TimeStampedModel):
             task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
 
         self.run_task_id = task_id
-        self.status = self.status_choices.RUN_QUEUED
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()

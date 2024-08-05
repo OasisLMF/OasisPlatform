@@ -4,8 +4,10 @@ from itertools import chain as iterchain
 from math import ceil
 from typing import List, Type, TYPE_CHECKING, Tuple, Optional
 
+from celery.result import GroupResult, AsyncResult
 from celery import signature, chord
 from celery.canvas import Signature, chain
+from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 
 from src.conf.iniconf import settings
@@ -13,6 +15,8 @@ from ...files.models import file_storage_link
 
 if TYPE_CHECKING:
     from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
+
+logger = get_task_logger(__name__)
 
 
 class TaskParams:
@@ -22,6 +26,29 @@ class TaskParams:
 
 
 class Controller:
+
+    @staticmethod
+    def extract_celery_task_ids(chain_result):
+        """
+        Take the output of a celery canvas dispatch 'cls._start(.. chain ..)'
+        which is a set of nested tasks, and extract the celery task id's into a list.
+        the lists order matches the order of sub-tasks for the oasis API.
+        stored in an analyses under 'analysis.sub_task_statuses.all()'
+
+        (Pdb) task.parent.parent.parent
+        <AsyncResult: 8664251b-6770-4b81-83c4-6f44e81dba78>
+        (Pdb) task.parent.parent.parent.parent
+        <GroupResult: 7db5aefa-089f-4bfa-bde3-e8c1621f9e18 [6446cc0c-4384-4a0b-b8ee-b8a08760e986, ca936aa4-faa8-42e1-a3c9-70667771fcd7, b8d50374-7334-4e55-84c2-8801b2c3248e, 2b43531d-2f5a-4f56-92cd-5af8a8676607, 15b481ef-bd59-41ad-b102-a30ef753c2c5, 430e2e29-d8f8-4649-adee-259e6f720466, 335e4810-18f6-4236-b6af-d5e6540324ae, 70e0f591-20c6-4705-9726-7344eaab103f, b19a4937-b29a-41f8-a58a-ee84ce021afd, 74ae0b2a-1fc3-430a-9802-d1f22ecfae5a]>
+        """
+        task_id_list = [chain_result.id]
+        for task in chain_result._parents():
+            if isinstance(task, AsyncResult):
+                task_id_list.append(task.id)
+            if isinstance(task, GroupResult):
+                parallel_tasks = [t.id for t in task.children]
+                parallel_tasks.reverse()
+                task_id_list += parallel_tasks
+        return task_id_list
 
     @classmethod
     def get_subtask_signature(cls, task_name, analysis, initiator, run_data_uuid, slug, queue, params: TaskParams) -> Signature:
@@ -383,11 +410,28 @@ class Controller:
             'input_generation_traceback_file',
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
         )
+        logger.debug(f"'generate_inputs' - canvas dispatched, analyses={analysis.pk}, run_uuid={run_data_uuid}")
+
+        # Update sub-task ids
+        celery_tasks_list = cls.extract_celery_task_ids(task)
+        for sub_t in analysis.sub_task_statuses.all():
+            try:
+                sub_t.task_id = celery_tasks_list.pop()
+                sub_t.save()
+                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            except Exception as e:
+                logger.exception('Failed to extract all task ids - continuing with execution')
+                logger.debug(task.status)
+                break
 
         # update analysis
         analysis.lookup_chunks = num_chunks
         analysis.generate_inputs_task_id = task.id
-        analysis.save()
+        analysis.save(update_fields=[
+            "lookup_chunks",
+            "generate_inputs_task_id",
+            "run_task_id"
+        ])
         return chain
 
     @classmethod
@@ -531,10 +575,28 @@ class Controller:
             'run_traceback_file',
             Analysis.status_choices.RUN_ERROR,
         )
+        logger.debug(f"'generate_losses' - canvas dispatched, analyses={analysis.pk}, run_uuid={run_data_uuid}")
+
+        # Update sub-task ids
+        # from celery.contrib import rdb; rdb.set_trace()
+        celery_tasks_list = cls.extract_celery_task_ids(task)
+        for sub_t in analysis.sub_task_statuses.all():
+            try:
+                sub_t.task_id = celery_tasks_list.pop()
+                sub_t.save()
+                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            except Exception as e:
+                logger.exception('Failed to extract all task ids - continuing with execution')
+                logger.debug(task.status)
+                break
+
         # update analysis
         analysis.analysis_chunks = num_chunks
         analysis.run_task_id = task.id
-        analysis.save()
+        analysis.save(update_fields=[
+            "analysis_chunks",
+            "run_task_id"
+        ])
         return chain
 
     @classmethod
@@ -592,9 +654,8 @@ class Controller:
         tasks = input_tasks + loss_tasks
 
         # Add chunk info to analysis
-        analysis.lookup_chunks = input_num_chunks + loss_num_chunks
-        analysis.sub_task_count = len(tasks)
-        analysis.save()
+        analysis.lookup_chunks = input_num_chunks
+        analysis.analysis_chunks = loss_num_chunks
 
         from src.server.oasisapi.analyses.models import AnalysisTaskStatus
         analysis.sub_task_statuses.all().delete()
@@ -616,11 +677,29 @@ class Controller:
             Analysis.status_choices.RUN_ERROR)
 
         task = chain(input_chain, loss_chain).delay({}, priority=analysis.priority, ignore_result=True)
+        logger.debug(
+            f"'generate_input_and_losses' - canvas dispatched, analyses={analysis.pk}, input_run_uuid={input_run_data_uuid}, losses_run_uuid={loss_run_data_uuid},")
+
+        # Update sub-task ids
+        celery_tasks_list = cls.extract_celery_task_ids(task)
+        for sub_t in analysis.sub_task_statuses.all():
+            try:
+                sub_t.task_id = celery_tasks_list.pop()
+                sub_t.save()
+                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            except Exception as e:
+                logger.exception('Failed to extract all task ids - continuing with execution')
+                logger.debug(task.status)
+                break
 
         analysis.generate_inputs_task_id = task.id
         analysis.run_task_id = task.id
-        analysis.save()
-
+        analysis.save(update_fields=[
+            "lookup_chunks",
+            "analysis_chunks",
+            "generate_inputs_task_id",
+            "run_task_id"
+        ])
         return task
 
 
