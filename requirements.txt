@@ -217,7 +217,7 @@ filelock==3.10.7
     #   -r ./requirements-worker.in
     #   tox
     #   virtualenv
-fiona==1.9.2
+fiona==1.10b2
     # via geopandas
 flake8==6.0.0
     # via -r requirements.in
@@ -250,7 +250,7 @@ idna==3.4
     #   hyperlink
     #   requests
     #   twisted
-incremental==22.10.0
+incremental==24.7.2
     # via twisted
 inflection==0.5.1
     # via drf-yasg
@@ -309,8 +309,6 @@ msgpack==0.6.2
     # via
     #   channels-redis
     #   oasislmf
-munch==2.5.0
-    # via fiona
 mysqlclient==2.1.1
     # via -r ./requirements-server.in
 natsort==8.3.1
@@ -336,9 +334,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.6
+oasislmf[extra]==2.3.7
     # via -r ./requirements-worker.in
-ods-tools==3.2.5
+ods-tools==3.2.6
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -504,7 +502,6 @@ six==1.16.0
     #   azure-core
     #   click-repl
     #   isodate
-    #   munch
     #   pathlib2
     #   python-dateutil
     #   service-identity
@@ -532,6 +529,7 @@ tomli==2.0.1
     # via
     #   build
     #   coverage
+    #   incremental
     #   ipdb
     #   pyproject-api
     #   pyproject-hooks
@@ -545,7 +543,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==22.10.0
+twisted[tls]==24.7.0rc1
     # via daphne
 txaio==23.1.1
     # via autobahn
