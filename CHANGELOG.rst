@@ -1,6 +1,20 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.7`_
+ ---------
+* [#1090](https://github.com/OasisLMF/OasisPlatform/pull/1090) -  Fixed CVEs from fiona package (backport)
+* [#1091](https://github.com/OasisLMF/OasisPlatform/pull/1091) - Fixed build error from worker-controller image
+* [#1057, #1092](https://github.com/OasisLMF/OasisPlatform/pull/1093) - Fix/1092 task cancellation issue
+* [#1095](https://github.com/OasisLMF/OasisPlatform/pull/1095) - Updated Package Requirements: twisted==24.7.0rc1
+* [#1065](https://github.com/OasisLMF/OasisPlatform/pull/1065) - Release 2.3.6 (July 1st 2024)
+* [#1077](https://github.com/OasisLMF/OasisPlatform/pull/1077) - FIx missing exception trace in V1 workers 
+* [#1076](https://github.com/OasisLMF/OasisPlatform/pull/1078) - Fix return of types of create 'analyses' and 'model' POST in API spec. 
+* [#1081](https://github.com/OasisLMF/OasisPlatform/pull/1081) - Fix/api responses v2
+* [#1085](https://github.com/OasisLMF/OasisPlatform/pull/1086) - Validation errors when posting a run incorrectly update an anaysis state to RUN_ERROR  
+* [#1071](https://github.com/OasisLMF/OasisPlatform/pull/1087) - Add new custom code hooks into the V2 workflow 
+.. _`2.3.7`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.6...2.3.7
+
 `2.3.6`_
  ---------
 * [#1062](https://github.com/OasisLMF/OasisPlatform/pull/1062) - Fix autoscaling ramping down when new analysis run is triggered  
