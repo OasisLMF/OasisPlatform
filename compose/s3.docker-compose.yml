@@ -233,12 +233,12 @@ services:
     image: coreoasis/oasisui_app:${VERS_UI:-latest}
     container_name: oasisui_app
     environment:
-     - API_IP=server:8000/api/
-     - API_VERSION=v2
-     - API_SHARE_FILEPATH=./downloads
-     - OASIS_ENVIRONMENT=oasis_localhost
+      - API_VERSION=v2
+      - API_IP=server:8000/${API_VERSION}/
+      - API_SHARE_FILEPATH=./downloads
+      - OASIS_ENVIRONMENT=oasis_localhost
     ports:
-     - 8080:3838
+      - 8080:3838
   portainer:
    restart: always
    image: portainer/portainer:latest
