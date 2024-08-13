@@ -483,7 +483,9 @@ def prepare_input_generation_params(
     gen_files_params = OasisManager()._params_generate_oasis_files(**lookup_params)
     params = paths_to_absolute_paths({**gen_files_params}, config_path)
 
+    params['log_storage'] = dict()
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['log_storage'][slug] = params['log_location']
     params['verbose'] = debug_worker
     return params
 
@@ -541,6 +543,7 @@ def pre_analysis_hook(self,
     else:
         logger.info('pre_generation_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['log_storage'][slug] = params['log_location']
     return params
 
 
@@ -601,6 +604,7 @@ def prepare_keys_file_chunk(
         )
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['log_storage'][slug] = params['log_location']
     return params
 
 
@@ -693,6 +697,7 @@ def collect_keys(
             )
 
     chunk_params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    chunk_params['log_storage'][slug] = chunk_params['log_location']
     return chunk_params
 
 
@@ -717,13 +722,19 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     if params['user_data_dir'] is not None:
         shutil.rmtree(params['user_data_dir'], ignore_errors=True)
 
+    # collect logs here before archive is created
+    params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['log_storage'][slug] = params['log_location']
+    for log_ref in params['log_storage']:
+        filestore.get(params['log_storage'][log_ref], os.path.join(params['target_dir'], 'log', f'v2-{log_ref}.txt'))
+
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
         'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
         'output_location': filestore.put(params['target_dir']),
-        'log_location': filestore.put(kwargs.get('log_filename')),
+        'log_location': params['log_location'],
     }
 
 
