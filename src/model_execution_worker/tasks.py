@@ -507,8 +507,11 @@ def generate_input(self,
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
-        # Store result files
+        # Store logs
         traceback = filestore.put(kwargs['log_filename'])
+        filestore.get(traceback, os.path.join(oasis_files_dir, 'log', 'v1-generate-oasis-files.txt'))
+
+        # Store result files
         lookup_error = filestore.put(lookup_error_fp)
         lookup_success = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
