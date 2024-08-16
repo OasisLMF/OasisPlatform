@@ -725,8 +725,12 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     # collect logs here before archive is created
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['log_storage'][slug] = params['log_location']
+    log_dir = os.path.join(params['target_dir'], 'log')
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
     for log_ref in params['log_storage']:
-        filestore.get(params['log_storage'][log_ref], os.path.join(params['target_dir'], 'log', f'v2-{log_ref}.txt'))
+        filestore.get(params['log_storage'][log_ref], os.path.join(log_dir, f'v2-{log_ref}.txt'))
 
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
