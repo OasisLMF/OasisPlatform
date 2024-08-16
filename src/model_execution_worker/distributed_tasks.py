@@ -1047,7 +1047,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     return {
         **res,
         'output_location': filestore.put(output_dir, arcname='output'),
-        'run_logs': filestore.put(logs_dir, arcname='logs'),
+        'run_logs': filestore.put(logs_dir),
         'log_location': filestore.put(kwargs.get('log_filename')),
         'raw_output_locations': {
             r: filestore.put(os.path.join(output_dir, r), arcname=f'output_{r}')
