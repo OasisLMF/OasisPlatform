@@ -506,7 +506,7 @@ def generate_input(self,
 
         # Store logs
         traceback = filestore.put(kwargs['log_filename'])
-        filestore.get(traceback, os.path.join(oasis_files_dir, 'log', 'v1-generate-oasis-files.txt'))
+        filestore.get(traceback, os.path.join(oasis_files_dir, os.path.basename(kwargs['log_filename'])))
 
         # Store result files
         lookup_error = filestore.put(lookup_error_fp)
