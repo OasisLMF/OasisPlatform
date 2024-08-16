@@ -951,7 +951,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     if num_chunks == 1:
         # Run multiple ktools pipes (based on cpu cores)
         current_chunk_id = None
-        max_chunk_id = -1
+        max_chunk_id = params.get('ktools_num_processes', -1)
         work_dir = 'work'
     else:
         # Run a single ktools pipe
