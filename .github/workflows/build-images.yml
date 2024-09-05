@@ -163,7 +163,7 @@ jobs:
 
     - name: Store image size report
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.dive }}
         path: ${{ matrix.dive }}
@@ -201,7 +201,7 @@ jobs:
 
     - name: Store CVE report
       if: success() || failure() && env.SEVERITY != 'SKIP'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.report }}
         path: ${{ matrix.report }}
