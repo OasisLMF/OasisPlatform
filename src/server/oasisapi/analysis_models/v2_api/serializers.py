@@ -13,7 +13,7 @@ from ...permissions.group_auth import validate_and_update_groups, validate_data_
 from ...schemas.serializers import ModelParametersSerializer
 from django.core.files import File
 from tempfile import TemporaryFile
-from ...files.models import RelatedFile
+from ...files.models import RelatedFile, file_storage_link
 
 
 def create_settings_file(data, user):
@@ -28,6 +28,20 @@ def create_settings_file(data, user):
             content_type='application/json',
             creator=user,
         )
+
+
+class AnalysisModelStorageSerializer(serializers.ModelSerializer):
+    settings_file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnalysisModel
+        fields = (
+            'settings_file',
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_settings_file(self, instance):
+        return file_storage_link(instance.resource_file, True)
 
 
 class AnalysisModelListSerializer(serializers.Serializer):
