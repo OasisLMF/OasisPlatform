@@ -48,8 +48,10 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
 
 class AnalysisModelStorageSerializer(serializers.ModelSerializer):
     settings_file = serializers.SerializerMethodField()
+    ns = 'v1-models'
 
     class Meta:
+        ref_name = __qualname__.split('.')[0] + 'V1'
         model = AnalysisModel
         fields = (
             'settings_file',
