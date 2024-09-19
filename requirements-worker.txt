@@ -83,7 +83,7 @@ fasteners==0.18
     # via -r requirements-worker.in
 fastparquet==2023.4.0
     # via oasislmf
-fiona==1.9.3
+fiona==1.10b2
     # via geopandas
 forex-python==1.8
     # via oasislmf
@@ -123,8 +123,6 @@ markupsafe==2.1.2
     # via jinja2
 msgpack==1.0.5
     # via oasislmf
-munch==2.5.0
-    # via fiona
 numba==0.57.0
     # via
     #   -r requirements-worker.in
@@ -170,7 +168,7 @@ pyarrow==14.0.1
     # via oasislmf
 pycparser==2.21
     # via cffi
-pymysql==1.0.3
+pymysql==1.1.1
     # via -r requirements-worker.in
 pyproj==3.5.0
     # via geopandas
@@ -225,7 +223,6 @@ six==1.16.0
     #   azure-core
     #   click-repl
     #   isodate
-    #   munch
     #   pathlib2
     #   python-dateutil
 sqlalchemy==2.0.13
