@@ -80,8 +80,8 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         """
 
         user = self.UserModel.objects.create_user(username)
-        self.update_groups(user, claims)
         self.update_roles(user, claims)
+        self.update_groups(user, claims)
         self.create_keycloak_user_id(user, claims.get('sub'))
         return user
 
