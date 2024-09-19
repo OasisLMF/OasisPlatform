@@ -3,14 +3,9 @@ name: Platform Image Tests
 on:
   push:
     branches:
-      - main-platform1
+      - main
       - stable**
-      - release**
   pull_request:
-    branches:
-      - main-platform1
-      - stable**
-      - release**
   workflow_dispatch:
     inputs:
       last_release:
@@ -45,7 +40,7 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
-      cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
+      cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'SKIP' ||  inputs.cve_severity }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/1.28.x' || inputs.oasislmf_branch }}
       ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/3.1.x' || inputs.ods_branch }}
 

@@ -76,8 +76,10 @@ fasteners==0.18
     # via -r requirements-worker.in
 fastparquet==2023.2.0
     # via oasislmf
-fiona==1.9.1
-    # via geopandas
+fiona==1.9.6
+    # via
+    #   geopandas
+    #   oasislmf
 forex-python==1.8
     # via oasislmf
 fsspec==2023.3.0
@@ -108,8 +110,6 @@ llvmlite==0.39.1
     # via numba
 msgpack==1.0.5
     # via oasislmf
-munch==2.5.0
-    # via fiona
 numba==0.56.4
     # via
     #   -r requirements-worker.in
@@ -128,7 +128,7 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.8
+oasislmf[extra]==1.28.9
     # via -r requirements-worker.in
 ods-tools==3.1.5
     # via oasislmf
@@ -204,8 +204,8 @@ six==1.16.0
     #   anytree
     #   azure-core
     #   click-repl
+    #   fiona
     #   isodate
-    #   munch
     #   pathlib2
     #   python-dateutil
 sqlalchemy==2.0.5.post1

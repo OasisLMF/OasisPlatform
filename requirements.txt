@@ -187,8 +187,10 @@ filelock==3.9.0
     # via
     #   tox
     #   virtualenv
-fiona==1.9.1
-    # via geopandas
+fiona==1.9.6
+    # via
+    #   geopandas
+    #   oasislmf
 flake8==6.0.0
     # via -r requirements.in
 forex-python==1.8
@@ -212,7 +214,7 @@ idna==3.4
     #   hyperlink
     #   requests
     #   twisted
-incremental==22.10.0
+incremental==24.7.2
     # via twisted
 inflection==0.5.1
     # via drf-yasg
@@ -254,8 +256,6 @@ model-mommy==2.0.0
     # via -r requirements.in
 msgpack==1.0.5
     # via oasislmf
-munch==2.5.0
-    # via fiona
 mysqlclient==2.1.1
     # via -r ./requirements-server.in
 numba==0.56.4
@@ -276,7 +276,7 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.8
+oasislmf[extra]==1.28.9
     # via -r ./requirements-worker.in
 ods-tools==3.1.5
     # via
@@ -416,8 +416,8 @@ six==1.16.0
     #   automat
     #   azure-core
     #   click-repl
+    #   fiona
     #   isodate
-    #   munch
     #   pathlib2
     #   python-dateutil
     #   service-identity
@@ -443,6 +443,7 @@ tomli==2.0.1
     # via
     #   build
     #   coverage
+    #   incremental
     #   pyproject-api
     #   pyproject-hooks
     #   pytest
@@ -451,7 +452,7 @@ tox==4.4.7
     # via -r requirements.in
 tqdm==4.65.0
     # via oasislmf
-twisted[tls]==23.10.0rc1
+twisted[tls]==24.7.0rc1
     # via
     #   -r ./requirements-server.in
     #   daphne
