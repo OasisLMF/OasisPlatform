@@ -194,8 +194,10 @@ filelock==3.12.0
     # via
     #   tox
     #   virtualenv
-fiona==1.10b2
-    # via geopandas
+fiona==1.9.6
+    # via
+    #   geopandas
+    #   oasislmf
 flake8==6.0.0
     # via -r requirements.in
 forex-python==1.8
@@ -285,7 +287,7 @@ numpy==1.23.5
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.27.9
+oasislmf[extra]==1.27.10
     # via -r ./requirements-worker.in
 ods-tools==3.0.8
     # via
@@ -431,6 +433,7 @@ six==1.16.0
     #   automat
     #   azure-core
     #   click-repl
+    #   fiona
     #   isodate
     #   pathlib2
     #   python-dateutil
