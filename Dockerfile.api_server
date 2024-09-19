@@ -60,6 +60,19 @@ RUN chown -R server:server /shared-fs \
     /usr/local/bin/wait-for-it \
     /usr/local/bin/migration-helper.sh
 
+    # After copying necessary files
+COPY ./wsgi ./wsgi
+
+# Set permissions and ownership
+RUN chown -R server:server /shared-fs \
+    /var/www/oasis \
+    && chmod +x ./asgi/run-asgi.sh \
+    /usr/local/bin/startup \
+    /usr/local/bin/wait-for-it \
+    /usr/local/bin/migration-helper.sh \
+    /var/www/oasis/wsgi/run-wsgi.sh
+
+
 USER server
 RUN OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
 ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
