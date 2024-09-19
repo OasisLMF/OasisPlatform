@@ -3,14 +3,9 @@ name: Platform Vulnerability Scanning
 on:
   push:
     branches:
-      - main-platform1
+      - main
       - stable**
-      - release**
   pull_request:
-    branches:
-      - main-platform1
-      - stable**
-      - release**
   schedule:
     - cron:  '0 */6 * * *' # Run scan every 6 hours
 
@@ -106,7 +101,7 @@ jobs:
 
     - name: Store CVE report
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.REPORT }}
         path: ${{ env.REPORT }}

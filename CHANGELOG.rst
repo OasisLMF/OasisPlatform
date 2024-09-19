@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.27.10`_
+ ---------
+* [#1001](https://github.com/OasisLMF/OasisPlatform/pull/1001) - Release 1.27.9
+* [#1116](https://github.com/OasisLMF/OasisPlatform/pull/1116) - Updated Package Requirements
+.. _`1.27.10`:  https://github.com/OasisLMF/OasisPlatform/compare/1.27.9...1.27.10
+
 `1.27.9`_
  ---------
 * [#993, #971, #784, #664, #798](https://github.com/OasisLMF/OasisPlatform/pull/994) - Logging fixes for workers 
