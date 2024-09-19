@@ -40,7 +40,7 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
-      cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
+      cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'SKIP' ||  inputs.cve_severity }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/1.27.x' || inputs.oasislmf_branch }}
       ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/3.0.x' || inputs.ods_branch }}
 
