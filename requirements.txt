@@ -10,8 +10,6 @@ anytree==2.8.0
     # via oasislmf
 argparsetree==0.0.6
     # via oasislmf
-arrow==1.2.3
-    # via jinja2-time
 asgiref==3.6.0
     # via
     #   channels
@@ -45,8 +43,6 @@ beautifulsoup4==4.12.2
     # via webtest
 billiard==4.1.0
     # via celery
-binaryornot==0.4.4
-    # via cookiecutter
 boto3==1.26.133
     # via
     #   -r ./requirements-server.in
@@ -66,6 +62,7 @@ celery==5.3.0
 certifi==2023.7.22
     # via
     #   fiona
+    #   pyogrio
     #   pyproj
     #   requests
 cffi==1.15.1
@@ -78,7 +75,6 @@ channels==4.0.0
     # via -r ./requirements-server.in
 chardet==5.1.0
     # via
-    #   binaryornot
     #   oasislmf
     #   ods-tools
     #   tox
@@ -91,7 +87,6 @@ click==8.1.3
     #   click-plugins
     #   click-repl
     #   cligj
-    #   cookiecutter
     #   fiona
     #   pip-tools
 click-didyoumean==0.3.0
@@ -112,8 +107,6 @@ configparser==5.3.0
     #   -r ./requirements-worker.in
 constantly==15.1.0
     # via twisted
-cookiecutter==2.1.1
-    # via oasislmf
 coreapi==2.3.3
     # via
     #   -r ./requirements-server.in
@@ -194,18 +187,16 @@ filelock==3.12.0
     # via
     #   tox
     #   virtualenv
-fiona==1.9.6
-    # via
-    #   geopandas
-    #   oasislmf
+fiona==1.10.1
+    # via -r ./requirements-worker.in
 flake8==6.0.0
     # via -r requirements.in
 forex-python==1.8
-    # via oasislmf
+    # via -r ./requirements-worker.in
 fsspec==2023.5.0
     # via fastparquet
-geopandas==0.13.0
-    # via oasislmf
+geopandas==1.0.1
+    # via -r ./requirements-worker.in
 greenlet==2.0.2
     # via sqlalchemy
 gunicorn==22.0.0
@@ -232,12 +223,7 @@ isodate==0.6.1
 itypes==1.2.0
     # via coreapi
 jinja2==3.1.2
-    # via
-    #   cookiecutter
-    #   coreschema
-    #   jinja2-time
-jinja2-time==0.2.0
-    # via cookiecutter
+    # via coreschema
 jmespath==1.0.1
     # via
     #   boto3
@@ -279,15 +265,17 @@ numexpr==2.8.4
 numpy==1.23.5
     # via
     #   fastparquet
+    #   geopandas
     #   numba
     #   numexpr
     #   oasislmf
     #   pandas
     #   pyarrow
+    #   pyogrio
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.27.10
+oasislmf==1.27.10
     # via -r ./requirements-worker.in
 ods-tools==3.0.8
     # via
@@ -301,6 +289,7 @@ packaging==23.1
     #   geopandas
     #   gunicorn
     #   ods-tools
+    #   pyogrio
     #   pyproject-api
     #   pytest
     #   tox
@@ -332,9 +321,7 @@ psycopg2-binary==2.9.6
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
 pyarrow==14.0.1
-    # via
-    #   -r ./requirements-server.in
-    #   oasislmf
+    # via -r ./requirements-server.in
 pyasn1==0.5.0
     # via
     #   pyasn1-modules
@@ -353,6 +340,8 @@ pymysql==1.1.1
     # via
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
+pyogrio==0.9.0
+    # via geopandas
 pyopenssl==24.0.0
     # via
     #   -r requirements.in
@@ -377,12 +366,9 @@ pytest-django==4.5.2
     # via -r requirements.in
 python-dateutil==2.8.2
     # via
-    #   arrow
     #   botocore
     #   celery
     #   pandas
-python-slugify==8.0.1
-    # via cookiecutter
 pytz==2023.3
     # via
     #   django
@@ -390,13 +376,10 @@ pytz==2023.3
     #   drf-yasg
     #   oasislmf
     #   pandas
-pyyaml==6.0
-    # via cookiecutter
 requests==2.30.0
     # via
     #   -r requirements.in
     #   azure-core
-    #   cookiecutter
     #   coreapi
     #   forex-python
     #   oasislmf
@@ -404,7 +387,7 @@ requests==2.30.0
 requests-toolbelt==1.0.0
     # via oasislmf
 rtree==1.0.1
-    # via oasislmf
+    # via -r ./requirements-worker.in
 ruamel-yaml==0.17.26
     # via drf-yasg
 ruamel-yaml-clib==0.2.7
@@ -412,7 +395,7 @@ ruamel-yaml-clib==0.2.7
 s3transfer==0.6.1
     # via boto3
 scikit-learn==1.2.2
-    # via oasislmf
+    # via -r ./requirements-worker.in
 scipy==1.10.1
     # via
     #   oasislmf
@@ -421,8 +404,8 @@ service-identity==21.1.0
     # via twisted
 shapely==2.0.1
     # via
+    #   -r ./requirements-worker.in
     #   geopandas
-    #   oasislmf
 shutilwhich==1.1.0
     # via oasislmf
 simplejson==3.19.1
@@ -433,7 +416,6 @@ six==1.16.0
     #   automat
     #   azure-core
     #   click-repl
-    #   fiona
     #   isodate
     #   pathlib2
     #   python-dateutil
@@ -454,8 +436,6 @@ tabulate==0.9.0
     # via oasislmf
 tblib==1.7.0
     # via oasislmf
-text-unidecode==1.3
-    # via python-slugify
 threadpoolctl==3.1.0
     # via scikit-learn
 tomli==2.0.1
