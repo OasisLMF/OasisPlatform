@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.9`_
+ ---------
+* [#1117](https://github.com/OasisLMF/OasisPlatform/pull/1117) - Updated Package Requirements
+* [#1046](https://github.com/OasisLMF/OasisPlatform/pull/1046) - Release 1.28.8 (30th May 2024)
+.. _`1.28.9`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.8...1.28.9
+
 `1.28.8`_
  ---------
 * [#1000](https://github.com/OasisLMF/OasisPlatform/pull/1000) - Release 1.28.7
