@@ -321,21 +321,21 @@ jobs:
         docker run --entrypoint "eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
 
     - name: 'store OASISLMF_VERSION'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: OASISLMF_VERSION
         path: OASISLMF_VERSION
         retention-days: 5
 
     - name: 'store ODS_VERSION'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ODS_VERSION
         path: ODS_VERSION
         retention-days: 5
 
     - name: 'store KTOOLS_VERSION'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: KTOOLS_VERSION
         path: KTOOLS_VERSION
@@ -353,7 +353,7 @@ jobs:
         test "v$KTOOL_VER" = ${{ env.ktools_release }} || exit 1
 
     - name: Download API schema
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: openapi-schema
         path: ${{ github.workspace }}/

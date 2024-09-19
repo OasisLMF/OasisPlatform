@@ -50,7 +50,7 @@ jobs:
 
     - name: Download package
       if: needs.ods_tools.outputs.whl_filename != ''
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bin_package
         path: ${{ github.workspace }}/
@@ -68,7 +68,7 @@ jobs:
         python ./manage.py generate_swagger ${{ env.SCHEMA }}
 
     - name: Store OpenAPI schema
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: openapi-schema
         path: ${{ env.SCHEMA }}
