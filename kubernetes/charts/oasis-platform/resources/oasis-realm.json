@@ -568,8 +568,8 @@
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
-    "defaultClientScopes" : [ "web-origins", "acr", "openid", "roles", "profile", "email" ],
-    "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
+    "defaultClientScopes" : [ "web-origins", "acr", "openid", "roles", "profile", "email", "microprofile-jwt" ],
+    "optionalClientScopes" : [ "address", "phone", "offline_access" ]
   }, {
     "id" : "40223c47-11d9-49e5-a552-197fbbfb21c3",
     "clientId" : "realm-management",
@@ -1158,7 +1158,7 @@
       "id" : "21ae480f-ef05-4436-a9d8-a6089272010a",
       "name" : "groups",
       "protocol" : "openid-connect",
-      "protocolMapper" : "oidc-usermodel-realm-role-mapper",
+      "protocolMapper" : "oidc-group-membership-mapper",
       "consentRequired" : false,
       "config" : {
         "multivalued" : "true",
