@@ -106,7 +106,7 @@ jobs:
 
     - name: Store CVE report
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.REPORT }}
         path: ${{ env.REPORT }}
