@@ -158,9 +158,13 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         Persist Keycloak groups as local Django groups.
         """
         keycloak_groups = claims.get('groups', None)
+
         if keycloak_groups is None:
-            msg = 'No group found in claim / user_info'
-            raise SuspiciousOperation(msg)
+            if (user.is_superuser or user.is_staff):
+                keycloak_groups = []
+            else:
+                msg = 'No group found in claim / user_info'
+                raise SuspiciousOperation(msg)
 
         for i, keycloak_group in enumerate(keycloak_groups):
             if keycloak_group.startswith('/'):
