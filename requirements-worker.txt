@@ -34,6 +34,7 @@ celery==5.2.7
 certifi==2023.7.22
     # via
     #   fiona
+    #   pyogrio
     #   pyproj
     #   requests
 cffi==1.15.1
@@ -76,16 +77,14 @@ fasteners==0.18
     # via -r requirements-worker.in
 fastparquet==2023.2.0
     # via oasislmf
-fiona==1.9.6
-    # via
-    #   geopandas
-    #   oasislmf
+fiona==1.10.1
+    # via -r requirements-worker.in
 forex-python==1.8
-    # via oasislmf
+    # via -r requirements-worker.in
 fsspec==2023.3.0
     # via fastparquet
-geopandas==0.12.2
-    # via oasislmf
+geopandas==1.0.1
+    # via -r requirements-worker.in
 greenlet==2.0.2
     # via sqlalchemy
 idna==3.4
@@ -120,15 +119,17 @@ numexpr==2.8.4
 numpy==1.22.4
     # via
     #   fastparquet
+    #   geopandas
     #   numba
     #   numexpr
     #   oasislmf
     #   pandas
     #   pyarrow
+    #   pyogrio
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.9
+oasislmf==1.28.9
     # via -r requirements-worker.in
 ods-tools==3.1.5
     # via oasislmf
@@ -137,6 +138,7 @@ packaging==23.0
     #   fastparquet
     #   geopandas
     #   ods-tools
+    #   pyogrio
     #   pytest
 pandas==1.5.3
     # via
@@ -158,6 +160,8 @@ pycparser==2.21
     # via cffi
 pymysql==1.1.1
     # via -r requirements-worker.in
+pyogrio==0.9.0
+    # via geopandas
 pyproj==3.4.1
     # via geopandas
 pyrsistent==0.19.3
@@ -182,19 +186,19 @@ requests==2.31.0
 requests-toolbelt==0.10.1
     # via oasislmf
 rtree==1.0.1
-    # via oasislmf
+    # via -r requirements-worker.in
 s3transfer==0.6.0
     # via boto3
 scikit-learn==1.2.2
-    # via oasislmf
+    # via -r requirements-worker.in
 scipy==1.10.1
     # via
     #   oasislmf
     #   scikit-learn
 shapely==2.0.1
     # via
+    #   -r requirements-worker.in
     #   geopandas
-    #   oasislmf
 shutilwhich==1.1.0
     # via oasislmf
 simplejson==3.18.3
@@ -204,7 +208,6 @@ six==1.16.0
     #   anytree
     #   azure-core
     #   click-repl
-    #   fiona
     #   isodate
     #   pathlib2
     #   python-dateutil
