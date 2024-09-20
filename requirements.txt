@@ -217,8 +217,10 @@ filelock==3.10.7
     #   -r ./requirements-worker.in
     #   tox
     #   virtualenv
-fiona==1.10b2
-    # via geopandas
+fiona==1.9.6
+    # via
+    #   geopandas
+    #   oasislmf
 flake8==6.0.0
     # via -r requirements.in
 forex-python==1.8
@@ -334,7 +336,7 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.7
+oasislmf[extra]==2.3.8
     # via -r ./requirements-worker.in
 ods-tools==3.2.7
     # via
@@ -501,6 +503,7 @@ six==1.16.0
     #   automat
     #   azure-core
     #   click-repl
+    #   fiona
     #   isodate
     #   pathlib2
     #   python-dateutil
