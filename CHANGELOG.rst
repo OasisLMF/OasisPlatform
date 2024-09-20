@@ -1,6 +1,18 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.8`_
+ ---------
+* [#1098](https://github.com/OasisLMF/OasisPlatform/pull/1099) - API is down. Please try again later 
+* [#1075](https://github.com/OasisLMF/OasisPlatform/pull/1103) - Logging - V2 input generation and losses tar should include log files for all sub-tasks 
+* [#1104](https://github.com/OasisLMF/OasisPlatform/pull/1104) - Fix params for V1 workers - so custom hooks are called
+* [#1107](https://github.com/OasisLMF/OasisPlatform/pull/1107) - Fix/gen log storage
+* [#1109](https://github.com/OasisLMF/OasisPlatform/pull/1109) - set artifact to v4
+* [#1079](https://github.com/OasisLMF/OasisPlatform/pull/1079) - Release 2.3.7 (Aug 6) 
+* [#1111](https://github.com/OasisLMF/OasisPlatform/pull/1112) - Keycloak OIDC group permistions is broken. 
+* [#1110](https://github.com/OasisLMF/OasisPlatform/pull/1113) - Add Endpoint for models - 'storage_links'
+.. _`2.3.8`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.7...2.3.8
+
 `2.3.7`_
  ---------
 * [#1090](https://github.com/OasisLMF/OasisPlatform/pull/1090) -  Fixed CVEs from fiona package (backport)

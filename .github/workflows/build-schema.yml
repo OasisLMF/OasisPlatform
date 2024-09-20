@@ -5,9 +5,6 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
-      - stable**
   workflow_dispatch:
     inputs:
       ods_branch:
@@ -49,7 +46,7 @@ jobs:
 
     - name: Download package
       if: needs.ods_tools.outputs.whl_filename != ''
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bin_package
         path: ${{ github.workspace }}/
@@ -83,21 +80,21 @@ jobs:
         OASIS_GEN_SWAGGER_V2: 1
 
     - name: Store OpenAPI schema
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: openapi-schema
         path: ${{ env.SCHEMA_ALL }}
         retention-days: 3
 
     - name: Store OpenAPI schema (only v1)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: v1-openapi-schema
         path: ${{ env.SCHEMA_V1 }}
         retention-days: 3
 
     - name: Store OpenAPI schema (only v2)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: v2-openapi-schema
         path: ${{ env.SCHEMA_V2 }}

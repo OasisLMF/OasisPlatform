@@ -84,8 +84,10 @@ fastparquet==2023.2.0
     #   oasislmf
 filelock==3.10.7
     # via -r requirements-worker.in
-fiona==1.10b2
-    # via geopandas
+fiona==1.9.6
+    # via
+    #   geopandas
+    #   oasislmf
 forex-python==1.8
     # via oasislmf
 fsspec==2023.3.0
@@ -143,9 +145,9 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.7
+oasislmf[extra]==2.3.8
     # via -r requirements-worker.in
-ods-tools==3.2.6
+ods-tools==3.2.7
     # via oasislmf
 packaging==23.0
     # via
@@ -222,6 +224,7 @@ six==1.16.0
     #   anytree
     #   azure-core
     #   click-repl
+    #   fiona
     #   isodate
     #   pathlib2
     #   python-dateutil

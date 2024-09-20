@@ -15,6 +15,7 @@ from ..models import AnalysisModel, SettingsTemplate
 from .serializers import (
     AnalysisModelSerializer,
     AnalysisModelListSerializer,
+    AnalysisModelStorageSerializer,
     ModelVersionsSerializer,
     CreateTemplateSerializer,
     TemplateSerializer,
@@ -209,6 +210,8 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
             return ModelScalingConfigSerializer
         elif self.action in ['chunking_configuration']:
             return ModelChunkingConfigSerializer
+        elif self.action == 'storage_links':
+            return AnalysisModelStorageSerializer
         else:
             return super(AnalysisModelViewSet, self).get_serializer_class()
 
@@ -432,6 +435,15 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
 
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)
+
+    @action(methods=['get'], detail=True)
+    def storage_links(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the analyses storage backed link references, `object keys` or `file paths`
+        """
+        serializer = self.get_serializer(self.get_object())
+        return Response(serializer.data)
 
 
 class ModelSettingsView(viewsets.ModelViewSet):

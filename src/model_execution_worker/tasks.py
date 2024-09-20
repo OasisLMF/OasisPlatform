@@ -334,9 +334,8 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Create and log params
         run_params = {**config, **task_params}
-        gen_losses_params = OasisManager()._params_generate_losses(**run_params)
-        post_hook_params = OasisManager()._params_post_analysis(**run_params)
-        params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params}, config_path)
+        gen_losses_params = OasisManager()._params_generate_oasis_losses(**run_params)
+        params = paths_to_absolute_paths({**gen_losses_params}, config_path)
 
         if debug_worker:
             log_params(params, kwargs)
@@ -440,10 +439,8 @@ def generate_input(self,
         config_path = get_oasislmf_config_path(settings)
         config = config_strip_default_exposure(get_json(config_path))
         lookup_params = {**config, **task_params}
-
-        gen_files_params = OasisManager()._params_generate_files(**lookup_params)
-        pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
-        params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params}, config_path)
+        gen_files_params = OasisManager()._params_generate_oasis_files(**lookup_params)
+        params = paths_to_absolute_paths({**gen_files_params}, config_path)
 
         if debug_worker:
             log_params(params, kwargs, exclude_keys=[
@@ -472,8 +469,11 @@ def generate_input(self,
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
 
-        # Store result files
+        # Store logs
         traceback = filestore.put(kwargs['log_filename'])
+        filestore.get(traceback, os.path.join(oasis_files_dir, os.path.basename(kwargs['log_filename'])))
+
+        # Store result files
         lookup_error = filestore.put(lookup_error_fp)
         lookup_success = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)

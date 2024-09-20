@@ -37,4 +37,4 @@ fi
 set -e
 docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
 docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
-docker-compose up -d
+docker-compose -f compose/debug.docker-compose.yml up -d
