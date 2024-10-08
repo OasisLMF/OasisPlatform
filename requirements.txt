@@ -218,9 +218,7 @@ filelock==3.10.7
     #   tox
     #   virtualenv
 fiona==1.9.6
-    # via
-    #   geopandas
-    #   oasislmf
+    # via geopandas
 flake8==6.0.0
     # via -r requirements.in
 forex-python==1.8
@@ -336,7 +334,7 @@ oasis-data-manager==0.1.1
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.8
+oasislmf[extra]==2.3.9
     # via -r ./requirements-worker.in
 ods-tools==3.2.7
     # via
