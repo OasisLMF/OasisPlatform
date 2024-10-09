@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.9`_
+ ---------
+* [#1105](https://github.com/OasisLMF/OasisPlatform/pull/1105) - Release 2.3.8
+* [#1122](https://github.com/OasisLMF/OasisPlatform/pull/1122) - Update python packages for  2.3.9
+.. _`2.3.9`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.8...2.3.9
+
 `2.3.8`_
  ---------
 * [#1098](https://github.com/OasisLMF/OasisPlatform/pull/1099) - API is down. Please try again later 
