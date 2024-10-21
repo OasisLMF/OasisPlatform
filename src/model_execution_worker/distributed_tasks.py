@@ -560,7 +560,7 @@ def prepare_keys_file_chunk(
     **kwargs
 ):
     with TemporaryDir() as chunk_target_dir:
-        chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx+1}')
+        chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx + 1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
 
         _, lookup = OasisLookupFactory.create(
@@ -597,7 +597,7 @@ def prepare_keys_file_chunk(
         # Store chunks
         params['chunk_keys'] = filestore.put(
             chunk_target_dir,
-            filename=f'lookup-{chunk_idx+1}.tar.gz',
+            filename=f'lookup-{chunk_idx + 1}.tar.gz',
             subdir=params['storage_subdir']
         )
 
@@ -970,12 +970,12 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         **params,
         'chunk_work_location': filestore.put(
             chunk_params['ktools_work_dir'],
-            filename=f'work-{chunk_idx+1}.tar.gz',
+            filename=f'work-{chunk_idx + 1}.tar.gz',
             subdir=params['storage_subdir']
         ),
         'chunk_log_location': filestore.put(
             chunk_params['ktools_log_dir'],
-            filename=f'log-{chunk_idx+1}.tar.gz',
+            filename=f'log-{chunk_idx + 1}.tar.gz',
             subdir=params['storage_subdir']
         ),
         'ktools_work_dir': chunk_params['ktools_work_dir'],
