@@ -2,7 +2,7 @@
 
 pkg_list=(
     'ods-tools==3.*'
-    'oasislmf==1.27.*'
+    'oasislmf==2.*'
     'pandas==1.*'
     'django==3.*'
     'celery==5.*'
