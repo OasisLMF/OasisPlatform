@@ -24,7 +24,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends sudo python3 python3-pkg-resources curl libmariadbclient-dev-compat \
  && rm -rf /var/lib/apt/lists/
 
-RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos "" server
+RUN useradd --home /home/server --shell /bin/bash server
 COPY --chown=server:server --from=build-packages /root/.local /home/server/.local
 RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
 
