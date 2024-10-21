@@ -1,5 +1,5 @@
 # ---- STAGE 1 -----
-FROM ubuntu:22.04 AS build-packages
+FROM ubuntu:24.04 AS build-packages
 
 ENV DEBIAN_FRONTEND noninteractive
 COPY ./requirements-server.txt ./requirements-server.txt
@@ -17,7 +17,7 @@ RUN if [ ! -z "$ods_tools_branch" ] ; then \
 USER server
 
 # ---- STAGE 2 ----
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends sudo python3 python3-pkg-resources curl libmariadbclient-dev-compat \
