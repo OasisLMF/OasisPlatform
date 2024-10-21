@@ -1,9 +1,10 @@
 # ---- STAGE 1 -----
-FROM ubuntu:22.04 AS build-packages
+FROM ubuntu:24.04 AS build-packages
 
+ENV PIP_BREAK_SYSTEM_PACKAGES 1
 ENV DEBIAN_FRONTEND noninteractive
 COPY ./requirements-server.txt ./requirements-server.txt
-RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential python3 python3-pip python3-dev libmariadbclient-dev-compat && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential python3 python3-pip python3-dev pkg-config libmariadb-dev-compat && rm -rf /var/lib/apt/lists/*
 RUN pip install --user --no-warn-script-location -r ./requirements-server.txt && pip install --no-warn-script-location --user mysqlclient
 
 # Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
@@ -25,13 +26,16 @@ RUN if [ ! -z "$odm_branch" ] ; then \
 USER server
 
 # ---- STAGE 2 ----
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends sudo python3 python3-pkg-resources curl libmariadbclient-dev-compat \
  && rm -rf /var/lib/apt/lists/
 
-RUN adduser --home /home/server --shell /bin/bash --disabled-password --gecos "" server
+ARG USER_ID=1000
+RUN userdel -r ubuntu
+RUN useradd -u ${USER_ID} --home /home/server --shell /bin/bash server
+
 COPY --chown=server:server --from=build-packages /root/.local /home/server/.local
 RUN mkdir -p /var/log/oasis /shared-fs && chmod 777 -R /var/log/oasis
 

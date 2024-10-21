@@ -72,6 +72,8 @@ env:
   IGNORE_UNFIXED: 'true'
   SEVERITY: 'CRITICAL,HIGH'
   IMAGE_REPO: 'coreoasis/github-actions'
+  TRIVY_SKIP_DB_UPDATE: true
+  TRIVY_SKIP_JAVA_DB_UPDATE: true
 
 jobs:
   build:
