@@ -530,16 +530,16 @@ class Analysis(TimeStampedModel):
             errors['model'] = ['Model pk "{}" - Unsupported Operation, "run_mode" must be "V2", not "{}"'.format(self.model.id, self.model.run_mode)]
         if not self.settings_file:
             errors['settings_file'] = ['Must not be null']
-        if not self.portfolio.location_file:
-            errors['portfolio'] = ['"location_file" must not be null']
-        else:
-            # get loc lines
-            try:
-                loc_lines = self.portfolio.location_file_len()
-            except Exception as e:
-                errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
-            if loc_lines < 1:
-                errors['portfolio'] = ['"location_file" must at least one row']
+        # if not self.portfolio.location_file:
+        #     errors['portfolio'] = ['"location_file" must not be null']
+        # else:
+        #     # get loc lines
+        #     try:
+        #         loc_lines = self.portfolio.location_file_len()
+        #     except Exception as e:
+        #         errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
+        #     if loc_lines < 1:
+        #         errors['portfolio'] = ['"location_file" must at least one row']
 
         # get events
         events_total = self.get_num_events()
@@ -595,16 +595,16 @@ class Analysis(TimeStampedModel):
         if (self.model.run_mode is None) and (run_mode_override is None):
             errors['model'] = ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
 
-        if not self.portfolio.location_file:
-            pass
-            # errors['portfolio'] = ['"location_file" must not be null']
-        else:
-            try:
-                loc_lines = self.portfolio.location_file_len()
-            except Exception as e:
-                errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
-            if loc_lines < 1:
-                errors['portfolio'] = ['"location_file" must at least one row']
+        # if not self.portfolio.location_file:
+        #     pass
+        #     # errors['portfolio'] = ['"location_file" must not be null']
+        # else:
+        #     try:
+        #         loc_lines = self.portfolio.location_file_len()
+        #     except Exception as e:
+        #         errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
+        #     if loc_lines < 1:
+        #         errors['portfolio'] = ['"location_file" must at least one row']
 
         if errors:
             raise ValidationError(errors)
