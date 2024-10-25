@@ -34,7 +34,9 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy built python packages
-RUN useradd  --home /home/worker --shell /bin/bash worker
+ARG USER_ID=1000
+RUN userdel -r ubuntu
+RUN useradd -u ${USER_ID} --home /home/worker --shell /bin/bash worker
 COPY --chown=worker:worker --from=build-packages /root/.local /home/worker/.local
 
 # Copy in worker files
