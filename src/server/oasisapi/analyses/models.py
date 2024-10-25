@@ -596,7 +596,8 @@ class Analysis(TimeStampedModel):
             errors['model'] = ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
 
         if not self.portfolio.location_file:
-            errors['portfolio'] = ['"location_file" must not be null']
+            pass
+            # errors['portfolio'] = ['"location_file" must not be null']
         else:
             try:
                 loc_lines = self.portfolio.location_file_len()

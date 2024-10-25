@@ -411,8 +411,8 @@ class CreateAnalysisSerializer(AnalysisSerializer):
 
     def validate(self, attrs):
         attrs['portfolio'] = self.portfolio
-        if not self.portfolio.location_file:
-            raise ValidationError({'portfolio': '"location_file" must not be null'})
+        # if not self.portfolio.location_file:
+        #     raise ValidationError({'portfolio': '"location_file" must not be null'})
 
         # Validate and update groups parameter
         validate_and_update_groups(self.partial, self.context.get('request').user, attrs)
