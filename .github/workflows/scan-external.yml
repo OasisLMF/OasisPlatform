@@ -65,7 +65,7 @@ jobs:
 
     - name: Vulnerability scanner
       if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.28.0
       with:
         image-ref: ${{ steps.img.outputs.result }}:${{ steps.ver.outputs.result }}
         scan-type: 'image'
@@ -76,7 +76,7 @@ jobs:
 
     - name: Create Report
       if: success() || failure()
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.28.0
       with:
         image-ref: ${{ steps.img.outputs.result }}:${{ steps.ver.outputs.result }}
         format: 'sarif'
