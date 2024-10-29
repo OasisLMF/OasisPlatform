@@ -346,12 +346,12 @@ def keys_generation_task(fn):
         file_from_hook = params.get(f'pre_{arg_name}')
         if not file_from_server:
             logger.info(f'{arg_name}: (Not loaded)')
-            return None
+            return None, None
         elif file_from_hook:
             logger.info(f'{arg_name}: {file_from_hook} (pre-analysis-hook)')
-            return file_from_hook
+            return file_from_hook, 'pre_'
         logger.info(f'{arg_name}: {file_from_server} (portfolio)')
-        return file_from_server
+        return file_from_server, 'raw_'
 
     def log_task_entry(slug, request_id, analysis_id):
         if slug:
@@ -398,32 +398,35 @@ def keys_generation_task(fn):
         complex_data_files = kwargs.get('complex_data_files')
 
         # Load OED file references (filenames or object keys)
-        loc_file = get_file_ref(kwargs, params, 'loc_file')
-        acc_file = get_file_ref(kwargs, params, 'acc_file')
-        info_file = get_file_ref(kwargs, params, 'info_file')
-        scope_file = get_file_ref(kwargs, params, 'scope_file')
+        #  {filetype}_source =>  'raw_' is returned if not modifed
+        #                        'pre_' is returned for files from pre-analysis
+
+        loc_filepath, loc_source = get_file_ref(kwargs, params, 'loc_file')
+        acc_filepath, acc_source = get_file_ref(kwargs, params, 'acc_file')
+        info_filepath, info_source = get_file_ref(kwargs, params, 'info_file')
+        scope_filepath, scope_source  = get_file_ref(kwargs, params, 'scope_file')
 
         # Prepare 'generate-oasis-files' input files
-        if loc_file:
-            loc_extention = "".join(pathlib.Path(loc_file).suffixes)
+        if loc_filepath:
+            loc_extention = "".join(pathlib.Path(loc_filepath).suffixes)
             loc_subdir = params.get('storage_subdir', '') if params.get('pre_loc_file') else ''
-            params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'location{loc_extention}')
-            maybe_fetch_file(loc_file, params['oed_location_csv'], loc_subdir)
-        if acc_file:
-            acc_extention = "".join(pathlib.Path(acc_file).suffixes)
+            params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'{loc_source}location{loc_extention}')
+            maybe_fetch_file(loc_filepath, params['oed_location_csv'], loc_subdir)
+        if acc_filepath:
+            acc_extention = "".join(pathlib.Path(acc_filepath).suffixes)
             acc_subdir = params.get('storage_subdir', '') if params.get('pre_acc_file') else ''
-            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'account{acc_extention}')
-            maybe_fetch_file(acc_file, params['oed_accounts_csv'], acc_subdir)
-        if info_file:
-            info_extention = "".join(pathlib.Path(info_file).suffixes)
+            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'{acc_source}account{acc_extention}')
+            maybe_fetch_file(acc_filepath, params['oed_accounts_csv'], acc_subdir)
+        if info_filepath:
+            info_extention = "".join(pathlib.Path(info_filepath).suffixes)
             info_subdir = params.get('storage_subdir', '') if params.get('pre_info_file') else ''
-            params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'reinsinfo{info_extention}')
-            maybe_fetch_file(info_file, params['oed_info_csv'], info_subdir)
-        if scope_file:
-            scope_extention = "".join(pathlib.Path(scope_file).suffixes)
+            params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'{info_source}reinsinfo{info_extention}')
+            maybe_fetch_file(info_filepath, params['oed_info_csv'], info_subdir)
+        if scope_filepath:
+            scope_extention = "".join(pathlib.Path(scope_filepath).suffixes)
             scope_subdir = params.get('storage_subdir', '') if params.get('pre_scope_file') else ''
-            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
-            maybe_fetch_file(scope_file, params['oed_scope_csv'], scope_subdir)
+            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'{scope_source}reinsscope{scope_extention}')
+            maybe_fetch_file(scope_filepath, params['oed_scope_csv'], scope_subdir)
 
         # Complex model lookup files
         if settings_file:
