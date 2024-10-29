@@ -435,8 +435,7 @@ def generate_input(self,
         loc_extention = "".join(pathlib.Path(loc_file).suffixes)
         task_params['oed_location_csv'] = filestore.get(
             loc_file,
-            os.path.join(oasis_files_dir, f'location{loc_extention}'),
-            required=True
+            os.path.join(oasis_files_dir, f'location{loc_extention}')
         )
         if acc_file:
             acc_extention = "".join(pathlib.Path(acc_file).suffixes)
