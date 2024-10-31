@@ -404,7 +404,7 @@ def keys_generation_task(fn):
         loc_filepath, loc_source = get_file_ref(kwargs, params, 'loc_file')
         acc_filepath, acc_source = get_file_ref(kwargs, params, 'acc_file')
         info_filepath, info_source = get_file_ref(kwargs, params, 'info_file')
-        scope_filepath, scope_source  = get_file_ref(kwargs, params, 'scope_file')
+        scope_filepath, scope_source = get_file_ref(kwargs, params, 'scope_file')
 
         # Prepare 'generate-oasis-files' input files
         if loc_filepath:
