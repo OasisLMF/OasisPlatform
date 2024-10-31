@@ -226,7 +226,8 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     with self.assertRaises(ValidationError) as ex:
                         analysis.generate_inputs(initiator, run_mode_override='V1')
 
-                    self.assertEqual({'portfolio': ['"location_file" must not be null']}, ex.exception.detail)
+                    self.assertEqual(
+                        {'portfolio': ['Either "location_file" or "accounts_file" must not be null for run_mode = V1']}, ex.exception.detail)
 
                     self.assertEqual(Analysis.status_choices.NEW, analysis.status)
                     self.assertFalse(res_factory.revoke_called)

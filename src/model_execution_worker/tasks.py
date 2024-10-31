@@ -412,7 +412,7 @@ def generate_input(self,
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
 
         # Fetch input files
-        location_file = filestore.get(loc_file, oasis_files_dir, required=True)
+        location_file = filestore.get(loc_file, oasis_files_dir)
         accounts_file = filestore.get(acc_file, oasis_files_dir)
         ri_info_file = filestore.get(info_file, oasis_files_dir)
         ri_scope_file = filestore.get(scope_file, oasis_files_dir)

@@ -42,6 +42,9 @@ jobs:
       REPORT: 'repo-results.sarif'
       IGNORE_UNFIXED: 'true'
       EXIT_CODE: '1'
+      TRIVY_SKIP_DB_UPDATE: true
+      TRIVY_SKIP_JAVA_DB_UPDATE: true
+
     runs-on: ubuntu-latest
     steps:
     - name: Adding code-scanning URL
