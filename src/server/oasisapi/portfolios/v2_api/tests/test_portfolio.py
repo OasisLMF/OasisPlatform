@@ -243,7 +243,7 @@ class PortfolioApiCreateAnalysis(WebTestMixin, TestCase):
         )
 
         self.assertEqual(400, response.status_code)
-        self.assertIn('"location_file" must not be null', response.json['portfolio'])
+        self.assertIn('either "location_file" or "accounts_file" must not be null', response.json['portfolio'])
 
     def test_model_is_not_provided___response_is_400(self):
         user = fake_user()
