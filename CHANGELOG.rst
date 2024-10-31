@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.10`_
+ ---------
+* [#1121](https://github.com/OasisLMF/OasisPlatform/pull/1121) - Release 2.3.9
+* [#1122](https://github.com/OasisLMF/OasisPlatform/pull/1122) - Update python packages for  2.3.9
+* [#1124](https://github.com/OasisLMF/OasisPlatform/pull/1124) - Update docker base images and python packages 
+* [#1123](https://github.com/OasisLMF/OasisPlatform/pull/1130) - Generate oasis files is not using the pre-analysis adjusted location file for V2 runs
+* [#1125](https://github.com/OasisLMF/OasisPlatform/pull/1133) - Support Cyber models on OasisPlatform
+.. _`2.3.10`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.9...2.3.10
+
 `2.3.9`_
  ---------
 * [#1105](https://github.com/OasisLMF/OasisPlatform/pull/1105) - Release 2.3.8
