@@ -432,12 +432,12 @@ def generate_input(self,
         task_params['model_settings_file'] = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
 
         # Fetch input files
-        loc_extention = "".join(pathlib.Path(loc_file).suffixes)
-        task_params['oed_location_csv'] = filestore.get(
-            loc_file,
-            os.path.join(oasis_files_dir, f'location{loc_extention}'),
-            required=True
-        )
+        if loc_file:
+            loc_extention = "".join(pathlib.Path(loc_file).suffixes)
+            task_params['oed_location_csv'] = filestore.get(
+                loc_file,
+                os.path.join(oasis_files_dir, f'location{loc_extention}')
+            )
         if acc_file:
             acc_extention = "".join(pathlib.Path(acc_file).suffixes)
             task_params['oed_accounts_csv'] = filestore.get(
