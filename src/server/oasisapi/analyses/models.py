@@ -595,7 +595,19 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_CANCELLED,
             self.status_choices.RUN_ERROR,
         ]
+        valid_run_modes = [
+            self.run_mode_choices.V1,
+            self.run_mode_choices.V2,
+        ]
 
+        # check run model
+        run_mode = run_mode_override if run_mode_override else self.model.run_mode
+        if run_mode not in valid_run_modes:
+            raise ValidationError(
+                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
+            )
+
+        # check everything else
         errors = {}
         if self.status not in valid_choices:
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
@@ -605,7 +617,8 @@ class Analysis(TimeStampedModel):
             errors['model'] = ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
 
         if not self.portfolio.location_file:
-            errors['portfolio'] = ['"location_file" must not be null']
+            if run_mode == self.run_mode_choices.V2:
+                errors['portfolio'] = ['"location_file" must not be null for run_mode = V2']
         else:
             try:
                 loc_lines = self.portfolio.location_file_len()
@@ -616,16 +629,6 @@ class Analysis(TimeStampedModel):
 
         if errors:
             raise ValidationError(errors)
-
-        valid_run_modes = [
-            self.run_mode_choices.V1,
-            self.run_mode_choices.V2,
-        ]
-        run_mode = run_mode_override if run_mode_override else self.model.run_mode
-        if run_mode not in valid_run_modes:
-            raise ValidationError(
-                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
-            )
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
