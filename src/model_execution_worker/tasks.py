@@ -299,16 +299,10 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         # oasislmf.json
         config_path = get_oasislmf_config_path(settings)
         config = config_strip_default_exposure(get_json(config_path))
-
-        # model settings
-        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
-        model_settings_file = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
-
         task_params = {
             'oasis_files_dir': oasis_files_dir,
             'model_run_dir': run_dir,
             'analysis_settings_json': analysis_settings_file,
-            'model_settings_json': model_settings_file,
             'ktools_fifo_relative': True,
             'verbose': debug_worker,
             # 'df_engine': json.dumps({
@@ -428,8 +422,6 @@ def generate_input(self,
 
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
         task_params = {'oasis_files_dir': oasis_files_dir}
-        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
-        task_params['model_settings_file'] = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
 
         # Fetch input files
         if loc_file:
