@@ -422,8 +422,6 @@ def generate_input(self,
 
     with tmp_dir as oasis_files_dir, tmp_input_dir as input_data_dir:
         task_params = {'oasis_files_dir': oasis_files_dir}
-        model_settings_fp = settings.get('worker', 'MODEL_SETTINGS_FILE', fallback='')
-        task_params['model_settings_file'] = model_settings_fp if model_settings_fp and os.path.isfile(model_settings_fp) else None
 
         # Fetch input files
         if loc_file:
