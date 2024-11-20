@@ -355,9 +355,28 @@ SWAGGER_SETTINGS = {
     'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
     'LOGIN_URL': reverse_lazy('rest_framework:login'),
     'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
+    "schemes": ["http", "https"]
 }
+
+# Make swagger aware of the protocol used by the client (web browser -> ingress)
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 if DEBUG_TOOLBAR:
     INTERNAL_IPS = [
         '127.0.0.1',
     ]
+
+"""
+Workaround, By default Django will try a chmod at file store to match its permistions, for disks
+mounted as root, world writable. `drwxrwxrwx   2 root root    0 Jun  6 13:19 shared-fs`
+
+The write content part works, but fails at chmod with:
+    Exception Type: PermissionError at /V1/portfolios/3/location_file/
+    Exception Value: [Errno 1] Operation not permitted: '/shared-fs/81987e7e62244184ba80a61dda2c194e.parquet'
+    Request information:
+
+To override this, that step will be skipped if 'FILE_UPLOAD_PERMISSIONS' is set as none
+https://github.com/django/django/blob/main/django/core/files/storage.py#L337-L338
+"""
+FILE_UPLOAD_PERMISSIONS = None
