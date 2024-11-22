@@ -6,7 +6,7 @@ on:
 jobs:
   track_pr:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'OasisLMF'
+    if: github.event.pull_request.head.repo.fork == false
     steps:
       - name: Get project data
         env:
