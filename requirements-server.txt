@@ -75,9 +75,13 @@ click-repl==0.3.0
 constantly==23.10.4
     # via twisted
 coreapi==2.3.3
-    # via -r requirements-server.in
+    # via
+    #   -r requirements-server.in
+    #   drf-yasg
 coreschema==0.0.4
-    # via coreapi
+    # via
+    #   coreapi
+    #   drf-yasg
 cramjam==2.9.0
     # via fastparquet
 cryptography==43.0.3
@@ -128,7 +132,7 @@ djangorestframework-simplejwt==5.3.1
     # via -r requirements-server.in
 drf-nested-routers==0.94.0
     # via -r requirements-server.in
-drf-yasg==1.21.8
+drf-yasg==1.21.5
     # via -r requirements-server.in
 fastparquet==2024.5.0
     # via oasis-data-manager
@@ -258,8 +262,6 @@ pytz==2024.2
     #   djangorestframework
     #   drf-yasg
     #   pandas
-pyyaml==6.0.2
-    # via drf-yasg
 redis==5.1.1
     # via -r requirements-server.in
 referencing==0.35.1
@@ -275,6 +277,10 @@ rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
+ruamel-yaml==0.18.6
+    # via drf-yasg
+ruamel-yaml-clib==0.2.12
+    # via ruamel-yaml
 s3transfer==0.10.3
     # via boto3
 service-identity==24.1.0
