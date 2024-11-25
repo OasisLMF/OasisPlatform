@@ -94,6 +94,7 @@ class AnalysisTaskStatus(models.Model):
         choices=status_choices,
         default=status_choices.PENDING,
         editable=False,
+        db_index=True,
     )
     pending_time = models.DateTimeField(null=True, auto_now_add=True, editable=False)
     queue_time = models.DateTimeField(null=True, default=None, editable=False)
@@ -166,7 +167,7 @@ class Analysis(TimeStampedModel):
     model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values),
-                              choices=status_choices, default=status_choices.NEW, editable=False)
+                              choices=status_choices, default=status_choices.NEW, editable=False, db_index=True)
     run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),
                                 choices=run_mode_choices, default=None, editable=False, null=True)
     task_started = models.DateTimeField(editable=False, null=True, default=None)
