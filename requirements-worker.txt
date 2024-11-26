@@ -115,7 +115,7 @@ numba==0.56.4
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-numexpr==2.8.4
+numexpr==2.10.0
     # via oasislmf
 numpy==1.22.4
     # via
