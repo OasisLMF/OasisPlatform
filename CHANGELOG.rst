@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.10`_
+ ---------
+* [#1114](https://github.com/OasisLMF/OasisPlatform/pull/1114) - Release 1.28.9
+* [#1141](https://github.com/OasisLMF/OasisPlatform/pull/1141) - Add setttings from platform v2 for running the v1.28.x server on azure cloud
+* [#1146](https://github.com/OasisLMF/OasisPlatform/pull/1146) - Fix CVE issues in release 1.28.10
+.. _`1.28.10`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.9...1.28.10
+
 `1.28.9`_
  ---------
 * [#1117](https://github.com/OasisLMF/OasisPlatform/pull/1117) - Updated Package Requirements
