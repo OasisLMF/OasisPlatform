@@ -79,7 +79,7 @@ cryptography==42.0.4
     #   service-identity
 daphne==4.0.0
     # via -r requirements-server.in
-django==3.2.23
+django==3.2.25
     # via
     #   -r requirements-server.in
     #   channels

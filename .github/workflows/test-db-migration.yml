@@ -1,0 +1,60 @@
+name: DB migration Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      prev_release_tag:
+        description: 'OasisPlatform tag [semvar]'
+        required: false
+
+  workflow_call:
+    inputs:
+      prev_release_tag:
+        description: 'Platform tag to set the DB migration from'
+        required: false
+        type: string
+      platform_branch:
+        description: "Platform branch to migrate to (remote trigger) [git ref]"
+        required: True
+        type: string
+
+jobs:
+  DB_migrate:
+    runs-on: ubuntu-22.04
+    env:
+      PLAT_BRANCH: ${{ github.ref }}
+      PREV_RELEASE_TAG: ${{ inputs.prev_release_tag }}
+
+    steps:
+    - name: Branch selection (remote trigger)
+      if: inputs.platform_branch != ''
+      run: echo "PLAT_BRANCH=${{ inputs.platform_branch }}" >> $GITHUB_ENV
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        repository: OasisLMF/OasisPlatform
+        ref: ${{ env.PLAT_BRANCH }}
+        fetch-depth: 0
+
+    - name: Find 'prev_release_tag'
+      if: inputs.prev_release_tag == ''
+      run: |
+        tag=$( ./scripts/find_release.sh -t 1)
+        echo "PREV_RELEASE_TAG=$tag" >> $GITHUB_ENV
+    - name: Create DB to migrate from
+      run: |
+        ./scripts/create-db-sqlite3.sh ${{ env.PREV_RELEASE_TAG }}
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: pip install -r requirements-server.txt
+
+    - name: Run Migration
+      run: |
+        python ./manage.py migrate
