@@ -38,7 +38,7 @@ six==1.16.0
     # via
     #   kubernetes-asyncio
     #   python-dateutil
-urllib3==1.26.12
+urllib3==2.2.3
     # via kubernetes-asyncio
 websockets==10.3
     # via -r kubernetes/worker-controller/requirements.in

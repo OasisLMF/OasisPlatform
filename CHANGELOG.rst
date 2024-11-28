@@ -1,6 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.11`_
+ ---------
+* [#1125](https://github.com/OasisLMF/OasisPlatform/pull/1133) - Support Cyber models on OasisPlatform
+* [#1134](https://github.com/OasisLMF/OasisPlatform/pull/1134) - Fixed pip install on model worker images 
+* [#1139](https://github.com/OasisLMF/OasisPlatform/pull/1139) - Fix/1135 model settings conf
+* [#1129](https://github.com/OasisLMF/OasisPlatform/pull/1143) - Platform schema generation - minor changes between versions.
+* [#1140](https://github.com/OasisLMF/OasisPlatform/pull/1145) - Add DB indexing to fields like Analyses status. 
+* [#1147](https://github.com/OasisLMF/OasisPlatform/pull/1147) - Release notes script - skip merge commits
+.. _`2.3.11`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.10...2.3.11
+
 `2.3.10`_
  ---------
 * [#1121](https://github.com/OasisLMF/OasisPlatform/pull/1121) - Release 2.3.9

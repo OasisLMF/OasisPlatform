@@ -35,12 +35,12 @@ automat==24.8.1
     # via twisted
 azure-core==1.31.0
     # via
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
     #   azure-storage-blob
     #   django-storages
 azure-storage-blob==12.23.1
     # via
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
     #   django-storages
 backports-tempfile==1.0
     # via -r requirements.in
@@ -50,12 +50,12 @@ beautifulsoup4==4.12.3
     # via webtest
 billiard==4.2.1
     # via
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
     #   celery
 boto3==1.35.44
     # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 botocore==1.35.44
     # via
     #   boto3
@@ -66,8 +66,8 @@ cachetools==5.5.0
     # via tox
 celery==5.4.0
     # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
     #   django-celery-results
 certifi==2024.8.30
     # via
@@ -78,14 +78,14 @@ cffi==1.17.1
     # via cryptography
 chainmap==1.0.3
     # via
-    #   -r ./requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   oasislmf
 channels==2.4.0
     # via
-    #   -r ./requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   channels-redis
 channels-redis==2.4.2
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 chardet==5.2.0
     # via
     #   oasislmf
@@ -109,13 +109,17 @@ click-repl==0.3.0
 colorama==0.4.6
     # via tox
 configparser==7.1.0
-    # via -r ./requirements-worker.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 constantly==23.10.4
     # via twisted
 coreapi==2.3.3
-    # via -r ./requirements-server.in
+    # via
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   drf-yasg
 coreschema==0.0.4
-    # via coreapi
+    # via
+    #   coreapi
+    #   drf-yasg
 coverage[toml]==7.6.4
     # via
     #   -r requirements.in
@@ -154,40 +158,40 @@ django==3.2.25
     #   model-mommy
     #   mozilla-django-oidc
 django-celery-results==2.5.1
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 django-cleanup==9.0.0
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 django-debug-toolbar==4.3.0
     # via
-    #   -r ./requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   -r requirements.in
 django-filter==23.5
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 django-model-utils==5.0.0
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 django-request-logging==0.7.5
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 django-storages[azure]==1.14.4
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 django-webtest==1.9.12
     # via -r requirements.in
 djangorestframework==3.14.0
     # via
-    #   -r ./requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   djangorestframework-simplejwt
     #   drf-nested-routers
     #   drf-yasg
 djangorestframework-simplejwt==5.3.1
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 drf-nested-routers==0.94.0
-    # via -r ./requirements-server.in
-drf-yasg==1.21.8
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+drf-yasg==1.21.5
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 executing==2.1.0
     # via stack-data
 fasteners==0.19
     # via
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
     #   -r requirements.in
 fastparquet==2024.5.0
     # via
@@ -195,7 +199,7 @@ fastparquet==2024.5.0
     #   oasislmf
 filelock==3.16.1
     # via
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
     #   tox
     #   virtualenv
 flake8==7.1.1
@@ -213,7 +217,7 @@ geopandas==1.0.1
 greenlet==3.1.1
     # via sqlalchemy
 gunicorn==23.0.0
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 hiredis==3.0.0
     # via aioredis
 httplib2==0.22.0
@@ -253,18 +257,18 @@ jmespath==1.0.1
     #   botocore
 joblib==1.4.2
     # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
     #   scikit-learn
 josepy==1.14.0
     # via mozilla-django-oidc
 jsonpickle==3.3.0
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 jsonref==1.1.0
     # via ods-tools
 jsonschema==4.23.0
     # via
-    #   -r ./requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   ods-tools
 jsonschema-specifications==2024.10.1
     # via jsonschema
@@ -273,7 +277,7 @@ kombu==5.4.2
 llvmlite==0.43.0
     # via numba
 markdown==3.7
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 markupsafe==3.0.2
     # via jinja2
 matplotlib-inline==0.1.7
@@ -285,15 +289,15 @@ mock==5.1.0
 model-mommy==2.0.0
     # via -r requirements.in
 mozilla-django-oidc==4.0.1
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 msgpack==0.6.2
     # via
     #   channels-redis
     #   oasislmf
 mysqlclient==2.2.5
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 natsort==8.4.0
-    # via -r ./requirements-worker.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 numba==0.60.0
     # via
     #   oasislmf
@@ -317,11 +321,11 @@ oasis-data-manager==0.1.3
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.10
-    # via -r ./requirements-worker.in
-ods-tools==3.2.8
+oasislmf[extra]==2.3.11
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
+ods-tools==3.2.9
     # via
-    #   -r ./requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   oasislmf
 packaging==24.1
     # via
@@ -337,7 +341,7 @@ packaging==24.1
     #   tox
 pandas==2.1.4
     # via
-    #   -r ./requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   fastparquet
     #   geopandas
     #   oasis-data-manager
@@ -347,8 +351,8 @@ parso==0.8.4
     # via jedi
 pathlib2==2.3.7.post1
     # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 pexpect==4.9.0
     # via ipython
 pip-tools==7.4.1
@@ -367,15 +371,15 @@ prompt-toolkit==3.0.48
     #   ipython
 psycopg2-binary==2.9.10
     # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
 pyarrow==17.0.0
     # via
-    #   -r ./requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   oasislmf
 pyasn1==0.6.1
     # via
@@ -395,8 +399,8 @@ pyjwt==2.9.0
     # via djangorestframework-simplejwt
 pymysql==1.1.1
     # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 pyogrio==0.10.0
     # via geopandas
 pyopenssl==24.2.1
@@ -415,10 +419,10 @@ pyproject-hooks==1.2.0
     #   build
     #   pip-tools
 pyrabbit==1.1.0
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 pytest==8.3.3
     # via
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
     #   -r requirements.in
     #   pytest-cov
     #   pytest-django
@@ -439,12 +443,10 @@ pytz==2024.2
     #   drf-yasg
     #   oasislmf
     #   pandas
-pyyaml==6.0.2
-    # via drf-yasg
 redis==5.1.1
     # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 referencing==0.35.1
     # via
     #   jsonschema
@@ -466,6 +468,10 @@ rpds-py==0.20.0
     #   referencing
 rtree==1.3.0
     # via oasislmf
+ruamel-yaml==0.18.6
+    # via drf-yasg
+ruamel-yaml-clib==0.2.12
+    # via ruamel-yaml
 s3transfer==0.10.3
     # via boto3
 scikit-learn==1.5.2
@@ -497,8 +503,8 @@ soupsieve==2.6
     # via beautifulsoup4
 sqlalchemy==2.0.36
     # via
-    #   -r ./requirements-server.in
-    #   -r ./requirements-worker.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 sqlparse==0.5.1
     # via
     #   django
@@ -561,7 +567,7 @@ webtest==3.0.1
 wheel==0.44.0
     # via pip-tools
 whitenoise==6.7.0
-    # via -r ./requirements-server.in
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 zope-interface==7.1.0
     # via twisted
 
