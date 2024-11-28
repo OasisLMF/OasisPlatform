@@ -75,6 +75,7 @@ RUN chown -R worker:worker /var/oasis \
 COPY ./VERSION ./
 USER worker
 ENV PATH=/home/worker/.local/bin:$PATH
+ENV PIP_BREAK_SYSTEM_PACKAGES 1
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_ENV_OVERRIDE=true
