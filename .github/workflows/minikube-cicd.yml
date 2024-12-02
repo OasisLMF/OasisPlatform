@@ -1,0 +1,142 @@
+name: Minikube CICD Test
+
+on:
+  - pull_request
+
+env:
+  dir_piwind: ${{ github.workspace }}/piwind
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.1
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          check-latest: true
+
+      - name: Setup chart-testing
+        uses: helm/chart-testing-action@v2.6.0
+
+      # - name: Run chart-testing (list-changed)
+      #   id: list-changed
+      #   run: |
+      #     changed=$(ct list-changed --target-branch ${{ github.ref }}) 
+      #     if [[ -n "$changed" ]]; then
+      #       echo "changed=true" >> "$GITHUB_OUTPUT"
+      #     fi 
+
+      # - name: Run chart-testing (lint)
+      #   if: steps.list-changed.outputs.changed == 'true'
+      #   run: ct lint --target-branch ${{ github.ref }}
+
+      # - name: Create kind cluster
+      #   if: steps.list-changed.outputs.changed == 'true'
+      #   uses: helm/kind-action@v1.8.0
+
+      # - name: Run chart-testing (install)
+      #   if: steps.list-changed.outputs.changed == 'true'
+      #   run: ct install --target-branch ${{ github.ref }}
+
+      - name: Checkout Platform
+        uses: actions/checkout@v3
+        with:
+          path: ${{ env.dir_piwind }}
+          repository: Oasislmf/OasisPiwind
+          ref: main
+          fetch-depth: 0
+
+      - name: Start minikube
+        id: minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          driver: docker
+
+     
+      - name: Try the cluster
+        run: kubectl get pods -A
+
+      - name: Build Docker Image
+        run: |
+          set -e
+          export SHELL=/bin/bash
+          eval $(minikube -p minikube docker-env)
+          docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
+          docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
+          pushd kubernetes/worker-controller
+          docker build -t coreoasis/worker_controller:dev .
+          popd
+          set +e
+          echo -n "verifying images:"
+          docker images
+
+      - name: Upload Piwind Data
+        run: ./kubernetes/scripts/k8s/upload_piwind_model_data.sh ${{ env.dir_piwind }}
+  
+      - name: Update and Apply Helm Charts
+        run: |
+          pushd kubernetes/charts
+          if ! helm status platform; then
+            helm install platform oasis-platform
+          else
+            helm upgrade platform oasis-platform
+          fi
+          if ! helm status models; then
+            helm install models oasis-models
+          else
+            helm upgrade models oasis-models
+          fi
+          popd
+
+     
+          
+
+      # - name: Test Deployment Failure #
+      #   run: |
+      #     POD_STATUS=$(kubectl get pods --namespace default --selector=app=my-app -o jsonpath='{.items[*].status.phase}')
+      #     if [[ $POD_STATUS =~ "Running" ]]; then
+      #       echo "Pods are running successfully."
+      #     else
+      #       echo "Pods are falling."
+      #       exit 1
+      #     fi
+
+      - name: Expose API Service
+        run: |
+          MINIKUBE_IP=$(minikube ip)
+          NODE_PORT=$(kubectl get service oasis-api -o jsonpath='{.spec.ports[0].nodePort}')
+          echo "Minikube IP: $MINIKUBE_IP"
+          echo "NodePort: $NODE_PORT"
+          echo "API URL: http://$MINIKUBE_IP:$NODE_PORT"
+
+      - name: Run PiWind
+        run: |
+          wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/ci/GUL_analysis_settings.json
+          wget https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/inputs/SourceLocEDPiWind10.csv
+          pip install oasislmf
+          oasislmf api run --server-url https://ui.oasis.local/api --server-version v2 --model-id 3 --oed-location-csv OurceLocEDPiWind10.csv --analysis-settings-json GUL_analysis_settings.json
+
+      - name: Test Authentication
+        run: |
+          curl -X POST http://localhost:8080/auth/realms/master/protocol/openid-connect/token \
+          --user 'client_id:client_secret'\
+          -H 'content-type: application/x-www-form-urlencoded' \
+          -d 'grant_type=password&username=username&password=password' \
+          | grep -q 'access_token'
+
+      - name: Test WebSocket
+        run: |
+          nc -zc localhost 8001
+
+      - name: Test API
+        run: |
+          wget -O /dev/null http://localhost:8000/api/healthcheck
