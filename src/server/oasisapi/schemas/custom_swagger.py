@@ -7,6 +7,7 @@ __all__ = [
     'SUBTASK_STATUS_PARAM',
     'SUBTASK_SLUG_PARAM',
     'FILE_VALIDATION_PARAM',
+    'LIST_FILE_PARAM', 
 ]
 
 from drf_yasg import openapi
@@ -108,4 +109,12 @@ FILE_VALIDATION_PARAM = openapi.Parameter(
     required=False,
     description="Validate OED files on upload, default `True`",
     type=openapi.TYPE_BOOLEAN,
+)
+
+LIST_FILE_PARAM = openapi.Parameter(
+    'file_mode', 
+    openapi.IN_QUERY, 
+    required=False, 
+    description="List file, if directory or tar, list contents.", 
+    type=openapi.TYPE_BOOLEAN, 
 )

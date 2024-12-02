@@ -4,13 +4,13 @@ from tempfile import TemporaryFile
 
 from django.conf import settings
 from django.core.files import File
-from django.http import StreamingHttpResponse, Http404
+from django.http import StreamingHttpResponse, Http404, JsonResponse
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 from oasis_data_manager.df_reader.config import get_df_reader
 from oasis_data_manager.df_reader.exceptions import InvalidSQLException
-from ..models import RelatedFile
+from ..models import RelatedFile, list_tar_file
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups
 
@@ -45,8 +45,11 @@ def _handle_get_related_file(parent, field, request):
     if not f:
         raise Http404()
 
+
     verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to read this file')
     file_format = request.GET.get('file_format', None)
+
+    list_files = request.query_params.get('file_mode', False)
 
     if 'converted' in request.GET:
         if not (f.converted_file and f.conversion_state == RelatedFile.ConversionState.DONE):
@@ -85,6 +88,11 @@ def _handle_get_related_file(parent, field, request):
         response = StreamingHttpResponse(output_buffer, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, '.csv')
         return response
+
+    if list_files: 
+        files = list_tar_file(f)
+        # todo: change this to a proper response
+        return JsonResponse({'files': files})
 
     # Original Fallback method - Reutrn data 'as is'
     response = StreamingHttpResponse(_get_chunked_content(file_obj), content_type=f.content_type)

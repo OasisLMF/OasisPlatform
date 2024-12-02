@@ -31,6 +31,7 @@ from ...schemas.custom_swagger import (
     RUN_MODE_PARAM,
     SUBTASK_STATUS_PARAM,
     SUBTASK_SLUG_PARAM,
+    LIST_FILE_PARAM,
 )
 
 
@@ -419,6 +420,17 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
+
+    @swagger_auto_schema(methods=['get'], manual_parameters=[LIST_FILE_PARAM,])
+    @action(methods=['get'], detail=True)
+    def list_input_files(self, request, pk=None, version=None):
+        """
+        get:
+        List the files in `input_file`.
+        """
+        return handle_related_file(self.get_object(), 'input_file', request,  ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
@@ -502,6 +514,15 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Disassociates the portfolios `output_file` contents
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @swagger_auto_schema(methods=['get'], manual_parameters=[LIST_FILE_PARAM,])
+    @action(methods=['get'], detail=True)
+    def list_output_files(self, request, pk=None, version=None):
+        """
+        get:
+        List the files in `output_file`.
+        """
+        return handle_related_file(self.get_object(), 'output_file', request,  ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @requires_sql_reader
     @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
