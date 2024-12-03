@@ -31,8 +31,8 @@ def list_tar_file(RelatedFile):
         return None 
     # Need to verify this is a tar file
     tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
-    # check if file by checking extension
-    files = [f for f in tarf.getnames() if os.path.splitext(f)[-1]] 
+
+    files = [m.name for m in tarf.getmembers() if m.isfile()] 
     return files
 
 
@@ -41,6 +41,7 @@ def extract_file_from_tar(RelatedFile, fname):
         return None 
 
     tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
+
     return tarf.extractfile(fname)
 
 def random_file_name(instance, filename):
