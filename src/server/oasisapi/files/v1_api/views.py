@@ -91,8 +91,9 @@ def _handle_get_related_file(parent, field, request):
 
     if list_files: 
         files = list_tar_file(f)
+
         # todo: change this to a proper response
-        return JsonResponse({'files': files})
+        return Response(files)
 
     # Original Fallback method - Reutrn data 'as is'
     response = StreamingHttpResponse(_get_chunked_content(file_obj), content_type=f.content_type)
