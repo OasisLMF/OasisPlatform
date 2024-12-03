@@ -1,5 +1,6 @@
 import json
 import io
+import os
 from tempfile import TemporaryFile
 
 from django.conf import settings
@@ -10,7 +11,7 @@ from rest_framework.exceptions import ValidationError
 
 from oasis_data_manager.df_reader.config import get_df_reader
 from oasis_data_manager.df_reader.exceptions import InvalidSQLException
-from ..models import RelatedFile, list_tar_file
+from ..models import RelatedFile, list_tar_file, extract_file_from_tar
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups
 
@@ -48,8 +49,6 @@ def _handle_get_related_file(parent, field, request):
 
     verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to read this file')
     file_format = request.GET.get('file_format', None)
-
-    list_files = request.query_params.get('file_mode', False)
 
     if 'converted' in request.GET:
         if not (f.converted_file and f.conversion_state == RelatedFile.ConversionState.DONE):
@@ -89,11 +88,6 @@ def _handle_get_related_file(parent, field, request):
         response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, '.csv')
         return response
 
-    if list_files: 
-        files = list_tar_file(f)
-
-        # todo: change this to a proper response
-        return Response(files)
 
     # Original Fallback method - Reutrn data 'as is'
     response = StreamingHttpResponse(_get_chunked_content(file_obj), content_type=f.content_type)
@@ -187,6 +181,31 @@ def handle_json_data(parent, field, request, serializer):
         return _json_write_to_file(parent, field, request, serializer)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field, request)
+
+
+def handle_get_related_file_tar(parent, field, request, content_types):
+    f = getattr(parent, field)
+    if not f:
+        raise Http404()
+
+    verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to read this file')
+
+    if 'list' in request.path: 
+        files = list_tar_file(f)
+
+        # todo: change this to a proper response
+        return Response(files)
+    elif 'extract' in request.path:
+        filename = request.GET.get('filename', None)
+        if not filename:
+            raise Http404
+        output_buffer = extract_file_from_tar(f, filename)
+        output_buffer.seek(0)
+
+        content_type='text/csv' # todo: find content_type
+        response = StreamingHttpResponse(output_buffer, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(filename)}"'
+        return response
 
 
 def handle_related_file_sql(parent, field, request, sql, m2m_file_pk=None):

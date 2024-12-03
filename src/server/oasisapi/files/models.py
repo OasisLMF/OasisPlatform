@@ -36,6 +36,13 @@ def list_tar_file(RelatedFile):
     return files
 
 
+def extract_file_from_tar(RelatedFile, fname):
+    if not RelatedFile:
+        return None 
+
+    tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
+    return tarf.extractfile(fname)
+
 def random_file_name(instance, filename):
     if getattr(instance, "store_as_filename", False):
         return filename
