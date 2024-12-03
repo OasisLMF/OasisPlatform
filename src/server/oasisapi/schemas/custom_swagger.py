@@ -7,7 +7,7 @@ __all__ = [
     'SUBTASK_STATUS_PARAM',
     'SUBTASK_SLUG_PARAM',
     'FILE_VALIDATION_PARAM',
-    'FILENAME_PARAM', 
+    'FILENAME_PARAM',
 ]
 
 from drf_yasg import openapi
@@ -112,9 +112,9 @@ FILE_VALIDATION_PARAM = openapi.Parameter(
 )
 
 FILENAME_PARAM = openapi.Parameter(
-    'filename', 
-    openapi.IN_QUERY, 
-    required=True, 
-    description="Filename to extract from tarfile.", 
-    type=openapi.TYPE_STRING, 
+    'filename',
+    openapi.IN_QUERY,
+    required=True,
+    description="Filename to extract from tarfile.",
+    type=openapi.TYPE_STRING,
 )

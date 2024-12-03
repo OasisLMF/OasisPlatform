@@ -21,7 +21,8 @@ from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
 from ...decorators import requires_sql_reader
 from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer, NestedRelatedFileSerializer
-from ...files.v1_api.views import handle_related_file, handle_json_data, handle_related_file_sql, handle_get_related_file_tar
+from ...files.v1_api.views import handle_related_file, handle_json_data, handle_related_file_sql
+from ...files.v2_api.views import handle_get_related_file_tar
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups
 from ...portfolios.models import Portfolio
