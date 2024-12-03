@@ -196,14 +196,24 @@ def handle_get_related_file_tar(parent, field, request, content_types):
         # todo: change this to a proper response
         return Response(files)
     elif 'extract' in request.path:
-        filename = request.GET.get('filename', None)
-        if not filename:
-            raise Http404
-        output_buffer = extract_file_from_tar(f, filename)
+        filename = request.GET.get('filename', '')
+
+        try:
+            output_buffer = extract_file_from_tar(f, filename)
+        except KeyError: 
+            raise ValidationError('Invalid filename.')
+
         output_buffer.seek(0)
 
-        content_type='text/csv' # todo: find content_type
-        response = StreamingHttpResponse(output_buffer, content_type=content_type)
+        extension_mapping = {
+            'parquet': 'application/octet-stream',
+            'pq': 'application/octet-stream',
+            'csv': 'text/csv', 
+            'json': 'application/json', 
+        }
+
+        content_type = extension_mapping.get(os.path.splitext(filename)[1][1:], None) 
+        response = StreamingHttpResponse(output_buffer)
         response['Content-Disposition'] = f'attachment; filename="{os.path.basename(filename)}"'
         return response
 
