@@ -437,10 +437,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     def extract_input_file(self, request, pk=None, version=None):
         """
         get:
-        Gets the portfolios `input_file` contents
-
-        delete:
-        Disassociates the portfolios `input_file` contents
+        Extract and get `input_file` content.
         """
         return handle_get_related_file_tar(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
@@ -537,6 +534,15 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         List the files in `output_file`.
         """
         return handle_get_related_file_tar(self.get_object(), 'output_file', request,  ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
+    @action(methods=['get'], detail=True)
+    def extract_output_file(self, request, pk=None, version=None):
+        """
+        get:
+        Extract and get `output_file` content.
+        """
+        return handle_get_related_file_tar(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @requires_sql_reader
     @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
