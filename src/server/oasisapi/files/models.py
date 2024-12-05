@@ -29,7 +29,7 @@ def related_file_to_df(RelatedFile):
 def list_tar_file(RelatedFile):
     if not RelatedFile:
         return None
-    # Need to verify this is a tar file
+
     tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
 
     files = [m.name for m in tarf.getmembers() if m.isfile()]
