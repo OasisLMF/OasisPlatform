@@ -32,9 +32,11 @@ FILE_RESPONSE = openapi.Response(
 
 
 FILE_LIST_RESPONSE = openapi.Response(
-    'File List',
-    schema = Schema(type=openapi.TYPE_ARRAY,
-                    items=Schema(title='File Name', type=openapi.TYPE_STRING))
+    "File List",
+    schema=Schema(
+        type=openapi.TYPE_ARRAY,
+        items=Schema(title="File Name", type=openapi.TYPE_STRING),
+    ),
 )
 
 

@@ -44,6 +44,7 @@ def extract_file_from_tar(RelatedFile, fname):
 
     return tarf.extractfile(fname)
 
+
 def random_file_name(instance, filename):
     if getattr(instance, "store_as_filename", False):
         return filename

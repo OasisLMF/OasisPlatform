@@ -422,16 +422,14 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_LIST_RESPONSE})
+    @swagger_auto_schema(methods=["get"], responses={200: FILE_LIST_RESPONSE})
     @action(methods=['get'], detail=True)
     def input_file_tar_list(self, request, pk=None, version=None):
         """
         get:
         List the files in `input_file`.
         """
-        return handle_get_related_file_tar(self.get_object(), 'input_file', request,  ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
-
+        return handle_get_related_file_tar(self.get_object(), "input_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
     @action(methods=['get'], detail=True)
@@ -442,8 +440,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_get_related_file_tar(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=["get"], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
@@ -534,7 +531,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         get:
         List the files in `output_file`.
         """
-        return handle_get_related_file_tar(self.get_object(), 'output_file', request,  ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+        return handle_get_related_file_tar(self.get_object(), "output_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
     @action(methods=['get'], detail=True)
