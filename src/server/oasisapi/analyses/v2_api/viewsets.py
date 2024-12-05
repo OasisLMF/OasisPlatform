@@ -424,7 +424,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     @swagger_auto_schema(methods=['get'])
     @action(methods=['get'], detail=True)
-    def list_input_files(self, request, pk=None, version=None):
+    def input_file_tar_list(self, request, pk=None, version=None):
         """
         get:
         List the files in `input_file`.
@@ -434,7 +434,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
     @action(methods=['get'], detail=True)
-    def extract_input_file(self, request, pk=None, version=None):
+    def input_file_tar_extract(self, request, pk=None, version=None):
         """
         get:
         Extract and get `input_file` content.
@@ -528,7 +528,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     @swagger_auto_schema(methods=['get'])
     @action(methods=['get'], detail=True)
-    def list_output_files(self, request, pk=None, version=None):
+    def output_file_tar_list(self, request, pk=None, version=None):
         """
         get:
         List the files in `output_file`.
@@ -537,7 +537,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
     @action(methods=['get'], detail=True)
-    def extract_output_file(self, request, pk=None, version=None):
+    def output_file_tar_extract(self, request, pk=None, version=None):
         """
         get:
         Extract and get `output_file` content.
