@@ -33,6 +33,7 @@ from ...schemas.custom_swagger import (
     SUBTASK_STATUS_PARAM,
     SUBTASK_SLUG_PARAM,
     FILENAME_PARAM,
+    FILE_LIST_RESPONSE,
 )
 
 
@@ -422,7 +423,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
 
-    @swagger_auto_schema(methods=['get'])
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_LIST_RESPONSE})
     @action(methods=['get'], detail=True)
     def input_file_tar_list(self, request, pk=None, version=None):
         """
@@ -526,7 +527,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @swagger_auto_schema(methods=['get'])
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_LIST_RESPONSE})
     @action(methods=['get'], detail=True)
     def output_file_tar_list(self, request, pk=None, version=None):
         """

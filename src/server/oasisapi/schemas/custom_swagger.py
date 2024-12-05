@@ -1,5 +1,6 @@
 __all__ = [
     'FILE_RESPONSE',
+    'FILE_LIST_RESPONSE',
     'HEALTHCHECK',
     'TOKEN_REFRESH_HEADER',
     'FILE_FORMAT_PARAM',
@@ -28,6 +29,14 @@ FILE_RESPONSE = openapi.Response(
         },
 
     })
+
+
+FILE_LIST_RESPONSE = openapi.Response(
+    'File List',
+    schema = Schema(type=openapi.TYPE_ARRAY,
+                    items=Schema(title='File Name', type=openapi.TYPE_STRING))
+)
+
 
 HEALTHCHECK = Schema(
     title='HealthCheck',
