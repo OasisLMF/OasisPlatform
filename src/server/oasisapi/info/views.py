@@ -4,6 +4,8 @@ from rest_framework import views
 from rest_framework.response import Response
 from .peril import PERIL_GROUPS, PERILS
 from ..schemas.custom_swagger import SERVER_INFO
+# from ....model_execution_worker.utils import get_worker_version
+import logging
 
 
 class PerilcodesView(views.APIView):
@@ -37,6 +39,8 @@ class ServerInfoView(views.APIView):
 
     @swagger_auto_schema(responses={200: SERVER_INFO}, tags=['info'])
     def get(self, request):
+        from celery.contrib import rdb
+        rdb.set_trace()
         server_version = ""
         server_config = dict()
 
@@ -75,7 +79,12 @@ class ServerInfoView(views.APIView):
             server_config['ACCESS_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
             server_config['REFRESH_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
 
+        # Worker information
+        worker_config = {}
+        # worker_config = get_worker_version()
+
         return Response({
             'version': server_version,
-            'config': server_config
+            'config': server_config,
+            'components': worker_config
         })
