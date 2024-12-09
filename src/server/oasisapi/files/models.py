@@ -3,6 +3,7 @@ import json
 from io import BytesIO
 
 import pandas as pd
+import tarfile
 from uuid import uuid4
 
 from django.conf import settings
@@ -23,6 +24,25 @@ def related_file_to_df(RelatedFile):
         return pd.read_parquet(BytesIO(RelatedFile.read()))
     else:
         return pd.read_csv(BytesIO(RelatedFile.read()))
+
+
+def list_tar_file(RelatedFile):
+    if not RelatedFile:
+        return None
+
+    tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
+
+    files = [m.name for m in tarf.getmembers() if m.isfile()]
+    return files
+
+
+def extract_file_from_tar(RelatedFile, fname):
+    if not RelatedFile:
+        return None
+
+    tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
+
+    return tarf.extractfile(fname)
 
 
 def random_file_name(instance, filename):

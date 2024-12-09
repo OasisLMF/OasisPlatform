@@ -22,6 +22,7 @@ from ...data_files.v2_api.serializers import DataFileSerializer
 from ...decorators import requires_sql_reader
 from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer, NestedRelatedFileSerializer
 from ...files.v1_api.views import handle_related_file, handle_json_data, handle_related_file_sql
+from ...files.v2_api.views import handle_get_related_file_tar
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups
 from ...portfolios.models import Portfolio
@@ -31,6 +32,8 @@ from ...schemas.custom_swagger import (
     RUN_MODE_PARAM,
     SUBTASK_STATUS_PARAM,
     SUBTASK_SLUG_PARAM,
+    FILENAME_PARAM,
+    FILE_LIST_RESPONSE,
 )
 
 
@@ -419,7 +422,25 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=["get"], responses={200: FILE_LIST_RESPONSE})
+    @action(methods=['get'], detail=True)
+    def input_file_tar_list(self, request, pk=None, version=None):
+        """
+        get:
+        List the files in `input_file`.
+        """
+        return handle_get_related_file_tar(self.get_object(), "input_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
+    @action(methods=['get'], detail=True)
+    def input_file_tar_extract(self, request, pk=None, version=None):
+        """
+        get:
+        Extract and get `input_file` content.
+        """
+        return handle_get_related_file_tar(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @swagger_auto_schema(methods=["get"], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
@@ -502,6 +523,24 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Disassociates the portfolios `output_file` contents
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_LIST_RESPONSE})
+    @action(methods=['get'], detail=True)
+    def output_file_tar_list(self, request, pk=None, version=None):
+        """
+        get:
+        List the files in `output_file`.
+        """
+        return handle_get_related_file_tar(self.get_object(), "output_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
+    @action(methods=['get'], detail=True)
+    def output_file_tar_extract(self, request, pk=None, version=None):
+        """
+        get:
+        Extract and get `output_file` content.
+        """
+        return handle_get_related_file_tar(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @requires_sql_reader
     @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
