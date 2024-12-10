@@ -15,6 +15,7 @@ __all__ = [
 import logging
 import json
 import os
+import re
 import tempfile
 import shutil
 import subprocess
@@ -180,10 +181,22 @@ def get_oed_version():
         return None
 
 
+def get_ktools_version():
+    ktool_ver_str = subprocess.getoutput('fmcalc -v')
+
+    # Match version x.x.x , x.x or x
+    reg_pattern = "(\d+\.)?(\d+\.)?(\d+)"
+    match_ver = re.search(reg_pattern, ktool_ver_str)
+
+    if match_ver:
+        ktool_ver_str = match_ver[0]
+    return ktool_ver_str
+
+
 def get_worker_versions():
     """ Search and return the versions of Oasis components
     """
-    ktool_ver_str = subprocess.getoutput('fmcalc -v')
+    ktool_ver_str = get_ktools_version()
     plat_ver_file = '/home/worker/VERSION'
     oed_schma_ver = get_oed_version()
 
