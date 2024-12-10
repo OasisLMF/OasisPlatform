@@ -51,6 +51,11 @@ SERVER_INFO = Schema(
             title='Server config',
             description="Oasis server public configuration",
             type='object',
+        ),
+        "components": Schema(
+            title='Components version',
+            description="Versions of oasis components",
+            type='object',
         )
     }
 )

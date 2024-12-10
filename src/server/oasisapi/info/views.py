@@ -4,8 +4,9 @@ from rest_framework import views
 from rest_framework.response import Response
 from .peril import PERIL_GROUPS, PERILS
 from ..schemas.custom_swagger import SERVER_INFO
-# from ....model_execution_worker.utils import get_worker_version
 import logging
+
+from ods_tools import __version__ as ods_version
 
 
 class PerilcodesView(views.APIView):
@@ -39,8 +40,6 @@ class ServerInfoView(views.APIView):
 
     @swagger_auto_schema(responses={200: SERVER_INFO}, tags=['info'])
     def get(self, request):
-        from celery.contrib import rdb
-        rdb.set_trace()
         server_version = ""
         server_config = dict()
 
@@ -79,12 +78,20 @@ class ServerInfoView(views.APIView):
             server_config['ACCESS_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
             server_config['REFRESH_TOKEN_LIFETIME'] = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
 
-        # Worker information
-        worker_config = {}
-        # worker_config = get_worker_version()
+        # Components information
+        components_config = {
+            'ods_version': ods_version,
+        }
+
+        try:
+            from ods_tools.oed.oed_schema import OedSchema
+            OedSchemaData = OedSchema.from_oed_schema_info(oed_schema_info=None)
+            components_config['oed_version'] = OedSchemaData.schema['version']
+        except Exception as _:
+            logging.exception("Failed to get OED version info")
 
         return Response({
             'version': server_version,
             'config': server_config,
-            'components': worker_config
+            'components': components_config,
         })
