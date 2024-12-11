@@ -134,6 +134,8 @@ class AnalysisModel(TimeStampedModel):
     ver_ktools = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ktools version.'))
     ver_oasislmf = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oasislmf version.'))
     ver_platform = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker platform version.'))
+    ver_ods = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker ods-tools version.'))
+    ver_oed = models.CharField(max_length=255, null=True, default=None, help_text=_('The worker oed-schema version.'))
     oasislmf_config = models.TextField(default='')
     deleted = models.BooleanField(default=False, editable=False)
     run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),

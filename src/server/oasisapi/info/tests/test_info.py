@@ -50,5 +50,7 @@ class ServerInfo(WebTest):
         self.assertEqual(200, response.status_code)
         self.assertTrue('version' in server_info_json)
         self.assertTrue('config' in server_info_json)
+        self.assertTrue('components' in server_info_json)
         self.assertFalse(server_info_json['version'] is str)
         self.assertFalse(server_info_json['config'] is {})
+        self.assertFalse(server_info_json['components'] is {})
