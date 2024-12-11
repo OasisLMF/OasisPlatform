@@ -39,7 +39,7 @@ HEALTHCHECK = Schema(
 SERVER_INFO = Schema(
     title='ServerInfo',
     type='object',
-    required=["version", "config"],
+    required=["version", "config", "components"],
     properties={
         "version": Schema(
             title='Server version',
