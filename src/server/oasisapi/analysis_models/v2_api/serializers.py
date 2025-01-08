@@ -246,6 +246,8 @@ class ModelVersionsSerializer(serializers.ModelSerializer):
             'ver_ktools',
             'ver_oasislmf',
             'ver_platform',
+            'ver_ods',
+            'ver_oed',
         )
 
 
