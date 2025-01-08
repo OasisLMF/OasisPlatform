@@ -39,7 +39,7 @@ HEALTHCHECK = Schema(
 SERVER_INFO = Schema(
     title='ServerInfo',
     type='object',
-    required=["version", "config"],
+    required=["version", "config", "components"],
     properties={
         "version": Schema(
             title='Server version',
@@ -50,6 +50,11 @@ SERVER_INFO = Schema(
         "config": Schema(
             title='Server config',
             description="Oasis server public configuration",
+            type='object',
+        ),
+        "components": Schema(
+            title='Components version',
+            description="Versions of oasis components",
             type='object',
         )
     }
