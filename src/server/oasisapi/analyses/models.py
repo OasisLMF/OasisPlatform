@@ -102,6 +102,7 @@ class AnalysisTaskStatus(models.Model):
     end_time = models.DateTimeField(null=True, default=None, editable=False)
     name = models.CharField(max_length=255, editable=False)
     slug = models.SlugField(max_length=255, editable=False)
+    retry_count = models.IntegerField(editable=False, default=0)
 
     output_log = models.ForeignKey(
         RelatedFile,
@@ -118,6 +119,15 @@ class AnalysisTaskStatus(models.Model):
         null=True,
         default=None,
         related_name='analysis_run_status_error_logs',
+        editable=False,
+    )
+    retry_log = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
+        related_name='analysis_run_status_retry_logs',
         editable=False,
     )
 
@@ -139,6 +149,10 @@ class AnalysisTaskStatus(models.Model):
     def get_error_log_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
         return reverse(f'{override_ns}analysis-task-status-error-log', kwargs={'pk': self.pk}, request=request)
+
+    def get_retry_log_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
+        return reverse(f'{override_ns}analysis-task-status-retry-log', kwargs={'pk': self.pk}, request=request)
 
 
 class Analysis(TimeStampedModel):
@@ -805,6 +819,7 @@ def delete_connected_task_logs(sender, instance, **kwargs):
     for_removal = [
         'output_log',
         'error_log',
+        'retry_log',
     ]
     for ref in for_removal:
         obj_ref = getattr(instance, ref)

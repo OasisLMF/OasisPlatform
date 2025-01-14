@@ -1,5 +1,5 @@
 import logging
-from celery import Task
+from celery import Task, signature
 from celery.worker.request import Request as CeleryRequest
 from celery.exceptions import WorkerLostError
 
@@ -20,6 +20,7 @@ class CustomRequest(CeleryRequest):
     def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
         """Handler called if the task raised an exception."""
         exc = exc_info.exception
+
         if isinstance(exc, ExceptionWithTraceback):
             exc = exc.exc
 
@@ -37,6 +38,22 @@ class CustomRequest(CeleryRequest):
                 self.task.reject_on_worker_lost = True
             else:
                 self.task.reject_on_worker_lost = False
+
+        # report retry attempt
+        #from celery.contrib import rdb; rdb.set_trace()
+        try:
+            task_id = self.task_id
+            task_args = self.kwargs
+            signature('subtask_retry_log').delay(
+                task_args.get('analysis_id'),
+                task_args.get('initiator_id'),
+                task_args.get('slug'),
+                task_id,
+                exc_info.traceback,
+            )
+        except Exception as e:
+            logger.error(f'Falied to store retry attempt logs: {exc_info}')
+            logger.exception(e)
 
         super().on_failure(exc_info, send_failed_event, return_ok)
 

@@ -39,6 +39,7 @@ def create_settings_file(data, user):
 class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     output_log = serializers.SerializerMethodField()
     error_log = serializers.SerializerMethodField()
+    retry_log = serializers.SerializerMethodField()
 
     class Meta:
         model = AnalysisTaskStatus
@@ -55,6 +56,8 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
             'end_time',
             'output_log',
             'error_log',
+            'retry_log',
+            'retry_count',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
@@ -66,6 +69,11 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     def get_error_log(self, instance):
         request = self.context.get('request')
         return instance.get_error_log_url(request=request) if instance.error_log else None
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_retry_log(self, instance):
+        request = self.context.get('request')
+        return instance.get_retry_log_url(request=request) if instance.retry_log else None
 
 
 class AnalysisListSerializer(serializers.Serializer):
