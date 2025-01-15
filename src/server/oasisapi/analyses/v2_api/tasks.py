@@ -767,7 +767,7 @@ def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
 @celery_app_v2.task(name='subtask_retry_log')
 def subtask_retry_log(analysis_id, initiator_id, slug, task_id, error_trace):
     # Increment retry counter and append to retry log
-    task = AnalysisTaskStatus.objects.get(analysis_id=analysis_id,slug=slug)
+    task = AnalysisTaskStatus.objects.get(analysis_id=analysis_id, slug=slug)
 
     with TemporaryFile() as tmp_file:
         if hasattr(task.retry_log, 'read'):
@@ -785,7 +785,6 @@ def subtask_retry_log(analysis_id, initiator_id, slug, task_id, error_trace):
         ))
         task.retry_count += 1
         task.save(update_fields=["retry_count", "retry_log"])
-
 
 
 @celery_app_v2.task(name='set_task_status_v2')
