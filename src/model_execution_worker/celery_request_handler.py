@@ -40,7 +40,6 @@ class CustomRequest(CeleryRequest):
                 self.task.reject_on_worker_lost = False
 
         # report retry attempt
-        #from celery.contrib import rdb; rdb.set_trace()
         try:
             task_id = self.task_id
             task_args = self.kwargs

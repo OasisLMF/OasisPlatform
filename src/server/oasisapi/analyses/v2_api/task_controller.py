@@ -578,7 +578,6 @@ class Controller:
         logger.debug(f"'generate_losses' - canvas dispatched, analyses={analysis.pk}, run_uuid={run_data_uuid}")
 
         # Update sub-task ids
-        # from celery.contrib import rdb; rdb.set_trace()
         celery_tasks_list = cls.extract_celery_task_ids(task)
         for sub_t in analysis.sub_task_statuses.all():
             try:
