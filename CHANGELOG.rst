@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#1063](https://github.com/OasisLMF/OasisPlatform/pull/1152) - Expose components versions in API
+.. _`2.3.12`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.11...2.3.12
+
 `2.3.11`_
  ---------
 * [#1125](https://github.com/OasisLMF/OasisPlatform/pull/1133) - Support Cyber models on OasisPlatform
