@@ -15,6 +15,7 @@ __all__ = [
 import logging
 import json
 import os
+import re
 import tempfile
 import shutil
 import subprocess
@@ -22,6 +23,7 @@ from copy import deepcopy
 
 from pathlib2 import Path
 from oasislmf import __version__ as mdk_version
+from ods_tools import __version__ as ods_version
 from oasislmf.utils.exceptions import OasisException
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
@@ -169,11 +171,34 @@ def get_model_settings(settings):
     return settings_data
 
 
+def get_oed_version():
+    try:
+        from ods_tools.oed.oed_schema import OedSchema
+        OedSchemaData = OedSchema.from_oed_schema_info(oed_schema_info=None)
+        return OedSchemaData.schema['version']
+    except Exception as e:
+        logging.exception("Failed to get OED version info")
+        return None
+
+
+def get_ktools_version():
+    ktool_ver_str = subprocess.getoutput('fmcalc -v')
+
+    # Match version x.x.x , x.x or x
+    reg_pattern = "(\d+\.)?(\d+\.)?(\d+)"
+    match_ver = re.search(reg_pattern, ktool_ver_str)
+
+    if match_ver:
+        ktool_ver_str = match_ver[0]
+    return ktool_ver_str
+
+
 def get_worker_versions():
     """ Search and return the versions of Oasis components
     """
-    ktool_ver_str = subprocess.getoutput('fmcalc -v')
+    ktool_ver_str = get_ktools_version()
     plat_ver_file = '/home/worker/VERSION'
+    oed_schma_ver = get_oed_version()
 
     if os.path.isfile(plat_ver_file):
         with open(plat_ver_file, 'r') as f:
@@ -184,7 +209,9 @@ def get_worker_versions():
     return {
         "oasislmf": mdk_version,
         "ktools": ktool_ver_str,
-        "platform": plat_ver_str
+        "platform": plat_ver_str,
+        "ods-tools": ods_version,
+        "oed-schema": oed_schma_ver,
     }
 
 
