@@ -699,3 +699,15 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
         Disassociates the task status' `error_log` contents
         """
         return handle_related_file(self.get_object(), 'error_log', request, ['text/plain'])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete'], detail=True)
+    def retry_log(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the task status' `retry_log` contents
+
+        delete:
+        Disassociates the task status' `retry_log` contents
+        """
+        return handle_related_file(self.get_object(), 'retry_log', request, ['text/plain'])
