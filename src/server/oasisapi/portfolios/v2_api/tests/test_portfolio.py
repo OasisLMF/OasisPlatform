@@ -1428,25 +1428,23 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
                 self.assertEqual(400, validate_response.status_code)
                 self.assertEqual(validate_response.json, [
-                    ['account', 'missing required column AccCurrency'], 
-                    ['account', 'missing required column PolNumber'], 
-                    ['account', 'missing required column PolPerilsCovered'], 
-                    ['account', "column 'LocNumber' is not a valid oed field"], 
-                    ['account', "column 'IsTenant' is not a valid oed field"], 
-                    ['account', "column 'BuildingID' is not a valid oed field"], 
-                    ['account', "column 'Latitude' is not a valid oed field"], 
-                    ['account', "column 'Longitude' is not a valid oed field"], 
-                    ['account', "column 'OccupancyCode' is not a valid oed field"], 
-                    ['account', "column 'ConstructionCode' is not a valid oed field"], 
-                    ['account', "column 'LocPerilsCovered' is not a valid oed field"], 
-                    ['account', "column 'BuildingTIV' is not a valid oed field"], 
-                    ['account', "column 'OtherTIV' is not a valid oed field"], 
-                    ['account', "column 'ContentsTIV' is not a valid oed field"], 
-                    ['account', "column 'BITIV' is not a valid oed field"], 
+                    ['account', 'missing required column AccCurrency'],
+                    ['account', 'missing required column PolNumber'],
+                    ['account', 'missing required column PolPerilsCovered'],
+                    ['account', "column 'LocNumber' is not a valid oed field"],
+                    ['account', "column 'IsTenant' is not a valid oed field"],
+                    ['account', "column 'BuildingID' is not a valid oed field"],
+                    ['account', "column 'Latitude' is not a valid oed field"],
+                    ['account', "column 'Longitude' is not a valid oed field"],
+                    ['account', "column 'OccupancyCode' is not a valid oed field"],
+                    ['account', "column 'ConstructionCode' is not a valid oed field"],
+                    ['account', "column 'LocPerilsCovered' is not a valid oed field"],
+                    ['account', "column 'BuildingTIV' is not a valid oed field"],
+                    ['account', "column 'OtherTIV' is not a valid oed field"],
+                    ['account', "column 'ContentsTIV' is not a valid oed field"],
+                    ['account', "column 'BITIV' is not a valid oed field"],
                     ['account', "column 'LocCurrency' is not a valid oed field"]
                 ])
-
-
 
     def test_reinsurance_info_file__is_invalid__response_is_400(self):
         content_type = 'text/csv'
