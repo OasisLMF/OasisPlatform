@@ -378,7 +378,6 @@ def keys_generation_task(fn):
         if filestore.storage_connector == 'FS-SHARE':
             Path(filestore.root_dir, params['storage_subdir']).mkdir(parents=True, exist_ok=True)
 
-
         # Set `oasis-file-generation` input files
         params.setdefault('target_dir', params['root_run_dir'])
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], 'user-data'))
@@ -517,28 +516,28 @@ def pre_analysis_hook(self,
             pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
             params['pre_loc_file'] = filestore.put(
                 pre_loc_fp,
-                #filename=os.path.basename(pre_loc_fp),
+                # filename=os.path.basename(pre_loc_fp),
                 subdir=params['storage_subdir']
             )
             if files_modified.get('account'):
                 pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
                 params['pre_acc_file'] = filestore.put(
                     pre_acc_fp,
-                    #filename=os.path.basename(pre_acc_fp),
+                    # filename=os.path.basename(pre_acc_fp),
                     subdir=params['storage_subdir']
                 )
             if files_modified.get('ri_info'):
                 pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
                 params['pre_info_file'] = filestore.put(
                     pre_info_fp,
-                    #filename=os.path.basename(pre_info_fp),
+                    # filename=os.path.basename(pre_info_fp),
                     subdir=params['storage_subdir']
                 )
             if files_modified.get('ri_scope'):
                 pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
                 params['pre_scope_file'] = filestore.put(
                     pre_scope_fp,
-                    #filename=os.path.basename(pre_scope_fp),
+                    # filename=os.path.basename(pre_scope_fp),
                     subdir=params['storage_subdir']
                 )
 
