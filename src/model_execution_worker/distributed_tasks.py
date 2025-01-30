@@ -337,12 +337,12 @@ def keys_generation_task(fn):
         file_from_hook = params.get(f'pre_{arg_name}')
         if not file_from_server:
             logger.info(f'{arg_name}: (Not loaded)')
-            return None
+            return None, None
         elif file_from_hook:
             logger.info(f'{arg_name}: {file_from_hook} (pre-analysis-hook)')
-            return file_from_hook
+            return file_from_hook, 'pre_'
         logger.info(f'{arg_name}: {file_from_server} (portfolio)')
-        return file_from_server
+        return file_from_server, 'raw_'
 
     def log_task_entry(slug, request_id, analysis_id):
         if slug:
@@ -374,6 +374,11 @@ def keys_generation_task(fn):
         params['root_run_dir'] = os.path.join(settings.get('worker', 'base_run_dir', fallback='/tmp/run'), params['storage_subdir'])
         Path(params['root_run_dir']).mkdir(parents=True, exist_ok=True)
 
+        # test workaround
+        if filestore.storage_connector == 'FS-SHARE':
+            Path(filestore.root_dir, params['storage_subdir']).mkdir(parents=True, exist_ok=True)
+
+
         # Set `oasis-file-generation` input files
         params.setdefault('target_dir', params['root_run_dir'])
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], 'user-data'))
@@ -389,28 +394,28 @@ def keys_generation_task(fn):
         complex_data_files = kwargs.get('complex_data_files')
 
         # Load OED file references (filenames or object keys)
-        loc_file = get_file_ref(kwargs, params, 'loc_file')
-        acc_file = get_file_ref(kwargs, params, 'acc_file')
-        info_file = get_file_ref(kwargs, params, 'info_file')
-        scope_file = get_file_ref(kwargs, params, 'scope_file')
+        loc_filepath, loc_source = get_file_ref(kwargs, params, 'loc_file')
+        acc_filepath, acc_source = get_file_ref(kwargs, params, 'acc_file')
+        info_filepath, info_source = get_file_ref(kwargs, params, 'info_file')
+        scope_filepath, scope_source = get_file_ref(kwargs, params, 'scope_file')
 
-        # Prepare 'generate-oasis-files' input files
-        if loc_file:
-            loc_extention = "".join(pathlib.Path(loc_file).suffixes)
-            params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'location{loc_extention}')
-            maybe_fetch_file(loc_file, params['oed_location_csv'])
-        if acc_file:
-            acc_extention = "".join(pathlib.Path(acc_file).suffixes)
-            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'account{acc_extention}')
-            maybe_fetch_file(acc_file, params['oed_accounts_csv'])
-        if info_file:
-            info_extention = "".join(pathlib.Path(info_file).suffixes)
-            params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'reinsinfo{info_extention}')
-            maybe_fetch_file(info_file, params['oed_info_csv'])
-        if scope_file:
-            scope_extention = "".join(pathlib.Path(scope_file).suffixes)
-            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
-            maybe_fetch_file(scope_file, params['oed_scope_csv'])
+        # Prepare 'generate-oasis-files' inploc_filepath
+        if loc_filepath:
+            loc_extention = "".join(pathlib.Path(loc_filepath).suffixes)
+            params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'{loc_source}location{loc_extention}')
+            maybe_fetch_file(loc_filepath, params['oed_location_csv'])
+        if acc_filepath:
+            acc_extention = "".join(pathlib.Path(acc_filepath).suffixes)
+            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'{acc_source}account{acc_extention}')
+            maybe_fetch_file(acc_filepath, params['oed_accounts_csv'])
+        if info_filepath:
+            info_extention = "".join(pathlib.Path(info_filepath).suffixes)
+            params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'{info_source}reinsinfo{info_extention}')
+            maybe_fetch_file(info_filepath, params['oed_info_csv'])
+        if scope_filepath:
+            scope_extention = "".join(pathlib.Path(scope_filepath).suffixes)
+            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'{scope_source}reinsscope{scope_extention}')
+            maybe_fetch_file(scope_filepath, params['oed_scope_csv'])
 
         # Complex model lookup files
         if settings_file:
@@ -512,28 +517,28 @@ def pre_analysis_hook(self,
             pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
             params['pre_loc_file'] = filestore.put(
                 pre_loc_fp,
-                filename=os.path.basename(pre_loc_fp),
+                #filename=os.path.basename(pre_loc_fp),
                 subdir=params['storage_subdir']
             )
             if files_modified.get('account'):
                 pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
                 params['pre_acc_file'] = filestore.put(
                     pre_acc_fp,
-                    filename=os.path.basename(pre_acc_fp),
+                    #filename=os.path.basename(pre_acc_fp),
                     subdir=params['storage_subdir']
                 )
             if files_modified.get('ri_info'):
                 pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
                 params['pre_info_file'] = filestore.put(
                     pre_info_fp,
-                    filename=os.path.basename(pre_info_fp),
+                    #filename=os.path.basename(pre_info_fp),
                     subdir=params['storage_subdir']
                 )
             if files_modified.get('ri_scope'):
                 pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
                 params['pre_scope_file'] = filestore.put(
                     pre_scope_fp,
-                    filename=os.path.basename(pre_scope_fp),
+                    #filename=os.path.basename(pre_scope_fp),
                     subdir=params['storage_subdir']
                 )
 
