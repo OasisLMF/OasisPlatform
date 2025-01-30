@@ -132,7 +132,7 @@ drf-yasg==1.21.8
     # via -r requirements-server.in
 fastparquet==2024.5.0
     # via oasis-data-manager
-fsspec==2024.12.0
+fsspec==2024.10.0
     # via
     #   fastparquet
     #   oasis-data-manager
