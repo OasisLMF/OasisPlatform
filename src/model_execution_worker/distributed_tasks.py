@@ -93,15 +93,21 @@ def load_location_data(loc_filepath, oed_schema_info=None):
 
     Returns a DataFrame of Loaction data with 'loc_id' row assgined
     """
-    from oasislmf.utils.data import prepare_oed_exposure
     from ods_tools.oed.exposure import OedExposure
-
     exposure = OedExposure(
         location=pathlib.Path(os.path.abspath(loc_filepath)),
-        oed_schema_info=oed_schema_info,
-    )
-    prepare_oed_exposure(exposure)
-    return exposure.location.dataframe
+        oed_schema_info=oed_schema_info)
+
+    try:
+        # Oasislmf 2.4.x
+        from oasislmf.utils.data import prepare_oed_exposure
+        prepare_oed_exposure(exposure)
+        return exposure.location.dataframe
+    except ImportError:
+        # Fallback Oasislmf LTS 2.3.x, LTS 1.28.x
+        from oasislmf.utils.data import prepare_location_df
+        exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
+        return exposure.location.dataframe
 
 
 def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_state):
