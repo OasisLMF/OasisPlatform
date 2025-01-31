@@ -103,11 +103,11 @@ def load_location_data(loc_filepath, oed_schema_info=None):
     prepare_oed_exposure(exposure)
     return exposure.location.dataframe
 
-    #try:
+    # try:
     #    # oasislmf == 1.26.x or 1.23.x
     #    from oasislmf.utils.data import get_location_df
     #    return get_location_df(loc_filepath)
-    #except ImportError:
+    # except ImportError:
     #    # oasislmf == 1.27.x or greater
     #    from oasislmf.utils.data import prepare_location_df
     #    from ods_tools.oed.exposure import OedExposure
@@ -116,8 +116,8 @@ def load_location_data(loc_filepath, oed_schema_info=None):
     #        location=pathlib.Path(os.path.abspath(loc_filepath)),
     #        oed_schema_info=oed_schema_info,
     #    )
-        exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
-        return exposure.location.dataframe
+    exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
+    return exposure.location.dataframe
 
 
 def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_state):
