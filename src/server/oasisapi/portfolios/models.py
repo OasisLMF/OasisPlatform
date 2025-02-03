@@ -179,8 +179,6 @@ class Portfolio(TimeStampedModel):
 
         # Set validation fields to true or raise exception
         if validation_errors:
-            import ipdb
-            ipdb.set_trace()
             raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
         else:
             self.set_portolio_valid()
