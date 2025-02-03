@@ -12,7 +12,46 @@ from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile, related_file_to_df
 
+import re
+
 from ods_tools.oed.exposure import OedExposure
+from ods_tools.oed import OdsException
+
+
+def oed_class_of_businesses__workaround(e):
+    """ workaround function to format ClassOfBusiness exceptions from
+        an ODS-tools validation call
+
+        If not a ClassOfBusiness error return an empty dict
+    """
+    format_as_validation_error = False
+    result = []
+
+    if not isinstance(e, OdsException):
+        return result
+
+    exception_string = str(e)
+    if 'ClassOfBusiness' in exception_string:
+        lines = exception_string.splitlines()
+
+        current_key = None
+        for line in lines:
+            line = line.strip()
+
+            # Check if it's a new key (ClassOfBusiness.*)
+            if line.endswith(':'):
+                current_key = line[:-1]
+            elif line.endswith('missing'):
+                line = line[:-8].strip()  # Remove " missing" and strip extra spaces
+                fields = re.split(r',\s*', line)  # Split by commas
+                for field in fields:
+                    field = field.strip()
+                    result.append({
+                        'name': current_key,
+                        'msg': f'missing required column {field}'
+                    })
+
+    return result
 
 
 class Portfolio(TimeStampedModel):
@@ -128,14 +167,20 @@ class Portfolio(TimeStampedModel):
                 validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
             validation_errors = portfolio_exposure.check()
         except Exception as e:
-            raise ValidationError({
-                'error': 'Failed to validate portfolio',
-                'detail': str(e),
-                'exception': type(e).__name__
-            })
+            COB_validation_errors = oed_class_of_businesses__workaround(e)
+            if COB_validation_errors:
+                validation_errors = COB_validation_errors
+            else:
+                raise ValidationError({
+                    'error': 'Failed to validate portfolio',
+                    'detail': str(e),
+                    'exception': type(e).__name__
+                })
 
         # Set validation fields to true or raise exception
         if validation_errors:
+            import ipdb
+            ipdb.set_trace()
             raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
         else:
             self.set_portolio_valid()
