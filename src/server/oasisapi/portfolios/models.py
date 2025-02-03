@@ -50,8 +50,8 @@ def oed_class_of_businesses__workaround(e):
                         'name': current_key,
                         'msg': f'missing required column {field}'
                     })
-
-    return result
+        if result:
+            raise ValidationError(detail=sorted([(error['name'], error['msg']) for error in result]))
 
 
 class Portfolio(TimeStampedModel):
@@ -167,15 +167,12 @@ class Portfolio(TimeStampedModel):
                 validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
             validation_errors = portfolio_exposure.check()
         except Exception as e:
-            COB_validation_errors = oed_class_of_businesses__workaround(e)
-            if COB_validation_errors:
-                validation_errors = COB_validation_errors
-            else:
-                raise ValidationError({
-                    'error': 'Failed to validate portfolio',
-                    'detail': str(e),
-                    'exception': type(e).__name__
-                })
+            oed_class_of_businesses__workaround(e)  # remove when Issue (https://github.com/OasisLMF/ODS_Tools/issues/174) fixed
+            raise ValidationError({
+                'error': 'Failed to validate portfolio',
+                'detail': str(e),
+                'exception': type(e).__name__
+            })
 
         # Set validation fields to true or raise exception
         if validation_errors:
