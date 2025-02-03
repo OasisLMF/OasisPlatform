@@ -92,21 +92,20 @@ def load_location_data(loc_filepath, oed_schema_info=None):
     """ Returns location file as DataFrame
 
     Returns a DataFrame of Loaction data with 'loc_id' row assgined
-    has a fallback to support both 1.26 and 1.27 versions of oasislmf
     """
-    try:
-        # oasislmf == 1.26.x or 1.23.x
-        from oasislmf.utils.data import get_location_df
-        return get_location_df(loc_filepath)
-    except ImportError:
-        # oasislmf == 1.27.x or greater
-        from oasislmf.utils.data import prepare_location_df
-        from ods_tools.oed.exposure import OedExposure
+    from ods_tools.oed.exposure import OedExposure
+    exposure = OedExposure(
+        location=pathlib.Path(os.path.abspath(loc_filepath)),
+        oed_schema_info=oed_schema_info)
 
-        exposure = OedExposure(
-            location=pathlib.Path(os.path.abspath(loc_filepath)),
-            oed_schema_info=oed_schema_info,
-        )
+    try:
+        # Oasislmf 2.4.x
+        from oasislmf.utils.data import prepare_oed_exposure
+        prepare_oed_exposure(exposure)
+        return exposure.location.dataframe
+    except ImportError:
+        # Fallback Oasislmf LTS 2.3.x, LTS 1.28.x
+        from oasislmf.utils.data import prepare_location_df
         exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
         return exposure.location.dataframe
 
