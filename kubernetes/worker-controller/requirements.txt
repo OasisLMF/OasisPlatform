@@ -4,7 +4,9 @@
 #
 #    pip-compile kubernetes/worker-controller/requirements.in
 #
-aiohttp==3.9.4
+aiohappyeyeballs==2.4.4
+    # via aiohttp
+aiohttp==3.10.10
     # via
     #   -r kubernetes/worker-controller/requirements.in
     #   kubernetes-asyncio
@@ -30,6 +32,8 @@ multidict==6.0.2
     #   yarl
 packaging==24.1
     # via -r kubernetes/worker-controller/requirements.in
+propcache==0.2.1
+    # via yarl
 python-dateutil==2.8.2
     # via kubernetes-asyncio
 pyyaml==6.0.1
@@ -42,7 +46,7 @@ urllib3==2.2.3
     # via kubernetes-asyncio
 websockets==10.3
     # via -r kubernetes/worker-controller/requirements.in
-yarl==1.8.1
+yarl==1.18.3
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
