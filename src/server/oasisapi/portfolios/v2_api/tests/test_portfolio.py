@@ -1374,13 +1374,12 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
                 self.assertEqual(400, validate_response.status_code)
                 self.assertEqual(validate_response.json, [
-                    ['location', 'missing required column PortNumber'],
-                    ['location', 'missing required column LocNumber'],
-                    ['location', "column 'Port' is not a valid oed field"],
-                    ['location', "column 'LocNumb' is not a valid oed field"],
-                    ['location', "column 'Street' is not a valid oed field"],
-                    ['location', 'LocPerilsCovered has invalid perils.\n  AccNumber LocPerilsCovered\n1    A11111             XXYA'],
-                    ['location', 'invalid ConstructionCode.\n  AccNumber  ConstructionCode\n3    A11111                -1']
+                    ['ClassOfBusiness.cyb', 'missing required column PortNumber'],
+                    ['ClassOfBusiness.liabs', 'missing required column PortNumber'],
+                    ['ClassOfBusiness.mar', 'missing required column LocNumber'],
+                    ['ClassOfBusiness.mar', 'missing required column PortNumber'],
+                    ['ClassOfBusiness.prop', 'missing required column LocNumber'],
+                    ['ClassOfBusiness.prop', 'missing required column PortNumber']
                 ])
 
     def test_account_file__is_invalid__response_is_400(self):
@@ -1428,22 +1427,34 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
                 self.assertEqual(400, validate_response.status_code)
                 self.assertEqual(validate_response.json, [
-                    ['account', 'missing required column AccCurrency'],
-                    ['account', 'missing required column PolNumber'],
-                    ['account', 'missing required column PolPerilsCovered'],
-                    ['account', "column 'LocNumber' is not a valid oed field"],
-                    ['account', "column 'IsTenant' is not a valid oed field"],
-                    ['account', "column 'BuildingID' is not a valid oed field"],
-                    ['account', "column 'Latitude' is not a valid oed field"],
-                    ['account', "column 'Longitude' is not a valid oed field"],
-                    ['account', "column 'OccupancyCode' is not a valid oed field"],
-                    ['account', "column 'ConstructionCode' is not a valid oed field"],
-                    ['account', "column 'LocPerilsCovered' is not a valid oed field"],
-                    ['account', "column 'BuildingTIV' is not a valid oed field"],
-                    ['account', "column 'OtherTIV' is not a valid oed field"],
-                    ['account', "column 'ContentsTIV' is not a valid oed field"],
-                    ['account', "column 'BITIV' is not a valid oed field"],
-                    ['account', "column 'LocCurrency' is not a valid oed field"]
+                    ['ClassOfBusiness.cyb', 'missing required column AccCurrency'],
+                    ['ClassOfBusiness.cyb', 'missing required column AnnualRevenue'],
+                    ['ClassOfBusiness.cyb', 'missing required column AnnualRevenueCurrency'],
+                    ['ClassOfBusiness.cyb', 'missing required column IndustryCodeXX'],
+                    ['ClassOfBusiness.cyb', 'missing required column IndustrySchemeXX'],
+                    ['ClassOfBusiness.cyb', 'missing required column InsuredName'],
+                    ['ClassOfBusiness.cyb', 'missing required column LayerAttachment'],
+                    ['ClassOfBusiness.cyb', 'missing required column LayerLimit'],
+                    ['ClassOfBusiness.cyb', 'missing required column LayerParticipation'],
+                    ['ClassOfBusiness.cyb', 'missing required column PolDed'],
+                    ['ClassOfBusiness.cyb', 'missing required column PolExpiryDate'],
+                    ['ClassOfBusiness.cyb', 'missing required column PolInceptionDate'],
+                    ['ClassOfBusiness.cyb', 'missing required column PolNumber'],
+                    ['ClassOfBusiness.cyb', 'missing required column PolPerilsCovered'],
+                    ['ClassOfBusiness.liabs', 'missing required column AccCurrency'],
+                    ['ClassOfBusiness.liabs', 'missing required column CoverageClassDescription'],
+                    ['ClassOfBusiness.liabs', 'missing required column InsuredName'],
+                    ['ClassOfBusiness.liabs', 'missing required column LayerAttachment'],
+                    ['ClassOfBusiness.liabs', 'missing required column LayerLimit'],
+                    ['ClassOfBusiness.liabs', 'missing required column LayerParticipation'],
+                    ['ClassOfBusiness.liabs', 'missing required column PolExpiryDate'],
+                    ['ClassOfBusiness.liabs', 'missing required column PolInceptionDate'],
+                    ['ClassOfBusiness.mar', 'missing required column AccCurrency'],
+                    ['ClassOfBusiness.mar', 'missing required column PolNumber'],
+                    ['ClassOfBusiness.mar', 'missing required column PolPerilsCovered'],
+                    ['ClassOfBusiness.prop', 'missing required column AccCurrency'],
+                    ['ClassOfBusiness.prop', 'missing required column PolNumber'],
+                    ['ClassOfBusiness.prop', 'missing required column PolPerilsCovered']
                 ])
 
     def test_reinsurance_info_file__is_invalid__response_is_400(self):
@@ -1491,30 +1502,30 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
                 self.assertEqual(400, validate_response.status_code)
                 self.assertEqual(validate_response.json, [
-                    ['ri_info', 'missing required column ReinsNumber'],
-                    ['ri_info', 'missing required column ReinsPeril'],
-                    ['ri_info', 'missing required column PlacedPercent'],
-                    ['ri_info', 'missing required column ReinsCurrency'],
-                    ['ri_info', 'missing required column InuringPriority'],
-                    ['ri_info', 'missing required column ReinsType'],
-                    ['ri_info', "column 'PortNumber' is not a valid oed field"],
-                    ['ri_info', "column 'AccNumber' is not a valid oed field"],
-                    ['ri_info', "column 'LocNumber' is not a valid oed field"],
-                    ['ri_info', "column 'IsTenant' is not a valid oed field"],
-                    ['ri_info', "column 'BuildingID' is not a valid oed field"],
-                    ['ri_info', "column 'CountryCode' is not a valid oed field"],
-                    ['ri_info', "column 'Latitude' is not a valid oed field"],
-                    ['ri_info', "column 'Longitude' is not a valid oed field"],
-                    ['ri_info', "column 'StreetAddress' is not a valid oed field"],
-                    ['ri_info', "column 'PostalCode' is not a valid oed field"],
-                    ['ri_info', "column 'OccupancyCode' is not a valid oed field"],
-                    ['ri_info', "column 'ConstructionCode' is not a valid oed field"],
-                    ['ri_info', "column 'LocPerilsCovered' is not a valid oed field"],
-                    ['ri_info', "column 'BuildingTIV' is not a valid oed field"],
-                    ['ri_info', "column 'OtherTIV' is not a valid oed field"],
-                    ['ri_info', "column 'ContentsTIV' is not a valid oed field"],
-                    ['ri_info', "column 'BITIV' is not a valid oed field"],
-                    ['ri_info', "column 'LocCurrency' is not a valid oed field"]
+                    ['ClassOfBusiness.cyb', 'missing required column InuringPriority'],
+                    ['ClassOfBusiness.cyb', 'missing required column PlacedPercent'],
+                    ['ClassOfBusiness.cyb', 'missing required column ReinsCurrency'],
+                    ['ClassOfBusiness.cyb', 'missing required column ReinsNumber'],
+                    ['ClassOfBusiness.cyb', 'missing required column ReinsPeril'],
+                    ['ClassOfBusiness.cyb', 'missing required column ReinsType'],
+                    ['ClassOfBusiness.liabs', 'missing required column InuringPriority'],
+                    ['ClassOfBusiness.liabs', 'missing required column PlacedPercent'],
+                    ['ClassOfBusiness.liabs', 'missing required column ReinsCurrency'],
+                    ['ClassOfBusiness.liabs', 'missing required column ReinsNumber'],
+                    ['ClassOfBusiness.liabs', 'missing required column ReinsPeril'],
+                    ['ClassOfBusiness.liabs', 'missing required column ReinsType'],
+                    ['ClassOfBusiness.mar', 'missing required column InuringPriority'],
+                    ['ClassOfBusiness.mar', 'missing required column PlacedPercent'],
+                    ['ClassOfBusiness.mar', 'missing required column ReinsCurrency'],
+                    ['ClassOfBusiness.mar', 'missing required column ReinsNumber'],
+                    ['ClassOfBusiness.mar', 'missing required column ReinsPeril'],
+                    ['ClassOfBusiness.mar', 'missing required column ReinsType'],
+                    ['ClassOfBusiness.prop', 'missing required column InuringPriority'],
+                    ['ClassOfBusiness.prop', 'missing required column PlacedPercent'],
+                    ['ClassOfBusiness.prop', 'missing required column ReinsCurrency'],
+                    ['ClassOfBusiness.prop', 'missing required column ReinsNumber'],
+                    ['ClassOfBusiness.prop', 'missing required column ReinsPeril'],
+                    ['ClassOfBusiness.prop', 'missing required column ReinsType']
                 ])
 
     def test_reinsurance_scope_file__is_invalid__response_is_400(self):
@@ -1562,21 +1573,10 @@ class PortfolioValidation(WebTestMixin, TestCase):
                 )
                 self.assertEqual(400, validate_response.status_code)
                 self.assertEqual(validate_response.json, [
-                    ['ri_scope', 'missing required column ReinsNumber'],
-                    ['ri_scope', "column 'IsTenant' is not a valid oed field"],
-                    ['ri_scope', "column 'BuildingID' is not a valid oed field"],
-                    ['ri_scope', "column 'Latitude' is not a valid oed field"],
-                    ['ri_scope', "column 'Longitude' is not a valid oed field"],
-                    ['ri_scope', "column 'StreetAddress' is not a valid oed field"],
-                    ['ri_scope', "column 'PostalCode' is not a valid oed field"],
-                    ['ri_scope', "column 'OccupancyCode' is not a valid oed field"],
-                    ['ri_scope', "column 'ConstructionCode' is not a valid oed field"],
-                    ['ri_scope', "column 'LocPerilsCovered' is not a valid oed field"],
-                    ['ri_scope', "column 'BuildingTIV' is not a valid oed field"],
-                    ['ri_scope', "column 'OtherTIV' is not a valid oed field"],
-                    ['ri_scope', "column 'ContentsTIV' is not a valid oed field"],
-                    ['ri_scope', "column 'BITIV' is not a valid oed field"],
-                    ['ri_scope', "column 'LocCurrency' is not a valid oed field"]
+                    ['ClassOfBusiness.cyb', 'missing required column ReinsNumber'],
+                    ['ClassOfBusiness.liabs', 'missing required column ReinsNumber'],
+                    ['ClassOfBusiness.mar', 'missing required column ReinsNumber'],
+                    ['ClassOfBusiness.prop', 'missing required column ReinsNumber']
                 ])
 
 
