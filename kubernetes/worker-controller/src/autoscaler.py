@@ -166,14 +166,15 @@ class AutoScaler:
 
             # Check for pending analyses
             if (queue_name not in ['celery', 'celery-v2', 'task-controller']):
-                queued_task_count = entry.get('queue', {}).get('queued_count', 0)  # sub-task queued (API DB status)
-                queue_message_count = entry.get('queue', {}).get('queue_message_count', 0)  # queue has messages
-                queued_count = max(queued_task_count, queue_message_count)
+                if queue_name.endswith('v2'):
+                    queued_task_count = entry.get('queue', {}).get('queued_count', 0)  # sub-task queued (API DB status)
+                    queue_message_count = entry.get('queue', {}).get('queue_message_count', 0)  # queue has messages
+                    queued_count = max(queued_task_count, queue_message_count)
 
-                if (queued_count > 0) and not analyses_list:
-                    # a task is queued, but no analyses are running.
-                    # worker-controller might have missed the analysis displatch
-                    pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[queue_name], priority=4)
+                    if (queued_count > 0) and not analyses_list:
+                        # a task is queued, but no analyses are running.
+                        # worker-controller might have missed the analysis displatch
+                        pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[queue_name], priority=4)
 
         return pending_analyses
 
