@@ -5,10 +5,12 @@ import json
 import logging
 import os
 import pathlib
+import tempfile
 import shutil
 from datetime import datetime
 
 import filelock
+import numpy as np
 import pandas as pd
 import numpy as np
 from celery import Celery, signature
@@ -17,15 +19,12 @@ from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
 from oasislmf.model_preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
-from oasislmf.utils.exceptions import OasisException
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
+from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v2 as celery_conf
-from ..conf.iniconf import settings
-from .backends.aws_storage import AwsObjectStore
-from .backends.azure_storage import AzureObjectStore
-from .storage_manager import BaseStorageConnector
+from ..conf.iniconf import settings, settings_local
 from .celery_request_handler import WorkerLostRetry
 from .utils import (
     LoggingTaskContext,
@@ -37,6 +36,7 @@ from .utils import (
     get_worker_versions,
     merge_dirs,
     prepare_complex_model_file_inputs,
+    config_strip_default_exposure,
 )
 
 
@@ -54,6 +54,8 @@ FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallbac
 
 app = Celery(task_cls=WorkerLostRetry)
 app.config_from_object(celery_conf)
+filestore = get_filestore(settings)
+model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 # print(app._conf)
 
 
@@ -63,17 +65,6 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
-
-# Set storage manager
-selected_storage = settings.get('worker', 'STORAGE_TYPE', fallback="").lower()
-if selected_storage in ['local-fs', 'shared-fs']:
-    filestore = BaseStorageConnector(settings)
-elif selected_storage in ['aws-s3', 'aws', 's3']:
-    filestore = AwsObjectStore(settings)
-elif selected_storage in ['azure']:
-    filestore = AzureObjectStore(settings)
-else:
-    raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
 
 
 def notify_api_status(analysis_pk, task_status):
@@ -97,22 +88,24 @@ def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, 
     ).delay()
 
 
-def load_location_data(loc_filepath):
+def load_location_data(loc_filepath, oed_schema_info=None):
     """ Returns location file as DataFrame
 
     Returns a DataFrame of Loaction data with 'loc_id' row assgined
-    has a fallback to support both 1.26 and 1.27 versions of oasislmf
     """
-    try:
-        # oasislmf == 1.26.x or 1.23.x
-        from oasislmf.utils.data import get_location_df
-        return get_location_df(loc_filepath)
-    except ImportError:
-        # oasislmf == 1.27.x or greater
-        from oasislmf.utils.data import prepare_location_df
-        from ods_tools.oed.exposure import OedExposure
+    from ods_tools.oed.exposure import OedExposure
+    exposure = OedExposure(
+        location=pathlib.Path(os.path.abspath(loc_filepath)),
+        oed_schema_info=oed_schema_info)
 
-        exposure = OedExposure(location=pathlib.Path(os.path.abspath(loc_filepath)))
+    try:
+        # Oasislmf 2.4.x
+        from oasislmf.utils.data import prepare_oed_exposure
+        prepare_oed_exposure(exposure)
+        return exposure.location.dataframe
+    except ImportError:
+        # Fallback Oasislmf LTS 2.3.x, LTS 1.28.x
+        from oasislmf.utils.data import prepare_location_df
         exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
         return exposure.location.dataframe
 
@@ -133,14 +126,14 @@ def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_sta
         logger.debug(f"redelivered: {redelivered}")
         logger.debug(f"state: {state}")
 
-        if redelivered and state == 'REVOKED':
-            logger.error('ERROR: task requeued three times - aborting task')
+        if state == 'REVOKED':
+            logger.error('ERROR: task requeued three times or cancelled - aborting task')
             notify_subtask_status(
                 analysis_id=analysis_id,
                 initiator_id=initiator_id,
                 task_slug=task_slug,
                 subtask_status='ERROR',
-                error_msg='Task failed on third redelivery, possible out of memory error'
+                error_msg='Task revoked, possible out of memory error or cancellation'
             )
             notify_api_status(analysis_id, error_state)
             task.app.control.revoke(task.request.id, terminate=True)
@@ -175,6 +168,7 @@ def revoked_handler(*args, **kwargs):
 
 @worker_ready.connect
 def register_worker(sender, **k):
+
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
@@ -342,12 +336,12 @@ def keys_generation_task(fn):
         file_from_hook = params.get(f'pre_{arg_name}')
         if not file_from_server:
             logger.info(f'{arg_name}: (Not loaded)')
-            return None
+            return None, None
         elif file_from_hook:
             logger.info(f'{arg_name}: {file_from_hook} (pre-analysis-hook)')
-            return file_from_hook
+            return file_from_hook, 'pre_'
         logger.info(f'{arg_name}: {file_from_server} (portfolio)')
-        return file_from_server
+        return file_from_server, 'raw_'
 
     def log_task_entry(slug, request_id, analysis_id):
         if slug:
@@ -379,6 +373,10 @@ def keys_generation_task(fn):
         params['root_run_dir'] = os.path.join(settings.get('worker', 'base_run_dir', fallback='/tmp/run'), params['storage_subdir'])
         Path(params['root_run_dir']).mkdir(parents=True, exist_ok=True)
 
+        # test workaround
+        if filestore.storage_connector == 'FS-SHARE':
+            Path(filestore.root_dir, params['storage_subdir']).mkdir(parents=True, exist_ok=True)
+
         # Set `oasis-file-generation` input files
         params.setdefault('target_dir', params['root_run_dir'])
         params.setdefault('user_data_dir', os.path.join(params['root_run_dir'], 'user-data'))
@@ -394,32 +392,28 @@ def keys_generation_task(fn):
         complex_data_files = kwargs.get('complex_data_files')
 
         # Load OED file references (filenames or object keys)
-        loc_file = get_file_ref(kwargs, params, 'loc_file')
-        acc_file = get_file_ref(kwargs, params, 'acc_file')
-        info_file = get_file_ref(kwargs, params, 'info_file')
-        scope_file = get_file_ref(kwargs, params, 'scope_file')
+        loc_filepath, loc_source = get_file_ref(kwargs, params, 'loc_file')
+        acc_filepath, acc_source = get_file_ref(kwargs, params, 'acc_file')
+        info_filepath, info_source = get_file_ref(kwargs, params, 'info_file')
+        scope_filepath, scope_source = get_file_ref(kwargs, params, 'scope_file')
 
-        # Prepare 'generate-oasis-files' input files
-        if loc_file:
-            loc_extention = "".join(pathlib.Path(loc_file).suffixes)
-            loc_subdir = params.get('storage_subdir', '') if params.get('pre_loc_file') else ''
-            params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'location{loc_extention}')
-            maybe_fetch_file(loc_file, params['oed_location_csv'], loc_subdir)
-        if acc_file:
-            acc_extention = "".join(pathlib.Path(acc_file).suffixes)
-            acc_subdir = params.get('storage_subdir', '') if params.get('pre_acc_file') else ''
-            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'account{acc_extention}')
-            maybe_fetch_file(acc_file, params['oed_accounts_csv'], acc_subdir)
-        if info_file:
-            info_extention = "".join(pathlib.Path(info_file).suffixes)
-            info_subdir = params.get('storage_subdir', '') if params.get('pre_info_file') else ''
-            params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'reinsinfo{info_extention}')
-            maybe_fetch_file(info_file, params['oed_info_csv'], info_subdir)
-        if scope_file:
-            scope_extention = "".join(pathlib.Path(scope_file).suffixes)
-            scope_subdir = params.get('storage_subdir', '') if params.get('pre_scope_file') else ''
-            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'reinsscope{scope_extention}')
-            maybe_fetch_file(scope_file, params['oed_scope_csv'], scope_subdir)
+        # Prepare 'generate-oasis-files' inploc_filepath
+        if loc_filepath:
+            loc_extention = "".join(pathlib.Path(loc_filepath).suffixes)
+            params['oed_location_csv'] = os.path.join(params['root_run_dir'], f'{loc_source}location{loc_extention}')
+            maybe_fetch_file(loc_filepath, params['oed_location_csv'])
+        if acc_filepath:
+            acc_extention = "".join(pathlib.Path(acc_filepath).suffixes)
+            params['oed_accounts_csv'] = os.path.join(params['root_run_dir'], f'{acc_source}account{acc_extention}')
+            maybe_fetch_file(acc_filepath, params['oed_accounts_csv'])
+        if info_filepath:
+            info_extention = "".join(pathlib.Path(info_filepath).suffixes)
+            params['oed_info_csv'] = os.path.join(params['root_run_dir'], f'{info_source}reinsinfo{info_extention}')
+            maybe_fetch_file(info_filepath, params['oed_info_csv'])
+        if scope_filepath:
+            scope_extention = "".join(pathlib.Path(scope_filepath).suffixes)
+            params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'{scope_source}reinsscope{scope_extention}')
+            maybe_fetch_file(scope_filepath, params['oed_scope_csv'])
 
         # Complex model lookup files
         if settings_file:
@@ -452,8 +446,12 @@ def keys_generation_task(fn):
                                    task_slug=kwargs.get('slug'),
                                    error_state='INPUTS_GENERATION_ERROR'
                                    )
-
-            return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+            try:
+                return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+            except Exception as error:
+                # fallback only needed if celery can't serialize the exception
+                logger.exception("Error occured in 'keys_generation_task':")
+                raise error
 
     return run
 
@@ -481,15 +479,16 @@ def prepare_input_generation_params(
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(settings, model_id)
-    config = get_json(config_path)
-    lookup_params = {**{k: v for k, v in config.items() if not k.startswith('oed_')}, **params}
+    config = config_strip_default_exposure(get_json(config_path))
+    lookup_params = {**config, **params}
 
     from oasislmf.manager import OasisManager
-    gen_files_params = OasisManager()._params_generate_files(**lookup_params)
-    pre_hook_params = OasisManager()._params_exposure_pre_analysis(**lookup_params)
-    params = paths_to_absolute_paths({**gen_files_params, **pre_hook_params}, config_path)
+    gen_files_params = OasisManager()._params_generate_oasis_files(**lookup_params)
+    params = paths_to_absolute_paths({**gen_files_params}, config_path)
 
+    params['log_storage'] = dict()
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['log_storage'][slug] = params['log_location']
     params['verbose'] = debug_worker
     return params
 
@@ -504,6 +503,7 @@ def pre_analysis_hook(self,
                       slug=None,
                       **kwargs
                       ):
+
     if params.get('exposure_pre_analysis_module'):
         with TemporaryDir() as hook_target_dir:
             params['oasis_files_dir'] = hook_target_dir
@@ -513,32 +513,40 @@ def pre_analysis_hook(self,
 
             # store updated files
             pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
-            params['pre_loc_file'] = filestore.put(pre_loc_fp, subdir=params['storage_subdir'])
-
+            params['pre_loc_file'] = filestore.put(
+                pre_loc_fp,
+                # filename=os.path.basename(pre_loc_fp),
+                subdir=params['storage_subdir']
+            )
             if files_modified.get('account'):
                 pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
-                params['pre_acc_file'] = filestore.put(pre_acc_fp, subdir=params['storage_subdir'])
-
+                params['pre_acc_file'] = filestore.put(
+                    pre_acc_fp,
+                    # filename=os.path.basename(pre_acc_fp),
+                    subdir=params['storage_subdir']
+                )
             if files_modified.get('ri_info'):
                 pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
-                params['pre_info_file'] = filestore.put(pre_info_fp, subdir=params['storage_subdir'])
-
+                params['pre_info_file'] = filestore.put(
+                    pre_info_fp,
+                    # filename=os.path.basename(pre_info_fp),
+                    subdir=params['storage_subdir']
+                )
             if files_modified.get('ri_scope'):
                 pre_scope_fp = os.path.join(hook_target_dir, files_modified.get('ri_scope'))
-                params['pre_scope_file'] = filestore.put(pre_scope_fp, subdir=params['storage_subdir'])
+                params['pre_scope_file'] = filestore.put(
+                    pre_scope_fp,
+                    # filename=os.path.basename(pre_scope_fp),
+                    subdir=params['storage_subdir']
+                )
 
             # OED has been loaded and check in this step, disable check in file gen
             # This is in case pre-exposure func has added non-standard cols to the file.
             params['check_oed'] = False
-
-        # remove any pre-loaded files (only affects this worker)
-        oed_files = {v for k, v in params.items() if k.startswith('oed_') and isinstance(v, str)}
-        for filepath in oed_files:
-            if Path(filepath).exists():
-                os.remove(filepath)
     else:
-        logger.info('pre_analysis_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
+        logger.info('pre_generation_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['log_storage'][slug] = params['log_location']
     return params
 
 
@@ -555,8 +563,9 @@ def prepare_keys_file_chunk(
     slug=None,
     **kwargs
 ):
+
     with TemporaryDir() as chunk_target_dir:
-        chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx+1}')
+        chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx + 1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
 
         _, lookup = OasisLookupFactory.create(
@@ -569,7 +578,10 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        location_df = load_location_data(params['oed_location_csv'])
+        location_df = load_location_data(
+            loc_filepath=params['oed_location_csv'],
+            oed_schema_info=params.get('oed_schema_info', None)
+        )
         location_df = np.array_split(location_df, num_chunks)[chunk_idx]
         location_df.reset_index(drop=True, inplace=True)
 
@@ -590,11 +602,12 @@ def prepare_keys_file_chunk(
         # Store chunks
         params['chunk_keys'] = filestore.put(
             chunk_target_dir,
-            filename=f'lookup-{chunk_idx+1}.tar.gz',
+            filename=f'lookup-{chunk_idx + 1}.tar.gz',
             subdir=params['storage_subdir']
         )
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['log_storage'][slug] = params['log_location']
     return params
 
 
@@ -609,6 +622,7 @@ def collect_keys(
     slug=None,
     **kwargs
 ):
+
     # Setup return params
     chunk_params = {**params[0]}
     storage_subdir = chunk_params['storage_subdir']
@@ -686,6 +700,7 @@ def collect_keys(
             )
 
     chunk_params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    chunk_params['log_storage'][slug] = chunk_params['log_location']
     return chunk_params
 
 
@@ -700,10 +715,25 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     from oasislmf.manager import OasisManager
     OasisManager().generate_files(**params)
 
+    # Optional step (Post file generation Hook)
+    if params.get('post_file_gen_module', None):
+        logger.info(f"post_generation_hook: running {params.get('post_file_gen_module')}")
+        OasisManager().post_file_gen(**params)
+
     # clear out user-data,
     # these files should not be sorted in the generated inputs tar
     if params['user_data_dir'] is not None:
         shutil.rmtree(params['user_data_dir'], ignore_errors=True)
+
+    # collect logs here before archive is created
+    params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    params['log_storage'][slug] = params['log_location']
+    log_dir = os.path.join(params['target_dir'], 'log')
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    for log_ref in params['log_storage']:
+        filestore.get(params['log_storage'][log_ref], os.path.join(log_dir, f'v2-{log_ref}.txt'))
 
     return {
         'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
@@ -711,14 +741,13 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
         'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
         'output_location': filestore.put(params['target_dir']),
-        'log_location': filestore.put(kwargs.get('log_filename')),
+        'log_location': params['log_location'],
     }
 
 
 @app.task(bind=True, name='cleanup_input_generation', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, **kwargs):
-
     # check for pre-analysis files and remove
 
     if not settings.getboolean('worker', 'KEEP_LOCAL_DATA', fallback=False):
@@ -852,7 +881,12 @@ def loss_generation_task(fn):
                                    task_slug=kwargs.get('slug'),
                                    error_state='RUN_ERROR'
                                    )
-            return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+            try:
+                return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+            except Exception as error:
+                # fallback only needed if celery can't serialize the exception
+                logger.exception("Error occured in 'loss_generation_task':")
+                raise error
 
     return run
 
@@ -872,13 +906,12 @@ def prepare_losses_generation_params(
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(settings, model_id)
-    config = get_json(config_path)
+    config = config_strip_default_exposure(get_json(config_path))
     run_params = {**config, **params}
 
     from oasislmf.manager import OasisManager
-    gen_losses_params = OasisManager()._params_generate_losses(**run_params)
-    post_hook_params = OasisManager()._params_post_analysis(**run_params)
-    params = paths_to_absolute_paths({**gen_losses_params, **post_hook_params}, config_path)
+    gen_losses_params = OasisManager()._params_generate_oasis_losses(**run_params)
+    params = paths_to_absolute_paths({**gen_losses_params}, config_path)
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
@@ -894,25 +927,38 @@ def prepare_losses_generation_params(
 @app.task(bind=True, name='prepare_losses_generation_directory', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def prepare_losses_generation_directory(self, params, analysis_id=None, slug=None, **kwargs):
-    from oasislmf.manager import OasisManager
-    params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
-    params['run_location'] = filestore.put(
-        params['model_run_dir'],
-        filename='run_directory.tar.gz',
-        subdir=params['storage_subdir']
-    )
-    params['log_location'] = filestore.put(kwargs.get('log_filename'))
-    return params
+    with tempfile.NamedTemporaryFile(mode="w+") as f:
+        # build the config for the file store storage
+        if model_storage:
+            config = model_storage.to_config()
+            json.dump(config, f)
+            f.flush()
+        params['model_storage_json'] = f.name if model_storage else None
+
+        from oasislmf.manager import OasisManager
+        params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
+
+        # Optional step (Pre losses hook) --- Before or after 'generate_losses_dir' ??
+        if params.get('pre_loss_module', None):
+            logger.info(f"pre_losses_hook: running {params.get('pre_loss_module')}")
+            OasisManager().pre_loss(**params)
+
+        params['run_location'] = filestore.put(
+            params['model_run_dir'],
+            filename='run_directory.tar.gz',
+            subdir=params['storage_subdir']
+        )
+        params['log_location'] = filestore.put(kwargs.get('log_filename'))
+        return params
 
 
 @app.task(bind=True, name='generate_losses_chunk', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None, **kwargs):
-
     if num_chunks == 1:
         # Run multiple ktools pipes (based on cpu cores)
         current_chunk_id = None
-        max_chunk_id = -1
+        max_chunk_id = params.get('ktools_num_processes', -1)
         work_dir = 'work'
     else:
         # Run a single ktools pipe
@@ -926,35 +972,58 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         'max_process_id': max_chunk_id,
         'ktools_fifo_relative': True,
         'ktools_work_dir': os.path.join(params['model_run_dir'], work_dir),
+        'df_engine': json.dumps({
+            "path": settings.get(
+                'worker',
+                'default_reader_engine',
+                fallback='oasis_data_manager.df_reader.reader.OasisPandasReader'
+            ),
+            "options": settings.get(
+                'worker.default_reader_engine_options',
+                None,
+                fallback={}
+            ),
+        }),
         'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
     }
-    Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
-    from oasislmf.manager import OasisManager
-    OasisManager().generate_losses_partial(**chunk_params)
 
-    return {
-        **params,
-        'chunk_work_location': filestore.put(
-            chunk_params['ktools_work_dir'],
-            filename=f'work-{chunk_idx+1}.tar.gz',
-            subdir=params['storage_subdir']
-        ),
-        'chunk_log_location': filestore.put(
-            chunk_params['ktools_log_dir'],
-            filename=f'log-{chunk_idx+1}.tar.gz',
-            subdir=params['storage_subdir']
-        ),
-        'ktools_work_dir': chunk_params['ktools_work_dir'],
-        'process_number': chunk_idx + 1,
-        'max_process_id': max_chunk_id,
-        'log_location': filestore.put(kwargs.get('log_filename')),
-    }
+    with tempfile.NamedTemporaryFile(mode="w+") as f:
+        # build the config for the file store storage
+        if model_storage:
+            config = model_storage.to_config()
+            json.dump(config, f)
+            f.flush()
+
+        chunk_params['model_storage_json'] = f.name if model_storage else None
+        Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
+        from oasislmf.manager import OasisManager
+        OasisManager().generate_losses_partial(**chunk_params)
+
+        return {
+            **params,
+            'chunk_work_location': filestore.put(
+                chunk_params['ktools_work_dir'],
+                filename=f'work-{chunk_idx + 1}.tar.gz',
+                subdir=params['storage_subdir']
+            ),
+            'chunk_log_location': filestore.put(
+                chunk_params['ktools_log_dir'],
+                filename=f'log-{chunk_idx + 1}.tar.gz',
+                subdir=params['storage_subdir']
+            ),
+            'ktools_work_dir': chunk_params['ktools_work_dir'],
+            'process_number': chunk_idx + 1,
+            'max_process_id': max_chunk_id,
+            'log_location': filestore.put(kwargs.get('log_filename')),
+        }
 
 
 @app.task(bind=True, name='generate_losses_output', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
+    res['model_storage_json'] = None
+
     # collect run results
     abs_work_dir = os.path.join(res['model_run_dir'], 'work')
     Path(abs_work_dir).mkdir(exist_ok=True, parents=True)
@@ -967,6 +1036,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     from oasislmf.manager import OasisManager
     OasisManager().generate_losses_output(**res)
     if res.get('post_analysis_module', None):
+        logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
         OasisManager().post_analysis(**res)
 
     # collect run logs
@@ -977,11 +1047,19 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
             filestore.extract(p['chunk_log_location'], d, p['storage_subdir'])
             merge_dirs(d, abs_log_dir)
 
+    output_dir = os.path.join(res['model_run_dir'], 'output')
+    logs_dir = os.path.join(res['model_run_dir'], 'log')
+    raw_output_files = list(filter(lambda f: f.endswith('.csv') or f.endswith('.parquet'), os.listdir(output_dir)))
+
     return {
         **res,
-        'output_location': filestore.put(os.path.join(res['model_run_dir'], 'output'), arcname='output'),
-        'run_logs': filestore.put(os.path.join(res['model_run_dir'], 'log'), arcname='logs'),
+        'output_location': filestore.put(output_dir, arcname='output'),
+        'run_logs': filestore.put(logs_dir),
         'log_location': filestore.put(kwargs.get('log_filename')),
+        'raw_output_locations': {
+            r: filestore.put(os.path.join(output_dir, r), arcname=f'output_{r}')
+            for r in raw_output_files
+        }
     }
 
 

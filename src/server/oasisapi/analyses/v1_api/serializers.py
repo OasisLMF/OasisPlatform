@@ -210,8 +210,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
 
         # Check that portfilio has a location file
         if attrs.get('portfolio'):
-            if not attrs['portfolio'].location_file:
-                raise ValidationError({'portfolio': '"location_file" must not be null'})
+            if (not attrs['portfolio'].location_file) and (not attrs['portfolio'].accounts_file):
+                raise ValidationError({'portfolio': 'either "location_file" or "accounts_file" must not be null'})
 
         # check that model isn't soft-deleted
         if attrs.get('model'):

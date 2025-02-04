@@ -10,6 +10,80 @@ from ...analyses.models import Analysis
 from ..models import AnalysisModel, ModelScalingOptions, ModelChunkingOptions
 from ...permissions.group_auth import validate_and_update_groups, validate_data_files
 
+from ...schemas.serializers import ModelParametersSerializer
+from django.core.files import File
+from tempfile import TemporaryFile
+from ...files.models import RelatedFile, file_storage_link
+
+
+def create_settings_file(data, user):
+    json_serializer = ModelParametersSerializer()
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(data.encode('utf-8'))
+        tmp_file.seek(0)
+
+        return RelatedFile.objects.create(
+            file=File(tmp_file, name=json_serializer.filename),
+            filename=json_serializer.filename,
+            content_type='application/json',
+            creator=user,
+        )
+
+
+class AnalysisModelStorageSerializer(serializers.ModelSerializer):
+    settings_file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnalysisModel
+        fields = (
+            'settings_file',
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_settings_file(self, instance):
+        return file_storage_link(instance.resource_file, True)
+
+
+class AnalysisModelListSerializer(serializers.Serializer):
+    """ Read Only Model Deserializer for efficiently returning a list of all
+        entries in DB
+    """
+    id = serializers.IntegerField(read_only=True)
+    supplier_id = serializers.CharField(read_only=True)
+    model_id = serializers.CharField(read_only=True)
+    version_id = serializers.CharField(read_only=True)
+    created = serializers.DateTimeField(read_only=True)
+    modified = serializers.DateTimeField(read_only=True)
+    settings = serializers.SerializerMethodField()
+    versions = serializers.SerializerMethodField()
+    scaling_configuration = serializers.SerializerMethodField()
+    chunking_configuration = serializers.SerializerMethodField()
+    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    settings = serializers.SerializerMethodField()
+    run_mode = serializers.CharField(read_only=True)
+    data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    namespace = 'v2-models'
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_settings(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_versions(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_versions_url(request=request, namespace=self.namespace)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_scaling_configuration(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_scaling_configuration_url(request=request, namespace=self.namespace)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_chunking_configuration(self, instance):
+        request = self.context.get('request')
+        return instance.get_absolute_chunking_configuration_url(request=request, namespace=self.namespace)
+
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
     settings = serializers.SerializerMethodField()
@@ -17,6 +91,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     scaling_configuration = serializers.SerializerMethodField()
     chunking_configuration = serializers.SerializerMethodField()
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    settings = serializers.SerializerMethodField()
     namespace = 'v2-models'
 
     class Meta:
@@ -45,15 +120,39 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         validate_and_update_groups(self.partial, user, attrs)
         validate_data_files(user, attrs.get('data_files'))
 
+        if attrs.get('settings'):
+            attrs['settings'] = ModelParametersSerializer().validate(attrs.get('settings'))
+
         return attrs
+
+    def to_internal_value(self, data):
+        settings = data.get('settings', {})
+        data = super(AnalysisModelSerializer, self).to_internal_value(data)
+        data['settings'] = ModelParametersSerializer().to_internal_value(settings)
+        return data
+
+    def update(self, instance, validated_data):
+        data = validated_data.copy()
+        settings = data.pop('settings', {})
+        if settings:
+            instance.resource_file = create_settings_file(settings, instance.creator)
+
+        return super(AnalysisModelSerializer, self).update(instance, validated_data)
 
     def create(self, validated_data):
         data = validated_data.copy()
+        settings = data.pop('settings', {})
         if 'request' in self.context:
             data['creator'] = self.context.get('request').user
-        return super(AnalysisModelSerializer, self).create(data)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+        instance = super(AnalysisModelSerializer, self).create(data)
+        if settings:
+            instance.resource_file = create_settings_file(settings, data['creator'])
+
+        instance.save()
+        return instance
+
+    @swagger_serializer_method(serializer_or_field=ModelParametersSerializer)
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
@@ -147,6 +246,8 @@ class ModelVersionsSerializer(serializers.ModelSerializer):
             'ver_ktools',
             'ver_oasislmf',
             'ver_platform',
+            'ver_ods',
+            'ver_oed',
         )
 
 
@@ -229,7 +330,11 @@ class ModelScalingConfigSerializer(serializers.ModelSerializer):
 
         # Check that `worker_count_min` < `worker_count_max`
         m_id = self.context['request'].parser_context['kwargs']['pk']
-        current_val = ModelScalingOptions.objects.get(id=m_id)
+        try:
+            current_val = ModelScalingOptions.objects.get(id=m_id)
+        except ModelScalingOptions.DoesNotExist:
+            # create a default config object for validation
+            current_val = ModelScalingOptions()
 
         wrk_min = self.initial_data.get('worker_count_min', current_val.worker_count_min)
         wrk_max = self.initial_data.get('worker_count_max', current_val.worker_count_max)

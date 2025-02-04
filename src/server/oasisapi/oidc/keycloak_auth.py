@@ -80,8 +80,8 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         """
 
         user = self.UserModel.objects.create_user(username)
-        self.update_groups(user, claims)
         self.update_roles(user, claims)
+        self.update_groups(user, claims)
         self.create_keycloak_user_id(user, claims.get('sub'))
         return user
 
@@ -157,7 +157,15 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         """
         Persist Keycloak groups as local Django groups.
         """
-        keycloak_groups = claims.get('groups', [])
+        keycloak_groups = claims.get('groups', None)
+
+        if keycloak_groups is None:
+            if (user.is_superuser or user.is_staff):
+                keycloak_groups = []
+            else:
+                msg = 'No group found in claim / user_info'
+                raise SuspiciousOperation(msg)
+
         for i, keycloak_group in enumerate(keycloak_groups):
             if keycloak_group.startswith('/'):
                 keycloak_groups[i] = keycloak_group[1:]

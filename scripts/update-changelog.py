@@ -74,9 +74,9 @@ class ReleaseNotesBuilder(object):
         self.logger.info("Fetching commits between tags {}...{} ".format(from_tag, to_tag))
 
         if local_path:
-            repo = RepositoryMining(local_path, from_tag=from_tag, to_tag=to_tag)
+            repo = RepositoryMining(local_path, from_tag=from_tag, to_tag=to_tag, only_no_merge=True)
         else:
-            repo = RepositoryMining(repo_url, from_tag=from_tag, to_tag=to_tag)
+            repo = RepositoryMining(repo_url, from_tag=from_tag, to_tag=to_tag, only_no_merge=True)
 
         commit_titles = [commit.msg.split('\n\n')[0] for commit in repo.traverse_commits()]
         commit_list = [re.findall(r'#\d+', title) for title in commit_titles]

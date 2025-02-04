@@ -27,7 +27,7 @@ class TestGroupAuth(TestCase):
         user_no_group = create_user([])
 
         self.assertEqual([], verify_and_get_groups(user_no_group, None))
-        self.assertEquals([], verify_and_get_groups(user_no_group, []))
+        self.assertEqual([], verify_and_get_groups(user_no_group, []))
 
     def test_verify_and_get_groups__invalid_groups(self):
 

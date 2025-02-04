@@ -27,16 +27,16 @@ case $CMD in
   "ls")
     case "$ANALYSIS_ID" in
       "p"|"portfolio"|"portfolios")
-        curlf -X GET "${API_URL}/v1/portfolios/" | jq -r '.[] | "\(.id) - \(.name)\r\t\t\t\tgroups: \(.groups | join (","))"' | sort -n
+        curlf -X GET "${API_URL}/v2/portfolios/" | jq -r '.[] | "\(.id) - \(.name)\r\t\t\t\tgroups: \(.groups | join (","))"' | sort -n
       ;;
       "m"|"model"|"models")
-        curlf -X GET "${API_URL}/v1/models/" | jq -r '.[] | "\(.id) - \(.supplier_id)-\(.model_id)-\(.version_id)\r\t\t\t\tgroups: \(.groups | join (","))"' | sort -n
+        curlf -X GET "${API_URL}/v2/models/" | jq -r '.[] | "\(.id) - \(.supplier_id)-\(.model_id)-\(.version_id)\r\t\t\t\tgroups: \(.groups | join (","))"' | sort -n
       ;;
       "df"|"data-files"|"datafiles")
-        curlf -X GET "${API_URL}/v1/data_files/" | jq -r '.[] | "\(.id) - \(.filename)\r\t\t\t\tgroups: \(.groups | join (","))"'| sort -n
+        curlf -X GET "${API_URL}/v2/data_files/" | jq -r '.[] | "\(.id) - \(.filename)\r\t\t\t\tgroups: \(.groups | join (","))"'| sort -n
       ;;
       *)
-        curlf -X GET "${API_URL}/v1/analyses/" | jq -r '.[] | "\(.id) - \(.status) - \(.name)\r\t\t\t\t\t\tportfolio: \(.portfolio)\tmodel: \(.model)\tgroups: \(.groups | join (","))"' | sort -n
+        curlf -X GET "${API_URL}/v2/analyses/" | jq -r '.[] | "\(.id) - \(.status) - \(.name)\r\t\t\t\t\t\tportfolio: \(.portfolio)\tmodel: \(.model)\tgroups: \(.groups | join (","))"' | sort -n
       ;;
     esac
   ;;

@@ -3,6 +3,8 @@ import logging
 import io
 from pathlib import Path
 
+from drf_yasg.utils import swagger_serializer_method
+
 from ods_tools.oed.exposure import OedExposure
 
 from django.contrib.auth.models import Group
@@ -11,7 +13,7 @@ from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.conf import settings as django_settings
 
-from .models import RelatedFile
+from ..models import RelatedFile, MappingFile
 
 logger = logging.getLogger('root')
 
@@ -37,9 +39,46 @@ def md5_filehash(in_memory_file, chunk_size=4096):
     return hasher_md5.hexdigest()
 
 
+class MappingFileSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+    input_validation_file = serializers.SerializerMethodField()
+    output_validation_file = serializers.SerializerMethodField()
+
+    class Meta:
+        ref_name = None
+        model = MappingFile
+        fields = (
+            'name',
+            'description',
+            'file',
+            'input_validation_file',
+            'output_validation_file',
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_file(self, instance: MappingFile):
+        request = self.context.get('request')
+        return instance.get_absolute_conversion_file_url(request, namespace="v2-files")
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_input_validation_file(self, instance: MappingFile):
+        request = self.context.get('request')
+        return instance.get_absolute_input_validation_file_url(request, namespace="v2-files")
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_output_validation_file(self, instance: MappingFile):
+        request = self.context.get('request')
+        return instance.get_absolute_output_validation_file_url(request, namespace="v2-files")
+
+
+class ConvertSerializer(serializers.Serializer):
+    mapping_file = serializers.CharField()
+
+
 class RelatedFileSerializer(serializers.ModelSerializer):
 
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
 
     class Meta:
         ref_name = None
@@ -47,8 +86,11 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         fields = (
             'created',
             'file',
+            'converted_file',
             'filename',
             'groups',
+            'mapping_file',
+            'conversion_state',
             # 'filehash_md5',
         )
 
@@ -131,3 +173,47 @@ class RelatedFileSerializer(serializers.ModelSerializer):
                     f"File extention '{file_extention}' mismatched with request header 'Content-Type': '{mapped_content_type}', should be set to '{extention_mapping.get(file_extention)}'")
 
         return value
+
+
+class FileSQLSerializer(serializers.Serializer):
+    sql = serializers.CharField()
+
+    def validate_sql(self, value):
+        # for purposes of validation, lowercase the sql, return the original
+        sql_to_validate = value.lower()
+        if "from table" not in sql_to_validate:
+            raise serializers.ValidationError("The from clause of the SQL must be "
+                                              "'FROM table', where table is explicitly the word table")
+
+        # TODO what else can we validate here? No point sanitising further as the SQL is not against a
+        # database which can be manipulated?
+
+        return value
+
+
+class NestedRelatedFileSerializer(serializers.ModelSerializer):
+    sql = serializers.SerializerMethodField()
+
+    class Meta:
+        ref_name = None
+        model = RelatedFile
+        fields = (
+            'id',
+            'created',
+            'file',
+            'filename',
+            'sql',
+        )
+
+    def __init__(self, *args, analyses=None, **kwargs):
+        self.analyses = analyses
+        super().__init__(*args, **kwargs)
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_sql(self, instance):
+        request = self.context.get('request')
+
+        try:
+            return self.analyses.get_absolute_output_file_sql_url(request=request, file_pk=instance.id, namespace="v2-analyses")
+        except:
+            return None

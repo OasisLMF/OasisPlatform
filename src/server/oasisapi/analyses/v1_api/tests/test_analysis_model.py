@@ -11,7 +11,7 @@ from mock import patch, PropertyMock, Mock
 from rest_framework.exceptions import ValidationError
 
 from src.server.oasisapi.portfolios.v1_api.tests.fakes import fake_portfolio
-from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.auth.tests.fakes import fake_user
 from ...models import Analysis
 from ..tasks import record_run_analysis_result, record_generate_input_result
@@ -226,7 +226,8 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     with self.assertRaises(ValidationError) as ex:
                         analysis.generate_inputs(initiator, run_mode_override='V1')
 
-                    self.assertEqual({'portfolio': ['"location_file" must not be null']}, ex.exception.detail)
+                    self.assertEqual(
+                        {'portfolio': ['Either "location_file" or "accounts_file" must not be null for run_mode = V1']}, ex.exception.detail)
 
                     self.assertEqual(Analysis.status_choices.NEW, analysis.status)
                     self.assertFalse(res_factory.revoke_called)

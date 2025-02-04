@@ -16,10 +16,30 @@ from ...schemas.serializers import (
     TaskErrorSerializer,
 )
 
+from ...schemas.serializers import AnalysisSettingsSerializer
+from django.core.files import File
+from tempfile import TemporaryFile
+from ...files.models import RelatedFile
+
+
+def create_settings_file(data, user):
+    json_serializer = AnalysisSettingsSerializer()
+    with TemporaryFile() as tmp_file:
+        tmp_file.write(data.encode('utf-8'))
+        tmp_file.seek(0)
+
+        return RelatedFile.objects.create(
+            file=File(tmp_file, name=json_serializer.filename),
+            filename=json_serializer.filename,
+            content_type='application/json',
+            creator=user,
+        )
+
 
 class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     output_log = serializers.SerializerMethodField()
     error_log = serializers.SerializerMethodField()
+    retry_log = serializers.SerializerMethodField()
 
     class Meta:
         model = AnalysisTaskStatus
@@ -36,6 +56,8 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
             'end_time',
             'output_log',
             'error_log',
+            'retry_log',
+            'retry_count',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
@@ -47,6 +69,11 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     def get_error_log(self, instance):
         request = self.context.get('request')
         return instance.get_error_log_url(request=request) if instance.error_log else None
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_retry_log(self, instance):
+        request = self.context.get('request')
+        return instance.get_retry_log_url(request=request) if instance.retry_log else None
 
 
 class AnalysisListSerializer(serializers.Serializer):
@@ -65,6 +92,7 @@ class AnalysisListSerializer(serializers.Serializer):
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    priority = serializers.IntegerField(read_only=True)
 
     # Groups - inherited from portfolio
     groups = serializers.SerializerMethodField(read_only=True)
@@ -266,7 +294,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_settings_file_url(request=request, namespace=self.ns) if instance.settings_file_id else None
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @swagger_serializer_method(serializer_or_field=AnalysisSettingsSerializer)
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.ns) if instance.settings_file_id else None
@@ -378,14 +406,13 @@ class AnalysisSerializer(serializers.ModelSerializer):
 
         # Check that portfolio has a location file and user is allowed to use the portfolio
         if attrs.get('portfolio'):
-
             try:
                 verify_and_get_groups(user, attrs['portfolio'].groups.all())
             except ValidationError:
                 raise ValidationError({'portfolio': 'You are not allowed to use this portfolio'})
 
-            if not attrs['portfolio'].location_file:
-                raise ValidationError({'portfolio': '"location_file" must not be null'})
+            if (not attrs['portfolio'].location_file) and (not attrs['portfolio'].accounts_file):
+                raise ValidationError({'portfolio': 'either "location_file" or "accounts_file" must not be null'})
 
         # check that model isn't soft-deleted
         if attrs.get('model'):
@@ -398,7 +425,36 @@ class AnalysisSerializer(serializers.ModelSerializer):
                     'model': ["Model pk \"{}\" - 'run_mode' must not be null".format(attrs['model'].id)]
                 })
 
+        # Validate analyses settings if given at create/update
+        if attrs.get('settings'):
+            attrs['settings'] = AnalysisSettingsSerializer().validate(attrs.get('settings'))
         return attrs
+
+    def to_internal_value(self, data):
+        settings = data.get('settings', {})
+        data = super(AnalysisSerializer, self).to_internal_value(data)
+        data['settings'] = AnalysisSettingsSerializer().to_internal_value(settings)
+        return data
+
+    def update(self, instance, validated_data):
+        data = validated_data.copy()
+        settings = data.pop('settings', {})
+        if settings:
+            instance.settings_file = create_settings_file(settings, instance.creator)
+        return super(AnalysisSerializer, self).update(instance, validated_data)
+
+    def create(self, validated_data):
+        data = validated_data.copy()
+        settings = data.pop('settings', {})
+        if 'request' in self.context:
+            data['creator'] = self.context.get('request').user
+
+        instance = super(AnalysisSerializer, self).create(data)
+        if settings:
+            instance.settings_file = create_settings_file(settings, data['creator'])
+
+        instance.save()
+        return instance
 
 
 class AnalysisSerializerWebSocket(serializers.Serializer):

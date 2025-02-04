@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel
-from src.server.oasisapi.analysis_models.v2_api.serializers import AnalysisModelSerializer
+from src.server.oasisapi.analysis_models.v2_api.serializers import AnalysisModelListSerializer
 from src.server.oasisapi.analyses.v2_api.serializers import AnalysisSerializerWebSocket, AnalysisTaskStatusSerializer
 
 
@@ -15,11 +15,11 @@ class QueueSerializer(serializers.Serializer):
     worker_count = serializers.IntegerField()
     models = serializers.SerializerMethodField()
 
-    @swagger_serializer_method(serializer_or_field=AnalysisModelSerializer(many=True))
+    @swagger_serializer_method(serializer_or_field=AnalysisModelListSerializer(many=True))
     def get_models(self, instance, *args, **kwargs):
         queue_name = instance['name'].removesuffix('-v2')
         models = [m for m in AnalysisModel.objects.all() if str(m) == queue_name]
-        return AnalysisModelSerializer(instance=models, many=True).data
+        return AnalysisModelListSerializer(instance=models, many=True).data
 
 
 class WebsocketAnalysesSerializer(serializers.Serializer):

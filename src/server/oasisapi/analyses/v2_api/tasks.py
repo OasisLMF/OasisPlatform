@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import json
-import logging
 import os
 import uuid
 from datetime import datetime
@@ -39,7 +38,7 @@ from urllib.request import urlopen
 from urllib.parse import urlparse
 
 from src.server.oasisapi.files.models import RelatedFile
-from src.server.oasisapi.files.views import handle_json_data
+from src.server.oasisapi.files.v1_api.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
 
@@ -279,7 +278,7 @@ class LogTaskError(Task):
 
 @signals.worker_ready.connect
 def log_worker_monitor(sender, **k):
-    logger.info('DEBUG: {}'.format(settings.DEBUG))
+    logger.info('DEBUG: {}'.format(getattr(settings, "DEBUG", False)))
     logger.info('DB_ENGINE: {}'.format(settings.DB_ENGINE))
     logger.info('STORAGE_TYPE: {}'.format(settings.STORAGE_TYPE))
     logger.info('DEFAULT_FILE_STORAGE: {}'.format(settings.DEFAULT_FILE_STORAGE))
@@ -347,9 +346,11 @@ def run_register_worker_v2(m_supplier, m_name, m_id, m_settings, m_version, m_co
                 model.ver_ktools = m_version['ktools']
                 model.ver_oasislmf = m_version['oasislmf']
                 model.ver_platform = m_version['platform']
+                model.ver_ods = m_version.get("ods-tools", None)
+                model.ver_oed = m_version.get("oed-schema", None)
                 logger.info('Updated model versions')
             except Exception as e:
-                logger.info('Failed to set model veriosns:')
+                logger.info('Failed to set model versions:')
                 logger.exception(str(e))
 
         # check current value of run_mode -> Set to V2 if null, if 'V1' set to both
@@ -375,8 +376,12 @@ def _traceback_from_errback_args(*args):
             failing_res = AsyncResult(args[0])
             tb = failing_res.traceback
         except ValueError:
-            logging.error('Could not extract traceback')
+            logger.error('Could not extract traceback')
             return ''
+
+    if tb is None:
+        logger.error('traceback returned is None')
+        return ''
 
     return tb
 
@@ -434,7 +439,6 @@ def start_input_generation_task(analysis_pk, initiator_pk, loc_lines):
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_inputs(analysis, initiator, loc_lines)
-    analysis.save()
 
 
 @celery_app_v2.task(name='start_loss_generation_task')
@@ -443,7 +447,6 @@ def start_loss_generation_task(analysis_pk, initiator_pk, events_total):
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_losses(analysis, initiator, events_total)
-    analysis.save()
 
 
 @celery_app_v2.task(name='start_input_and_loss_generation_task')
@@ -452,8 +455,6 @@ def start_input_and_loss_generation_task(analysis_pk, initiator_pk, loc_lines, e
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
     get_analysis_task_controller().generate_input_and_losses(analysis, initiator, loc_lines, events_total)
-    analysis.status = Analysis.status_choices.INPUTS_GENERATION_STARTED
-    analysis.save()
 
 
 @celery_app_v2.task(bind=True, name='record_input_files')
@@ -550,6 +551,15 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
         analysis.run_log_file = store_file(result['run_logs'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
 
     analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
+
+    # remove then store raw files.
+    analysis.raw_output_files.all().delete()
+    if 'raw_output_locations' in result:
+        for name, put_location in result['raw_output_locations'].items():
+            content_type = 'application/octet-stream'
+            if name[-4:] == '.csv':
+                content_type = 'text/csv'
+            analysis.raw_output_files.add(store_file(put_location, content_type, initiator, filename=name))
 
     analysis.save()
     return result
@@ -756,14 +766,38 @@ def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
     )
 
 
+@celery_app_v2.task(name='subtask_retry_log')
+def subtask_retry_log(analysis_id, initiator_id, slug, task_id, error_trace):
+    # Increment retry counter and append to retry log
+    task = AnalysisTaskStatus.objects.get(analysis_id=analysis_id, slug=slug)
+
+    with TemporaryFile() as tmp_file:
+        if hasattr(task.retry_log, 'read'):
+            tmp_file.write(task.retry_log.read())
+
+        tmp_file.write(f'\n=== {slug}, try={task.retry_count}  ===\n'.encode('utf-8'))
+        tmp_file.write(error_trace.encode('utf-8'))
+        tmp_file.seek(0)
+
+        setattr(task, 'retry_log', RelatedFile.objects.create(
+            file=File(tmp_file, name='{}.txt'.format(uuid.uuid4().hex)),
+            filename='{}-retry.log'.format(task_id),
+            content_type='text/plain',
+            creator_id=initiator_id,
+        ))
+        task.retry_count += 1
+        task.save(update_fields=["retry_count", "retry_log"])
+
+
 @celery_app_v2.task(name='set_task_status_v2')
 def set_task_status(analysis_pk, task_status, dt):
     try:
         from ..models import Analysis
         analysis = Analysis.objects.get(pk=analysis_pk)
-        analysis.status = task_status
-        analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
-        analysis.save(update_fields=["status", "task_started"])
+        if analysis.status not in [analysis.status_choices.INPUTS_GENERATION_CANCELLED, analysis.status_choices.RUN_CANCELLED]:
+            analysis.status = task_status
+            analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
+            analysis.save(update_fields=["status", "task_started"])
         logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
     except Exception as e:
         logger.error('Task Status Update: Failed')

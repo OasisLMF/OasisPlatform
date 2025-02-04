@@ -1,6 +1,60 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.0`_
+ ---------
+* [#1063](https://github.com/OasisLMF/OasisPlatform/pull/1152) - Expose components versions in API
+* [#1097](https://github.com/OasisLMF/OasisPlatform/pull/1155) - Extend sub-tasks to track and log any retries attempts 
+* [#1158](https://github.com/OasisLMF/OasisPlatform/pull/1158) - Worker controller detects pending V1 task and tries to scale V2 workers 
+* [#1160](https://github.com/OasisLMF/OasisPlatform/pull/1160) - Fix/testing oed4 update
+* [#1123](https://github.com/OasisLMF/OasisPlatform/pull/1161) - Generate oasis files is not using the pre-analysis adjusted location file for V2 runs
+* [#1162](https://github.com/OasisLMF/OasisPlatform/pull/1162) - Fix/v2 location loading
+* [#1163](https://github.com/OasisLMF/OasisPlatform/pull/1163) - Workaround for ods tools issue  #174
+* [#1035](https://github.com/OasisLMF/OasisPlatform/pull/1036) - Remove debug mounts and refs in default compose file 
+* [#1040](https://github.com/OasisLMF/OasisPlatform/pull/1040) - Azure Postgres Flexible server support   
+* [#1038, #1039](https://github.com/OasisLMF/OasisPlatform/pull/1041) - Minor bug fixes for worker and server
+* [#1042](https://github.com/OasisLMF/OasisPlatform/pull/1045) - Check older paramter names are updated and working in 2.3.4  
+* [#1047](https://github.com/OasisLMF/OasisPlatform/pull/1047) - Tidy up docker compose examples
+* [#1051](https://github.com/OasisLMF/OasisPlatform/pull/1051) - Fix running V2 workers with custom OED specification files
+* [#1052](https://github.com/OasisLMF/OasisPlatform/pull/1054) - Lot3 - worker monitor compatibility fix needed 
+* [#1058](https://github.com/OasisLMF/OasisPlatform/pull/1058) -  CI - Disable external docker images scanning 
+* [#1060](https://github.com/OasisLMF/OasisPlatform/pull/1060) - Set version 2.3.5
+* [#1062](https://github.com/OasisLMF/OasisPlatform/pull/1062) - Fix autoscaling ramping down when new analysis run is triggered  
+* [#1066](https://github.com/OasisLMF/OasisPlatform/pull/1066) - Fix keycloak when running with Postgres Flexible server
+* [#1056](https://github.com/OasisLMF/OasisPlatform/pull/1067) - Passing analysis/model settings as a(n optional) parameter when creating a new analysis or model
+* [#1068](https://github.com/OasisLMF/OasisPlatform/pull/1069) - If conf.ini is missing a [celery] section OASIS_CELERY_BROKER_URL fails to load 
+* [#1070](https://github.com/OasisLMF/OasisPlatform/pull/1070) - Use version 2 of the API on api ls commands
+* [#1072](https://github.com/OasisLMF/OasisPlatform/pull/1073) - Always mark Sub-tasks as error when hitting problems 
+* [#1077](https://github.com/OasisLMF/OasisPlatform/pull/1077) - FIx missing exception trace in V1 workers 
+* [#1076](https://github.com/OasisLMF/OasisPlatform/pull/1078) - Fix return of types of create 'analyses' and 'model' POST in API spec. 
+* [#1081](https://github.com/OasisLMF/OasisPlatform/pull/1081) - Fix/api responses v2
+* [#904](https://github.com/OasisLMF/OasisPlatform/pull/958) - Lot3 - Load model data from object storage
+* [#1085](https://github.com/OasisLMF/OasisPlatform/pull/1086) - Validation errors when posting a run incorrectly update an anaysis state to RUN_ERROR  
+* [#1088](https://github.com/OasisLMF/OasisPlatform/pull/1088) - Added new hooks to v2 workflow  (main)
+* [#1089](https://github.com/OasisLMF/OasisPlatform/pull/1089) - Fixed CVEs from fiona package
+* [#1091](https://github.com/OasisLMF/OasisPlatform/pull/1091) - Fixed build error from worker-controller image
+* [#1057, #1092](https://github.com/OasisLMF/OasisPlatform/pull/1093) - Fix/1092 task cancellation issue
+* [#1094](https://github.com/OasisLMF/OasisPlatform/pull/1094) - Updated Package Requirements: twisted==24.7.0rc1
+* [#1098](https://github.com/OasisLMF/OasisPlatform/pull/1099) - API is down. Please try again later 
+* [#1101](https://github.com/OasisLMF/OasisPlatform/pull/1101) - Only run attach project issues workflow from Our repo - not forks
+* [#1102](https://github.com/OasisLMF/OasisPlatform/pull/1102) - Set version 2.3.7
+* [#1075](https://github.com/OasisLMF/OasisPlatform/pull/1103) - Logging - V2 input generation and losses tar should include log files for all sub-tasks 
+* [#1104](https://github.com/OasisLMF/OasisPlatform/pull/1104) - Fix params for V1 workers - so custom hooks are called
+* [#1107](https://github.com/OasisLMF/OasisPlatform/pull/1107) - Fix/gen log storage
+* [#1108](https://github.com/OasisLMF/OasisPlatform/pull/1108) - Relase fix - gen log storage (#1107)
+* [#1109](https://github.com/OasisLMF/OasisPlatform/pull/1109) - set artifact to v4
+* [#1111](https://github.com/OasisLMF/OasisPlatform/pull/1112) - Keycloak OIDC group permistions is broken. 
+* [#1110](https://github.com/OasisLMF/OasisPlatform/pull/1113) - Add Endpoint for models - 'storage_links'
+* [#1128](https://github.com/OasisLMF/OasisPlatform/pull/1128) - Update python 3.12
+* [#1125](https://github.com/OasisLMF/OasisPlatform/pull/1133) - Support Cyber models on OasisPlatform
+* [#1134](https://github.com/OasisLMF/OasisPlatform/pull/1134) - Fixed pip install on model worker images 
+* [#1139](https://github.com/OasisLMF/OasisPlatform/pull/1139) - Fix/1135 model settings conf
+* [#1142](https://github.com/OasisLMF/OasisPlatform/pull/1142) - Project PR action -  incorrectly running on external PRs
+* [#1140](https://github.com/OasisLMF/OasisPlatform/pull/1144) - Add DB indexing to fields like Analyses status. 
+* [#1147](https://github.com/OasisLMF/OasisPlatform/pull/1147) - Release notes script - skip merge commits
+* [#689](https://github.com/OasisLMF/OasisPlatform/pull/1151) - Add mechanism to list, and return individual files from tar
+.. _`2.4.0`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.4...2.4.0
+
 `2.3.4`_
  ---------
 * [#1023](https://github.com/OasisLMF/OasisPlatform/pull/1024) - Error reading sub-task logs from S3 when AWS_LOCATION is set
@@ -84,6 +138,7 @@ OasisPlatform Changelog
 * [#860, #863](https://github.com/OasisLMF/OasisPlatform/pull/862) - Fix/migrations plat1 to plat2
 * [#847](https://github.com/OasisLMF/OasisPlatform/pull/847) - Release 2.2.0
 .. _`2.2.1rc1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.2.0...2.2.1rc1
+
 
 `2.2.0`_
  ---------

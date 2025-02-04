@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 
 from ..models import AnalysisModel, SettingsTemplate
 from ...analyses.models import Analysis
+from ...files.models import file_storage_link
 
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
@@ -43,6 +44,22 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     def get_versions(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_versions_url(request=request, namespace=self.ns)
+
+
+class AnalysisModelStorageSerializer(serializers.ModelSerializer):
+    settings_file = serializers.SerializerMethodField()
+    ns = 'v1-models'
+
+    class Meta:
+        ref_name = __qualname__.split('.')[0] + 'V1'
+        model = AnalysisModel
+        fields = (
+            'settings_file',
+        )
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_settings_file(self, instance):
+        return file_storage_link(instance.resource_file, True)
 
 
 class TemplateSerializer(serializers.ModelSerializer):

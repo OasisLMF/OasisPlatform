@@ -1,18 +1,24 @@
+import io
 import json
 import string
+import sys
+from importlib import reload
+import pytest
 
+import pandas as pd
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
-from django.urls import reverse
+from django.urls import reverse, clear_url_caches
 from django_webtest import WebTestMixin
+from django.conf import settings as django_settings
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
 from mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
-from src.server.oasisapi.files.tests.fakes import fake_related_file
+from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.analysis_models.v2_api.tests.fakes import fake_analysis_model
 from src.server.oasisapi.portfolios.v2_api.tests.fakes import fake_portfolio
 from src.server.oasisapi.auth.tests.fakes import fake_user, add_fake_group
@@ -169,16 +175,16 @@ class AnalysisApi(WebTestMixin, TestCase):
                                      'STARTED': 0,
                                      'TOTAL': 0,
                                      'TOTAL_IN_QUEUE': 0},
-                    'storage_links': 'http://testserver/v2/analyses/1/storage_links/',
+                    'storage_links': f'http://testserver/v2/analyses/{analysis.id}/storage_links/',
                     'sub_task_count': 0,
                     'sub_task_error_ids': [],
-                    'sub_task_list': 'http://testserver/v2/analyses/1/sub_task_list/',
+                    'sub_task_list': f'http://testserver/v2/analyses/{analysis.id}/sub_task_list/',
                     'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(namespace=NAMESPACE),
                     'task_started': None,
                     'task_finished': None,
                     'groups': [],
                     'analysis_chunks': None,
-                    'chunking_configuration': 'http://testserver/v2/analyses/1/chunking_configuration/',
+                    'chunking_configuration': f'http://testserver/v2/analyses/{analysis.id}/chunking_configuration/',
                     'lookup_chunks': None,
                     'priority': 4,
                 }, response.json)
@@ -248,10 +254,10 @@ class AnalysisApi(WebTestMixin, TestCase):
                                      'STARTED': 0,
                                      'TOTAL': 0,
                                      'TOTAL_IN_QUEUE': 0},
-                    'storage_links': 'http://testserver/v2/analyses/1/storage_links/',
+                    'storage_links': f'http://testserver/v2/analyses/{analysis.id}/storage_links/',
                     'sub_task_count': 0,
                     'sub_task_error_ids': [],
-                    'sub_task_list': 'http://testserver/v2/analyses/1/sub_task_list/',
+                    'sub_task_list': f'http://testserver/v2/analyses/{analysis.id}/sub_task_list/',
                     'storage_links': response.request.application_url + analysis.get_absolute_storage_url(namespace=NAMESPACE),
                     'summary_levels_file': None,
                     'groups': [],
@@ -997,7 +1003,7 @@ class AnalysisCopy(WebTestMixin, TestCase):
             }
         )
 
-        self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, '{} - Copy'.format(name))
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).name, '{} - Copy'.format(name[:248]))
 
     @given(orig_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters), new_name=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
     def test_new_name_is_provided___new_name_is_set_on_new_object(self, orig_name, new_name):
@@ -1876,3 +1882,220 @@ class AnalysisRunTracebackFile(WebTestMixin, TestCase):
 
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
+
+
+class ResetUrlMixin:
+    def setUp(self) -> None:
+        import src.server.oasisapi.analyses.v2_api.viewsets
+        reload(src.server.oasisapi.analyses.v2_api.viewsets)
+        if django_settings.ROOT_URLCONF in sys.modules:
+            reload(sys.modules[django_settings.ROOT_URLCONF])
+        clear_url_caches()
+
+
+@pytest.mark.skip(reason="LOT3 DISABLE")
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
+class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_endpoint_disabled___raises_no_reverse_match(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        res = self.app.get(
+            analysis.get_absolute_output_file_list_url(namespace=NAMESPACE),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(res.body, b"SQL not supported")
+        self.assertEqual(res.status_code, 400)
+
+
+@pytest.mark.skip(reason="LOT3 DISABLE")
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
+class AnalysisOutputFileListSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        analysis = fake_analysis()
+        response = self.app.get(analysis.get_absolute_output_file_list_url(namespace=NAMESPACE), expect_errors=True)
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_user_is_authenticated_object_does_not_exist___response_is_404(self):
+        user = fake_user()
+        analysis = fake_analysis()
+
+        response = self.app.get(
+            analysis.get_absolute_output_file_list_url(namespace=NAMESPACE).replace(str(analysis.pk), str(analysis.pk + 1)),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_list_expected__response_200(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.get(
+            analysis.get_absolute_output_file_list_url(namespace=NAMESPACE),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(len(response.json), 2)
+        self.assertEqual(response.json[0]["sql"], f"/v2/analyses/{analysis.pk}/output_file_sql/{related_file_one.pk}/")
+
+
+@pytest.mark.skip(reason="LOT3 DISABLE")
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
+class AnalysisOutputFileSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_endpoint_disabled___raises_no_reverse_match(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        res = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table"},
+        )
+
+        self.assertEqual(res.body, b"SQL not supported")
+        self.assertEqual(res.status_code, 400)
+
+
+@pytest.mark.skip(reason="LOT3 DISABLE")
+@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisDaskReader')
+class AnalysisOutputFileSQLApi(ResetUrlMixin, WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post(analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"), expect_errors=True)
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_sql_is_empty___response_is_400(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_sql_is_invalid___response_is_400(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT x FROM table"},
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_sql___file_incorrect__response_is_404(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk + 2, namespace="v2-analyses"),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT x FROM table"},
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_sql__response_is_200(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses"),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table"},
+        )
+
+        self.assertEqual(200, response.status_code)
+
+    def test_file__sql_applied__csv_response(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses") + "?file_format=csv",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_csv(io.StringIO(response.content.decode('utf-8')))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("text/csv", response.content_type)
+        self.assertEqual(len(response_df.index), 1)
+
+    def test_file__sql_applied__parquet_response(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses") + "?file_format=parquet",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_parquet(io.BytesIO(response.content))
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("application/octet-stream", response.content_type)
+        self.assertEqual(len(response_df.index), 1)
+
+    def test_file__sql_applied__json_response(self):
+        user = fake_user()
+        related_file_one = fake_related_file()
+        analysis = fake_analysis(raw_output_files=[related_file_one, fake_related_file()])
+
+        response = self.app.post_json(
+            analysis.get_absolute_output_file_sql_url(related_file_one.pk, namespace="v2-analyses") + "?file_format=json",
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params={"sql": "SELECT * FROM table WHERE BuildingTIV = 220000"},
+        )
+
+        response_df = pd.read_json(io.BytesIO(response.content), orient="table")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("application/json", response.content_type)
+        self.assertEqual(len(response_df.index), 1)

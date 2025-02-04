@@ -77,11 +77,11 @@ jobs:
         echo ${{ inputs.platform_version }} > VERSION
         git add VERSION
 
-    - name: Set up Python 3.10
+    - name: Set up Python 3.12
       if: inputs.oasislmf_version != ''
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.12'
 
     - name: Install piptools
       run: pip install pip-tools

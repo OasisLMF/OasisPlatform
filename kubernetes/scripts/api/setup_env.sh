@@ -24,23 +24,24 @@ else
 fi
 
 echo "Updating model chunking configuration..."
-cat << EOF | curlf -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/chunking_configuration/" -H "Content-Type: application/json" -d @- | jq .
+cat << EOF | curlf -X POST "${API_URL}/v2/models/${PIWIND_VERSION}/chunking_configuration/" -H "Content-Type: application/json" -d @- | jq .
 {
   "strategy": "FIXED_CHUNKS",
+  "loss_strategy": "FIXED_CHUNKS",
   "dynamic_locations_per_lookup": 10000,
-  "dynamic_events_per_analysis": 1,
+  "dynamic_events_per_analysis": 100,
   "fixed_analysis_chunks": 10,
-  "fixed_lookup_chunks": 10
+  "fixed_lookup_chunks": 5
 }
 EOF
 
 echo "Updating model scaling configuration..."
-cat << EOF | curlf -X POST "${API_URL}/v1/models/${PIWIND_VERSION}/scaling_configuration/" -H "Content-Type: application/json" -d @- | jq .
+cat << EOF | curlf -X POST "${API_URL}/v2/models/${PIWIND_VERSION}/scaling_configuration/" -H "Content-Type: application/json" -d @- | jq .
 {
   "scaling_strategy": "FIXED_WORKERS",
   "worker_count_fixed": 1,
-  "worker_count_max": 4,
-  "chunks_per_worker": 2
+  "worker_count_max": 10,
+  "chunks_per_worker": 10
 }
 EOF
 

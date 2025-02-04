@@ -14,6 +14,8 @@ from rest_framework.settings import api_settings
 from ..models import AnalysisModel, SettingsTemplate
 from .serializers import (
     AnalysisModelSerializer,
+    AnalysisModelListSerializer,
+    AnalysisModelStorageSerializer,
     ModelVersionsSerializer,
     CreateTemplateSerializer,
     TemplateSerializer,
@@ -23,8 +25,8 @@ from .serializers import (
 
 from ...data_files.v2_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter
-from ...files.views import handle_json_data
-from ...files.serializers import RelatedFileSerializer
+from ...files.v1_api.views import handle_json_data
+from ...files.v2_api.serializers import RelatedFileSerializer
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.serializers import ModelParametersSerializer, AnalysisSettingsSerializer
 
@@ -151,6 +153,10 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
         return handle_json_data(self.get_object(), 'file', request, AnalysisSettingsSerializer)
 
 
+@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisModelListSerializer(many=True)}))
+@method_decorator(name='create', decorator=swagger_auto_schema(responses={200: AnalysisModelListSerializer()}))
+@method_decorator(name='update', decorator=swagger_auto_schema(responses={200: AnalysisModelListSerializer()}))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(responses={200: AnalysisModelListSerializer()}))
 class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
@@ -194,6 +200,8 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
     def get_serializer_class(self):
         if self.action in ['resource_file', 'set_resource_file']:
             return RelatedFileSerializer
+        elif self.action in ['list', 'retrieve']:
+            return AnalysisModelListSerializer
         elif self.action in ['data_files']:
             return DataFileSerializer
         elif self.action in ['versions']:
@@ -202,6 +210,8 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
             return ModelScalingConfigSerializer
         elif self.action in ['chunking_configuration']:
             return ModelChunkingConfigSerializer
+        elif self.action == 'storage_links':
+            return AnalysisModelStorageSerializer
         else:
             return super(AnalysisModelViewSet, self).get_serializer_class()
 
@@ -425,6 +435,15 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
 
         df_serializer = DataFileSerializer(df, many=True, context=context)
         return Response(df_serializer.data)
+
+    @action(methods=['get'], detail=True)
+    def storage_links(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the analyses storage backed link references, `object keys` or `file paths`
+        """
+        serializer = self.get_serializer(self.get_object())
+        return Response(serializer.data)
 
 
 class ModelSettingsView(viewsets.ModelViewSet):

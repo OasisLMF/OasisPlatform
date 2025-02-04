@@ -185,7 +185,6 @@ class VerifyGroupAccessModelViewSet(viewsets.ModelViewSet):
 
         :return: A QuerySet of model objects available for current user.
         """
-
         if self.queryset:
             return self.queryset
 

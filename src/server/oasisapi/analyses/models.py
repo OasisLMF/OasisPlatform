@@ -18,7 +18,7 @@ from rest_framework.reverse import reverse
 from src.server.oasisapi.celery_app_v1 import v1 as celery_app_v1
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
-    TaskStatusMessageAnalysisItem, build_task_status_message
+    TaskStatusMessageAnalysisItem, build_task_status_message, build_all_queue_status_message
 from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
 from ..data_files.models import DataFile
 from ..files.models import RelatedFile, file_storage_link
@@ -64,7 +64,8 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
         """
         statuses = self.bulk_create(objs)
 
-        self._send_socket_messages(statuses)
+        send_task_status_message(build_all_queue_status_message())
+        # self._send_socket_messages(statuses)
 
     # This generates too much WS traffic disableing message per sub-task update
     # def update(self, **kwargs):
@@ -93,6 +94,7 @@ class AnalysisTaskStatus(models.Model):
         choices=status_choices,
         default=status_choices.PENDING,
         editable=False,
+        db_index=True,
     )
     pending_time = models.DateTimeField(null=True, auto_now_add=True, editable=False)
     queue_time = models.DateTimeField(null=True, default=None, editable=False)
@@ -100,6 +102,7 @@ class AnalysisTaskStatus(models.Model):
     end_time = models.DateTimeField(null=True, default=None, editable=False)
     name = models.CharField(max_length=255, editable=False)
     slug = models.SlugField(max_length=255, editable=False)
+    retry_count = models.IntegerField(editable=False, default=0)
 
     output_log = models.ForeignKey(
         RelatedFile,
@@ -116,6 +119,15 @@ class AnalysisTaskStatus(models.Model):
         null=True,
         default=None,
         related_name='analysis_run_status_error_logs',
+        editable=False,
+    )
+    retry_log = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
+        related_name='analysis_run_status_retry_logs',
         editable=False,
     )
 
@@ -137,6 +149,10 @@ class AnalysisTaskStatus(models.Model):
     def get_error_log_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
         return reverse(f'{override_ns}analysis-task-status-error-log', kwargs={'pk': self.pk}, request=request)
+
+    def get_retry_log_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
+        return reverse(f'{override_ns}analysis-task-status-retry-log', kwargs={'pk': self.pk}, request=request)
 
 
 class Analysis(TimeStampedModel):
@@ -165,7 +181,7 @@ class Analysis(TimeStampedModel):
     model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values),
-                              choices=status_choices, default=status_choices.NEW, editable=False)
+                              choices=status_choices, default=status_choices.NEW, editable=False, db_index=True)
     run_mode = models.CharField(max_length=max(len(c) for c in run_mode_choices._db_values),
                                 choices=run_mode_choices, default=None, editable=False, null=True)
     task_started = models.DateTimeField(editable=False, null=True, default=None)
@@ -181,6 +197,7 @@ class Analysis(TimeStampedModel):
     input_generation_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL,
                                                         blank=True, null=True, default=None, related_name='input_generation_traceback_analyses')
     output_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='output_file_analyses')
+    raw_output_files = models.ManyToManyField(RelatedFile, blank=True, related_name='raw_output_files_analyses')
     run_traceback_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True, null=True,
                                            default=None, related_name='run_traceback_file_analyses')
     run_log_file = models.ForeignKey(RelatedFile, on_delete=models.SET_NULL, blank=True,
@@ -278,6 +295,14 @@ class Analysis(TimeStampedModel):
     def get_absolute_summary_levels_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}analysis-summary-levels-file', kwargs={'pk': self.pk}, request=self._update_ns(request))
+
+    def get_absolute_output_file_list_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-output-file-list', kwargs={'pk': self.pk}, request=request)
+
+    def get_absolute_output_file_sql_url(self, file_pk, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}analysis-output-file-sql', kwargs={'pk': self.pk, "file_pk": file_pk}, request=request)
 
     def get_absolute_input_generation_traceback_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
@@ -474,10 +499,10 @@ class Analysis(TimeStampedModel):
                             errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
 
         if errors:
-            self.status = self.status_choices.RUN_ERROR
-            self.save()
             raise ValidationError(detail=errors)
 
+        self.status = self.status_choices.RUN_QUEUED
+        self.save()
         # Start V1 run
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_run_analysis_signature
@@ -501,17 +526,12 @@ class Analysis(TimeStampedModel):
             task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
 
         self.run_task_id = task_id
-        self.status = self.status_choices.RUN_QUEUED
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
 
-    def raise_validate_errors(self, errors, error_state=None):
-        if error_state:
-            self.status = error_state
-            self.save()
-        if errors:
-            raise ValidationError(detail=errors)
+    def raise_validate_errors(self, errors):
+        raise ValidationError(detail=errors)
 
     def generate_and_run(self, initiator):
         valid_choices = [
@@ -549,7 +569,8 @@ class Analysis(TimeStampedModel):
         events_total = self.get_num_events()
 
         # Raise for error
-        self.raise_validate_errors(errors)
+        if errors:
+            raise ValidationError(detail=errors)
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
@@ -589,7 +610,19 @@ class Analysis(TimeStampedModel):
             self.status_choices.RUN_CANCELLED,
             self.status_choices.RUN_ERROR,
         ]
+        valid_run_modes = [
+            self.run_mode_choices.V1,
+            self.run_mode_choices.V2,
+        ]
 
+        # check run model
+        run_mode = run_mode_override if run_mode_override else self.model.run_mode
+        if run_mode not in valid_run_modes:
+            raise ValidationError(
+                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
+            )
+
+        # check everything else
         errors = {}
         if self.status not in valid_choices:
             errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
@@ -598,28 +631,25 @@ class Analysis(TimeStampedModel):
         if (self.model.run_mode is None) and (run_mode_override is None):
             errors['model'] = ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
 
-        if not self.portfolio.location_file:
-            errors['portfolio'] = ['"location_file" must not be null']
-        else:
-            try:
-                loc_lines = self.portfolio.location_file_len()
-            except Exception as e:
-                errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
-            if loc_lines < 1:
-                errors['portfolio'] = ['"location_file" must at least one row']
+        # check for eitehr location or account file if V1
+        if run_mode == self.run_mode_choices.V1:
+            if (not self.portfolio.location_file) and (not self.portfolio.accounts_file):
+                errors['portfolio'] = ['Either "location_file" or "accounts_file" must not be null for run_mode = V1']
+
+        # check for location file if V2
+        if run_mode == self.run_mode_choices.V2:
+            if not self.portfolio.location_file:
+                errors['portfolio'] = ['"location_file" must not be null for run_mode = V2']
+            else:
+                try:
+                    loc_lines = self.portfolio.location_file_len()
+                except Exception as e:
+                    errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
+                if loc_lines < 1:
+                    errors['portfolio'] = ['"location_file" must at least one row']
 
         if errors:
             raise ValidationError(errors)
-
-        valid_run_modes = [
-            self.run_mode_choices.V1,
-            self.run_mode_choices.V2,
-        ]
-        run_mode = run_mode_override if run_mode_override else self.model.run_mode
-        if run_mode not in valid_run_modes:
-            raise ValidationError(
-                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
-            )
 
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
@@ -740,7 +770,7 @@ class Analysis(TimeStampedModel):
     def copy(self):
         new_instance = self
         new_instance.pk = None
-        new_instance.name = '{} - Copy'.format(new_instance.name)
+        new_instance.name = '{} - Copy'.format(new_instance.name[:248])
         new_instance.run_task_id = ''
         new_instance.generate_inputs_task_id = ''
         new_instance.status = self.status_choices.NEW
@@ -789,6 +819,7 @@ def delete_connected_task_logs(sender, instance, **kwargs):
     for_removal = [
         'output_log',
         'error_log',
+        'retry_log',
     ]
     for ref in for_removal:
         obj_ref = getattr(instance, ref)

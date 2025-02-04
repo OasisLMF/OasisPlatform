@@ -1,5 +1,6 @@
 __all__ = [
     'FILE_RESPONSE',
+    'FILE_LIST_RESPONSE',
     'HEALTHCHECK',
     'TOKEN_REFRESH_HEADER',
     'FILE_FORMAT_PARAM',
@@ -7,6 +8,7 @@ __all__ = [
     'SUBTASK_STATUS_PARAM',
     'SUBTASK_SLUG_PARAM',
     'FILE_VALIDATION_PARAM',
+    'FILENAME_PARAM',
 ]
 
 from drf_yasg import openapi
@@ -28,6 +30,16 @@ FILE_RESPONSE = openapi.Response(
 
     })
 
+
+FILE_LIST_RESPONSE = openapi.Response(
+    "File List",
+    schema=Schema(
+        type=openapi.TYPE_ARRAY,
+        items=Schema(title="File Name", type=openapi.TYPE_STRING),
+    ),
+)
+
+
 HEALTHCHECK = Schema(
     title='HealthCheck',
     type='object',
@@ -39,7 +51,7 @@ HEALTHCHECK = Schema(
 SERVER_INFO = Schema(
     title='ServerInfo',
     type='object',
-    required=["version", "config"],
+    required=["version", "config", "components"],
     properties={
         "version": Schema(
             title='Server version',
@@ -50,6 +62,11 @@ SERVER_INFO = Schema(
         "config": Schema(
             title='Server config',
             description="Oasis server public configuration",
+            type='object',
+        ),
+        "components": Schema(
+            title='Components version',
+            description="Versions of oasis components",
             type='object',
         )
     }
@@ -108,4 +125,12 @@ FILE_VALIDATION_PARAM = openapi.Parameter(
     required=False,
     description="Validate OED files on upload, default `True`",
     type=openapi.TYPE_BOOLEAN,
+)
+
+FILENAME_PARAM = openapi.Parameter(
+    'filename',
+    openapi.IN_QUERY,
+    required=True,
+    description="Filename to extract from tarfile.",
+    type=openapi.TYPE_STRING,
 )

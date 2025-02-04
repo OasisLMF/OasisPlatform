@@ -43,6 +43,14 @@ RUN if [ ! -z "$ods_tools_branch" ] ; then \
     pip install -v git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}#egg=ods-tools; \
   fi
 
+# Install Oasis-Data-Manager from git branch (Optional) 'docker build --build-arg odm_branch=develop'
+ARG odm_branch
+RUN if [ ! -z "$odm_branch" ] ; then \
+    apt update && apt install -y git; \
+    pip uninstall oasis-data-manager -y; \
+    pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}#egg=oasis-data-manager; \
+  fi
+
 # Copy startup script + server config
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./conf.ini ./

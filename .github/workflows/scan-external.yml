@@ -1,13 +1,6 @@
 name: External Vulnerability Scanning
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - stable**
-
   workflow_dispatch:
     inputs:
       cve_severity:
@@ -22,6 +15,8 @@ on:
 env:
   SEVERITY: 'HIGH,CRITICAL'
   IGNORE_UNFIXED: 'true'
+  TRIVY_SKIP_DB_UPDATE: true
+  TRIVY_SKIP_JAVA_DB_UPDATE: true
 
 jobs:
   scan_external_images:
@@ -102,7 +97,7 @@ jobs:
 
     - name: Store report
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.report }}
         path: ${{ matrix.report }}

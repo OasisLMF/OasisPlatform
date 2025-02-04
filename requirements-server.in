@@ -22,6 +22,7 @@ jsonschema
 markdown
 mozilla_django_oidc
 ods_tools
+oasis-data-manager
 pandas
 pathlib2
 psycopg2-binary
@@ -30,5 +31,5 @@ pymysql
 pyrabbit
 redis
 sqlalchemy
-mysqlclient
+mysqlclient==2.1.1
 whitenoise

@@ -14,8 +14,8 @@ from rest_framework.status import HTTP_201_CREATED
 
 from ...filters import TimeStampedFilter
 from ...analyses.v1_api.serializers import AnalysisSerializer
-from ...files.views import handle_related_file
-from ...files.serializers import RelatedFileSerializer
+from ...files.v1_api.views import handle_related_file
+from ...files.v1_api.serializers import RelatedFileSerializer
 from ..models import Portfolio
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer

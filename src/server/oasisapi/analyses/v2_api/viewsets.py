@@ -19,8 +19,10 @@ from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTas
 from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
-from ...files.serializers import RelatedFileSerializer
-from ...files.views import handle_related_file, handle_json_data
+from ...decorators import requires_sql_reader
+from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer, NestedRelatedFileSerializer
+from ...files.v1_api.views import handle_related_file, handle_json_data, handle_related_file_sql
+from ...files.v2_api.views import handle_get_related_file_tar
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups
 from ...portfolios.models import Portfolio
@@ -30,6 +32,8 @@ from ...schemas.custom_swagger import (
     RUN_MODE_PARAM,
     SUBTASK_STATUS_PARAM,
     SUBTASK_SLUG_PARAM,
+    FILENAME_PARAM,
+    FILE_LIST_RESPONSE,
 )
 
 
@@ -182,7 +186,10 @@ class AnalysisTaskFilter(TimeStampedFilter):
 
 # https://stackoverflow.com/questions/62572389/django-drf-yasg-how-to-add-description-to-tags
 
-@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisSerializer(many=True)}))
+@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer(many=True)}))
+@method_decorator(name='create', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
+@method_decorator(name='update', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
 class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
@@ -249,7 +256,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
                          'cancel_analysis_run']
 
     # queryset = Analysis.objects.all().select_related(*file_action_types).prefetch_related('complex_model_data_files')
-    serializer_class = AnalysisSerializer
+    serializer_class = AnalysisListSerializer
     filterset_class = AnalysisFilter
 
     group_access_model = Analysis
@@ -262,10 +269,10 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         return super().get_queryset().select_related(*self.file_action_types).prefetch_related('complex_model_data_files')
 
     def get_serializer_class(self):
-        if self.action in ['create', 'options', 'update', 'partial_update', 'retrieve']:
-            return super(AnalysisViewSet, self).get_serializer_class()
-        elif self.action in ['list']:
-            return AnalysisListSerializer
+        if self.action in ['create', 'options', 'update', 'partial_update']:
+            return AnalysisSerializer
+        elif self.action in ['list', 'retrieve']:
+            return super().get_serializer_class()
         elif self.action == 'copy':
             return AnalysisCopySerializer
         elif self.action == 'data_files':
@@ -274,6 +281,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
             return AnalysisStorageSerializer
         elif self.action in self.file_action_types_with_settings_file:
             return RelatedFileSerializer
+        elif self.action in ["output_file_sql"]:
+            return FileSQLSerializer
         elif self.action in ['chunking_configuration']:
             return ModelChunkingConfigSerializer
         else:
@@ -286,7 +295,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer}, manual_parameters=[RUN_MODE_PARAM])
+    @swagger_auto_schema(responses={200: AnalysisListSerializer}, manual_parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
@@ -298,9 +307,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         run_mode_override = request.GET.get('run_mode_override', None)
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.run(request.user, run_mode_override=run_mode_override)
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def generate_and_run(self, request, pk=None, version=None):
         """
@@ -311,9 +320,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj = self.get_object()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.generate_and_run(request.user)
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
@@ -324,9 +333,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_any()
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def cancel_analysis_run(self, request, pk=None, version=None):
         """
@@ -336,9 +345,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_analysis()
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer}, manual_parameters=[RUN_MODE_PARAM])
+    @swagger_auto_schema(responses={200: AnalysisListSerializer}, manual_parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def generate_inputs(self, request, pk=None, version=None):
         """
@@ -349,9 +358,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         run_mode_override = request.GET.get('run_mode_override', None)
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         obj.generate_inputs(request.user, run_mode_override=run_mode_override)
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None, version=None):
         """
@@ -361,7 +370,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_generate_inputs()
-        return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @action(methods=['post'], detail=True)
     def copy(self, request, pk=None, version=None):
@@ -413,7 +422,25 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(methods=["get"], responses={200: FILE_LIST_RESPONSE})
+    @action(methods=['get'], detail=True)
+    def input_file_tar_list(self, request, pk=None, version=None):
+        """
+        get:
+        List the files in `input_file`.
+        """
+        return handle_get_related_file_tar(self.get_object(), "input_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
+    @action(methods=['get'], detail=True)
+    def input_file_tar_extract(self, request, pk=None, version=None):
+        """
+        get:
+        Extract and get `input_file` content.
+        """
+        return handle_get_related_file_tar(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @swagger_auto_schema(methods=["get"], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
@@ -496,6 +523,49 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Disassociates the portfolios `output_file` contents
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_LIST_RESPONSE})
+    @action(methods=['get'], detail=True)
+    def output_file_tar_list(self, request, pk=None, version=None):
+        """
+        get:
+        List the files in `output_file`.
+        """
+        return handle_get_related_file_tar(self.get_object(), "output_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
+    @action(methods=['get'], detail=True)
+    def output_file_tar_extract(self, request, pk=None, version=None):
+        """
+        get:
+        Extract and get `output_file` content.
+        """
+        return handle_get_related_file_tar(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+
+    @requires_sql_reader
+    @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
+    @action(methods=['get'], detail=True)
+    def output_file_list(self, request, *args, **kwargs):
+        """
+        get:
+        Gets the portfolios `output_file` as a list of raw files, which can have SQL applied.
+        """
+        serializer = NestedRelatedFileSerializer(self.get_object().raw_output_files.all(), analyses=self.get_object(), many=True)
+        return Response(serializer.data)
+
+    @requires_sql_reader
+    @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE})
+    @action(methods=['post'], url_path=r'output_file_sql/(?P<file_pk>\d+)', detail=True)
+    def output_file_sql(self, request, *args, file_pk=None, **kwargs):
+        """
+        get:
+        Gets the portfolios `output_file` contents, with applied sql SQL
+        """
+        serializer = self.get_serializer(self.get_object(), data=request.data)
+        serializer.is_valid(raise_exception=True)
+        sql = serializer.validated_data.get("sql")
+
+        return handle_related_file_sql(self.get_object(), "raw_output_files", request, sql, file_pk)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
@@ -629,3 +699,15 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
         Disassociates the task status' `error_log` contents
         """
         return handle_related_file(self.get_object(), 'error_log', request, ['text/plain'])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete'], detail=True)
+    def retry_log(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the task status' `retry_log` contents
+
+        delete:
+        Disassociates the task status' `retry_log` contents
+        """
+        return handle_related_file(self.get_object(), 'retry_log', request, ['text/plain'])

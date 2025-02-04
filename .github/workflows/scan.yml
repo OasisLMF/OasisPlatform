@@ -8,8 +8,6 @@ on:
     branches:
       - main
       - stable**  
-  schedule:
-    - cron:  '0 */6 * * *' # Run scan every 6 hours
 
   workflow_dispatch:
     inputs:
@@ -47,6 +45,9 @@ jobs:
       REPORT: 'repo-results.sarif'
       IGNORE_UNFIXED: 'true'
       EXIT_CODE: '1'
+      TRIVY_SKIP_DB_UPDATE: true
+      TRIVY_SKIP_JAVA_DB_UPDATE: true
+
     runs-on: ubuntu-latest
     steps:
     - name: Adding code-scanning URL
@@ -103,7 +104,7 @@ jobs:
 
     - name: Store CVE report
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.REPORT }}
         path: ${{ env.REPORT }}
