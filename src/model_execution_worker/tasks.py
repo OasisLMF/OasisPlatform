@@ -234,18 +234,19 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
     Returns:
         (string) The location of the outputs.
     """
-    logger.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
-    logger.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
+    task_logger = logging.getLogger('oasislmf')
+    task_logger.info("LOCK_FILE: {}".format(settings.get('worker', 'LOCK_FILE')))
+    task_logger.info("LOCK_RETRY_COUNTDOWN_IN_SECS: {}".format(
         settings.get('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS')))
 
     with get_lock() as gotten:
         if not gotten:
-            logger.info("Failed to get resource lock - retry task")
+            task_logger.info("Failed to get resource lock - retry task")
             raise self.retry(
                 max_retries=None,
                 countdown=settings.getint('worker', 'LOCK_RETRY_COUNTDOWN_IN_SECS'))
 
-        logger.info("Acquired resource lock")
+        task_logger.info("Acquired resource lock")
 
         try:
             # Check if this task was re-queued from a lost worker
@@ -263,7 +264,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
         except Terminated:
             sys.exit('Task aborted')
         except Exception:
-            logger.exception("Model execution task failed.")
+            task_logger.exception("Model execution task failed.")
             raise
 
         return output_location, traceback_location, log_location, return_code
@@ -285,8 +286,9 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
     # Check that the input archive exists and is valid
     from oasislmf.manager import OasisManager
 
-    logger.info("args: {}".format(str(locals())))
-    logger.info(str(get_worker_versions()))
+    task_logger = logging.getLogger('oasislmf')
+    task_logger.info("args: {}".format(str(locals())))
+    task_logger.info(str(get_worker_versions()))
     tmpdir_persist = settings.getboolean('worker', 'KEEP_RUN_DIR', fallback=False)
     tmpdir_base = settings.get('worker', 'BASE_RUN_DIR', fallback=None)
 
@@ -343,7 +345,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             OasisManager().generate_oasis_losses(**params)
             returncode = 0
         except Exception as e:
-            logger.info(f'Exception: {e.__class__}: {e}')
+            task_logger.exception("Error occured in 'generate_oasis_losses':")
             returncode = 1
 
         # Ktools log Tar file
@@ -388,7 +390,8 @@ def generate_input(self,
         (tuple(str, str)) Paths to the outputs tar file and errors tar file.
 
     """
-    logger.info(str(get_worker_versions()))
+    task_logger = logging.getLogger('oasislmf')
+    task_logger.info(str(get_worker_versions()))
 
     # Check if this task was re-queued from a lost worker
     check_worker_lost(self, analysis_pk)
@@ -461,7 +464,7 @@ def generate_input(self,
             OasisManager().generate_oasis_files(**params)
             returncode = 0
         except Exception as e:
-            logger.info(f'Exception: {e.__class__}: {e}')
+            task_logger.exception("Error occured in 'generate_oasis_files':")
             returncode = 1
 
         # Find Generated Files
