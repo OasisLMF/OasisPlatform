@@ -1,1 +1,1 @@
-# Defining the custom DB Engine
+# Defining custom DB Engine for Service Principal Authentication
