@@ -36,31 +36,30 @@ This document explains how to implement **Azure Service Principal Authentication
    - The custom database wrapper fetches a fresh Azure AD token for database authentication.
 
 #### Implementation Steps
-##### 1. *Custom settings.py*
+##### 1. *_Custom settings.py_*
 
 ```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'myapp.db.backends.azure_postgresql',  # Custom wrapper
-        'NAME': 'your_db_name',
-        'USER': 'your_db_user',
-        'HOST': 'your_db_host',
-        'PORT': '5432',
-        'TENANT_ID': 'your_tenant_id',
-        'CLIENT_ID': 'your_client_id',
-        'CLIENT_SECRET': 'your_client_secret',
-    }
-}
+# For Azure Service Principal Authentication with token rotation
+
+    DATABASES = {
+       'default': {
+           'ENGINE': DB_ENGINE,
+           'NAME': iniconf.settings.get('server', 'db_name'),
+           'USER': iniconf.settings.get('server', 'AZURE_SERVICE_PRINCIPAL_USER'),
+           'PASSWORD': '', # Database-Custom-backendWrapper.get_token
+           'HOST': iniconf.settings.get('server', 'db_host'),
+           'PORT': iniconf.settings.get('server', 'db_port'),
+           'TENANT_ID': iniconf.settings.get('server','AZURE_TENANT_ID', fallback=None),
+           'CLIENT_ID': iniconf.settings.get('server','AZURE_CLIENT_ID', fallback=None),
+           'CLIENT_SECRET': iniconf.settings.get('server','AZURE_CLIENT_SECRET', fallback=None),
+           }
+        }
 ```
 
 ##### 2. Custom Database Backend (base.py)
 Create a custom database backend that authenticates using Azure AD.
 
 ```python
-from django.db.backends.postgresql.base import DatabaseWrapper as PostgresDatabaseWrapper
-from azure.identity import ClientSecretCredential
-import psycopg2
-
 class DatabaseWrapper(PostgresDatabaseWrapper):
     def __init__(self, settings_dict, alias='default'):
         super().__init__(settings_dict, alias)
@@ -86,21 +85,10 @@ class DatabaseWrapper(PostgresDatabaseWrapper):
         # Fetch a fresh token
         token = self.credential.get_token("https://ossrdbms-aad.database.windows.net/.default")
         return token.token
-
-    def get_new_connection(self, conn_params):
-        """
-        Establish a new PostgreSQL connection with a fresh Azure AD token.
-        """
-        conn_params["password"] = self.get_azure_access_token()  # Get fresh token
-        conn_params["sslmode"] = "require"  # Ensure SSL connection
-
-        return psycopg2.connect(**conn_params)
 ```
 
 
-### Security Best Practices
-- **Hash Secrets**: Use `django.contrib.auth.hashers.make_password` before storing secrets.
-- **Use HTTPS**: Encrypt all authentication requests.
+### Security Best Practices followed
 - **Short-Lived Access Tokens**: Implement tokens with a short expiration time and refresh capability.
 - **Access Control**: Enforce fine-grained permissions stored in PostgreSQL.
 - **Secure Database Connection**: Enforce SSL and use short-lived Azure AD tokens for authentication.
