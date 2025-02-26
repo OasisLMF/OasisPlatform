@@ -1,4 +1,4 @@
-# Azure Service Principal Authentication with Token Refresh for Django Application using PostgreSQL
+# Azure Service Principal for PostgreSQL Authentication
 
 #### Defining custom DB Engine for Azure Service Principal Authentication
 #### Tree 
