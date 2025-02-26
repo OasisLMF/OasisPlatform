@@ -33,6 +33,10 @@ services:
      - OASIS_CELERY_DB_NAME=celery
      - OASIS_CELERY_DB_PORT=5432
      - STARTUP_RUN_MIGRATIONS=true
+     - OASIS_AZURE_CLIENT_ID=spa-client
+     - OASIS_AZURE_TENANT_ID=spa-tenant
+     - OASIS_AZURE_CLIENT_SECRET=spa-client-secret
+     - OASIS_AZURE_SERVICE_PRINCIPAL_USER=spa-name
    volumes:
      - ${OASIS_MEDIA_ROOT:-./docker-shared-fs}:/shared-fs:rw
   worker-monitor:
