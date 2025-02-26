@@ -22,7 +22,11 @@ autobahn==23.6.2
 automat==22.10.0
     # via twisted
 azure-core==1.26.3
-    # via azure-storage-blob
+    # via
+    #   azure-identity
+    #   azure-storage-blob
+azure-identity==1.17.1
+    # via -r requirements-server.in
 azure-storage-blob==12.15.0
     # via django-storages
 billiard==3.6.4.0
@@ -74,7 +78,10 @@ coreschema==0.0.4
 cryptography==42.0.4
     # via
     #   autobahn
+    #   azure-identity
     #   azure-storage-blob
+    #   msal
+    #   pyjwt
     #   pyopenssl
     #   service-identity
 daphne==4.0.0
@@ -159,6 +166,12 @@ markdown==3.4.1
     # via -r requirements-server.in
 markupsafe==2.1.2
     # via jinja2
+msal==1.31.1
+    # via
+    #   azure-identity
+    #   msal-extensions
+msal-extensions==1.2.0
+    # via azure-identity
 mysqlclient==2.1.1
     # via -r requirements-server.in
 numba==0.58.1
@@ -181,6 +194,8 @@ pandas==1.5.3
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-server.in
+portalocker==2.10.1
+    # via msal-extensions
 prompt-toolkit==3.0.38
     # via click-repl
 psycopg2-binary==2.9.5
@@ -195,8 +210,10 @@ pyasn1-modules==0.2.8
     # via service-identity
 pycparser==2.21
     # via cffi
-pyjwt==2.6.0
-    # via djangorestframework-simplejwt
+pyjwt[crypto]==2.6.0
+    # via
+    #   djangorestframework-simplejwt
+    #   msal
 pymysql==1.1.1
     # via -r requirements-server.in
 pyopenssl==24.0.0
@@ -218,6 +235,7 @@ requests==2.31.0
     # via
     #   azure-core
     #   coreapi
+    #   msal
 ruamel-yaml==0.17.21
     # via drf-yasg
 ruamel-yaml-clib==0.2.7
@@ -252,6 +270,7 @@ txaio==23.1.1
 typing-extensions==4.5.0
     # via
     #   azure-core
+    #   azure-identity
     #   azure-storage-blob
     #   sqlalchemy
     #   twisted
