@@ -11,8 +11,9 @@
 │   │   │   ├── custom_db_backend/
 │   │   │   │   ├── __init__.py  # existing
 │   │   │   │   ├── readme.md  # Defining the custom DB Engine
-│   │   │   │   |     ├── base.py  # where we have the DatabaseWrapper
-│   │   │   │   |     ├── __init__.py  # existing
+│   │   │   │   ├── base/
+│   │   │   │   |    ├── base.py  # where we have the DatabaseWrapper
+│   │   │   │   |    ├── __init__.py  # existing
 ```
 
 ## Overview
