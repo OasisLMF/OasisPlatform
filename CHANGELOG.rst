@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.1`_
+ ---------
+* [#1149, #1150](https://github.com/OasisLMF/OasisPlatform/pull/1164) - Fixed missing stack trace logging for V1 workers 
+* [#1129](https://github.com/OasisLMF/OasisPlatform/pull/1168) - Platform schema generation - minor changes between versions.
+* [#1169](https://github.com/OasisLMF/OasisPlatform/pull/1169) - Azure Service Principal for Postgres SQL authentication - 
+* [#1170](https://github.com/OasisLMF/OasisPlatform/pull/1170) - Azure Service Principal for Postgres SQL authentication -  (#1169)
+* [#1171](https://github.com/OasisLMF/OasisPlatform/pull/1171) - Update expected validation errors for ods-tools 4.0.1
+.. _`2.4.1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.0...2.4.1
+
 `2.4.0`_
  ---------
 * [#1063](https://github.com/OasisLMF/OasisPlatform/pull/1152) - Expose components versions in API
