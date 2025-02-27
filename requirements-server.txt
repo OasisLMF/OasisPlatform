@@ -28,8 +28,11 @@ automat==24.8.1
     # via twisted
 azure-core==1.31.0
     # via
+    #   azure-identity
     #   azure-storage-blob
     #   django-storages
+azure-identity==1.20.0
+    # via -r requirements-server.in
 azure-storage-blob==12.23.1
     # via django-storages
 billiard==4.2.1
@@ -83,9 +86,12 @@ cramjam==2.9.0
 cryptography==43.0.3
     # via
     #   autobahn
+    #   azure-identity
     #   azure-storage-blob
     #   josepy
     #   mozilla-django-oidc
+    #   msal
+    #   pyjwt
     #   pyopenssl
     #   service-identity
 daphne==2.5.0
@@ -191,6 +197,12 @@ markupsafe==3.0.2
     # via jinja2
 mozilla-django-oidc==4.0.1
     # via -r requirements-server.in
+msal==1.31.1
+    # via
+    #   azure-identity
+    #   msal-extensions
+msal-extensions==1.2.0
+    # via azure-identity
 msgpack==0.6.2
     # via channels-redis
 mysqlclient==2.1.1
@@ -223,6 +235,8 @@ pandas==2.2.3
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-server.in
+portalocker==2.10.1
+    # via msal-extensions
 prompt-toolkit==3.0.48
     # via click-repl
 psycopg2-binary==2.9.10
@@ -237,8 +251,10 @@ pyasn1-modules==0.4.1
     # via service-identity
 pycparser==2.22
     # via cffi
-pyjwt==2.9.0
-    # via djangorestframework-simplejwt
+pyjwt[crypto]==2.9.0
+    # via
+    #   djangorestframework-simplejwt
+    #   msal
 pymysql==1.1.1
     # via -r requirements-server.in
 pyopenssl==24.2.1
@@ -273,6 +289,7 @@ requests==2.32.3
     #   azure-core
     #   coreapi
     #   mozilla-django-oidc
+    #   msal
 rpds-py==0.20.0
     # via
     #   jsonschema
@@ -299,6 +316,7 @@ txaio==23.1.1
 typing-extensions==4.12.2
     # via
     #   azure-core
+    #   azure-identity
     #   azure-storage-blob
     #   oasis-data-manager
     #   sqlalchemy
