@@ -147,21 +147,21 @@ if DB_ENGINE == 'django.db.backends.sqlite3':
 
 elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
 
-# For Azure Service Principal Authentication with token rotation
+    # For Azure Service Principal Authentication with token rotation
 
     DATABASES = {
-       'default': {
-           'ENGINE': DB_ENGINE,
-           'NAME': iniconf.settings.get('server', 'db_name'),
-           'USER': iniconf.settings.get('server', 'AZURE_SERVICE_PRINCIPAL_USER'),
-           'PASSWORD': '', # Database-Custom-backendWrapper.get_token
-           'HOST': iniconf.settings.get('server', 'db_host'),
-           'PORT': iniconf.settings.get('server', 'db_port'),
-           'TENANT_ID': iniconf.settings.get('server','AZURE_TENANT_ID', fallback=None),
-           'CLIENT_ID': iniconf.settings.get('server','AZURE_CLIENT_ID', fallback=None),
-           'CLIENT_SECRET': iniconf.settings.get('server','AZURE_CLIENT_SECRET', fallback=None),
-           }
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': iniconf.settings.get('server', 'db_name'),
+            'USER': iniconf.settings.get('server', 'AZURE_SERVICE_PRINCIPAL_USER'),
+            'PASSWORD': '',  # Database-Custom-backendWrapper.get_token
+            'HOST': iniconf.settings.get('server', 'db_host'),
+            'PORT': iniconf.settings.get('server', 'db_port'),
+            'TENANT_ID': iniconf.settings.get('server', 'AZURE_TENANT_ID', fallback=None),
+            'CLIENT_ID': iniconf.settings.get('server', 'AZURE_CLIENT_ID', fallback=None),
+            'CLIENT_SECRET': iniconf.settings.get('server', 'AZURE_CLIENT_SECRET', fallback=None),
         }
+    }
 
 
 else:
