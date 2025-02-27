@@ -30,7 +30,10 @@ automat==22.10.0
 azure-core==1.26.3
     # via
     #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
+    #   azure-identity
     #   azure-storage-blob
+azure-identity==1.17.1
+    # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 azure-storage-blob==12.15.0
     # via
     #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
@@ -117,12 +120,15 @@ cramjam==2.6.2
 cryptography==42.0.4
     # via
     #   autobahn
+    #   azure-identity
     #   azure-storage-blob
+    #   msal
+    #   pyjwt
     #   pyopenssl
     #   service-identity
 daphne==4.0.0
     # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
-distlib==0.3.6
+distlib==0.3.9
     # via virtualenv
 django==3.2.25
     # via
@@ -176,7 +182,7 @@ fasteners==0.18
     #   -r requirements.in
 fastparquet==2023.2.0
     # via oasislmf
-filelock==3.9.0
+filelock==3.17.0
     # via
     #   tox
     #   virtualenv
@@ -243,6 +249,12 @@ mock==5.0.1
     # via -r requirements.in
 model-mommy==2.0.0
     # via -r requirements.in
+msal==1.31.1
+    # via
+    #   azure-identity
+    #   msal-extensions
+msal-extensions==1.2.0
+    # via azure-identity
 msgpack==1.0.5
     # via oasislmf
 mysqlclient==2.1.1
@@ -298,7 +310,7 @@ pathlib2==2.3.7.post1
     #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 pip-tools==6.12.3
     # via -r requirements.in
-platformdirs==3.1.1
+platformdirs==4.3.6
     # via
     #   tox
     #   virtualenv
@@ -306,6 +318,8 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
+portalocker==2.10.1
+    # via msal-extensions
 prompt-toolkit==3.0.38
     # via click-repl
 psycopg2-binary==2.9.5
@@ -328,8 +342,10 @@ pycparser==2.21
     # via cffi
 pyflakes==3.0.1
     # via flake8
-pyjwt==2.6.0
-    # via djangorestframework-simplejwt
+pyjwt[crypto]==2.6.0
+    # via
+    #   djangorestframework-simplejwt
+    #   msal
 pymysql==1.1.1
     # via
     #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
@@ -376,6 +392,7 @@ requests==2.31.0
     #   azure-core
     #   coreapi
     #   forex-python
+    #   msal
     #   oasislmf
     #   requests-toolbelt
 requests-toolbelt==0.10.1
@@ -454,6 +471,7 @@ txaio==23.1.1
 typing-extensions==4.5.0
     # via
     #   azure-core
+    #   azure-identity
     #   azure-storage-blob
     #   sqlalchemy
     #   twisted
@@ -470,7 +488,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.21.0
+virtualenv==20.26.6
     # via tox
 waitress==3.0.2
     # via webtest
