@@ -58,8 +58,10 @@ azure-core==1.31.0
     #   django-storages
 azure-datalake-store==0.0.53
     # via adlfs
-azure-identity==1.19.0
-    # via adlfs
+azure-identity==1.20.0
+    # via
+    #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
+    #   adlfs
 azure-storage-blob==12.23.1
     # via
     #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
