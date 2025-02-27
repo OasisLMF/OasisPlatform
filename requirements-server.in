@@ -14,7 +14,7 @@ django_celery_results
 djangorestframework
 djangorestframework_simplejwt
 drf-nested-routers
-drf-yasg>=1.17.1
+drf-yasg<=1.21.5
 gunicorn
 joblib>=1.2.0
 jsonpickle

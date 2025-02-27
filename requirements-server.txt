@@ -128,7 +128,7 @@ djangorestframework-simplejwt==5.3.1
     # via -r requirements-server.in
 drf-nested-routers==0.94.0
     # via -r requirements-server.in
-drf-yasg==1.21.8
+drf-yasg==1.21.5
     # via -r requirements-server.in
 fastparquet==2024.5.0
     # via oasis-data-manager
