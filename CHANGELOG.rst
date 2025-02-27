@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.13`_
+ ---------
+* [#1149, #1150](https://github.com/OasisLMF/OasisPlatform/pull/1164) - Fixed missing stack trace logging for V1 workers 
+* [#1158](https://github.com/OasisLMF/OasisPlatform/pull/1158) - Worker controller detects pending V1 task and tries to scale V2 workers 
+.. _`2.3.13`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.12...2.3.13
+
 * [#1063](https://github.com/OasisLMF/OasisPlatform/pull/1152) - Expose components versions in API
 .. _`2.3.12`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.11...2.3.12
 
