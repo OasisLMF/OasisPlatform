@@ -30,3 +30,4 @@ mysqlclient
 whitenoise
 twisted>=22.1
 gunicorn
+azure-identity

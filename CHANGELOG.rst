@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.11`_
+ ---------
+* [#1169](https://github.com/OasisLMF/OasisPlatform/pull/1169) - Azure Service Principal for Postgres SQL authentication - 
+* [#1147](https://github.com/OasisLMF/OasisPlatform/pull/1147) - Release notes script - skip merge commits
+* [#1149, #1150](https://github.com/OasisLMF/OasisPlatform/pull/1164) - Fixed missing stack trace logging for V1 workers 
+.. _`1.28.11`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.10...1.28.11
+
 `1.28.10`_
  ---------
 * [#1114](https://github.com/OasisLMF/OasisPlatform/pull/1114) - Release 1.28.9
