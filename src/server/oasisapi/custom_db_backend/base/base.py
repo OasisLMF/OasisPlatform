@@ -2,6 +2,7 @@ from django.db.backends.postgresql.base import DatabaseWrapper as PostgresDataba
 from azure.identity import ClientSecretCredential
 import psycopg2
 
+
 class DatabaseWrapper(PostgresDatabaseWrapper):
     def __init__(self, settings_dict, alias='default'):
         super().__init__(settings_dict, alias)
