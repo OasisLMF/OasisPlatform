@@ -51,9 +51,9 @@ class DataFile(TimeStampedModel):
         """
         if not request:
             return None
-        ns_ver, ns_view = request.version.split('-')
-        if ns_view != 'files':
-            request.version = f'{ns_ver}-files'
+        ns_ver, ns_view = request.version.split('-', 1)
+        if ns_view != 'data-files':
+            request.version = f'{ns_ver}-data-files'
         return request
 
     def get_filename(self):

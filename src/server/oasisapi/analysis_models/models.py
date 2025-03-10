@@ -164,7 +164,7 @@ class AnalysisModel(TimeStampedModel):
         """
         if not request:
             return None
-        ns_ver, ns_view = request.version.split('-')
+        ns_ver, ns_view = request.version.split('-', 1)
         if ns_view != 'models':
             request.version = f'{ns_ver}-models'
         return request
