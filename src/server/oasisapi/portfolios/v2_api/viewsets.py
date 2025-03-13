@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
+from django.core.files import File
 from django.conf import settings as django_settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
@@ -18,8 +19,10 @@ from .serializers import (
     CreateAnalysisSerializer,
     PortfolioStorageSerializer,
     PortfolioListSerializer,
-    PortfolioValidationSerializer
+    PortfolioValidationSerializer,
+    ExposureRunSerializer
 )
+from ...files.models import RelatedFile
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
 from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer
@@ -109,20 +112,21 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
-        elif self.action in ['list']:
+        if self.action in ['list']:
             return PortfolioListSerializer
-        elif self.action in ['set_storage_links', 'storage_links']:
+        if self.action in ['set_storage_links', 'storage_links']:
             return PortfolioStorageSerializer
-        elif self.action in ['validate']:
+        if self.action in ['validate']:
             return PortfolioValidationSerializer
-        elif self.action in [
+        if self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
         ]:
             return RelatedFileSerializer
-        elif self.action in ["file_sql"]:
+        if self.action in ["file_sql"]:
             return FileSQLSerializer
-        else:
-            return super(PortfolioViewSet, self).get_serializer_class()
+        if self.action in ['exposure_run']:
+            return ExposureRunSerializer
+        return super(PortfolioViewSet, self).get_serializer_class()
 
     @property
     def parser_classes(self):
@@ -277,6 +281,43 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    @action(methods=['get', 'post'], detail=True)
+    def exposure_run(self, request, pk=None, version=None):
+        method = request.method.lower()
+        if method == 'get':
+            instance = self.get_object()
+
+            return Response(instance.exposure_run_file.file.url)
+        try:
+            instance = self.get_object()
+            if not instance:
+                raise Exception("!!!")
+            import os
+            import subprocess
+            file_path = request.data.get('file_path')
+            os.chdir(file_path)
+            command = ['oasislmf', 'exposure', 'run']
+
+            params = request.data.get('params')
+            for k, v in params.items():
+                command.append(k)
+                command.append(v)
+
+            with open('outfile.csv', 'w') as outfile:
+                outfile.write(subprocess.run(command, capture_output=True, text=True, check=True).stdout)
+            
+            with open('outfile.csv', 'rb') as file:
+                instance.exposure_run_file = RelatedFile.objects.create(
+                file=File(file, name='outfile.csv'),
+                filename='outfile.csv',
+                content_type='text/csv'
+            )
+            instance.save()
+
+            return Response({"message": "passed", "file": instance.exposure_run_file.file.url})
+        except Exception as e:
+            return Response({"message": "failed", "error": str(e)})
 
     # LOT3 DISABLE
     # @requires_sql_reader
