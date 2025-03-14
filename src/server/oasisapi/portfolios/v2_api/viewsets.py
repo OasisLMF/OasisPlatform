@@ -32,8 +32,8 @@ from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer
-
-
+from src.model_execution_worker.execute_run_tasks import run_exposure_task
+# /home/ubuntu/GitHub/OasisPlatform/src/model_execution_worker/execute_run_tasks.py
 class PortfolioFilter(TimeStampedFilter):
     name = filters.CharFilter(help_text=_('Filter results by case insensitive names equal to the given string'), lookup_expr='iexact')
     name__contains = filters.CharFilter(help_text=_(
@@ -291,31 +291,13 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             return Response(instance.exposure_run_file.file.url)
         try:
             instance = self.get_object()
-            if not instance:
-                raise Exception("!!!")
-            import os
-            import subprocess
             file_path = request.data.get('file_path')
-            os.chdir(file_path)
-            command = ['oasislmf', 'exposure', 'run']
-
             params = request.data.get('params')
-            for k, v in params.items():
-                command.append(k)
-                command.append(v)
-
-            with open('outfile.csv', 'w') as outfile:
-                outfile.write(subprocess.run(command, capture_output=True, text=True, check=True).stdout)
-            
-            with open('outfile.csv', 'rb') as file:
-                instance.exposure_run_file = RelatedFile.objects.create(
-                file=File(file, name='outfile.csv'),
-                filename='outfile.csv',
-                content_type='text/csv'
+            run_exposure_task.apply_async(
+                args=[instance.id, file_path, params],
+                queue='celery'
             )
-            instance.save()
-
-            return Response({"message": "passed", "file": instance.exposure_run_file.file.url})
+            return Response({"message": "in queue"})
         except Exception as e:
             return Response({"message": "failed", "error": str(e)})
 
