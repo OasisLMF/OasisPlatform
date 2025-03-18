@@ -295,7 +295,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             params = request.data.get('params')
             run_exposure_task.apply_async(
                 args=[instance.id, file_path, params],
-                queue='celery'
+                queue='celery-v2'
             )
             return Response({"message": "in queue"})
         except Exception as e:

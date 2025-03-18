@@ -1,5 +1,4 @@
 from celery import signature, Celery
-from celery.exceptions import Terminated
 from django.core.files.base import File
 import os
 import subprocess
