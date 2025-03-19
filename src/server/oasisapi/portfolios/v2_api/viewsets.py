@@ -33,7 +33,10 @@ from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer
 from src.model_execution_worker.execute_run_tasks import run_exposure_task
+import os
 # /home/ubuntu/GitHub/OasisPlatform/src/model_execution_worker/execute_run_tasks.py
+
+
 class PortfolioFilter(TimeStampedFilter):
     name = filters.CharFilter(help_text=_('Filter results by case insensitive names equal to the given string'), lookup_expr='iexact')
     name__contains = filters.CharFilter(help_text=_(
@@ -287,19 +290,33 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         method = request.method.lower()
         if method == 'get':
             instance = self.get_object()
-
             return Response(instance.exposure_run_file.file.url)
         try:
             instance = self.get_object()
-            file_path = request.data.get('file_path')
+            loc_file_path = instance.location_file.file.path
+            acc_file_path = instance.accounts_file.file.path
             params = request.data.get('params')
-            run_exposure_task.apply_async(
-                args=[instance.id, file_path, params],
+
+            task = run_exposure_task.apply_async(
+                args=[loc_file_path, acc_file_path, params],
                 queue='oasis-internal-worker'
             )
+            task.link(record_output.s(instance, request.user))
+
             return Response({"message": "in queue"})
         except Exception as e:
             return Response({"message": "failed", "error": str(e)})
+
+def record_output(result, portfolio, user):
+    with open('outfile.csv', 'rb') as outfile:
+        portfolio.exposure_run_file = RelatedFile.objects.create(
+            file=File(outfile, name='outfile.csv'),
+            filename='outfile.csv',
+            content_type='text/csv',
+            creator=user.pk
+        )
+  
+    portfolio.save()
 
     # LOT3 DISABLE
     # @requires_sql_reader

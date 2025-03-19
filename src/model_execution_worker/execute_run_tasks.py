@@ -1,47 +1,32 @@
-from celery import signature, Celery
-#from django.core.files.base import File
-import os
+from __future__ import absolute_import
+
+from celery import Celery
 import subprocess
-
-#from ..server.oasisapi.portfolios.models import Portfolio, RelatedFile
-
-
 from ..conf import celeryconf_v2 as celery_conf
+from ..conf.iniconf import settings
+import shutil
+from ..common.filestore.filestore import get_filestore
 
 app = Celery()
 app.config_from_object(celery_conf)
 
 @app.task(name='run_exposure_task')
-def run_exposure_task(pk, file_path, params):
-    print('Task recived')
-    #try:
-    #    instance = Portfolio.objects.get(id=pk)
-    #    os.chdir(file_path)
-    #    command = ['oasislmf', 'exposure', 'run']
+def run_exposure_task(loc_filepath, acc_filepath, params):
+    print('Task received')
+    command = ['oasislmf', 'exposure', 'run', '-f', 'outfile.csv']
 
-    #    for k, v in params.items():
-    #        command.append(k)
-    #        command.append(v)
+    shutil.copy2(loc_filepath, "location.csv")
+    shutil.copy2(acc_filepath, "account.csv")
 
-    #    with open('outfile.csv', 'w') as outfile:
-    #        process = subprocess.run(command, capture_output=True, text=True, check=True)
-    #        outfile.write(process.stdout)
-
-    #    with open('outfile.csv', 'rb') as file:
-    #        instance.exposure_run_file = RelatedFile.objects.create(
-    #            file=File(file, name='outfile.csv'),
-    #            filename='outfile.csv',
-    #            content_type='text/csv'
-    #        )
-
-    #    instance.save()
-    #    return {"message": "success", "file_url": instance.exposure_run_file.file.url}
-
-    #except Exception as ex:
-    #    traceback_info = str(ex)
-    #    signature(
-    #        'on_error',
-    #        args=(traceback_info, 'run_exposure_task', pk),
-    #        queue='celery'
-    #    ).delay()
-    #    raise
+    for k, v in params.items():
+        command.append(k)
+        command.append(v)
+    try:
+        subprocess.run(command, capture_output=True, text=True, check=True)
+        filestore = get_filestore(settings)
+        return filestore.put("outfile.csv")
+    except Exception as e:
+        print(e)
+        print(e.stderr)
+        print(e.stdout)
+        raise

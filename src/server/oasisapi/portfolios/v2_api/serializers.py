@@ -457,14 +457,12 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
 
 
 class ExposureRunSerializer(serializers.ModelSerializer):
-    file_path = serializers.CharField()
     params = serializers.JSONField()
     exposure_run_file = serializers.SerializerMethodField()
 
     class Meta:
         model = Portfolio
         fields = (
-            'file_path',
             'params',
             'exposure_run_file'
         )
