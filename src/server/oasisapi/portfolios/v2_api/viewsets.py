@@ -299,7 +299,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             task.link(record_output.s(instance.pk, request.user.pk))
             task.apply_async(queue='oasis-internal-worker')
 
-            return Response({"message": "in queue!"})
+            return Response({"message": "in queue"})
         except Exception as e:
             return Response({"message": "failed", "error": str(e)})
 
