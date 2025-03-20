@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
-from django.core.files import File
 from django.conf import settings as django_settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
@@ -33,7 +32,6 @@ from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer
 from src.model_execution_worker.execute_run_tasks import run_exposure_task
-import os
 # /home/ubuntu/GitHub/OasisPlatform/src/model_execution_worker/execute_run_tasks.py
 
 
