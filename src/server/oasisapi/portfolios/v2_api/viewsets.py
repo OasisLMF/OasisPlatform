@@ -294,7 +294,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         """
         method = request.method.lower()
         instance = self.get_object()
-        
+
         if method == 'get':
             return Response(instance.exposure_run_file.file.url)
 

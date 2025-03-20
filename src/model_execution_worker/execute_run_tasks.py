@@ -29,7 +29,7 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, give
             shutil.copy2(ri_filepath, ri_temp)
         if rl_filepath:
             shutil.copy2(rl_filepath, rl_temp)
-        
+
         os.chdir(temp_dir)
         print(temp_dir)
         try:
