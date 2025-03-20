@@ -67,8 +67,9 @@ class Portfolio(TimeStampedModel):
                                               default=None, related_name='reinsurance_info_file_portfolios')
     reinsurance_scope_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                                default=None, related_name='reinsurance_scope_file_portfolios')
-    exposure_run_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
-                                               default=None, related_name='exposure_run_file_portfolios')
+    exposure_run_file = models.ForeignKey(
+        RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='exposure_run_file_portfolios'
+    )
 
     class Meta:
         ordering = ['id']

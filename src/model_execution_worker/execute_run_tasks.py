@@ -10,6 +10,7 @@ from ..common.filestore.filestore import get_filestore
 app = Celery()
 app.config_from_object(celery_conf)
 
+
 @app.task(name='run_exposure_task')
 def run_exposure_task(loc_filepath, acc_filepath, params):
     print('Task received')

@@ -309,6 +309,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from django.contrib.auth import get_user_model
 
+
 @celery_app_v2.task()
 def record_output(result, portfolio_pk, user_pk):
     portfolio = Portfolio.objects.get(id=portfolio_pk)
