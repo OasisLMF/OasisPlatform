@@ -297,25 +297,28 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             acc_file_path = instance.accounts_file.file.path
             params = request.data.get('params')
 
-            task = run_exposure_task.apply_async(
-                args=[loc_file_path, acc_file_path, params],
-                queue='oasis-internal-worker'
-            )
-            task.link(record_output.s(instance, request.user))
+            task = run_exposure_task.s(loc_file_path, acc_file_path, params)
+            task.link(record_output.s(instance.pk, request.user.pk))
+            task.apply_async(queue='oasis-internal-worker')
 
-            return Response({"message": "in queue"})
+            return Response({"message": "in queue!"})
         except Exception as e:
             return Response({"message": "failed", "error": str(e)})
 
-def record_output(result, portfolio, user):
-    with open('outfile.csv', 'rb') as outfile:
-        portfolio.exposure_run_file = RelatedFile.objects.create(
-            file=File(outfile, name='outfile.csv'),
-            filename='outfile.csv',
-            content_type='text/csv',
-            creator=user.pk
-        )
-  
+
+from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
+from django.contrib.auth import get_user_model
+
+@celery_app_v2.task()
+def record_output(result, portfolio_pk, user_pk):
+    portfolio = Portfolio.objects.get(id=portfolio_pk)
+    initiator = get_user_model().objects.get(pk=user_pk)
+
+    portfolio.exposure_run_file = RelatedFile.objects.create(
+        file=result, content_type='text/csv', creator=initiator,
+        filename=f'portfolio_{portfolio_pk}_exposure_run.csv', store_as_filename=True
+    )
+
     portfolio.save()
 
     # LOT3 DISABLE
