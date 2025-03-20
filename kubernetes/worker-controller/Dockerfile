@@ -1,5 +1,6 @@
-FROM alpine:3.16
+FROM alpine:3.20
 ARG PIP_TRUSTED_HOSTS
+ENV PIP_BREAK_SYSTEM_PACKAGES 1
 
 WORKDIR /app/worker-controller/
 RUN adduser  --home /app/worker-controller/ --shell /bin/bash --disabled-password --gecos "" worker-controller
