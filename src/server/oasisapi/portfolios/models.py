@@ -11,6 +11,8 @@ from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile, related_file_to_df
+from src.model_execution_worker.execute_run_tasks import run_exposure_task
+from .v2_api.tasks import record_output
 
 import re
 
@@ -182,6 +184,19 @@ class Portfolio(TimeStampedModel):
             raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
         else:
             self.set_portolio_valid()
+
+    def exposure_run(self, params, user_pk):
+        try:
+            loc_file_path = self.location_file.file.path
+            acc_file_path = self.accounts_file.file.path
+        except Exception as e:
+            raise ValidationError(f"Exposure run requires a location and an accounts file. {str(e)}")
+        ri_file_path = getattr(getattr(self.reinsurance_info_file, 'file', None), 'path', None)
+        rl_file_path = getattr(getattr(self.reinsurance_scope_file, 'file', None), 'path', None)
+
+        task = run_exposure_task.s(loc_file_path, acc_file_path, ri_file_path, rl_file_path, params)
+        task.link(record_output.s(self.pk, user_pk))
+        task.apply_async(queue='oasis-internal-worker')
 
 
 class PortfolioStatus(TimeStampedModel):

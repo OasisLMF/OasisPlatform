@@ -31,7 +31,6 @@ from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer
-from src.model_execution_worker.execute_run_tasks import run_exposure_task
 # /home/ubuntu/GitHub/OasisPlatform/src/model_execution_worker/execute_run_tasks.py
 
 
@@ -285,40 +284,22 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
 
     @action(methods=['get', 'post'], detail=True)
     def exposure_run(self, request, pk=None, version=None):
+        """
+        get:
+        Return result of `oasislmf exposure run` on the targetted portfolio
+
+        post:
+        Starts a run of `oasislmf exposure run` with the given parameters.
+        Parameters can be viewed with command `oasislmf exposure run -h`.
+        """
         method = request.method.lower()
+        instance = self.get_object()
+        
         if method == 'get':
-            instance = self.get_object()
             return Response(instance.exposure_run_file.file.url)
-        try:
-            instance = self.get_object()
-            loc_file_path = instance.location_file.file.path
-            acc_file_path = instance.accounts_file.file.path
-            params = request.data.get('params')
 
-            task = run_exposure_task.s(loc_file_path, acc_file_path, params)
-            task.link(record_output.s(instance.pk, request.user.pk))
-            task.apply_async(queue='oasis-internal-worker')
-
-            return Response({"message": "in queue"})
-        except Exception as e:
-            return Response({"message": "failed", "error": str(e)})
-
-
-from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
-from django.contrib.auth import get_user_model
-
-
-@celery_app_v2.task()
-def record_output(result, portfolio_pk, user_pk):
-    portfolio = Portfolio.objects.get(id=portfolio_pk)
-    initiator = get_user_model().objects.get(pk=user_pk)
-
-    portfolio.exposure_run_file = RelatedFile.objects.create(
-        file=result, content_type='text/csv', creator=initiator,
-        filename=f'portfolio_{portfolio_pk}_exposure_run.csv', store_as_filename=True
-    )
-
-    portfolio.save()
+        instance.exposure_run(request.data.get('params'), request.user.pk)
+        return Response({"message": "in queue"})
 
     # LOT3 DISABLE
     # @requires_sql_reader
