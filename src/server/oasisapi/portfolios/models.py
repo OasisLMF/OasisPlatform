@@ -11,7 +11,7 @@ from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile, related_file_to_df
-from src.model_execution_worker.execute_run_tasks import run_exposure_task
+from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from .v2_api.tasks import record_output
 
 import re
@@ -69,9 +69,8 @@ class Portfolio(TimeStampedModel):
                                               default=None, related_name='reinsurance_info_file_portfolios')
     reinsurance_scope_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                                default=None, related_name='reinsurance_scope_file_portfolios')
-    exposure_run_file = models.ForeignKey(
-        RelatedFile, on_delete=models.CASCADE, blank=True, null=True, default=None, related_name='exposure_run_file_portfolios'
-    )
+    exposure_run_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                          default=None, related_name='exposure_run_file_portfolios')
 
     class Meta:
         ordering = ['id']
@@ -185,6 +184,24 @@ class Portfolio(TimeStampedModel):
         else:
             self.set_portolio_valid()
 
+    # def exposure_run_signature(self, params):
+    #     try:
+    #         loc_file_path = self.location_file.file.path
+    #         acc_file_path = self.accounts_file.file.path
+    #     except Exception as e:
+    #         raise ValidationError(f"Exposure run requires a location and an accounts file. {str(e)}")
+    #     ri_file_path = getattr(getattr(self.reinsurance_info_file, 'file', None), 'path', None)
+    #     rl_file_path = getattr(getattr(self.reinsurance_scope_file, 'file', None), 'path', None)
+    #     return celery_app_v2.signature(
+    #         'run_exposure_task',
+    #         args=(loc_file_path, acc_file_path, ri_file_path, rl_file_path, params)
+    #     )
+
+    # def exposure_run(self, params, user_pk):
+    #     task = self.exposure_run_signature(params)
+    #     task.link(record_output.s(self.pk, user_pk))
+    #     task.apply_async(queue='oasis-internal-worker')
+
     def exposure_run(self, params, user_pk):
         try:
             loc_file_path = self.location_file.file.path
@@ -193,11 +210,10 @@ class Portfolio(TimeStampedModel):
             raise ValidationError(f"Exposure run requires a location and an accounts file. {str(e)}")
         ri_file_path = getattr(getattr(self.reinsurance_info_file, 'file', None), 'path', None)
         rl_file_path = getattr(getattr(self.reinsurance_scope_file, 'file', None), 'path', None)
-
+        from src.model_execution_worker.execute_run_tasks import run_exposure_task
         task = run_exposure_task.s(loc_file_path, acc_file_path, ri_file_path, rl_file_path, params)
         task.link(record_output.s(self.pk, user_pk))
         task.apply_async(queue='oasis-internal-worker')
-
 
 class PortfolioStatus(TimeStampedModel):
 
