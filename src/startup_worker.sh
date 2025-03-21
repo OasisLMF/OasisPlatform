@@ -37,6 +37,13 @@ case "$SELECT_RUN_MODE" in
       API_VER='-v2'
       TASK_FILE='src.model_execution_worker.distributed_tasks'
     ;;
+    "server-internal")
+      API_VER=''
+      OASIS_MODEL_SUPPLIER_ID='oasis'
+      OASIS_MODEL_ID='internal'
+      OASIS_MODEL_VERSION_ID='worker'
+      TASK_FILE='src.model_execution_worker.execute_run_tasks'
+    ;;
     *)
         echo "Invalid value for api version:"
         echo " Set 'OASIS_RUN_MODE=v1'  For Single server execution"

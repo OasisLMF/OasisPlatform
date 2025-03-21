@@ -2,8 +2,6 @@ import logging
 from typing import Union
 
 from oasis_data_manager.errors import OasisException
-from oasis_data_manager.filestore.backends.aws_s3 import AwsS3Storage
-from oasis_data_manager.filestore.backends.azure_abfs import AzureABFSStorage
 from oasis_data_manager.filestore.backends.local import LocalStorage
 from oasis_data_manager.filestore.backends.base import BaseStorage
 
@@ -17,6 +15,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
         )
     elif selected_storage in ['aws-s3', 'aws', 's3']:
 
+        from oasis_data_manager.filestore.backends.aws_s3 import AwsS3Storage
         return AwsS3Storage(
             root_dir=settings.get(section, 'ROOT_DIR', fallback=""),
             bucket_name=settings.get(section, 'AWS_BUCKET_NAME'),
@@ -59,6 +58,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
         )
     elif selected_storage in ['azure']:
+        from oasis_data_manager.filestore.backends.azure_abfs import AzureABFSStorage
         return AzureABFSStorage(
             root_dir=settings.get(section, 'ROOT_DIR', fallback=""),
             account_name=settings.get(section, 'AZURE_ACCOUNT_NAME'),

@@ -454,3 +454,21 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
     def get_reinsurance_scope_validated(self, instance):
         if instance.reinsurance_scope_file:
             return instance.reinsurance_scope_file.oed_validated
+
+
+class ExposureRunSerializer(serializers.ModelSerializer):
+    params = serializers.JSONField()
+    exposure_run_file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Portfolio
+        fields = (
+            'params',
+            'exposure_run_file'
+        )
+
+    def get_exposure_run(self, instance):
+        path = instance.exposure_run_file
+        if path:
+            return path.file.url
+        return None

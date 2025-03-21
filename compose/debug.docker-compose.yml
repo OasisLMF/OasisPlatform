@@ -182,6 +182,23 @@ services:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ../src/model_execution_worker:/home/worker/src/model_execution_worker
      - filestore-OasisData:/shared-fs:rw
+
+  internal-worker:
+    restart: always
+    image: coreoasis/model_worker:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.model_worker
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *shared-env
+     OASIS_RUN_MODE: server-internal
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - ../src/model_execution_worker:/home/worker/src/model_execution_worker
+     - filestore-OasisData:/shared-fs:rw
   server-db:
     restart: always
     image: postgres
@@ -228,7 +245,7 @@ services:
     image: coreoasis/oasisui_app:${VERS_UI:-latest}
     container_name: oasisui_app
     environment:
-     - API_IP=server:8000/api/
+     - API_IP=server:8000/
      - API_VERSION=v2
      - API_SHARE_FILEPATH=./downloads
      - OASIS_ENVIRONMENT=oasis_localhost
