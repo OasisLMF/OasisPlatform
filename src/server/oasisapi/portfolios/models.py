@@ -11,7 +11,7 @@ from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile, related_file_to_df
-from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
+# from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from .v2_api.tasks import record_output
 
 import re
@@ -202,18 +202,33 @@ class Portfolio(TimeStampedModel):
     #     task.link(record_output.s(self.pk, user_pk))
     #     task.apply_async(queue='oasis-internal-worker')
 
+    # def exposure_run(self, params, user_pk):
+    #     try:
+    #         loc_file_path = self.location_file.file.path
+    #         acc_file_path = self.accounts_file.file.path
+    #     except Exception as e:
+    #         raise ValidationError(f"Exposure run requires a location and an accounts file! {str(e)}")
+    #     ri_file_path = getattr(getattr(self.reinsurance_info_file, 'file', None), 'path', None)
+    #     rl_file_path = getattr(getattr(self.reinsurance_scope_file, 'file', None), 'path', None)
+    #     from src.model_execution_worker.execute_run_tasks import run_exposure_task
+    #     task = run_exposure_task.s(loc_file_path, acc_file_path, ri_file_path, rl_file_path, params)
+    #     task.link(record_output.s(self.pk, user_pk))
+    #     task.apply_async(queue='oasis-internal-worker')
+
     def exposure_run(self, params, user_pk):
-        try:
-            loc_file_path = self.location_file.file.path
-            acc_file_path = self.accounts_file.file.path
-        except Exception as e:
-            raise ValidationError(f"Exposure run requires a location and an accounts file. {str(e)}")
-        ri_file_path = getattr(getattr(self.reinsurance_info_file, 'file', None), 'path', None)
-        rl_file_path = getattr(getattr(self.reinsurance_scope_file, 'file', None), 'path', None)
+        if not self.location_file or not self.accounts_file:
+            raise ValidationError("Exposure run requires a location and an accounts file!")
+
+        location = getattr(getattr(self.location_file, 'file', None), 'url', None)
+        account = getattr(getattr(self.accounts_file, 'file', None), 'url', None)
+        ri_info = getattr(getattr(self.reinsurance_info_file, 'file', None), 'url', None)
+        ri_scope = getattr(getattr(self.reinsurance_scope_file, 'file', None), 'url', None)
+
         from src.model_execution_worker.execute_run_tasks import run_exposure_task
-        task = run_exposure_task.s(loc_file_path, acc_file_path, ri_file_path, rl_file_path, params)
+        task = run_exposure_task.s(location, account, ri_info, ri_scope, params)
         task.link(record_output.s(self.pk, user_pk))
         task.apply_async(queue='oasis-internal-worker')
+
 
 class PortfolioStatus(TimeStampedModel):
 

@@ -21,7 +21,6 @@ from .serializers import (
     PortfolioValidationSerializer,
     ExposureRunSerializer
 )
-from ...files.models import RelatedFile
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
 from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer

@@ -63,11 +63,6 @@ services:
      OASIS_ADMIN_PASS: password
    volumes:
      - filestore-OasisData:/shared-fs:rw
-   develop:
-     watch:
-       - action: sync
-         path: ./src/
-         target: /var/www/oasis/src/ 
   server_websocket:
    restart: always
    image: coreoasis/api_server:dev

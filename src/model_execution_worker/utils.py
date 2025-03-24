@@ -27,6 +27,9 @@ from ods_tools import __version__ as ods_version
 from oasislmf.utils.exceptions import OasisException
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
+import boto3
+from urllib.parse import urlparse
+from ..conf.iniconf import settings
 
 
 class LoggingTaskContext:
@@ -270,3 +273,31 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory, filest
             # If reference is a remote, then download the file & rename to 'original_filename'
             fpath = filestore.get(stored_fn, run_directory)
             shutil.move(fpath, os.path.join(run_directory, orig_fn))
+
+
+def update_params(params, given_params):
+    for k, v in given_params.items():
+        if k in params:
+            if " " not in v:
+                params[k] = v
+            else:
+                raise ValueError(f"Values must be one word: {k}, {v}")
+    params["output_file"] = "outfile.csv"
+
+
+def copy_or_download(source, destination):
+    if not source:
+        return
+    if source.startswith("http"):
+        s3 = boto3.client(
+            "s3",
+            endpoint_url="http://localstack-s3:4572",
+            aws_access_key_id=settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None'),
+            aws_secret_access_key = settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None),
+        )
+        parsed_url = urlparse(source)
+        bucket_name = parsed_url.path.split('/')[1]
+        key = "/".join(parsed_url.path.split('/')[2:])
+        s3.download_file(bucket_name, key, destination)
+        return
+    shutil.copy2(source, destination)
