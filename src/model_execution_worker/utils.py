@@ -293,7 +293,7 @@ def copy_or_download(source, destination):
             "s3",
             endpoint_url="http://localstack-s3:4572",
             aws_access_key_id=settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None'),
-            aws_secret_access_key = settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None),
+            aws_secret_access_key=settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None),
         )
         parsed_url = urlparse(source)
         bucket_name = parsed_url.path.split('/')[1]
