@@ -3,8 +3,11 @@ from __future__ import absolute_import
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
 from ..common.filestore.filestore import get_filestore
+from oasislmf.manager import OasisManager
+from src.model_execution_worker.utils import TemporaryDir, update_params, copy_or_download, get_destination_file
 import os
 from celery import Celery
+
 app = Celery()
 
 app.config_from_object(celery_conf)
@@ -12,8 +15,6 @@ app.config_from_object(celery_conf)
 
 @app.task(name='run_exposure_task')
 def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, given_params):
-    from oasislmf.manager import OasisManager
-    from src.model_execution_worker.utils import TemporaryDir, update_params, copy_or_download, get_destination_file
     with TemporaryDir() as temp_dir:
         loc_temp = get_destination_file(loc_filepath, temp_dir, "location")
         copy_or_download(loc_filepath, loc_temp)

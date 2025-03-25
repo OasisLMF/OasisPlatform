@@ -279,12 +279,24 @@ def update_params(params, given_params):
     """
     Changes exposure run's given parameters.
     """
+    ALLOWED_PARAMS = [
+        'ktools-alloc-rule-il',
+        'model-perils-covered',
+        'loss-factor',
+        'supported-oed-coverage-types',
+        'fmpy-sort-output',
+        'fmpy-low-memory',
+        'extra-summary-cols',
+        'ktools-alloc-rule-ri',
+        'reporting-currency',
+        'check-oed',
+        'do-disaggregation',
+        'verbose'
+    ]
     for k, v in given_params.items():
-        if k in params:
-            if " " not in v:
-                params[k] = v
-            else:
-                raise ValueError(f"Values must be one word: {k}, {v}")
+        if k in ALLOWED_PARAMS:
+            params[k] = v
+
     params["output_file"] = "outfile.csv"
 
 
