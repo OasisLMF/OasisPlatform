@@ -84,7 +84,6 @@ class Portfolio(TimeStampedModel):
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
     )
 
-
     class Meta:
         ordering = ['id']
 
