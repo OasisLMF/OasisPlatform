@@ -461,9 +461,13 @@ class ExposureRunParamsSerializer(serializers.Serializer):
     ktools_alloc_rule_il = serializers.IntegerField(default=2, help_text="Set the fmcalc allocation rule used in direct insured loss")
     model_perils_covered = serializers.CharField(default='AA1', help_text="List of perils covered by the model")
     loss_factor = serializers.ListField(child=serializers.FloatField(), default=[1.0], help_text="Loss factor")
-    supported_oed_coverage_types = serializers.ListField(child=serializers.IntegerField(), default=None, help_text="Select List of supported coverage_types [1, .. ,15]")
+    supported_oed_coverage_types = serializers.ListField(
+        child=serializers.IntegerField(), default=None, help_text="Select List of supported coverage_types [1, .. ,15]"
+    )
     fmpy_sort_output = serializers.BooleanField(default=True, help_text="Order fmpy output by item_id")
-    fmpy_low_memory = serializers.BooleanField(default=False, help_text="Use memory map instead of RAM to store loss array (may decrease performance but reduce RAM usage drastically)")
+    fmpy_low_memory = serializers.BooleanField(
+        default=False, help_text="Use memory map instead of RAM to store loss array (may decrease performance but reduce RAM usage drastically)"
+    )
     extra_summary_cols = serializers.ListField(child=serializers.CharField(), default=[], help_text="Extra columns to include in the summary")
     ktools_alloc_rule_ri = serializers.IntegerField(default=3, help_text="Set the fmcalc allocation rule used in reinsurance")
     reporting_currency = serializers.CharField(default=None, help_text="Currency to use in the results reported")
