@@ -456,8 +456,15 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
             return instance.reinsurance_scope_file.oed_validated
 
 
+class ExposureRunParamsSerializer(serializers.Serializer):
+    """ The expected structure for the `params` field """
+    ktools_alloc_rule_il = serializers.IntegerField(help_text="Set the fmcalc allocation rule used in direct insured loss")
+    loss_factor = serializers.FloatField(help_text="GUL factor")
+    model_perils_covered = serializers.CharField(help_text="List of peril covered by the model")
+
+
 class ExposureRunSerializer(serializers.ModelSerializer):
-    params = serializers.JSONField()
+    params = ExposureRunParamsSerializer(required=False)
     exposure_run_file = serializers.SerializerMethodField()
 
     class Meta:

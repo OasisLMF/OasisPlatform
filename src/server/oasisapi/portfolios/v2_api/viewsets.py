@@ -281,6 +281,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    @swagger_auto_schema(method='post', request_body=ExposureRunSerializer)
     @action(methods=['get', 'post'], detail=True)
     def exposure_run(self, request, pk=None, version=None):
         """
