@@ -276,6 +276,9 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory, filest
 
 
 def update_params(params, given_params):
+    """
+    Changes exposure run's given parameters.
+    """
     for k, v in given_params.items():
         if k in params:
             if " " not in v:
@@ -286,18 +289,29 @@ def update_params(params, given_params):
 
 
 def copy_or_download(source, destination):
+    """
+    Gets files needed into the storage they need to be in.
+    """
     if not source:
         return
-    if source.startswith("http"):
-        s3 = boto3.client(
-            "s3",
-            endpoint_url="http://localstack-s3:4572",
-            aws_access_key_id=settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None'),
-            aws_secret_access_key=settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None),
-        )
-        parsed_url = urlparse(source)
-        bucket_name = parsed_url.path.split('/')[1]
-        key = "/".join(parsed_url.path.split('/')[2:])
-        s3.download_file(bucket_name, key, destination)
+    if not source.startswith("http"):
+        shutil.copy2(source, destination)
         return
-    shutil.copy2(source, destination)
+    
+    s3 = boto3.client(
+        "s3",
+        endpoint_url="http://localstack-s3:4572",
+        aws_access_key_id=settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None'),
+        aws_secret_access_key=settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None),
+    )
+    parsed_url = urlparse(source)
+    bucket_name = parsed_url.path.split('/')[1]
+    key = "/".join(parsed_url.path.split('/')[2:])
+    s3.download_file(bucket_name, key, destination)
+
+
+def get_destination_file(filename, destination_dir, destination_title):
+    is_csv = filename.lower().endswith('.csv')
+    if is_csv:
+        return os.path.join(destination_dir, destination_title+".csv")
+    return os.path.join(destination_dir, destination_title+".parquet")

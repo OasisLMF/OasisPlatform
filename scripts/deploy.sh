@@ -63,5 +63,5 @@ set -e
 docker build -f Dockerfile.api_server $BUILD_ARGS_SERVER -t coreoasis/api_server:dev .
 docker build -f Dockerfile.model_worker $BUILD_ARGS_WORKER -t coreoasis/model_worker:dev .
 
-docker-compose -f compose/s3.docker-compose.yml up -d
-# docker-compose -f compose/debug.docker-compose.yml up -d
+# docker-compose -f compose/s3.docker-compose.yml up -d
+docker-compose -f compose/debug.docker-compose.yml up -d

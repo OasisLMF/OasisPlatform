@@ -24,4 +24,6 @@ v2.conf.task_queues = [
     Queue('celery-v2', Exchange('celery-v2'), routing_key='celery-v2', queue_arguments={'x-max-priority': CELERY_QUEUE_MAX_PRIORITY}),
     Queue('task-controller', Exchange('task-controller'), routing_key='task-controller',
           queue_arguments={'x-max-priority': CELERY_QUEUE_MAX_PRIORITY}),
+    Queue('oasis-internal-worker', Exchange('oasis-internal-worker'),
+          routing_key='oasis-internal-worker', queue_arguments={'x-max-priority': CELERY_QUEUE_MAX_PRIORITY}),
 ]
