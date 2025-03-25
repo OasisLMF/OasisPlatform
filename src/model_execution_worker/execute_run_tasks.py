@@ -15,6 +15,10 @@ app.config_from_object(celery_conf)
 
 @app.task(name='run_exposure_task')
 def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, given_params):
+    """
+    Returns a tuple of a file containing either the result or an error log, and a flag
+    to say whether the run was successful to update the portfolio.exposure_status
+    """
     with TemporaryDir() as temp_dir:
         loc_temp = get_destination_file(loc_filepath, temp_dir, "location")
         copy_or_download(loc_filepath, loc_temp)
@@ -32,8 +36,8 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, give
             params = OasisManager()._params_run_exposure()
             update_params(params, given_params)
             OasisManager().run_exposure(**params)
-            return get_filestore(settings).put("outfile.csv")
+            return (get_filestore(settings).put("outfile.csv"), True)
         except Exception as e:
             with open("error.txt", "w") as error_file:
                 error_file.write(str(e))
-            return get_filestore(settings).put("error.txt")
+            return (get_filestore(settings).put("error.txt"), False)

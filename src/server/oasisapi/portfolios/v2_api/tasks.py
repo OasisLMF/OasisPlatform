@@ -6,13 +6,16 @@ from ...files.models import RelatedFile
 @celery_app_v2.task()
 def record_output(result, portfolio_pk, user_pk):
     from ..models import Portfolio
-    print(result)
+    file, success = result
     portfolio = Portfolio.objects.get(id=portfolio_pk)
     initiator = get_user_model().objects.get(pk=user_pk)
 
     portfolio.exposure_run_file = RelatedFile.objects.create(
-        file=result, content_type='text/csv', creator=initiator,
+        file=file, content_type='text/csv', creator=initiator,
         filename=f'portfolio_{portfolio_pk}_exposure_run.csv', store_as_filename=True
     )
-
+    if success:
+        portfolio.exposure_status = portfolio.exposure_status_choices.RUN_COMPLETED
+    else:
+        portfolio.exposure_status = portfolio.exposure_status_choices.ERROR
     portfolio.save()

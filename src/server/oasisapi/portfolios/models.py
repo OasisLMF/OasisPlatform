@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from model_utils.models import TimeStampedModel
+from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 
@@ -57,6 +58,13 @@ def oed_class_of_businesses__workaround(e):
 
 
 class Portfolio(TimeStampedModel):
+    exposure_status_choices = Choices(
+        ('NONE', 'No exposure run calls'),
+        ('INSUFFICIENT_DATA', 'Missing location/accounts file'),
+        ('STARTED', 'An exposure run has been started'),
+        ('ERROR', 'Exposure run has failed'),
+        ('RUN_COMPLETED', 'Exposure run has successfully finished'),
+    )
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
     groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
@@ -71,6 +79,11 @@ class Portfolio(TimeStampedModel):
                                                default=None, related_name='reinsurance_scope_file_portfolios')
     exposure_run_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                           default=None, related_name='exposure_run_file_portfolios')
+    exposure_status = models.CharField(
+        max_length=max(len(c) for c in exposure_status_choices._db_values),
+        choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
+    )
+
 
     class Meta:
         ordering = ['id']
@@ -186,6 +199,8 @@ class Portfolio(TimeStampedModel):
 
     def exposure_run_signature(self, params):
         if not self.location_file or not self.accounts_file:
+            self.exposure_status = self.exposure_status_choices.INSUFFICIENT_DATA
+            self.save()
             raise ValidationError("Exposure run requires a location and an accounts file!")
 
         location = get_path_or_url(self.location_file)
@@ -203,6 +218,8 @@ class Portfolio(TimeStampedModel):
         task = self.exposure_run_signature(params)
         task.link(record_output.s(self.pk, user_pk))
         task.apply_async(queue='oasis-internal-worker', priority=10)
+        self.exposure_status = self.exposure_status_choices.STARTED
+        self.save()
 
 
 def get_path_or_url(file):
