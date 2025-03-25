@@ -281,6 +281,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @swagger_auto_schema(method='post', request_body=ExposureRunSerializer)
     @action(methods=['get', 'post'], detail=True)
     def exposure_run(self, request, pk=None, version=None):
@@ -296,7 +297,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         instance = self.get_object()
 
         if method == 'get':
-            return Response(instance.exposure_run_file.file.url)
+            return handle_related_file(self.get_object(), 'exposure_run_file', request, ['text/plain'])
 
         instance.exposure_run(request.data.get('params'), request.user.pk)
         return Response({"message": "in queue"})
