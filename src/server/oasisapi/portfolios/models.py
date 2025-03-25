@@ -184,7 +184,6 @@ class Portfolio(TimeStampedModel):
         else:
             self.set_portolio_valid()
 
-
     def exposure_run_signature(self, params):
         if not self.location_file or not self.accounts_file:
             raise ValidationError("Exposure run requires a location and an accounts file!")
@@ -199,7 +198,6 @@ class Portfolio(TimeStampedModel):
             args=(location, account, ri_info, ri_scope, params),
             priority=10
         )
-
 
     def exposure_run(self, params, user_pk):
         task = self.exposure_run_signature(params)

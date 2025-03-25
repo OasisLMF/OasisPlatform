@@ -297,7 +297,6 @@ def copy_or_download(source, destination):
     if not source.startswith("http"):
         shutil.copy2(source, destination)
         return
-    
     s3 = boto3.client(
         "s3",
         endpoint_url="http://localstack-s3:4572",
@@ -313,5 +312,5 @@ def copy_or_download(source, destination):
 def get_destination_file(filename, destination_dir, destination_title):
     is_csv = filename.lower().endswith('.csv')
     if is_csv:
-        return os.path.join(destination_dir, destination_title+".csv")
-    return os.path.join(destination_dir, destination_title+".parquet")
+        return os.path.join(destination_dir, destination_title + ".csv")
+    return os.path.join(destination_dir, destination_title + ".parquet")
