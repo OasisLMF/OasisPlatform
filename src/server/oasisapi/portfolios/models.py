@@ -7,10 +7,13 @@ from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from model_utils.models import TimeStampedModel
+from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile, related_file_to_df
+from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
+from .v2_api.tasks import record_output
 
 import re
 
@@ -55,6 +58,13 @@ def oed_class_of_businesses__workaround(e):
 
 
 class Portfolio(TimeStampedModel):
+    exposure_status_choices = Choices(
+        ('NONE', 'No exposure run calls'),
+        ('INSUFFICIENT_DATA', 'Missing location/accounts file'),
+        ('STARTED', 'An exposure run has been started'),
+        ('ERROR', 'Exposure run has failed'),
+        ('RUN_COMPLETED', 'Exposure run has successfully finished'),
+    )
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
     groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
@@ -67,6 +77,12 @@ class Portfolio(TimeStampedModel):
                                               default=None, related_name='reinsurance_info_file_portfolios')
     reinsurance_scope_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                                default=None, related_name='reinsurance_scope_file_portfolios')
+    exposure_run_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                          default=None, related_name='exposure_run_file_portfolios')
+    exposure_status = models.CharField(
+        max_length=max(len(c) for c in exposure_status_choices._db_values),
+        choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
+    )
 
     class Meta:
         ordering = ['id']
@@ -179,6 +195,40 @@ class Portfolio(TimeStampedModel):
             raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
         else:
             self.set_portolio_valid()
+
+    def exposure_run_signature(self, params):
+        if not self.location_file or not self.accounts_file:
+            self.exposure_status = self.exposure_status_choices.INSUFFICIENT_DATA
+            self.save()
+            raise ValidationError("Exposure run requires a location and an accounts file!")
+
+        location = get_path_or_url(self.location_file)
+        account = get_path_or_url(self.accounts_file)
+        ri_info = get_path_or_url(self.reinsurance_info_file)
+        ri_scope = get_path_or_url(self.reinsurance_scope_file)
+
+        return celery_app_v2.signature(
+            'run_exposure_task',
+            args=(location, account, ri_info, ri_scope, params),
+            priority=10
+        )
+
+    def exposure_run(self, params, user_pk):
+        task = self.exposure_run_signature(params)
+        task.link(record_output.s(self.pk, user_pk))
+        task.apply_async(queue='oasis-internal-worker', priority=10)
+        self.exposure_status = self.exposure_status_choices.STARTED
+        self.save()
+
+
+def get_path_or_url(file):
+    """
+    S3 Files have no path attribute and Localstorage needs to use path
+    """
+    file = getattr(file, 'file', None)
+    if file:
+        return getattr(file, 'path', getattr(file, 'url', None))
+    return None
 
 
 class PortfolioStatus(TimeStampedModel):

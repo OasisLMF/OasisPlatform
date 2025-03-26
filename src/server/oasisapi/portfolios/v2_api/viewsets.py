@@ -18,7 +18,8 @@ from .serializers import (
     CreateAnalysisSerializer,
     PortfolioStorageSerializer,
     PortfolioListSerializer,
-    PortfolioValidationSerializer
+    PortfolioValidationSerializer,
+    ExposureRunSerializer
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
@@ -29,6 +30,7 @@ from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer
+# /home/ubuntu/GitHub/OasisPlatform/src/model_execution_worker/execute_run_tasks.py
 
 
 class PortfolioFilter(TimeStampedFilter):
@@ -109,20 +111,21 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create_analysis':
             return CreateAnalysisSerializer
-        elif self.action in ['list']:
+        if self.action in ['list']:
             return PortfolioListSerializer
-        elif self.action in ['set_storage_links', 'storage_links']:
+        if self.action in ['set_storage_links', 'storage_links']:
             return PortfolioStorageSerializer
-        elif self.action in ['validate']:
+        if self.action in ['validate']:
             return PortfolioValidationSerializer
-        elif self.action in [
+        if self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
         ]:
             return RelatedFileSerializer
-        elif self.action in ["file_sql"]:
+        if self.action in ["file_sql"]:
             return FileSQLSerializer
-        else:
-            return super(PortfolioViewSet, self).get_serializer_class()
+        if self.action in ['exposure_run']:
+            return ExposureRunSerializer
+        return super(PortfolioViewSet, self).get_serializer_class()
 
     @property
     def parser_classes(self):
@@ -277,6 +280,27 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @swagger_auto_schema(method='post', request_body=ExposureRunSerializer)
+    @action(methods=['get', 'post'], detail=True)
+    def exposure_run(self, request, pk=None, version=None):
+        """
+        get:
+        Return result of `oasislmf exposure run` on the targetted portfolio
+
+        post:
+        Starts a run of `oasislmf exposure run` with the given parameters.
+        Parameters can be viewed with command `oasislmf exposure run -h`.
+        """
+        method = request.method.lower()
+        instance = self.get_object()
+
+        if method == 'get':
+            return handle_related_file(self.get_object(), 'exposure_run_file', request, ['text/plain'])
+
+        instance.exposure_run(request.data.get('params'), request.user.pk)
+        return Response({"message": "in queue"})
 
     # LOT3 DISABLE
     # @requires_sql_reader

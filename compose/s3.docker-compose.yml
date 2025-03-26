@@ -4,7 +4,6 @@ volumes:
   server-db-OasisData:
   celery-db-OasisData:
 
-
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
   OASIS_URL_SUB_PATH: 0
@@ -64,7 +63,8 @@ services:
     restart: always
     image: localstack-s3:latest
     build:
-     context: .
+     context: /home/ubuntu/GitHub/OasisPiWind/docker
+     # context: .
      dockerfile: Dockerfile.localstack-s3
     ports:
       - "4567-4599:4567-4599"
@@ -94,6 +94,7 @@ services:
      OASIS_ADMIN_PASS: password
    volumes:
      - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+     - ../src:/var/www/oasis/src:rw
   server_websocket:
    restart: always
    image: coreoasis/api_server:dev
@@ -144,6 +145,7 @@ services:
      <<: *shared-env
    volumes:
      - ../src/server/oasisapi/analyses:/var/www/oasis/src/server/oasisapi/analyses
+     - ../src:/var/www/oasis/src:rw
   celery-beat_v2:
    restart: always
    image: coreoasis/api_server:dev
@@ -189,9 +191,24 @@ services:
      OASIS_RUN_MODE: v2
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
-     - ../src/model_execution_worker:/home/worker/src/model_execution_worker
+     - ../src:/home/worker/src:rw
      # - /home/sam/repos/core/OasisDataManager/oasis_data_manager:/home/worker/.local/lib/python3.10/site-packages/oasis_data_manager/
      # - /home/sam/repos/core/oasisLMF/oasislmf:/home/worker/.local/lib/python3.10/site-packages/oasislmf
+  internal-worker:
+    restart: always
+    image: coreoasis/model_worker:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.model_worker
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *shared-env
+     OASIS_RUN_MODE: server-internal
+    volumes:
+     - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
+     - ../src:/home/worker/src:rw
   server-db:
     restart: always
     image: postgres
