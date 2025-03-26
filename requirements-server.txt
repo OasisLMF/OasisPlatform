@@ -125,7 +125,7 @@ drf-yasg==1.21.5
     # via -r requirements-server.in
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==22.0.0
+gunicorn==23.0.0
     # via -r requirements-server.in
 hyperlink==21.0.0
     # via

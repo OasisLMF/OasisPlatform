@@ -196,7 +196,7 @@ geopandas==1.0.1
     # via oasislmf
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==22.0.0
+gunicorn==23.0.0
     # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 hyperlink==21.0.0
     # via
