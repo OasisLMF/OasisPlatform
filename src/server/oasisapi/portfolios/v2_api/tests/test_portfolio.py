@@ -125,6 +125,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                 )
 
                 self.assertEqual(200, response.status_code)
+                print(response.json)
                 self.assertEqual({
                     'id': portfolio.pk,
                     'name': name,
@@ -167,7 +168,8 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_stored': None,
                         'converted_uri': None,
                     },
-                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE)
+                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE),
+                    'exposure_status': "NONE"
                 }, response.json)
 
     @pytest.mark.skip(reason="LOT3 DISABLE")
