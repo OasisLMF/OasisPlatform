@@ -112,6 +112,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
         ]:
             return RelatedFileSerializer
+        elif self.action == 'exposure_run':
+            return ExposureRunSerializer
         else:
             return super(PortfolioViewSet, self).get_serializer_class()
 

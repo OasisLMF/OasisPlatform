@@ -120,6 +120,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'reinsurance_info_file',
             'reinsurance_scope_file',
             'storage_links',
+            'exposure_status'
         )
 
     def validate(self, attrs):
@@ -454,3 +455,41 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
     def get_reinsurance_scope_validated(self, instance):
         if instance.reinsurance_scope_file:
             return instance.reinsurance_scope_file.oed_validated
+
+
+class ExposureRunParamsSerializer(serializers.Serializer):
+    """ The expected structure for the `params` field """
+    ktools_alloc_rule_il = serializers.IntegerField(default=2, help_text="Set the fmcalc allocation rule used in direct insured loss")
+    model_perils_covered = serializers.CharField(default='AA1', help_text="List of perils covered by the model")
+    loss_factor = serializers.ListField(child=serializers.FloatField(), default=[1.0], help_text="Loss factor")
+    supported_oed_coverage_types = serializers.ListField(
+        child=serializers.IntegerField(), default=None, help_text="Select List of supported coverage_types [1, .. ,15]"
+    )
+    fmpy_sort_output = serializers.BooleanField(default=True, help_text="Order fmpy output by item_id")
+    fmpy_low_memory = serializers.BooleanField(
+        default=False, help_text="Use memory map instead of RAM to store loss array (may decrease performance but reduce RAM usage drastically)"
+    )
+    extra_summary_cols = serializers.ListField(child=serializers.CharField(), default=[], help_text="Extra columns to include in the summary")
+    ktools_alloc_rule_ri = serializers.IntegerField(default=3, help_text="Set the fmcalc allocation rule used in reinsurance")
+    reporting_currency = serializers.CharField(default=None, help_text="Currency to use in the results reported")
+    check_oed = serializers.BooleanField(default=True, help_text="If True, check input OED files")
+    do_disaggregation = serializers.BooleanField(default=True, help_text="If True, run the Oasis disaggregation")
+    verbose = serializers.BooleanField(default=False, help_text="Use verbose logging")
+
+
+class ExposureRunSerializer(serializers.ModelSerializer):
+    params = ExposureRunParamsSerializer(required=False)
+    exposure_run_file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Portfolio
+        fields = (
+            'params',
+            'exposure_run_file'
+        )
+
+    def get_exposure_run(self, instance):
+        path = instance.exposure_run_file
+        if path:
+            return path.file.url
+        return None
