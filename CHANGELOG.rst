@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`2.3.14`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.13...2.3.14
+
 `2.3.13`_
  ---------
 * [#1149, #1150](https://github.com/OasisLMF/OasisPlatform/pull/1164) - Fixed missing stack trace logging for V1 workers 
