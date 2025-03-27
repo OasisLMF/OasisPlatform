@@ -196,7 +196,7 @@ geopandas==1.0.1
     # via oasislmf
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==22.0.0
+gunicorn==23.0.0
     # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
 hyperlink==21.0.0
     # via
@@ -279,7 +279,7 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.11
+oasislmf[extra]==1.28.12
     # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
 ods-tools==3.1.5
     # via

@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`1.28.12`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.11...1.28.12
+
 `1.28.11`_
  ---------
 * [#1169](https://github.com/OasisLMF/OasisPlatform/pull/1169) - Azure Service Principal for Postgres SQL authentication - 
