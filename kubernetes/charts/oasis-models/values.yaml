@@ -22,11 +22,19 @@ modelVolumes:
 #        shareName: oasisfs
 
 workers:
-  piwind_demo: # A name that is unique among all workers
+  # piwind_demo: # A name that is unique among all workers
+  #   supplierId: OasisLMF
+  #   modelId: PiWind
+  #   modelVersionId: "1"
+  #   apiVersion: "v2"
+  #   image: coreoasis/model_worker
+  #   version: dev
+  #   imagePullPolicy: Never
+  piwind_demo_v1: # A name that is unique among all workers
     supplierId: OasisLMF
     modelId: PiWind
     modelVersionId: "1"
-    apiVersion: "v2"
+    apiVersion: "v1"
     image: coreoasis/model_worker
     version: dev
     imagePullPolicy: Never

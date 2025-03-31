@@ -48,7 +48,7 @@ class ModelScalingOptions(models.Model):
         ('DYNAMIC_TASKS', 'Scale based on tasks per worker'),
     )
     scaling_strategy = models.CharField(max_length=max(len(c) for c in scaling_types._db_values),
-                                        choices=scaling_types, default=scaling_types.FIXED_WORKERS, editable=True)
+                                        choices=scaling_types, default=scaling_types.QUEUE_LOAD, editable=True)
     worker_count_fixed = models.PositiveSmallIntegerField(default=1, null=False)
     worker_count_max = models.PositiveSmallIntegerField(default=10, null=False)
     worker_count_min = models.PositiveSmallIntegerField(default=0, null=False)

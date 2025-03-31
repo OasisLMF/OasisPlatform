@@ -46,17 +46,18 @@ class AutoScaler:
         :param msg: The message content
         """
         pending_analyses: [RunningAnalysis] = await self.parse_queued_pending(msg)
-        logging.debug('Analyses pending: %s', pending_analyses)
+        logging.info('Analyses pending: %s', pending_analyses)
 
         running_analyses: [RunningAnalysis] = await self.parse_running_analyses(msg)
-        logging.debug('Analyses running: %s', running_analyses)
+        logging.info('Analyses running: %s', running_analyses)
 
         model_states = self._aggregate_model_states({**pending_analyses, **running_analyses})
-        logging.debug('Model statuses: %s', model_states)
+        logging.info('Model statuses: %s', model_states)
 
         model_states_with_wd = await self._filter_model_states_with_wd(model_states)
+        v1_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v1')
         v2_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v2')
-        prioritized_models = self._clear_unprioritized_models(v2_models)
+        prioritized_models = self._clear_unprioritized_models(v1_models + v2_models)
 
         await self._scale_models(prioritized_models)
 
@@ -116,6 +117,8 @@ class AutoScaler:
         if desired_replicas > 0 and wd.name in self.cleanup_deployments:
             if wd.name in self.cleanup_deployments:
                 self.cleanup_deployments.remove(wd.name)
+        logging.info(f"wd replicas: {wd.replicas}")
+        logging.info(f"desired replicas: {desired_replicas}")
 
         if wd.replicas != desired_replicas:
             if desired_replicas > 0:

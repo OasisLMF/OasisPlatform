@@ -131,11 +131,13 @@ def main():
     deployments.print_list()
 
     # Connect to the oasis api websocket
-    oasis_web_socket = OasisWebSocket(oasis_client, autoscaler)
+    oasis_web_socket_v1 = OasisWebSocket(oasis_client, autoscaler, version="v1")
+    oasis_web_socket_v2 = OasisWebSocket(oasis_client, autoscaler, version="v2")
 
     # Watch changes in the clutser and oasis
     event_loop.create_task(deployments_watcher.watch())
-    event_loop.create_task(oasis_web_socket.watch())
+    event_loop.create_task(oasis_web_socket_v1.watch())
+    event_loop.create_task(oasis_web_socket_v2.watch())
 
     event_loop.run_forever()
 
