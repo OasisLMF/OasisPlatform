@@ -183,10 +183,11 @@ class AutoScaler:
                         pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[queue_name], priority=4)
                 else:
                     if not analyses_list:
-                        pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[f"{queue_name}-v1"], priority=4)
+                        pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(
+                            id=None, tasks=1, queue_names=[f"{queue_name}-v1"], priority=4)
 
         return pending_analyses
-    
+
     async def parse_running_analyses(self, msg) -> [RunningAnalysis]:
         """
         Parse the web socket message and return a list of running analyses.
