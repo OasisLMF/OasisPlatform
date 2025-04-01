@@ -182,7 +182,8 @@ class AutoScaler:
                         # worker-controller might have missed the analysis displatch
                         pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[queue_name], priority=4)
                 else:
-                    pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[f"{queue_name}-v1"], priority=4)
+                    if not analyses_list:
+                        pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[f"{queue_name}-v1"], priority=4)
 
         return pending_analyses
     
