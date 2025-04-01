@@ -59,6 +59,9 @@ class AutoScaler:
         v2_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v2')
         prioritized_models = self._clear_unprioritized_models(v1_models + v2_models)
 
+        logging.info(f"v1 models: {v1_models}")
+        logging.info(f"priority: {prioritized_models}")
+        logging.info(f"with wd: {model_states_with_wd}")
         await self._scale_models(prioritized_models)
 
     def _aggregate_model_states(self, analyses: []) -> dict:
@@ -162,11 +165,11 @@ class AutoScaler:
         """
         content: List[QueueStatusContentEntry] = msg['content']
         pending_analyses: [RunningAnalysis] = {}
-
+        logging.info("Parse queue pending")
         for entry in content:
             analyses_list = entry['analyses']
             queue_name = entry['queue']['name']
-
+            logging.info(f"queue_name: {queue_name}, analyses_list: {analyses_list}")
             # Check for pending analyses
             if (queue_name not in ['celery', 'celery-v2', 'task-controller']):
                 if queue_name.endswith('v2'):
@@ -178,9 +181,11 @@ class AutoScaler:
                         # a task is queued, but no analyses are running.
                         # worker-controller might have missed the analysis displatch
                         pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[queue_name], priority=4)
+                else:
+                    pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[f"{queue_name}-v1"], priority=4)
 
         return pending_analyses
-
+    
     async def parse_running_analyses(self, msg) -> [RunningAnalysis]:
         """
         Parse the web socket message and return a list of running analyses.
