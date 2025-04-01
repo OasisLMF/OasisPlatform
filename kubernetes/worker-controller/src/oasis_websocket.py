@@ -17,14 +17,13 @@ class WebSocketConnection:
     first fetch the access token from the server to authenticate the websocket.
     """
 
-    def __init__(self, oasis_client: OasisClient, version):
+    def __init__(self, oasis_client: OasisClient):
         """
         :param oasis_client: Oasis API client.
         """
         self.oasis_client = oasis_client
         self.ws_scheme = 'wss://' if oasis_client.secure else 'ws://'
         self.connection = None
-        self.version = version
 
     async def __aenter__(self):
 
@@ -32,7 +31,7 @@ class WebSocketConnection:
 
         # https://websockets.readthedocs.io/en/stable/reference/asyncio/client.html#websockets.client.connect
         self.connection = websockets.connect(
-            urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', f'/ws/{self.version}/queue-status/'),
+            urljoin(f'{self.ws_scheme}{self.oasis_client.ws_host}:{self.oasis_client.ws_port}', f'/ws/v2/queue-status/'),
             extra_headers={'AUTHORIZATION': f'Bearer {access_token}'},
             ping_interval=None,
         )
@@ -68,15 +67,13 @@ class OasisWebSocket:
     based on rules defined in autoscaler_rules.
     """
 
-    def __init__(self, oasis_client: OasisClient, autoscaler: AutoScaler, version="v2"):
+    def __init__(self, oasis_client: OasisClient, autoscaler: AutoScaler):
         """
         :param oasis_client: A initialized oasis client.
         :param autoscaler: The autoscaler to forward websocket messages to.
-        :param version: v1 or v2.
         """
         self.oasis_client = oasis_client
         self.autoscaler = autoscaler
-        self.version = version
 
     async def watch(self):
         """
@@ -88,7 +85,7 @@ class OasisWebSocket:
 
         while running:
             try:
-                async with WebSocketConnection(self.oasis_client, self.version) as socket:
+                async with WebSocketConnection(self.oasis_client) as socket:
                     logging.info(f'Connected to ws: {self.oasis_client.ws_host}:{self.oasis_client.ws_port}')
                     async for msg in next_msg(socket):
                         logging.debug('Socket message: %s', msg)
