@@ -344,7 +344,12 @@ class AnalysisModelViewSet(VerifyGroupAccessModelViewSet):
         if method == 'get':
             serializer = self.get_serializer(self.get_object().scaling_options)
         else:
-            serializer = self.get_serializer(self.get_object().scaling_options, data=request.data)
+            version = AnalysisModel.objects.get(id=pk).run_mode
+            serializer = self.get_serializer(
+                self.get_object().scaling_options,
+                data=request.data,
+                context={**self.get_serializer_context(), 'version': version}
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
         return Response(serializer.data)

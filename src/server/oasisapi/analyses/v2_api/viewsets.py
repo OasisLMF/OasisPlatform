@@ -16,6 +16,7 @@ from rest_framework.settings import api_settings
 from ..models import Analysis, AnalysisTaskStatus
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
     AnalysisStorageSerializer, AnalysisListSerializer
+from .utils import verify_model_scaling
 from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
@@ -306,6 +307,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj = self.get_object()
         run_mode_override = request.GET.get('run_mode_override', None)
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        verify_model_scaling(obj.model)
         obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -319,6 +321,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         obj = self.get_object()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        verify_model_scaling(obj.model)
         obj.generate_and_run(request.user)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -357,6 +360,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj = self.get_object()
         run_mode_override = request.GET.get('run_mode_override', None)
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        verify_model_scaling(obj.model)
         obj.generate_inputs(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
