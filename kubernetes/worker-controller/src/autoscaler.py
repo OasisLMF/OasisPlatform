@@ -172,18 +172,14 @@ class AutoScaler:
             logging.info(f"queue_name: {queue_name}, analyses_list: {analyses_list}")
             # Check for pending analyses
             if (queue_name not in ['celery', 'celery-v2', 'task-controller']):
-                if queue_name.endswith('v2'):
-                    queued_task_count = entry.get('queue', {}).get('queued_count', 0)  # sub-task queued (API DB status)
-                    queue_message_count = entry.get('queue', {}).get('queue_message_count', 0)  # queue has messages
-                    queued_count = max(queued_task_count, queue_message_count)
+                queued_task_count = entry.get('queue', {}).get('queued_count', 0)  # sub-task queued (API DB status)
+                queue_message_count = entry.get('queue', {}).get('queue_message_count', 0)  # queue has messages
+                queued_count = max(queued_task_count, queue_message_count)
 
-                    if (queued_count > 0) and not analyses_list:
-                        # a task is queued, but no analyses are running.
-                        # worker-controller might have missed the analysis displatch
-                        pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[queue_name], priority=4)
-                else:
-                    pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(
-                        id=None, tasks=1, queue_names=[f"{queue_name}-v1"], priority=4)
+                if (queued_count > 0) and not analyses_list:
+                    # a task is queued, but no analyses are running.
+                    # worker-controller might have missed the analysis displatch
+                    pending_analyses[f'pending-task_{queue_name}'] = RunningAnalysis(id=None, tasks=1, queue_names=[queue_name], priority=4)
 
         return pending_analyses
 
@@ -198,12 +194,22 @@ class AutoScaler:
         running_analyses: [RunningAnalysis] = {}
 
         for entry in content:
+            logging.info(f"entry: {entry}")
+            logging.info(f"analyses: {entry['analyses']}")
             analyses_list = entry['analyses']
 
-            for analysis_entry in analyses_list:
+            for (i, analysis_entry) in enumerate(analyses_list):
                 analysis = analysis_entry['analysis']
-                tasks = analysis.get('sub_task_count', 0)
+                if entry['queue']['models'][i]['run_mode'].lower() == "v1":
+                    if analysis.get('status') in ['RUN_QUEUED', 'RUN_STARTED']:
+                        sa_id = analysis['id']
+                        if sa_id not in running_analyses:
+                            priority = int(analysis.get('priority', 1))
+                            running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=1,
+                                                                    queue_names=[f"{entry['queue']['name']}-v1"], priority=priority)
+                            continue
 
+                tasks = analysis.get('sub_task_count', 0)
                 queue_names = set()
                 task_counts = analysis.get('status_count', {})
                 tasks_in_queue = task_counts.get('TOTAL_IN_QUEUE', 0)
