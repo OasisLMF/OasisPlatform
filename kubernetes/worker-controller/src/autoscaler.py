@@ -206,7 +206,7 @@ class AutoScaler:
                         if sa_id not in running_analyses:
                             priority = int(analysis.get('priority', 1))
                             running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=1,
-                                                                    queue_names=[f"{entry['queue']['name']}-v1"], priority=priority)
+                                                                      queue_names=[f"{entry['queue']['name']}-v1"], priority=priority)
                             continue
 
                 tasks = analysis.get('sub_task_count', 0)
