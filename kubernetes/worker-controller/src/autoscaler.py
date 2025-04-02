@@ -200,7 +200,7 @@ class AutoScaler:
 
             for (i, analysis_entry) in enumerate(analyses_list):
                 analysis = analysis_entry['analysis']
-                if entry['queue']['models'][i].get('run_mode', '?').lower() == "v1":
+                if is_model_v1(analysis['model'], entry['queue']['models']):
                     if analysis.get('status') in ['RUN_QUEUED', 'RUN_STARTED']:
                         sa_id = analysis['id']
                         if sa_id not in running_analyses:
@@ -330,3 +330,10 @@ class AutoScaler:
                 result.append((model, state, wd), )
 
         return result
+
+
+def is_model_v1(model_num, models):
+    for model in models:
+        if model['id'] == model_num:
+            return model.get('run_mode', "").lower() == "v1"
+    return False
