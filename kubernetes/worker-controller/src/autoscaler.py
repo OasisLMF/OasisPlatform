@@ -201,7 +201,7 @@ class AutoScaler:
             for (i, analysis_entry) in enumerate(analyses_list):
                 analysis = analysis_entry['analysis']
                 tasks = analysis.get('sub_task_count', 0)
-                if tasks == 0:
+                if not tasks:
                     if analysis.get('status') in ['RUN_QUEUED', 'RUN_STARTED', 'INPUTS_GENERATION_QUEUED', 'INPUTS_GENERATION_STARTED']:
                         sa_id = analysis['id']
                         if sa_id not in running_analyses:
@@ -209,7 +209,7 @@ class AutoScaler:
                             running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=1,
                                                                       queue_names=[f"{entry['queue']['name']}-v1"], priority=priority)
                             continue
-                
+
                 queue_names = set()
                 task_counts = analysis.get('status_count', {})
                 tasks_in_queue = task_counts.get('TOTAL_IN_QUEUE', 0)
