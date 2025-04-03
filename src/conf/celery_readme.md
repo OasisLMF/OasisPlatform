@@ -139,7 +139,7 @@ class CeleryDatabaseBackend:
 ```
 
 
-![Celery Postgres Flow](celery_flow.png)
+![Celery Postgres Flow](assets/celery_flow.png)
 
 <details>
   <summary>📌 Environment Variables Required (Click to expand)</summary>
