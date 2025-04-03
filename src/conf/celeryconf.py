@@ -24,12 +24,12 @@ if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
         DB_NAME=settings.get('celery', 'db_name', fallback='celery.db.sqlite'),
     )
 else:
-    # 🔹 Attempt to retrieve Service Principal credentials
+    #: 🔹 Attempt to retrieve Service Principal credentials
     service_principal_user = settings.get("celery", "AZURE_SERVICE_PRINCIPAL_USER", fallback=None)
     azure_token = None
 
     if service_principal_user:
-        # ✅ Use Service Principal Authentication
+        #: ✅ Use Service Principal Authentication
         azure_token = celery_db_backend.get_azure_access_token()
         CELERY_RESULT_BACKEND = "{DB_ENGINE}://{SP_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
             DB_ENGINE=settings.get('celery', 'db_engine'),
@@ -40,7 +40,7 @@ else:
             DB_NAME=settings.get("celery", "db_name", fallback="celery"),
         )
     else:
-        # ✅ Fallback to Username/Password Authentication
+        #: ✅ Fallback to Username/Password Authentication
         CELERY_RESULT_BACKEND = "{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
             DB_ENGINE=settings.get('celery', 'db_engine'),
             DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
