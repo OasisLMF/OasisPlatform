@@ -38,13 +38,24 @@ class CeleryDatabaseBackend:
         Establish a PostgreSQL connection for Celery using an Azure AD token.
         """
         conn_params = {
-            "db_name": self.settings.get('celery', 'db_name'),
-            "db_user": self.settings.get('celery', 'AZURE_SERVICE_PRINCIPAL_USER'),
-            "db_pass": self.get_azure_access_token(),
-            "db_host": self.settings.get('celery', 'db_host'),
-            "db_port": self.settings.get('celery', 'db_port'),
+            "dbname": self.settings.get('celery', 'db_name'),
+            "user": self.settings.get('celery', 'AZURE_SERVICE_PRINCIPAL_USER'),
+            "password": self.get_azure_access_token(),
+            "host": self.settings.get('celery', 'db_host'),
+            "port": self.settings.get('celery', 'db_port'),
             "sslmode": "require",
         }
 
         return psycopg2.connect(**conn_params)
 
+    def get_db_engine(self):
+        """
+        Retrieves the database engine type from settings.
+        Ensures correct format for Celery result backend.
+        """
+        db_engine = self.settings.get("celery", "DB_ENGINE", fallback="db+sqlite")
+
+        if db_engine.startswith("db+postgresql"):
+            return "postgresql+psycopg2"  # Ensure correct format for Celery backend
+
+        return db_engine
