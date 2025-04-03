@@ -4,9 +4,7 @@
 This setup enables Celery to store task results in Azure PostgreSQL while authenticating securely using Azure Active Directory Service Principal (SP).
 
 - Instead of a static username/password, it retrieves an Azure AD access token dynamically.
-
 - The token auto-refreshes every 60 minutes to maintain authentication.
-
 - Logs are sanitized to prevent token exposure.
 
 ### Configuration Breakdown
@@ -24,6 +22,8 @@ This setup enables Celery to store task results in Azure PostgreSQL while authen
 │   │   ├── oasisapi
 │   │   │   ├── settings.py  # where we Configures database backend 
 ```
+![Celery Postgres Flow](assets/celery_flow.png)
+
 
 ##### 1️⃣ celeryconf.py - Configuring Celery to Use Azure Authentication
 This script sets up Celery’s result backend to use Azure PostgreSQL with an access token.
@@ -139,7 +139,7 @@ class CeleryDatabaseBackend:
 ```
 
 
-![Celery Postgres Flow](assets/celery_flow.png)
+
 
 <details>
   <summary>📌 Environment Variables Required (Click to expand)</summary>
