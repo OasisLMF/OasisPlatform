@@ -1,77 +1,54 @@
 import urllib
-from celery import Celery
 from src.conf.iniconf import settings
 from src.conf.celery_db_backend import CeleryDatabaseBackend
 
-#: Celery config - Ignore task results?
+#: Celery config - ignore result?
 CELERY_IGNORE_RESULT = False
-
-#: Celery config - RabbitMQ connection
-BROKER_URL = "amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".format(
-    RABBIT_USER=settings.get("celery", "rabbit_user", fallback="rabbit"),
-    RABBIT_PASS=settings.get("celery", "rabbit_pass", fallback="rabbit"),
-    RABBIT_HOST=settings.get("celery", "rabbit_host", fallback="rabbit"),  # Ensure correct hostname
-    RABBIT_PORT=settings.get("celery", "rabbit_port", fallback="5672"),
-)
-
-#: Initialize Celery app with broker
-app = Celery("oasisapi", broker=BROKER_URL) # ✅ Explicitly setting broker
 
 #: Initialize Celery Database Backend
 celery_db_backend = CeleryDatabaseBackend(settings)
 
-#: Retrieve the database engine from settings
-CELERY_RESULTS_DB_BACKEND = settings.get("celery", "DB_ENGINE", fallback="db+sqlite")
+#: Celery config - IP address of the server running RabbitMQ and Celery
+BROKER_URL = "amqp://{RABBIT_USER}:{RABBIT_PASS}@{RABBIT_HOST}:{RABBIT_PORT}//".format(
+    RABBIT_USER=settings.get('celery', 'rabbit_user', fallback='rabbit'),
+    RABBIT_PASS=settings.get('celery', 'rabbit_pass', fallback='rabbit'),
+    RABBIT_HOST=settings.get('celery', 'rabbit_host', fallback='127.0.0.1'),
+    RABBIT_PORT=settings.get('celery', 'rabbit_port', fallback='5672'),
+)
 
-# 🔹 Debugging Output
-print(f"🔍 DB_ENGINE from settings: {CELERY_RESULTS_DB_BACKEND}")
-
-if CELERY_RESULTS_DB_BACKEND == "db+sqlite":
-    app.conf.result_backend = "sqlite:///{DB_NAME}".format(
-        DB_NAME=settings.get("celery", "db_name", fallback="celery.db.sqlite"),
+#: Celery config - result backend URI
+CELERY_RESULTS_DB_BACKEND = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')
+if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
+    CELERY_RESULT_BACKEND = '{DB_ENGINE}:///{DB_NAME}'.format(
+        DB_ENGINE=CELERY_RESULTS_DB_BACKEND,
+        DB_NAME=settings.get('celery', 'db_name', fallback='celery.db.sqlite'),
     )
-elif CELERY_RESULTS_DB_BACKEND.startswith("db+postgresql"):  # ✅ Ensure all workers use Service Principal
-    # 🔹 Remove 'db+' prefix to match Celery's expected format
-    db_engine = CELERY_RESULTS_DB_BACKEND.replace("db+", "")
-
-    # 🔹 Try to get Service Principal credentials
+else:
+    # 🔹 Attempt to retrieve Service Principal credentials
     service_principal_user = settings.get("celery", "AZURE_SERVICE_PRINCIPAL_USER", fallback=None)
-    azure_token = celery_db_backend.get_azure_access_token()
+    azure_token = None
 
-    if service_principal_user and azure_token:
-        app.conf.result_backend = "{DB_ENGINE}://{SP_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
-            DB_ENGINE=db_engine,  # ✅ 'postgresql+psycopg2'
-            SP_USER=urllib.parse.quote(service_principal_user),  # 🔹 Force Service Principal
-            DB_PASS=urllib.parse.quote(azure_token),  # 🔹 Auto-rotating token
-            DB_HOST=settings.get("celery", "db_host"),
-            DB_PORT=settings.get("celery", "db_port"),
+    if service_principal_user:
+        # ✅ Use Service Principal Authentication
+        azure_token = celery_db_backend.get_azure_access_token()
+        CELERY_RESULT_BACKEND = "{DB_ENGINE}://{SP_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
+            DB_ENGINE=settings.get('celery', 'db_engine'),
+            SP_USER=urllib.parse.quote(service_principal_user),
+            DB_PASS=urllib.parse.quote(azure_token),
+            DB_HOST=settings.get('celery', 'db_host'),
+            DB_PORT=settings.get("celery", "db_port", fallback="5432"),
             DB_NAME=settings.get("celery", "db_name", fallback="celery"),
         )
     else:
-        # 🔹 If Service Principal credentials are missing, fallback to db_user
-        app.conf.result_backend = "{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
-            DB_ENGINE=db_engine,
-            DB_USER=urllib.parse.quote(settings.get("celery", "db_user", fallback="user")),
-            DB_PASS=urllib.parse.quote(settings.get("celery", "db_pass", fallback="password")),
-            DB_HOST=settings.get("celery", "db_host"),
-            DB_PORT=settings.get("celery", "db_port"),
-            DB_NAME=settings.get("celery", "db_name", fallback="celery"),
+        # ✅ Fallback to Username/Password Authentication
+        CELERY_RESULT_BACKEND = "{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
+            DB_ENGINE=settings.get('celery', 'db_engine'),
+            DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
+            DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
+            DB_HOST=settings.get('celery', 'db_host'),
+            DB_PORT=settings.get('celery', 'db_port'),
+            DB_NAME=settings.get('celery', 'db_name', fallback='celery'),
         )
-else:
-    # ✅ Default case for other DB backends
-    app.conf.result_backend = "{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
-        DB_ENGINE=CELERY_RESULTS_DB_BACKEND,
-        DB_USER=urllib.parse.quote(settings.get("celery", "db_user", fallback="user")),
-        DB_PASS=urllib.parse.quote(settings.get("celery", "db_pass", fallback="password")),
-        DB_HOST=settings.get("celery", "db_host", fallback="localhost"),
-        DB_PORT=settings.get("celery", "db_port", fallback="5432"),
-        DB_NAME=settings.get("celery", "db_name", fallback="celery"),
-    )
-
-
-#: Debugging Output
-print("✅ Celery broker set to:", app.conf.broker_url)
-print("✅ Celery result backend set to:", app.conf.result_backend)
 
 
 #: Celery config - AMQP task result expiration time
@@ -104,4 +81,3 @@ worker_task_kwargs = {
     'max_retries': 2,               # The task will be run max_retries + 1 times
     'default_retry_delay': 6,       # A small delay to recover from temporary bad states
 }
-
