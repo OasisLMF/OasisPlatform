@@ -36,44 +36,22 @@ This script sets up Celery’s result backend to use Azure PostgreSQL with an ac
 ##### 💻 Code Breakdown
 
 ```python
-elif CELERY_RESULTS_DB_BACKEND.startswith("db+postgresql"):  
-    # 🔹 Remove 'db+' prefix as Celery doesn't require it
-    db_engine = CELERY_RESULTS_DB_BACKEND.replace("db+", "")
-
-    # ✅ Get Azure Service Principal Credentials
-    service_principal_user = settings.get("celery", "AZURE_SERVICE_PRINCIPAL_USER")
-    azure_token = celery_db_backend.get_azure_access_token()  # 🔹 Fetch token
-    db_host = settings.get("celery", "db_host")
-
-    # ✅ Configure Celery to use Azure Authenticated PostgreSQL
-    app.conf.result_backend = "{DB_ENGINE}://{SP_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
-        DB_ENGINE=db_engine,  # ✅ Uses 'postgresql+psycopg2'
-        SP_USER=urllib.parse.quote(service_principal_user),  # 🔹 Use Service Principal Username
-        DB_PASS=urllib.parse.quote(azure_token),  # 🔹 Use Azure AD Token
-        DB_HOST=db_host,
-        DB_PORT=settings.get("celery", "db_port"),
-        DB_NAME=settings.get("celery", "db_name", fallback="celery"),
-    )
-
-    # ✅ Mask token for security in logs
-    masked_backend = app.conf.result_backend.replace(urllib.parse.quote(azure_token), "**T*O*K*E*N**")
-
 else:
-    # Default to user/password authentication
-    db_user = settings.get("celery", "db_user", fallback="user")
-    db_pass = settings.get("celery", "db_pass", fallback="password")
-    db_host = settings.get("celery", "db_host", fallback="localhost")
-    db_port = settings.get("celery", "db_port", fallback="5432")
-    db_name = settings.get("celery", "db_name", fallback="celery")
+    #: 🔹 Attempt to retrieve Service Principal credentials
+    service_principal_user = settings.get("celery", "AZURE_SERVICE_PRINCIPAL_USER", fallback=None)
+    azure_token = None
 
-    app.conf.result_backend = f"{CELERY_RESULTS_DB_BACKEND}://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-
-    # ✅ Mask Password in Logs for Non-Azure DBs
-    masked_backend = app.conf.result_backend.replace(db_pass, "**P*A*S*S*W*O*R*D**")
-
-# ✅ Log Configuration
-print("✅ Celery broker set to:", app.conf.broker_url)
-print("✅ Celery result backend set to:", masked_backend)
+    if service_principal_user:
+        #: ✅ Use Service Principal Authentication
+        azure_token = celery_db_backend.get_azure_access_token()
+        CELERY_RESULT_BACKEND = "{DB_ENGINE}://{SP_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
+            DB_ENGINE=settings.get('celery', 'db_engine'),
+            SP_USER=urllib.parse.quote(service_principal_user),
+            DB_PASS=urllib.parse.quote(azure_token),
+            DB_HOST=settings.get('celery', 'db_host'),
+            DB_PORT=settings.get("celery", "db_port", fallback="5432"),
+            DB_NAME=settings.get("celery", "db_name", fallback="celery"),
+        )
 ```
 
 ##### 2️⃣ celery_db_backend.py - Handling Azure AD Token Authentication
@@ -127,15 +105,27 @@ class CeleryDatabaseBackend:
         Establish a PostgreSQL connection for Celery using an Azure AD token.
         """
         conn_params = {
-            "db_name": self.settings.get('celery', 'db_name'),
-            "db_user": self.settings.get('celery', 'AZURE_SERVICE_PRINCIPAL_USER'),
-            "db_pass": self.get_azure_access_token(),
-            "db_host": self.settings.get('celery', 'db_host'),
-            "db_port": self.settings.get('celery', 'db_port'),
+            "dbname": self.settings.get('celery', 'db_name'),
+            "user": self.settings.get('celery', 'AZURE_SERVICE_PRINCIPAL_USER'),
+            "password": self.get_azure_access_token(),
+            "host": self.settings.get('celery', 'db_host'),
+            "port": self.settings.get('celery', 'db_port'),
             "sslmode": "require",
         }
 
         return psycopg2.connect(**conn_params)
+
+    def get_db_engine(self):
+        """
+        Retrieves the database engine type from settings.
+        Ensures correct format for Celery result backend.
+        """
+        db_engine = self.settings.get("celery", "DB_ENGINE", fallback="db+sqlite")
+
+        if db_engine.startswith("db+postgresql"):
+            return "postgresql+psycopg2"  # Ensure correct format for Celery backend
+
+        return db_engine
 ```
 
 
