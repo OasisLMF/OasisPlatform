@@ -1,11 +1,13 @@
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageAnalysisItem, \
     TaskStatusMessageItem, build_task_status_message
 from ...queues.utils import filter_queues_info
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
 
 
 def task_updated(instance, *args, **kwargs):
     # we post all new queues together in a group
-    if instance.status in ['PENDING', 'COMPLETED','CANCELLED', 'ERROR']:
+    if instance.status != instance.status_choices.PENDING:
         send_task_status_message(build_task_status_message(
             [TaskStatusMessageItem(
                 queue=q,
@@ -15,3 +17,10 @@ def task_updated(instance, *args, **kwargs):
                 )],
             ) for q in filter_queues_info(instance.queue_name)]
         ))
+
+
+def analysis_updated(instance, *args, **kwargs):
+
+    if instance.status not in ['NEW', 'READY', 'INPUTS_GENERATION_STARTED', 'RUN_STARTED']:
+        send_task_status_message({'task': 'queue_status_updated', 'content': {}})
+        logger.info("Message sent to task")

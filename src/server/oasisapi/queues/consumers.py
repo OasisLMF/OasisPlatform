@@ -7,6 +7,9 @@ from channels.layers import get_channel_layer
 from django.utils.timezone import now
 from rest_framework.serializers import DateTimeField
 
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
+
 if TYPE_CHECKING:
     from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
     from src.server.oasisapi.queues.utils import QueueInfo
@@ -86,6 +89,7 @@ def build_task_status_message(items: List[TaskStatusMessageItem], message_type='
 
 def send_task_status_message(items: dict):
     layer = get_channel_layer()
+    logger.info("Message has been recieved")
     async_to_sync(layer.group_send)(
         'queue_status',
         items
