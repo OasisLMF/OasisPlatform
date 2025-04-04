@@ -46,22 +46,22 @@ class AutoScaler:
         :param msg: The message content
         """
         pending_analyses: [RunningAnalysis] = await self.parse_queued_pending(msg)
-        logging.info('Analyses pending: %s', pending_analyses)
+        logging.debug('Analyses pending: %s', pending_analyses)
 
         running_analyses: [RunningAnalysis] = await self.parse_running_analyses(msg)
-        logging.info('Analyses running: %s', running_analyses)
+        logging.debug('Analyses running: %s', running_analyses)
 
         model_states = self._aggregate_model_states({**pending_analyses, **running_analyses})
-        logging.info('Model statuses: %s', model_states)
+        logging.debug('Model statuses: %s', model_states)
 
         model_states_with_wd = await self._filter_model_states_with_wd(model_states)
         v1_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v1')
         v2_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v2')
         prioritized_models = self._clear_unprioritized_models(v1_models + v2_models)
 
-        logging.info(f"v1 models: {v1_models}")
-        logging.info(f"priority: {prioritized_models}")
-        logging.info(f"with wd: {model_states_with_wd}")
+        logging.debug(f"v1 models: {v1_models}")
+        logging.debug(f"priority: {prioritized_models}")
+        logging.debug(f"with wd: {model_states_with_wd}")
         await self._scale_models(prioritized_models)
 
     def _aggregate_model_states(self, analyses: []) -> dict:
@@ -92,7 +92,7 @@ class AutoScaler:
         for wd in self.deployments.worker_deployments:
 
             id = wd.id_string()
-            if id not in model_states:
+            if id not in model_states and id[:-3] not in model_states:
                 model_state = ModelState(tasks=0, analyses=0, priority=1)
                 model_states[id] = model_state
 
@@ -120,8 +120,8 @@ class AutoScaler:
         if desired_replicas > 0 and wd.name in self.cleanup_deployments:
             if wd.name in self.cleanup_deployments:
                 self.cleanup_deployments.remove(wd.name)
-        logging.info(f"wd replicas: {wd.replicas}")
-        logging.info(f"desired replicas: {desired_replicas}")
+        logging.debug(f"wd replicas: {wd.replicas}")
+        logging.debug(f"desired replicas: {desired_replicas}")
 
         if wd.replicas != desired_replicas:
             if desired_replicas > 0:
@@ -165,11 +165,9 @@ class AutoScaler:
         """
         content: List[QueueStatusContentEntry] = msg['content']
         pending_analyses: [RunningAnalysis] = {}
-        logging.info("Parse queue pending")
         for entry in content:
             analyses_list = entry['analyses']
             queue_name = entry['queue']['name']
-            logging.info(f"queue_name: {queue_name}, analyses_list: {analyses_list}")
             # Check for pending analyses
             if (queue_name not in ['celery', 'celery-v2', 'task-controller']):
                 queued_task_count = entry.get('queue', {}).get('queued_count', 0)  # sub-task queued (API DB status)
@@ -194,11 +192,11 @@ class AutoScaler:
         running_analyses: [RunningAnalysis] = {}
 
         for entry in content:
-            logging.info(f"entry: {entry}")
-            logging.info(f"analyses: {entry['analyses']}")
+            logging.debug(f"entry: {entry}")
+            logging.debug(f"analyses: {entry['analyses']}")
             analyses_list = entry['analyses']
 
-            for (i, analysis_entry) in enumerate(analyses_list):
+            for analysis_entry in analyses_list:
                 analysis = analysis_entry['analysis']
                 tasks = analysis.get('sub_task_count', 0)
                 if not tasks:
@@ -206,8 +204,10 @@ class AutoScaler:
                         sa_id = analysis['id']
                         if sa_id not in running_analyses:
                             priority = int(analysis.get('priority', 1))
-                            running_analyses[sa_id] = RunningAnalysis(id=analysis['id'], tasks=1,
-                                                                      queue_names=[f"{entry['queue']['name']}-v1"], priority=priority)
+                            running_analyses[sa_id] = RunningAnalysis(
+                                id=analysis['id'], tasks=1,
+                                queue_names=[f"{entry['queue']['name']}"],
+                                priority=priority)
                             continue
 
                 queue_names = set()
@@ -331,10 +331,3 @@ class AutoScaler:
                 result.append((model, state, wd), )
 
         return result
-
-
-def is_model_v1(model_num, models):
-    for model in models:
-        if model['id'] == model_num:
-            return model.get('run_mode', "").lower() == "v1"
-    return False
