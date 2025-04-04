@@ -28,12 +28,12 @@ This setup enables Celery to store task results in Azure PostgreSQL while authen
 ##### 1️⃣ celeryconf.py - Configuring Celery to Use Azure Authentication
 This script sets up Celery’s result backend to use Azure PostgreSQL with an access token.
 
-##### 🔹 Key Features:
+###### 🔹 Key Features:
 - ✅ Automatically detects if PostgreSQL is the result backend.
 - ✅ Retrieves the Azure Service Principal access token dynamically.
 - ✅ Masks the token/password in logs for security.
 
-##### 💻 Code Breakdown
+###### 💻 Code Breakdown
 
 ```python
 else:
@@ -57,16 +57,15 @@ else:
 ##### 2️⃣ celery_db_backend.py - Handling Azure AD Token Authentication
 This module is responsible for fetching Azure Active Directory access tokens and managing the PostgreSQL connection for Celery.
 
-##### 🔹 Key Features:
+###### 🔹 Key Features:
 - ✅ Uses Azure Identity SDK to authenticate via ClientSecretCredential.
 - ✅ Caches the token and auto-refreshes it 5 minutes before expiration.
 - ✅ Establishes a PostgreSQL SSL connection using the token as the password.
 
-##### 💻 Code Breakdown
+###### 💻 Code Breakdown
 
 ```python
 from azure.identity import ClientSecretCredential
-import psycopg2
 import time  # To track token expiration
 
 class CeleryDatabaseBackend:
@@ -100,32 +99,6 @@ class CeleryDatabaseBackend:
 
         return self.token
 
-    def get_connection(self):
-        """
-        Establish a PostgreSQL connection for Celery using an Azure AD token.
-        """
-        conn_params = {
-            "dbname": self.settings.get('celery', 'db_name'),
-            "user": self.settings.get('celery', 'AZURE_SERVICE_PRINCIPAL_USER'),
-            "password": self.get_azure_access_token(),
-            "host": self.settings.get('celery', 'db_host'),
-            "port": self.settings.get('celery', 'db_port'),
-            "sslmode": "require",
-        }
-
-        return psycopg2.connect(**conn_params)
-
-    def get_db_engine(self):
-        """
-        Retrieves the database engine type from settings.
-        Ensures correct format for Celery result backend.
-        """
-        db_engine = self.settings.get("celery", "DB_ENGINE", fallback="db+sqlite")
-
-        if db_engine.startswith("db+postgresql"):
-            return "postgresql+psycopg2"  # Ensure correct format for Celery backend
-
-        return db_engine
 ```
 
 
