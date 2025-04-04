@@ -24,7 +24,8 @@
             "versions": "/v1/models/1/versions/",
             "scaling_configuration": "/v1/models/1/scaling_configuration/",
             "chunking_configuration": "/v1/models/1/chunking_configuration/",
-            "groups": []
+            "groups": [],
+            "run_mode": "V1"
           }
         ]
       },
