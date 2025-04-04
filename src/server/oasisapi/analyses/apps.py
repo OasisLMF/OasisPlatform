@@ -1,6 +1,4 @@
 from django.apps import AppConfig
-from celery.utils.log import get_task_logger
-logger = get_task_logger(__name__)
 
 
 class V1_AnalysesAppConfig(AppConfig):
