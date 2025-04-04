@@ -22,6 +22,27 @@ modelVolumes:
 #        shareName: oasisfs
 
 workers:
+  internal_worker:
+    supplierId: OasisLMF
+    modelId: InternalWorker
+    modelVersionId: "1"
+    apiVersion: "v1"
+    image: coreoasis/model_worker
+    version: dev
+    imagePullPolicy: Never
+    restartPolicy: Always
+    env:
+      - name: OASIS_RUN_MODE
+        value: server-internal
+      - name: OASIS_DEBUG
+        value: "1"
+      - name: OASIS_MODEL_DATA_DIRECTORY
+        value: /home/worker/model
+    volumes:
+      - name: piwind-model-data-pv
+        type: model-data
+        mountPath: /home/worker/model
+        source: host
   piwind_demo_v1: # A name that is unique among all workers
     supplierId: OasisLMF
     modelId: PiWind
