@@ -20,7 +20,6 @@ def task_updated(instance, *args, **kwargs):
 
 
 def analysis_updated(instance, *args, **kwargs):
-
     if instance.status not in ['NEW', 'READY', 'INPUTS_GENERATION_STARTED', 'RUN_STARTED']:
-        send_task_status_message({'type': 'queue_status_updated', 'content': {}})
-        logger.info("Message sent to task")
+        send_task_status_message({'type': 'queue_status.updated', 'content': {}})
+        logger.debug("Message sent to task")
