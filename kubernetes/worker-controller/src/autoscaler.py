@@ -206,7 +206,7 @@ class AutoScaler:
                             priority = int(analysis.get('priority', 1))
                             running_analyses[sa_id] = RunningAnalysis(
                                 id=analysis['id'], tasks=1,
-                                queue_names=[f"{entry['queue']['name']}"],
+                                queue_names=[entry['queue']['name']],
                                 priority=priority)
                             continue
 
