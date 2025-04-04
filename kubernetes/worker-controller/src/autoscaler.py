@@ -45,7 +45,6 @@ class AutoScaler:
 
         :param msg: The message content
         """
-        logging.info("Pinged")
         pending_analyses: [RunningAnalysis] = await self.parse_queued_pending(msg)
         logging.debug('Analyses pending: %s', pending_analyses)
 
