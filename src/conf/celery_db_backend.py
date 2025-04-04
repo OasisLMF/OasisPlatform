@@ -1,5 +1,4 @@
 from azure.identity import ClientSecretCredential
-import psycopg2
 import time  # To track token expiration
 
 class CeleryDatabaseBackend:
@@ -32,30 +31,3 @@ class CeleryDatabaseBackend:
             self.token_expiry = current_time + 3600  # Azure tokens last ~60 min
 
         return self.token
-
-    def get_connection(self):
-        """
-        Establish a PostgreSQL connection for Celery using an Azure AD token.
-        """
-        conn_params = {
-            "dbname": self.settings.get('celery', 'db_name'),
-            "user": self.settings.get('celery', 'AZURE_SERVICE_PRINCIPAL_USER'),
-            "password": self.get_azure_access_token(),
-            "host": self.settings.get('celery', 'db_host'),
-            "port": self.settings.get('celery', 'db_port'),
-            "sslmode": "require",
-        }
-
-        return psycopg2.connect(**conn_params)
-
-    def get_db_engine(self):
-        """
-        Retrieves the database engine type from settings.
-        Ensures correct format for Celery result backend.
-        """
-        db_engine = self.settings.get("celery", "DB_ENGINE", fallback="db+sqlite")
-
-        if db_engine.startswith("db+postgresql"):
-            return "postgresql+psycopg2"  # Ensure correct format for Celery backend
-
-        return db_engine
