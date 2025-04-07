@@ -1,17 +1,17 @@
 from azure.identity import ClientSecretCredential
 import time  # To track token expiration
 
-class CeleryDatabaseBackend:
+
+class CeleryAzureServicePrincipal:
     def __init__(self, settings):
         self.settings = settings
         self.credential = None
         self.token = None
         self.token_expiry = 0  # Stores expiry timestamp
 
-    def get_azure_access_token(self):
+    def get_access_token(self):
         """
         Fetches and caches a fresh access token using Azure Service Principal credentials.
-        Auto-refreshes when token is about to expire.
         """
         tenant_id = self.settings.get('celery', 'AZURE_TENANT_ID')
         client_id = self.settings.get('celery', 'AZURE_CLIENT_ID')
