@@ -11,3 +11,4 @@ psycopg2-binary
 sqlalchemy
 pytest
 numba
+azure-identity

@@ -20,14 +20,34 @@ if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
         DB_NAME=settings.get('celery', 'db_name', fallback='celery.db.sqlite'),
     )
 else:
-    CELERY_RESULT_BACKEND = '{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'.format(
-        DB_ENGINE=settings.get('celery', 'db_engine'),
-        DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
-        DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
-        DB_HOST=settings.get('celery', 'db_host'),
-        DB_PORT=settings.get('celery', 'db_port'),
-        DB_NAME=settings.get('celery', 'db_name', fallback='celery'),
-    )
+    #: Attempt to retrieve Service Principal credentials
+    service_principal_user = settings.get("celery", "AZURE_SERVICE_PRINCIPAL_USER", fallback=None)
+    if service_principal_user:
+        #: Initialize Celery Database Backend
+        from src.conf.utils import CeleryAzureServicePrincipal
+        azure_token_client = CeleryAzureServicePrincipal(settings)
+
+        #: Use Service Principal Authentication
+        azure_token = azure_token_client.get_access_token()
+        CELERY_RESULT_BACKEND = "{DB_ENGINE}://{SP_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
+            DB_ENGINE=settings.get('celery', 'db_engine'),
+            SP_USER=urllib.parse.quote(service_principal_user),
+            DB_PASS=urllib.parse.quote(azure_token),
+            DB_HOST=settings.get('celery', 'db_host'),
+            DB_PORT=settings.get("celery", "db_port", fallback="5432"),
+            DB_NAME=settings.get("celery", "db_name", fallback="celery"),
+        )
+    else:
+        #: Fallback to Username/Password Authentication
+        CELERY_RESULT_BACKEND = "{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
+            DB_ENGINE=settings.get('celery', 'db_engine'),
+            DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
+            DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
+            DB_HOST=settings.get('celery', 'db_host'),
+            DB_PORT=settings.get('celery', 'db_port'),
+            DB_NAME=settings.get('celery', 'db_name', fallback='celery'),
+        )
+
 
 #: Celery config - AMQP task result expiration time
 CELERY_AMQP_TASK_RESULT_EXPIRES = 1000
