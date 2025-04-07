@@ -20,7 +20,7 @@ This setup enables Celery to store task results in Azure PostgreSQL while authen
 │   │   ├── readme.md
 │   ├── server
 │   │   ├── oasisapi
-│   │   │   ├── settings.py  # where we Configures database backend 
+│   │   │   ├── settings.py  # where we Configures server database backend 
 ```
 ![Celery Postgres Flow](assets/celery_flow.png)
 
@@ -37,13 +37,15 @@ This script sets up Celery’s result backend to use Azure PostgreSQL with an ac
 
 ```python
 else:
-    #: 🔹 Attempt to retrieve Service Principal credentials
+    #: Attempt to retrieve Service Principal credentials
     service_principal_user = settings.get("celery", "AZURE_SERVICE_PRINCIPAL_USER", fallback=None)
-    azure_token = None
-
     if service_principal_user:
-        #: ✅ Use Service Principal Authentication
-        azure_token = celery_db_backend.get_azure_access_token()
+        #: Initialize Celery Database Backend
+        from src.conf.utils import CeleryAzureServicePrincipal
+        azure_token_client = CeleryAzureServicePrincipal(settings)
+
+        #: Use Service Principal Authentication
+        azure_token = azure_token_client.get_access_token()
         CELERY_RESULT_BACKEND = "{DB_ENGINE}://{SP_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}".format(
             DB_ENGINE=settings.get('celery', 'db_engine'),
             SP_USER=urllib.parse.quote(service_principal_user),
@@ -54,7 +56,7 @@ else:
         )
 ```
 
-##### 2️⃣ celery_db_backend.py - Handling Azure AD Token Authentication
+##### 2️⃣ utils.py - Handling Azure AD Token Authentication
 This module is responsible for fetching Azure Active Directory access tokens and managing the PostgreSQL connection for Celery.
 
 ###### 🔹 Key Features:
@@ -65,20 +67,16 @@ This module is responsible for fetching Azure Active Directory access tokens and
 ###### 💻 Code Breakdown
 
 ```python
-from azure.identity import ClientSecretCredential
-import time  # To track token expiration
-
-class CeleryDatabaseBackend:
+class CeleryAzureServicePrincipal:
     def __init__(self, settings):
         self.settings = settings
         self.credential = None
         self.token = None
         self.token_expiry = 0  # Stores expiry timestamp
 
-    def get_azure_access_token(self):
+    def get_access_token(self):
         """
         Fetches and caches a fresh access token using Azure Service Principal credentials.
-        Auto-refreshes when token is about to expire.
         """
         tenant_id = self.settings.get('celery', 'AZURE_TENANT_ID')
         client_id = self.settings.get('celery', 'AZURE_CLIENT_ID')
