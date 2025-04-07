@@ -4,8 +4,6 @@
 This setup enables Celery to store task results in Azure PostgreSQL while authenticating securely using Azure Active Directory Service Principal (SP). This eliminates the need for database passwords, enhances security, and ensures seamless authentication with Azure PostgreSQL using Service Principal tokens
 
 - Instead of a static username/password, it retrieves an Azure AD access token dynamically.
-- The token auto-refreshes every 60 minutes to maintain authentication.
-- Logs are sanitized to prevent token exposure.
 
 ### Configuration Breakdown
 
