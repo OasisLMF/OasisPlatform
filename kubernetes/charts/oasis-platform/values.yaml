@@ -234,6 +234,26 @@ oasisUI:
 #      accountKey: key
 #  tenantId: "812eb12f-c995-45ef-bfea-eac7aeca0755"
 
+internalWorker:
+  enabled: true
+  image: coreoasis/model_worker
+  version: dev
+  imagePullPolicy: Never
+  name: internal-worker
+  env:
+    - name: OASIS_RUN_MODE
+      value: server-internal
+    - name: OASIS_DEBUG
+      value: "1"
+    - name: OASIS_MODEL_DATA_DIRECTORY
+      value: /home/worker/model
+  volumeMount:
+    name: model-data
+    mountPath: /home/worker/model
+  volume:
+    name: model-data
+    hostPath: /data/shared-fs/model
+
 # Volumes to mount and use within the platform
 # Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount
 volumes:

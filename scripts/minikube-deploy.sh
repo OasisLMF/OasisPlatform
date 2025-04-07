@@ -59,7 +59,6 @@ pushd kubernetes/charts
     fi
 popd
 
-kubectl scale --replicas=1 deployment/worker-oasislmf-internalworker-1-v1
 # kubectl scale --replicas=0 deployment/oasis-worker-controller
 
 # Open local access to cluster

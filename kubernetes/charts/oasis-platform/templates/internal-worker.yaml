@@ -1,0 +1,29 @@
+{{- if .Values.internalWorker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.internalWorker.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.internalWorker.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.internalWorker.name }}
+    spec:
+      containers:
+        - name: {{ .Values.internalWorker.name }}
+          image: {{ .Values.internalWorker.image }}:{{ .Values.internalWorker.version }}
+          imagePullPolicy: {{ .Values.internalWorker.imagePullPolicy }}
+          env:
+            {{- toYaml .Values.internalWorker.env | nindent 12 }}
+          volumeMounts:
+            - name: {{ .Values.internalWorker.volumeMount.name }}
+              mountPath: {{ .Values.internalWorker.volumeMount.mountPath }}
+      volumes:
+        - name: {{ .Values.internalWorker.volume.name }}
+          hostPath:
+            path: {{ .Values.internalWorker.volume.hostPath }}
+{{- end }}
