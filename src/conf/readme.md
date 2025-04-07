@@ -16,8 +16,8 @@ This setup enables Celery to store task results in Azure PostgreSQL while authen
 │   │   ├── assets/
 │   │   │   ├── celery_flow.png
 │   │   ├── celeryconf.py
-│   │   ├── celery_db_backend.py  # Configures celery backend logic for authentication
-│   │   ├── celery_readme.md  # Defining the custom DB Engine
+│   │   ├── utils.py  # Configures celery backend logic for Service Principal authentication
+│   │   ├── readme.md
 │   ├── server
 │   │   ├── oasisapi
 │   │   │   ├── settings.py  # where we Configures database backend 
