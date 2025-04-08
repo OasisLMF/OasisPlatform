@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Clone OasisPiWind model data
         run: |
-          git clone https://github.com/YOUR_ORG/OasisPiWind.git /tmp/piwind
+          git clone https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
 
       - name: Set OASIS_MODEL_DATA_DIR env
         run: echo "OASIS_MODEL_DATA_DIR=/tmp/piwind" >> $GITHUB_ENV
