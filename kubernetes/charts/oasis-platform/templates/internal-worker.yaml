@@ -22,6 +22,8 @@ spec:
           volumeMounts:
             - name: {{ .Values.internalWorker.volumeMounts.name }}
               mountPath: "{{ .Values.internalWorker.volumeMounts.mountPath }}"
+            - name: {{ .Values.internalWorker.volumeMounts.name }}
+              mountPath: /home/worker/model
       volumes:
         - name: {{ .Values.internalWorker.volumeMounts.name }}
           persistentVolumeClaim:

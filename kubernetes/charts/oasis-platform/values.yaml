@@ -253,6 +253,14 @@ internalWorker:
       value: celery-db
     - name: OASIS_CELERY_DB_PORT
       value: "5432"
+    - name: OASIS_CELERY_DB_ENGINE
+      value: db+postgresql+psycopg2
+    - name: OASIS_CELERY_DB_NAME
+      value: celery
+    - name: OASIS_CELERY_DB_USER
+      value: celery
+    - name: OASIS_CELERY_DB_PASS
+      value: password
   volumeMounts:
     name: shared-fs-worker
     mountPath: /shared-fs
