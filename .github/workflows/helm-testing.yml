@@ -37,13 +37,12 @@ jobs:
 
       - name: Deploy Platform
         run: |
-          pushd kubernetes/charts
-
           if ! helm status platform > /dev/null 2>&1; then
               helm install platform oasis-platform
           else
               helm upgrade platform oasis-platform
           fi
+        working-directory: kubernetes/charts
 
       - name: Deploy Models
         run: |
@@ -52,5 +51,4 @@ jobs:
           else
               helm upgrade models oasis-models
           fi
-
-          popd
+        working-directory: kubernetes/charts
