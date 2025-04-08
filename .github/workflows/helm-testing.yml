@@ -1,0 +1,54 @@
+name: CI
+on:
+  pull_request:
+jobs:
+  minikube:
+    runs-on: ubuntu-latest
+    env:
+      OASIS_MODEL_DATA_DIR: /shared-fs/PIWIND
+    steps:
+      - name: Clone OasisPiWind model data
+        run: |
+          git clone https://github.com/YOUR_ORG/OasisPiWind.git /tmp/piwind
+
+      - name: Set OASIS_MODEL_DATA_DIR env
+        run: echo "OASIS_MODEL_DATA_DIR=/tmp/piwind" >> $GITHUB_ENV
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Start Minikube
+        uses: medyagh/setup-minikube@latest
+
+      - name: Build Docker images
+        run: |
+          eval $(minikube docker-env)
+          
+          docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
+          docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
+
+          pushd kubernetes/worker-controller
+              docker build -t coreoasis/worker_controller:dev .
+          popd
+
+      - name: Upload PiWind model data
+        run: |
+          ./kubernetes/scripts/k8s/upload_piwind_model_data.sh $OASIS_MODEL_DATA_DIR
+
+      - name: Deploy with Helm
+        run: |
+          pushd kubernetes/charts
+
+          if ! helm status platform > /dev/null 2>&1; then
+              helm install platform oasis-platform
+          else
+              helm upgrade platform oasis-platform
+          fi
+
+          if ! helm status models > /dev/null 2>&1; then
+              helm install models oasis-models
+          else
+              helm upgrade models oasis-models
+          fi
+
+          popd
