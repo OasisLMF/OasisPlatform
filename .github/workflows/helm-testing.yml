@@ -35,7 +35,7 @@ jobs:
         run: |
           ./kubernetes/scripts/k8s/upload_piwind_model_data.sh $OASIS_MODEL_DATA_DIR
 
-      - name: Deploy with Helm
+      - name: Deploy Platform
         run: |
           pushd kubernetes/charts
 
@@ -45,6 +45,8 @@ jobs:
               helm upgrade platform oasis-platform
           fi
 
+      - name: Deploy Models
+        run: |
           if ! helm status models > /dev/null 2>&1; then
               helm install models oasis-models
           else
