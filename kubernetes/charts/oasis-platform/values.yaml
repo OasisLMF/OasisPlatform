@@ -247,12 +247,19 @@ internalWorker:
       value: "1"
     - name: OASIS_MODEL_DATA_DIRECTORY
       value: /home/worker/model
-  volumeMount:
-    name: model-data
-    mountPath: /home/worker/model
-  volume:
-    name: model-data
-    hostPath: /data/shared-fs/model
+    - name: OASIS_CELERY_BROKER_URL
+      value: "amqp://rabbit:rabbit@broker:5672"
+    - name: OASIS_CELERY_DB_HOST
+      value: celery-db
+    - name: OASIS_CELERY_DB_PORT
+      value: "5432"
+  volumeMounts:
+    name: shared-fs-worker
+    mountPath: /shared-fs
+  volumes:
+    name: shared-fs-worker
+    persistentVolumeClaim:
+      claimName: shared-fs 
 
 # Volumes to mount and use within the platform
 # Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount

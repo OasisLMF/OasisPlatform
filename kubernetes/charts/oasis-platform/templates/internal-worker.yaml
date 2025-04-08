@@ -20,10 +20,10 @@ spec:
           env:
             {{- toYaml .Values.internalWorker.env | nindent 12 }}
           volumeMounts:
-            - name: {{ .Values.internalWorker.volumeMount.name }}
-              mountPath: {{ .Values.internalWorker.volumeMount.mountPath }}
+            - name: {{ .Values.internalWorker.volumeMounts.name }}
+              mountPath: "{{ .Values.internalWorker.volumeMounts.mountPath }}"
       volumes:
-        - name: {{ .Values.internalWorker.volume.name }}
-          hostPath:
-            path: {{ .Values.internalWorker.volume.hostPath }}
+        - name: {{ .Values.internalWorker.volumeMounts.name }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.internalWorker.volumes.persistentVolumeClaim.claimName }}
 {{- end }}

@@ -102,11 +102,11 @@ class OasisWebSocket:
                 logging.debug(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} was closed', e)
                 continue
 
-            except (WebSocketException, ClientError) as e:
-                logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} failed', e)
+            except (WebSocketException, ClientError):
+                logging.exception(f'Connection to {self.oasis_client.ws_host}:{self.oasis_client.ws_port} failed')
                 running = False
-            except Exception as e:
-                logging.exception('Unexpected web socket exception thrown', e)
+            except Exception:
+                logging.exception('Unexpected web socket exception thrown')
                 running = False
 
         asyncio.get_event_loop().stop()
