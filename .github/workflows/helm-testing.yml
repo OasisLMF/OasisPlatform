@@ -77,7 +77,7 @@ jobs:
 
       - name: Get API NodePort
         run: |
-          API_PORT=$(kubectl get svc platform-api-server -n default -o jsonpath='{.spec.ports[0].nodePort}')
+          API_PORT=$(kubectl get svc oasis-server -n default -o jsonpath='{.spec.ports[0].nodePort}')
           echo "API_PORT=$API_PORT" >> $GITHUB_ENV
 
       - name: Create Portfolio
