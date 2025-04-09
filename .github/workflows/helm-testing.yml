@@ -59,17 +59,27 @@ jobs:
           repository: OasisLMF/OasisPiWind
           ref: main
 
-      - name: Set Minikube IP
-        run: echo "MINIKUBE_IP=$(minikube ip)" >> $GITHUB_ENV
-
-      - name: Get API NodePort
+      - name: Start Minikube Tunnel
         run: |
-          API_PORT=$(kubectl get svc oasis-ui -n default -o jsonpath='{.spec.ports[0].nodePort}')
-          echo "API_PORT=$API_PORT" >> $GITHUB_ENV
+          nohup minikube tunnel > /dev/null 2>&1 &
+          sleep 10
+
+      - name: Get Minikube LoadBalancer IP
+        run: |
+          for i in {1..30}; do
+            IP=$(kubectl get svc --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}")
+            if [[ -n "$IP" ]]; then
+              echo "MINIKUBE_IP=$IP" >> $GITHUB_ENV
+              break
+            fi
+            echo "Waiting for LoadBalancer IP..."
+            sleep 5
+          done
 
       - name: Authenticate
         run: |
-          TOKEN=$(curl -s -k -X POST https://$MINIKUBE_IP:$API_PORT/api/access_token/ \
+          TOKEN=$(curl -s -k -X POST https://$MINIKUBE_IP/api/access_token/ \
+            -H "Host: ui.oasis.local" \
             -H "Content-Type: application/json" \
             -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
 
@@ -77,7 +87,8 @@ jobs:
 
       - name: Create Portfolio
         run: |
-          PORTFOLIO_ID=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/portfolios/ \
+          PORTFOLIO_ID=$(curl -s -k -X POST https://$MINIKUBE_IP/api/v1/portfolios/ \
+            -H "Host: ui.oasis.local" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
@@ -85,13 +96,15 @@ jobs:
 
       - name: Upload Locations File
         run: |
-          curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/portfolios/$PORTFOLIO_ID/locations_file/ \
+          curl -s -X POST https://$MINIKUBE_IP/api/v1/portfolios/$PORTFOLIO_ID/locations_file/ \
+            -H "Host: ui.oasis.local" \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@tests/inputs/SourceLocOEDPiWind10.csv"
 
       - name: Create Model
         run: |
-          MODEL_ID=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/models/ \
+          MODEL_ID=$(curl -s -X POST https://$MINIKUBE_IP/api/v1/models/ \
+            -H "Host: ui.oasis.local" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"name": "piwind", "version": "1.0"}' | jq -r '.id')
@@ -100,7 +113,8 @@ jobs:
 
       - name: Create Analysis
         run: |
-          ANALYSIS_ID=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
+          ANALYSIS_ID=$(curl -s -X POST https://$MINIKUBE_IP/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
+            -H "Host: ui.oasis.local" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"model\": $MODEL_ID}" | jq -r '.id')
@@ -109,11 +123,13 @@ jobs:
 
       - name: Upload Analysis Settings
         run: |
-          curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/analyses/$ANALYSIS_ID/analysis_settings/ \
+          curl -s -X POST https://$MINIKUBE_IP/api/v1/analyses/$ANALYSIS_ID/analysis_settings/ \
+            -H "Host: ui.oasis.local" \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@analysis_settings.json"
 
       - name: Run Analysis
         run: |
-          curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/analyses/$ANALYSIS_ID/run/ \
+          curl -s -X POST https://$MINIKUBE_IP/api/v1/analyses/$ANALYSIS_ID/run/ \
+            -H "Host: ui.oasis.local" \
             -H "Authorization: Bearer $TOKEN"
