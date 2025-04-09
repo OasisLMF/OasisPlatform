@@ -71,3 +71,47 @@ jobs:
             -d "password=${{ secrets.OIDC_PASSWORD }}" | jq -r '.access_token')
 
           echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+
+      - name: Create Portfolio
+        run: |
+          PORTFOLIO_ID=$(curl -s -X POST https://ui.oasis.local/api/v1/portfolios/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
+
+          echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
+
+      - name: Upload Locations File
+        run: |
+          curl -s -X POST https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/locations_file/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "file=@tests/inputs/SourceLocOEDPiWind10.csv"
+
+      - name: Create Model
+        run: |
+          MODEL_ID=$(curl -s -X POST https://ui.oasis.local/api/v1/models/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "piwind", "version": "1.0"}' | jq -r '.id')
+
+          echo "MODEL_ID=$MODEL_ID" >> $GITHUB_ENV
+
+      - name: Create Analysis
+        run: |
+          ANALYSIS_ID=$(curl -s -X POST https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"model\": $MODEL_ID}" | jq -r '.id')
+
+          echo "ANALYSIS_ID=$ANALYSIS_ID" >> $GITHUB_ENV
+
+      - name: Upload Analysis Settings
+        run: |
+          curl -s -X POST https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/analysis_settings/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "file=@analysis_settings.json"
+
+      - name: Run Analysis
+        run: |
+          curl -s -X POST https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/run/ \
+            -H "Authorization: Bearer $TOKEN"
