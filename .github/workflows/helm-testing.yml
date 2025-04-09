@@ -83,14 +83,15 @@ jobs:
       - name: Authenticate
         run: |
           for i in {1..25}; do
-            TOKEN=$(curl -s -k -X POST  https://ui.oasis.local/api/access_token/ \
+            RESPONSE=$(curl -s -k -X POST  https://ui.oasis.local/api/access_token/ \
               -H "Content-Type: application/json" \
-              -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
-              if [[ -n "$TOKEN" ]]; then
-                echo "TOKEN=$TOKEN" >> $GITHUB_ENV
-                break
-              fi
-              echo "Setup not ready"
+              -d '{"username": "admin", "password": "password"}')
+            TOKEN=$(echo "$RESPONSE" | jq -r '.access_token' 2>/dev/null)
+            if [[ "$TOKEN" != "null" && -n "$TOKEN" ]]; then
+              echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+              break
+            fi
+            echo "Setup not ready"
             sleep 5
           done
 
