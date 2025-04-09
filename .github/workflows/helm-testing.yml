@@ -59,14 +59,6 @@ jobs:
           repository: OasisLMF/OasisPiWind
           ref: main
 
-      - name: Authenticate
-        run: |
-          TOKEN=$(curl -s -k -X POST https://$MINIKUBE_IP:$API_PORT/access_token/ \
-            -H "Content-Type: application/json" \
-            -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
-
-          echo "TOKEN=$TOKEN" >> $GITHUB_ENV
-
       - name: Set Minikube IP
         run: echo "MINIKUBE_IP=$(minikube ip)" >> $GITHUB_ENV
 
@@ -74,6 +66,14 @@ jobs:
         run: |
           API_PORT=$(kubectl get svc oasis-ui -n default -o jsonpath='{.spec.ports[0].nodePort}')
           echo "API_PORT=$API_PORT" >> $GITHUB_ENV
+
+      - name: Authenticate
+        run: |
+          TOKEN=$(curl -s -k -X POST https://$MINIKUBE_IP:$API_PORT/api/access_token/ \
+            -H "Content-Type: application/json" \
+            -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
+
+          echo "TOKEN=$TOKEN" >> $GITHUB_ENV
 
       - name: Create Portfolio
         run: |
