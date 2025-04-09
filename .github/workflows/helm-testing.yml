@@ -61,7 +61,7 @@ jobs:
 
       - name: Authenticate
         run: |
-          TOKEN=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/access_token/ \
+          TOKEN=$(curl -s -k -X POST https://$MINIKUBE_IP:$API_PORT/access_token/ \
             -H "Content-Type: application/json" \
             -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
 
