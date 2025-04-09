@@ -77,17 +77,15 @@ jobs:
 
       - name: Get API NodePort
         run: |
-          API_PORT=$(kubectl get svc oasis-server -n default -o jsonpath='{.spec.ports[0].nodePort}')
+          API_PORT=$(kubectl get svc oasis-ui -n default -o jsonpath='{.spec.ports[0].nodePort}')
           echo "API_PORT=$API_PORT" >> $GITHUB_ENV
 
       - name: Create Portfolio
         run: |
-          RESPONSE=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/portfolios/ \
+          PORTFOLIO_ID=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/portfolios/ \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"name": "PiWind Portfolio"}')
-          echo "Response: $RESPONSE"
-          PORTFOLIO_ID=$(echo RESPONSE | jq -r '.id')
+            -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
           echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
 
       - name: Upload Locations File
