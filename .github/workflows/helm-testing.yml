@@ -86,9 +86,8 @@ jobs:
             TOKEN=$(curl -s -k -X POST  https://ui.oasis.local/api/access_token/ \
               -H "Content-Type: application/json" \
               -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
-              echo "TOKEN=$TOKEN" >> $GITHUB_ENV
-              if [[ -n "$PORTFOLIO_ID" ]]; then
-                echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
+              if [[ -n "$TOKEN" ]]; then
+                echo "TOKEN=$TOKEN" >> $GITHUB_ENV
                 break
               fi
               echo "Setup not ready"
