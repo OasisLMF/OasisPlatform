@@ -82,26 +82,27 @@ jobs:
 
       - name: Authenticate
         run: |
-          TOKEN=$(curl -s -k -X POST  https://ui.oasis.local/api/access_token/ \
-            -H "Content-Type: application/json" \
-            -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
-          echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+          for i in {1..25}; do
+            TOKEN=$(curl -s -k -X POST  https://ui.oasis.local/api/access_token/ \
+              -H "Content-Type: application/json" \
+              -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
+              echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+              if [[ -n "$PORTFOLIO_ID" ]]; then
+                echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
+                break
+              fi
+              echo "Setup not ready"
+            sleep 5
+          done
 
       - name: Create Portfolio
         run: |
-          for i in {1..25}; do
-            PORTFOLIO_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/ \
-              -H "Authorization: Bearer $TOKEN" \
-              -H "Content-Type: application/json" \
-              -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
-              if [[ -n "$PORTFOLIO_ID" ]]; then
-              echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
-                break
-              fi
-              echo "Waiting for LoadBalancer IP..."
-            sleep 5
-          done
-            
+          PORTFOLIO_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
+            echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
+
 
       - name: Upload Locations File
         run: |
