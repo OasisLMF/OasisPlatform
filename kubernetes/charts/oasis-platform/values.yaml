@@ -14,6 +14,11 @@ images:
       image: coreoasis/worker_controller
       version: dev
       imagePullPolicy: Never
+    worker_internal: 
+      image: coreoasis/model_worker
+      version: dev
+      imagePullPolicy: Never
+
   postgres:
     image: postgres
     version: 15-alpine3.18
@@ -235,39 +240,11 @@ oasisUI:
 #  tenantId: "812eb12f-c995-45ef-bfea-eac7aeca0755"
 
 internalWorker:
-  enabled: true
-  image: coreoasis/model_worker
-  version: dev
-  imagePullPolicy: Never
-  name: internal-worker
+  name: oasis-worker-internal
+  replicas: 1
   env:
-    - name: OASIS_RUN_MODE
-      value: server-internal
     - name: OASIS_DEBUG
-      value: "1"
-    - name: OASIS_MODEL_DATA_DIRECTORY
-      value: /home/worker/model
-    - name: OASIS_CELERY_BROKER_URL
-      value: "amqp://rabbit:rabbit@broker:5672"
-    - name: OASIS_CELERY_DB_HOST
-      value: celery-db
-    - name: OASIS_CELERY_DB_PORT
-      value: "5432"
-    - name: OASIS_CELERY_DB_ENGINE
-      value: db+postgresql+psycopg2
-    - name: OASIS_CELERY_DB_NAME
-      value: celery
-    - name: OASIS_CELERY_DB_USER
-      value: celery
-    - name: OASIS_CELERY_DB_PASS
-      value: password
-  volumeMounts:
-    name: shared-fs-worker
-    mountPath: /shared-fs
-  volumes:
-    name: shared-fs-worker
-    persistentVolumeClaim:
-      claimName: shared-fs 
+      value: "0"
 
 # Volumes to mount and use within the platform
 # Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount

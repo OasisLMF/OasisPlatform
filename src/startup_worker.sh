@@ -42,7 +42,7 @@ case "$SELECT_RUN_MODE" in
       OASIS_MODEL_SUPPLIER_ID='oasis'
       OASIS_MODEL_ID='internal'
       OASIS_MODEL_VERSION_ID='worker'
-      TASK_FILE='src.model_execution_worker.execute_run_tasks'
+      TASK_FILE='src.model_execution_worker.server_tasks'
     ;;
     *)
         echo "Invalid value for api version:"
