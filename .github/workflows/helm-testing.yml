@@ -52,3 +52,22 @@ jobs:
               helm upgrade models oasis-models
           fi
         working-directory: kubernetes/charts
+
+      - name: Checkout PiWind
+        uses: actions/checkout@v3
+        with:
+          repository: OasisLMF/OasisPiWind
+          ref: main
+
+      - name: Authenticate
+        id: auth
+        run: |
+          TOKEN=$(curl -s -X POST "${{ secrets.OIDC_ENDPOINT }}/protocol/openid-connect/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=password" \
+            -d "client_id=${{ secrets.OIDC_CLIENT_ID }}" \
+            -d "client_secret=${{ secrets.OIDC_CLIENT_SECRET }}" \
+            -d "username=${{ secrets.OIDC_USERNAME }}" \
+            -d "password=${{ secrets.OIDC_PASSWORD }}" | jq -r '.access_token')
+
+          echo "TOKEN=$TOKEN" >> $GITHUB_ENV
