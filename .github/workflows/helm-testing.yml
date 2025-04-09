@@ -72,9 +72,17 @@ jobs:
 
           echo "TOKEN=$TOKEN" >> $GITHUB_ENV
 
+      - name: Set Minikube IP
+        run: echo "MINIKUBE_IP=$(minikube ip)" >> $GITHUB_ENV
+
+      - name: Get API NodePort
+        run: |
+          API_PORT=$(kubectl get svc platform-api-server -n oasis-platform -o jsonpath='{.spec.ports[0].nodePort}')
+          echo "API_PORT=$API_PORT" >> $GITHUB_ENV
+
       - name: Create Portfolio
         run: |
-          PORTFOLIO_ID=$(curl -s -X POST https://ui.oasis.local/api/v1/portfolios/ \
+          PORTFOLIO_ID=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/portfolios/ \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
@@ -83,13 +91,13 @@ jobs:
 
       - name: Upload Locations File
         run: |
-          curl -s -X POST https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/locations_file/ \
+          curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/portfolios/$PORTFOLIO_ID/locations_file/ \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@tests/inputs/SourceLocOEDPiWind10.csv"
 
       - name: Create Model
         run: |
-          MODEL_ID=$(curl -s -X POST https://ui.oasis.local/api/v1/models/ \
+          MODEL_ID=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/models/ \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"name": "piwind", "version": "1.0"}' | jq -r '.id')
@@ -98,7 +106,7 @@ jobs:
 
       - name: Create Analysis
         run: |
-          ANALYSIS_ID=$(curl -s -X POST https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
+          ANALYSIS_ID=$(curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"model\": $MODEL_ID}" | jq -r '.id')
@@ -107,11 +115,11 @@ jobs:
 
       - name: Upload Analysis Settings
         run: |
-          curl -s -X POST https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/analysis_settings/ \
+          curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/analyses/$ANALYSIS_ID/analysis_settings/ \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@analysis_settings.json"
 
       - name: Run Analysis
         run: |
-          curl -s -X POST https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/run/ \
+          curl -s -X POST https://$MINIKUBE_IP:$API_PORT/api/v1/analyses/$ANALYSIS_ID/run/ \
             -H "Authorization: Bearer $TOKEN"
