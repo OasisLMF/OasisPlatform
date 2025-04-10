@@ -147,14 +147,9 @@ jobs:
       - name: Generate Inputs
         run: |
           kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
-          # Token dies for some reason? Not a timeout
-          TOKEN=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \ 
-              -H "Content-Type: application/json" \
-              -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
-
           curl -s -k -X POST 'https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/generate_inputs/' \
             -H 'accept: application/json' \
-            -H 'authorization: Bearer $TOKEN' \
+            -H "authorization: Bearer $TOKEN" \
             -H 'Content-Type: application/json' \
             -d '{}'
 
@@ -163,7 +158,7 @@ jobs:
           for i in {1..20}; do
             STATUS=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
               -H 'accept: application/json' \
-              -H 'authorization: Bearer $TOKEN' | jq -r '.status')
+              -H "authorization: Bearer $TOKEN" | jq -r '.status')
 
             if [[ "$STATUS" == "INPUTS_GENERATION_ERROR" ]]; then
               exit 1
@@ -195,7 +190,7 @@ jobs:
           for i in {1..60}; do
             RESPONSE=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
               -H 'accept: application/json' \
-              -H 'authorization: Bearer $TOKEN')
+              -H "authorization: Bearer $TOKEN")
                 
             if echo "$RESPONSE" | jq -e '.detail == "Token verification failed"' > /dev/null; then
               refresh_token
