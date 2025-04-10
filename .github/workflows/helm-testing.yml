@@ -205,7 +205,7 @@ jobs:
             RESPONSE=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
               -H 'accept: application/json' \
               -H "authorization: Bearer $TOKEN")
-                
+
             if echo "$RESPONSE" | jq -e '.detail == "Token verification failed"' > /dev/null; then
               refresh_token
               continue
