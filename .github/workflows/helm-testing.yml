@@ -149,7 +149,7 @@ jobs:
         run: |
           curl -s -k -X POST https://ui.oasis.local/api/v2/models/1/scaling_configuration/ \
             -H 'accept: application/json' \
-            -H "authorization: Bearer $TOKEN"
+            -H "authorization: Bearer $TOKEN" \
             -H 'Content-Type: application/json' \
             -d '{
             "scaling_strategy": "FIXED_WORKERS",
@@ -231,10 +231,10 @@ jobs:
           curl -s -k -X GET "https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/output_file/" \
             -H 'accept: application/json' \
             -H "authorization: Bearer $TOKEN" \
-            -o output.csv
+            -o output.tar.gz
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: piwind-output
-          path: output.csv
+          path: output.tar.gz
