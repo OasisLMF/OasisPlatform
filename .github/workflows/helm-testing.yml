@@ -144,9 +144,23 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@analysis_settings.json;type=application/json"
 
+      - name: Setup worker
+        run: |
+          curl -s -k -X POST https://ui.oasis.local/api/v2/models/1/scaling_configuration/ \
+            -H 'accept: application/json' \
+            -H "authorization: Bearer $TOKEN"
+            -H 'Content-Type: application/json' \
+            -d '{
+            "scaling_strategy": "FIXED_WORKERS",
+            "worker_count_fixed": 1,
+            "worker_count_max": 1,
+            "worker_count_min": 1,
+            "chunks_per_worker": 4
+          }'
+          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
+
       - name: Generate Inputs
         run: |
-          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
           curl -s -k -X POST 'https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/generate_inputs/' \
             -H 'accept: application/json' \
             -H "authorization: Bearer $TOKEN" \
@@ -175,7 +189,6 @@ jobs:
 
       - name: Run Analysis
         run: |
-          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
           curl -s -k -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/run/ \
             -H "Authorization: Bearer $TOKEN"
 
@@ -207,3 +220,20 @@ jobs:
               sleep 10
             fi
           done
+
+          if [[ "$STATUS" != "RUN_COMPLETE" ]]; then
+            exit 1
+          fi
+
+      - name: Download Output File
+        run: |
+          curl -s -k -X GET "https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/output_file/" \
+            -H 'accept: application/json' \
+            -H "authorization: Bearer $TOKEN" \
+            -o output.csv
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: piwind-output
+          path: output.csv
