@@ -222,7 +222,7 @@ jobs:
             fi
           done
 
-          if [[ "$STATUS" != "RUN_COMPLETE" ]]; then
+          if [[ "$STATUS" != "RUN_COMPLETED" ]]; then
             exit 1
           fi
 
