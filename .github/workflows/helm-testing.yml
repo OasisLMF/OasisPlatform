@@ -147,6 +147,11 @@ jobs:
       - name: Generate Inputs
         run: |
           kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
+          # Token dies for some reason? Not a timeout
+          TOKEN=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \ 
+              -H "Content-Type: application/json" \
+              -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
+
           curl -s -k -X POST 'https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/generate_inputs/' \
             -H 'accept: application/json' \
             -H 'authorization: Bearer $TOKEN' \
@@ -168,6 +173,10 @@ jobs:
               sleep 5
             fi
           done
+
+          if [[ "$STATUS" != "READY" ]]; then
+            exit 1
+          fi
 
       - name: Run Analysis
         run: |
