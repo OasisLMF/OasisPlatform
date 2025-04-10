@@ -215,7 +215,7 @@ jobs:
 
             if [[ "$STATUS" == "RUN_ERROR" ]]; then
               exit 1
-            elif [[ "$STATUS" == "RUN_COMPLETE" ]]; then
+            elif [[ "$STATUS" == "RUN_COMPLETED" ]]; then
               break
             else
               sleep 10
