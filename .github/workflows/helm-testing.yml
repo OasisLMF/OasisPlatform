@@ -83,15 +83,18 @@ jobs:
       - name: Authenticate
         run: |
           for i in {1..25}; do
-            RESPONSE=$(curl -s -k -X POST  https://ui.oasis.local/api/access_token/ \
+            RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
               -H "Content-Type: application/json" \
               -d '{"username": "admin", "password": "password"}')
-            TOKEN=$(echo "$RESPONSE" | jq -r '.access_token' 2>/dev/null)
-            if [[ "$TOKEN" != "null" && -n "$TOKEN" ]]; then
-              echo "TOKEN=$TOKEN" >> $GITHUB_ENV
-              break
-            fi
-            echo "Setup not ready"
+
+            if echo "$RESPONSE" | jq -e . > /dev/null 2>&1; then
+              TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+              if [[ "$TOKEN" != "null" && -n "$TOKEN" ]]; then
+                echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+                break
+              fi
+
+            echo "No valid json"
             sleep 5
           done
 
@@ -103,39 +106,28 @@ jobs:
             -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
             echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
 
-
       - name: Upload Locations File
         run: |
-          curl -s -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/locations_file/ \
-             
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/location_file/ \
             -H "Authorization: Bearer $TOKEN" \
-            -F "file=@tests/inputs/SourceLocOEDPiWind10.csv"
-
-      - name: Create Model
-        run: |
-          MODEL_ID=$(curl -s -X POST  https://ui.oasis.local/api/v1/models/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"name": "piwind", "version": "1.0"}' | jq -r '.id')
-
-          echo "MODEL_ID=$MODEL_ID" >> $GITHUB_ENV
+            -F "file=@tests/inputs/SourceLocOEDPiWind10.csv;type=text/csv"
 
       - name: Create Analysis
         run: |
           ANALYSIS_ID=$(curl -s -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"model\": $MODEL_ID}" | jq -r '.id')
+            -d "{\"model\": 1}" | jq -r '.id')
 
           echo "ANALYSIS_ID=$ANALYSIS_ID" >> $GITHUB_ENV
 
       - name: Upload Analysis Settings
         run: |
-          curl -s -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/analysis_settings/ \
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/settings_file/ \
             -H "Authorization: Bearer $TOKEN" \
-            -F "file=@analysis_settings.json"
+            -F "file=@analysis_settings.json;type=application/json"
 
       - name: Run Analysis
         run: |
-          curl -s -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/run/ \
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/run/ \
             -H "Authorization: Bearer $TOKEN"
