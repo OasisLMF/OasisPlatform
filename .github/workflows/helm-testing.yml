@@ -93,8 +93,7 @@ jobs:
                 echo "TOKEN=$TOKEN" >> $GITHUB_ENV
                 break
               fi
-
-            echo "No valid json"
+            fi
             sleep 5
           done
 
