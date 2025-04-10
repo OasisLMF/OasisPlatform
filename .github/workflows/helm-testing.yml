@@ -146,6 +146,7 @@ jobs:
 
       - name: Generate Inputs
         run: |
+          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
           curl -s -k -X POST 'https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/generate_inputs/' \
             -H 'accept: application/json' \
             -H 'authorization: Bearer $TOKEN' \
@@ -166,9 +167,11 @@ jobs:
             else
               sleep 5
             fi
+          done
 
       - name: Run Analysis
         run: |
+          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
           curl -s -k -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/run/ \
             -H "Authorization: Bearer $TOKEN"
 
