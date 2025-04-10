@@ -105,18 +105,36 @@ jobs:
             -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
             echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
 
-      - name: Upload Locations File
+      - name: Upload Location File
         run: |
           curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/location_file/ \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@tests/inputs/SourceLocOEDPiWind10.csv;type=text/csv"
 
+      - name: Upload Accounts File
+        run: |
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/accounts_file/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "file=@tests/inputs/SourceAccOEDPiWind.csv;type=text/csv"
+
+      - name: Upload RI File
+        run: |
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/reinsurance_info_file/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "file=@tests/inputs/SourceReinsInfoOEDPiWind.csv;type=text/csv"
+
+      - name: Upload RL File
+        run: |
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/reinsurance_loss_file/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "file=@tests/inputs/SourceReinsScopeOEDPiWind.csv;type=text/csv"
+
       - name: Create Analysis
         run: |
-          ANALYSIS_ID=$(curl -s -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
+          ANALYSIS_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"model\": 1}" | jq -r '.id')
+            -d '{\"model\": 1, \"name\": 1"}' | jq -r '.id')
 
           echo "ANALYSIS_ID=$ANALYSIS_ID" >> $GITHUB_ENV
 
