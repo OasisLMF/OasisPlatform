@@ -206,8 +206,15 @@ jobs:
               -H 'accept: application/json' \
               -H "authorization: Bearer $TOKEN")
 
+            if ! echo "$RESPONSE" | jq empty 2>/dev/null; then
+              echo "$RESPONSE"
+              sleep 10
+              continue
+            fi
+
             if echo "$RESPONSE" | jq -e '.detail == "Token verification failed"' > /dev/null; then
               refresh_token
+              sleep 10
               continue
             fi
 
@@ -221,7 +228,7 @@ jobs:
               sleep 10
             fi
           done
-
+          echo "$RESPONSE"
           if [[ "$STATUS" != "RUN_COMPLETED" ]]; then
             exit 1
           fi
