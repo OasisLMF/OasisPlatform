@@ -99,7 +99,7 @@ jobs:
 
       - name: Create Portfolio
         run: |
-          PORTFOLIO_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v2/portfolios/ \
+          PORTFOLIO_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/ \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
@@ -107,31 +107,31 @@ jobs:
 
       - name: Upload Location File
         run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v2/portfolios/$PORTFOLIO_ID/location_file/ \
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/location_file/ \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@tests/inputs/SourceLocOEDPiWind10.csv;type=text/csv"
 
       - name: Upload Accounts File
         run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v2/portfolios/$PORTFOLIO_ID/accounts_file/ \
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/accounts_file/ \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@tests/inputs/SourceAccOEDPiWind.csv;type=text/csv"
 
       - name: Upload RI File
         run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v2/portfolios/$PORTFOLIO_ID/reinsurance_info_file/ \
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/reinsurance_info_file/ \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@tests/inputs/SourceReinsInfoOEDPiWind.csv;type=text/csv"
 
       - name: Upload RS File
         run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v2/portfolios/$PORTFOLIO_ID/reinsurance_scope_file/ \
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/reinsurance_scope_file/ \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@tests/inputs/SourceReinsScopeOEDPiWind.csv;type=text/csv"
 
       - name: Create Analysis
         run: |
-          ANALYSIS_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v2/portfolios/$PORTFOLIO_ID/create_analysis/ \
+          ANALYSIS_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"model": 1, "name": 1}' | jq -r '.id')
@@ -140,27 +140,50 @@ jobs:
 
       - name: Upload Analysis Settings
         run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v2/analyses/$ANALYSIS_ID/settings_file/ \
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/settings_file/ \
             -H "Authorization: Bearer $TOKEN" \
             -F "file=@analysis_settings.json;type=application/json"
 
+      - name: Generate Inputs
+        run: |
+          curl -s -k -X POST 'https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/generate_inputs/' \
+            -H 'accept: application/json' \
+            -H 'authorization: Bearer $TOKEN' \
+            -H 'Content-Type: application/json' \
+            -d '{}'
+
+      - name: Wait for input completion
+        run: |
+          for i in {1..20}; do
+            STATUS=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
+              -H 'accept: application/json' \
+              -H 'authorization: Bearer $TOKEN' | jq -r '.status')
+
+            if [[ "$STATUS" == "INPUTS_GENERATION_ERROR" ]]; then
+              exit 1
+            elif [[ "$STATUS" == "READY" ]]; then
+              break
+            else
+              sleep 5
+            fi
+
       - name: Run Analysis
         run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v2/analyses/$ANALYSIS_ID/run/ \
+          curl -s -k -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/run/ \
             -H "Authorization: Bearer $TOKEN"
 
-      - name: Wait for completion
+      - name: Wait for analysis completion
         run: |
           refresh_token() {
             TOKEN=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
               -H "Content-Type: application/json" \
-              -d '{"username": "admin", "password": "password"}' | jq -r '.acces_token')
+              -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
           }
 
           for i in {1..60}; do
-            RESPONSE=$(curl -s -k -X GET https://ui.oasis.local/api/v2/analyses/$ANALYSIS_ID/ \
-                -H 'accept: application/json' \
-                -H 'authorization: Bearer $TOKEN')
+            RESPONSE=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
+              -H 'accept: application/json' \
+              -H 'authorization: Bearer $TOKEN')
                 
             if echo "$RESPONSE" | jq -e '.detail == "Token verification failed"' > /dev/null; then
               refresh_token
