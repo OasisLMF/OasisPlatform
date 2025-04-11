@@ -147,8 +147,9 @@ jobs:
           path: logs.txt
 
       - name: Fail if analysis errored
-        if: steps.run_analysis.outputs.exit_code != '0'
-        run: exit 1
+        run: |
+          if (( $GITHUB_OUTPUT != 0 )); then
+            exit 1
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
