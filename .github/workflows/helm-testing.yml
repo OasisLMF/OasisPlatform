@@ -83,7 +83,9 @@ jobs:
 
       - name: Authenticate
         run: |
-          for i in {1..25}; do
+          delay=1
+          for i in {1..5}; do
+            delay=$((delay * 2))
             RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
               -H "Content-Type: application/json" \
               -d '{"username": "admin", "password": "password"}')
@@ -95,7 +97,7 @@ jobs:
                 break
               fi
             fi
-            sleep 5
+            sleep $delay
           done
 
       - name: Create Portfolio
@@ -170,7 +172,9 @@ jobs:
 
       - name: Wait for input completion
         run: |
-          for i in {1..20}; do
+          delay=1
+          for i in {1..5}; do
+            delay=$((delay * 2))
             STATUS=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
               -H 'accept: application/json' \
               -H "authorization: Bearer $TOKEN" | jq -r '.status')
@@ -180,7 +184,7 @@ jobs:
             elif [[ "$STATUS" == "READY" ]]; then
               break
             else
-              sleep 5
+              sleep delay
             fi
           done
 
@@ -200,21 +204,23 @@ jobs:
               -H "Content-Type: application/json" \
               -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
           }
-
-          for i in {1..60}; do
+          delay=5
+          for i in {1..10}; do
+            delay=$((delay * 2))
+            if ((delay > 30)); then delay=30; fi
             RESPONSE=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
               -H 'accept: application/json' \
               -H "authorization: Bearer $TOKEN")
 
             if ! echo "$RESPONSE" | jq empty 2>/dev/null; then
               echo "$RESPONSE"
-              sleep 10
+              sleep delay
               continue
             fi
 
             if echo "$RESPONSE" | jq -e '.detail == "Token verification failed"' > /dev/null; then
               refresh_token
-              sleep 10
+              sleep delay
               continue
             fi
 
@@ -225,7 +231,7 @@ jobs:
             elif [[ "$STATUS" == "RUN_COMPLETED" ]]; then
               break
             else
-              sleep 10
+              sleep delay
             fi
           done
           echo "$RESPONSE"
