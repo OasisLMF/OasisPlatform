@@ -227,7 +227,7 @@ jobs:
 
             if echo "$RESPONSE" | jq -e '.detail == "Token verification failed"' > /dev/null; then
               sleep $delay
-              refresh_tokens
+              refresh_token
               continue
             fi
 
