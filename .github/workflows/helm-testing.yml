@@ -24,7 +24,7 @@ jobs:
       - name: Build Docker images
         run: |
           eval $(minikube docker-env)
-          
+
           docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
           docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
 
@@ -75,7 +75,7 @@ jobs:
             echo "Waiting for LoadBalancer IP..."
             sleep 5
           done
-        
+
       - name: Setup ui.oasis.local
         run: |
           echo "$MINIKUBE_IP ui.oasis.local" | sudo tee -a /etc/hosts
@@ -117,7 +117,7 @@ jobs:
             "worker_count_min": 1,
             "chunks_per_worker": 4
           }'
-          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1    
+          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
 
       - name: Install OasisLMF
         run: pip install oasislmf
@@ -134,6 +134,51 @@ jobs:
           -y tests/inputs/SourceAccOEDPiWind.csv \
           -i tests/inputs/SourceReinsInfoOEDPiWind.csv \
           -s tests/inputs/SourceReinsScopeOEDPiWind.csv
+
+      - name: Create kube logs
+        if: always()
+        run: |
+          OUTPUT_DIR="oasis-kubelogs"
+
+          if [ -d "$OUTPUT_DIR" ]; then
+              echo "Removing existing $OUTPUT_DIR directory..."
+              rm -rf "$OUTPUT_DIR"
+          fi
+
+          echo "Creating $OUTPUT_DIR directory..."
+          mkdir -p "$OUTPUT_DIR"
+
+          echo "Getting list of pods..."
+          kubectl get pods -o name > "$OUTPUT_DIR/pod-list.txt"
+          echo "Saved pod list to $OUTPUT_DIR/pod-list.txt"
+
+
+          while read -r pod_line; do
+              pod_name=$(echo "$pod_line" | cut -d'/' -f2)
+              pod_status=$(kubectl get "$pod_line" -o jsonpath='{.status.phase}')
+
+              if [ "$pod_status" == "Running" ]; then
+                  echo "Processing $pod_name..."
+
+                  kubectl logs "$pod_line" > "$OUTPUT_DIR/${pod_name}.log"
+                  echo "  Saved logs to $OUTPUT_DIR/${pod_name}.log"
+
+                  kubectl describe "$pod_line" > "$OUTPUT_DIR/${pod_name}-details.log"
+                  echo "  Saved details to $OUTPUT_DIR/${pod_name}-details.log"
+              else
+                  echo "Skipping $pod_name (Status: $pod_status)"
+              fi
+          done < "$OUTPUT_DIR/pod-list.txt"
+          echo "All logs and details saved in $OUTPUT_DIR"
+
+
+      - name: Store kube logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minikube-logs${{ inputs.storage_suffix }}
+          path: ./oasis-kubelogs
+          retention-days: 3
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
