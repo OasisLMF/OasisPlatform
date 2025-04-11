@@ -161,7 +161,7 @@ jobs:
               -x tests/inputs/SourceLocOEDPiWind10.csv \
               -V
           } 2>&1 | tee logs.txt
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          echo "exit_code=$?" >> "$GITHUB_ENV"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -171,7 +171,7 @@ jobs:
 
       - name: Fail if analysis errored
         run: |
-          if (( $GITHUB_OUTPUT != 0 )); then
+          if (( $exit_code != 0 )); then
             exit 1
 
       - name: Upload Artifact
