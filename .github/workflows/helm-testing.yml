@@ -189,7 +189,7 @@ jobs:
             elif [[ "$STATUS" == "READY" ]]; then
               break
             else
-              sleep delay
+              sleep $delay
             fi
           done
 
@@ -211,7 +211,7 @@ jobs:
             echo 'New token'
           }
           delay=5
-          for i in {1..20}; do
+          for i in {1..30}; do
             delay=$((delay * 2))
             if ((delay > 30)); then delay=30; fi
             RESPONSE=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
