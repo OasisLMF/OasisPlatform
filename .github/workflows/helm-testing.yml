@@ -123,17 +123,32 @@ jobs:
         run: pip install oasislmf
 
       - name: Run analysis
+        continue-on-error: true
         run: |
-          oasislmf api run \
-          --server-login-json '{"username": "admin", "password": "password"}' \
-          --server-version 'v1' \
-          --server-url 'http://ui.oasis.local/api' \
-          --model-id 1 \
-          -a analysis_settings.json \
-          -x tests/inputs/SourceLocOEDPiWind10.csv \
-          -y tests/inputs/SourceAccOEDPiWind.csv \
-          -i tests/inputs/SourceReinsInfoOEDPiWind.csv \
-          -s tests/inputs/SourceReinsScopeOEDPiWind.csv
+          {
+            oasislmf api run \
+              --server-login-json '{"username": "admin", "password": "password"}' \
+              --server-version 'v1' \
+              --server-url 'http://ui.oasis.local/api' \
+              --model-id 1 \
+              -a analysis_settings.json \
+              -x tests/inputs/SourceLocOEDPiWind10.csv \
+              -y tests/inputs/SourceAccOEDPiWind.csv \
+              -i tests/inputs/SourceReinsInfoOEDPiWind.csv \
+              -s tests/inputs/SourceReinsScopeOEDPiWind.csv \
+              -V
+          } 2>&1 | tee logs.txt
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: piwind-logs
+          path: logs.txt
+
+      - name: Fail if analysis errored
+        if: steps.run_analysis.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
