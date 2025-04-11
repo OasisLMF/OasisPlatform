@@ -59,7 +59,6 @@ jobs:
         with:
           repository: OasisLMF/OasisPiWind
           ref: main
-
       - name: Start Minikube Tunnel
         run: |
           nohup minikube tunnel > /dev/null 2>&1 &
@@ -105,7 +104,7 @@ jobs:
             exit 1
           fi
 
-      - name: Setup worker
+      - name: Worker setup
         run: |
           curl -s -k -X POST https://ui.oasis.local/api/v2/models/1/scaling_configuration/ \
             -H 'accept: application/json' \
@@ -119,6 +118,9 @@ jobs:
             "chunks_per_worker": 4
           }'
           kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1    
+
+      - name: Install OasisLMF
+        run: pip install oasislmf
 
       - name: Run analysis
         run: |
