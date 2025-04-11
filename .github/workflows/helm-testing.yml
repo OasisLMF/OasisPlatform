@@ -75,7 +75,7 @@ jobs:
             echo "Waiting for LoadBalancer IP..."
             sleep 5
           done
-        
+
       - name: Setup ui.oasis.local
         run: |
           echo "$MINIKUBE_IP ui.oasis.local" | sudo tee -a /etc/hosts
@@ -122,6 +122,32 @@ jobs:
       - name: Install OasisLMF
         run: pip install oasislmf
 
+      - name: Create test settings
+        run: |
+          cat <<EOF > test_settings.json
+          {
+            "version": "3",
+            "analysis_tag": "base_example",
+            "source_tag": "MDK",
+            "model_name_id": "PiWind",
+            "model_supplier_id": "OasisLMF",
+            "gul_threshold": 0,
+            "gul_output": true,
+            "model_settings": {
+              "event_set": "p",
+              "event_occurrence_id": "lt"
+            },
+            "gul_summaries": [
+              {
+                "aalcalc": false,
+                "eltcalc": true,
+                "id": 1,
+                "lec_output": false
+              }
+            ]
+          }
+          EOF
+
       - name: Run analysis
         continue-on-error: true
         run: |
@@ -131,11 +157,8 @@ jobs:
               --server-version 'v1' \
               --server-url 'http://ui.oasis.local/api' \
               --model-id 1 \
-              -a analysis_settings.json \
+              -a test_settings.json \
               -x tests/inputs/SourceLocOEDPiWind10.csv \
-              -y tests/inputs/SourceAccOEDPiWind.csv \
-              -i tests/inputs/SourceReinsInfoOEDPiWind.csv \
-              -s tests/inputs/SourceReinsScopeOEDPiWind.csv \
               -V
           } 2>&1 | tee logs.txt
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
