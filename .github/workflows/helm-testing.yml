@@ -127,8 +127,6 @@ jobs:
           --server-version 'v1' \
           --server-url 'http://ui.oasis.local/api' \
           --model-id 1 \
-          --portfolio-id 1 \
-          --analysis-id 1 \
           -a analysis_settings.json \
           -x tests/inputs/SourceLocOEDPiWind10.csv \
           -y tests/inputs/SourceAccOEDPiWind.csv \
