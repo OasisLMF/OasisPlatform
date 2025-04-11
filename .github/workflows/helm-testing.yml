@@ -105,53 +105,6 @@ jobs:
             exit 1
           fi
 
-      - name: Create Portfolio
-        run: |
-          PORTFOLIO_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"name": "PiWind Portfolio"}' | jq -r '.id')
-            echo "PORTFOLIO_ID=$PORTFOLIO_ID" >> $GITHUB_ENV
-
-      - name: Upload Location File
-        run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/location_file/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -F "file=@tests/inputs/SourceLocOEDPiWind10.csv;type=text/csv"
-
-      - name: Upload Accounts File
-        run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/accounts_file/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -F "file=@tests/inputs/SourceAccOEDPiWind.csv;type=text/csv"
-
-      - name: Upload RI File
-        run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/reinsurance_info_file/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -F "file=@tests/inputs/SourceReinsInfoOEDPiWind.csv;type=text/csv"
-
-      - name: Upload RS File
-        run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/reinsurance_scope_file/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -F "file=@tests/inputs/SourceReinsScopeOEDPiWind.csv;type=text/csv"
-
-      - name: Create Analysis
-        run: |
-          ANALYSIS_ID=$(curl -s -k -X POST  https://ui.oasis.local/api/v1/portfolios/$PORTFOLIO_ID/create_analysis/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"model": 1, "name": 1}' | jq -r '.id')
-
-          echo "ANALYSIS_ID=$ANALYSIS_ID" >> $GITHUB_ENV
-
-      - name: Upload Analysis Settings
-        run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/settings_file/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -F "file=@analysis_settings.json;type=application/json"
-
       - name: Setup worker
         run: |
           curl -s -k -X POST https://ui.oasis.local/api/v2/models/1/scaling_configuration/ \
@@ -165,96 +118,25 @@ jobs:
             "worker_count_min": 1,
             "chunks_per_worker": 4
           }'
-          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
+          kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1    
 
-      - name: Generate Inputs
+      - name: Run analysis
         run: |
-          curl -s -k -X POST 'https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/generate_inputs/' \
-            -H 'accept: application/json' \
-            -H "authorization: Bearer $TOKEN" \
-            -H 'Content-Type: application/json' \
-            -d '{}'
-
-      - name: Wait for input completion
-        run: |
-          delay=1
-          for i in {1..5}; do
-            delay=$((delay * 2))
-            STATUS=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
-              -H 'accept: application/json' \
-              -H "authorization: Bearer $TOKEN" | jq -r '.status')
-
-            if [[ "$STATUS" == "INPUTS_GENERATION_ERROR" ]]; then
-              exit 1
-            elif [[ "$STATUS" == "READY" ]]; then
-              break
-            else
-              sleep $delay
-            fi
-          done
-
-          if [[ "$STATUS" != "READY" ]]; then
-            exit 1
-          fi
-
-      - name: Run Analysis
-        run: |
-          curl -s -k -X POST  https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/run/ \
-            -H "Authorization: Bearer $TOKEN"
-
-      - name: Wait for analysis completion
-        run: |
-          refresh_token() {
-            TOKEN=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
-              -H "Content-Type: application/json" \
-              -d '{"username": "admin", "password": "password"}' | jq -r '.access_token')
-            echo 'New token'
-          }
-          delay=5
-          for i in {1..30}; do
-            delay=$((delay * 2))
-            if ((delay > 30)); then delay=30; fi
-            RESPONSE=$(curl -s -k -X GET https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/ \
-              -H 'accept: application/json' \
-              -H "authorization: Bearer $TOKEN")
-
-            if ! echo "$RESPONSE" | jq empty 2>/dev/null; then
-              echo "$RESPONSE"
-              sleep $delay
-              refresh_token
-              continue
-            fi
-
-            if echo "$RESPONSE" | jq -e '.detail == "Token verification failed"' > /dev/null; then
-              sleep $delay
-              refresh_token
-              continue
-            fi
-
-            STATUS=$(echo "$RESPONSE" | jq -r '.status')
-
-            if [[ "$STATUS" == "RUN_ERROR" ]]; then
-              exit 1
-            elif [[ "$STATUS" == "RUN_COMPLETED" ]]; then
-              break
-            else
-              sleep $delay
-            fi
-          done
-          echo "$RESPONSE"
-          if [[ "$STATUS" != "RUN_COMPLETED" ]]; then
-            exit 1
-          fi
-
-      - name: Download Output File
-        run: |
-          curl -s -k -X GET "https://ui.oasis.local/api/v1/analyses/$ANALYSIS_ID/output_file/" \
-            -H 'accept: application/json' \
-            -H "authorization: Bearer $TOKEN" \
-            -o output.tar.gz
+          oasislmf api run \
+          --server-login-json '{"username": "admin", "password": "password"}' \
+          --server-version 'v1' \
+          --server-url 'http://ui.oasis.local/api' \
+          --model-id 1 \
+          --portfolio-id 1 \
+          --analysis-id 1 \
+          -a analysis_settings.json \
+          -x tests/inputs/SourceLocOEDPiWind10.csv \
+          -y tests/inputs/SourceAccOEDPiWind.csv \
+          -i tests/inputs/SourceReinsInfoOEDPiWind.csv \
+          -s tests/inputs/SourceReinsScopeOEDPiWind.csv
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: piwind-output
-          path: output.tar.gz
+          path: analysis_1_output.tar.gz
