@@ -25,7 +25,6 @@ from pathlib2 import Path
 from oasislmf import __version__ as mdk_version
 from ods_tools import __version__ as ods_version
 from oasislmf.utils.exceptions import OasisException
-from oasis_data_manager.filestore.backends.local import LocalStorage
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
 import boto3
@@ -260,7 +259,6 @@ def prepare_complex_model_file_inputs(complex_model_files, run_directory, filest
         stored_fn = cmf[STORED_FILENAME]
         orig_fn = cmf[ORIGINAL_FILENAME]
 
-        # If reference is a remote, then download the file & rename to 'original_filename'
         fpath = filestore.get(stored_fn, run_directory)
         shutil.move(fpath, os.path.join(run_directory, orig_fn))
 
