@@ -10,6 +10,7 @@ __all__ = [
     'MissingModelDataException',
     'prepare_complex_model_file_inputs',
     'config_strip_default_exposure',
+    'unwrap_task_args',
 ]
 
 import logging
@@ -236,6 +237,18 @@ def merge_dirs(src_root, dst_root):
             abs_dst = os.path.join(dst_root, rel_dst)
             Path(abs_dst).parent.mkdir(exist_ok=True, parents=True)
             shutil.copy(os.path.join(root, f), abs_dst)
+
+
+def unwrap_task_args(task_args):
+    """ Takes the args of a celery task return, and rolls back the nesting to the
+        first dict found, then return dict by value
+
+        called_params = unwrap_task_args(kwargs.get('args'))
+    """
+    value = task_args
+    while isinstance(value, list) and value:
+        value = value[0]
+    return deepcopy(value) if isinstance(value, dict) else {}
 
 
 def prepare_complex_model_file_inputs(complex_model_files, run_directory, filestore):
