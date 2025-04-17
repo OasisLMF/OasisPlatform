@@ -515,6 +515,21 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     return result
 
 
+@celery_app_v2.task(name='record_input_error_files')
+def record_input_error_files(analysis_id, initiator_id, output_location=None, lookup_error_location=None, **kwargs):
+    """ If a V2 worker fails during oasis input file generate,
+        then store the 'failed' output dir for debugging.
+    """
+    analysis = Analysis.objects.get(pk=analysis_id)
+    initiator = get_user_model().objects.get(pk=initiator_id)
+    if output_location:
+        analysis.input_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
+    if lookup_error_location:
+        analysis.lookup_errors_file = store_file(lookup_error_location, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+
+    analysis.save(update_fields=["input_file", "lookup_errors_file"])
+
+
 @celery_app_v2.task(bind=True, name='record_losses_files')
 def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     from ..models import Analysis
@@ -563,6 +578,22 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     analysis.save()
     return result
+
+
+@celery_app_v2.task(name='record_losses_error_files')
+def record_losses_error_files(analysis_id, initiator_id, output_location=None, run_logs=None, **kwargs):
+    """ If a V2 worker fails in loss output report creation,
+        store the failed files for debugging.
+    """
+    analysis = Analysis.objects.get(pk=analysis_id)
+    initiator = get_user_model().objects.get(pk=initiator_id)
+
+    if output_location:
+        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
+    if run_logs:
+        analysis.run_log_file = store_file(run_logs, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+
+    analysis.save(update_fields=["output_file", "run_log_file"])
 
 
 @celery_app_v2.task(bind=True, name='record_sub_task_start')

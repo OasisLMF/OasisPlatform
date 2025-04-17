@@ -56,6 +56,7 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
             'end_time',
             'output_log',
             'error_log',
+            'error_file',
             'retry_log',
             'retry_count',
         )
@@ -69,6 +70,11 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
     def get_error_log(self, instance):
         request = self.context.get('request')
         return instance.get_error_log_url(request=request) if instance.error_log else None
+
+    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    def get_error_file(self, instance):
+        request = self.context.get('request')
+        return instance.get_error_file_url(request=request) if instance.error_file else None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_retry_log(self, instance):
