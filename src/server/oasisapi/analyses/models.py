@@ -121,6 +121,15 @@ class AnalysisTaskStatus(models.Model):
         related_name='analysis_run_status_error_logs',
         editable=False,
     )
+    error_file = models.ForeignKey(
+        RelatedFile,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        default=None,
+        related_name='analysis_run_status_error_file',
+        editable=False,
+    )
     retry_log = models.ForeignKey(
         RelatedFile,
         on_delete=models.SET_NULL,
@@ -149,6 +158,10 @@ class AnalysisTaskStatus(models.Model):
     def get_error_log_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
         return reverse(f'{override_ns}analysis-task-status-error-log', kwargs={'pk': self.pk}, request=request)
+
+    def get_error_file_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
+        return reverse(f'{override_ns}analysis-task-status-error-file', kwargs={'pk': self.pk}, request=request)
 
     def get_retry_log_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else 'v2-analyses:'
