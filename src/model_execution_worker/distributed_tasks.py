@@ -1039,6 +1039,8 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
         OasisManager().post_analysis(**res)
 
+    raise ValueError("OMG SOMETHING BROKE!! D:")
+
     # collect run logs
     abs_log_dir = os.path.join(res['model_run_dir'], 'log')
     Path(abs_log_dir).mkdir(exist_ok=True, parents=True)
@@ -1078,10 +1080,11 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
 
 @task_failure.connect
 def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
-    #from celery.contrib import rdb; rdb.set_trace()
     logger.info("Task error handler")
     task_params = kwargs.get('args')[0]
     task_args = sender.request.kwargs
+
+    # If chunk task failed (keys gen or Loss gen, then store partial files in subtask?)
 
     # Store output log
     task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
@@ -1104,7 +1107,8 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         )
 
     # Store failed Ktools log files
-
+    from celery.contrib import rdb
+    rdb.set_trace()
 
     # Wipe worker's remote data storage
     keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
