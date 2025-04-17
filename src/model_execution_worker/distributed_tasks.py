@@ -1078,6 +1078,7 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
 
 @task_failure.connect
 def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
+    #from celery.contrib import rdb; rdb.set_trace()
     logger.info("Task error handler")
     task_params = kwargs.get('args')[0]
     task_args = sender.request.kwargs
@@ -1092,6 +1093,18 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
             task_id,
             filestore.put(task_log_file)
         )
+
+    # Store failed input gen files
+    if task_args.get('slug') == 'write-input-files':
+        signature('record_input_error_files').delay(
+            task_args.get('analysis_id'),
+            task_args.get('initiator_id'),
+            filestore.put(task_params.get('target_dir')),
+            filestore.put(os.path.join(task_params.get('target_dir'), 'keys-errors.csv'))
+        )
+
+    # Store failed Ktools log files
+
 
     # Wipe worker's remote data storage
     keep_remote_data = settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False)
