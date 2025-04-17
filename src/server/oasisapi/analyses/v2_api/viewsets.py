@@ -706,6 +706,18 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
+    def error_file(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the task status' `error_file` contents
+
+        delete:
+        Disassociates the task status' `error_file` contents
+        """
+        return handle_related_file(self.get_object(), 'error_file', request, ['text/plain'])
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete'], detail=True)
     def retry_log(self, request, pk=None, version=None):
         """
         get:
