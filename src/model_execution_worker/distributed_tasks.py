@@ -1080,8 +1080,8 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
 @task_failure.connect
 def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     logger.info("Task error handler")
-    task_params = unwrap_task_args(kwargs.get('args'))
     task_args = sender.request.kwargs
+    task_params = unwrap_task_args(kwargs.get('args'))
 
     # Store output log
     task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
@@ -1095,6 +1095,14 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         )
 
     # Note: Might be worth extending this to also store partial work of chunks that failed
+
+    # Store failed pre-analysis
+    if task_args.get('slug') == 'pre-analysis-hook':
+        signature('record_input_error_files').delay(
+            task_args.get('analysis_id'),
+            task_args.get('initiator_id'),
+            filestore.put(task_params.get('target_dir'))
+        )
 
     # Store failed input gen files
     if task_args.get('slug') == 'write-input-files':
