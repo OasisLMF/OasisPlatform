@@ -41,15 +41,20 @@ class CustomRequest(CeleryRequest):
 
         # report retry attempt
         try:
-            task_id = self.task_id
             task_args = self.kwargs
-            signature('subtask_retry_log').delay(
-                task_args.get('analysis_id'),
-                task_args.get('initiator_id'),
-                task_args.get('slug'),
-                task_id,
-                exc_info.traceback,
-            )
+            task_id = self.task_id
+            task_slug = task_args.get('slug')
+            initiator_id = task_args.get('initiator_id')
+            analysis_id = task_args.get('analysis_id')
+
+            if analysis_id and task_slug:
+                signature('subtask_retry_log').delay(
+                    analysis_id,
+                    initiator_id,
+                    task_slug,
+                    task_id,
+                    exc_info.traceback,
+                )
         except Exception as e:
             logger.error(f'Falied to store retry attempt logs: {exc_info}')
             logger.exception(e)
