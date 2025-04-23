@@ -1094,7 +1094,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
             filestore.put(task_log_file)
         )
 
-    # If chunk task failed (keys gen or Loss gen, then store partial files in subtask?)
+    # Note: Might be worth extending this to also store partial work of chunks that failed
 
     # Store failed input gen files
     if task_args.get('slug') == 'write-input-files':
