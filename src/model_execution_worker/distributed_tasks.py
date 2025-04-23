@@ -1106,7 +1106,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         )
 
     # Store failed loss gen files
-    if task_args.get('slug') == 'generate_losses_output':
+    if task_args.get('slug') == 'generate-losses-output':
         signature('record_losses_error_files').delay(
             task_args.get('analysis_id'),
             task_args.get('initiator_id'),
