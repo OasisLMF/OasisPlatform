@@ -523,7 +523,7 @@ class Controller:
                     initiator,
                     run_data_uuid,
                     'Generate losses output',
-                    'generate_losses_output',
+                    'generate-losses-output',
                     queue,
                     TaskParams(**base_kwargs),
                 ),
