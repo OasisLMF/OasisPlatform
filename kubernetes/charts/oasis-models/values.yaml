@@ -13,13 +13,13 @@ modelVolumes:
     source: host
     hostPath: /data/model-data/piwind/
     storageCapacity: 1Gi
-#  - name: oasis-models-azure-file
-#    source: azureFiles
-#    csi:
-#      driver: file.csi.azure.com
-#      volumeAttributes:
-#        secretName: azure-secret
-#        shareName: oasisfs
+  - name: oasis-models-azure-file
+    source: azureFiles
+    csi:
+      driver: file.csi.azure.com
+      volumeAttributes:
+        secretName: azure-secret
+        shareName: oasisfs
 
 workers:
   piwind_demo_v1: # A name that is unique among all workers
@@ -52,11 +52,11 @@ workers:
         source: host         # Can either be 'host' or 'azureFiles':
                              #  host       - Host path on kubernetes node
                              #  azureFiles - Azure files on account storage
-        #        source: azureFiles
-        #      - name: oasis-models-azure-file
-        #        type: model-data
-        #        mountPath: /home/worker/model
-        #        source: azureFiles         # Can either be 'host' or 'azureFiles':
+
+      - name: oasis-models-azure-file
+        type: model-data
+        mountPath: /home/worker/model
+        source: azureFiles         # Can either be 'host' or 'azureFiles':
         #                             #  host       - Host path on kubernetes node
         #                             #  azureFiles - Azure files on account storage
         #    groups:
@@ -130,8 +130,19 @@ databases:
 oasisServer:
   name: oasis-server
 
+# volumes:
+#   host:
+#     sharedFs:
+#       name: shared-fs
+
 volumes:
   host:
     sharedFs:
       name: shared-fs
+      source: azureFiles
+      csi:
+        driver: file.csi.azure.com
+        volumeAttributes:
+          secretName: azure-secret
+          shareName: oasissharedfs 
 ## End of sync with oasis-platform values ##
