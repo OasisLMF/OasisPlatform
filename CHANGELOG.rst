@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#1190](https://github.com/OasisLMF/OasisPlatform/pull/1190) - Stable/1.28.x - Allianz - Celery DB authentication with Azure Service Principal
+.. _`1.28.13`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.12...1.28.13
+
 .. _`1.28.12`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.11...1.28.12
 
 `1.28.11`_
