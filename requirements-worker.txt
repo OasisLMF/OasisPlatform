@@ -132,7 +132,7 @@ numpy==1.22.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasislmf[extra]==1.28.12
+oasislmf[extra]==1.28.13
     # via -r requirements-worker.in
 ods-tools==3.1.5
     # via oasislmf
@@ -162,7 +162,9 @@ pyarrow==14.0.1
 pycparser==2.21
     # via cffi
 pyjwt[crypto]==2.10.1
-    # via msal
+    # via
+    #   msal
+    #   pyjwt
 pymysql==1.1.1
     # via -r requirements-worker.in
 pyogrio==0.10.0
