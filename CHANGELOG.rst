@@ -1,6 +1,17 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.3`_
+ ---------
+* [#1189](https://github.com/OasisLMF/OasisPlatform/pull/1189) - Add internal worker to Helm charts
+* [#1193](https://github.com/OasisLMF/OasisPlatform/pull/1193) - Update base deb image to p3.12
+* [#781](https://github.com/OasisLMF/OasisPlatform/pull/1194) - Add kubernetes CI/CD testing
+* [#1181](https://github.com/OasisLMF/OasisPlatform/pull/1198) - Data files and analyses settings issues in 2.4.x release
+* [#1174](https://github.com/OasisLMF/OasisPlatform/pull/1199) - Missing output when V2 input gen fails
+* [#1201](https://github.com/OasisLMF/OasisPlatform/pull/1201) - Udate name in workflow so Job type is clear in GitHub UI
+* [#969](https://github.com/OasisLMF/OasisPlatform/pull/1183) - Autoscale V1 model deployments 
+.. _`2.4.3`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.2...2.4.3
+
 * [#1175](https://github.com/OasisLMF/OasisPlatform/pull/1175) - Exposure run endpoint
 .. _`2.4.2`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.1...2.4.2
 
