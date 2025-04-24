@@ -22,46 +22,67 @@ modelVolumes:
 #        shareName: oasisfs
 
 workers:
-  piwind_demo: # A name that is unique among all workers
+  piwind_demo_v1: # A name that is unique among all workers
     supplierId: OasisLMF
     modelId: PiWind
     modelVersionId: "1"
-    apiVersion: "v2"
+    apiVersion: "v1"
     image: coreoasis/model_worker
     version: dev
     imagePullPolicy: Never
-# If using a private image registry, define a secret as per
-# https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ and
-# reference it here.
-#    registryCredentials: regcred
+    # If using a private image registry, define a secret as per
+    # https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ and
+    # reference it here.
+    #    registryCredentials: regcred
     env: # Additional worker environment variables
       - name: OASIS_DEBUG
         value: "1"
       - name: OASIS_MODEL_DATA_DIRECTORY
         value: /home/worker/model
     volumes: # Volume defined in modelVolumes
-#      - name: name of volume defined in modelVolumes.
-#        type: Type of volume, set 'model-data' for model data mounts. Any other value for additional mounts
-#        mountPath: Path to mount this volume on
-#        source: Can either be 'host' or 'azureFiles':
-#                host       - Host path on kubernetes node
-#                azureFiles - Azure files on account storage
+    #      - name: name of volume defined in modelVolumes.
+    #        type: Type of volume, set 'model-data' for model data mounts. Any other value for additional mounts
+    #        mountPath: Path to mount this volume on
+    #        source: Can either be 'host' or 'azureFiles':
+    #                host       - Host path on kubernetes node
+    #                azureFiles - Azure files on account storage
       - name: piwind-model-data-pv
         type: model-data
         mountPath: /home/worker/model
         source: host         # Can either be 'host' or 'azureFiles':
                              #  host       - Host path on kubernetes node
                              #  azureFiles - Azure files on account storage
-#        source: azureFiles
-#      - name: oasis-models-azure-file
-#        type: model-data
-#        mountPath: /home/worker/model
-#        source: azureFiles         # Can either be 'host' or 'azureFiles':
-#                             #  host       - Host path on kubernetes node
-#                             #  azureFiles - Azure files on account storage
-#    groups:
-#      - wind
-#      - flood
+        #        source: azureFiles
+        #      - name: oasis-models-azure-file
+        #        type: model-data
+        #        mountPath: /home/worker/model
+        #        source: azureFiles         # Can either be 'host' or 'azureFiles':
+        #                             #  host       - Host path on kubernetes node
+        #                             #  azureFiles - Azure files on account storage
+        #    groups:
+        #      - wind
+        #      - flood
+              
+  piwind_demo_v2: # A name that is unique among all workers
+    supplierId: OasisLMF
+    modelId: PiWind
+    modelVersionId: "2"
+    apiVersion: "v2"
+    image: coreoasis/model_worker
+    version: dev
+    imagePullPolicy: Never
+    env: # Additional worker environment variables
+      - name: OASIS_DEBUG
+        value: "1"
+      - name: OASIS_MODEL_DATA_DIRECTORY
+        value: /home/worker/model
+    volumes: # Volume defined in modelVolumes
+      - name: piwind-model-data-pv
+        type: model-data
+        mountPath: /home/worker/model
+        source: host  # Can either be 'host' or 'azureFiles':
+
+
 
 # Image used by model registration init container and tcp check init container
 modelImages:

@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.15`_
+ ---------
+* [#1193](https://github.com/OasisLMF/OasisPlatform/pull/1193) - Update base deb image to p3.12
+* [#781](https://github.com/OasisLMF/OasisPlatform/pull/1194) - Add kubernetes CI/CD testing
+.. _`2.3.15`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.14...2.3.15
+
 .. _`2.3.14`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.13...2.3.14
 
 `2.3.13`_
