@@ -1,4 +1,4 @@
-name: CI
+name: Kube - Helm deploy test
 on:
   pull_request:
 jobs:
@@ -24,7 +24,7 @@ jobs:
       - name: Build Docker images
         run: |
           eval $(minikube docker-env)
-          
+
           docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
           docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
 
