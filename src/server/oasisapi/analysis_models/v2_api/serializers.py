@@ -313,6 +313,10 @@ class ModelScalingConfigSerializer(serializers.ModelSerializer):
         ]
         errors = dict()
 
+        version = self.context.get('version', None)
+        # disallow dynamic in v1
+        if version and version.lower() == 'v1' and attrs.get('scaling_strategy') == 'DYNAMIC_TASKS':
+            errors['scaling_strategy'] = "DYNAMIC_TASKS is not allowed in v1."
         # check for negative values
         for k in non_neg_fields:
             value = self.initial_data.get(k)

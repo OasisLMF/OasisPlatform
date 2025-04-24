@@ -34,6 +34,7 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, give
         os.chdir(temp_dir)
         try:
             params = OasisManager()._params_run_exposure()
+            params['print_summary'] = False
             update_params(params, given_params)
             OasisManager().run_exposure(**params)
             return (get_filestore(settings).put("outfile.csv"), True)
