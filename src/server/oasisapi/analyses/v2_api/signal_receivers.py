@@ -21,6 +21,6 @@ def task_updated(instance, *args, **kwargs):
 
 def analysis_updated(instance, *args, **kwargs):
     """ Sends a queue notification whenever the task is finished to update workers """
-    if instance.status not in ['NEW', 'READY', 'INPUTS_GENERATION_STARTED', 'RUN_STARTED']:
+    if instance.status in ['RUN_COMPLETED', 'RUN_CANCELLED', 'RUN_ERROR']:
         send_task_status_message({'type': 'queue_status.updated', 'content': {}})
         logger.debug("Message sent to task")

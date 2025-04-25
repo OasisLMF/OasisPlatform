@@ -503,6 +503,7 @@ class Analysis(TimeStampedModel):
 
         self.status = self.status_choices.RUN_QUEUED
         self.save()
+        send_task_status_message({'type': 'queue_status.updated', 'content': {}})
         # Start V1 run
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_run_analysis_signature
@@ -587,6 +588,7 @@ class Analysis(TimeStampedModel):
             'traceback_property': 'input_generation_traceback_file',
             'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
         }))
+        send_task_status_message({'type': 'queue_status.updated', 'content': {}})
         self.run_mode = self.run_mode_choices.V2
         task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines, events_total], priority=self.priority).id
 
@@ -659,6 +661,7 @@ class Analysis(TimeStampedModel):
         self.input_generation_traceback_file_id = None
         self.input_file = None
         self.save()
+        send_task_status_message({'type': 'queue_status.updated', 'content': {}})
 
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_generate_input_signature
