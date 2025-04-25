@@ -252,10 +252,10 @@ volumes:
       name: shared-fs
       storageCapacity: 2Gi
       hostPath: /data/shared-fs/
-  # azureFiles:
-  #  sharedFs:
-  #    csi:
-  #      driver: file.csi.azure.com
-  #      volumeAttributes:
-  #        secretName: azure-secret
-  #        shareName: oasisfs
+#  azureFiles:
+#    sharedFs:
+#      csi:
+#        driver: file.csi.azure.com
+#        volumeAttributes:
+#          secretName: azure-secret
+#          shareName: oasisfs
