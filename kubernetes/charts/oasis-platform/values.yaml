@@ -26,18 +26,18 @@ images:
   init:
     image: busybox
     version: 1.28
-  # redis:
-  #   image: valkey/valkey
-  #   version: 8.1-alpine3.21
+  redis:
+    image: valkey/valkey
+    version: 8.1-alpine3.21
   # redis:
   #   image: redis
   #   version: 7-alpine3.18
   # redis:
   #   image: eqalpha/keydb
   #   version: latest
-  redis:
-    image: docker.dragonflydb.io/dragonflydb/dragonfly
-    version: latest
+  # redis:
+  #   image: docker.dragonflydb.io/dragonflydb/dragonfly
+  #   version: latest
   rabbitmq:
     image: rabbitmq
     version: 3.11-management-alpine
@@ -114,7 +114,7 @@ databases:
 #   port: port (for service)
   channel_layer:
     type: redis
-    name: channel-layer
+    name: valkey
     port: 6379
     ssl: false
   broker:
@@ -247,15 +247,15 @@ oasisUI:
 # Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount
 volumes:
   # Placement of the shared filesystem on the kubernetes host node
-  # host:
-  #   sharedFs:
-  #     name: shared-fs
-  #     storageCapacity: 2Gi
-  #     hostPath: /data/shared-fs/
-  azureFiles:
-   sharedFs:
-     csi:
-       driver: file.csi.azure.com
-       volumeAttributes:
-         secretName: azure-secret
-         shareName: oasisfs
+  host:
+    sharedFs:
+      name: shared-fs
+      storageCapacity: 2Gi
+      hostPath: /data/shared-fs/
+  # azureFiles:
+  #  sharedFs:
+  #    csi:
+  #      driver: file.csi.azure.com
+  #      volumeAttributes:
+  #        secretName: azure-secret
+  #        shareName: oasisfs

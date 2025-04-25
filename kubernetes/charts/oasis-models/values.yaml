@@ -49,20 +49,20 @@ workers:
       - name: piwind-model-data-pv
         type: model-data
         mountPath: /home/worker/model
-        source: azureFiles         # Can either be 'host' or 'azureFiles':
+        source: host         # Can either be 'host' or 'azureFiles':
                              #  host       - Host path on kubernetes node
                              #  azureFiles - Azure files on account storage
         #        source: azureFiles
-      - name: oasis-models-azure-file
-        type: model-data
-        mountPath: /home/worker/model
-        source: azureFiles         # Can either be 'host' or 'azureFiles':
+      # - name: oasis-models-azure-file
+      #   type: model-data
+      #   mountPath: /home/worker/model
+      #   source: azureFiles         # Can either be 'host' or 'azureFiles':
         #                             #  host       - Host path on kubernetes node
         #                             #  azureFiles - Azure files on account storage
         #    groups:
         #      - wind
         #      - flood
-              
+
   piwind_demo_v2: # A name that is unique among all workers
     supplierId: OasisLMF
     modelId: PiWind
