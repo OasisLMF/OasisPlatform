@@ -1,6 +1,5 @@
 from __future__ import absolute_import, print_function
 import logging
-import time
 
 from celery.result import AsyncResult
 from django.conf import settings as django_settings
@@ -531,8 +530,7 @@ class Analysis(TimeStampedModel):
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
-        time.sleep(1)
-        send_task_status_message({'type': 'queue_status.updated', 'content': {}})
+        send_task_status_message(build_all_queue_status_message())
 
     def raise_validate_errors(self, errors):
         raise ValidationError(detail=errors)
@@ -598,8 +596,7 @@ class Analysis(TimeStampedModel):
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
-        time.sleep(1)
-        send_task_status_message({'type': 'queue_status.updated', 'content': {}})
+        send_task_status_message(build_all_queue_status_message())
 
     def cancel_subtasks(self):
         if self.run_mode == self.run_mode_choices.V2:
@@ -691,8 +688,7 @@ class Analysis(TimeStampedModel):
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
-        time.sleep(1)
-        send_task_status_message({'type': 'queue_status.updated', 'content': {}})
+        send_task_status_message(build_all_queue_status_message())
 
     def cancel_any(self):
         INPUTS_GENERATION_STATES = [
