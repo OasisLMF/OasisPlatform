@@ -76,7 +76,11 @@ class AnalysisRun(WebTestMixin, TestCase):
                 sig_res = Mock()
                 sig_res.delay.return_value = res_factory(task_id)
 
-                with patch('src.server.oasisapi.analyses.models.Analysis.v1_run_analysis_signature', PropertyMock(return_value=sig_res)):
+                with (
+                    patch('src.server.oasisapi.analyses.models.Analysis.v1_run_analysis_signature', PropertyMock(return_value=sig_res)),
+                    patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                    patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+                ):
                     analysis.run(initiator, run_mode_override='V1')
 
                     sig_res.link.assert_called_once_with(record_run_analysis_result.s(analysis.pk, initiator.pk))
@@ -177,7 +181,11 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig_res = Mock()
                 sig_res.delay.return_value = res_factory(task_id)
 
-                with patch('src.server.oasisapi.analyses.models.Analysis.v1_generate_input_signature', PropertyMock(return_value=sig_res)):
+                with (
+                    patch('src.server.oasisapi.analyses.models.Analysis.v1_generate_input_signature', PropertyMock(return_value=sig_res)),
+                    patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                    patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+                ):
                     analysis.generate_inputs(initiator, run_mode_override='V1')
 
                     sig_res.link.assert_called_once_with(record_generate_input_result.s(analysis.pk, initiator.pk))

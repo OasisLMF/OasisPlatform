@@ -183,7 +183,11 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
                 res_factory = FakeAsyncResultFactory(target_task_id=task_gen_id)
                 task_sig.apply_async.return_value = res_factory(task_gen_id)
 
-                with patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)):
+                with (
+                    patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)),
+                    patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                    patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+                ):
                     analysis.generate_and_run(initiator)
                     loc_lines = 4
                     events = None
@@ -285,7 +289,11 @@ class AnalysisRun(WebTestMixin, TestCase):
                 task_obj.id = task_id
                 mock_task = MagicMock(return_value=task_obj)
 
-                with patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task):
+                with (
+                    patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task),
+                    patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                    patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+                ):
                     analysis.run(initiator, run_mode_override='V2')
                     mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, None),
                                                       {}, queue='celery-v2', link_error=ANY, priority=4)
@@ -349,7 +357,11 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 task_obj = type('', (), {})()
                 task_obj.id = task_id
                 mock_task = MagicMock(return_value=task_obj)
-                with patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task):
+                with (
+                    patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task),
+                    patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                    patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+                ):
                     analysis.generate_inputs(initiator, run_mode_override='V2')
                     mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk,
                                                       4), {}, queue='celery-v2', link_error=ANY, priority=4)
