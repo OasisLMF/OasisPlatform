@@ -17,10 +17,3 @@ def task_updated(instance, *args, **kwargs):
                 )],
             ) for q in filter_queues_info(instance.queue_name)]
         ))
-
-
-def analysis_updated(instance, *args, **kwargs):
-    """ Sends a queue notification whenever the task is finished to update workers """
-    if instance.status in ['RUN_COMPLETED', 'RUN_CANCELLED', 'RUN_ERROR']:
-        send_task_status_message({'type': 'queue_status.updated', 'content': {}})
-        logger.debug("Message sent to task")

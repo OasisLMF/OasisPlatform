@@ -46,22 +46,22 @@ class AutoScaler:
         :param msg: The message content
         """
         pending_analyses: [RunningAnalysis] = await self.parse_queued_pending(msg)
-        logging.debug('Analyses pending: %s', pending_analyses)
+        logging.info('Analyses pending: %s', pending_analyses)
 
         running_analyses: [RunningAnalysis] = await self.parse_running_analyses(msg)
-        logging.debug('Analyses running: %s', running_analyses)
+        logging.info('Analyses running: %s', running_analyses)
 
         model_states = self._aggregate_model_states({**pending_analyses, **running_analyses})
-        logging.debug('Model statuses: %s', model_states)
+        logging.info('Model statuses: %s', model_states)
 
         model_states_with_wd = await self._filter_model_states_with_wd(model_states)
         v1_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v1')
         v2_models = self._filter_models_by_api_version(model_states_with_wd, api_version='v2')
         prioritized_models = self._clear_unprioritized_models(v1_models + v2_models)
 
-        logging.debug(f"v1 models: {v1_models}")
-        logging.debug(f"priority: {prioritized_models}")
-        logging.debug(f"with wd: {model_states_with_wd}")
+        logging.info(f"v1 models: {v1_models}")
+        logging.info(f"priority: {prioritized_models}")
+        logging.info(f"with wd: {model_states_with_wd}")
         await self._scale_models(prioritized_models)
 
     def _aggregate_model_states(self, analyses: []) -> dict:
@@ -191,6 +191,8 @@ class AutoScaler:
         content: List[QueueStatusContentEntry] = msg['content']
         running_analyses: [RunningAnalysis] = {}
 
+        logging.info("content")
+
         for entry in content:
             logging.debug(f"entry: {entry}")
             logging.debug(f"analyses: {entry['analyses']}")
@@ -200,15 +202,14 @@ class AutoScaler:
                 analysis = analysis_entry['analysis']
                 tasks = analysis.get('sub_task_count', 0)
                 if not tasks:
-                    if analysis.get('status') in ['RUN_QUEUED', 'RUN_STARTED', 'INPUTS_GENERATION_QUEUED', 'INPUTS_GENERATION_STARTED']:
-                        sa_id = analysis['id']
-                        if sa_id not in running_analyses:
-                            priority = int(analysis.get('priority', 1))
-                            running_analyses[sa_id] = RunningAnalysis(
-                                id=analysis['id'], tasks=1,
-                                queue_names=[entry['queue']['name']],
-                                priority=priority)
-                            continue
+                    sa_id = analysis['id']
+                    if sa_id not in running_analyses:
+                        priority = int(analysis.get('priority', 1))
+                        running_analyses[sa_id] = RunningAnalysis(
+                            id=analysis['id'], tasks=1,
+                            queue_names=[entry['queue']['name']],
+                            priority=priority)
+                        continue
 
                 queue_names = set()
                 task_counts = analysis.get('status_count', {})
