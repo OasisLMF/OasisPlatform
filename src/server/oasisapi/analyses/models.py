@@ -503,6 +503,7 @@ class Analysis(TimeStampedModel):
 
         self.status = self.status_choices.RUN_QUEUED
         self.save()
+
         # Start V1 run
         if run_mode == self.run_mode_choices.V1:
             task = self.v1_run_analysis_signature
@@ -529,6 +530,7 @@ class Analysis(TimeStampedModel):
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
+        send_task_status_message(build_all_queue_status_message())
 
     def raise_validate_errors(self, errors):
         raise ValidationError(detail=errors)
@@ -594,6 +596,7 @@ class Analysis(TimeStampedModel):
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
+        send_task_status_message(build_all_queue_status_message())
 
     def cancel_subtasks(self):
         if self.run_mode == self.run_mode_choices.V2:
@@ -685,6 +688,7 @@ class Analysis(TimeStampedModel):
         self.task_started = timezone.now()
         self.task_finished = None
         self.save()
+        send_task_status_message(build_all_queue_status_message())
 
     def cancel_any(self):
         INPUTS_GENERATION_STATES = [
