@@ -41,7 +41,7 @@ class CancelAnalysisTask(WebTestMixin, TestCase):
         async_result_mock = Mock()
 
         with freeze_time(_now), \
-             patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
+                patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
             analysis = fake_analysis(status=orig_status)
 
             complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
@@ -79,7 +79,7 @@ class CancelAnalysisTask(WebTestMixin, TestCase):
         async_result_mock = Mock()
 
         with freeze_time(_now), \
-             patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
+                patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
             analysis = fake_analysis(status=orig_status)
 
             complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
@@ -121,7 +121,7 @@ class CancelAnalysisTask(WebTestMixin, TestCase):
         async_result_mock = Mock()
 
         with freeze_time(_now), \
-             patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
+                patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
             analysis = fake_analysis(status=orig_status, task_finished=end_time)
 
             complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
