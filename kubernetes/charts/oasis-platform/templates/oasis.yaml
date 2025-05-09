@@ -88,13 +88,7 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
-{{- if ((.Values.volumes.host).sharedFs) }}
-        - name: shared-fs-persistent-storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.volumes.host.sharedFs.name }}
-{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
-        - name: shared-fs-persistent-storage
-{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
+{{- include "h.sharedVolume" . | nindent 8}}
 {{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
@@ -103,7 +97,7 @@ spec:
             volumeAttributes:
               secretProviderClass: "azure-secret-provider"
 {{- end }}
-{{- end }}
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -163,13 +157,7 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
-{{- if ((.Values.volumes.host).sharedFs) }}
-        - name: shared-fs-persistent-storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.volumes.host.sharedFs.name }}
-{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
-        - name: shared-fs-persistent-storage
-{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
+{{- include "h.sharedVolume" . | nindent 8}}
 {{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
@@ -177,7 +165,6 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: "azure-secret-provider"
-{{- end }}
 {{- end }}
 ---
 apiVersion: apps/v1

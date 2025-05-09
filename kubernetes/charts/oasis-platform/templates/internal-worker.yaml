@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.internalWorker.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "h.labels" . | nindent 4}} 
+  {{- include "h.labels" . | nindent 4}}
 spec:
   replicas: {{ .Values.internalWorker.replicas }}
   selector:
@@ -45,11 +45,4 @@ spec:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
       volumes:
-{{- if ((.Values.volumes.host).sharedFs) }}
-        - name: shared-fs-persistent-storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.volumes.host.sharedFs.name }}
-{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
-        - name: shared-fs-persistent-storage
-{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
-{{- end }}
+{{- include "h.sharedVolume" . | nindent 8}}

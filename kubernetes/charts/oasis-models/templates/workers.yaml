@@ -42,7 +42,7 @@ spec:
             {{- include "h.modelEnvs" . | indent 12 }}
             {{- include "h.brokerVars" $root | indent 12 }}
             {{- include "h.celeryDbVars" $root | indent 12}}
-{{- if eq $worker.apiVersion "v1" }}            
+{{- if eq $worker.apiVersion "v1" }}
           startupProbe:
             exec:
               command: ["celery", "-A", "src.model_execution_worker.tasks", "inspect", "ping"]
@@ -91,13 +91,7 @@ spec:
               readOnly: true
 {{- end }}
       volumes:
-        - name: shared-fs-persistent-storage
-{{- if (($root.Values.volumes.host).sharedFs) }}
-          persistentVolumeClaim:
-            claimName: {{ $root.Values.volumes.host.sharedFs.name }}
-{{- else if (($root.Values.volumes.azureFiles).sharedFs) }}
-{{- toYaml $root.Values.volumes.azureFiles.sharedFs | nindent 10 }}
-{{- end }}
+{{- include "h.sharedVolume" $root | nindent 8}}
         {{- range .volumes }}
         - name: {{ .name }}
           {{- if eq .source "host" }}

@@ -1,0 +1,60 @@
+{{- if .Values.blobs.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blob-sync
+  labels:
+    app: blob-sync
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blob-sync
+  template:
+    metadata:
+      labels:
+        app: blob-sync
+    spec:
+      containers:
+        - name: blob-sync
+          image: oasisblobacr.azurecr.io/blobfuse2:latest
+          securityContext:
+            privileged: true
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              blobfuse2 mount /mnt/blobfuse \
+                --container-name={{ .Values.azure.storage.container }} \
+                --tmp-path=/tmp/blobfuse \
+                --log-level=LOG_WARNING && \
+              cp -r /mnt/blobfuse/. /shared-fs/ && \
+              inotifywait -m -r -e close_write,create,delete /shared-fs | while read path action file; do
+                cp "/shared-fs/$file" "/mnt/blobfuse/$file"
+              done
+          volumeMounts:
+            - name: shared-fs
+              mountPath: /shared-fs
+            - name: tmp
+              mountPath: /tmp/blobfuse
+          env:
+            - name: AZURE_STORAGE_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-blob-account
+                  key: AZURE_STORAGE_ACCOUNT
+            - name: AZURE_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-blob-account
+                  key: AZURE_STORAGE_KEY
+            - name: AZURE_STORAGE_AUTH_TYPE
+              value: Key
+
+      volumes:
+        - name: shared-fs
+          persistentVolumeClaim:
+            claimName: {{ .Values.volumes.blobData.sharedFs.name }}
+        - name: tmp
+          emptyDir: {}
+{{- end }}

@@ -273,3 +273,18 @@ affinity:
   {{- toYaml .Values.affinity | nindent 2 }}
 {{- end -}}
 {{- end -}}
+
+{{- define "h.sharedVolume" -}}
+{{- if and .Values.volumes.host (hasKey .Values.volumes.host "sharedFs") }}
+- name: shared-fs-persistent-storage
+  persistentVolumeClaim:
+    claimName: {{ .Values.volumes.host.sharedFs.name }}
+{{- else if and .Values.volumes.azureFiles (hasKey .Values.volumes.azureFiles "sharedFs" ) }}
+- name: shared-fs-persistent-storage
+{{ toYaml .Values.volumes.azureFiles.sharedFs | indent 2 }}
+{{- else if .Values.volumes.blobData }}
+- name: shared-fs-persistent-storage
+  persistentVolumeClaim:
+    claimName: {{ .Values.volumes.blobData.sharedFs.name }}
+{{- end }}
+{{- end }}
