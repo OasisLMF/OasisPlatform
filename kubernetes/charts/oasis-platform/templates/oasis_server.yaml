@@ -143,14 +143,7 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 2
       volumes:
-{{- if ((.Values.volumes.host).sharedFs) }}
-        - name: shared-fs-persistent-storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.volumes.host.sharedFs.name }}
-{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
-        - name: shared-fs-persistent-storage
-{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
-{{- end }}
+{{- include "h.sharedVolume" . | nindent 8}}
 {{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
@@ -269,14 +262,7 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 2
       volumes:
-{{- if ((.Values.volumes.host).sharedFs) }}
-        - name: shared-fs-persistent-storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.volumes.host.sharedFs.name }}
-{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
-        - name: shared-fs-persistent-storage
-{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
-{{- end }}
+{{- include "h.sharedVolume" . | nindent 8}}
 {{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:

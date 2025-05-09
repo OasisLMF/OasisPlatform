@@ -2,5 +2,10 @@
 {{ include "h.createPersistentVolume" (dict "name" $v.name "storageCapacity" $v.storageCapacity "hostPath" $v.hostPath) }}
 ---
 {{ include "h.createPersistentVolumeClaim" (dict "name" $v.name "storageCapacity" $v.storageCapacity) }}
+{{- end }}
+{{- if .Values.blobs.enabled }}
+{{ include "h.createPersistentVolume" (dict "name" "shared-fs-persistent-storage" "storageCapacity" .Values.volumes.blobData.sharedFs.storage "hostPath" "/shared-fs") }}
+---
+{{ include "h.createPersistentVolumeClaim" (dict "name" "shared-fs-persistent-storage" "storageCapacity" .Values.volumes.blobData.sharedFs.storage) }}
 ---
 {{- end }}

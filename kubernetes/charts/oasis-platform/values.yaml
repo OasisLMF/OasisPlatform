@@ -14,7 +14,7 @@ images:
       image: coreoasis/worker_controller
       version: dev
       imagePullPolicy: Never
-    worker_internal: 
+    worker_internal:
       image: coreoasis/model_worker
       version: dev
       imagePullPolicy: Never
@@ -271,3 +271,6 @@ volumes:
 #        volumeAttributes:
 #          secretName: azure-secret
 #          shareName: oasisfs
+
+blobs:
+  enabled: false
