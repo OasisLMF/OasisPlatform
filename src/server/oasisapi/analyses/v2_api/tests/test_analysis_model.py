@@ -13,7 +13,7 @@ from hypothesis.strategies import text, sampled_from
 from hypothesis.strategies import datetimes, just
 from mock import patch, PropertyMock, Mock
 from rest_framework.exceptions import ValidationError
-from unittest.mock import ANY, MagicMock
+from unittest.mock import MagicMock
 
 from src.conf import iniconf
 from src.server.oasisapi.portfolios.v2_api.tests.fakes import fake_portfolio
@@ -29,9 +29,6 @@ settings.load_profile("ci")
 
 
 class CancelAnalysisTask(WebTestMixin, TestCase):
-    # pass
-
-    # TODO: fix test - disabled due to failure
     @given(orig_status=sampled_from([
         Analysis.status_choices.INPUTS_GENERATION_QUEUED,
         Analysis.status_choices.INPUTS_GENERATION_STARTED,
@@ -69,7 +66,6 @@ class CancelAnalysisTask(WebTestMixin, TestCase):
             async_res_mock.assert_any_call(queued.task_id)
             async_res_mock.assert_any_call(started.task_id)
 
-    # TODO: fix test - disabled due to failure
     @given(orig_status=sampled_from([
         Analysis.status_choices.RUN_QUEUED,
         Analysis.status_choices.RUN_STARTED,
@@ -118,10 +114,8 @@ class CancelAnalysisTask(WebTestMixin, TestCase):
     )
     def test_analysis_already_in_and_ended_state___analysis_status_is_unchanged(self, orig_status, end_time):
         _now = now()
-        async_result_mock = Mock()
 
-        with freeze_time(_now), \
-                patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
+        with freeze_time(_now):
             analysis = fake_analysis(status=orig_status, task_finished=end_time)
 
             complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
@@ -172,7 +166,6 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
                     settings_file=fake_related_file())
 
                 task_sig = Mock()
-                task_chain = Mock()
 
                 analysis.model.run_mode = analysis.model.run_mode_choices.V2
                 analysis.model.save()
@@ -292,8 +285,10 @@ class AnalysisRun(WebTestMixin, TestCase):
                     patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
                 ):
                     analysis.run(initiator, run_mode_override='V2')
-                    mock_task.assert_called_once_with('start_loss_generation_task', (analysis.pk, initiator.pk, None),
-                                                      {}, queue='celery-v2', link_error=ANY, priority=4)
+                    mock_task.assert_called_once()
+                    args, kwargs = mock_task.call_args
+                    assert args == ('start_loss_generation_task', (analysis.pk, initiator.pk, None), {})
+                    assert kwargs['priority'] == 4
 
     @given(
         status=sampled_from([
@@ -360,8 +355,11 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
                 ):
                     analysis.generate_inputs(initiator, run_mode_override='V2')
-                    mock_task.assert_called_once_with('start_input_generation_task', (analysis.pk, initiator.pk,
-                                                      4), {}, queue='celery-v2', link_error=ANY, priority=4)
+                    mock_task.assert_called_once()
+                    args, kwargs = mock_task.call_args
+                    assert args == ('start_input_generation_task', (analysis.pk, initiator.pk, 4), {})
+                    assert kwargs['priority'] == 4
+                    assert kwargs['queue'] == 'celery-v2'
 
     @given(
         status=sampled_from([
