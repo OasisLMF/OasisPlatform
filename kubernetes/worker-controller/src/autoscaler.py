@@ -236,7 +236,6 @@ class AutoScaler:
         logging.debug('Scaling: %s', prioritized_models)
 
         for model, state, wd in prioritized_models:
-            logging.info(f"Scaling: {wd.auto_scaling}")
             if wd.auto_scaling and wd.auto_scaling.get('scaling_strategy') is None:
                 logging.info("No scaling strategy")
                 continue
