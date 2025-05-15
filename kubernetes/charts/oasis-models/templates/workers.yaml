@@ -31,18 +31,21 @@ spec:
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.databases.broker.name $root.Values.databases.celery_db.name) | nindent 8}}
       containers:
+        {{- include "h.blobfuseSidecar" $root | nindent 8 }}
         - image: {{ .image }}:{{ .version }}
           {{- if .imagePullPolicy }}
           imagePullPolicy: {{ .imagePullPolicy }}
           {{- end }}
           name: worker
+          securityContext:
+            privileged: true
           env:
             - name: OASIS_RUN_MODE
               value: {{ $worker.apiVersion }}
             {{- include "h.modelEnvs" . | indent 12 }}
             {{- include "h.brokerVars" $root | indent 12 }}
             {{- include "h.celeryDbVars" $root | indent 12}}
-{{- if eq $worker.apiVersion "v1" }}            
+{{- if eq $worker.apiVersion "v1" }}
           startupProbe:
             exec:
               command: ["celery", "-A", "src.model_execution_worker.tasks", "inspect", "ping"]
@@ -72,8 +75,7 @@ spec:
             failureThreshold: 15
 {{- end }}
           volumeMounts:
-            - name: shared-fs-persistent-storage
-              mountPath: /shared-fs
+{{- include "h.volumeMounts" $root | nindent 12 }}
             {{- range .volumes }}
             - name: {{ .name }}
               {{- if eq .source "azureFiles" }}
@@ -91,13 +93,7 @@ spec:
               readOnly: true
 {{- end }}
       volumes:
-        - name: shared-fs-persistent-storage
-{{- if (($root.Values.volumes.host).sharedFs) }}
-          persistentVolumeClaim:
-            claimName: {{ $root.Values.volumes.host.sharedFs.name }}
-{{- else if (($root.Values.volumes.azureFiles).sharedFs) }}
-{{- toYaml $root.Values.volumes.azureFiles.sharedFs | nindent 10 }}
-{{- end }}
+{{- include "h.sharedVolume" $root | nindent 8}}
         {{- range .volumes }}
         - name: {{ .name }}
           {{- if eq .source "host" }}

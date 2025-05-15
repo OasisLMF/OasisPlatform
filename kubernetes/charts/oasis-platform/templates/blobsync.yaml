@@ -1,0 +1,60 @@
+{{- if .Values.blobs.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: blob-sync
+  labels:
+    app: blob-sync
+spec:
+  selector:
+    matchLabels:
+      app: blob-sync
+  template:
+    metadata:
+      labels:
+        app: blob-sync
+    spec:
+      containers:
+        - name: blob-sync
+          image: oasisblobacr.azurecr.io/blobfuse2:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              echo "Mounting blobfuse2 to /shared-fs..."
+              blobfuse2 mount /shared-fs \
+                --container-name={{ .Values.azure.storage.container }} \
+                --tmp-path=/tmp/blobfuse \
+                --log-level=LOG_WARNING \
+                --file-cache-timeout-in-seconds=2 \
+                --allow-other && \
+              tail -f /dev/null
+
+          volumeMounts:
+            - name: shared-fs-persistent-storage
+              mountPath: /shared-fs
+            - name: tmp
+              mountPath: /tmp/blobfuse
+          env:
+            - name: AZURE_STORAGE_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: blob-password
+                  key: AZURE_STORAGE_ACCOUNT
+            - name: AZURE_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: blob-password
+                  key: AZURE_STORAGE_KEY
+            - name: AZURE_STORAGE_AUTH_TYPE
+              value: Key
+
+      volumes:
+        - name: shared-fs-persistent-storage
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+{{- end }}

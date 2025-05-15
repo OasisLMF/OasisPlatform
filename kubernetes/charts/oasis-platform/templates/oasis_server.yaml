@@ -83,6 +83,8 @@ spec:
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisWebsocket.name }}
+          securityContext:
+            privileged: true
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
             - name: OASIS_ADMIN_USER
@@ -122,8 +124,7 @@ spec:
               name: {{ .Values.oasisWebsocket.name }}
           command: [ "./asgi/run-asgi.sh" ]
           volumeMounts:
-            - name: shared-fs-persistent-storage
-              mountPath: /shared-fs
+{{- include "h.volumeMounts" .| nindent 12 }}
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -143,14 +144,7 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 2
       volumes:
-{{- if ((.Values.volumes.host).sharedFs) }}
-        - name: shared-fs-persistent-storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.volumes.host.sharedFs.name }}
-{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
-        - name: shared-fs-persistent-storage
-{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
-{{- end }}
+{{- include "h.sharedVolume" . | nindent 8}}
 {{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
@@ -198,15 +192,19 @@ spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
+        {{- if not .Values.volumes.blobData }}
         - name: set-mount-permissions
           image: busybox
           command: ["sh", "-c", "find /shared-fs -user root -exec chown 1000:1000 {} \\;"]
           volumeMounts:
-          - mountPath: /shared-fs
-            name: shared-fs-persistent-storage
+{{- include "h.volumeMounts" .| nindent 12 }}
+        {{- end}}
       containers:
+        {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisServer.name }}
+          securityContext:
+            privileged: true
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
             - name: OASIS_ADMIN_USER
@@ -244,8 +242,7 @@ spec:
             - containerPort: {{ .Values.oasisServer.port }}
               name: {{ .Values.oasisServer.name }}
           volumeMounts:
-            - name: shared-fs-persistent-storage
-              mountPath: /shared-fs
+{{- include "h.volumeMounts" .| nindent 12 }}
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -269,14 +266,7 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 2
       volumes:
-{{- if ((.Values.volumes.host).sharedFs) }}
-        - name: shared-fs-persistent-storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.volumes.host.sharedFs.name }}
-{{- else if ((.Values.volumes.azureFiles).sharedFs) }}
-        - name: shared-fs-persistent-storage
-{{- toYaml .Values.volumes.azureFiles.sharedFs | nindent 10 }}
-{{- end }}
+{{- include "h.sharedVolume" . | nindent 8}}
 {{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
