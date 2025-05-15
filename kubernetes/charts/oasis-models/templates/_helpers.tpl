@@ -275,7 +275,9 @@ affinity:
 {{ toYaml .Values.volumes.azureFiles.sharedFs | indent 2 }}
 {{- else if .Values.volumes.blobData }}
 - name: shared-fs-persistent-storage
-  emptyDir: {}
+  hostPath:
+    path: /shared-fs
+    type: DirectoryOrCreate
 - name: tmp
   emptyDir: {}
 {{- end }}
@@ -285,6 +287,7 @@ affinity:
 {{- if and (not .Values.volumes.host) (not .Values.volumes.azureFiles) }}
 - name: shared-fs-persistent-storage
   mountPath: /shared-fs
+  mountPropagation: Bidirectional
 - name: tmp
   mountPath: /tmp/blobfuse
 {{- else }}
@@ -304,6 +307,7 @@ affinity:
     - -c
     - |
       echo "Mounting blobfuse2 to /shared-fs..."
+      rm -rf /shared-fs/* && \
       blobfuse2 mount /shared-fs \
         --container-name=${AZURE_CONTAINER_NAME} \
         --tmp-path=/tmp/blobfuse \
@@ -331,6 +335,7 @@ affinity:
   volumeMounts:
     - name: shared-fs-persistent-storage
       mountPath: /shared-fs
+      mountPropagation: Bidirectional
     - name: tmp
       mountPath: /tmp/blobfuse
 {{- end }}

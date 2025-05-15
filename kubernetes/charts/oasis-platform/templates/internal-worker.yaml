@@ -19,9 +19,10 @@ spec:
         app: {{ .Values.internalWorker.name }}
     spec:
       containers:
-        {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - name: {{ .Values.internalWorker.name }}
           image: {{ .Values.images.oasis.worker_internal.image }}:{{ .Values.images.oasis.worker_internal.version }}
+          securityContext:
+            privileged: true
           imagePullPolicy: {{ .Values.images.oasis.worker_internal.imagePullPolicy }}
           env:
             - name: OASIS_RUN_MODE

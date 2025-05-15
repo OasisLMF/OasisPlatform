@@ -37,6 +37,8 @@ spec:
           imagePullPolicy: {{ .imagePullPolicy }}
           {{- end }}
           name: worker
+          securityContext:
+            privileged: true
           env:
             - name: OASIS_RUN_MODE
               value: {{ $worker.apiVersion }}

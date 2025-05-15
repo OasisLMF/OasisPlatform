@@ -81,9 +81,10 @@ spec:
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
       containers:
-        {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisWebsocket.name }}
+          securityContext:
+            privileged: true
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
             - name: OASIS_ADMIN_USER
@@ -202,6 +203,8 @@ spec:
         {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisServer.name }}
+          securityContext:
+            privileged: true
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
             - name: OASIS_ADMIN_USER

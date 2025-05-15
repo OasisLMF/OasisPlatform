@@ -56,10 +56,11 @@ spec:
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
       containers:
-        {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: oasis-v1-worker-monitor
+          securityContext:
+            privileged: true
           env:
 {{- include "h.serverDbVars" . | indent 12}}
 {{- include "h.celeryDbVars" . | indent 12}}
@@ -125,10 +126,11 @@ spec:
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
       containers:
-        {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: oasis-v2-worker-monitor
+          securityContext:
+            privileged: true
           env:
 {{- include "h.serverDbVars" . | indent 12}}
 {{- include "h.celeryDbVars" . | indent 12}}
