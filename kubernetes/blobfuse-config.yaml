@@ -1,0 +1,20 @@
+logging:
+  type: syslog
+  level: LOG_WARNING
+
+components:
+  - libfuse
+  - azstorage
+
+libfuse:
+  mount-path: /mnt/blobfuse
+  allow-other: true
+  uid: 1000
+  gid: 1000
+  tmp-path: /tmp/blobfuse
+
+azstorage:
+  type: block
+  container: {{ .Values.azure.storage.container }}
+  account-name: UseEnv
+  account-key: UseEnv
