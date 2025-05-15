@@ -31,6 +31,7 @@ spec:
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list $root $root.Values.databases.broker.name $root.Values.databases.celery_db.name) | nindent 8}}
       containers:
+        {{- include "h.blobfuseSidecar" $root | nindent 8 }}
         - image: {{ .image }}:{{ .version }}
           {{- if .imagePullPolicy }}
           imagePullPolicy: {{ .imagePullPolicy }}
@@ -72,8 +73,7 @@ spec:
             failureThreshold: 15
 {{- end }}
           volumeMounts:
-            - name: shared-fs-persistent-storage
-              mountPath: /shared-fs
+{{- include "h.volumeMounts" $root | nindent 12 }}
             {{- range .volumes }}
             - name: {{ .name }}
               {{- if eq .source "azureFiles" }}

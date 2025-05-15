@@ -19,6 +19,7 @@ spec:
         app: {{ .Values.internalWorker.name }}
     spec:
       containers:
+        {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - name: {{ .Values.internalWorker.name }}
           image: {{ .Values.images.oasis.worker_internal.image }}:{{ .Values.images.oasis.worker_internal.version }}
           imagePullPolicy: {{ .Values.images.oasis.worker_internal.imagePullPolicy }}
@@ -42,7 +43,6 @@ spec:
             timeoutSeconds: 60
             failureThreshold: 15
           volumeMounts:
-            - name: shared-fs-persistent-storage
-              mountPath: /shared-fs
+{{- include "h.volumeMounts" . | nindent 12 }}
       volumes:
 {{- include "h.sharedVolume" . | nindent 8}}

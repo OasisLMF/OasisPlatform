@@ -275,7 +275,63 @@ affinity:
 {{ toYaml .Values.volumes.azureFiles.sharedFs | indent 2 }}
 {{- else if .Values.volumes.blobData }}
 - name: shared-fs-persistent-storage
-  persistentVolumeClaim:
-    claimName: {{ .Values.volumes.blobData.sharedFs.name }}
+  emptyDir: {}
+- name: tmp
+  emptyDir: {}
+{{- end }}
+{{- end }}
+
+{{- define "h.volumeMounts" -}}
+{{- if and (not .Values.volumes.host) (not .Values.volumes.azureFiles) }}
+- name: shared-fs-persistent-storage
+  mountPath: /shared-fs
+- name: tmp
+  mountPath: /tmp/blobfuse
+{{- else }}
+- name: shared-fs-persistent-storage
+  mountPath: /shared-fs
+{{- end }}
+{{- end }}
+
+{{- define "h.blobfuseSidecar" -}}
+{{- if and (not .Values.volumes.host) (not .Values.volumes.azureFiles) .Values.volumes.blobData }}
+- name: blobfuse
+  image: oasisblobacr.azurecr.io/blobfuse2:latest
+  securityContext:
+    privileged: true
+  command:
+    - /bin/sh
+    - -c
+    - |
+      echo "Mounting blobfuse2 to /shared-fs..."
+      blobfuse2 mount /shared-fs \
+        --container-name=${AZURE_CONTAINER_NAME} \
+        --tmp-path=/tmp/blobfuse \
+        --log-level=LOG_WARNING \
+        --allow-other && \
+      tail -f /dev/null
+  env:
+    - name: AZURE_STORAGE_ACCOUNT
+      valueFrom:
+        secretKeyRef:
+          name: blob-password
+          key: AZURE_STORAGE_ACCOUNT
+    - name: AZURE_STORAGE_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: blob-password
+          key: AZURE_STORAGE_KEY
+    - name: AZURE_CONTAINER_NAME
+      valueFrom:
+        secretKeyRef:
+          name: blob-password
+          key: AZURE_CONTAINER_NAME
+    - name: AZURE_STORAGE_AUTH_TYPE
+      value: Key
+  volumeMounts:
+    - name: shared-fs-persistent-storage
+      mountPath: /shared-fs
+    - name: tmp
+      mountPath: /tmp/blobfuse
 {{- end }}
 {{- end }}

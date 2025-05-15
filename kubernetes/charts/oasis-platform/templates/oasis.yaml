@@ -56,6 +56,7 @@ spec:
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
       containers:
+        {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: oasis-v1-worker-monitor
@@ -68,8 +69,7 @@ spec:
               value: "1"
           command: [ "celery", "-A", "src.server.oasisapi.celery_app_v1", "worker", "--loglevel=INFO", "-Q", "celery" ]
           volumeMounts:
-            - name: shared-fs-persistent-storage
-              mountPath: /shared-fs
+{{- include "h.volumeMounts" . | nindent 12 }}
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -125,6 +125,7 @@ spec:
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
       containers:
+        {{- include "h.blobfuseSidecar" .  | nindent 8 }}
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: oasis-v2-worker-monitor
@@ -135,10 +136,9 @@ spec:
 {{- include "h.channelLayerVars" . | indent 12 }}
             - name: OASIS_DEBUG
               value: "1"
-          command: [ "celery", "-A", "src.server.oasisapi.celery_app_v2", "worker", "--loglevel=INFO", "-Q", "celery-v2" ]
+          command: [ "celery", "-A", "src.server.oasisapi.celery_app_v2", "worker", "--loglevel=INFO", "-Q", "celery-v2" ]#
           volumeMounts:
-            - name: shared-fs-persistent-storage
-              mountPath: /shared-fs
+{{- include "h.volumeMounts" .| nindent 12 }}
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
