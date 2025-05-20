@@ -12,9 +12,23 @@ from ..celery_app_v2 import v2 as celery_app_v2
 from ..schemas.custom_swagger import HEALTHCHECK
 
 
-class HealthcheckView(views.APIView):
+class HealthcheckViewShallow(views.APIView):
     """
     Gets the current status of the api
+    """
+
+    http_method_names = ['get']
+    authentication_classes = []
+    permission_classes = []
+
+    @swagger_auto_schema(responses={200: HEALTHCHECK})
+    def get(self, request):
+        return Response({'status': 'OK'})
+
+
+class HealthcheckViewDeep(views.APIView):
+    """
+    Gets the current status of the api, checking the connecting to celery and database 
     """
 
     http_method_names = ['get']
