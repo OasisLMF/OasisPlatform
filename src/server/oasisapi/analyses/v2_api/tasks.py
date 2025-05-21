@@ -469,6 +469,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     lookup_success_fp = result.get('lookup_success_location')
     lookup_validation_fp = result.get('lookup_validation_location')
     summary_levels_fp = result.get('summary_levels_location')
+    analysis_settings_fp = result.get('analysis_settings_location', None)
 
     logger.info('args: {}'.format({
         'output_location': input_location,
@@ -490,6 +491,9 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
                                                  filename=f'analysis_{analysis_id}_exposure_summary_report.json')
     analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator,
                                               filename=f'analysis_{analysis_id}_exposure_summary_levels.json')
+
+    if analysis_settings_fp:
+        analysis.settings_file = store_file(analysis_settings_fp, 'application/json', initiator, required=False, filename=f'analysis_{analysis_id}_settings.json')
 
     # group sub-task logs and write to trace file
     random_filename = '{}.txt'.format(uuid.uuid4().hex)
