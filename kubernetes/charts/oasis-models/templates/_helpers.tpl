@@ -264,3 +264,66 @@ affinity:
   {{- toYaml .Values.affinity | nindent 2 }}
 {{- end -}}
 {{- end -}}
+
+{{- define "h.blobfuseVolume" -}}
+{{- if .Values.blobs.enabled }}
+- name: model-files
+  emptyDir: {}
+- name: tmp
+  emptyDir: {}
+{{- end }}
+{{- end }}
+
+{{- define "h.blobfuseMounts" -}}
+{{- if .Values.blobs.enabled }}
+- name: model-files
+  mountPath: /home/worker/model
+- name: tmp
+  mountPath: /tmp/blobfuse
+{{- end }}
+{{- end }}
+
+{{- define "h.blobfuseSidecar" -}}
+{{- if .Values.blobs.enabled }}
+- name: blobfuse
+  image: oasisblobacr.azurecr.io/blobfuse2:latest
+  securityContext:
+    privileged: true
+  command:
+    - /bin/sh
+    - -c
+    - |
+      echo "Mounting blobfuse2 to /mnt/blobfuse..."
+      mkdir -p /mnt/blobfuse
+      blobfuse2 mount /mnt/blobfuse \
+        --container-name=${AZURE_CONTAINER_NAME} \
+        --tmp-path=/tmp/blobfuse \
+        --log-level=LOG_WARNING \
+        --allow-other && \
+      cp -r /mnt/blobfuse/* /home/worker/model/
+      fusermount3 -u /mnt/blobfuse
+  env:
+    - name: AZURE_STORAGE_ACCOUNT
+      valueFrom:
+        secretKeyRef:
+          name: blob-password
+          key: AZURE_STORAGE_ACCOUNT
+    - name: AZURE_STORAGE_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: blob-password
+          key: AZURE_STORAGE_KEY
+    - name: AZURE_CONTAINER_NAME
+      valueFrom:
+        secretKeyRef:
+          name: blob-password
+          key: AZURE_CONTAINER_NAME
+    - name: AZURE_STORAGE_AUTH_TYPE
+      value: Key
+  volumeMounts:
+    - name: model-files
+      mountPath: /home/worker/model
+    - name: tmp
+      mountPath: /tmp/blobfuse
+{{- end }}
+{{- end }}
