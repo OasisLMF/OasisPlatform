@@ -286,7 +286,7 @@ affinity:
 {{- define "h.blobfuseSidecar" -}}
 {{- if .Values.blobs.enabled }}
 - name: blobfuse
-  image: hazzaboynton/blobfuse2:latest
+  image: coreoasis/blobfuse2:latest
   securityContext:
     privileged: true
   command:
