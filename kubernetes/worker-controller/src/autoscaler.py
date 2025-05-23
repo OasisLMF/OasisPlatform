@@ -236,6 +236,10 @@ class AutoScaler:
         logging.debug('Scaling: %s', prioritized_models)
 
         for model, state, wd in prioritized_models:
+            if wd.auto_scaling and wd.auto_scaling.get('scaling_strategy') is None:
+                logging.info("No scaling strategy")
+                continue
+
             workers_min = wd.auto_scaling.get('worker_count_min', 0) if wd.auto_scaling else 0
 
             # Load auto scaling settings everytime we scale up workers from 0 or if 'worker_count_min' is set
