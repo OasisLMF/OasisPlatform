@@ -286,7 +286,7 @@ affinity:
 {{- define "h.blobfuseSidecar" -}}
 {{- if .Values.blobs.enabled }}
 - name: blobfuse
-  image: oasisblobacr.azurecr.io/blobfuse2:latest
+  image: hazzaboynton/blobfuse2:latest
   securityContext:
     privileged: true
   command:
@@ -306,18 +306,15 @@ affinity:
     - name: AZURE_STORAGE_ACCOUNT
       valueFrom:
         secretKeyRef:
-          name: blob-password
-          key: AZURE_STORAGE_ACCOUNT
+          name: oasis-blob-account
+          key: azurestorageaccountname
     - name: AZURE_STORAGE_ACCESS_KEY
       valueFrom:
         secretKeyRef:
-          name: blob-password
-          key: AZURE_STORAGE_KEY
+          name: oasis-blob-account
+          key: azurestorageaccountkey
     - name: AZURE_CONTAINER_NAME
-      valueFrom:
-        secretKeyRef:
-          name: blob-password
-          key: AZURE_CONTAINER_NAME
+      value: model-bucket
     - name: AZURE_STORAGE_AUTH_TYPE
       value: Key
   volumeMounts:

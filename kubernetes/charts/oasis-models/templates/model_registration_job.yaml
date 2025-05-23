@@ -1,6 +1,7 @@
 {{- $root := . -}}
 {{- $initConfigMap := "init-model-registration" -}}
 {{- $index := 0 -}}
+{{- if not $root.Values.blobs.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -86,3 +87,4 @@ spec:
         {{- end }}
       restartPolicy: Never
   backoffLimit: 4
+{{- end }}
