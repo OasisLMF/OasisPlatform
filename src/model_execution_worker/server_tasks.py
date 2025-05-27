@@ -46,7 +46,7 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             ri_info=ri_info,
             ri_scope=ri_scope,
             validation_config=validation_config
-            )
+        )
         try:
             return portfolio_exposure.check()
         except Exception as e:
