@@ -1,10 +1,11 @@
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from django.contrib.auth import get_user_model
 from ...files.models import RelatedFile
+from rest_framework.exceptions import ValidationError
 
 
 @celery_app_v2.task()
-def record_output(result, portfolio_pk, user_pk):
+def record_exposure_output(result, portfolio_pk, user_pk):
     from ..models import Portfolio
     file, success = result
     portfolio = Portfolio.objects.get(id=portfolio_pk)
@@ -19,3 +20,20 @@ def record_output(result, portfolio_pk, user_pk):
     else:
         portfolio.exposure_status = portfolio.exposure_status_choices.ERROR
     portfolio.save()
+
+
+@celery_app_v2.task()
+def record_validation_output(validation_errors, portfolio_pk):
+    from ..models import oed_class_of_businesses__workaround, Portfolio
+    if not validation_errors:
+        instance = Portfolio.objects.get(pk=portfolio_pk)
+        instance.set_portolio_valid()
+    elif isinstance(validation_errors, Exception):
+        oed_class_of_businesses__workaround(validation_errors)  # remove when Issue (https://github.com/OasisLMF/ODS_Tools/issues/174) fixed
+        raise ValidationError({
+            'error': validation_errors[0],
+            'detail': validation_errors[1],
+            'exception': validation_errors[2]
+        })
+    else:
+        raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
