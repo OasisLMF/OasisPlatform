@@ -19,7 +19,8 @@ from .serializers import (
     PortfolioStorageSerializer,
     PortfolioListSerializer,
     PortfolioValidationSerializer,
-    ExposureRunSerializer
+    ExposureRunSerializer,
+    ExposureTransformationSerializer
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
@@ -298,6 +299,17 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             return handle_related_file(self.get_object(), 'exposure_run_file', request, ['text/plain'])
 
         instance.exposure_run(request.data.get('params'), request.user.pk)
+        return Response({"message": "in queue"})
+
+    @swagger_auto_schema(method='post', request_body=ExposureTransformationSerializer)
+    @action(methods=['post'], detail=True)
+    def exposure_transformation(self, request, pk=None, version=None):
+        """
+        post:
+        Converts data to ODS
+        """
+        instance = self.get_object()
+        instance.exposure_transformation(request)
         return Response({"message": "in queue"})
 
     # LOT3 DISABLE

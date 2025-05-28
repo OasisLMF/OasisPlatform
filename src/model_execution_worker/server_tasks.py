@@ -8,6 +8,7 @@ from src.model_execution_worker.utils import TemporaryDir, update_params, get_al
 import os
 from celery import Celery
 from ods_tools.oed.exposure import OedExposure
+from ods_tools.main import transform
 
 app = Celery()
 
@@ -51,3 +52,20 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             return portfolio_exposure.check()
         except Exception as e:
             return e
+
+
+@app.task(name='run_exposure_transform')
+def run_exposure_transform(filepaths, details):
+    options = ['location', 'account', 'ri_info', 'ri_scope']
+    result = [None, None, None, None]
+    with TemporaryDir() as temp_dir:
+        local_filepaths = get_all_files(*filepaths, temp_dir)
+        os.chdir(temp_dir)
+        for i, option in enumerate(options):
+            if details[option]:
+                print(f"Transforming {option} file")
+                transform(format=details['mapping_direction'], input_file=local_filepaths[i], output_file=f"{option}.csv")
+                result[i] = get_filestore(settings).put(f"{option}.csv")
+                print(f"{option} file transformed")
+    print("Am terminat")
+    return result

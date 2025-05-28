@@ -187,8 +187,12 @@ oasis-data-manager==0.1.3
     #   ods-tools
 oasislmf[extra]==2.4.3
     # via -r requirements-worker.in
+psycopg2-binary==2.9.10
+    # via -r requirements-worker.in
+    # before ods
 ods-tools==4.0.1
     # via oasislmf
+ods-tools[extra]==4.0.1
 packaging==24.1
     # via
     #   fastparquet
@@ -213,8 +217,6 @@ prompt-toolkit==3.0.48
     # via click-repl
 propcache==0.2.0
     # via yarl
-psycopg2-binary==2.9.10
-    # via -r requirements-worker.in
 pyarrow==17.0.0
     # via oasislmf
 pycparser==2.22
