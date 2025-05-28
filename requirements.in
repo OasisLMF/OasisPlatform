@@ -23,3 +23,10 @@ django-debug-toolbar
 freezegun
 requests
 tox
+
+PyYAML
+lark
+networkx
+pyodbc
+sqlparams
+sqlparse

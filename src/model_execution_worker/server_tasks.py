@@ -64,8 +64,7 @@ def run_exposure_transform(filepaths, details):
         for i, option in enumerate(options):
             if details[option]:
                 print(f"Transforming {option} file")
-                transform(format=details['mapping_direction'], input_file=local_filepaths[i], output_file=f"{option}.csv")
-                result[i] = get_filestore(settings).put(f"{option}.csv")
+                transform(format=details['mapping_direction'], input_file=local_filepaths[i], output_file=f"{option}_transform.csv")
+                result[i] = get_filestore(settings).put(f"{option}_transform.csv")
                 print(f"{option} file transformed")
-    print("Am terminat")
     return result
