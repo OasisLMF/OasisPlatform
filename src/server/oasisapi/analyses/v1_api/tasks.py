@@ -401,7 +401,6 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
         *additional_args
     ) = result
 
-
     analysis_settings_fp = additional_args[0] if additional_args else None
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
@@ -422,8 +421,6 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
         old_rm_list.append('settings_file')
 
     delete_prev_output(analysis, old_rm_list)
-
-
 
     # SUCCESS
     if return_code == 0:
@@ -446,8 +443,8 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     analysis.task_finished = timezone.now()
 
     if analysis_settings_fp:
-        analysis.settings_file = store_file(analysis_settings_fp, 'application/json', initiator, required=False, filename=f'analysis_{analysis_pk}_settings.json')
-
+        analysis.settings_file = store_file(analysis_settings_fp, 'application/json', initiator,
+                                            required=False, filename=f'analysis_{analysis_pk}_settings.json')
 
     # always store traceback
     if traceback_fp:
