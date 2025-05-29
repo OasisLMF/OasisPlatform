@@ -203,7 +203,7 @@ class Portfolio(TimeStampedModel):
 
         return celery_app_v2.signature(
             'run_exposure_task',
-            args=(location, account, ri_info, ri_scope, params, self.pk),
+            args=(location, account, ri_info, ri_scope, params),
             priority=10
         )
 
