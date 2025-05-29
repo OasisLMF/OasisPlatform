@@ -341,6 +341,6 @@ def get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir
         ri_temp = get_destination_file(ri_filepath, temp_dir, "ri_loss")
         copy_or_download(ri_filepath, ri_temp)
     if rl_filepath:
-        rl_temp = get_destination_file(acc_filepath, temp_dir, "ri_scope")
+        rl_temp = get_destination_file(rl_filepath, temp_dir, "ri_scope")
         copy_or_download(rl_filepath, rl_temp)
     return (loc_temp, acc_temp, ri_temp, rl_temp)
