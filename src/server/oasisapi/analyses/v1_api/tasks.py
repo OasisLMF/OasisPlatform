@@ -398,13 +398,15 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
         summary_levels_fp,
         traceback_fp,
         return_code,
+        *additional_args
     ) = result
 
+    analysis_settings_fp = additional_args[0] if additional_args else None
     analysis = Analysis.objects.get(pk=analysis_pk)
     initiator = get_user_model().objects.get(pk=initiator_pk)
 
     # Remove previous output
-    delete_prev_output(analysis, [
+    old_rm_list = [
         'output_file',
         'input_file',
         'lookup_errors_file',
@@ -414,7 +416,11 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
         'input_generation_traceback_file',
         'run_traceback_file',
         'run_log_file',
-    ])
+    ]
+    if analysis_settings_fp:
+        old_rm_list.append('settings_file')
+
+    delete_prev_output(analysis, old_rm_list)
 
     # SUCCESS
     if return_code == 0:
@@ -435,6 +441,10 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False,
                                               filename=f'analysis_{analysis_pk}_exposure_summary_levels.json') if summary_levels_fp else None
     analysis.task_finished = timezone.now()
+
+    if analysis_settings_fp:
+        analysis.settings_file = store_file(analysis_settings_fp, 'application/json', initiator,
+                                            required=False, filename=f'analysis_{analysis_pk}_settings.json')
 
     # always store traceback
     if traceback_fp:

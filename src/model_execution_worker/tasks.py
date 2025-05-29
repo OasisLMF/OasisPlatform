@@ -498,6 +498,7 @@ def generate_input(self,
         lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
+        analysis_settings_fp = task_params['analysis_settings_json']
 
         # Store logs
         traceback = filestore.put(kwargs['log_filename'])
@@ -509,7 +510,9 @@ def generate_input(self,
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels = filestore.put(summary_levels_fp)
         output_tar_path = filestore.put(oasis_files_dir)
-        return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, returncode
+        analysis_settings = filestore.put(analysis_settings_fp)
+
+        return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, returncode, analysis_settings
 
 
 @app.task(name='on_error')
