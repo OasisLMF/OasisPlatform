@@ -306,7 +306,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
     def exposure_transformation(self, request, pk=None, version=None):
         """
         post:
-        Converts data to ODS
+        Converts data to between OED and AIR
         """
         instance = self.get_object()
         instance.exposure_transformation(request)

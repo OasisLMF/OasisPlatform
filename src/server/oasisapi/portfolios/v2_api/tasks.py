@@ -27,13 +27,13 @@ def record_validation_output(validation_errors, portfolio_pk):
     from ..models import oed_class_of_businesses__workaround, Portfolio
     if not validation_errors:
         instance = Portfolio.objects.get(pk=portfolio_pk)
-        instance.set_portolio_valid()
+        instance.set_portfolio_valid()
     elif isinstance(validation_errors, Exception):
         oed_class_of_businesses__workaround(validation_errors)  # remove when Issue (https://github.com/OasisLMF/ODS_Tools/issues/174) fixed
         raise ValidationError({
-            'error': validation_errors[0],
-            'detail': validation_errors[1],
-            'exception': validation_errors[2]
+            'error': 'Failed to validate portfolio',
+            'detail': str(validation_errors),
+            'exception': type(validation_errors).__name__
         })
     else:
         raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
