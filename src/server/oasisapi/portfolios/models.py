@@ -160,7 +160,7 @@ class Portfolio(TimeStampedModel):
         df = related_file_to_df(self.location_file)
         return len(df.index)
 
-    def set_portolio_valid(self):
+    def set_port_valid(self):
         oed_files = [
             'accounts_file',
             'location_file',
