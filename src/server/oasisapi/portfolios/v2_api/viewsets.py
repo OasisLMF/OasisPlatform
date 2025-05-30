@@ -19,7 +19,8 @@ from .serializers import (
     PortfolioStorageSerializer,
     PortfolioListSerializer,
     PortfolioValidationSerializer,
-    ExposureRunSerializer
+    ExposureRunSerializer,
+    ExposureTransformationSerializer
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
@@ -29,8 +30,6 @@ from ...files.v2_api.views import handle_related_file
 from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
-from ...schemas.serializers import StorageLinkSerializer
-# /home/ubuntu/GitHub/OasisPlatform/src/model_execution_worker/execute_run_tasks.py
 
 
 class PortfolioFilter(TimeStampedFilter):
@@ -300,6 +299,17 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             return handle_related_file(self.get_object(), 'exposure_run_file', request, ['text/plain'])
 
         instance.exposure_run(request.data.get('params'), request.user.pk)
+        return Response({"message": "in queue"})
+
+    @swagger_auto_schema(method='post', request_body=ExposureTransformationSerializer)
+    @action(methods=['post'], detail=True)
+    def exposure_transformation(self, request, pk=None, version=None):
+        """
+        post:
+        Converts data to between OED and AIR
+        """
+        instance = self.get_object()
+        instance.exposure_transformation(request)
         return Response({"message": "in queue"})
 
     # LOT3 DISABLE

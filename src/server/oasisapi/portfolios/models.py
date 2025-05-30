@@ -13,11 +13,11 @@ from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile, related_file_to_df
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
-from .v2_api.tasks import record_output
+from .v2_api.tasks import record_exposure_output, record_validation_output, record_exposure_transformation
 
 import re
 
-from ods_tools.oed.exposure import OedExposure
+# from ods_tools.oed.exposure import OedExposure
 from ods_tools.oed import OdsException
 
 
@@ -160,7 +160,7 @@ class Portfolio(TimeStampedModel):
         df = related_file_to_df(self.location_file)
         return len(df.index)
 
-    def set_portolio_valid(self):
+    def set_portfolio_valid(self):
         oed_files = [
             'accounts_file',
             'location_file',
@@ -173,28 +173,19 @@ class Portfolio(TimeStampedModel):
                 file_ref.oed_validated = True
                 file_ref.save()
 
-    def run_oed_validation(self):
-        try:
-            portfolio_exposure = OedExposure(
-                location=getattr(self.location_file, 'file', None),
-                account=getattr(self.accounts_file, 'file', None),
-                ri_info=getattr(self.reinsurance_info_file, 'file', None),
-                ri_scope=getattr(self.reinsurance_scope_file, 'file', None),
-                validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
-            validation_errors = portfolio_exposure.check()
-        except Exception as e:
-            oed_class_of_businesses__workaround(e)  # remove when Issue (https://github.com/OasisLMF/ODS_Tools/issues/174) fixed
-            raise ValidationError({
-                'error': 'Failed to validate portfolio',
-                'detail': str(e),
-                'exception': type(e).__name__
-            })
+    # Task signatures #
 
-        # Set validation fields to true or raise exception
-        if validation_errors:
-            raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
-        else:
-            self.set_portolio_valid()
+    def run_oed_validation_signature(self):
+        location = get_path_or_url(self.location_file)
+        account = get_path_or_url(self.accounts_file)
+        ri_info = get_path_or_url(self.reinsurance_info_file)
+        ri_scope = get_path_or_url(self.reinsurance_scope_file)
+        validation_config = settings.PORTFOLIO_VALIDATION_CONFIG
+
+        return celery_app_v2.signature(
+            'run_oed_validation',
+            args=(location, account, ri_info, ri_scope, validation_config)
+        )
 
     def exposure_run_signature(self, params):
         if not self.location_file or not self.accounts_file:
@@ -213,12 +204,36 @@ class Portfolio(TimeStampedModel):
             priority=10
         )
 
+    def exposure_transformation_signature(self, request):
+        location = get_path_or_url(self.location_file)
+        account = get_path_or_url(self.accounts_file)
+        ri_info = get_path_or_url(self.reinsurance_info_file)
+        ri_scope = get_path_or_url(self.reinsurance_scope_file)
+        details = request.data
+        return celery_app_v2.signature(
+            'run_exposure_transform',
+            args=([location, account, ri_info, ri_scope], details),
+            priority=10
+        )
+
+    # Task calls #
+
+    def run_oed_validation(self):
+        task = self.run_oed_validation_signature()
+        task.link(record_validation_output.s(self.pk))
+        task.apply_async(queue='oasis-internal-worker', priority=10)
+
     def exposure_run(self, params, user_pk):
         task = self.exposure_run_signature(params)
-        task.link(record_output.s(self.pk, user_pk))
+        task.link(record_exposure_output.s(self.pk, user_pk))
         task.apply_async(queue='oasis-internal-worker', priority=10)
         self.exposure_status = self.exposure_status_choices.STARTED
         self.save()
+
+    def exposure_transformation(self, request):
+        task = self.exposure_transformation_signature(request)
+        task.link(record_exposure_transformation.s(self.pk, request.user.pk))
+        task.apply_async(queue='oasis-internal-worker', priority=10)
 
 
 def get_path_or_url(file):
