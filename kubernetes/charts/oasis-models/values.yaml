@@ -62,7 +62,7 @@ workers:
         #    groups:
         #      - wind
         #      - flood
-              
+
   piwind_demo_v2: # A name that is unique among all workers
     supplierId: OasisLMF
     modelId: PiWind

@@ -32,8 +32,17 @@ images:
     image: busybox
     version: 1.28
   redis:
-    image: redis
-    version: 7-alpine3.18
+    image: valkey/valkey
+    version: 8.1-alpine3.21
+  # redis:
+  #   image: redis
+  #   version: 7-alpine3.18
+  # redis:
+  #   image: eqalpha/keydb
+  #   version: latest
+  # redis:
+  #   image: docker.dragonflydb.io/dragonflydb/dragonfly
+  #   version: latest
   rabbitmq:
     image: rabbitmq
     version: 3.11-management-alpine
@@ -110,7 +119,7 @@ databases:
 #   port: port (for service)
   channel_layer:
     type: redis
-    name: channel-layer
+    name: valkey
     port: 6379
     ssl: false
   broker:

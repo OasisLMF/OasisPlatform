@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`2.4.4`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.3...2.4.4
+
 `2.4.3`_
  ---------
 * [#1189](https://github.com/OasisLMF/OasisPlatform/pull/1189) - Add internal worker to Helm charts
