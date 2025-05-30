@@ -20,7 +20,6 @@ CONFIG = django_settings.PORTFOLIO_VALIDATION_CONFIG
 
 
 class PortfolioValidation(WebTestMixin, TestCase):
-
     def test_all_exposure__are_valid(self):
         validation_errors = run_oed_validation(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, CONFIG)
         assert validation_errors == []
