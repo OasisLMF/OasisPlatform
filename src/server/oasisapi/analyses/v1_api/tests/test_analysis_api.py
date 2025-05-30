@@ -589,20 +589,22 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).portfolio, analysis.portfolio)
 
     def test_portfolio_is_supplied___portfolio_is_replaced(self):
-        user = fake_user()
-        analysis = fake_analysis()
-        new_portfolio = fake_portfolio(location_file=fake_related_file())
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                analysis = fake_analysis()
+                new_portfolio = fake_portfolio(location_file=fake_related_file())
 
-        response = self.app.post(
-            analysis.get_absolute_copy_url(namespace=NAMESPACE),
-            headers={
-                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-            },
-            params=json.dumps({'portfolio': new_portfolio.pk}),
-            content_type='application/json',
-        )
+                response = self.app.post(
+                    analysis.get_absolute_copy_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=json.dumps({'portfolio': new_portfolio.pk}),
+                    content_type='application/json',
+                )
 
-        self.assertEqual(Analysis.objects.get(pk=response.json['id']).portfolio, new_portfolio)
+                self.assertEqual(Analysis.objects.get(pk=response.json['id']).portfolio, new_portfolio)
 
     def test_model_is_not_supplied___model_is_copied(self):
         user = fake_user()
