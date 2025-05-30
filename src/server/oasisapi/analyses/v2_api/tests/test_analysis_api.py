@@ -313,16 +313,14 @@ class AnalysisApi(WebTestMixin, TestCase):
         group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_portfolio_group_inheritance___same_groups_as_portfolio(self, name, group_name):
-
-        user = fake_user()
-        group = add_fake_group(user, group_name)
-        model = fake_analysis_model()
-        model.run_mode = model.run_mode_choices.V2
-        model.save()
-        portfolio = fake_portfolio(location_file=fake_related_file())
-
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                group = add_fake_group(user, group_name)
+                model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V2
+                model.save()
+                portfolio = fake_portfolio(location_file=fake_related_file())
                 # Deny due to not in the same group as model
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),
@@ -385,41 +383,39 @@ class AnalysisApi(WebTestMixin, TestCase):
         group_name3=text(alphabet=string.ascii_letters, max_size=6, min_size=5),
     )
     def test_multiple_analyses_with_different_groups___user_should_not_see_each_others(self, name, group_name1, group_name2, group_name3):
-
-        group1, _ = Group.objects.get_or_create(name=group_name1)
-        group2, _ = Group.objects.get_or_create(name=group_name2)
-        group3, _ = Group.objects.get_or_create(name=group_name3)
-
-        user1 = fake_user()
-        user2 = fake_user()
-
-        group1.user_set.add(user1)
-        group1.user_set.add(user2)
-        group1.save()
-
-        group2.user_set.add(user1)
-        group2.save()
-
-        group3.user_set.add(user2)
-        group3.save()
-
-        model = fake_analysis_model()
-        model.run_mode = model.run_mode_choices.V1
-        model.groups.add(group1)
-        model.groups.add(group2)
-        model.groups.add(group3)
-        model.save()
-
-        portfolio1 = fake_portfolio(location_file=fake_related_file())
-        portfolio1.groups.add(group2)
-        portfolio1.save()
-
-        portfolio2 = fake_portfolio(location_file=fake_related_file())
-        portfolio2.groups.add(group3)
-        portfolio2.save()
-
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
+                group1, _ = Group.objects.get_or_create(name=group_name1)
+                group2, _ = Group.objects.get_or_create(name=group_name2)
+                group3, _ = Group.objects.get_or_create(name=group_name3)
+
+                user1 = fake_user()
+                user2 = fake_user()
+
+                group1.user_set.add(user1)
+                group1.user_set.add(user2)
+                group1.save()
+
+                group2.user_set.add(user1)
+                group2.save()
+
+                group3.user_set.add(user2)
+                group3.save()
+
+                model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V1
+                model.groups.add(group1)
+                model.groups.add(group2)
+                model.groups.add(group3)
+                model.save()
+
+                portfolio1 = fake_portfolio(location_file=fake_related_file())
+                portfolio1.groups.add(group2)
+                portfolio1.save()
+
+                portfolio2 = fake_portfolio(location_file=fake_related_file())
+                portfolio2.groups.add(group3)
+                portfolio2.save()
                 # Create an analysis with portfolio1 - group2
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),
@@ -475,25 +471,24 @@ class AnalysisApi(WebTestMixin, TestCase):
         group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_multiple_analyses_with_different_groups___user_without_group_should_not_see_them(self, name, group_name1):
-
-        group1, _ = Group.objects.get_or_create(name=group_name1)
-
-        user1 = fake_user()
-        group1.user_set.add(user1)
-        group1.save()
-
-        user2 = fake_user()
-
-        model = fake_analysis_model()
-        model.run_mode = model.run_mode_choices.V2
-        model.groups.add(group1)
-        model.save()
-
-        portfolio1 = fake_portfolio(location_file=fake_related_file())
-        portfolio1.groups.add(group1)
-        portfolio1.save()
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
+                group1, _ = Group.objects.get_or_create(name=group_name1)
+
+                user1 = fake_user()
+                group1.user_set.add(user1)
+                group1.save()
+
+                user2 = fake_user()
+
+                model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V2
+                model.groups.add(group1)
+                model.save()
+
+                portfolio1 = fake_portfolio(location_file=fake_related_file())
+                portfolio1.groups.add(group1)
+                portfolio1.save()
                 # Create an analysis
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),
@@ -521,24 +516,23 @@ class AnalysisApi(WebTestMixin, TestCase):
         group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_user_with_and_without_group_can_access_portfolio_without_group(self, name, group_name1):
-
-        group1, _ = Group.objects.get_or_create(name=group_name1)
-
-        user_with_group1 = fake_user()
-        group1.user_set.add(user_with_group1)
-        group1.save()
-
-        user_without_group = fake_user()
-
-        model = fake_analysis_model()
-        model.run_mode = model.run_mode_choices.V1
-        model.save()
-
-        portfolio1 = fake_portfolio(location_file=fake_related_file())
-        portfolio1.save()
-
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
+                group1, _ = Group.objects.get_or_create(name=group_name1)
+
+                user_with_group1 = fake_user()
+                group1.user_set.add(user_with_group1)
+                group1.save()
+
+                user_without_group = fake_user()
+
+                model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V1
+                model.save()
+
+                portfolio1 = fake_portfolio(location_file=fake_related_file())
+                portfolio1.save()
+
                 # Create an analysis
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),
@@ -577,24 +571,22 @@ class AnalysisApi(WebTestMixin, TestCase):
         group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_modify_analysis_without_group___successfully(self, name, group_name1):
-
-        group1, _ = Group.objects.get_or_create(name=group_name1)
-
-        user_with_group1 = fake_user()
-        group1.user_set.add(user_with_group1)
-        group1.save()
-
-        user_without_group = fake_user()
-
-        model = fake_analysis_model()
-        model.run_mode = model.run_mode_choices.V2
-        model.save()
-
-        portfolio1 = fake_portfolio(location_file=fake_related_file())
-        portfolio1.save()
-
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
+                group1, _ = Group.objects.get_or_create(name=group_name1)
+
+                user_with_group1 = fake_user()
+                group1.user_set.add(user_with_group1)
+                group1.save()
+
+                user_without_group = fake_user()
+
+                model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V2
+                model.save()
+
+                portfolio1 = fake_portfolio(location_file=fake_related_file())
+                portfolio1.save()
                 # Create an analysis
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),
@@ -655,14 +647,12 @@ class AnalysisApi(WebTestMixin, TestCase):
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_create_no_priority___successfully_set_default(self, name):
-
-        portfolio = fake_portfolio(location_file=fake_related_file())
-        model = fake_analysis_model()
-        model.run_mode = model.run_mode_choices.V2
-        model.save()
-
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
+                portfolio = fake_portfolio(location_file=fake_related_file())
+                model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V2
+                model.save()
                 # Create an analysis
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),
@@ -680,17 +670,16 @@ class AnalysisApi(WebTestMixin, TestCase):
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_create_as_admin_low_priority___successfully(self, name):
-
-        user = fake_user()
-        user.is_staff = True
-        user.save()
-        portfolio = fake_portfolio(location_file=fake_related_file())
-
-        model = fake_analysis_model()
-        model.run_mode = model.run_mode_choices.V2
-        model.save()
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
+                user = fake_user()
+                user.is_staff = True
+                user.save()
+                portfolio = fake_portfolio(location_file=fake_related_file())
+
+                model = fake_analysis_model()
+                model.run_mode = model.run_mode_choices.V2
+                model.save()
                 # Create an analysis
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),
@@ -706,12 +695,10 @@ class AnalysisApi(WebTestMixin, TestCase):
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_create_as_no_admin_low_priority___rejected(self, name):
-
-        model = fake_analysis_model()
-        portfolio = fake_portfolio(location_file=fake_related_file())
-
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
+                model = fake_analysis_model()
+                portfolio = fake_portfolio(location_file=fake_related_file())
                 # Create an analysis
                 response = self.app.post(
                     reverse(f'{NAMESPACE}:analysis-list'),

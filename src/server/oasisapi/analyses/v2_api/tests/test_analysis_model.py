@@ -36,35 +36,36 @@ class CancelAnalysisTask(WebTestMixin, TestCase):
     def test_analysis_is_running_input_generation___analysis_status_is_updated_and_running_children_are_cancelled(self, orig_status):
         _now = now()
         async_result_mock = Mock()
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                with freeze_time(_now), \
+                        patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
+                    analysis = fake_analysis(status=orig_status)
 
-        with freeze_time(_now), \
-                patch('src.server.oasisapi.analyses.models.AsyncResult', return_value=async_result_mock) as async_res_mock:
-            analysis = fake_analysis(status=orig_status)
+                    complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
+                    error = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.ERROR)
+                    queued = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.QUEUED)
+                    started = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.STARTED)
 
-            complete = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.COMPLETED)
-            error = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.ERROR)
-            queued = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.QUEUED)
-            started = fake_analysis_task_status(analysis=analysis, status=AnalysisTaskStatus.status_choices.STARTED)
+                    analysis.cancel_any()
+                    cancel_subtasks(analysis.pk)
 
-            analysis.cancel_any()
-            cancel_subtasks(analysis.pk)
+                    analysis.refresh_from_db()
+                    complete.refresh_from_db()
+                    error.refresh_from_db()
+                    queued.refresh_from_db()
+                    started.refresh_from_db()
 
-            analysis.refresh_from_db()
-            complete.refresh_from_db()
-            error.refresh_from_db()
-            queued.refresh_from_db()
-            started.refresh_from_db()
+                    self.assertEqual(analysis.status, Analysis.status_choices.INPUTS_GENERATION_CANCELLED)
+                    self.assertEqual(analysis.task_finished, _now)
 
-            self.assertEqual(analysis.status, Analysis.status_choices.INPUTS_GENERATION_CANCELLED)
-            self.assertEqual(analysis.task_finished, _now)
+                    self.assertEqual(complete.status, AnalysisTaskStatus.status_choices.COMPLETED)
+                    self.assertEqual(error.status, AnalysisTaskStatus.status_choices.ERROR)
+                    self.assertEqual(queued.status, AnalysisTaskStatus.status_choices.CANCELLED)
+                    self.assertEqual(started.status, AnalysisTaskStatus.status_choices.CANCELLED)
 
-            self.assertEqual(complete.status, AnalysisTaskStatus.status_choices.COMPLETED)
-            self.assertEqual(error.status, AnalysisTaskStatus.status_choices.ERROR)
-            self.assertEqual(queued.status, AnalysisTaskStatus.status_choices.CANCELLED)
-            self.assertEqual(started.status, AnalysisTaskStatus.status_choices.CANCELLED)
-
-            async_res_mock.assert_any_call(queued.task_id)
-            async_res_mock.assert_any_call(started.task_id)
+                    async_res_mock.assert_any_call(queued.task_id)
+                    async_res_mock.assert_any_call(started.task_id)
 
     @given(orig_status=sampled_from([
         Analysis.status_choices.RUN_QUEUED,
