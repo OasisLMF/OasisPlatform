@@ -37,3 +37,22 @@ def record_validation_output(validation_errors, portfolio_pk):
         })
     else:
         raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
+
+
+@celery_app_v2.task()
+def record_exposure_transformation(result, portfolio_pk, user_pk):
+    from ..models import Portfolio
+    portfolio = Portfolio.objects.get(pk=portfolio_pk)
+    initiator = get_user_model().objects.get(pk=user_pk)
+    files = ['location', 'account', 'ri_info', 'ri_scope']
+    for i, file_name in enumerate(files):
+        if result[i] is not None:
+            related_file = RelatedFile.objects.create(
+                file=result[i],
+                content_type='text/csv',
+                creator=initiator,
+                filename=f"{file_name}.csv",
+                store_as_filename=True
+            )
+            setattr(portfolio, f"{file_name}_file", related_file)
+    portfolio.save()

@@ -13,7 +13,7 @@ from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile, related_file_to_df
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
-from .v2_api.tasks import record_exposure_output, record_validation_output
+from .v2_api.tasks import record_exposure_output, record_validation_output, record_exposure_transformation
 
 import re
 
@@ -213,6 +213,23 @@ class Portfolio(TimeStampedModel):
         task.apply_async(queue='oasis-internal-worker', priority=10)
         self.exposure_status = self.exposure_status_choices.STARTED
         self.save()
+
+    def exposure_transformation_signature(self, request):
+        location = get_path_or_url(self.location_file)
+        account = get_path_or_url(self.accounts_file)
+        ri_info = get_path_or_url(self.reinsurance_info_file)
+        ri_scope = get_path_or_url(self.reinsurance_scope_file)
+        details = request.data
+        return celery_app_v2.signature(
+            'run_exposure_transform',
+            args=([location, account, ri_info, ri_scope], details),
+            priority=10
+        )
+
+    def exposure_transformation(self, request):
+        task = self.exposure_transformation_signature(request)
+        task.link(record_exposure_transformation.s(self.pk, request.user.pk))
+        task.apply_async(queue='oasis-internal-worker', priority=10)
 
 
 def get_path_or_url(file):

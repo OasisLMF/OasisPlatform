@@ -493,3 +493,13 @@ class ExposureRunSerializer(serializers.ModelSerializer):
         if path:
             return path.file.url
         return None
+
+
+class ExposureTransformationSerializer(serializers.Serializer):
+    location = serializers.BooleanField(required=False, default=True)
+    account = serializers.BooleanField(required=False, default=False)
+    ri_info = serializers.BooleanField(required=False, default=False)
+    ri_scope = serializers.BooleanField(required=False, default=False)
+
+    MAPPING_DIRECTIONS = ('oed-air', 'air-oed')
+    mapping_direction = serializers.ChoiceField(choices=MAPPING_DIRECTIONS)
