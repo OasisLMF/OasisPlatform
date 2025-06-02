@@ -135,3 +135,6 @@ volumes:
     sharedFs:
       name: shared-fs
 ## End of sync with oasis-platform values ##
+
+blobs:
+  enabled: false
