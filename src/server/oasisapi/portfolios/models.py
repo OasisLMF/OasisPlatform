@@ -184,6 +184,7 @@ class Portfolio(TimeStampedModel):
                 file_ref.oed_validated = True
                 file_ref.save()
         self.validation_status = self.validation_status_choices.RUN_COMPLETED
+        self.save()
 
     def run_oed_validation_signature(self):
         location = get_path_or_url(self.location_file)
