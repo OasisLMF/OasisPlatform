@@ -38,17 +38,19 @@ class PortfolioValidation(WebTestMixin, TestCase):
         mock_ri_scope = MagicMock(spec=RelatedFile, instance=True)
         mock_ri_scope._state = MagicMock(db='default')
 
-        portfolio = Portfolio()
-        portfolio.location_file = mock_location
-        portfolio.accounts_file = mock_accounts
-        portfolio.reinsurance_info_file = mock_ri_info
-        portfolio.reinsurance_scope_file = mock_ri_scope
+        with patch('src.server.oasisapi.portfolios.models.Portfolio.save') as mock_save:
+            portfolio = Portfolio()
+            portfolio.location_file = mock_location
+            portfolio.accounts_file = mock_accounts
+            portfolio.reinsurance_info_file = mock_ri_info
+            portfolio.reinsurance_scope_file = mock_ri_scope
 
-        portfolio.set_portfolio_valid()
-        assert mock_location.oed_validated and mock_location.save.call_count == 1
-        assert mock_accounts.oed_validated and mock_accounts.save.call_count == 1
-        assert mock_ri_info.oed_validated and mock_ri_info.save.call_count == 1
-        assert mock_ri_scope.oed_validated and mock_ri_scope.save.call_count == 1
+            portfolio.set_portfolio_valid()
+            assert mock_location.oed_validated and mock_location.save.call_count == 1
+            assert mock_accounts.oed_validated and mock_accounts.save.call_count == 1
+            assert mock_ri_info.oed_validated and mock_ri_info.save.call_count == 1
+            assert mock_ri_scope.oed_validated and mock_ri_scope.save.call_count == 1
+            assert mock_save.call_count == 1
 
     def test_location_file__is_valid(self):
         validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG)
@@ -62,43 +64,53 @@ class PortfolioValidation(WebTestMixin, TestCase):
         mock_location = MagicMock(spec=RelatedFile, instance=True)
         mock_location._state = MagicMock(db='default')
 
-        portfolio = Portfolio()
-        portfolio.location_file = mock_location
+        with patch('src.server.oasisapi.portfolios.models.Portfolio.save') as mock_save:
+            portfolio = Portfolio()
+            portfolio.location_file = mock_location
 
-        portfolio.set_portfolio_valid()
-        assert mock_location.oed_validated and mock_location.save.call_count == 1
-        assert portfolio.accounts_file is None
-        assert portfolio.reinsurance_info_file is None
-        assert portfolio.reinsurance_scope_file is None
+            portfolio.set_portfolio_valid()
+            assert mock_location.oed_validated and mock_location.save.call_count == 1
+            assert portfolio.accounts_file is None
+            assert portfolio.reinsurance_info_file is None
+            assert portfolio.reinsurance_scope_file is None
+            assert mock_save.call_count == 1
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_location_file__is_invalid(self, mock_oed_cob_workaround):
         validation_errors = run_oed_validation(LOCATION_INVALID, None, None, None, CONFIG)
         assert isinstance(validation_errors, OdsException)
         with self.assertRaises(ValidationError):
-            record_validation_output(validation_errors, 5)
-            mock_oed_cob_workaround.assert_called_once_with(validation_errors)
+            fake_portfolio = MagicMock()
+            with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
+                record_validation_output(validation_errors, 5)
+                mock_oed_cob_workaround.assert_called_once_with(validation_errors)
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_account_file__is_invalid(self, mock_oed_cob_workaround):
         validation_errors = run_oed_validation(None, LOCATION_VALID, None, None, CONFIG)
         assert isinstance(validation_errors, OdsException)
         with self.assertRaises(ValidationError):
-            record_validation_output(validation_errors, 7)
-            mock_oed_cob_workaround.assert_called_once_with(validation_errors)
+            fake_portfolio = MagicMock()
+            with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
+                record_validation_output(validation_errors, 7)
+                mock_oed_cob_workaround.assert_called_once_with(validation_errors)
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_info_file__is_invalid(self, mock_oed_cob_workaround):
         validation_errors = run_oed_validation(None, None, LOCATION_VALID, None, CONFIG)
         assert isinstance(validation_errors, OdsException)
         with self.assertRaises(ValidationError):
-            record_validation_output(validation_errors, 11)
-            mock_oed_cob_workaround.assert_called_once_with(validation_errors)
+            fake_portfolio = MagicMock()
+            with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
+                record_validation_output(validation_errors, 11)
+                mock_oed_cob_workaround.assert_called_once_with(validation_errors)
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_scope_file__is_invalid(self, mock_oed_cob_workaround):
         validation_errors = run_oed_validation(None, None, None, LOCATION_VALID, CONFIG)
         assert isinstance(validation_errors, OdsException)
         with self.assertRaises(ValidationError):
-            record_validation_output(validation_errors, 13)
-            mock_oed_cob_workaround.assert_called_once_with(validation_errors)
+            fake_portfolio = MagicMock()
+            with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
+                record_validation_output(validation_errors, 13)
+                mock_oed_cob_workaround.assert_called_once_with(validation_errors)
