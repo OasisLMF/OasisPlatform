@@ -25,10 +25,11 @@ def record_exposure_output(result, portfolio_pk, user_pk):
 @celery_app_v2.task()
 def record_validation_output(validation_errors, portfolio_pk):
     from ..models import oed_class_of_businesses__workaround, Portfolio
+    portfolio = Portfolio.objects.get(pk=portfolio_pk)
     if not validation_errors:
-        instance = Portfolio.objects.get(pk=portfolio_pk)
-        instance.set_portfolio_valid()
+        portfolio.set_portfolio_valid()
     elif isinstance(validation_errors, Exception):
+        portfolio.validation_status = portfolio.validation_status_choices.ERROR
         oed_class_of_businesses__workaround(validation_errors)  # remove when Issue (https://github.com/OasisLMF/ODS_Tools/issues/174) fixed
         raise ValidationError({
             'error': 'Failed to validate portfolio',
@@ -36,4 +37,5 @@ def record_validation_output(validation_errors, portfolio_pk):
             'exception': type(validation_errors).__name__
         })
     else:
+        portfolio.validation_status = portfolio.validation_status_choices.ERROR
         raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])

@@ -57,14 +57,21 @@ def oed_class_of_businesses__workaround(e):
             raise ValidationError(detail=sorted([(error['name'], error['msg']) for error in result]))
 
 
-class Portfolio(TimeStampedModel):
-    exposure_status_choices = Choices(
-        ('NONE', 'No exposure run calls'),
-        ('INSUFFICIENT_DATA', 'Missing location/accounts file'),
-        ('STARTED', 'An exposure run has been started'),
-        ('ERROR', 'Exposure run has failed'),
-        ('RUN_COMPLETED', 'Exposure run has successfully finished'),
+def create_custom_choices(name):
+    name = name.lower()
+    return Choices(
+        ('NONE', f'No {name} calls'),
+        ('INSUFFICIENT_DATA', 'Missing input files'),
+        ('STARTED', f'{name.capitalize()} has been started'),
+        ('ERROR', f'{name.capitalize()} has failed'),
+        ('RUN_COMPLETED', f'{name.capitalize()} has successfully finished'),
     )
+
+
+class Portfolio(TimeStampedModel):
+    exposure_status_choices = create_custom_choices('exposure run')
+    validation_status_choices = create_custom_choices('validation')
+
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
     groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
@@ -82,6 +89,10 @@ class Portfolio(TimeStampedModel):
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
+    )
+    validation_status = models.CharField(
+        max_length=max(len(c) for c in validation_status_choices._db_values),
+        choices=validation_status_choices, default=validation_status_choices.NONE, editable=False, db_index=True
     )
 
     class Meta:
@@ -172,6 +183,7 @@ class Portfolio(TimeStampedModel):
             if file_ref:
                 file_ref.oed_validated = True
                 file_ref.save()
+        self.validation_status = self.validation_status_choices.RUN_COMPLETED
 
     def run_oed_validation_signature(self):
         location = get_path_or_url(self.location_file)
@@ -188,6 +200,8 @@ class Portfolio(TimeStampedModel):
     def run_oed_validation(self):
         task = self.run_oed_validation_signature()
         task.link(record_validation_output.s(self.pk))
+        self.validation_status = self.validation_status_choices.STARTED
+        self.save()
         task.apply_async(queue='oasis-internal-worker', priority=10)
 
     def exposure_run_signature(self, params):
