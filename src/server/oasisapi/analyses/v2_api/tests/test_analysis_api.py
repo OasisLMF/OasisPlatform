@@ -313,68 +313,68 @@ class AnalysisApi(WebTestMixin, TestCase):
         group_name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_portfolio_group_inheritance___same_groups_as_portfolio(self, name, group_name):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                group = add_fake_group(user, group_name)
-                model = fake_analysis_model()
-                model.run_mode = model.run_mode_choices.V2
-                model.save()
-                portfolio = fake_portfolio(location_file=fake_related_file())
-                # Deny due to not in the same group as model
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
-                    content_type='application/json',
-                    expect_errors=True,
-                )
-                self.assertEqual(400, response.status_code)
-                self.assertEqual('You are not allowed to use this model', json.loads(response.body).get('model')[0])
 
-                model.groups.add(group)
-                model.save()
+        user = fake_user()
+        group = add_fake_group(user, group_name)
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
+        portfolio = fake_portfolio(location_file=fake_related_file())
 
-                # Deny due to not in the same group as portfolio
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
-                    content_type='application/json',
-                    expect_errors=True,
-                )
-                self.assertEqual(400, response.status_code)
-                self.assertEqual('You are not allowed to use this portfolio', json.loads(response.body).get('portfolio')[0])
+        # Deny due to not in the same group as model
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+            content_type='application/json',
+            expect_errors=True,
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('You are not allowed to use this model', json.loads(response.body).get('model')[0])
 
-                portfolio.groups.add(group)
-                portfolio.save()
+        model.groups.add(group)
+        model.save()
 
-                # Successfully create
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
-                    content_type='application/json',
-                )
-                self.assertEqual(201, response.status_code)
+        # Deny due to not in the same group as portfolio
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+            content_type='application/json',
+            expect_errors=True,
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('You are not allowed to use this portfolio', json.loads(response.body).get('portfolio')[0])
 
-                analysis = Analysis.objects.get(pk=response.json['id'])
+        portfolio.groups.add(group)
+        portfolio.save()
 
-                response = self.app.get(
-                    analysis.get_absolute_url(namespace=NAMESPACE),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                )
+        # Successfully create
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
 
-                self.assertEqual(200, response.status_code)
-                self.assertEqual([group_name], json.loads(response.body).get('groups'))
+        analysis = Analysis.objects.get(pk=response.json['id'])
+
+        response = self.app.get(
+            analysis.get_absolute_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+        )
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual([group_name], json.loads(response.body).get('groups'))
 
     @given(
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
@@ -383,334 +383,333 @@ class AnalysisApi(WebTestMixin, TestCase):
         group_name3=text(alphabet=string.ascii_letters, max_size=6, min_size=5),
     )
     def test_multiple_analyses_with_different_groups___user_should_not_see_each_others(self, name, group_name1, group_name2, group_name3):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                group1, _ = Group.objects.get_or_create(name=group_name1)
-                group2, _ = Group.objects.get_or_create(name=group_name2)
-                group3, _ = Group.objects.get_or_create(name=group_name3)
 
-                user1 = fake_user()
-                user2 = fake_user()
+        group1, _ = Group.objects.get_or_create(name=group_name1)
+        group2, _ = Group.objects.get_or_create(name=group_name2)
+        group3, _ = Group.objects.get_or_create(name=group_name3)
 
-                group1.user_set.add(user1)
-                group1.user_set.add(user2)
-                group1.save()
+        user1 = fake_user()
+        user2 = fake_user()
 
-                group2.user_set.add(user1)
-                group2.save()
+        group1.user_set.add(user1)
+        group1.user_set.add(user2)
+        group1.save()
 
-                group3.user_set.add(user2)
-                group3.save()
+        group2.user_set.add(user1)
+        group2.save()
 
-                model = fake_analysis_model()
-                model.run_mode = model.run_mode_choices.V1
-                model.groups.add(group1)
-                model.groups.add(group2)
-                model.groups.add(group3)
-                model.save()
+        group3.user_set.add(user2)
+        group3.save()
 
-                portfolio1 = fake_portfolio(location_file=fake_related_file())
-                portfolio1.groups.add(group2)
-                portfolio1.save()
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V1
+        model.groups.add(group1)
+        model.groups.add(group2)
+        model.groups.add(group3)
+        model.save()
 
-                portfolio2 = fake_portfolio(location_file=fake_related_file())
-                portfolio2.groups.add(group3)
-                portfolio2.save()
-                # Create an analysis with portfolio1 - group2
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
-                    content_type='application/json',
-                )
-                self.assertEqual(201, response.status_code)
-                analysis1_id = response.json['id']
+        portfolio1 = fake_portfolio(location_file=fake_related_file())
+        portfolio1.groups.add(group2)
+        portfolio1.save()
 
-                # Create an analysis with portfolio2 - group3
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio2.pk, 'model': model.pk}),
-                    content_type='application/json',
-                )
-                self.assertEqual(201, response.status_code)
-                analysis2_id = response.json['id']
+        portfolio2 = fake_portfolio(location_file=fake_related_file())
+        portfolio2.groups.add(group3)
+        portfolio2.save()
 
-                # User1 should only se analysis 1 with groups2
-                response = self.app.get(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
-                    },
-                )
-                self.assertEqual(200, response.status_code)
-                analysis = json.loads(response.body)[0]
-                self.assertEqual(analysis1_id, analysis.get('id'))
-                self.assertEqual([group_name2], analysis.get('groups'))
+        # Create an analysis with portfolio1 - group2
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+        analysis1_id = response.json['id']
 
-                # User2 should only se analysis2 with groups3
-                response = self.app.get(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
-                    },
-                )
-                self.assertEqual(200, response.status_code)
-                analyses = json.loads(response.body)
-                self.assertEqual(1, len(analyses))
-                analysis = analyses[0]
-                self.assertEqual(analysis2_id, analysis.get('id'))
-                self.assertEqual([group_name3], analysis.get('groups'))
+        # Create an analysis with portfolio2 - group3
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio2.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+        analysis2_id = response.json['id']
+
+        # User1 should only se analysis 1 with groups2
+        response = self.app.get(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analysis = json.loads(response.body)[0]
+        self.assertEqual(analysis1_id, analysis.get('id'))
+        self.assertEqual([group_name2], analysis.get('groups'))
+
+        # User2 should only se analysis2 with groups3
+        response = self.app.get(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+        analysis = analyses[0]
+        self.assertEqual(analysis2_id, analysis.get('id'))
+        self.assertEqual([group_name3], analysis.get('groups'))
 
     @given(
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
         group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_multiple_analyses_with_different_groups___user_without_group_should_not_see_them(self, name, group_name1):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                group1, _ = Group.objects.get_or_create(name=group_name1)
 
-                user1 = fake_user()
-                group1.user_set.add(user1)
-                group1.save()
+        group1, _ = Group.objects.get_or_create(name=group_name1)
 
-                user2 = fake_user()
+        user1 = fake_user()
+        group1.user_set.add(user1)
+        group1.save()
 
-                model = fake_analysis_model()
-                model.run_mode = model.run_mode_choices.V2
-                model.groups.add(group1)
-                model.save()
+        user2 = fake_user()
 
-                portfolio1 = fake_portfolio(location_file=fake_related_file())
-                portfolio1.groups.add(group1)
-                portfolio1.save()
-                # Create an analysis
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
-                    content_type='application/json',
-                )
-                self.assertEqual(201, response.status_code)
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.groups.add(group1)
+        model.save()
 
-                # User2 should not see any analysis
-                response = self.app.get(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
-                    },
-                )
-                self.assertEqual(200, response.status_code)
-                analyses = json.loads(response.body)
-                self.assertEqual(0, len(analyses))
+        portfolio1 = fake_portfolio(location_file=fake_related_file())
+        portfolio1.groups.add(group1)
+        portfolio1.save()
+
+        # Create an analysis
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user1))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+
+        # User2 should not see any analysis
+        response = self.app.get(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user2))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(0, len(analyses))
 
     @given(
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
         group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_user_with_and_without_group_can_access_portfolio_without_group(self, name, group_name1):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                group1, _ = Group.objects.get_or_create(name=group_name1)
 
-                user_with_group1 = fake_user()
-                group1.user_set.add(user_with_group1)
-                group1.save()
+        group1, _ = Group.objects.get_or_create(name=group_name1)
 
-                user_without_group = fake_user()
+        user_with_group1 = fake_user()
+        group1.user_set.add(user_with_group1)
+        group1.save()
 
-                model = fake_analysis_model()
-                model.run_mode = model.run_mode_choices.V1
-                model.save()
+        user_without_group = fake_user()
 
-                portfolio1 = fake_portfolio(location_file=fake_related_file())
-                portfolio1.save()
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V1
+        model.save()
 
-                # Create an analysis
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
-                    content_type='application/json',
-                )
-                self.assertEqual(201, response.status_code)
+        portfolio1 = fake_portfolio(location_file=fake_related_file())
+        portfolio1.save()
 
-                # user_with_group1 should see the analysis
-                response = self.app.get(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
-                    },
-                )
-                self.assertEqual(200, response.status_code)
-                analyses = json.loads(response.body)
-                self.assertEqual(1, len(analyses))
+        # Create an analysis
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
 
-                # user_without_group should see the analysis
-                response = self.app.get(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
-                    },
-                )
-                self.assertEqual(200, response.status_code)
-                analyses = json.loads(response.body)
-                self.assertEqual(1, len(analyses))
+        # user_with_group1 should see the analysis
+        response = self.app.get(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+
+        # user_without_group should see the analysis
+        response = self.app.get(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
 
     @given(
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
         group_name1=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_modify_analysis_without_group___successfully(self, name, group_name1):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                group1, _ = Group.objects.get_or_create(name=group_name1)
 
-                user_with_group1 = fake_user()
-                group1.user_set.add(user_with_group1)
-                group1.save()
+        group1, _ = Group.objects.get_or_create(name=group_name1)
 
-                user_without_group = fake_user()
+        user_with_group1 = fake_user()
+        group1.user_set.add(user_with_group1)
+        group1.save()
 
-                model = fake_analysis_model()
-                model.run_mode = model.run_mode_choices.V2
-                model.save()
+        user_without_group = fake_user()
 
-                portfolio1 = fake_portfolio(location_file=fake_related_file())
-                portfolio1.save()
-                # Create an analysis
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
-                    content_type='application/json',
-                )
-                self.assertEqual(201, response.status_code)
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
 
-                # user_with_group1 should see the analysis
-                response = self.app.get(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
-                    },
-                )
-                self.assertEqual(200, response.status_code)
-                analyses = json.loads(response.body)
-                self.assertEqual(1, len(analyses))
-                analysis_id = analyses[0].get('id')
+        portfolio1 = fake_portfolio(location_file=fake_related_file())
+        portfolio1.save()
 
-                # user_with_group1 should be allowed to write
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-settings', kwargs={'pk': analysis_id}),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
-                    },
-                    params={},
-                    expect_errors=True,
-                )
-                self.assertEqual(400, response.status_code)
+        # Create an analysis
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio1.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
 
-                # user_without_group should see the analysis
-                response = self.app.get(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
-                    },
-                )
-                self.assertEqual(200, response.status_code)
-                analyses = json.loads(response.body)
-                self.assertEqual(1, len(analyses))
+        # user_with_group1 should see the analysis
+        response = self.app.get(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+        analysis_id = analyses[0].get('id')
 
-                # user_without_group should be allowed to write
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-settings', kwargs={'pk': analysis_id}),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
-                    },
-                    params={},
-                    expect_errors=True,
-                )
-                self.assertEqual(400, response.status_code)
+        # user_with_group1 should be allowed to write
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-settings', kwargs={'pk': analysis_id}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_with_group1))
+            },
+            params={},
+            expect_errors=True,
+        )
+        self.assertEqual(400, response.status_code)
+
+        # user_without_group should see the analysis
+        response = self.app.get(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+        )
+        self.assertEqual(200, response.status_code)
+        analyses = json.loads(response.body)
+        self.assertEqual(1, len(analyses))
+
+        # user_without_group should be allowed to write
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-settings', kwargs={'pk': analysis_id}),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user_without_group))
+            },
+            params={},
+            expect_errors=True,
+        )
+        self.assertEqual(400, response.status_code)
 
     @given(
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_create_no_priority___successfully_set_default(self, name):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                portfolio = fake_portfolio(location_file=fake_related_file())
-                model = fake_analysis_model()
-                model.run_mode = model.run_mode_choices.V2
-                model.save()
-                # Create an analysis
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
-                    content_type='application/json',
-                )
-                self.assertEqual(201, response.status_code)
-                analysis = json.loads(response.body)
-                self.assertEqual(4, analysis.get('priority'))
+
+        portfolio = fake_portfolio(location_file=fake_related_file())
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
+
+        # Create an analysis
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
+        analysis = json.loads(response.body)
+        self.assertEqual(4, analysis.get('priority'))
 
     @given(
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_create_as_admin_low_priority___successfully(self, name):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                user.is_staff = True
-                user.save()
-                portfolio = fake_portfolio(location_file=fake_related_file())
 
-                model = fake_analysis_model()
-                model.run_mode = model.run_mode_choices.V2
-                model.save()
-                # Create an analysis
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk, 'priority': 1}),
-                    content_type='application/json',
-                )
-                self.assertEqual(201, response.status_code)
+        user = fake_user()
+        user.is_staff = True
+        user.save()
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        model = fake_analysis_model()
+        model.run_mode = model.run_mode_choices.V2
+        model.save()
+
+        # Create an analysis
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk, 'priority': 1}),
+            content_type='application/json',
+        )
+        self.assertEqual(201, response.status_code)
 
     @given(
         name=text(alphabet=string.ascii_letters, max_size=10, min_size=1),
     )
     def test_create_as_no_admin_low_priority___rejected(self, name):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                model = fake_analysis_model()
-                portfolio = fake_portfolio(location_file=fake_related_file())
-                # Create an analysis
-                response = self.app.post(
-                    reverse(f'{NAMESPACE}:analysis-list'),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
-                    },
-                    params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk, 'priority': 9}),
-                    content_type='application/json',
-                    expect_errors=True
-                )
-                self.assertEqual(400, response.status_code)
-                self.assertEqual('Levels restricted to administrators: [8, 9, 10]', json.loads(response.body).get('priority')[0])
+
+        model = fake_analysis_model()
+        portfolio = fake_portfolio(location_file=fake_related_file())
+
+        # Create an analysis
+        response = self.app.post(
+            reverse(f'{NAMESPACE}:analysis-list'),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+            },
+            params=json.dumps({'name': name, 'portfolio': portfolio.pk, 'model': model.pk, 'priority': 9}),
+            content_type='application/json',
+            expect_errors=True
+        )
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('Levels restricted to administrators: [8, 9, 10]', json.loads(response.body).get('priority')[0])
 
 
 class AnalysisRun(WebTestMixin, TestCase):
@@ -1091,22 +1090,20 @@ class AnalysisCopy(WebTestMixin, TestCase):
         self.assertEqual(Analysis.objects.get(pk=response.json['id']).portfolio, analysis.portfolio)
 
     def test_portfolio_is_supplied___portfolio_is_replaced(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                user = fake_user()
-                analysis = fake_analysis()
-                new_portfolio = fake_portfolio(location_file=fake_related_file())
+        user = fake_user()
+        analysis = fake_analysis()
+        new_portfolio = fake_portfolio(location_file=fake_related_file())
 
-                response = self.app.post(
-                    analysis.get_absolute_copy_url(namespace=NAMESPACE),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    params=json.dumps({'portfolio': new_portfolio.pk}),
-                    content_type='application/json',
-                )
+        response = self.app.post(
+            analysis.get_absolute_copy_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            params=json.dumps({'portfolio': new_portfolio.pk}),
+            content_type='application/json',
+        )
 
-                self.assertEqual(Analysis.objects.get(pk=response.json['id']).portfolio, new_portfolio)
+        self.assertEqual(Analysis.objects.get(pk=response.json['id']).portfolio, new_portfolio)
 
     def test_model_is_not_supplied___model_is_copied(self):
         user = fake_user()
