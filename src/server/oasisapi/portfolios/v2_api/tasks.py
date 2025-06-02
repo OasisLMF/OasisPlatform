@@ -59,4 +59,5 @@ def record_exposure_transformation(result, portfolio_pk, user_pk):
                 store_as_filename=True
             )
             setattr(portfolio, f"{file_name}_file", related_file)
+    portfolio.exposure_transformation_status = portfolio.exposure_transformation_status_choices.RUN_COMPLETED
     portfolio.save()

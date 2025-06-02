@@ -121,7 +121,8 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'reinsurance_scope_file',
             'storage_links',
             'exposure_status',
-            'validation_status'
+            'validation_status',
+            'exposure_transformation_status'
         )
 
     def validate(self, attrs):

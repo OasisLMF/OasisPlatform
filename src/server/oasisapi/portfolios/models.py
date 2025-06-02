@@ -71,6 +71,7 @@ def create_custom_choices(name):
 class Portfolio(TimeStampedModel):
     exposure_status_choices = create_custom_choices('exposure run')
     validation_status_choices = create_custom_choices('validation')
+    exposure_transformation_status_choices = create_custom_choices('transformation')
 
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
@@ -93,6 +94,10 @@ class Portfolio(TimeStampedModel):
     validation_status = models.CharField(
         max_length=max(len(c) for c in validation_status_choices._db_values),
         choices=validation_status_choices, default=validation_status_choices.NONE, editable=False, db_index=True
+    )
+    exposure_transformation_status = models.CharField(
+        max_length=max(len(c) for c in exposure_transformation_status_choices._db_values),
+        choices=exposure_transformation_status_choices, default=exposure_transformation_status_choices.NONE, editable=False, db_index=True
     )
 
     class Meta:
@@ -186,6 +191,8 @@ class Portfolio(TimeStampedModel):
         self.validation_status = self.validation_status_choices.RUN_COMPLETED
         self.save()
 
+    # Signatures
+
     def run_oed_validation_signature(self):
         location = get_path_or_url(self.location_file)
         account = get_path_or_url(self.accounts_file)
@@ -197,13 +204,6 @@ class Portfolio(TimeStampedModel):
             'run_oed_validation',
             args=(location, account, ri_info, ri_scope, validation_config)
         )
-
-    def run_oed_validation(self):
-        task = self.run_oed_validation_signature()
-        task.link(record_validation_output.s(self.pk))
-        self.validation_status = self.validation_status_choices.STARTED
-        self.save()
-        task.apply_async(queue='oasis-internal-worker', priority=10)
 
     def exposure_run_signature(self, params):
         if not self.location_file or not self.accounts_file:
@@ -222,13 +222,6 @@ class Portfolio(TimeStampedModel):
             priority=10
         )
 
-    def exposure_run(self, params, user_pk):
-        task = self.exposure_run_signature(params)
-        task.link(record_exposure_output.s(self.pk, user_pk))
-        task.apply_async(queue='oasis-internal-worker', priority=10)
-        self.exposure_status = self.exposure_status_choices.STARTED
-        self.save()
-
     def exposure_transformation_signature(self, request):
         location = get_path_or_url(self.location_file)
         account = get_path_or_url(self.accounts_file)
@@ -241,9 +234,27 @@ class Portfolio(TimeStampedModel):
             priority=10
         )
 
+    # Calls
+
+    def run_oed_validation(self):
+        task = self.run_oed_validation_signature()
+        task.link(record_validation_output.s(self.pk))
+        self.validation_status = self.validation_status_choices.STARTED
+        self.save()
+        task.apply_async(queue='oasis-internal-worker', priority=10)
+
+    def exposure_run(self, params, user_pk):
+        task = self.exposure_run_signature(params)
+        task.link(record_exposure_output.s(self.pk, user_pk))
+        self.exposure_status = self.exposure_status_choices.STARTED
+        self.save()
+        task.apply_async(queue='oasis-internal-worker', priority=10)
+
     def exposure_transformation(self, request):
         task = self.exposure_transformation_signature(request)
         task.link(record_exposure_transformation.s(self.pk, request.user.pk))
+        self.exposure_transformation_status = self.exposure_transformation_status_choices.STARTED
+        self.save()
         task.apply_async(queue='oasis-internal-worker', priority=10)
 
 
