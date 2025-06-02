@@ -43,7 +43,6 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
     original_dir = os.getcwd()
     with TemporaryDir() as temp_dir:
         location, account, ri_info, ri_scope = get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir)
-        os.chdir(temp_dir)
         portfolio_exposure = True
         portfolio_exposure = OedExposure(
             location=location,
@@ -56,5 +55,3 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             return portfolio_exposure.check()
         except Exception as e:
             return e
-        finally:
-            os.chdir(original_dir)
