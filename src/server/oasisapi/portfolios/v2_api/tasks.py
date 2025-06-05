@@ -2,6 +2,7 @@ from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from django.contrib.auth import get_user_model
 from ...files.models import RelatedFile
 from rest_framework.exceptions import ValidationError
+from ods_tools.oed import OdsException
 from ...files.v2_api.views import _delete_related_file
 
 
@@ -29,10 +30,10 @@ def record_validation_output(validation_errors, portfolio_pk):
     portfolio = Portfolio.objects.get(pk=portfolio_pk)
     if not validation_errors:
         portfolio.set_portfolio_valid()
-    elif isinstance(validation_errors, Exception):
+    elif isinstance(validation_errors, str):
         portfolio.validation_status = portfolio.validation_status_choices.ERROR
         portfolio.save()
-        oed_class_of_businesses__workaround(validation_errors)  # remove when Issue (https://github.com/OasisLMF/ODS_Tools/issues/174) fixed
+        oed_class_of_businesses__workaround(OdsException(validation_errors))  # remove when Issue (https://github.com/OasisLMF/ODS_Tools/issues/174) fixed
         raise ValidationError({
             'error': 'Failed to validate portfolio',
             'detail': str(validation_errors),

@@ -55,9 +55,10 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             validation_config=validation_config
         )
         try:
-            return portfolio_exposure.check()
+            res = portfolio_exposure.check()
+            return [str(e) for e in res]
         except Exception as e:
-            return e
+            return str(e)  # OdsException not JSON serializable
 
 
 @app.task(name='run_exposure_transform')
@@ -68,9 +69,10 @@ def run_exposure_transform(filepath, mapping_direction):
     with TemporaryDir() as temp_dir:
         local_file = get_destination_file(filepath, temp_dir, 'local_file')
         copy_or_download(filepath, local_file)
+        output_file = os.path.join(temp_dir, "transform_output.csv")
         try:
-            transform(format=mapping_direction, input_file=local_file, output_file="transform_output.csv")
-            result = get_filestore(settings).put("transform_output.csv")
+            transform(format=mapping_direction, input_file=local_file, output_file=output_file)
+            result = get_filestore(settings).put(output_file)
             return (result, True)
         except Exception:
             return (None, False)

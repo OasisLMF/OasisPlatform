@@ -10,6 +10,7 @@ from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
+from celery import chain
 
 from ..files.models import RelatedFile, related_file_to_df
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
@@ -204,7 +205,10 @@ class Portfolio(TimeStampedModel):
 
         return celery_app_v2.signature(
             'run_oed_validation',
-            args=(location, account, ri_info, ri_scope, validation_config)
+            args=(location, account, ri_info, ri_scope, validation_config),
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
         )
 
     def exposure_run_signature(self, params):
@@ -221,14 +225,18 @@ class Portfolio(TimeStampedModel):
         return celery_app_v2.signature(
             'run_exposure_task',
             args=(location, account, ri_info, ri_scope, params),
-            priority=10
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
         )
 
     def exposure_transform_signature(self, mapping_direction):
         return celery_app_v2.signature(
             'run_exposure_transform',
             args=(get_path_or_url(self.transform_file), mapping_direction),
-            priority=10
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
         )
 
     # Calls
@@ -248,9 +256,14 @@ class Portfolio(TimeStampedModel):
         task.apply_async(queue='oasis-internal-worker', priority=10)
 
     def exposure_transform(self, request):
-        task = self.exposure_transform_signature(request.data['mapping_direction'])
-        task.link(exposure_transform_output.s(self.pk, request.user.pk, request.data['file_type']))
+        transform = self.exposure_transform_signature(request.data['mapping_direction'])
+        transform_output = exposure_transform_output.s(self.pk, request.user.pk, request.data['file_type'])
+        validate = self.run_oed_validation_signature()
+        validate_output = record_validation_output.s(self.pk)
+        task = chain(transform, transform_output, validate, validate_output)
+
         self.exposure_transform_status = self.exposure_transform_status_choices.STARTED
+        self.validation_status = self.validation_status_choices.STARTED
         self.save()
         task.apply_async(queue='oasis-internal-worker', priority=10)
 
