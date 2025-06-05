@@ -13,7 +13,7 @@ from rest_framework.exceptions import ValidationError
 
 from ..files.models import RelatedFile, related_file_to_df
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
-from .v2_api.tasks import record_exposure_output, record_validation_output, record_exposure_transformation
+from .v2_api.tasks import record_exposure_output, record_validation_output, exposure_transform_output
 
 import re
 
@@ -71,7 +71,7 @@ def create_custom_choices(name):
 class Portfolio(TimeStampedModel):
     exposure_status_choices = create_custom_choices('exposure run')
     validation_status_choices = create_custom_choices('validation')
-    exposure_transformation_status_choices = create_custom_choices('transformation')
+    exposure_transform_status_choices = create_custom_choices('transformation')
 
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
@@ -87,6 +87,8 @@ class Portfolio(TimeStampedModel):
                                                default=None, related_name='reinsurance_scope_file_portfolios')
     exposure_run_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                           default=None, related_name='exposure_run_file_portfolios')
+    transform_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                       default=None, related_name='transform_file_portfolios')
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
@@ -95,9 +97,9 @@ class Portfolio(TimeStampedModel):
         max_length=max(len(c) for c in validation_status_choices._db_values),
         choices=validation_status_choices, default=validation_status_choices.NONE, editable=False, db_index=True
     )
-    exposure_transformation_status = models.CharField(
-        max_length=max(len(c) for c in exposure_transformation_status_choices._db_values),
-        choices=exposure_transformation_status_choices, default=exposure_transformation_status_choices.NONE, editable=False, db_index=True
+    exposure_transform_status = models.CharField(
+        max_length=max(len(c) for c in exposure_transform_status_choices._db_values),
+        choices=exposure_transform_status_choices, default=exposure_transform_status_choices.NONE, editable=False, db_index=True
     )
 
     class Meta:
@@ -222,15 +224,10 @@ class Portfolio(TimeStampedModel):
             priority=10
         )
 
-    def exposure_transformation_signature(self, request):
-        location = get_path_or_url(self.location_file)
-        account = get_path_or_url(self.accounts_file)
-        ri_info = get_path_or_url(self.reinsurance_info_file)
-        ri_scope = get_path_or_url(self.reinsurance_scope_file)
-        details = request.data
+    def exposure_transform_signature(self, mapping_direction):
         return celery_app_v2.signature(
             'run_exposure_transform',
-            args=([location, account, ri_info, ri_scope], details),
+            args=(get_path_or_url(self.transform_file), mapping_direction),
             priority=10
         )
 
@@ -250,10 +247,10 @@ class Portfolio(TimeStampedModel):
         self.save()
         task.apply_async(queue='oasis-internal-worker', priority=10)
 
-    def exposure_transformation(self, request):
-        task = self.exposure_transformation_signature(request)
-        task.link(record_exposure_transformation.s(self.pk, request.user.pk))
-        self.exposure_transformation_status = self.exposure_transformation_status_choices.STARTED
+    def exposure_transform(self, request):
+        task = self.exposure_transform_signature(request.data['mapping_direction'])
+        task.link(exposure_transform_output.s(self.pk, request.user.pk, request.data['file_type']))
+        self.exposure_transform_status = self.exposure_transform_status_choices.STARTED
         self.save()
         task.apply_async(queue='oasis-internal-worker', priority=10)
 
