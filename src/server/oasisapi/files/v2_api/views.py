@@ -16,7 +16,6 @@ from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups
 
 from ods_tools.oed.exposure import OedExposure
-import logging
 
 
 def _delete_related_file(parent, field, user):
