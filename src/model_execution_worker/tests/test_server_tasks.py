@@ -4,7 +4,6 @@ from src.model_execution_worker.server_tasks import run_oed_validation
 from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output
 from django.conf import settings as django_settings
 import os
-from ods_tools.oed.common import OdsException
 from unittest.mock import MagicMock, patch
 from rest_framework.exceptions import ValidationError
 from src.server.oasisapi.portfolios.models import Portfolio
