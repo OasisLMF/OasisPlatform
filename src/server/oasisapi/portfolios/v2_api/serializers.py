@@ -54,8 +54,6 @@ class PortfolioListSerializer(serializers.Serializer):
     location_file = serializers.SerializerMethodField(read_only=True)
     reinsurance_info_file = serializers.SerializerMethodField(read_only=True)
     reinsurance_scope_file = serializers.SerializerMethodField(read_only=True)
-    exposure_run_file = serializers.SerializerMethodField(read_only=True)
-    transform_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
     groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
