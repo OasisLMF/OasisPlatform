@@ -171,6 +171,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE),
                     'exposure_status': "NONE",
                     'validation_status': "NONE",
+                    'exposure_transform_status': "NONE",
                 }, response.json)
 
     @pytest.mark.skip(reason="LOT3 DISABLE")

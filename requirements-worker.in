@@ -16,5 +16,12 @@ psycopg2-binary
 pymysql
 pytest
 redis
-natsort 
+natsort
 sqlalchemy
+
+PyYAML
+lark
+networkx
+pyodbc
+sqlparams
+sqlparse

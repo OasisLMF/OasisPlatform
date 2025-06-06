@@ -19,7 +19,8 @@ from .serializers import (
     PortfolioStorageSerializer,
     PortfolioListSerializer,
     PortfolioValidationSerializer,
-    ExposureRunSerializer
+    ExposureRunSerializer,
+    ExposureTransformSerializer
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
@@ -29,6 +30,7 @@ from ...files.v2_api.views import handle_related_file
 from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
+from ...files.models import RelatedFile
 
 
 class PortfolioFilter(TimeStampedFilter):
@@ -107,27 +109,25 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         )
 
     def get_serializer_class(self):
-        if self.action == 'create_analysis':
-            return CreateAnalysisSerializer
-        if self.action in ['list']:
-            return PortfolioListSerializer
-        if self.action in ['set_storage_links', 'storage_links']:
-            return PortfolioStorageSerializer
-        if self.action in ['validate']:
-            return PortfolioValidationSerializer
-        if self.action in [
-            'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
-        ]:
-            return RelatedFileSerializer
-        if self.action in ["file_sql"]:
-            return FileSQLSerializer
-        if self.action in ['exposure_run']:
-            return ExposureRunSerializer
-        return super(PortfolioViewSet, self).get_serializer_class()
+        action_serializer_map = {
+            'create_analysis': CreateAnalysisSerializer,
+            'list': PortfolioListSerializer,
+            'set_storage_links': PortfolioStorageSerializer,
+            'storage_links': PortfolioStorageSerializer,
+            'validate': PortfolioValidationSerializer,
+            'accounts_file': RelatedFileSerializer,
+            'location_file': RelatedFileSerializer,
+            'reinsurance_info_file': RelatedFileSerializer,
+            'reinsurance_scope_file': RelatedFileSerializer,
+            'file_sql': FileSQLSerializer,
+            'exposure_run': ExposureRunSerializer,
+            'exposure_transform': ExposureTransformSerializer,
+        }
+        return action_serializer_map.get(self.action, super().get_serializer_class())
 
     @property
     def parser_classes(self):
-        upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file']
+        upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file', 'exposure_transform']
         if getattr(self, 'action', None) in upload_views:
             return [MultiPartParser]
         else:
@@ -295,9 +295,24 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         instance = self.get_object()
 
         if method == 'get':
-            return handle_related_file(self.get_object(), 'exposure_run_file', request, ['text/plain'])
+            return handle_related_file(self.get_object(), 'exposure_run_file', request, ['text/csv'])
 
         instance.exposure_run(request.data.get('params'), request.user.pk)
+        return Response({"message": "in queue"})
+
+    @swagger_auto_schema(method='post', request_body=ExposureTransformSerializer)
+    @action(methods=['post'], detail=True)
+    def exposure_transform(self, request, pk=None, version=None):
+        """
+        post:
+        Converts data to between OED and AIR
+        """
+        instance = self.get_object()
+        instance.transform_file = RelatedFile.objects.create(
+            file=request.data['file'], content_type='text/csv', creator=request.user,
+            filename='transform_file_delete_on_use', store_as_filename=True
+        )
+        instance.exposure_transform(request)
         return Response({"message": "in queue"})
 
     # LOT3 DISABLE

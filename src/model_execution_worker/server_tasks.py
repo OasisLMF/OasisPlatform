@@ -4,10 +4,11 @@ from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
 from ..common.filestore.filestore import get_filestore
 from oasislmf.manager import OasisManager
-from src.model_execution_worker.utils import TemporaryDir, update_params, get_all_files
+from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_files
 import os
 from celery import Celery
 from ods_tools.oed.exposure import OedExposure
+from ods_tools.main import transform
 
 app = Celery()
 
@@ -40,6 +41,9 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, give
 
 @app.task(name='run_oed_validation')
 def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, validation_config):
+    """
+    Returns either an error (unraised) or a possibly empty list of errors
+    """
     with TemporaryDir() as temp_dir:
         location, account, ri_info, ri_scope = get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir)
         portfolio_exposure = True
@@ -51,6 +55,24 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             validation_config=validation_config
         )
         try:
-            return portfolio_exposure.check()
+            res = portfolio_exposure.check()
+            return [str(e) for e in res]
         except Exception as e:
-            return e
+            return str(e)  # OdsException not JSON serializable
+
+
+@app.task(name='run_exposure_transform')
+def run_exposure_transform(filepath, mapping_direction):
+    """
+    Returns a tuple of a file and a boolean flag of success
+    """
+    with TemporaryDir() as temp_dir:
+        local_file = get_destination_file(filepath, temp_dir, 'local_file')
+        copy_or_download(filepath, local_file)
+        output_file = os.path.join(temp_dir, "transform_output.csv")
+        try:
+            transform(format=mapping_direction, input_file=local_file, output_file=output_file)
+            result = get_filestore(settings).put(output_file)
+            return (result, True)
+        except Exception:
+            return (None, False)

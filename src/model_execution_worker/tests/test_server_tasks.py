@@ -4,7 +4,6 @@ from src.model_execution_worker.server_tasks import run_oed_validation
 from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output
 from django.conf import settings as django_settings
 import os
-from ods_tools.oed.common import OdsException
 from unittest.mock import MagicMock, patch
 from rest_framework.exceptions import ValidationError
 from src.server.oasisapi.portfolios.models import Portfolio
@@ -78,7 +77,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_location_file__is_invalid(self, mock_oed_cob_workaround):
         validation_errors = run_oed_validation(LOCATION_INVALID, None, None, None, CONFIG)
-        assert isinstance(validation_errors, OdsException)
+        assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
             with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
@@ -88,7 +87,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_account_file__is_invalid(self, mock_oed_cob_workaround):
         validation_errors = run_oed_validation(None, LOCATION_VALID, None, None, CONFIG)
-        assert isinstance(validation_errors, OdsException)
+        assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
             with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
@@ -98,7 +97,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_info_file__is_invalid(self, mock_oed_cob_workaround):
         validation_errors = run_oed_validation(None, None, LOCATION_VALID, None, CONFIG)
-        assert isinstance(validation_errors, OdsException)
+        assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
             with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
@@ -108,7 +107,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_scope_file__is_invalid(self, mock_oed_cob_workaround):
         validation_errors = run_oed_validation(None, None, None, LOCATION_VALID, CONFIG)
-        assert isinstance(validation_errors, OdsException)
+        assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
             with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
