@@ -26,6 +26,7 @@ from .serializers import (
     PortfolioListSerializer,
     PortfolioValidationSerializer
 )
+from ...portfolios.v2_api.serializers import ExposureRunSerializer
 
 
 class PortfolioFilter(TimeStampedFilter):

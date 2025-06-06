@@ -169,7 +169,8 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_uri': None,
                     },
                     'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE),
-                    'exposure_status': "NONE"
+                    'exposure_status': "NONE",
+                    'validation_status': "NONE",
                 }, response.json)
 
     @pytest.mark.skip(reason="LOT3 DISABLE")
@@ -1199,8 +1200,54 @@ LOCATION_DATA_INVALID = """Port,AccNumber,LocNumb,IsTenant,BuildingID,CountryCod
 
 
 class PortfolioValidation(WebTestMixin, TestCase):
+    # Testing for the functionality moved into test_server_tasks
+    @patch('src.server.oasisapi.portfolios.models.Portfolio.run_oed_validation_signature')
+    def test_validation_celery_call(self, mock_signature):
+        content_type = 'text/csv'
+        test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
+        file_content = test_data.to_csv(index=False).encode('utf-8')
 
-    def test_all_exposure__are_valid(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_reinsurance_scope_file_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                validate_response = self.app.get(
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                # Get current validate status - Not yet run
+                self.assertEqual(200, validate_response.status_code)
+                self.assertEqual(validate_response.json, {
+                    'location_validated': None,
+                    'accounts_validated': None,
+                    'reinsurance_info_validated': None,
+                    'reinsurance_scope_validated': False})
+
+                # Run validate - check is valid
+                validate_response = self.app.post(
+                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    expect_errors=True,
+                )
+                mock_signature.assert_called_once()
+
+    def test_all_exposure__are_valid_setup(self):
         content_type = 'text/csv'
         loc_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
         acc_data = pd.read_csv(io.StringIO(ACCOUNT_DATA_VALID))
@@ -1269,21 +1316,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     'reinsurance_info_validated': False,
                     'reinsurance_scope_validated': False})
 
-                # Run validate - check is valid
-                validate_response = self.app.post(
-                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                )
-                self.assertEqual(200, validate_response.status_code)
-                self.assertEqual(validate_response.json, {
-                    'location_validated': True,
-                    'accounts_validated': True,
-                    'reinsurance_info_validated': True,
-                    'reinsurance_scope_validated': True})
-
-    def test_location_file__is_valid(self):
+    def test_location_file__is_valid_setup(self):
         content_type = 'text/csv'
         test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
         file_content = test_data.to_csv(index=False).encode('utf-8')
@@ -1318,21 +1351,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     'reinsurance_info_validated': None,
                     'reinsurance_scope_validated': None})
 
-                # Run validate - check is valid
-                validate_response = self.app.post(
-                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                )
-                self.assertEqual(200, validate_response.status_code)
-                self.assertEqual(validate_response.json, {
-                    'location_validated': True,
-                    'accounts_validated': None,
-                    'reinsurance_info_validated': None,
-                    'reinsurance_scope_validated': None})
-
-    def test_location_file__is_invalid__response_is_400(self):
+    def test_location_file__is_invalid_setup(self):
         content_type = 'text/csv'
         test_data = pd.read_csv(io.StringIO(LOCATION_DATA_INVALID))
         file_content = test_data.to_csv(index=False).encode('utf-8')
@@ -1366,25 +1385,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     'reinsurance_info_validated': None,
                     'reinsurance_scope_validated': None})
 
-                # Run validate - check is invalid
-                validate_response = self.app.post(
-                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    expect_errors=True,
-                )
-                self.assertEqual(400, validate_response.status_code)
-                self.assertEqual(validate_response.json, [
-                    ['ClassOfBusiness.cyb', 'missing required column PortNumber'],
-                    ['ClassOfBusiness.liabs', 'missing required column PortNumber'],
-                    ['ClassOfBusiness.mar', 'missing required column LocNumber'],
-                    ['ClassOfBusiness.mar', 'missing required column PortNumber'],
-                    ['ClassOfBusiness.prop', 'missing required column LocNumber'],
-                    ['ClassOfBusiness.prop', 'missing required column PortNumber']
-                ])
-
-    def test_account_file__is_invalid__response_is_400(self):
+    def test_account_file__is_invalid_setup(self):
         content_type = 'text/csv'
         test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
         file_content = test_data.to_csv(index=False).encode('utf-8')
@@ -1419,47 +1420,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     'reinsurance_info_validated': None,
                     'reinsurance_scope_validated': None})
 
-                # Run validate - check is valid
-                validate_response = self.app.post(
-                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    expect_errors=True,
-                )
-                self.assertEqual(400, validate_response.status_code)
-                self.assertEqual(validate_response.json, [
-                    ['ClassOfBusiness.cyb', 'missing required column AccCurrency'],
-                    ['ClassOfBusiness.cyb', 'missing required column AnnualRevenue'],
-                    ['ClassOfBusiness.cyb', 'missing required column AnnualRevenueCurrency'],
-                    ['ClassOfBusiness.cyb', 'missing required column IndustryCodeXX'],
-                    ['ClassOfBusiness.cyb', 'missing required column IndustrySchemeXX'],
-                    ['ClassOfBusiness.cyb', 'missing required column InsuredName'],
-                    ['ClassOfBusiness.cyb', 'missing required column LayerAttachment'],
-                    ['ClassOfBusiness.cyb', 'missing required column LayerLimit'],
-                    ['ClassOfBusiness.cyb', 'missing required column LayerParticipation'],
-                    ['ClassOfBusiness.cyb', 'missing required column PolDed'],
-                    ['ClassOfBusiness.cyb', 'missing required column PolExpiryDate'],
-                    ['ClassOfBusiness.cyb', 'missing required column PolInceptionDate'],
-                    ['ClassOfBusiness.cyb', 'missing required column PolNumber'],
-                    ['ClassOfBusiness.cyb', 'missing required column PolPerilsCovered'],
-                    ['ClassOfBusiness.liabs', 'missing required column AccCurrency'],
-                    ['ClassOfBusiness.liabs', 'missing required column CoverageClassDescription'],
-                    ['ClassOfBusiness.liabs', 'missing required column InsuredName'],
-                    ['ClassOfBusiness.liabs', 'missing required column LayerAttachment'],
-                    ['ClassOfBusiness.liabs', 'missing required column LayerLimit'],
-                    ['ClassOfBusiness.liabs', 'missing required column LayerParticipation'],
-                    ['ClassOfBusiness.liabs', 'missing required column PolExpiryDate'],
-                    ['ClassOfBusiness.liabs', 'missing required column PolInceptionDate'],
-                    ['ClassOfBusiness.mar', 'missing required column AccCurrency'],
-                    ['ClassOfBusiness.mar', 'missing required column PolNumber'],
-                    ['ClassOfBusiness.mar', 'missing required column PolPerilsCovered'],
-                    ['ClassOfBusiness.prop', 'missing required column AccCurrency'],
-                    ['ClassOfBusiness.prop', 'missing required column PolNumber'],
-                    ['ClassOfBusiness.prop', 'missing required column PolPerilsCovered']
-                ])
-
-    def test_reinsurance_info_file__is_invalid__response_is_400(self):
+    def test_reinsurance_info_file__is_invalid_setup(self):
         content_type = 'text/csv'
         test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
         file_content = test_data.to_csv(index=False).encode('utf-8')
@@ -1494,43 +1455,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     'reinsurance_info_validated': False,
                     'reinsurance_scope_validated': None})
 
-                # Run validate - check is valid
-                validate_response = self.app.post(
-                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    expect_errors=True,
-                )
-                self.assertEqual(400, validate_response.status_code)
-                self.assertEqual(validate_response.json, [
-                    ['ClassOfBusiness.cyb', 'missing required column InuringPriority'],
-                    ['ClassOfBusiness.cyb', 'missing required column PlacedPercent'],
-                    ['ClassOfBusiness.cyb', 'missing required column ReinsCurrency'],
-                    ['ClassOfBusiness.cyb', 'missing required column ReinsNumber'],
-                    ['ClassOfBusiness.cyb', 'missing required column ReinsPeril'],
-                    ['ClassOfBusiness.cyb', 'missing required column ReinsType'],
-                    ['ClassOfBusiness.liabs', 'missing required column InuringPriority'],
-                    ['ClassOfBusiness.liabs', 'missing required column PlacedPercent'],
-                    ['ClassOfBusiness.liabs', 'missing required column ReinsCurrency'],
-                    ['ClassOfBusiness.liabs', 'missing required column ReinsNumber'],
-                    ['ClassOfBusiness.liabs', 'missing required column ReinsPeril'],
-                    ['ClassOfBusiness.liabs', 'missing required column ReinsType'],
-                    ['ClassOfBusiness.mar', 'missing required column InuringPriority'],
-                    ['ClassOfBusiness.mar', 'missing required column PlacedPercent'],
-                    ['ClassOfBusiness.mar', 'missing required column ReinsCurrency'],
-                    ['ClassOfBusiness.mar', 'missing required column ReinsNumber'],
-                    ['ClassOfBusiness.mar', 'missing required column ReinsPeril'],
-                    ['ClassOfBusiness.mar', 'missing required column ReinsType'],
-                    ['ClassOfBusiness.prop', 'missing required column InuringPriority'],
-                    ['ClassOfBusiness.prop', 'missing required column PlacedPercent'],
-                    ['ClassOfBusiness.prop', 'missing required column ReinsCurrency'],
-                    ['ClassOfBusiness.prop', 'missing required column ReinsNumber'],
-                    ['ClassOfBusiness.prop', 'missing required column ReinsPeril'],
-                    ['ClassOfBusiness.prop', 'missing required column ReinsType']
-                ])
-
-    def test_reinsurance_scope_file__is_invalid__response_is_400(self):
+    def test_reinsurance_scope_file__is_invalid_setup(self):
         content_type = 'text/csv'
         test_data = pd.read_csv(io.StringIO(LOCATION_DATA_VALID))
         file_content = test_data.to_csv(index=False).encode('utf-8')
@@ -1564,22 +1489,6 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     'accounts_validated': None,
                     'reinsurance_info_validated': None,
                     'reinsurance_scope_validated': False})
-
-                # Run validate - check is valid
-                validate_response = self.app.post(
-                    portfolio.get_absolute_url(namespace=NAMESPACE) + 'validate/',
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    expect_errors=True,
-                )
-                self.assertEqual(400, validate_response.status_code)
-                self.assertEqual(validate_response.json, [
-                    ['ClassOfBusiness.cyb', 'missing required column ReinsNumber'],
-                    ['ClassOfBusiness.liabs', 'missing required column ReinsNumber'],
-                    ['ClassOfBusiness.mar', 'missing required column ReinsNumber'],
-                    ['ClassOfBusiness.prop', 'missing required column ReinsNumber']
-                ])
 
 
 class ResetUrlMixin:
