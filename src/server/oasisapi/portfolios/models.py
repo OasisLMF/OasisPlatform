@@ -10,10 +10,11 @@ from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
+from celery import chain
 
 from ..files.models import RelatedFile, related_file_to_df
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
-from .v2_api.tasks import record_exposure_output, record_validation_output
+from .v2_api.tasks import record_exposure_output, record_validation_output, exposure_transform_output
 
 import re
 
@@ -71,6 +72,7 @@ def create_custom_choices(name):
 class Portfolio(TimeStampedModel):
     exposure_status_choices = create_custom_choices('exposure run')
     validation_status_choices = create_custom_choices('validation')
+    exposure_transform_status_choices = create_custom_choices('transformation')
 
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
@@ -86,6 +88,8 @@ class Portfolio(TimeStampedModel):
                                                default=None, related_name='reinsurance_scope_file_portfolios')
     exposure_run_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                           default=None, related_name='exposure_run_file_portfolios')
+    transform_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                       default=None, related_name='transform_file_portfolios')
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
@@ -93,6 +97,10 @@ class Portfolio(TimeStampedModel):
     validation_status = models.CharField(
         max_length=max(len(c) for c in validation_status_choices._db_values),
         choices=validation_status_choices, default=validation_status_choices.NONE, editable=False, db_index=True
+    )
+    exposure_transform_status = models.CharField(
+        max_length=max(len(c) for c in exposure_transform_status_choices._db_values),
+        choices=exposure_transform_status_choices, default=exposure_transform_status_choices.NONE, editable=False, db_index=True
     )
 
     class Meta:
@@ -186,6 +194,8 @@ class Portfolio(TimeStampedModel):
         self.validation_status = self.validation_status_choices.RUN_COMPLETED
         self.save()
 
+    # Signatures
+
     def run_oed_validation_signature(self):
         location = get_path_or_url(self.location_file)
         account = get_path_or_url(self.accounts_file)
@@ -195,15 +205,11 @@ class Portfolio(TimeStampedModel):
 
         return celery_app_v2.signature(
             'run_oed_validation',
-            args=(location, account, ri_info, ri_scope, validation_config)
+            args=(location, account, ri_info, ri_scope, validation_config),
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
         )
-
-    def run_oed_validation(self):
-        task = self.run_oed_validation_signature()
-        task.link(record_validation_output.s(self.pk))
-        self.validation_status = self.validation_status_choices.STARTED
-        self.save()
-        task.apply_async(queue='oasis-internal-worker', priority=10)
 
     def exposure_run_signature(self, params):
         if not self.location_file or not self.accounts_file:
@@ -219,15 +225,47 @@ class Portfolio(TimeStampedModel):
         return celery_app_v2.signature(
             'run_exposure_task',
             args=(location, account, ri_info, ri_scope, params),
-            priority=10
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
         )
+
+    def exposure_transform_signature(self, mapping_direction):
+        return celery_app_v2.signature(
+            'run_exposure_transform',
+            args=(get_path_or_url(self.transform_file), mapping_direction),
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
+        )
+
+    # Calls
+
+    def run_oed_validation(self):
+        task = self.run_oed_validation_signature()
+        task.link(record_validation_output.s(self.pk))
+        self.validation_status = self.validation_status_choices.STARTED
+        self.save()
+        task.apply_async(queue='oasis-internal-worker', priority=10)
 
     def exposure_run(self, params, user_pk):
         task = self.exposure_run_signature(params)
         task.link(record_exposure_output.s(self.pk, user_pk))
-        task.apply_async(queue='oasis-internal-worker', priority=10)
         self.exposure_status = self.exposure_status_choices.STARTED
         self.save()
+        task.apply_async(queue='oasis-internal-worker', priority=10)
+
+    def exposure_transform(self, request):
+        transform = self.exposure_transform_signature(request.data['mapping_direction'])
+        transform_output = exposure_transform_output.s(self.pk, request.user.pk, request.data['file_type'])
+        validate = self.run_oed_validation_signature()
+        validate_output = record_validation_output.s(self.pk)
+        task = chain(transform, transform_output, validate, validate_output)
+
+        self.exposure_transform_status = self.exposure_transform_status_choices.STARTED
+        self.validation_status = self.validation_status_choices.STARTED
+        self.save()
+        task.apply_async(queue='oasis-internal-worker', priority=10)
 
 
 def get_path_or_url(file):
