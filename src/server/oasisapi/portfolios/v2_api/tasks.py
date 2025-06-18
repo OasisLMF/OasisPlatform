@@ -70,4 +70,5 @@ def exposure_transform_output(result, portfolio_pk, user_pk, file_type):
     else:
         portfolio.exposure_transform_status = portfolio.exposure_transform_status_choices.ERROR
     _delete_related_file(portfolio, 'transform_file', initiator)
+    _delete_related_file(portfolio, 'mapping_file', initiator)
     portfolio.save()

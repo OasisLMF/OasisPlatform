@@ -309,8 +309,12 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         """
         instance = self.get_object()
         instance.transform_file = RelatedFile.objects.create(
-            file=request.data['file'], content_type='text/csv', creator=request.user,
+            file=request.data['transform_file'], content_type='text/csv', creator=request.user,
             filename='transform_file_delete_on_use', store_as_filename=True
+        )
+        instance.mapping_file = RelatedFile.objects.create(
+            file=request.data['mapping_file'], content_type='text/yaml', creator=request.user,
+            filename='mapping_file_delete_on_use', store_as_filename=True
         )
         instance.exposure_transform(request)
         return Response({"message": "in queue"})

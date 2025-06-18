@@ -90,6 +90,8 @@ class Portfolio(TimeStampedModel):
                                           default=None, related_name='exposure_run_file_portfolios')
     transform_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                        default=None, related_name='transform_file_portfolios')
+    mapping_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                     default=None, related_name='mapping_file_portfolios')
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
@@ -230,10 +232,10 @@ class Portfolio(TimeStampedModel):
             queue='oasis-internal-worker'
         )
 
-    def exposure_transform_signature(self, mapping_direction):
+    def exposure_transform_signature(self):
         return celery_app_v2.signature(
             'run_exposure_transform',
-            args=(get_path_or_url(self.transform_file), mapping_direction),
+            args=(get_path_or_url(self.transform_file), get_path_or_url(self.mapping_file)),
             priority=10,
             immutable=True,
             queue='oasis-internal-worker'
@@ -256,7 +258,7 @@ class Portfolio(TimeStampedModel):
         task.apply_async(queue='oasis-internal-worker', priority=10)
 
     def exposure_transform(self, request):
-        transform = self.exposure_transform_signature(request.data['mapping_direction'])
+        transform = self.exposure_transform_signature()
         transform_output = exposure_transform_output.s(self.pk, request.user.pk, request.data['file_type'])
         validate = self.run_oed_validation_signature()
         validate_output = record_validation_output.s(self.pk)

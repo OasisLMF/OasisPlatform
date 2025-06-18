@@ -501,7 +501,5 @@ class ExposureTransformSerializer(serializers.Serializer):
     FILE_TYPES = ('location', 'accounts', 'ri_info', 'ri_scope')
     file_type = serializers.ChoiceField(choices=FILE_TYPES)
 
-    MAPPING_DIRECTIONS = ('air-oed', 'TODO: find more')
-    mapping_direction = serializers.ChoiceField(choices=MAPPING_DIRECTIONS)
-
-    file = serializers.FileField(required=True)
+    mapping_file = serializers.FileField(required=True)
+    transform_file = serializers.FileField(required=True)

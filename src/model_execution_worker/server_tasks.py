@@ -62,7 +62,7 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
 
 
 @app.task(name='run_exposure_transform')
-def run_exposure_transform(filepath, mapping_direction):
+def run_exposure_transform(filepath, mapping_file):
     """
     Returns a tuple of a file and a boolean flag of success
     """
@@ -71,7 +71,7 @@ def run_exposure_transform(filepath, mapping_direction):
         copy_or_download(filepath, local_file)
         output_file = os.path.join(temp_dir, "transform_output.csv")
         try:
-            transform(format=mapping_direction, input_file=local_file, output_file=output_file)
+            transform(mapping_file=mapping_file, input_file=local_file, output_file=output_file)
             result = get_filestore(settings).put(output_file)
             return (result, True)
         except Exception:
