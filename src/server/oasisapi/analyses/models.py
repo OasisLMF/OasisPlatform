@@ -62,7 +62,7 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
         :param objs: A list of instances to create, they should all be for the same
             queue and analysis
         """
-        statuses = self.bulk_create(objs)
+        self.bulk_create(objs)
 
         send_task_status_message(build_all_queue_status_message())
         # self._send_socket_messages(statuses)
@@ -187,6 +187,8 @@ class Analysis(TimeStampedModel):
     task_started = models.DateTimeField(editable=False, null=True, default=None)
 
     task_finished = models.DateTimeField(editable=False, null=True, default=None)
+    run_tasks_total = models.IntegerField(editable=True, null=True, default=0)
+    run_tasks_complete = models.IntegerField(editable=True, null=True, default=0)
     run_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     generate_inputs_task_id = models.CharField(max_length=255, editable=False, default='', blank=True)
     complex_model_data_files = models.ManyToManyField(DataFile, blank=True, related_name='complex_model_files_analyses')
@@ -601,7 +603,7 @@ class Analysis(TimeStampedModel):
     def cancel_subtasks(self):
         if self.run_mode == self.run_mode_choices.V2:
             cancel_tasks = self.v2_cancel_subtasks_signature
-            task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
+            cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
         valid_choices = [

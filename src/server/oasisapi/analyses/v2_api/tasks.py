@@ -642,6 +642,11 @@ def record_sub_task_success(self, res, analysis_id=None, initiator_id=None, task
         )
     )
 
+    if "generate-losses-chunk" in task_slug:
+        Analysis.objects.filter(pk=analysis_id).update(
+            run_tasks_complete=F('run_tasks_complete') + 1
+        )
+
 
 @celery_app_v2.task(bind=True, name='set_subtask_status')
 def set_subtask_status(self, analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):

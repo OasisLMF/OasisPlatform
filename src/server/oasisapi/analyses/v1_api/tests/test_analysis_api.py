@@ -144,6 +144,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(namespace=NAMESPACE),
                     'task_started': None,
                     'task_finished': None,
+                    'run_tasks_total': 0,
+                    'run_tasks_complete': 0,
                 }, response.json)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
@@ -290,7 +292,7 @@ class AnalysisRun(WebTestMixin, TestCase):
         self.assertEqual(404, response.status_code)
 
     def test_run_mode_is_not_V1___responce_is_400(self):
-        with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True) as run_mock:
+        with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True):
             user = fake_user()
             analysis = fake_analysis()
             analysis.model.run_mode = analysis.model.run_mode_choices.V2
@@ -400,7 +402,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
             generate_inputs_mock.assert_called_once_with(analysis, user)
 
     def test_model_run_mode_not_V1___response_is_400(self):
-        with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True) as generate_inputs_mock:
+        with patch('src.server.oasisapi.analyses.models.Analysis.generate_inputs', autospec=True):
             user = fake_user()
             analysis = fake_analysis()
             analysis.model.run_mode = analysis.model.run_mode_choices.V2
@@ -999,7 +1001,8 @@ class AnalysisInputFile(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    @given(file_content=binary(min_size=1), content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
+    @given(file_content=binary(min_size=1),
+           content_type=sampled_from(['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar']))
     def test_input_file_is_present___file_can_be_retrieved(self, file_content, content_type):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):

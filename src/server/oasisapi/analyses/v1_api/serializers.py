@@ -21,6 +21,8 @@ class AnalysisListSerializer(serializers.Serializer):
     status = serializers.CharField(read_only=True)
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
+    run_tasks_total = serializers.IntegerField(read_only=True)
+    run_tasks_complete = serializers.IntegerField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     # file fields
@@ -129,6 +131,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'status',
             'task_started',
             'task_finished',
+            'run_tasks_total',
+            'run_tasks_complete',
             'complex_model_data_files',
             'input_file',
             'settings_file',
