@@ -319,7 +319,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `input_file` contents
         """
-        return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+        return handle_related_file(self.get_object(), 'input_file', request,
+                                   ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
@@ -403,7 +404,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `output_file` contents
         """
-        return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+        return handle_related_file(self.get_object(), 'output_file', request,
+                                   ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)

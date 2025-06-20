@@ -182,7 +182,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_input_generation_traceback_file(self, instance):
         request = self.context.get('request')
-        return instance.get_absolute_input_generation_traceback_file_url(request=request, namespace=self.ns) if instance.input_generation_traceback_file_id else None
+        if instance.input_generation_traceback_file_id:
+            return instance.get_absolute_input_generation_traceback_file_url(request=request, namespace=self.ns)
+        return None
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_output_file(self, instance):

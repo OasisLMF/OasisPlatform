@@ -424,7 +424,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         delete:
         Disassociates the portfolios `input_file` contents
         """
-        return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+        return handle_related_file(self.get_object(), 'input_file', request,
+                                   ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @swagger_auto_schema(methods=["get"], responses={200: FILE_LIST_RESPONSE})
     @action(methods=['get'], detail=True)
@@ -433,7 +434,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         get:
         List the files in `input_file`.
         """
-        return handle_get_related_file_tar(self.get_object(), "input_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
+        return handle_get_related_file_tar(self.get_object(), "input_file", request,
+                                           ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
     @action(methods=['get'], detail=True)
@@ -442,7 +444,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         get:
         Extract and get `input_file` content.
         """
-        return handle_get_related_file_tar(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+        return handle_get_related_file_tar(self.get_object(), 'input_file', request,
+                                           ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @swagger_auto_schema(methods=["get"], responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
@@ -526,7 +529,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         delete:
         Disassociates the portfolios `output_file` contents
         """
-        return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+        return handle_related_file(self.get_object(), 'output_file', request,
+                                   ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_LIST_RESPONSE})
     @action(methods=['get'], detail=True)
@@ -535,7 +539,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         get:
         List the files in `output_file`.
         """
-        return handle_get_related_file_tar(self.get_object(), "output_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
+        return handle_get_related_file_tar(self.get_object(), "output_file", request,
+                                           ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
     @action(methods=['get'], detail=True)
@@ -544,7 +549,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         get:
         Extract and get `output_file` content.
         """
-        return handle_get_related_file_tar(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
+        return handle_get_related_file_tar(self.get_object(), 'output_file', request,
+                                           ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @requires_sql_reader
     @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
@@ -613,7 +619,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(self.get_object())
         return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: AnalysisTaskStatusSerializer(many=True)}, manual_parameters=[SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM])
+    @swagger_auto_schema(methods=['get'], responses={200: AnalysisTaskStatusSerializer(many=True)},
+                         manual_parameters=[SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM])
     @action(methods=['get'], detail=True)
     def sub_task_list(self, request, pk=None, version=None):
 
