@@ -207,8 +207,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'task_started': None,
                     'task_finished': None,
                     'run_tasks_total': 0,
-                    'run_tasks_completed': 0,
-
+                    'run_tasks_complete': 0,
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):
