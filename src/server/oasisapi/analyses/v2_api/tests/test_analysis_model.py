@@ -331,30 +331,16 @@ class AnalysisRun(WebTestMixin, TestCase):
                     iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
 
-    @patch("src.server.oasisapi.analyses.v2_api.task_controller.Controller.extract_celery_task_ids")
-    @patch("src.server.oasisapi.analyses.v2_api.task_controller.Controller._start")
-    @patch("src.server.oasisapi.analyses.v2_api.task_controller.Controller.get_loss_generation_tasks")
-    @patch("src.server.oasisapi.analyses.v2_api.task_controller.Controller._get_loss_generation_chunks")
-    def test_run_tasks_total_completed_initialised(
-        self,
-        fake_chunks,
-        fake_tasks,
-        fake_start,
-        fake_ids
-    ):
-        analysis = fake_analysis()
-        initiator = fake_user()
-
-        fake_chunks.return_value = 151
-        fake_tasks.return_value = ([MagicMock()], [MagicMock()])
-        fake_task = MagicMock()
-        fake_task.id = 7
-        fake_start.return_value = (None, fake_task)
-        fake_ids.return_value = []
+    def test_run_tasks_total_completed_initialised(self):
+        analysis = MagicMock()
+        analysis.chunking_options = MagicMock()
+        analysis.chunking_options.loss_strategy = 'FIXED_CHUNKS'
+        analysis.chunking_options.fixed_analysis_chunks = 151
 
         controller = Controller()
-        controller.generate_losses(analysis, initiator, 7)
+        result = controller._get_loss_generation_chunks(analysis, 12)
 
+        assert result == 151
         assert analysis.run_tasks_total == 151
         assert analysis.run_tasks_complete == 0
 

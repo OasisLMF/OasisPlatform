@@ -570,9 +570,6 @@ class Controller:
         num_chunks = cls._get_loss_generation_chunks(analysis, events_total)
         run_data_uuid = uuid.uuid4().hex
         statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
-        analysis.run_tasks_total = num_chunks
-        analysis.run_tasks_complete = 0
-        analysis.save()
 
         chain, task = cls._start(
             analysis,
@@ -621,6 +618,9 @@ class Controller:
             events_per_chunk = chunking_options.dynamic_events_per_analysis
             num_chunks = min(ceil(events_total / events_per_chunk), chunking_options.dynamic_chunks_max)
 
+        analysis.run_tasks_total = num_chunks
+        analysis.run_tasks_complete = 0
+        analysis.save()
         return num_chunks
 
     @classmethod
