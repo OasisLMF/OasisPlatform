@@ -473,7 +473,7 @@ class Analysis(TimeStampedModel):
         if not self.input_file:
             errors['input_file'] = ['Must not be null']
 
-        # Valadation for dyanmic loss chunks
+        # Valadation for dynamic loss chunks
         if run_mode == self.run_mode_choices.V2:
             if self.chunking_options is None:
                 chunking_options = self.model.chunking_options

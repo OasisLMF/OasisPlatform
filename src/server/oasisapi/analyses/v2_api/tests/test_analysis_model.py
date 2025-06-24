@@ -22,6 +22,8 @@ from src.server.oasisapi.auth.tests.fakes import fake_user
 from ...models import AnalysisTaskStatus
 from ...models import Analysis
 from src.server.oasisapi.analyses.v2_api.tasks import cancel_subtasks
+from src.server.oasisapi.analyses.v2_api.tasks import record_sub_task_success
+from src.server.oasisapi.analyses.v2_api.task_controller import Controller
 
 # Override default deadline for all tests to 8s
 settings.register_profile("ci", deadline=800.0)
@@ -328,6 +330,52 @@ class AnalysisRun(WebTestMixin, TestCase):
                     sig.options['queue'],
                     iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
+
+    @patch("src.server.oasisapi.analyses.v2_api.task_controller.Controller.extract_celery_task_ids")
+    @patch("src.server.oasisapi.analyses.v2_api.task_controller.Controller._start")
+    @patch("src.server.oasisapi.analyses.v2_api.task_controller.Controller.get_loss_generation_tasks")
+    @patch("src.server.oasisapi.analyses.v2_api.task_controller.Controller._get_loss_generation_chunks")
+    def test_run_tasks_total_completed_initialised(
+        self,
+        fake_chunks,
+        fake_tasks,
+        fake_start,
+        fake_ids
+    ):
+        analysis = fake_analysis()
+        initiator = fake_user()
+
+        fake_chunks.return_value = 151
+        fake_tasks.return_value = ([MagicMock()], [MagicMock()])
+        fake_task = MagicMock()
+        fake_task.id = 7
+        fake_start.return_value = (None, fake_task)
+        fake_ids.return_value = []
+
+        controller = Controller()
+        controller.generate_losses(analysis, initiator, 7)
+
+        assert analysis.run_tasks_total == 151
+        assert analysis.run_tasks_complete == 0
+
+    @patch("src.server.oasisapi.analyses.models.Analysis.objects")
+    def test_run_tasks_completed_correct(self, objects):
+        analysis = fake_analysis(pk=72)
+        res = {'log_location': None, 'error_location': None}
+        task_slugs = ["generate-losses-chunk-4", "generate-losses-chunk-3", "Hello World", "generate-losses-start", "generate-losses-chunk-17"]
+
+        mock_filter = MagicMock()
+        objects.filter.return_value = mock_filter
+
+        def mock_update(run_tasks_complete):
+            analysis.run_tasks_complete += 1
+
+        mock_filter.update.side_effect = mock_update
+
+        for task_slug in task_slugs:
+            record_sub_task_success(res=res, analysis_id=3, initiator_id=3, task_slug=task_slug)
+
+        assert analysis.run_tasks_complete == 3
 
 
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
