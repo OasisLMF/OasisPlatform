@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.5`_
+ ---------
+* [#1220](https://github.com/OasisLMF/OasisPlatform/pull/1220) - Bugfix- errors not JSON serializable
+* [#1212](https://github.com/OasisLMF/OasisPlatform/pull/1212) - Validation on internal worker
+* [#1219](https://github.com/OasisLMF/OasisPlatform/pull/1219) - Transformation Endpoint
+.. _`2.4.5`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.4...2.4.5
+
 .. _`2.4.4`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.3...2.4.4
 
 `2.4.3`_

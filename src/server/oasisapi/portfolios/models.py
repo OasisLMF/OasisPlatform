@@ -10,14 +10,15 @@ from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
+from celery import chain
 
 from ..files.models import RelatedFile, related_file_to_df
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
-from .v2_api.tasks import record_output
+from .v2_api.tasks import record_exposure_output, record_validation_output, exposure_transform_output
 
 import re
 
-from ods_tools.oed.exposure import OedExposure
+# from ods_tools.oed.exposure import OedExposure
 from ods_tools.oed import OdsException
 
 
@@ -57,14 +58,22 @@ def oed_class_of_businesses__workaround(e):
             raise ValidationError(detail=sorted([(error['name'], error['msg']) for error in result]))
 
 
-class Portfolio(TimeStampedModel):
-    exposure_status_choices = Choices(
-        ('NONE', 'No exposure run calls'),
-        ('INSUFFICIENT_DATA', 'Missing location/accounts file'),
-        ('STARTED', 'An exposure run has been started'),
-        ('ERROR', 'Exposure run has failed'),
-        ('RUN_COMPLETED', 'Exposure run has successfully finished'),
+def create_custom_choices(name):
+    name = name.lower()
+    return Choices(
+        ('NONE', f'No {name} calls'),
+        ('INSUFFICIENT_DATA', 'Missing input files'),
+        ('STARTED', f'{name.capitalize()} has been started'),
+        ('ERROR', f'{name.capitalize()} has failed'),
+        ('RUN_COMPLETED', f'{name.capitalize()} has successfully finished'),
     )
+
+
+class Portfolio(TimeStampedModel):
+    exposure_status_choices = create_custom_choices('exposure run')
+    validation_status_choices = create_custom_choices('validation')
+    exposure_transform_status_choices = create_custom_choices('transformation')
+
     name = models.CharField(max_length=255, help_text=_('The name of the portfolio'))
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
     groups = models.ManyToManyField(Group, blank=True, default=None, help_text='Groups allowed to access this object')
@@ -79,9 +88,21 @@ class Portfolio(TimeStampedModel):
                                                default=None, related_name='reinsurance_scope_file_portfolios')
     exposure_run_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                           default=None, related_name='exposure_run_file_portfolios')
+    transform_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                       default=None, related_name='transform_file_portfolios')
+    mapping_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                     default=None, related_name='mapping_file_portfolios')
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
+    )
+    validation_status = models.CharField(
+        max_length=max(len(c) for c in validation_status_choices._db_values),
+        choices=validation_status_choices, default=validation_status_choices.NONE, editable=False, db_index=True
+    )
+    exposure_transform_status = models.CharField(
+        max_length=max(len(c) for c in exposure_transform_status_choices._db_values),
+        choices=exposure_transform_status_choices, default=exposure_transform_status_choices.NONE, editable=False, db_index=True
     )
 
     class Meta:
@@ -160,7 +181,7 @@ class Portfolio(TimeStampedModel):
         df = related_file_to_df(self.location_file)
         return len(df.index)
 
-    def set_portolio_valid(self):
+    def set_portfolio_valid(self):
         oed_files = [
             'accounts_file',
             'location_file',
@@ -172,29 +193,25 @@ class Portfolio(TimeStampedModel):
             if file_ref:
                 file_ref.oed_validated = True
                 file_ref.save()
+        self.validation_status = self.validation_status_choices.RUN_COMPLETED
+        self.save()
 
-    def run_oed_validation(self):
-        try:
-            portfolio_exposure = OedExposure(
-                location=getattr(self.location_file, 'file', None),
-                account=getattr(self.accounts_file, 'file', None),
-                ri_info=getattr(self.reinsurance_info_file, 'file', None),
-                ri_scope=getattr(self.reinsurance_scope_file, 'file', None),
-                validation_config=settings.PORTFOLIO_VALIDATION_CONFIG)
-            validation_errors = portfolio_exposure.check()
-        except Exception as e:
-            oed_class_of_businesses__workaround(e)  # remove when Issue (https://github.com/OasisLMF/ODS_Tools/issues/174) fixed
-            raise ValidationError({
-                'error': 'Failed to validate portfolio',
-                'detail': str(e),
-                'exception': type(e).__name__
-            })
+    # Signatures
 
-        # Set validation fields to true or raise exception
-        if validation_errors:
-            raise ValidationError(detail=[(error['name'], error['msg']) for error in validation_errors])
-        else:
-            self.set_portolio_valid()
+    def run_oed_validation_signature(self):
+        location = get_path_or_url(self.location_file)
+        account = get_path_or_url(self.accounts_file)
+        ri_info = get_path_or_url(self.reinsurance_info_file)
+        ri_scope = get_path_or_url(self.reinsurance_scope_file)
+        validation_config = settings.PORTFOLIO_VALIDATION_CONFIG
+
+        return celery_app_v2.signature(
+            'run_oed_validation',
+            args=(location, account, ri_info, ri_scope, validation_config),
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
+        )
 
     def exposure_run_signature(self, params):
         if not self.location_file or not self.accounts_file:
@@ -210,15 +227,47 @@ class Portfolio(TimeStampedModel):
         return celery_app_v2.signature(
             'run_exposure_task',
             args=(location, account, ri_info, ri_scope, params),
-            priority=10
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
         )
+
+    def exposure_transform_signature(self):
+        return celery_app_v2.signature(
+            'run_exposure_transform',
+            args=(get_path_or_url(self.transform_file), get_path_or_url(self.mapping_file)),
+            priority=10,
+            immutable=True,
+            queue='oasis-internal-worker'
+        )
+
+    # Calls
+
+    def run_oed_validation(self):
+        task = self.run_oed_validation_signature()
+        task.link(record_validation_output.s(self.pk))
+        self.validation_status = self.validation_status_choices.STARTED
+        self.save()
+        task.apply_async(queue='oasis-internal-worker', priority=10)
 
     def exposure_run(self, params, user_pk):
         task = self.exposure_run_signature(params)
-        task.link(record_output.s(self.pk, user_pk))
-        task.apply_async(queue='oasis-internal-worker', priority=10)
+        task.link(record_exposure_output.s(self.pk, user_pk))
         self.exposure_status = self.exposure_status_choices.STARTED
         self.save()
+        task.apply_async(queue='oasis-internal-worker', priority=10)
+
+    def exposure_transform(self, request):
+        transform = self.exposure_transform_signature()
+        transform_output = exposure_transform_output.s(self.pk, request.user.pk, request.data['file_type'])
+        validate = self.run_oed_validation_signature()
+        validate_output = record_validation_output.s(self.pk)
+        task = chain(transform, transform_output, validate, validate_output)
+
+        self.exposure_transform_status = self.exposure_transform_status_choices.STARTED
+        self.validation_status = self.validation_status_choices.STARTED
+        self.save()
+        task.apply_async(queue='oasis-internal-worker', priority=10)
 
 
 def get_path_or_url(file):

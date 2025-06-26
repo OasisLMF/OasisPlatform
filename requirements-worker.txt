@@ -144,6 +144,8 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 kombu==5.4.2
     # via celery
+lark==1.1.9
+    # via -r requirements-worker.in
 llvmlite==0.43.0
     # via numba
 msal==1.31.0
@@ -160,6 +162,8 @@ multidict==6.1.0
     #   aiohttp
     #   yarl
 natsort==8.4.0
+    # via -r requirements-worker.in
+networkx==3.2.1
     # via -r requirements-worker.in
 numba==0.60.0
     # via
@@ -185,9 +189,9 @@ oasis-data-manager==0.1.3
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.4.4
+oasislmf[extra]==2.4.5
     # via -r requirements-worker.in
-ods-tools==4.0.1
+ods-tools==4.0.2
     # via oasislmf
 packaging==24.1
     # via
@@ -225,6 +229,8 @@ pyjwt[crypto]==2.9.0
     #   pyjwt
 pymysql==1.1.1
     # via -r requirements-worker.in
+pyodbc==5.0.1
+    # via -r requirements-worker.in
 pyogrio==0.10.0
     # via geopandas
 pyproj==3.7.0
@@ -240,6 +246,8 @@ pytz==2024.2
     # via
     #   oasislmf
     #   pandas
+pyyaml==6.0.2
+    # via -r requirements-worker.in
 redis==5.2.0
     # via -r requirements-worker.in
 referencing==0.35.1
@@ -287,6 +295,10 @@ six==1.16.0
     #   pathlib2
     #   python-dateutil
 sqlalchemy==2.0.36
+    # via -r requirements-worker.in
+sqlparams==6.0.1
+    # via -r requirements-worker.in
+sqlparse==0.5.1
     # via -r requirements-worker.in
 tabulate==0.9.0
     # via oasislmf
