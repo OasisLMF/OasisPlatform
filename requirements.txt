@@ -374,7 +374,7 @@ oasis-data-manager==0.1.3
     #   ods-tools
 oasislmf[extra]==2.4.4
     # via -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in
-ods-tools==4.0.1
+ods-tools==4.0.2
     # via
     #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   oasislmf
