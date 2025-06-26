@@ -298,7 +298,7 @@ sqlalchemy==2.0.36
     # via -r requirements-worker.in
 sqlparams==6.0.1
     # via -r requirements-worker.in
-sqlparse==0.4.4
+sqlparse==0.5.1
     # via -r requirements-worker.in
 tabulate==0.9.0
     # via oasislmf
