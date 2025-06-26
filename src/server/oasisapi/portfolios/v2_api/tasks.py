@@ -55,7 +55,7 @@ def exposure_transform_output(result, portfolio_pk, user_pk, file_type):
     initiator = get_user_model().objects.get(pk=user_pk)
     selection = {
         'location': 'location_file',
-        'account': 'accounts_file',
+        'accounts': 'accounts_file',
         'ri_info': 'reinsurance_info_file',
         'ri_scope': 'reinsurance_scope_file'
     }
