@@ -121,7 +121,8 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'reinsurance_scope_file',
             'storage_links',
             'exposure_status',
-            'validation_status'
+            'validation_status',
+            'exposure_transform_status'
         )
 
     def validate(self, attrs):
@@ -494,3 +495,11 @@ class ExposureRunSerializer(serializers.ModelSerializer):
         if path:
             return path.file.url
         return None
+
+
+class ExposureTransformSerializer(serializers.Serializer):
+    FILE_TYPES = ('location', 'accounts', 'ri_info', 'ri_scope')
+    file_type = serializers.ChoiceField(choices=FILE_TYPES)
+
+    mapping_file = serializers.FileField(required=True)
+    transform_file = serializers.FileField(required=True)
