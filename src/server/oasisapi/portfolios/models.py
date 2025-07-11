@@ -28,7 +28,6 @@ def oed_class_of_businesses__workaround(e):
 
         If not a ClassOfBusiness error return an empty dict
     """
-    format_as_validation_error = False
     result = []
 
     if not isinstance(e, OdsException):
@@ -168,13 +167,13 @@ class Portfolio(TimeStampedModel):
         )
 
     def location_file_len(self):
-        csv_compression_types = {
-            'text/csv': 'infer',
-            'application/vnd.ms-excel': 'infer',
-            'application/gzip': 'gzip',
-            'application/x-bzip2': 'bz2',
-            'application/zip': 'zip',
-        }
+        # csv_compression_types = {
+        #     'text/csv': 'infer',
+        #     'application/vnd.ms-excel': 'infer',
+        #     'application/gzip': 'gzip',
+        #     'application/x-bzip2': 'bz2',
+        #     'application/zip': 'zip',
+        # }
         if not self.location_file:
             return None
 
