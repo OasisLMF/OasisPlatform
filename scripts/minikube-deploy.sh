@@ -66,7 +66,7 @@ popd
 #minikube tunnel &
 # kubectl get svc --template="{{range .items}}{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}{{end}}"
 
-# Open single service 
+# Open single service
 #kubectl port-forward deployment/oasis-websocket 8001:8001  #(forward websocket)
 
 
