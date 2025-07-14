@@ -1,0 +1,112 @@
+types:
+  ContractID:
+    type: string
+  LocationID:
+    type: string
+  CountryISO:
+    type: string
+  Latitude:
+    type: float
+  Longitude:
+    type: float
+  Street:
+    type: string
+  PostalCode:
+    type: string
+  OccupancyCode:
+    type: int
+  ConstructionCode:
+    type: int
+  LocPerils:
+    type: string
+  BuildingValue:
+    type: float
+  OtherValue:
+    type: float
+  ContentsValue:
+    type: float
+  TimeElementValue:
+    type: float
+  Currency:
+    type: string
+null_values:
+  - "''"
+  - Null
+  - NULL
+transform:
+  PortNumber:
+    - transformation: "'1'"
+  AccNumber:
+    - transformation: ContractID
+  LocNumber:
+    - transformation: LocationID
+  CountryCode:
+    - transformation: CountryISO
+  Latitude:
+    - transformation: Latitude
+  Longitude:
+    - transformation: Longitude
+  StreetAddress:
+    - transformation: Street
+  PostalCode:
+    - transformation: PostalCode
+  OccupancyCode:
+    - transformation:
+        replace(
+          OccupancyCode,
+          '301','1050'
+          )
+  ConstructionCode:
+    - transformation: |
+        replace(
+          ConstructionCode,
+          '100','5000'
+          )
+  LocPerilsCovered:
+    - transformation: |
+        replace_multiple(
+          LocPerils,
+          ',', ';',
+          'TC', 'WTC'
+        )
+      when: LocPerils is not in [Null, '', 'NULL']
+    - transformation: "'AA1'"
+  BuildingTIV:
+    - transformation: BuildingValue
+  OtherTIV:
+    - transformation: OtherValue
+  ContentsTIV:
+    - transformation: ContentsValue
+  BITIV:
+    - transformation: TimeElementValue
+  LocCurrency:
+    - transformation: Currency
+validation:
+  input:
+    Total:
+      fields:
+        - BuildingValue
+        - ContentsValue
+      operator: sum
+    TotalByContractID:
+      fields:
+        - BuildingValue
+      operator: sum
+      group_by:
+        - ContractID
+    NumRows:
+      operator: count_rows
+  output:
+    Total:
+      fields:
+        - BuildingTIV
+        - ContentsTIV
+      operator: sum
+    TotalByAccNumber:
+      fields:
+        - BuildingTIV
+      operator: sum
+      group_by:
+        - AccNumber
+    NumRows:
+      operator: count_rows

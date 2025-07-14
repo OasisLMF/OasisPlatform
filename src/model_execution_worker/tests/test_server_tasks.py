@@ -1,10 +1,10 @@
 from hypothesis.extra.django import TestCase
-from src.model_execution_worker.server_tasks import run_oed_validation, run_exposure_task
-from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output, record_exposure_output, exposure_transform_output
+from src.model_execution_worker.server_tasks import run_oed_validation, run_exposure_task, run_exposure_transform
+from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output, record_exposure_output, record_transform_output
 from src.server.oasisapi.auth.tests.fakes import fake_user
 from django.conf import settings as django_settings
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 from rest_framework.exceptions import ValidationError
 from src.server.oasisapi.portfolios.models import Portfolio
 from src.server.oasisapi.files.models import RelatedFile
@@ -12,6 +12,7 @@ import pytest
 import filecmp
 
 TEST_DIR = os.path.dirname(__file__)
+TRANSFORM_DIR = os.path.join(TEST_DIR, "inputs", "test_transform")
 ACCOUNTS_VALID = os.path.join(TEST_DIR, "inputs", "accounts.csv")
 LOCATION_VALID = os.path.join(TEST_DIR, "inputs", "location.csv")
 RI_INFO_VALID = os.path.join(TEST_DIR, "inputs", "ri_info.csv")
@@ -276,7 +277,7 @@ class Transform(TestCase):
             mock_portfolio.exposure_transform_signature.assert_called_once_with()
             mock_portfolio.run_oed_validation_signature.assert_called_once_with()
 
-            transform_output = exposure_transform_output.s(5, 7, 'csv')
+            transform_output = record_transform_output.s(5, 7, 'csv')
             validate_output = record_validation_output.s(5)
             chain_mock.assert_called_once_with(transform_mock, transform_output, validate_mock, validate_output)
 
@@ -295,3 +296,45 @@ class Transform(TestCase):
                 immutable=True,
                 queue='oasis-internal-worker'
             )
+
+    def test_run_exposure_transform_correct(self):
+        input_file = os.path.join(TRANSFORM_DIR, "input.csv")
+        mapping_file = os.path.join(TRANSFORM_DIR, "mapping.yml")
+        expected_output = os.path.join(TRANSFORM_DIR, "expected_output.csv")
+        with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
+            def side_effect(arg):
+                assert filecmp.cmp(os.path.join(TRANSFORM_DIR, "output.csv"), expected_output)
+                return "Hello World"
+
+            mock_store = MagicMock()
+            mock_store.put.side_effect = side_effect
+            mock_filestore.return_value = mock_store
+            file = run_exposure_transform(input_file, mapping_file)
+            self.assertEqual(file, "Hello World")
+
+    def test_record_transform_output(self):
+        portfolio_pk = 10110
+        portfolio = MagicMock(pk=10110)
+        portfolio.exposure_transform_status_choices.RUN_COMPLETED = "COMPLETED"
+        initiator = MagicMock()
+
+        with (patch("src.server.oasisapi.portfolios.models.Portfolio") as mock_Portfolio,
+              patch("src.server.oasisapi.portfolios.v2_api.tasks.get_user_model") as mock_get_user,
+              patch("src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile") as mock_RelatedFile,
+              patch("src.server.oasisapi.portfolios.v2_api.tasks._delete_related_file") as mock_deleted):
+            mock_Portfolio.objects.get.return_value = portfolio
+            mock_get_user.return_value = initiator
+            mock_RelatedFile.objects.create.return_value = 3
+            record_transform_output("Filey McFileface", portfolio_pk, 42, "accounts")
+            mock_Portfolio.objects.get.assert_called_once_with(pk=portfolio_pk)
+            mock_RelatedFile.objects.create.assert_called_once_with(file="Filey McFileface", content_type='text/csv', creator=initiator.objects.get(),
+                                                                    filename="portfolio_10110_accounts_file.csv", store_as_filename=True)
+            self.assertEqual(portfolio.accounts_file, 3)
+
+            mock_deleted.assert_has_calls([
+                call(portfolio, 'transform_file', initiator.objects.get()),
+                call(portfolio, 'mapping_file', initiator.objects.get())]
+            )
+            self.assertEqual(mock_deleted.call_count, 2)
+            self.assertEqual(portfolio.exposure_transform_status, "COMPLETED")
+            portfolio.save.assert_called_once_with()
