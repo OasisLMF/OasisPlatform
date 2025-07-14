@@ -109,7 +109,7 @@ def get_queues_info() -> List[QueueInfo]:
         ),
         {}
     )
-    # raise ValueError(running)
+
     for entry in res:
         entry['pending_count'] = pending.get(entry['name'], 0)
         entry['queued_count'] = queued.get(entry['name'], 0)
