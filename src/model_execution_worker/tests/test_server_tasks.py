@@ -216,7 +216,7 @@ class ExposureRun(TestCase):
             self.assertEqual(effect, "world")
             mock_store.put.assert_called_once_with("error.txt")
 
-            self.assertEqual(dir, os.getcwd)
+            self.assertEqual(dir, os.getcwd())
 
     def test_run_exposure_task_output(self):
         def side_effect(arg):
