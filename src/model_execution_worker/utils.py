@@ -180,7 +180,7 @@ def get_oed_version():
         from ods_tools.oed.oed_schema import OedSchema
         OedSchemaData = OedSchema.from_oed_schema_info(oed_schema_info=None)
         return OedSchemaData.schema['version']
-    except Exception as e:
+    except Exception:
         logging.exception("Failed to get OED version info")
         return None
 
@@ -322,25 +322,27 @@ def copy_or_download(source, destination):
     s3.download_file(bucket_name, key, destination)
 
 
-def get_destination_file(filename, destination_dir, destination_title):
-    is_csv = filename.lower().endswith('.csv')
-    if is_csv:
+def detect_file_type(filename, destination_dir, destination_title):
+    _, ext = os.path.splitext(filename)
+    if ext.startswith('.csv'):  # Some can be stored like '.csv_abc4def'
         return os.path.join(destination_dir, destination_title + ".csv")
-    return os.path.join(destination_dir, destination_title + ".parquet")
+    if ext.startswith('.parquet'):
+        return os.path.join(destination_dir, destination_title + ".parquet")
+    raise ValueError(f"File must be either Parquet or CSV: {filename, ext}")
 
 
 def get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir):
     loc_temp = acc_temp = ri_temp = rl_temp = None
     if loc_filepath:
-        loc_temp = get_destination_file(loc_filepath, temp_dir, "location")
+        loc_temp = detect_file_type(loc_filepath, temp_dir, "location")
         copy_or_download(loc_filepath, loc_temp)
     if acc_filepath:
-        acc_temp = get_destination_file(acc_filepath, temp_dir, "account")
+        acc_temp = detect_file_type(acc_filepath, temp_dir, "account")
         copy_or_download(acc_filepath, acc_temp)
     if ri_filepath:
-        ri_temp = get_destination_file(ri_filepath, temp_dir, "ri_loss")
+        ri_temp = detect_file_type(ri_filepath, temp_dir, "ri_loss")
         copy_or_download(ri_filepath, ri_temp)
     if rl_filepath:
-        rl_temp = get_destination_file(rl_filepath, temp_dir, "ri_scope")
+        rl_temp = detect_file_type(rl_filepath, temp_dir, "ri_scope")
         copy_or_download(rl_filepath, rl_temp)
     return (loc_temp, acc_temp, ri_temp, rl_temp)

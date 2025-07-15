@@ -4,11 +4,12 @@ from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
 from ..common.filestore.filestore import get_filestore
 from oasislmf.manager import OasisManager
-from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_files
+from src.model_execution_worker.utils import TemporaryDir, update_params, detect_file_type, copy_or_download, get_all_files
 import os
 from celery import Celery
 from ods_tools.oed.exposure import OedExposure
 from ods_tools.main import transform
+import logging
 
 app = Celery()
 
@@ -58,6 +59,7 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             res = portfolio_exposure.check()
             return [str(e) for e in res]
         except Exception as e:
+            logging.error(f"OED Validation failed: {str(e)}")
             return str(e)  # OdsException not JSON serializable
 
 
@@ -67,7 +69,7 @@ def run_exposure_transform(filepath, mapping_file):
     Returns a tuple of a file and a boolean flag of success
     """
     with TemporaryDir() as temp_dir:
-        local_file = get_destination_file(filepath, temp_dir, 'local_file')
+        local_file = detect_file_type(filepath, temp_dir, 'local_file')
         copy_or_download(filepath, local_file)
         output_file = os.path.join(temp_dir, "transform_output.csv")
         try:
