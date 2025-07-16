@@ -70,7 +70,9 @@ def run_exposure_transform(filepath, mapping_file):
         local_file = get_destination_file(filepath, temp_dir, 'local_file')
         copy_or_download(filepath, local_file)
         output_file = os.path.join(temp_dir, "transform_output.csv")
-
-        transform(mapping_file=mapping_file, input_file=local_file, output_file=output_file)
-        result = get_filestore(settings).put(output_file)
-        return result
+        try:
+            transform(mapping_file=mapping_file, input_file=local_file, output_file=output_file)
+            result = get_filestore(settings).put(output_file)
+            return (result, True)
+        except Exception:
+            return (None, False)

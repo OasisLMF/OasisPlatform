@@ -48,8 +48,9 @@ def record_validation_output(validation_errors, portfolio_pk):
 
 
 @celery_app_v2.task()
-def record_transform_output(file, portfolio_pk, user_pk, file_type):
+def exposure_transform_output(result, portfolio_pk, user_pk, file_type):
     from ..models import Portfolio
+    file, success = result
     portfolio = Portfolio.objects.get(pk=portfolio_pk)
     initiator = get_user_model().objects.get(pk=user_pk)
     selection = {
@@ -59,13 +60,15 @@ def record_transform_output(file, portfolio_pk, user_pk, file_type):
         'ri_scope': 'reinsurance_scope_file'
     }
 
-    relatedfile = RelatedFile.objects.create(
-        file=file, content_type='text/csv', creator=initiator,
-        filename=f'portfolio_{portfolio_pk}_{selection[file_type]}.csv', store_as_filename=True
-    )
-    setattr(portfolio, selection[file_type], relatedfile)
-    portfolio.exposure_transform_status = portfolio.exposure_transform_status_choices.RUN_COMPLETED
-
+    if success:
+        relatedfile = RelatedFile.objects.create(
+            file=file, content_type='text/csv', creator=initiator,
+            filename=f'portfolio_{portfolio_pk}_{selection[file_type]}.csv', store_as_filename=True
+        )
+        setattr(portfolio, selection[file_type], relatedfile)
+        portfolio.exposure_transform_status = portfolio.exposure_transform_status_choices.RUN_COMPLETED
+    else:
+        portfolio.exposure_transform_status = portfolio.exposure_transform_status_choices.ERROR
     _delete_related_file(portfolio, 'transform_file', initiator)
     _delete_related_file(portfolio, 'mapping_file', initiator)
     portfolio.save()
