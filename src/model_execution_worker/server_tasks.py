@@ -4,11 +4,11 @@ from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
 from ..common.filestore.filestore import get_filestore
 from oasislmf.manager import OasisManager
-from src.model_execution_worker.utils import TemporaryDir, update_params, detect_file_type, copy_or_download, get_all_files
+from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_files
 import os
 from celery import Celery
 from ods_tools.oed.exposure import OedExposure
-from ods_tools.main import transform
+from ods_tools.odtf.controller import transform_format
 import logging
 
 app = Celery()
@@ -69,12 +69,12 @@ def run_exposure_transform(filepath, mapping_file):
     Returns a tuple of a file and a boolean flag of success
     """
     with TemporaryDir() as temp_dir:
-        local_file = detect_file_type(filepath, temp_dir, 'local_file')
+        local_file = get_destination_file(filepath, temp_dir, 'local_file')
         copy_or_download(filepath, local_file)
         output_file = os.path.join(temp_dir, "transform_output.csv")
         try:
-            transform(mapping_file=mapping_file, input_file=local_file, output_file=output_file)
+            transform_format(mapping_file=mapping_file, input_file=local_file, output_file=output_file)
             result = get_filestore(settings).put(output_file)
             return (result, True)
-        except Exception:
-            return (None, False)
+        except Exception as e:
+            return (str(e), False)

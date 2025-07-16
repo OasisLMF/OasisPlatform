@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 from rest_framework.exceptions import ValidationError
 from src.server.oasisapi.portfolios.models import Portfolio
 from src.server.oasisapi.files.models import RelatedFile
+from src.server.oasisapi.auth.tests.fakes import fake_user
 
 TEST_DIR = os.path.dirname(__file__)
 ACCOUNTS_VALID = os.path.join(TEST_DIR, "inputs", "accounts.csv")
@@ -24,7 +25,8 @@ class PortfolioValidation(WebTestMixin, TestCase):
         assert validation_errors == []
         fake_portfolio = MagicMock()
         with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio) as mock_get:
-            record_validation_output(validation_errors, 2)
+            fake_user(pk=29)
+            record_validation_output(validation_errors, 2, 29)
             mock_get.assert_called_once_with(pk=2)
             fake_portfolio.set_portfolio_valid.assert_called_once()
 
@@ -56,7 +58,8 @@ class PortfolioValidation(WebTestMixin, TestCase):
         assert validation_errors == []
         fake_portfolio = MagicMock()
         with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio) as mock_get:
-            record_validation_output(validation_errors, 3)
+            fake_user(pk=29)
+            record_validation_output(validation_errors, 3, 29)
             mock_get.assert_called_once_with(pk=3)
             fake_portfolio.set_portfolio_valid.assert_called_once()
 
@@ -80,8 +83,9 @@ class PortfolioValidation(WebTestMixin, TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
+            fake_user(pk=29)
             with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
-                record_validation_output(validation_errors, 5)
+                record_validation_output(validation_errors, 5, 29)
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
@@ -90,8 +94,9 @@ class PortfolioValidation(WebTestMixin, TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
+            fake_user(pk=29)
             with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
-                record_validation_output(validation_errors, 7)
+                record_validation_output(validation_errors, 7, 29)
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
@@ -100,8 +105,9 @@ class PortfolioValidation(WebTestMixin, TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
+            fake_user(pk=29)
             with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
-                record_validation_output(validation_errors, 11)
+                record_validation_output(validation_errors, 11, 29)
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
@@ -110,6 +116,7 @@ class PortfolioValidation(WebTestMixin, TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
+            fake_user(pk=29)
             with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
-                record_validation_output(validation_errors, 13)
+                record_validation_output(validation_errors, 13, 29)
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
