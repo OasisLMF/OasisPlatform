@@ -1,6 +1,6 @@
 from hypothesis.extra.django import TestCase
 from src.model_execution_worker.server_tasks import run_oed_validation, run_exposure_task, run_exposure_transform
-from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output, record_exposure_output, exposure_transform_output
+from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output, record_exposure_output, record_transform_output
 from src.server.oasisapi.auth.tests.fakes import fake_user
 from django.conf import settings as django_settings
 import os
@@ -277,7 +277,7 @@ class Transform(TestCase):
             mock_portfolio.exposure_transform_signature.assert_called_once_with()
             mock_portfolio.run_oed_validation_signature.assert_called_once_with()
 
-            transform_output = exposure_transform_output.s(5, 7, 'csv')
+            transform_output = record_transform_output.s(5, 7, 'csv')
             validate_output = record_validation_output.s(5)
             chain_mock.assert_called_once_with(transform_mock, transform_output, validate_mock, validate_output)
 
@@ -309,8 +309,9 @@ class Transform(TestCase):
             mock_store = MagicMock()
             mock_store.put.side_effect = side_effect
             mock_filestore.return_value = mock_store
-            file = run_exposure_transform(input_file, mapping_file)
+            file, flag = run_exposure_transform(input_file, mapping_file)
             self.assertEqual(file, "Hello World")
+            self.assertEqual(flag, True)
 
     def test_record_transform_output(self):
         portfolio_pk = 10110
@@ -325,7 +326,7 @@ class Transform(TestCase):
             mock_Portfolio.objects.get.return_value = portfolio
             mock_get_user.return_value = initiator
             mock_RelatedFile.objects.create.return_value = 3
-            exposure_transform_output("Filey McFileface", portfolio_pk, 42, "accounts")
+            record_transform_output(("Filey McFileface", True), portfolio_pk, 42, "accounts")
             mock_Portfolio.objects.get.assert_called_once_with(pk=portfolio_pk)
             mock_RelatedFile.objects.create.assert_called_once_with(file="Filey McFileface", content_type='text/csv', creator=initiator.objects.get(),
                                                                     filename="portfolio_10110_accounts_file.csv", store_as_filename=True)

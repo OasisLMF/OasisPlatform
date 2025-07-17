@@ -48,7 +48,7 @@ def record_validation_output(validation_errors, portfolio_pk):
 
 
 @celery_app_v2.task()
-def exposure_transform_output(result, portfolio_pk, user_pk, file_type):
+def record_transform_output(result, portfolio_pk, user_pk, file_type):
     from ..models import Portfolio
     file, success = result
     portfolio = Portfolio.objects.get(pk=portfolio_pk)
