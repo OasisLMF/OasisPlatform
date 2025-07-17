@@ -219,7 +219,7 @@ numpy==2.0.2
     #   numba
     #   pandas
     #   pyarrow
-oasis-data-manager==0.1.3
+oasis-data-manager==0.1.5
     # via
     #   -r requirements-server.in
     #   ods-tools
