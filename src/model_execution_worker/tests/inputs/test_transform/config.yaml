@@ -1,0 +1,9 @@
+input:
+  path: ./input.csv
+output:
+  path: ./output.csv
+mapping:
+  path: ./mapping.yml
+batch_size: 150000
+write_header: true
+logging: True
