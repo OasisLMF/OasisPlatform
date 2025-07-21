@@ -14,7 +14,7 @@ from celery import chain
 
 from ..files.models import RelatedFile, related_file_to_df
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
-from .v2_api.tasks import record_exposure_output, record_validation_output, exposure_transform_output
+from .v2_api.tasks import record_exposure_output, record_validation_output, record_transform_output
 
 import re
 
@@ -28,7 +28,6 @@ def oed_class_of_businesses__workaround(e):
 
         If not a ClassOfBusiness error return an empty dict
     """
-    format_as_validation_error = False
     result = []
 
     if not isinstance(e, OdsException):
@@ -170,13 +169,13 @@ class Portfolio(TimeStampedModel):
         )
 
     def location_file_len(self):
-        csv_compression_types = {
-            'text/csv': 'infer',
-            'application/vnd.ms-excel': 'infer',
-            'application/gzip': 'gzip',
-            'application/x-bzip2': 'bz2',
-            'application/zip': 'zip',
-        }
+        # csv_compression_types = {
+        #     'text/csv': 'infer',
+        #     'application/vnd.ms-excel': 'infer',
+        #     'application/gzip': 'gzip',
+        #     'application/x-bzip2': 'bz2',
+        #     'application/zip': 'zip',
+        # }
         if not self.location_file:
             return None
 
@@ -261,7 +260,7 @@ class Portfolio(TimeStampedModel):
 
     def exposure_transform(self, request):
         transform = self.exposure_transform_signature()
-        transform_output = exposure_transform_output.s(self.pk, request.user.pk, request.data['file_type'])
+        transform_output = record_transform_output.s(self.pk, request.user.pk, request.data['file_type'])
         validate = self.run_oed_validation_signature()
         validate_output = record_validation_output.s(self.pk, request.user.pk)
         task = chain(transform, transform_output, validate, validate_output)

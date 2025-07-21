@@ -62,7 +62,7 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
         :param objs: A list of instances to create, they should all be for the same
             queue and analysis
         """
-        statuses = self.bulk_create(objs)
+        self.bulk_create(objs)
 
         send_task_status_message(build_all_queue_status_message())
         # self._send_socket_messages(statuses)
@@ -601,7 +601,7 @@ class Analysis(TimeStampedModel):
     def cancel_subtasks(self):
         if self.run_mode == self.run_mode_choices.V2:
             cancel_tasks = self.v2_cancel_subtasks_signature
-            task_id = cancel_tasks.apply_async(args=[self.pk], priority=1).id
+            cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
         valid_choices = [
