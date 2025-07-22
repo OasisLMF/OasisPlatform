@@ -255,7 +255,7 @@ internalWorker:
     - name: OASIS_DEBUG
       value: "0"
     - name: OASISLMF_VERSION
-      value:
+      value: # Empty = latest version
 
 # Volumes to mount and use within the platform
 # Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount
