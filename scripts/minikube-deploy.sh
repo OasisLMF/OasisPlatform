@@ -35,7 +35,6 @@ fi
 ODM_BRANCH=''
 ODS_BRANCH=''
 LMF_BRANCH=''
-LMF_VERSION=''
 
 BUILD_ARGS_WORKER=''
 BUILD_ARGS_SERVER=''
@@ -50,11 +49,7 @@ if [ ! -z $ODS_BRANCH ]; then
 fi
 
 if [ ! -z $LMF_BRANCH ]; then
-    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg oasislmf_branch=${LMF_BRANCH}"
-fi
-
-if [ ! -z $LMF_VERSION ]; then
-    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg oasislmf_version=${LMF_VERSION}"
+    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg oasislmf_version=${LMF_BRANCH}"
 fi
 
 eval $(minikube docker-env)

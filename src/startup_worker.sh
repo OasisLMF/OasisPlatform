@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+# Install OasisLMF from a specific version
+if [ ! -z "${OASISLMF_VERSION}" ] ; then
+  echo "Overwriting version";
+  pip uninstall oasislmf -y || true
+  pip install --no-cache-dir --user --no-warn-script-location oasislmf==${OASISLMF_VERSION}
+fi
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export PYTHONPATH=$SCRIPT_DIR
 
@@ -15,7 +22,6 @@ rm -f /home/worker/celeryd.pid
 # Check connectivity
 ./src/utils/wait-for-it.sh "$OASIS_CELERY_BROKER_URL" -t 60
 ./src/utils/wait-for-it.sh "$OASIS_CELERY_DB_HOST:$OASIS_CELERY_DB_PORT" -t 60
-
 
 # set concurrency flag
 if [ -z "$OASIS_CELERY_CONCURRENCY" ]
@@ -51,7 +57,6 @@ case "$SELECT_RUN_MODE" in
         exit 1
     ;;
 esac
-
 
 # Start new worker on init
 celery --app $TASK_FILE worker $WORKER_CONCURRENCY --loglevel=INFO -Q "${OASIS_MODEL_SUPPLIER_ID}-${OASIS_MODEL_ID}-${OASIS_MODEL_VERSION_ID}${API_VER}" ${OASIS_CELERY_EXTRA_ARGS} |& tee -a /var/log/oasis/worker.log
