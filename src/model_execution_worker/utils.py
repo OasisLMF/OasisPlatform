@@ -180,7 +180,7 @@ def get_oed_version():
         from ods_tools.oed.oed_schema import OedSchema
         OedSchemaData = OedSchema.from_oed_schema_info(oed_schema_info=None)
         return OedSchemaData.schema['version']
-    except Exception as e:
+    except Exception:
         logging.exception("Failed to get OED version info")
         return None
 
@@ -323,10 +323,12 @@ def copy_or_download(source, destination):
 
 
 def get_destination_file(filename, destination_dir, destination_title):
-    is_csv = filename.lower().endswith('.csv')
-    if is_csv:
+    _, ext = os.path.splitext(filename)
+    if ext.startswith('.csv'):  # Some can be stored like '.csv_abc4def'
         return os.path.join(destination_dir, destination_title + ".csv")
-    return os.path.join(destination_dir, destination_title + ".parquet")
+    if ext.startswith('.parquet'):
+        return os.path.join(destination_dir, destination_title + ".parquet")
+    raise ValueError(f"File must be either Parquet or CSV: {filename, ext}")
 
 
 def get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir):

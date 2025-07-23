@@ -91,6 +91,8 @@ class Portfolio(TimeStampedModel):
                                        default=None, related_name='transform_file_portfolios')
     mapping_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                      default=None, related_name='mapping_file_portfolios')
+    run_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                        default=None, related_name='errors_file_portfolios')
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
@@ -242,9 +244,9 @@ class Portfolio(TimeStampedModel):
 
     # Calls
 
-    def run_oed_validation(self):
+    def run_oed_validation(self, user_pk):
         task = self.run_oed_validation_signature()
-        task.link(record_validation_output.s(self.pk))
+        task.link(record_validation_output.s(self.pk, user_pk))
         self.validation_status = self.validation_status_choices.STARTED
         self.save()
         task.apply_async(queue='oasis-internal-worker', priority=10)
@@ -260,7 +262,7 @@ class Portfolio(TimeStampedModel):
         transform = self.exposure_transform_signature()
         transform_output = record_transform_output.s(self.pk, request.user.pk, request.data['file_type'])
         validate = self.run_oed_validation_signature()
-        validate_output = record_validation_output.s(self.pk)
+        validate_output = record_validation_output.s(self.pk, request.user.pk)
         task = chain(transform, transform_output, validate, validate_output)
 
         self.exposure_transform_status = self.exposure_transform_status_choices.STARTED

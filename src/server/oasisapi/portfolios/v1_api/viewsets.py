@@ -264,7 +264,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
 
         if method == 'post':
-            instance.run_oed_validation()
+            instance.run_oed_validation(request.user.pk)
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)

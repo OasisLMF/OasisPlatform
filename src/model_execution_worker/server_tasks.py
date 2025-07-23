@@ -8,7 +8,8 @@ from src.model_execution_worker.utils import TemporaryDir, update_params, get_de
 import os
 from celery import Celery
 from ods_tools.oed.exposure import OedExposure
-from ods_tools.main import transform
+from ods_tools.odtf.controller import transform_format
+import logging
 
 app = Celery()
 
@@ -58,6 +59,7 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             res = portfolio_exposure.check()
             return [str(e) for e in res]
         except Exception as e:
+            logging.error(f"OED Validation failed: {str(e)}")
             return str(e)  # OdsException not JSON serializable
 
 
@@ -71,8 +73,8 @@ def run_exposure_transform(filepath, mapping_file):
         copy_or_download(filepath, local_file)
         output_file = os.path.join(temp_dir, "transform_output.csv")
         try:
-            transform(mapping_file=mapping_file, input_file=local_file, output_file=output_file)
+            transform_format(mapping_file=mapping_file, input_file=local_file, output_file=output_file)
             result = get_filestore(settings).put(output_file)
             return (result, True)
-        except Exception:
-            return (None, False)
+        except Exception as e:
+            return (str(e), False)

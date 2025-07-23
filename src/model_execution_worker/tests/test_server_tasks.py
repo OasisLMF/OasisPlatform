@@ -29,10 +29,10 @@ class PortfolioValidation(TestCase):
         signature_mock = MagicMock()
         mock_portfolio.run_oed_validation_signature.return_value = signature_mock
 
-        Portfolio.run_oed_validation(mock_portfolio)
+        Portfolio.run_oed_validation(mock_portfolio, 22)
         mock_portfolio.save.assert_called_once()
         self.assertEqual(mock_portfolio.validation_status, "Started")
-        signature_mock.link.assert_called_once_with(record_validation_output.s(19))
+        signature_mock.link.assert_called_once_with(record_validation_output.s(19, 22))
         signature_mock.apply_async.assert_called_once_with(queue='oasis-internal-worker', priority=10)
 
     def test_signature_creation(self):
@@ -54,7 +54,8 @@ class PortfolioValidation(TestCase):
         assert validation_errors == []
         fake_portfolio = MagicMock()
         with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio) as mock_get:
-            record_validation_output(validation_errors, 2)
+            fake_user(pk=29)
+            record_validation_output(validation_errors, 2, 29)
             mock_get.assert_called_once_with(pk=2)
             fake_portfolio.set_portfolio_valid.assert_called_once()
 
@@ -86,7 +87,8 @@ class PortfolioValidation(TestCase):
         assert validation_errors == []
         fake_portfolio = MagicMock()
         with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio) as mock_get:
-            record_validation_output(validation_errors, 3)
+            fake_user(pk=29)
+            record_validation_output(validation_errors, 3, 29)
             mock_get.assert_called_once_with(pk=3)
             fake_portfolio.set_portfolio_valid.assert_called_once()
 
@@ -110,9 +112,18 @@ class PortfolioValidation(TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
-            with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
-                record_validation_output(validation_errors, 5)
+            fake_user(pk=29)
+            with (patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio),
+                  patch('src.server.oasisapi.portfolios.v2_api.tasks.ContentFile') as mock_file,
+                  patch('src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile') as mock_related_file):
+                mock_file.return_value = MagicMock()
+                record_validation_output(validation_errors, 5, 29)
+                mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_5_errors.txt")
+                mock_related_file.assert_called_once_with(file=mock_file, content_type='text/csv', creator=fake_user,
+                                                          filename=mock_file.name, store_as_filename=True)
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
+                assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
+                fake_portfolio.save.assert_called_once()
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_account_file__is_invalid(self, mock_oed_cob_workaround):
@@ -120,9 +131,18 @@ class PortfolioValidation(TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
-            with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
-                record_validation_output(validation_errors, 7)
+            fake_user(pk=29)
+            with (patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio),
+                  patch('src.server.oasisapi.portfolios.v2_api.tasks.ContentFile') as mock_file,
+                  patch('src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile') as mock_related_file):
+                mock_file.return_value = MagicMock()
+                record_validation_output(validation_errors, 7, 29)
+                mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_7_errors.txt")
+                mock_related_file.assert_called_once_with(file=mock_file, content_type='text/csv', creator=fake_user,
+                                                          filename=mock_file.name, store_as_filename=True)
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
+                assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
+                fake_portfolio.save.assert_called_once()
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_info_file__is_invalid(self, mock_oed_cob_workaround):
@@ -130,9 +150,18 @@ class PortfolioValidation(TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
-            with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
-                record_validation_output(validation_errors, 11)
+            fake_user(pk=29)
+            with (patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio),
+                  patch('src.server.oasisapi.portfolios.v2_api.tasks.ContentFile') as mock_file,
+                  patch('src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile') as mock_related_file):
+                mock_file.return_value = MagicMock()
+                record_validation_output(validation_errors, 11, 29)
+                mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_5_errors.txt")
+                mock_related_file.assert_called_once_with(file=mock_file, content_type='text/csv', creator=fake_user,
+                                                          filename=mock_file.name, store_as_filename=True)
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
+                assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
+                fake_portfolio.save.assert_called_once()
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_scope_file__is_invalid(self, mock_oed_cob_workaround):
@@ -140,9 +169,18 @@ class PortfolioValidation(TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
-            with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio):
-                record_validation_output(validation_errors, 13)
+            fake_user(pk=29)
+            with (patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio),
+                  patch('src.server.oasisapi.portfolios.v2_api.tasks.ContentFile') as mock_file,
+                  patch('src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile') as mock_related_file):
+                mock_file.return_value = MagicMock()
+                record_validation_output(validation_errors, 13, 29)
+                mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_5_errors.txt")
+                mock_related_file.assert_called_once_with(file=mock_file, content_type='text/csv', creator=fake_user,
+                                                          filename=mock_file.name, store_as_filename=True)
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
+                assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
+                fake_portfolio.save.assert_called_once()
 
 
 class ExposureRun(TestCase):
@@ -278,7 +316,7 @@ class Transform(TestCase):
             mock_portfolio.run_oed_validation_signature.assert_called_once_with()
 
             transform_output = record_transform_output.s(5, 7, 'csv')
-            validate_output = record_validation_output.s(5)
+            validate_output = record_validation_output.s(5, 7)
             chain_mock.assert_called_once_with(transform_mock, transform_output, validate_mock, validate_output)
 
             chain_mock_return.apply_async.assert_called_once_with(queue='oasis-internal-worker', priority=10)
