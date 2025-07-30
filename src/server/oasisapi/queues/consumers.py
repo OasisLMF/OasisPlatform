@@ -5,9 +5,11 @@ from asgiref.sync import async_to_sync, sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.utils.timezone import now
+from django.db.models import F
 from rest_framework.serializers import DateTimeField
 
 from celery.utils.log import get_task_logger
+
 logger = get_task_logger(__name__)
 
 if TYPE_CHECKING:
@@ -204,3 +206,34 @@ class QueueStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
 
     async def queue_status_updated(self, event):
         await self.send_json(event)
+
+
+class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
+    # class QueueStatusConsumer(AsyncJsonWebsocketConsumer):
+    groups = ['queue_status']
+
+    async def connect(self):
+        logger.error("HARRY HIT")
+        await super().connect()
+
+    async def receive_json(self, content, **kwargs):
+        logger.error(f"HARRY HIT content={content}")
+        self.send_json({"Thank": "You"})
+        if "analysis_pk" not in content:
+            return
+        analysis = await get_analysis(pk=content["analysis_pk"])
+        if "counter" in content:
+            logger.error("Hit counter")
+            analysis.num_events_total = int(content["counter"])
+            analysis.num_events_completed = 0
+            await sync_to_async(analysis.save)()
+            return
+        logger.error("Missed counter")
+        analysis.num_events_complete = F('num_events_complete') + 1
+        await sync_to_async(analysis.save)()
+
+
+@sync_to_async
+def get_analysis(pk):
+    from src.server.oasisapi.analyses.models import Analysis
+    return Analysis.objects.get(pk=int(pk))

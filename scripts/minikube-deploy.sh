@@ -34,8 +34,7 @@ fi
 eval $(minikube docker-env)
 set -e
     docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
-    docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
-
+    docker build -f Dockerfile.model_worker --build-arg oasislmf_branch=env_var_bash --build-arg no_cache=32 -t coreoasis/model_worker:dev .
     pushd kubernetes/worker-controller
         docker build -t coreoasis/worker_controller:dev .
     popd
@@ -68,5 +67,3 @@ popd
 
 # Open single service
 #kubectl port-forward deployment/oasis-websocket 8001:8001  #(forward websocket)
-
-
