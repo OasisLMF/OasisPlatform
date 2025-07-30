@@ -274,7 +274,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         instance = self.get_object()
 
         if method == 'post':
-            instance.run_oed_validation()
+            instance.run_oed_validation(user_pk=request.user.pk)
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
@@ -318,6 +318,11 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         )
         instance.exposure_transform(request)
         return Response({"message": "in queue"})
+
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get'], detail=True)
+    def errors_file(self, request, pk=None, version=None):
+        return handle_related_file(self.get_object(), 'run_errors_file', request, ['text/csv'])
 
     # LOT3 DISABLE
     # @requires_sql_reader

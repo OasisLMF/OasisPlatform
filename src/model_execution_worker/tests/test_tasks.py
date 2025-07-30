@@ -14,7 +14,6 @@ from mock import patch, Mock
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher
-# from src.model_execution_worker.storage_manager import MissingInputsException
 from src.model_execution_worker.tasks import start_analysis, start_analysis_task
 
 
@@ -45,27 +44,26 @@ class StartAnalysis(TestCase):
                 path.touch()
                 tar.add(str(path), path.name)
 
-    # TODO: fix test - disabled due to failure
-    # def test_input_tar_file_does_not_exist___exception_is_raised(self):
-    #     with TemporaryDirectory() as media_root:
-    #         with SettingsPatcher(MEDIA_ROOT=media_root):
-    #             Path(media_root, 'analysis_settings.json').touch()
-    #             with self.assertRaises(MissingInputsException):
-    #                 start_analysis(
-    #                     input_location=os.path.join(media_root, 'non-existant-location.tar'),
-    #                     analysis_settings=os.path.join(media_root, 'analysis_settings.json')
-    #                 )
+    def test_input_tar_file_does_not_exist___exception_is_raised(self):
+        with TemporaryDirectory() as media_root:
+            with SettingsPatcher(MEDIA_ROOT=media_root):
+                Path(media_root, 'analysis_settings.json').touch()
+                with self.assertRaises(Exception):
+                    start_analysis(
+                        input_location=os.path.join(media_root, 'non-existant-location.tar'),
+                        analysis_settings=os.path.
+                        join(media_root, 'analysis_settings.json')
+                    )
 
-    # TODO: fix test - disabled due to failure
-    # def test_settings_file_does_not_exist___exception_is_raised(self):
-    #     with TemporaryDirectory() as media_root:
-    #         with SettingsPatcher(MEDIA_ROOT=media_root):
-    #             self.create_tar(str(Path(media_root, 'location.tar')))
-    #             with self.assertRaises(MissingInputsException):
-    #                 start_analysis(
-    #                     input_location=os.path.join(media_root, 'location.tar'),
-    #                     analysis_settings=os.path.join(media_root, 'analysis_settings.json')
-    #                 )
+    def test_settings_file_does_not_exist___exception_is_raised(self):
+        with TemporaryDirectory() as media_root:
+            with SettingsPatcher(MEDIA_ROOT=media_root):
+                self.create_tar(str(Path(media_root, 'location.tar')))
+                with self.assertRaises(Exception):
+                    start_analysis(
+                        input_location=os.path.join(media_root, 'location.tar'),
+                        analysis_settings=os.path.join(media_root, 'analysis_settings.json')
+                    )
 
     def test_input_location_is_not_a_tar___exception_is_raised(self):
         with TemporaryDirectory() as media_root:
@@ -105,8 +103,6 @@ class StartAnalysis(TestCase):
                 with open(Path(model_data_dir, 'oasislmf.json'), 'w') as f:
                     f.write(json.dumps(params))
 
-                cmd_instance = Mock()
-
                 @contextmanager
                 def fake_run_dir(*args, **kwargs):
                     yield run_dir
@@ -117,7 +113,7 @@ class StartAnalysis(TestCase):
                         patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
                         patch('src.model_execution_worker.tasks.TemporaryDir', fake_run_dir):
 
-                    output_location, log_location, error_location, returncode = start_analysis(
+                    start_analysis(
                         os.path.join('analysis_settings.json'),
                         os.path.join('location.tar'),
                         log_filename=log_file,
@@ -140,7 +136,7 @@ class StartAnalysisTask(TestCase):
             with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)), \
                     patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
                     patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
-                    patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
+                    patch('src.model_execution_worker.tasks.notify_api_status'):
 
                 with self.assertRaises(Retry):
                     start_analysis_task(pk, location, analysis_settings_path)

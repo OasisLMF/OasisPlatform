@@ -137,7 +137,10 @@ class PortfolioApi(WebTestMixin, TestCase):
                         "name": portfolio.reinsurance_scope_file.filename,
                         "stored": str(portfolio.reinsurance_scope_file.file)
                     },
-                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE)
+                    'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE),
+                    'exposure_status': "NONE",
+                    'validation_status': "NONE",
+                    'exposure_transform_status': "NONE",
                 }, response.json)
 
 

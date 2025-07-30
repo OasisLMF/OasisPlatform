@@ -370,7 +370,7 @@ numpy==1.26.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.1.3
+oasis-data-manager==0.1.5
     # via
     #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-server.in
     #   -r /home/runner/work/OasisPlatform/OasisPlatform/requirements-worker.in

@@ -211,7 +211,6 @@ class LogTaskError(Task):
         logger.info('args: {}'.format(args))
         logger.info('kwargs: {}'.format(kwargs))
         logger.info('traceback: {}'.format(traceback))
-        files_for_removal = list()
 
         if self.name in ['record_run_analysis_result', 'record_generate_input_result']:
             _, analysis_pk, initiator_pk = args
@@ -478,7 +477,7 @@ def record_run_analysis_failure(analysis_pk, initiator_pk, traceback):
                     creator=get_user_model().objects.get(pk=initiator_pk),
                 )
         else:
-            logging.error('Could not extract traceback')
+            logger.error('Could not extract traceback')
 
         # remove the current command log file
         if analysis.run_log_file:
@@ -512,7 +511,7 @@ def record_generate_input_failure(analysis_pk, initiator_pk, traceback):
                     creator=get_user_model().objects.get(pk=initiator_pk),
                 )
         else:
-            logging.error('Could not extract traceback')
+            logger.error('Could not extract traceback')
 
         analysis.save()
     except Exception as e:

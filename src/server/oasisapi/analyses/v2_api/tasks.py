@@ -19,8 +19,6 @@ from celery import Task
 from celery import signals
 from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
-from celery import Task
-from celery import signals
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
@@ -31,11 +29,6 @@ from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
-
-from botocore.exceptions import ClientError as S3_ClientError
-from tempfile import TemporaryFile
-from urllib.request import urlopen
-from urllib.parse import urlparse
 
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.v1_api.views import handle_json_data
@@ -228,7 +221,6 @@ class LogTaskError(Task):
         logger.info('args: {}'.format(args))
         logger.info('kwargs: {}'.format(kwargs))
         logger.info('traceback: {}'.format(traceback))
-        files_for_removal = list()
 
         if self.name in ['record_run_analysis_result', 'record_generate_input_result']:
             _, analysis_pk, initiator_pk = args
@@ -458,7 +450,8 @@ def start_input_and_loss_generation_task(analysis_pk, initiator_pk, loc_lines, e
 
 
 @celery_app_v2.task(bind=True, name='record_input_files')
-def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None, slug=None, analysis_finish_status=Analysis.status_choices.READY):
+def record_input_files(self, result, analysis_id=None, initiator_id=None, run_data_uuid=None,
+                       slug=None, analysis_finish_status=Analysis.status_choices.READY):
 
     record_sub_task_start.delay(analysis_id=analysis_id, task_slug=slug, task_id=self.request.id, dt=datetime.now().timestamp())
     logger.info('record_input_files: analysis_id: {}, initiator_id: {}'.format(analysis_id, initiator_id))
@@ -499,7 +492,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     # group sub-task logs and write to trace file
     random_filename = '{}.txt'.format(uuid.uuid4().hex)
     with TemporaryFile() as tmp_file:
-       # Write Error logs
+        # Write Error logs
         subtask_qs = analysis.sub_task_statuses.filter(
             status__in=[AnalysisTaskStatus.status_choices.COMPLETED]
         )
@@ -700,7 +693,7 @@ def chord_error_callback(self, analysis_id):
         status__in=unfinished_statuses,
     ).values_list('task_id', flat=True)
 
-    celery_app.control.revoke(set(ids_to_revoke), terminate=True)
+    celery_app_v2.control.revoke(set(ids_to_revoke), terminate=True)
 
     AnalysisTaskStatus.objects.filter(
         status__in=unfinished_statuses,
