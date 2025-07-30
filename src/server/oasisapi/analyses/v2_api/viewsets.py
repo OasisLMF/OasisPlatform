@@ -644,6 +644,18 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
             obj.save()
         return Response(serializer.data)
 
+    @action(methods=['get'], detail=True)
+    def status(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the progress report
+        """
+        analysis = Analysis.objects.get(pk=pk)
+
+        if analysis.num_events_total == 0:
+            return Response({"Status": "Nothing has started"})
+        return Response({"Status": "#" * analysis.num_events_complete + "~" * (analysis.num_events_total - analysis.num_events_complete)})
+
 
 class AnalysisSettingsView(VerifyGroupAccessModelViewSet):
     """
