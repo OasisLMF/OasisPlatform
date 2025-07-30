@@ -41,6 +41,10 @@ workers:
         value: /home/worker/model
       - name: OASISLMF_VERSION
         value: # Empty = latest version
+      - name: ODS_VERSION
+        value: # Empty = latest version
+      - name: ODM_VERSION
+        value: # Empty = latest version
     volumes: # Volume defined in modelVolumes
     #      - name: name of volume defined in modelVolumes.
     #        type: Type of volume, set 'model-data' for model data mounts. Any other value for additional mounts
@@ -79,6 +83,10 @@ workers:
       - name: OASIS_MODEL_DATA_DIRECTORY
         value: /home/worker/model
       - name: OASISLMF_VERSION
+        value: # Empty = latest version
+      - name: ODS_VERSION
+        value: # Empty = latest version
+      - name: ODM_VERSION
         value: # Empty = latest version
     volumes: # Volume defined in modelVolumes
       - name: piwind-model-data-pv
