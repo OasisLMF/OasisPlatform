@@ -213,22 +213,21 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
     groups = ['queue_status']
 
     async def connect(self):
-        logger.error("HARRY HIT")
+        logger.info("New connection")
         await super().connect()
 
     async def receive_json(self, content, **kwargs):
-        logger.error(f"HARRY HIT content={content}")
         self.send_json({"Thank": "You"})
         if "analysis_pk" not in content:
             return
         analysis = await get_analysis(pk=content["analysis_pk"])
         if "counter" in content:
-            logger.error("Hit counter")
+            logger.error("New event started")
             analysis.num_events_total = int(content["counter"])
             analysis.num_events_completed = 0
             await sync_to_async(analysis.save)()
             return
-        logger.error("Missed counter")
+        logger.info("New event completion")
         analysis.num_events_complete = F('num_events_complete') + 1
         await sync_to_async(analysis.save)()
 

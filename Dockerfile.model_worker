@@ -10,9 +10,7 @@ RUN pip3 install --user --no-warn-script-location -r ./requirements-worker.txt
 
 # Install MDK from git branch (Optional) 'docker build --build-arg oasislmf_branch=develop'
 ARG oasislmf_branch
-ARG no_cache
 RUN if [ ! -z "$oasislmf_branch" ] ; then \
-    echo "Forcing no cache with ${no-cache}"; \
     apt update && apt install -y git; \
     pip uninstall oasislmf -y; \
     pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisLMF.git@${oasislmf_branch}#egg=oasislmf[extra]; \
