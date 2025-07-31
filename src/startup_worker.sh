@@ -2,10 +2,10 @@
 set -e
 
 # Install packages from a specific version
-if [ ! -z "${OASISLMF_VERSION}" ] ; then
+if [ ! -z "${OASIS_OASISLMF_VERSION}" ] ; then
   echo "Overwriting oasislmf version";
   pip uninstall oasislmf -y || true
-  pip install --no-cache-dir --user --no-warn-script-location oasislmf==${OASISLMF_VERSION}
+  pip install --no-cache-dir --user --no-warn-script-location oasislmf==${OASIS_OASISLMF_VERSION}
 fi
 
 version_valid() {
@@ -25,22 +25,22 @@ for req_str in dist.requires:
  " "$1" "$2"
 }
 
-if [ ! -z "${ODS_VERSION}" ] ; then
-  if version_valid "ods-tools" ${ODS_VERSION} ; then
+if [ ! -z "${OASIS_ODS_VERSION}" ] ; then
+  if version_valid "ods-tools" ${OASIS_ODS_VERSION} ; then
     echo "Overwriting ods version";
     pip uninstall ods-tools -y || true
-    pip install --no-cache-dir --user --no-warn-script-location ods-tools==${ODS_VERSION}
+    pip install --no-cache-dir --user --no-warn-script-location ods-tools==${OASIS_ODS_VERSION}
   else
     echo "Invalid version of ODS"
     exit 1
   fi
 fi
 
-if [ ! -z "${ODM_VERSION}" ] ; then
-  if version_valid "oasis-data-manager" ${ODM_VERSION} ; then
+if [ ! -z "${OASIS_ODM_VERSION}" ] ; then
+  if version_valid "oasis-data-manager" ${OASIS_ODM_VERSION} ; then
     echo "Overwriting odm version";
     pip uninstall oasis-data-manager -y || true
-    pip install --no-cache-dir --user --no-warn-script-location oasis-data-manager==${ODM_VERSION}
+    pip install --no-cache-dir --user --no-warn-script-location oasis-data-manager==${OASIS_ODM_VERSION}
   else
     echo "Invalid version of ODM"
     exit 1

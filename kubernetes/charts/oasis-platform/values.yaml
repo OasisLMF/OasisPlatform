@@ -254,11 +254,11 @@ internalWorker:
   env:
     - name: OASIS_DEBUG
       value: "0"
-    - name: OASISLMF_VERSION
+    - name: OASIS_OASISLMF_VERSION
       value: # Empty = latest version
-    - name: ODS_VERSION
+    - name: OASIS_ODS_VERSION
       value: # Empty = latest version
-    - name: ODM_VERSION
+    - name: OASIS_ODM_VERSION
       value: # Empty = latest version
 
 # Volumes to mount and use within the platform
