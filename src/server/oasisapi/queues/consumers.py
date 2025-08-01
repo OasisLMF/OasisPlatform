@@ -220,15 +220,22 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         self.send_json({"Thank": "You"})
         if "analysis_pk" not in content:
             return
-        analysis = await get_analysis(pk=content["analysis_pk"])
+        pk = content["analysis_pk"]
+        analysis = await get_analysis(pk=pk)
+        logger.info(f"New update received on run {pk}")
+
         if "counter" in content:
-            logger.error("New event started")
+            logger.info("New event started")
             analysis.num_events_total = int(content["counter"])
             analysis.num_events_completed = 0
-            await sync_to_async(analysis.save)()
-            return
-        logger.info("New event completion")
-        analysis.num_events_complete = F('num_events_complete') + 1
+        elif "num_completed" in content:  # V2 gives batch update, V1 gives individual updates
+            num_completed = content["num_completed"]
+            logger.info(f"Update on run: {num_completed}")
+            analysis.num_events_complete = int(num_completed)
+        else:
+            logger.info("New event completion")
+            analysis.num_events_complete = F('num_events_complete') + 1
+
         await sync_to_async(analysis.save)()
 
 
