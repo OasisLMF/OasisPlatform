@@ -14,7 +14,7 @@ images:
       image: coreoasis/worker_controller
       version: dev
       imagePullPolicy: Never
-    worker_internal: 
+    worker_internal:
       image: coreoasis/model_worker
       version: dev
       imagePullPolicy: Never
@@ -254,6 +254,12 @@ internalWorker:
   env:
     - name: OASIS_DEBUG
       value: "0"
+    - name: OASIS_OASISLMF_VERSION
+      value: # Empty = latest version
+    - name: OASIS_ODS_VERSION
+      value: # Empty = latest version
+    - name: OASIS_ODM_VERSION
+      value: # Empty = latest version
 
 # Volumes to mount and use within the platform
 # Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount

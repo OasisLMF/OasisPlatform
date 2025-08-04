@@ -1,6 +1,16 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.6`_
+ ---------
+* [#1232](https://github.com/OasisLMF/OasisPlatform/pull/1232) - Tests fixes/new
+* [#1231](https://github.com/OasisLMF/OasisPlatform/pull/1234) - Missing file extension errors portfolio validation
+* [#1233](https://github.com/OasisLMF/OasisPlatform/pull/1235) - Key for v1 runs without analyses settings file
+* [#1083](https://github.com/OasisLMF/OasisPlatform/pull/1237) - Add override environment variable to load new oasislmf version on startup 
+* [#1238](https://github.com/OasisLMF/OasisPlatform/pull/1239) - S3 object storage broken in model worker
+* [#1243](https://github.com/OasisLMF/OasisPlatform/pull/1243) - update upload to v3
+.. _`2.4.6`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.5...2.4.6
+
 `2.4.5`_
  ---------
 * [#1220](https://github.com/OasisLMF/OasisPlatform/pull/1220) - Bugfix- errors not JSON serializable
