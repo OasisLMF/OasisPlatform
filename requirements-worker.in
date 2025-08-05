@@ -1,4 +1,4 @@
-oasislmf[extra]>=1.25.0
+oasislmf[extra]>=1.25.0,<2.0.0
 azure-core
 azure-storage-blob
 celery
