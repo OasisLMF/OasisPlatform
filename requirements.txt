@@ -176,7 +176,7 @@ django-storages[azure]==1.14.6
     # via -r requirements-server.in
 django-webtest==1.9.13
     # via -r requirements.in
-djangorestframework==3.15.1
+djangorestframework==3.14.0
     # via
     #   -r requirements-server.in
     #   djangorestframework-simplejwt
@@ -451,6 +451,7 @@ python-dateutil==2.9.0.post0
 pytz==2025.2
     # via
     #   django
+    #   djangorestframework
     #   drf-yasg
     #   oasislmf
     #   pandas
