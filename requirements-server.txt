@@ -39,7 +39,7 @@ botocore==1.29.89
     #   s3transfer
 celery==5.2.7
     # via -r requirements-server.in
-certifi==2025.8.3
+certifi==2023.7.22
     # via requests
 cffi==1.15.1
     # via cryptography
@@ -160,7 +160,7 @@ jsonschema==4.17.3
     #   ods-tools
 kombu==5.2.4
     # via celery
-llvmlite==0.44.0
+llvmlite==0.41.1
     # via numba
 markdown==3.4.1
     # via -r requirements-server.in
@@ -174,9 +174,9 @@ msal-extensions==1.2.0
     # via azure-identity
 mysqlclient==2.1.1
     # via -r requirements-server.in
-numba==0.61.2
+numba==0.58.1
     # via ods-tools
-numpy==2.2.6
+numpy==1.24.2
     # via
     #   numba
     #   pandas
