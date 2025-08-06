@@ -1,4 +1,5 @@
-oasislmf[extra]>=1.25.0,<2.0.0
+oasislmf[extra]<1.29.0
+ods-tools<3.2.0
 azure-core
 azure-storage-blob
 celery
@@ -12,3 +13,5 @@ sqlalchemy
 pytest
 numba
 azure-identity
+pandas
+numpy
