@@ -12,7 +12,7 @@ django-model-utils>=4.0.0
 django-request-logging>=0.0,<1.0
 django-storages[azure]>=1.12.3
 django_celery_results
-djangorestframework>=3.0,<4.0
+djangorestframework>=3.0,<3.15.0
 djangorestframework_simplejwt
 drf-nested-routers>=0.0,<1.0
 drf-yasg>=1.17.1,<=1.21.5
