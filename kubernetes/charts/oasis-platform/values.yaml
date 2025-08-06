@@ -28,6 +28,9 @@ images:
   keycloak:
     image: quay.io/keycloak/keycloak
     version: 23.0.6-0
+  authentik:
+    image: ghcr.io/goauthentik/server
+    version: 2025.6.4
   init:
     image: busybox
     version: 1.28
@@ -137,6 +140,14 @@ databases:
     volumeSize: 2Gi
     user: keycloak
     password: password
+  authentik_db:
+    type: postgres
+    name: authentik-db
+    dbName: authentik
+    port: 5432
+    volumeSize: 2Gi
+    user: authentik
+    password: password
   celery_db:
     type: postgres
     name: celery-db
@@ -175,6 +186,32 @@ keycloak:
         password: password
         admin: true
 
+
+# Authentik host, port and console admin credentials
+authentik:
+  name: authentik
+  port: 9000
+  # This is the authentik admin account to manage the realm and all users
+  user: authentik
+  password: password
+  secretKey: notsosecretkey
+  redis:
+    host: valkey
+  oasisRestApi:
+    # These users will be created on the first deployment/installation but never updated. Use the authentik admin
+    # console to manage users.
+
+    # The worker controller needs an account to listen to the web socket (queue)
+    platformServiceAccount:
+      username: platform-service-controller
+      password: x7e+GK6Y8ac#grb&9vT4
+    users:
+      # A default user is created at first deployment.
+      - username: admin
+        password: password
+        admin: true
+
+
 # Oasis API host, port and credentials (for HTTP connections)
 oasisServer:
   name: oasis-server
@@ -184,7 +221,7 @@ oasisServer:
   password: password
 
   # Enable OIDC Keycloak authentication with 'keycloak or set to 'simple' for simple jwt.
-  apiAuthType: keycloak
+  apiAuthType: simple
   oidc:
     endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
     clientName: oasis-server

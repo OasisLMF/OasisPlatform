@@ -36,6 +36,9 @@ for arg in "${@}"; do
   "keycloak")
     forwards+=("deployment/keycloak 8081:8080")
     ;;
+  "authentik")
+    forwards+=("deployment/authentik 9000")
+    ;;
   "monitoring")
     forwards+=("deployment/monitoring-grafana 3000:3000")
     forwards+=("statefulset/prometheus-monitoring-kube-prometheus-prometheus 9090")

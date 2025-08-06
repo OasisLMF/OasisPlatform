@@ -1,0 +1,246 @@
+{{- if (.Values.authentik) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.authentik.name }}
+  labels:
+  {{- include "h.labels" . | nindent 4 }}
+data:
+  host: {{ .Values.authentik.name }}
+  port: {{ .Values.authentik.port | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.authentik.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+type: Opaque
+data:
+  user: {{ .Values.authentik.user | b64enc }}
+  password: {{ include "h.password" (list .Values.authentik.name "password" . .Values.authentik.password (printf "A valid password for %s is required" .Values.authentik.name)) }}
+  secret_key: {{ .Values.authentik.secretKey | b64enc }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.authentik.name }}-init-users
+  labels:
+    app: {{ .Values.authentik.name }}-init
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.authentik.name }}-init
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.authentik.name }}-init
+    spec:
+      restartPolicy: Always  # pod restarts until successful
+      containers:
+        - name: init-authentik-users
+          image: python:3.11-slim
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-u", "-c"]
+          args:
+            - |
+              import os, sys, time, json
+              from urllib import request, parse, error
+
+              host = "{{ .Values.authentik.name }}"
+              port = "{{ .Values.authentik.port }}"
+              prefix = "{{ .Values.authentik.pathPrefix | default "/authentik" }}"
+              if prefix and not prefix.startswith("/"):
+                prefix = "/" + prefix
+              base = f"http://{host}:{port}{prefix}"
+
+              ADMIN_USER = os.environ.get("AUTHENTIK_ADMIN_USER")
+              ADMIN_PASS = os.environ.get("AUTHENTIK_ADMIN_PASSWORD")
+
+              def http_get(url, headers=None, timeout=10):
+                  req = request.Request(url, headers=headers or {}, method="GET")
+                  try:
+                      with request.urlopen(req, timeout=timeout) as resp:
+                          return resp.status, resp.read().decode()
+                  except error.HTTPError as e:
+                      return e.code, e.read().decode()
+                  except Exception as e:
+                      return None, str(e)
+
+              def http_post(url, data_obj, headers=None, timeout=10):
+                  data = json.dumps(data_obj).encode("utf-8")
+                  hdrs = {"Content-Type": "application/json"}
+                  if headers:
+                      hdrs.update(headers)
+                  req = request.Request(url, data=data, headers=hdrs, method="POST")
+                  try:
+                      with request.urlopen(req, timeout=timeout) as resp:
+                          return resp.status, resp.read().decode()
+                  except error.HTTPError as e:
+                      return e.code, e.read().decode()
+                  except Exception as e:
+                      return None, str(e)
+
+              # Wait until Authentik API responds
+              while True:
+                  status, _ = http_get(f"{base}/-/health/ready", timeout=5)
+                  if status == 200:
+                      print("Authentik is ready.")
+                      break
+                  print("Waiting for Authentik...", flush=True)
+                  time.sleep(10)
+
+              # Get API token
+              token_url = f"{base}/api/v3/token/"
+              status, body = http_post(token_url, {"username": ADMIN_USER, "password": ADMIN_PASS})
+              if status != 200:
+                  print("Failed to get token:", status, body, file=sys.stderr)
+                  sys.exit(1)
+              token = json.loads(body).get("token")
+              headers = {"Authorization": f"Bearer {token}"}
+
+              def create_user(username, password, is_superuser=False):
+                  payload = {"username": username, "password": password, "is_active": True}
+                  if is_superuser:
+                      payload["is_superuser"] = True
+                  status, body = http_post(f"{base}/api/v3/core/users/", payload, headers=headers)
+                  if status in (200, 201):
+                      print(f"Created/updated user {username}")
+                      return True
+                  print(f"Failed to create {username}: {status} {body}")
+                  return False
+
+              create_user("{{ .Values.authentik.oasisRestApi.platformServiceAccount.username }}",
+                          "{{ .Values.authentik.oasisRestApi.platformServiceAccount.password }}", is_superuser=False)
+
+              {{- range $u := .Values.authentik.oasisRestApi.users }}
+              create_user("{{ $u.username }}", "{{ $u.password }}", is_superuser={{ if $u.admin }}True{{ else }}False{{ end }})
+              {{- end }}
+
+              print("Init users complete. Exiting.")
+              sys.exit(0)
+          env:
+            - name: AUTHENTIK_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authentik.name }}
+                  key: user
+            - name: AUTHENTIK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authentik.name }}
+                  key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.authentik.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.authentik.port }}
+      targetPort: {{ .Values.authentik.port }}
+      protocol: TCP
+      name: authentik-http
+  selector:
+    {{- include "h.selectorLabels" . | nindent 4 }}
+    app: {{ .Values.authentik.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.authentik.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.authentik.name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        {{- include "h.labels" . | nindent 8 }}
+        app: {{ .Values.authentik.name }}
+    spec:
+      {{- include "h.affinity" . | nindent 6 }}
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.authentik_db.name) | nindent 8}}
+      containers:
+        - name: {{ .Values.authentik.name }}
+          image: {{ .Values.images.authentik.image }}:{{ .Values.images.authentik.version }}
+          args: 
+            - server
+            - "--bind=0.0.0.0:9000"
+          ports:
+            - containerPort: {{ .Values.authentik.port }}
+          env:
+            - name: AUTHENTIK_LOG_LEVEL 
+              value: DEBUG
+            - name: AUTHENTIK_PATH_PREFIX
+              value: "/authentik"
+            - name: AUTHENTIK_DISABLE_UPDATE_CHECK
+              value: "true"
+            - name: AUTHENTIK_REDIS__HOST
+              value: {{ .Values.authentik.redis.host }}
+            - name: AUTHENTIK_POSTGRESQL__HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.databases.authentik_db.name }}
+                  key: host
+            - name: AUTHENTIK_POSTGRESQL__PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.databases.authentik_db.name }}
+                  key: port
+            - name: AUTHENTIK_POSTGRESQL__NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.databases.authentik_db.name }}
+                  key: dbName
+            - name: AUTHENTIK_POSTGRESQL__USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.databases.authentik_db.name }}
+                  key: user
+            - name: AUTHENTIK_POSTGRESQL__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.databases.authentik_db.name }}
+                  key: password
+            - name: AUTHENTIK_BOOTSTRAP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authentik.name }}
+                  key: user
+            - name: AUTHENTIK_BOOTSTRAP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authentik.name }}
+                  key: password
+            - name: AUTHENTIK_BOOTSTRAP_EMAIL
+              value: "{{ .Values.authentik.user }}@example.com"
+            - name: AUTHENTIK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.authentik.name }}
+                  key: secret_key
+          startupProbe:
+            httpGet:
+              path: /authentik/-/health/live
+              port: 9000
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /authentik/-/health/ready
+              port: 9000
+            initialDelaySeconds: 300
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 30
+{{- end }}
