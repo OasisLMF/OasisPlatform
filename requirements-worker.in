@@ -1,5 +1,6 @@
 #-e git://github.com/OasisLMF/OasisLMF.git@feature/refactor-arch2020#egg=oasislmf[extra]
-oasislmf[extra]
+oasislmf[extra]<2.4.0
+ods-tools<3.3.0
 azure-core
 azure-storage-blob
 billiard
@@ -16,3 +17,5 @@ pytest
 redis
 natsort 
 sqlalchemy
+pandas
+numpy
