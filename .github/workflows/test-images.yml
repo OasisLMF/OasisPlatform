@@ -32,7 +32,7 @@ env:
   pre_release: 'true'  # look for pre-release when testing last released platform version
   semver_major: '1'    # Search for published images but limited to {semvar_major}.x.x
   semver_minor: '28'   # Search for published images but limited to x.{semvar_minor}.x
-  server_stable: '1.28.0'
+  server_min_supported: '1.28.0'
 
 jobs:
   build_images:
@@ -56,7 +56,7 @@ jobs:
       release_stable_15: ${{ steps.released_images.outputs.stable_15 }}
       release_stable_23: ${{ steps.released_images.outputs.stable_23 }}
       release_stable_27: ${{ steps.released_images.outputs.stable_27 }}
-      server_stable: ${{ env.server_stable }}
+      server_min_supported: ${{ env.server_min_supported }}
 
       build_server_img: ${{ steps.built_images.outputs.server_img }}
       build_server_tag: ${{ steps.built_images.outputs.server_tag }}
@@ -242,17 +242,17 @@ jobs:
       storage_suffix: '_s3'
 
   stable_server:
-    name: test stable server (${{ needs.setup.outputs.server_stable }})
+    name: test stable server (${{ needs.setup.outputs.server_min_supported }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
       piwind_branch: 'stable/1.28.x'
       server_image: 'coreoasis/api_server'
-      server_tag: ${{ needs.setup.outputs.server_stable }}
+      server_tag: ${{ needs.setup.outputs.server_min_supported }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       debug_mode: 1
       pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
-      storage_suffix: "_server-${{ needs.setup.outputs.server_stable }}_v1"
+      storage_suffix: "_server-${{ needs.setup.outputs.server_min_supported }}_v1"
 
