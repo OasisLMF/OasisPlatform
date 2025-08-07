@@ -240,34 +240,19 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '_s3'
-  stable_server_2-4_v1:
-    name: test stable server (${{ needs.setup.outputs.server_stable }}) v1
+
+  stable_server:
+    name: test stable server (${{ needs.setup.outputs.server_stable }})
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      piwind_branch: 'stable/2.4.x'
+      piwind_branch: 'stable/1.28.x'
       server_image: 'coreoasis/api_server'
       server_tag: ${{ needs.setup.outputs.server_stable }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      worker_api_ver: 'v1'
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      pytest_opts: ${{ needs.setup.outputs.pytest_opts }}
       storage_suffix: "_server-${{ needs.setup.outputs.server_stable }}_v1"
 
-  stable_server_2-4_v2:
-    name: test stable server (${{ needs.setup.outputs.server_stable }}) v2
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
-    with:
-      piwind_branch: 'stable/2.4.x'
-      server_image: 'coreoasis/api_server'
-      server_tag: ${{ needs.setup.outputs.server_stable }}
-      worker_image: ${{ needs.setup.outputs.build_worker_img }}
-      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      worker_api_ver: 'v2'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_server-${{ needs.setup.outputs.server_stable }}_v2"
