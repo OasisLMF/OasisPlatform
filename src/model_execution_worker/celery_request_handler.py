@@ -64,3 +64,17 @@ class CustomRequest(CeleryRequest):
 
 class WorkerLostRetry(Task):
     Request = CustomRequest
+
+
+class RejectLostWorkerRequest(CeleryRequest):
+    def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
+        self.task.reject_on_worker_lost = True
+        logger.error(f"Worker lost on task {self.task.__name__}")
+        logger.error(f"Error type {exc_info.type}")
+        logger.debug(f"Error trace {exc_info.traceback}")
+        logger.info(self.task)
+        super().on_failure(exc_info, send_failed_event, return_ok)
+
+
+class WorkerLostReject(Task):
+    Request = RejectLostWorkerRequest
