@@ -334,7 +334,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-4 }}"
 
-  stable_server_2-4_v1:
+  stable_server_v1:
     name: test stable server (${{ needs.setup.outputs.server_stable }}) v1
     secrets: inherit
     needs: [setup]
@@ -350,7 +350,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_server-${{ needs.setup.outputs.server_stable }}_v1"
 
-  stable_server_2-4_v2:
+  stable_server_v2:
     name: test stable server (${{ needs.setup.outputs.server_stable }}) v2
     secrets: inherit
     needs: [setup]
