@@ -1,3 +1,4 @@
+{{- if (.Values.keycloak) }}
 {{ $realmSecretName := printf "%s-realm" .Values.keycloak.name }}
 apiVersion: v1
 kind: ConfigMap
@@ -209,3 +210,4 @@ spec:
             volumeAttributes:
               secretProviderClass: "azure-secret-provider"
     {{- end }}
+{{- end }}
