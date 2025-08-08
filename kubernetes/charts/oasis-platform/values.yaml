@@ -30,7 +30,7 @@ images:
     version: 23.0.6-0
   authentik:
     image: ghcr.io/goauthentik/server
-    version: 2025.6.4
+    version: 2025.4.4
   init:
     image: busybox
     version: 1.28
@@ -197,6 +197,8 @@ authentik:
   secretKey: notsosecretkey
   redis:
     host: valkey
+  bootstrapEmail: admin@example.com
+  bootstrapToken: my-demo-token-abc123
   oasisRestApi:
     # These users will be created on the first deployment/installation but never updated. Use the authentik admin
     # console to manage users.
@@ -210,6 +212,9 @@ authentik:
       - username: admin
         password: password
         admin: true
+      - username: user
+        password: password
+        admin: false
 
 
 # Oasis API host, port and credentials (for HTTP connections)
@@ -221,7 +226,7 @@ oasisServer:
   password: password
 
   # Enable OIDC Keycloak authentication with 'keycloak or set to 'simple' for simple jwt.
-  apiAuthType: simple
+  apiAuthType: keycloak
   oidc:
     endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
     clientName: oasis-server
