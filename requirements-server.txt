@@ -12,6 +12,7 @@ asgiref==3.9.1
     # via
     #   channels
     #   channels-redis
+    #   daphne
     #   django
 async-timeout==5.0.1
     # via aioredis
@@ -74,6 +75,8 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
+constantly==23.10.4
+    # via twisted
 coreapi==2.3.3
     # via
     #   -r requirements-server.in
@@ -86,6 +89,7 @@ cramjam==2.11.0
     # via fastparquet
 cryptography==45.0.6
     # via
+    #   autobahn
     #   azure-identity
     #   azure-storage-blob
     #   josepy
@@ -93,6 +97,9 @@ cryptography==45.0.6
     #   msal
     #   pyjwt
     #   pyopenssl
+    #   service-identity
+daphne==4.2.1
+    # via -r requirements-server.in
 django==5.2.5
     # via
     #   -r requirements-server.in
@@ -146,8 +153,17 @@ gunicorn==23.0.0
     # via -r requirements-server.in
 httplib2==0.22.0
     # via pyrabbit
+hyperlink==21.0.0
+    # via
+    #   autobahn
+    #   twisted
 idna==3.10
-    # via requests
+    # via
+    #   hyperlink
+    #   requests
+    #   twisted
+incremental==24.7.2
+    # via twisted
 inflection==0.5.1
     # via drf-yasg
 isodate==0.7.2
@@ -227,10 +243,20 @@ pathlib2==2.3.7.post1
     # via -r requirements-server.in
 prompt-toolkit==3.0.51
     # via click-repl
-psycopg2-binary==2.9.10
+psycopg[binary,pool]==3.2.9
     # via -r requirements-server.in
+psycopg-binary==3.2.9
+    # via psycopg
+psycopg-pool==3.2.6
+    # via psycopg
 pyarrow==17.0.0
     # via -r requirements-server.in
+pyasn1==0.6.1
+    # via
+    #   pyasn1-modules
+    #   service-identity
+pyasn1-modules==0.4.2
+    # via service-identity
 pycparser==2.22
     # via cffi
 pyjwt[crypto]==2.10.1
@@ -326,3 +352,8 @@ wcwidth==0.2.13
     # via prompt-toolkit
 whitenoise==6.9.0
     # via -r requirements-server.in
+zope-interface==7.2
+    # via twisted
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

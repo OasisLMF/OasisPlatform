@@ -31,6 +31,7 @@ asgiref==3.9.1
     # via
     #   channels
     #   channels-redis
+    #   daphne
     #   django
 asttokens==3.0.0
     # via stack-data
@@ -50,7 +51,7 @@ automat==25.4.16
     # via twisted
 azure-core==1.35.0
     # via
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   adlfs
     #   azure-identity
     #   azure-storage-blob
@@ -59,11 +60,11 @@ azure-datalake-store==0.0.53
     # via adlfs
 azure-identity==1.23.1
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   adlfs
 azure-storage-blob==12.26.0
     # via
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   adlfs
     #   django-storages
 backports-tempfile==1.0
@@ -74,7 +75,7 @@ beautifulsoup4==4.13.4
     # via webtest
 billiard==4.2.1
     # via
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   celery
 boto3==1.39.8
     # via
@@ -91,8 +92,8 @@ cachetools==6.1.0
     # via tox
 celery==5.5.3
     # via
-    #   -r requirements-server.in
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   django-celery-results
 certifi==2025.8.3
     # via
@@ -105,14 +106,14 @@ cffi==1.17.1
     #   cryptography
 chainmap==1.0.3
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   oasislmf
 channels==4.2.2
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   channels-redis
 channels-redis==4.2.1
-    # via -r requirements-server.in
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
 chardet==5.2.0
     # via
     #   oasislmf
@@ -139,7 +140,7 @@ configparser==7.2.0
     # via -r requirements-worker.in
 coreapi==2.3.3
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   drf-yasg
 coreschema==0.0.4
     # via
@@ -153,6 +154,7 @@ cramjam==2.11.0
     # via fastparquet
 cryptography==44.0.3
     # via
+    #   autobahn
     #   azure-identity
     #   azure-storage-blob
     #   josepy
@@ -161,8 +163,8 @@ cryptography==44.0.3
     #   pyjwt
     #   pyopenssl
     #   service-identity
-daphne==2.5.0
-    # via channels
+daphne==4.2.1
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
 decorator==5.2.1
     # via
     #   ipdb
@@ -171,7 +173,7 @@ distlib==0.4.0
     # via virtualenv
 django==5.2.5
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   channels
     #   django-celery-results
     #   django-debug-toolbar
@@ -188,15 +190,15 @@ django==5.2.5
 django-celery-results==2.6.0
     # via -r requirements-server.in
 django-cleanup==9.0.0
-    # via -r requirements-server.in
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
 django-debug-toolbar==4.3.0
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   -r requirements.in
 django-filter==23.5
-    # via -r requirements-server.in
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
 django-model-utils==5.0.0
-    # via -r requirements-server.in
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
 django-request-logging==0.7.5
     # via -r requirements-server.in
 django-storages[azure]==1.14.6
@@ -205,21 +207,21 @@ django-webtest==1.9.13
     # via -r requirements.in
 djangorestframework==3.14.0
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   djangorestframework-simplejwt
     #   drf-nested-routers
     #   drf-yasg
 djangorestframework-simplejwt==5.3.1
-    # via -r requirements-server.in
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
 drf-nested-routers==0.94.0
-    # via -r requirements-server.in
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
 drf-yasg==1.21.5
     # via -r requirements-server.in
 executing==2.2.0
     # via stack-data
 fasteners==0.19
     # via
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   -r requirements.in
 fastparquet==2024.11.0
     # via
@@ -227,7 +229,7 @@ fastparquet==2024.11.0
     #   oasislmf
 filelock==3.18.0
     # via
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   tox
     #   virtualenv
 flake8==7.3.0
@@ -251,9 +253,6 @@ geopandas==1.1.1
 greenlet==3.2.3
     # via sqlalchemy
 gunicorn==23.0.0
-    # via -r requirements-server.in
-hiredis==3.2.1
-    # via aioredis
 httplib2==0.22.0
     # via pyrabbit
 hyperlink==21.0.0
@@ -264,8 +263,12 @@ hypothesis==6.137.1
     # via -r requirements.in
 idna==3.10
     # via
+    #   hyperlink
     #   requests
+    #   twisted
     #   yarl
+incremental==24.7.2
+    # via twisted
 inflection==0.5.1
     # via drf-yasg
 iniconfig==2.1.0
@@ -291,8 +294,8 @@ jmespath==1.0.1
     #   botocore
 joblib==1.5.1
     # via
-    #   -r requirements-server.in
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   scikit-learn
 josepy==2.1.0
     # via mozilla-django-oidc
@@ -302,7 +305,7 @@ jsonref==1.1.0
     # via ods-tools
 jsonschema==4.25.0
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   ods-tools
 jsonschema-specifications==2025.4.1
     # via jsonschema
@@ -345,7 +348,7 @@ multidict==6.6.3
 mysqlclient==2.2.7
     # via -r requirements-server.in
 natsort==8.4.0
-    # via -r requirements-worker.in
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
 networkx==3.5
     # via -r requirements-worker.in
 numba==0.61.2
@@ -371,12 +374,12 @@ numpy==1.26.4
     #   shapely
 oasis-data-manager==0.1.5
     # via
-    #   -r requirements-server.in
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   oasislmf
     #   ods-tools
 oasislmf[extra]==2.4.6
-    # via -r requirements-worker.in
+    # via -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
 ods-tools==4.0.2
     # via
     #   -r requirements-server.in
@@ -408,8 +411,8 @@ parso==0.8.4
     # via jedi
 pathlib2==2.3.7.post1
     # via
-    #   -r requirements-server.in
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
 pexpect==4.9.0
     # via ipython
 pip-tools==7.5.0
@@ -426,21 +429,23 @@ prompt-toolkit==3.0.51
     # via
     #   click-repl
     #   ipython
-propcache==0.3.2
+propcache==0.2.0
+    # via yarl
+psycopg[binary,pool]==3.2.9
     # via
-    #   aiohttp
-    #   yarl
-psycopg2-binary==2.9.10
-    # via
-    #   -r requirements-server.in
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
+psycopg-binary==3.2.9
+    # via psycopg
+psycopg-pool==3.2.6
+    # via psycopg
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
 pyarrow==17.0.0
     # via
-    #   -r requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
     #   oasislmf
 pyasn1==0.6.1
     # via
@@ -465,8 +470,8 @@ pyjwt[crypto]==2.10.1
     #   msal
 pymysql==1.1.1
     # via
-    #   -r requirements-server.in
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
 pyodbc==5.2.0
     # via -r requirements-worker.in
 pyogrio==0.11.1
@@ -489,7 +494,7 @@ pyrabbit==1.1.0
     # via -r requirements-server.in
 pytest==8.4.1
     # via
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   -r requirements.in
     #   pytest-cov
     #   pytest-django
@@ -574,13 +579,13 @@ soupsieve==2.7
     # via beautifulsoup4
 sqlalchemy==2.0.42
     # via
-    #   -r requirements-server.in
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-server.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
 sqlparams==6.2.0
     # via -r requirements-worker.in
 sqlparse==0.5.3
     # via
-    #   -r requirements-worker.in
+    #   -r /home/sam/work/oasis-repos/platform_oasis/requirements-worker.in
     #   django
     #   django-debug-toolbar
 stack-data==0.6.3
@@ -640,6 +645,8 @@ wrapt==1.17.2
     # via aiobotocore
 yarl==1.20.1
     # via aiohttp
+zope-interface==7.2
+    # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

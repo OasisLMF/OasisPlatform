@@ -131,6 +131,11 @@ if DEBUG:
 if DEBUG_TOOLBAR:
     INSTALLED_APPS.append('debug_toolbar')
     MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda request: DEBUG,
+        'SHOW_COLLAPSED': False,
+        'SHOW_TEMPLATE_CONTEXT': True,
+    }
 
 
 ROOT_URLCONF = 'src.server.oasisapi.urls'
@@ -154,22 +159,34 @@ TEMPLATES = [
 ]
 
 # Database
-
+# Django 5.1+ Native Connection Pooling Settings
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
+DB_CONN_MAX_AGE = iniconf.settings.getint('server', 'db_conn_max_age', fallback=600)
+DB_CONN_HEALTH_CHECKS = iniconf.settings.getboolean('server', 'db_conn_health_checks', fallback=True)
+DB_DISABLE_SERVER_SIDE_CURSORS = iniconf.settings.getboolean('server', 'db_disable_server_side_cursors', fallback=False)
+
+# DB pool options
+DB_POOL_ENABLE = iniconf.settings.getboolean('server', 'db_pool_enable', fallback=True)
+DB_POOL_MIN_SIZE = iniconf.settings.getint('server', 'db_pool_min_size', fallback=2)
+DB_POOL_MAX_SIZE = iniconf.settings.getint('server', 'db_pool_max_size', fallback=10)
+DB_POOL_TIMEOUT = iniconf.settings.getint('server', 'db_pool_timeout', fallback=30)
+DB_POOL_MAX_LIFETIME = iniconf.settings.getint('server', 'db_pool_max_lifetime', fallback=3600)
+DB_POOL_MAX_IDLE = iniconf.settings.getint('server', 'db_pool_max_idle', fallback=600)
+
 
 if DB_ENGINE == 'django.db.backends.sqlite3':
+    # SQLite doesn't benefit from persistent connections
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
             'NAME': os.path.join(BASE_DIR, iniconf.settings.get('server', 'db_name', fallback='db.sqlite3')),
+            'CONN_MAX_AGE': 0,  # Disable connection pooling for SQLite
         }
     }
 
 
 elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
-
-    # For Azure Service Principal Authentication with token rotation
-
+    # For Azure Service Principal Authentication with token rotation + connection pooling
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
@@ -181,12 +198,25 @@ elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
             'TENANT_ID': iniconf.settings.get('server', 'AZURE_TENANT_ID', fallback=None),
             'CLIENT_ID': iniconf.settings.get('server', 'AZURE_CLIENT_ID', fallback=None),
             'CLIENT_SECRET': iniconf.settings.get('server', 'AZURE_CLIENT_SECRET', fallback=None),
+            # Django 5.1+ native connection pooling
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE if not DB_POOL_ENABLE else 0,  # either persistent connections OR pooling not both
+            'CONN_HEALTH_CHECKS': DB_CONN_HEALTH_CHECKS,
+            'DISABLE_SERVER_SIDE_CURSORS': DB_DISABLE_SERVER_SIDE_CURSORS,
+            'OPTIONS': {
+                'pool': {
+                    'min_size': 2,
+                    'max_size': 10,
+                    'timeout': 30,
+                    'max_lifetime': 3600,
+                    'max_idle': 600,
+                } if DB_POOL_ENABLE else {},
+            },
         }
     }
 
 
 else:
-
+    # Standard database engines (PostgreSQL, MySQL, etc.) with native Django 5.1+ connection pooling
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
@@ -195,6 +225,19 @@ else:
             'PORT': iniconf.settings.get('server', 'db_port'),
             'USER': iniconf.settings.get('server', 'db_user'),
             'PASSWORD': iniconf.settings.get('server', 'db_pass'),
+            # Django 5.1+ native connection pooling
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE if not DB_POOL_ENABLE else 0,
+            'CONN_HEALTH_CHECKS': DB_CONN_HEALTH_CHECKS,
+            'DISABLE_SERVER_SIDE_CURSORS': DB_DISABLE_SERVER_SIDE_CURSORS,
+            'OPTIONS': {
+                'pool': {
+                    'min_size': 2,
+                    'max_size': 10,
+                    'timeout': 30,
+                    'max_lifetime': 3600,
+                    'max_idle': 600,
+                } if DB_POOL_ENABLE else {},
+            },
         }
     }
 

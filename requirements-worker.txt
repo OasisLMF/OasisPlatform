@@ -323,7 +323,8 @@ typing-extensions==4.14.1
     #   azure-identity
     #   azure-storage-blob
     #   oasis-data-manager
-    #   referencing
+    #   psycopg
+    #   psycopg-pool
     #   sqlalchemy
 tzdata==2025.2
     # via

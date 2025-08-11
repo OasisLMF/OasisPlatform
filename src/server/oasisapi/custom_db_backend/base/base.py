@@ -1,6 +1,6 @@
 from django.db.backends.postgresql.base import DatabaseWrapper as PostgresDatabaseWrapper
 from azure.identity import ClientSecretCredential
-import psycopg2
+import psycopg
 
 
 class DatabaseWrapper(PostgresDatabaseWrapper):
@@ -36,4 +36,4 @@ class DatabaseWrapper(PostgresDatabaseWrapper):
         conn_params["password"] = self.get_azure_access_token()  # Get fresh token
         conn_params["sslmode"] = "require"  # Ensure SSL connection
 
-        return psycopg2.connect(**conn_params)
+        return psycopg.connect(**conn_params)
