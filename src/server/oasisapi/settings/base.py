@@ -288,7 +288,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
-USE_L10N = True
+# USE_L10N = True  # Deprecated in Django 4.0+, now enabled by default
 USE_TZ = True
 
 # Place the app in a sub path (swagger still available in /)
@@ -303,7 +303,7 @@ MEDIA_URL = '/api/media/'
 STATIC_URL = '/api/static/'
 STATIC_DEBUG_URL = '/static/'  # when running
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Django 5+ STORAGES configuration will be set below
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
 # Authenticate with S3
@@ -370,17 +370,39 @@ LOCAL_FS = ['local-fs', 'shared-fs']
 AWS_S3 = ['aws-s3', 's3', 'aws']
 AZURE = ['azure']
 
+# Django 5+ STORAGES configuration
 if STORAGE_TYPE in LOCAL_FS:
     # Set Storage to shared volumn mount
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 elif STORAGE_TYPE in AWS_S3:
     # AWS S3 Object Store via `Django-Storages`
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
     set_aws_log_level(AWS_LOG_LEVEL)
 
 elif STORAGE_TYPE in AZURE:
-    DEFAULT_FILE_STORAGE = 'storages.backends.azure_abfs.AzureStorage'
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.azure_abfs.AzureStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
     set_azure_log_level(AZURE_LOG_LEVEL)
 
 else:
