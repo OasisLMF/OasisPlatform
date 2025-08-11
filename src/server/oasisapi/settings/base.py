@@ -156,7 +156,7 @@ TEMPLATES = [
 # Database
 # Django 5.1+ Native Connection Pooling Settings
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
-DB_CONN_MAX_AGE = iniconf.settings.getint('server', 'db_conn_max_age', fallback=600)  # 10 minutes
+DB_CONN_MAX_AGE = iniconf.settings.get('server', 'db_conn_max_age', fallback=600)  # 10 minutes
 DB_CONN_HEALTH_CHECKS = iniconf.settings.getboolean('server', 'db_conn_health_checks', fallback=True)
 
 if DB_ENGINE == 'django.db.backends.sqlite3':
