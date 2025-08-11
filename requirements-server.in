@@ -32,6 +32,7 @@ pymysql
 pyrabbit
 redis
 sqlalchemy
+setuptools
 mysqlclient==2.1.1
 whitenoise
 azure-identity

@@ -308,3 +308,6 @@ wcwidth==0.2.13
     # via prompt-toolkit
 whitenoise==6.7.0
     # via -r requirements-server.in
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
