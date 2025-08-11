@@ -26,7 +26,7 @@ stringData:
 
   # Database connection (mapped from your values)
   AUTHENTIK_POSTGRESQL__HOST: {{ .Values.databases.authentik_db.name | quote }}
-  AUTHENTIK_POSTGRESQL__PORT: "{{ .Values.databases.authentik_db.port }}"
+  AUTHENTIK_POSTGRESQL__PORT: {{ .Values.databases.authentik_db.port | quote }}
   AUTHENTIK_POSTGRESQL__NAME: {{ .Values.databases.authentik_db.dbName | quote }}
   AUTHENTIK_POSTGRESQL__USER: {{ .Values.databases.authentik_db.user | quote }}
   AUTHENTIK_POSTGRESQL__PASSWORD: {{ .Values.databases.authentik_db.password | quote }}
@@ -64,7 +64,7 @@ spec:
             - name: AUTHENTIK_LOG_LEVEL 
               value: DEBUG
             - name: AUTHENTIK_WEB__PATH
-              value: "/authentik"
+              value: /authentik/
             - name: AUTHENTIK_DISABLE_UPDATE_CHECK
               value: "true"
           envFrom:
@@ -72,25 +72,25 @@ spec:
                 name: {{ .Values.authentik.name }}
           startupProbe:
             httpGet:
-              path: /authentik/-/health/live
+              path: "/authentik/-/health/live/"
               port: {{ .Values.authentik.port }}
-            initialDelaySeconds: 120
+            initialDelaySeconds: 60
             periodSeconds: 10
             timeoutSeconds: 30
             failureThreshold: 60
           livenessProbe:
             httpGet:
-              path: /authentik/-/health/live
+              path: "/authentik/-/health/live/"
               port: {{ .Values.authentik.port }}
-            initialDelaySeconds: 120
+            initialDelaySeconds: 60
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 60
           readinessProbe:
             httpGet:
-              path: /authentik/-/health/ready
+              path: "/authentik/-/health/ready/"
               port: {{ .Values.authentik.port }}
-            initialDelaySeconds: 120
+            initialDelaySeconds: 90
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 60
