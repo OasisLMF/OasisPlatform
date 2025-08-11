@@ -154,22 +154,24 @@ TEMPLATES = [
 ]
 
 # Database
-
+# Django 5.1+ Native Connection Pooling Settings
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
+DB_CONN_MAX_AGE = iniconf.settings.getint('server', 'db_conn_max_age', fallback=600)  # 10 minutes
+DB_CONN_HEALTH_CHECKS = iniconf.settings.getboolean('server', 'db_conn_health_checks', fallback=True)
 
 if DB_ENGINE == 'django.db.backends.sqlite3':
+    # SQLite doesn't benefit from persistent connections
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
             'NAME': os.path.join(BASE_DIR, iniconf.settings.get('server', 'db_name', fallback='db.sqlite3')),
+            'CONN_MAX_AGE': 0,  # Disable connection pooling for SQLite
         }
     }
 
 
 elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
-
-    # For Azure Service Principal Authentication with token rotation
-
+    # For Azure Service Principal Authentication with token rotation + connection pooling
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
@@ -181,12 +183,15 @@ elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
             'TENANT_ID': iniconf.settings.get('server', 'AZURE_TENANT_ID', fallback=None),
             'CLIENT_ID': iniconf.settings.get('server', 'AZURE_CLIENT_ID', fallback=None),
             'CLIENT_SECRET': iniconf.settings.get('server', 'AZURE_CLIENT_SECRET', fallback=None),
+            # Django 5.1+ native connection pooling
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE,
+            'CONN_HEALTH_CHECKS': DB_CONN_HEALTH_CHECKS,
         }
     }
 
 
 else:
-
+    # Standard database engines (PostgreSQL, MySQL, etc.) with native Django 5.1+ connection pooling
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
@@ -195,6 +200,13 @@ else:
             'PORT': iniconf.settings.get('server', 'db_port'),
             'USER': iniconf.settings.get('server', 'db_user'),
             'PASSWORD': iniconf.settings.get('server', 'db_pass'),
+            # Django 5.1+ native connection pooling
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE,
+            'CONN_HEALTH_CHECKS': DB_CONN_HEALTH_CHECKS,
+            'OPTIONS': {
+                # Optimize for connection pooling (PostgreSQL/MySQL)
+                'DISABLE_SERVER_SIDE_CURSORS': True,
+            } if 'postgresql' in DB_ENGINE or 'mysql' in DB_ENGINE else {},
         }
     }
 
