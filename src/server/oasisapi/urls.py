@@ -1,15 +1,12 @@
 from django.conf import settings
 from django.urls import include, re_path
 from django.conf.urls.static import static
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework import permissions
 
 from .swagger import (
     api_v1_urlpatterns,
     api_v2_urlpatterns,
-    CustomGeneratorClassV1,
-    CustomGeneratorClassV2,
 )
 
 if settings.DEBUG_TOOLBAR:
@@ -51,41 +48,14 @@ api_info_description += """
 8. Get the outputs (get `/analyses/<pk>/output_file/`)"""
 
 
-api_info = openapi.Info(
-    title="Oasis Platform",
-    default_version='v2',
-    description=api_info_description,
-)
-schema_view_all = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
-schema_view_v1 = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-    generator_class=CustomGeneratorClassV1,
-)
-
-schema_view_v2 = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-    generator_class=CustomGeneratorClassV2,
-)
+# drf-spectacular views replace the schema views
 
 
 api_urlpatterns = [
-    # Main Swagger page
-    re_path(r'^(?P<format>\.json|\.yaml)$', schema_view_all.without_ui(cache_timeout=0), name='schema-json'),
-    re_path(r'^$', schema_view_all.with_ui('swagger', cache_timeout=0), name='schema-ui'),
-    # V1 only swagger endpoints
-    re_path(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui-v1'),
-    re_path(r'^v1/(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json'),
-    # V2 only swagger endpoints
-    re_path(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui-v2'),
-    re_path(r'^v2/(?P<format>\.json|\.yaml)$', schema_view_v2.without_ui(cache_timeout=0), name='schema-json'),
+    # drf-spectacular schema and UI endpoints
+    re_path(r'^schema/$', SpectacularAPIView.as_view(), name='schema'),
+    re_path(r'^$', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    re_path(r'^redoc/$', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     # basic urls (auth, server info)
     re_path(r'^', include('src.server.oasisapi.base_urls')),
 ]

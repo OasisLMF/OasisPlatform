@@ -52,7 +52,8 @@ else:
 
 
 # Generate All
-DEFAULT_GENERATOR_CLASS = 'drf_yasg.generators.OpenAPISchemaGenerator'          # Generate All
+# drf-spectacular doesn't use generator classes like drf-yasg
+# DEFAULT_GENERATOR_CLASS = 'drf_yasg.generators.OpenAPISchemaGenerator'          # Generate All
 if IS_SWAGGER_GEN:
     # generate only V1 endpoints
     if iniconf.settings.getboolean('server', 'GEN_SWAGGER_V1', fallback=False):
@@ -107,7 +108,7 @@ INSTALLED_APPS = [
     #    'django_extensions',
     'django_filters',
     'rest_framework',
-    'drf_yasg',
+    'drf_spectacular',
     'channels',
     'storages',
 
@@ -225,6 +226,7 @@ REST_FRAMEWORK = {
     ),
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Password validation
@@ -254,19 +256,34 @@ if API_AUTH_TYPE == 'keycloak':
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False
 
-    SWAGGER_SETTINGS = {
-        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
-        'USE_SESSION_AUTH': False,
-        'SECURITY_DEFINITIONS': {
-            "keycloak": {
-                "type": "oauth2",
-                "authorizationUrl": KEYCLOAK_OIDC_BASE_URL + 'auth',
-                "refreshUrl": OIDC_OP_TOKEN_ENDPOINT + 'auth',
-                "flow": "implicit",
-                "scopes": {}
+    SPECTACULAR_SETTINGS = {
+        'TITLE': 'Oasis Platform',
+        'DESCRIPTION': '''
+# Workflow
+The general workflow is as follows
+
+1. Authenticate your client, either supply your username and password to the `/access_token/`
+   endpoint or make a `post` request to `/refresh_token/` with the `HTTP_AUTHORIZATION` header
+   set as `Bearer <refresh_token>`.
+2. Create a portfolio (post to `/portfolios/`).
+3. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
+4. Create the model object for your model (post to `/models/`).
+5. Create an analysis (post to `/portfolios/<id>/create_analysis`). This will generate the input files
+   for the analysis.
+6. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
+7. Run the analysis (post to `/analyses/<pk>/run/`)
+8. Get the outputs (get `/analyses/<pk>/output_file/`)
+''',
+        'VERSION': 'v2',
+        'SERVE_INCLUDE_SCHEMA': False,
+        'COMPONENT_SPLIT_REQUEST': True,
+        'SCHEMA_PATH_PREFIX': '/api/' if URL_SUB_PATH else '/',
+        'SECURITY': [
+            {
+                'keycloak': []
             }
-        },
-        "schemes": ["http", "https"]
+        ],
+        'DISABLE_ERRORS_AND_WARNINGS': True,
     }
 else:
     INSTALLED_APPS += ('rest_framework_simplejwt.token_blacklist',)
@@ -281,12 +298,29 @@ else:
         'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
     }
 
-    SWAGGER_SETTINGS = {
-        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
-        'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
-        'LOGIN_URL': reverse_lazy('rest_framework:login'),
-        'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
-        "schemes": ["http", "https"]
+    SPECTACULAR_SETTINGS = {
+        'TITLE': 'Oasis Platform',
+        'DESCRIPTION': '''
+# Workflow
+The general workflow is as follows
+
+1. Authenticate your client, either supply your username and password to the `/access_token/`
+   endpoint or make a `post` request to `/refresh_token/` with the `HTTP_AUTHORIZATION` header
+   set as `Bearer <refresh_token>`.
+2. Create a portfolio (post to `/portfolios/`).
+3. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
+4. Create the model object for your model (post to `/models/`).
+5. Create an analysis (post to `/portfolios/<id>/create_analysis`). This will generate the input files
+   for the analysis.
+6. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
+7. Run the analysis (post to `/analyses/<pk>/run/`)
+8. Get the outputs (get `/analyses/<pk>/output_file/`)
+''',
+        'VERSION': 'v2',
+        'SERVE_INCLUDE_SCHEMA': False,
+        'COMPONENT_SPLIT_REQUEST': True,
+        'SCHEMA_PATH_PREFIX': '/api/' if URL_SUB_PATH else '/',
+        'DISABLE_ERRORS_AND_WARNINGS': True,
     }
 
 
@@ -442,7 +476,7 @@ LOGGING = {
         'handlers': ['console'],
     },
     'loggers': {
-        'drf_yasg': {
+        'drf_spectacular': {
             'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,
