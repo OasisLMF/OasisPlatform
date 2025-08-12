@@ -134,7 +134,6 @@ class StartAnalysisTask(TestCase):
     def test_lock_is_not_acquireable___retry_esception_is_raised(self, pk, location, analysis_settings_path):
         with TemporaryDirectory() as log_dir:
             with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)), \
-                    patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
                     patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
                     patch('src.model_execution_worker.tasks.notify_api_status'):
 
@@ -145,7 +144,6 @@ class StartAnalysisTask(TestCase):
     def test_lock_is_acquireable___start_analysis_is_ran(self, pk, location, analysis_settings_path):
         with TemporaryDirectory() as log_dir:
             with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
-                    patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
                     patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
                     patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
 
