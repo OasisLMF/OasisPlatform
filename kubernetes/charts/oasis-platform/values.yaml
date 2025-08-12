@@ -191,14 +191,14 @@ keycloak:
 authentik:
   name: authentik
   port: 9000
-  # This is the authentik admin account to manage the realm and all users
-  user: authentik
-  password: password
+  # This is the authentik admin account to manage all users
+  bootstrapUser: akadmin  # This is the default authentik admin name which is unchangeable
+  bootstrapEmail: akadmin@example.com
+  bootstrapPassword: password
+  bootstrapToken: my-demo-token-abc123
   secretKey: notsosecretkey
   redis:
     host: valkey
-  bootstrapEmail: admin@example.com
-  bootstrapToken: my-demo-token-abc123
   oasisRestApi:
     # These users will be created on the first deployment/installation but never updated. Use the authentik admin
     # console to manage users.

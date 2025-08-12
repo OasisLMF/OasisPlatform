@@ -12,16 +12,16 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Values.authentik.name }}
+  name: {{ .Values.authentik.name }}-secret
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "h.labels" . | nindent 4}}
 type: Opaque
 stringData:
   # Authentik automated-install envs (read only on first startup)
-  AUTHENTIK_BOOTSTRAP_PASSWORD: {{ .Values.authentik.password | quote }}
-  AUTHENTIK_BOOTSTRAP_EMAIL: {{ default "admin@example.com" .Values.authentik.bootstrapEmail | quote }}
-  AUTHENTIK_BOOTSTRAP_TOKEN: {{ default "demo-bootstrap-token" .Values.authentik.bootstrapToken | quote }}
+  AUTHENTIK_BOOTSTRAP_PASSWORD: {{ .Values.authentik.bootstrapPassword | quote }}
+  AUTHENTIK_BOOTSTRAP_EMAIL: {{ .Values.authentik.bootstrapEmail | quote }}
+  AUTHENTIK_BOOTSTRAP_TOKEN: {{ .Values.authentik.bootstrapToken | quote }}
   AUTHENTIK_SECRET_KEY: {{ .Values.authentik.secretKey | quote }}
 
   # Database connection (mapped from your values)
@@ -33,6 +33,23 @@ stringData:
 
   # Redis
   AUTHENTIK_REDIS__HOST: {{ .Values.authentik.redis.host | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.authentik.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.authentik.port }}
+      targetPort: {{ .Values.authentik.port }}
+      protocol: TCP
+      name: authentik-http
+  selector:
+    {{- include "h.selectorLabels" . | nindent 4 }}
+    app: {{ .Values.authentik.name }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -69,7 +86,7 @@ spec:
               value: "true"
           envFrom:
             - secretRef:
-                name: {{ .Values.authentik.name }}
+                name: {{ .Values.authentik.name }}-secret
           startupProbe:
             httpGet:
               path: "/authentik/-/health/live/"
@@ -95,20 +112,63 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 60
 ---
-apiVersion: v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: {{ .Values.authentik.name }}
+  name: {{ .Values.authentik.name }}-worker
   labels:
-    {{- include "h.labels" . | nindent 4 }}
+    {{- include "h.labels" . | nindent 4}}
 spec:
-  type: ClusterIP
-  ports:
-    - port: {{ .Values.authentik.port }}
-      targetPort: {{ .Values.authentik.port }}
-      protocol: TCP
-      name: authentik-http
+  replicas: 1
   selector:
-    {{- include "h.selectorLabels" . | nindent 4 }}
-    app: {{ .Values.authentik.name }}
+    matchLabels:
+      app: {{ .Values.authentik.name }}-worker
+  template:
+    metadata:
+      labels:
+        {{- include "h.labels" . | nindent 8 }}
+        app: {{ .Values.authentik.name }}-worker
+    spec:
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.authentik_db.name) | nindent 8}}
+      containers:
+        - name: {{ .Values.authentik.name }}-worker
+          image: {{ .Values.images.authentik.image }}:{{ .Values.images.authentik.version }}
+          args:
+            - worker
+          env:
+            - name: AUTHENTIK_LOG_LEVEL 
+              value: DEBUG
+            - name: AUTHENTIK_DISABLE_UPDATE_CHECK
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: {{ .Values.authentik.name }}-secret
+          startupProbe:
+            exec:
+              command:
+                - ak
+                - healthcheck
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 30
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command:
+                - ak
+                - healthcheck
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                - ak
+                - healthcheck
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 60
 {{- end }}
