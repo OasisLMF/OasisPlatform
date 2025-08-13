@@ -156,8 +156,9 @@ TEMPLATES = [
 # Database
 # Django 5.1+ Native Connection Pooling Settings
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
-DB_CONN_MAX_AGE = iniconf.settings.getint('server', 'db_conn_max_age', fallback=600)  # 10 minutes
+DB_CONN_MAX_AGE = iniconf.settings.getint('server', 'db_conn_max_age', fallback=600)
 DB_CONN_HEALTH_CHECKS = iniconf.settings.getboolean('server', 'db_conn_health_checks', fallback=True)
+DB_CONN_POOL_ENABLE = iniconf.settings.getboolean('server', 'db_conn_pool_enable', fallback=True)
 
 if DB_ENGINE == 'django.db.backends.sqlite3':
     # SQLite doesn't benefit from persistent connections
@@ -186,6 +187,7 @@ elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
             # Django 5.1+ native connection pooling
             'CONN_MAX_AGE': DB_CONN_MAX_AGE,
             'CONN_HEALTH_CHECKS': DB_CONN_HEALTH_CHECKS,
+            'DISABLE_SERVER_SIDE_CURSORS': DB_CONN_POOL_ENABLE,
         }
     }
 
@@ -203,10 +205,7 @@ else:
             # Django 5.1+ native connection pooling
             'CONN_MAX_AGE': DB_CONN_MAX_AGE,
             'CONN_HEALTH_CHECKS': DB_CONN_HEALTH_CHECKS,
-            'OPTIONS': {
-                # Optimize for connection pooling (PostgreSQL/MySQL)
-                'DISABLE_SERVER_SIDE_CURSORS': True,
-            } if 'postgresql' in DB_ENGINE or 'mysql' in DB_ENGINE else {},
+            'DISABLE_SERVER_SIDE_CURSORS': DB_CONN_POOL_ENABLE,
         }
     }
 

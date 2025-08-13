@@ -144,7 +144,7 @@ Variables for a server DB client
   value: django.db.backends.mysql
 {{- else }}
 - name: OASIS_SERVER_DB_ENGINE
-  value: django.db.backends.postgresql_psycopg2
+  value: django.db.backends.postgresql
 {{- end }}
 {{- end }}
 
