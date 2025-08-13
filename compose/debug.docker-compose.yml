@@ -5,6 +5,7 @@ volumes:
   filestore-OasisData:
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
+  OASIS_DEBUG_TOOLBAR: 1
   OASIS_KEEP_RUN_DIR: 1
   OASIS_KEEP_LOCAL_DATA: 1
   OASIS_KEEP_REMOTE_DATA: 1
