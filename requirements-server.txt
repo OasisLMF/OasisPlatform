@@ -238,8 +238,12 @@ portalocker==2.10.1
     # via msal-extensions
 prompt-toolkit==3.0.48
     # via click-repl
-psycopg2-binary==2.9.10
+psycopg[binary,pool]==3.2.9
     # via -r requirements-server.in
+psycopg-binary==3.2.9
+    # via psycopg
+psycopg-pool==3.2.6
+    # via psycopg
 pyarrow==17.0.0
     # via -r requirements-server.in
 pyasn1==0.6.1
@@ -321,6 +325,8 @@ typing-extensions==4.12.2
     #   azure-identity
     #   azure-storage-blob
     #   oasis-data-manager
+    #   psycopg
+    #   psycopg-pool
     #   sqlalchemy
     #   twisted
 tzdata==2024.2

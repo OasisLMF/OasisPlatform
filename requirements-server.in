@@ -27,7 +27,7 @@ ods_tools
 oasis-data-manager
 pandas
 pathlib2
-psycopg2-binary
+psycopg[binary, pool]
 pyarrow
 pymysql
 pyrabbit
