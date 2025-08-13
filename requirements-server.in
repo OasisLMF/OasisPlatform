@@ -1,9 +1,11 @@
 boto3
 celery
 chainmap
-channels==2.4.0
-channels_redis==2.4.2
+channels>=4.0.0
+channels_redis>=4.0.0
 coreapi
+daphne
+django>=5.0,<6.0
 django-cleanup
 django-debug-toolbar
 django-filter
@@ -25,12 +27,13 @@ ods_tools
 oasis-data-manager
 pandas
 pathlib2
-psycopg2-binary
+psycopg[binary, pool]
 pyarrow
 pymysql
 pyrabbit
 redis
 sqlalchemy
+setuptools
 mysqlclient==2.1.1
 whitenoise
 azure-identity

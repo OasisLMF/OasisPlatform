@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.conf.urls import include, url
+from django.urls import include, re_path
 from django.conf.urls.static import static
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
@@ -78,16 +78,16 @@ schema_view_v2 = get_schema_view(
 
 api_urlpatterns = [
     # Main Swagger page
-    url(r'^(?P<format>\.json|\.yaml)$', schema_view_all.without_ui(cache_timeout=0), name='schema-json'),
-    url(r'^$', schema_view_all.with_ui('swagger', cache_timeout=0), name='schema-ui'),
+    re_path(r'^(?P<format>\.json|\.yaml)$', schema_view_all.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^$', schema_view_all.with_ui('swagger', cache_timeout=0), name='schema-ui'),
     # V1 only swagger endpoints
-    url(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui-v1'),
-    url(r'^v1/(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui-v1'),
+    re_path(r'^v1/(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json'),
     # V2 only swagger endpoints
-    url(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui-v2'),
-    url(r'^v2/(?P<format>\.json|\.yaml)$', schema_view_v2.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui-v2'),
+    re_path(r'^v2/(?P<format>\.json|\.yaml)$', schema_view_v2.without_ui(cache_timeout=0), name='schema-json'),
     # basic urls (auth, server info)
-    url(r'^', include('src.server.oasisapi.base_urls')),
+    re_path(r'^', include('src.server.oasisapi.base_urls')),
 ]
 api_urlpatterns += api_v1_urlpatterns
 if not settings.DISABLE_V2_API:
@@ -96,10 +96,10 @@ if not settings.DISABLE_V2_API:
 urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.URL_SUB_PATH:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += [url(r'^api/', include(api_urlpatterns))]
+    urlpatterns += [re_path(r'^api/', include(api_urlpatterns))]
 else:
     urlpatterns += static(settings.STATIC_DEBUG_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += [url(r'^', include(api_urlpatterns))]
+    urlpatterns += [re_path(r'^', include(api_urlpatterns))]
 
 
 if settings.DEBUG_TOOLBAR:

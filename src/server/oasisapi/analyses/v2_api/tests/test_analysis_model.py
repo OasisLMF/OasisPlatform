@@ -4,7 +4,9 @@ from .fakes import fake_analysis, FakeAsyncResultFactory
 from .fakes import fake_analysis_task_status
 from backports.tempfile import TemporaryDirectory
 from django.test import override_settings
-from django.utils.timezone import now, utc
+from django.utils.timezone import now
+from datetime import timezone
+
 from django_webtest import WebTestMixin
 from freezegun import freeze_time
 from hypothesis import given, settings
@@ -104,7 +106,7 @@ class CancelAnalysisTask(WebTestMixin, TestCase):
             async_res_mock.assert_any_call(started.task_id)
 
     @given(
-        end_time=datetimes(timezones=just(utc)),
+        end_time=datetimes(timezones=just(timezone.utc)),
         orig_status=sampled_from([
             Analysis.status_choices.INPUTS_GENERATION_ERROR,
             Analysis.status_choices.INPUTS_GENERATION_CANCELLED,

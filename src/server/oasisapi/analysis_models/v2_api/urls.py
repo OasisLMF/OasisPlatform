@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.urls import include, re_path
 from rest_framework_nested import routers
 from .viewsets import AnalysisModelViewSet, ModelSettingsView, SettingsTemplateViewSet
 
@@ -17,7 +17,7 @@ model_settings = ModelSettingsView.as_view({
 })
 
 urlpatterns = [
-    url(r'models/(?P<pk>\d+)/settings/', model_settings, name='model-settings'),
-    url(r'', include(v2_api_router.urls)),
-    url(r'', include(v2_templates_router.urls)),
+    re_path(r'models/(?P<pk>\d+)/settings/', model_settings, name='model-settings'),
+    re_path(r'', include(v2_api_router.urls)),
+    re_path(r'', include(v2_templates_router.urls)),
 ]

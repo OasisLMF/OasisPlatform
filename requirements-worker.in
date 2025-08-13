@@ -12,7 +12,7 @@ fasteners
 filelock
 joblib
 pathlib2
-psycopg2-binary
+psycopg[binary, pool]
 pymysql
 pytest
 redis
