@@ -29,6 +29,7 @@ asgiref==3.8.1
     # via
     #   channels
     #   channels-redis
+    #   daphne
     #   django
 asttokens==2.4.1
     # via stack-data
@@ -38,6 +39,12 @@ attrs==24.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
+    #   service-identity
+    #   twisted
+autobahn==24.4.2
+    # via daphne
+automat==25.4.16
+    # via twisted
 azure-core==1.31.0
     # via
     #   -r requirements-worker.in
@@ -127,6 +134,8 @@ colorama==0.4.6
     # via tox
 configparser==7.1.0
     # via -r requirements-worker.in
+constantly==23.10.4
+    # via twisted
 coreapi==2.3.3
     # via
     #   -r requirements-server.in
@@ -143,6 +152,7 @@ cramjam==2.9.0
     # via fastparquet
 cryptography==43.0.3
     # via
+    #   autobahn
     #   azure-identity
     #   azure-storage-blob
     #   josepy
@@ -150,6 +160,9 @@ cryptography==43.0.3
     #   msal
     #   pyjwt
     #   pyopenssl
+    #   service-identity
+daphne==4.2.1
+    # via -r requirements-server.in
 decorator==5.1.1
     # via
     #   ipdb
@@ -241,12 +254,20 @@ gunicorn==23.0.0
     # via -r requirements-server.in
 httplib2==0.22.0
     # via pyrabbit
+hyperlink==21.0.0
+    # via
+    #   autobahn
+    #   twisted
 hypothesis==6.115.5
     # via -r requirements.in
 idna==3.10
     # via
+    #   hyperlink
     #   requests
+    #   twisted
     #   yarl
+incremental==24.7.2
+    # via twisted
 inflection==0.5.1
     # via drf-yasg
 iniconfig==2.0.0
@@ -414,6 +435,12 @@ pyarrow==17.0.0
     # via
     #   -r requirements-server.in
     #   oasislmf
+pyasn1==0.6.1
+    # via
+    #   pyasn1-modules
+    #   service-identity
+pyasn1-modules==0.4.2
+    # via service-identity
 pycodestyle==2.12.1
     # via flake8
 pycparser==2.22
@@ -438,6 +465,7 @@ pyopenssl==24.2.1
     # via
     #   -r requirements.in
     #   josepy
+    #   twisted
 pyparsing==3.2.0
     # via httplib2
 pyproj==3.7.0
@@ -516,6 +544,8 @@ scipy==1.14.1
     # via
     #   oasislmf
     #   scikit-learn
+service-identity==24.2.0
+    # via twisted
 shapely==2.0.6
     # via
     #   geopandas
@@ -562,6 +592,10 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
+twisted[tls]==25.5.0
+    # via daphne
+txaio==25.6.1
+    # via autobahn
 typing-extensions==4.12.2
     # via
     #   azure-core
@@ -569,6 +603,7 @@ typing-extensions==4.12.2
     #   azure-storage-blob
     #   oasis-data-manager
     #   sqlalchemy
+    #   twisted
 tzdata==2024.2
     # via
     #   celery
@@ -605,6 +640,8 @@ wrapt==1.16.0
     # via aiobotocore
 yarl==1.16.0
     # via aiohttp
+zope-interface==7.2
+    # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

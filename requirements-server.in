@@ -4,6 +4,7 @@ chainmap
 channels>=4.0.0
 channels_redis>=4.0.0
 coreapi
+daphne
 django>=5.0,<6.0
 django-cleanup
 django-debug-toolbar

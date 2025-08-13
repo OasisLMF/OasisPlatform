@@ -10,11 +10,18 @@ asgiref==3.8.1
     # via
     #   channels
     #   channels-redis
+    #   daphne
     #   django
 attrs==24.2.0
     # via
     #   jsonschema
     #   referencing
+    #   service-identity
+    #   twisted
+autobahn==24.4.2
+    # via daphne
+automat==25.4.16
+    # via twisted
 azure-core==1.31.0
     # via
     #   azure-identity
@@ -64,6 +71,8 @@ click-plugins==1.1.1
     # via celery
 click-repl==0.3.0
     # via celery
+constantly==23.10.4
+    # via twisted
 coreapi==2.3.3
     # via
     #   -r requirements-server.in
@@ -76,6 +85,7 @@ cramjam==2.9.0
     # via fastparquet
 cryptography==43.0.3
     # via
+    #   autobahn
     #   azure-identity
     #   azure-storage-blob
     #   josepy
@@ -83,6 +93,9 @@ cryptography==43.0.3
     #   msal
     #   pyjwt
     #   pyopenssl
+    #   service-identity
+daphne==4.2.1
+    # via -r requirements-server.in
 django==5.2.5
     # via
     #   -r requirements-server.in
@@ -136,8 +149,17 @@ gunicorn==23.0.0
     # via -r requirements-server.in
 httplib2==0.22.0
     # via pyrabbit
+hyperlink==21.0.0
+    # via
+    #   autobahn
+    #   twisted
 idna==3.10
-    # via requests
+    # via
+    #   hyperlink
+    #   requests
+    #   twisted
+incremental==24.7.2
+    # via twisted
 inflection==0.5.1
     # via drf-yasg
 isodate==0.7.2
@@ -220,6 +242,12 @@ psycopg2-binary==2.9.10
     # via -r requirements-server.in
 pyarrow==17.0.0
     # via -r requirements-server.in
+pyasn1==0.6.1
+    # via
+    #   pyasn1-modules
+    #   service-identity
+pyasn1-modules==0.4.2
+    # via service-identity
 pycparser==2.22
     # via cffi
 pyjwt[crypto]==2.9.0
@@ -229,7 +257,9 @@ pyjwt[crypto]==2.9.0
 pymysql==1.1.1
     # via -r requirements-server.in
 pyopenssl==24.2.1
-    # via josepy
+    # via
+    #   josepy
+    #   twisted
 pyparsing==3.2.0
     # via httplib2
 pyrabbit==1.1.0
@@ -268,6 +298,8 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 s3transfer==0.10.3
     # via boto3
+service-identity==24.2.0
+    # via twisted
 six==1.16.0
     # via
     #   azure-core
@@ -279,6 +311,10 @@ sqlparse==0.5.1
     # via
     #   django
     #   django-debug-toolbar
+twisted[tls]==25.5.0
+    # via daphne
+txaio==25.6.1
+    # via autobahn
 typing-extensions==4.12.2
     # via
     #   azure-core
@@ -286,6 +322,7 @@ typing-extensions==4.12.2
     #   azure-storage-blob
     #   oasis-data-manager
     #   sqlalchemy
+    #   twisted
 tzdata==2024.2
     # via
     #   celery
@@ -308,6 +345,8 @@ wcwidth==0.2.13
     # via prompt-toolkit
 whitenoise==6.7.0
     # via -r requirements-server.in
+zope-interface==7.2
+    # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
