@@ -130,7 +130,7 @@ Variables for a celery DB client
 {{- if eq .Values.databases.celery_db.type "mysql" }}
   value: db+mysql+pymysql
 {{- else }}
-  value: db+postgresql+psycopg2
+  value: db+postgresql+psycopg
 {{- end }}
 {{- end }}
 
