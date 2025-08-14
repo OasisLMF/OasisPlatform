@@ -1,0 +1,36 @@
+version: 1
+metadata:
+  name: oasis-full-blueprint
+  labels:
+    managed-by: helm
+
+entries:
+  ##########################################
+  # GROUPS (Keycloak realm roles & groups) #
+  ##########################################
+  # Admin group
+  - model: authentik_core.group
+    identifiers:
+      name: admin
+    attrs:
+      name: admin
+
+  # Default roles group
+  - model: authentik_core.group
+    identifiers:
+      name: default-roles-oasis
+    attrs:
+      name: default-roles-oasis
+
+  # Map Keycloak "offline_access", "uma_authorization", etc. to groups
+  - model: authentik_core.group
+    identifiers:
+      name: offline_access
+    attrs:
+      name: offline_access
+
+  - model: authentik_core.group
+    identifiers:
+      name: uma_authorization
+    attrs:
+      name: uma_authorization

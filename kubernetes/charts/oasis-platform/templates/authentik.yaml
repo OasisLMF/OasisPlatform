@@ -10,6 +10,16 @@ data:
   port: {{ .Values.authentik.port | quote }}
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.authentik.name }}-blueprint
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+data:
+  oasis-blueprint.yaml: |
+    {{ .Files.Get "resources/blueprints/oasis-blueprint.yaml" | nindent 4 }}
+---
+apiVersion: v1
 kind: Secret
 metadata:
   name: {{ .Values.authentik.name }}-secret
@@ -144,6 +154,10 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Values.authentik.name }}-secret
+          volumeMounts:
+            - name: blueprint-config
+              mountPath: /blueprints/oasis-blueprint.yaml
+              subPath: oasis-blueprint.yaml
           startupProbe:
             exec:
               command:
@@ -171,4 +185,8 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 60
+      volumes:
+        - name: blueprint-config
+          configMap:
+            name: {{ .Values.authentik.name }}-blueprint
 {{- end }}
