@@ -142,6 +142,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'run_traceback_file',
             'run_log_file',
             'storage_links',
+            'num_events_complete',
+            'num_events_total',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)

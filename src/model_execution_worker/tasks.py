@@ -245,6 +245,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
 
             notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
+            kwargs["analysis_pk"] = str(analysis_pk)
             output_location, traceback_location, log_location, return_code = start_analysis(
                 analysis_settings,
                 input_location,
@@ -343,6 +344,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         run_params = {**config, **task_params}
         gen_losses_params = OasisManager()._params_generate_oasis_losses(**run_params)
         params = paths_to_absolute_paths({**gen_losses_params}, config_path)
+        params['analysis_pk'] = kwargs['analysis_pk']
 
         if debug_worker:
             log_params(params, kwargs)
@@ -356,7 +358,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         try:
             OasisManager().generate_oasis_losses(**params)
             returncode = 0
-        except Exception as e:
+        except Exception:
             task_logger.exception("Error occured in 'generate_oasis_losses':")
             returncode = 1
 
@@ -489,7 +491,7 @@ def generate_input(self,
         try:
             OasisManager().generate_oasis_files(**params)
             returncode = 0
-        except Exception as e:
+        except Exception:
             task_logger.exception("Error occured in 'generate_oasis_files':")
             returncode = 1
 
