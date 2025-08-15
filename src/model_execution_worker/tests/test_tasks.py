@@ -14,7 +14,8 @@ from mock import patch, Mock
 from pathlib2 import Path
 
 from src.conf.iniconf import SettingsPatcher
-from src.model_execution_worker.tasks import start_analysis, start_analysis_task
+from src.model_execution_worker.tasks import start_analysis, start_analysis_task, check_state
+from celery.exceptions import WorkerLostError
 
 
 # from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -145,16 +146,39 @@ class StartAnalysisTask(TestCase):
         with TemporaryDirectory() as log_dir:
             with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
                     patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
-                    patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
+                    patch('src.model_execution_worker.tasks.notify_api_status') as api_notify, \
+                    patch('src.model_execution_worker.tasks.check_state') as check_state:
 
                 start_analysis_task.update_state = Mock()
                 start_analysis_task(pk, location, analysis_settings_path)
 
                 api_notify.assert_called_once_with(pk, 'RUN_STARTED')
-                start_analysis_task.update_state.assert_called_once_with(state=OASIS_TASK_STATUS["running"]["id"])
+                check_state.assert_called_once_with(start_analysis_task, pk, OASIS_TASK_STATUS["running"]["id"])
                 start_analysis_mock.assert_called_once_with(
                     analysis_settings_path,
                     location,
                     complex_data_files=None,
                     log_filename=f'{log_dir}/analysis_{pk}_None.log'
                 )
+
+    def test_check_state(self):
+        test_cases = [(OASIS_TASK_STATUS['running']['id'], True),
+                      ("INPUTS_GENERATION_STARTED", True),
+                      ("OK_STATUS", False)]
+
+        for state, passes in test_cases:
+            with self.subTest(state=state, passes=passes):
+                mock_task = Mock()
+                mock_task.request.id = "fake-id"
+
+                mock_async_result = Mock()
+                mock_async_result.state = state
+
+                mock_task.AsyncResult.return_value = mock_async_result
+
+                if passes:
+                    with self.assertRaises(WorkerLostError):
+                        check_state(mock_task, analysis_pk=123, status="FINAL_STATUS")
+                else:
+                    check_state(mock_task, analysis_pk=123, status="FINAL_STATUS")
+                    mock_task.update_state.assert_called_once_with(state="FINAL_STATUS", meta={'analysis_pk': 123})

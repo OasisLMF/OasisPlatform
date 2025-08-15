@@ -24,7 +24,7 @@ from oasislmf.utils.status import OASIS_TASK_STATUS
 from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings, settings_local
-from .celery_request_handler import WorkerLostReject
+from celery.exceptions import WorkerLostError
 
 from .utils import (
     LoggingTaskContext,
@@ -46,7 +46,7 @@ LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
-app = Celery(task_cls=WorkerLostReject)
+app = Celery()
 app.config_from_object(celery_conf)
 model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 
@@ -215,7 +215,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
         try:
             # Check if this task was re-queued from a lost worker
             notify_api_status(analysis_pk, 'RUN_STARTED')
-            self.update_state(state=RUNNING_TASK_STATUS)
+            check_state(self, analysis_pk, RUNNING_TASK_STATUS)
             output_location, traceback_location, log_location, return_code = start_analysis(
                 analysis_settings,
                 input_location,
@@ -327,7 +327,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         try:
             OasisManager().generate_oasis_losses(**params)
             returncode = 0
-        except Exception as e:
+        except Exception:
             task_logger.exception("Error occured in 'generate_oasis_losses':")
             returncode = 1
 
@@ -378,6 +378,7 @@ def generate_input(self,
 
     # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
+    check_state(self, analysis_pk, 'INPUTS_GENERATION_STARTED')
     filestore = get_filestore(settings)
     from oasislmf.manager import OasisManager
 
@@ -457,7 +458,7 @@ def generate_input(self,
         try:
             OasisManager().generate_oasis_files(**params)
             returncode = 0
-        except Exception as e:
+        except Exception:
             task_logger.exception("Error occured in 'generate_oasis_files':")
             returncode = 1
 
@@ -499,3 +500,13 @@ def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk
             args=(analysis_pk, initiator_pk, traceback),
             queue='celery'
         ).delay()
+
+
+def check_state(task, analysis_pk, status):
+    current_state = task.AsyncResult(task.request.id).state
+    logger.info(current_state)
+    if current_state in [RUNNING_TASK_STATUS, 'INPUTS_GENERATION_STARTED']:
+        raise WorkerLostError(
+            'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
+        )
+    task.update_state(state=status, meta={'analysis_pk': analysis_pk})
