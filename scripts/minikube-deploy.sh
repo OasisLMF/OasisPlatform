@@ -31,10 +31,31 @@ fi
 # minikube start
 
 # build images
+
+ODM_BRANCH=''
+ODS_BRANCH=''
+LMF_BRANCH=''
+
+BUILD_ARGS_WORKER=''
+BUILD_ARGS_SERVER=''
+if [ ! -z $ODM_BRANCH ]; then
+    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg odm_branch=${ODM_BRANCH}"
+    BUILD_ARGS_SERVER="${BUILD_ARGS_SERVER} --build-arg odm_branch=${ODM_BRANCH}"
+fi
+
+if [ ! -z $ODS_BRANCH ]; then
+    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg ods_tools_branch=${ODS_BRANCH}"
+    BUILD_ARGS_SERVER="${BUILD_ARGS_SERVER} --build-arg ods_tools_branch=${ODS_BRANCH}"
+fi
+
+if [ ! -z $LMF_BRANCH ]; then
+    BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg oasislmf_branch=${LMF_BRANCH}"
+fi
+
 eval $(minikube docker-env)
 set -e
-    docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
-    docker build -f Dockerfile.model_worker --build-arg oasislmf_branch=clean_progress -t coreoasis/model_worker:dev .
+    docker build -f Dockerfile.api_server $BUILD_ARGS_SERVER --build-arg oasislmf_branch=clean_progress -t coreoasis/api_server:dev .
+    docker build -f Dockerfile.model_worker $BUILD_ARGS_WORKER -t coreoasis/model_worker:dev .
 
     pushd kubernetes/worker-controller
         docker build -t coreoasis/worker_controller:dev .
