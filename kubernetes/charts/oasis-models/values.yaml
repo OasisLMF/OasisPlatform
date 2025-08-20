@@ -39,9 +39,9 @@ workers:
         value: "1"
       - name: OASIS_MODEL_DATA_DIRECTORY
         value: /home/worker/model
-      - name: url
+      - name: OASIS_WEBSOCKET_URL
         value: "ws://oasis-websocket"
-      - name: socket
+      - name: OASIS_WEBSOCKET_PORT
         value: "8001"
       - name: OASIS_OASISLMF_VERSION
         value: # Empty = latest version
