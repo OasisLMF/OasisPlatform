@@ -19,6 +19,7 @@ class CustomRequest(CeleryRequest):
 
     def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
         """Handler called if the task raised an exception."""
+        logger.error("HARRY v2 on_failure")
         exc = exc_info.exception
 
         if isinstance(exc, ExceptionWithTraceback):
