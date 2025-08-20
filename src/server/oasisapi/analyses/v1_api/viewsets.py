@@ -447,6 +447,24 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(self.get_object())
         return Response(serializer.data)
 
+    @action(methods=['get'], detail=True)
+    def run_progress(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the progress report
+        """
+        analysis = Analysis.objects.get(pk=pk)
+
+        if analysis.num_events_total != 0:
+            return Response({"Status": "#" * analysis.num_events_complete + "~" * (analysis.num_events_total - analysis.num_events_complete)})
+
+        subtasks = analysis.sub_task_statuses.all()
+        if len(subtasks) != 0:
+            completed = subtasks.filter(status='COMPLETED').count()
+            return Response({"Progress": "#" * completed + "~" * (len(subtasks) - completed)})
+
+        return Response({"Status": "Nothing has started"})
+
 
 class AnalysisSettingsView(viewsets.ModelViewSet):
     """

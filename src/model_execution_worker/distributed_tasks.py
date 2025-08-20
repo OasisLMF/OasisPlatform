@@ -12,12 +12,11 @@ from datetime import datetime
 import filelock
 import numpy as np
 import pandas as pd
-import numpy as np
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
-from oasislmf.model_preparation.lookup import OasisLookupFactory
+from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
