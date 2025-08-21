@@ -4,68 +4,69 @@
 #
 #    pip-compile requirements-server.in
 #
-amqp==5.1.1
+amqp==5.3.1
     # via kombu
-asgiref==3.6.0
+asgiref==3.9.1
     # via
     #   channels
     #   daphne
     #   django
-attrs==22.2.0
+attrs==25.3.0
     # via
-    #   automat
     #   jsonschema
+    #   referencing
     #   service-identity
     #   twisted
-autobahn==23.6.2
+autobahn==24.4.2
     # via daphne
-automat==22.10.0
+automat==25.4.16
     # via twisted
-azure-core==1.26.3
+azure-core==1.35.0
     # via
     #   azure-identity
     #   azure-storage-blob
-azure-identity==1.17.1
+    #   django-storages
+azure-identity==1.23.1
     # via -r requirements-server.in
-azure-storage-blob==12.15.0
+azure-storage-blob==12.26.0
     # via django-storages
-billiard==3.6.4.0
+billiard==4.2.1
     # via celery
-boto3==1.26.89
+boto3==1.40.3
     # via -r requirements-server.in
-botocore==1.29.89
+botocore==1.40.3
     # via
     #   boto3
     #   s3transfer
-celery==5.2.7
+celery==5.5.3
     # via -r requirements-server.in
-certifi==2023.7.22
+certifi==2025.8.3
     # via requests
-cffi==1.15.1
+cffi==1.17.1
     # via cryptography
 chainmap==1.0.3
     # via -r requirements-server.in
 channels==4.0.0
     # via -r requirements-server.in
-chardet==5.1.0
+chardet==5.2.0
     # via ods-tools
-charset-normalizer==3.1.0
+charset-normalizer==3.4.2
     # via requests
-click==8.1.3
+click==8.2.1
     # via
     #   celery
     #   click-didyoumean
     #   click-plugins
     #   click-repl
-click-didyoumean==0.3.0
+click-didyoumean==0.3.1
     # via celery
-click-plugins==1.1.1
+click-plugins==1.1.1.2
     # via celery
-click-repl==0.2.0
+click-repl==0.3.0
     # via celery
 configparser==5.3.0
     # via -r requirements-server.in
-constantly==15.1.0
+constantly==23.10.4
     # via twisted
 coreapi==2.3.3
     # via
@@ -75,7 +76,7 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==42.0.4
+cryptography==45.0.6
     # via
     #   autobahn
     #   azure-identity
@@ -84,7 +85,7 @@ cryptography==42.0.4
     #   pyjwt
     #   pyopenssl
     #   service-identity
-daphne==4.0.0
+daphne==4.2.1
     # via -r requirements-server.in
 django==3.2.25
     # via
@@ -105,25 +106,25 @@ django-debug-toolbar==3.8.1
     # via -r requirements-server.in
 django-filter==22.1
     # via -r requirements-server.in
-django-model-utils==4.3.1
+django-model-utils==5.0.0
     # via -r requirements-server.in
 django-request-logging==0.7.5
     # via -r requirements-server.in
-django-storages[azure]==1.13.2
+django-storages[azure]==1.14.6
     # via -r requirements-server.in
-djangorestframework==3.14.0
+djangorestframework==3.15.1
     # via
     #   -r requirements-server.in
     #   djangorestframework-simplejwt
     #   drf-nested-routers
     #   drf-yasg
-djangorestframework-simplejwt==5.2.2
+djangorestframework-simplejwt==5.3.1
     # via -r requirements-server.in
-drf-nested-routers==0.93.4
+drf-nested-routers==0.94.0
     # via -r requirements-server.in
 drf-yasg==1.21.5
     # via -r requirements-server.in
-greenlet==2.0.2
+greenlet==3.2.3
     # via sqlalchemy
 gunicorn==23.0.0
     # via -r requirements-server.in
@@ -131,7 +132,7 @@ hyperlink==21.0.0
     # via
     #   autobahn
     #   twisted
-idna==3.4
+idna==3.10
     # via
     #   hyperlink
     #   requests
@@ -140,53 +141,57 @@ incremental==24.7.2
     # via twisted
 inflection==0.5.1
     # via drf-yasg
-isodate==0.6.1
+isodate==0.7.2
     # via azure-storage-blob
 itypes==1.2.0
     # via coreapi
-jinja2==3.1.2
+jinja2==3.1.6
     # via coreschema
 jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-jsonpickle==3.0.1
+jsonpickle==3.4.2
     # via -r requirements-server.in
 jsonref==1.1.0
     # via ods-tools
-jsonschema==4.17.3
+jsonschema==4.25.0
     # via
     #   -r requirements-server.in
     #   ods-tools
-kombu==5.2.4
+jsonschema-specifications==2025.4.1
+    # via jsonschema
+kombu==5.5.4
     # via celery
-llvmlite==0.41.1
+llvmlite==0.44.0
     # via numba
-markdown==3.4.1
+markdown==3.8.2
     # via -r requirements-server.in
-markupsafe==2.1.2
+markupsafe==3.0.2
     # via jinja2
-msal==1.31.1
+msal==1.33.0
     # via
     #   azure-identity
     #   msal-extensions
-msal-extensions==1.2.0
+msal-extensions==1.3.1
     # via azure-identity
 mysqlclient==2.1.1
     # via -r requirements-server.in
-numba==0.58.1
+numba==0.61.2
     # via ods-tools
-numpy==1.24.2
+numpy==1.26.4
     # via
+    #   -r requirements-server.in
     #   numba
     #   pandas
     #   pyarrow
 ods-tools==3.1.5
     # via -r requirements-server.in
-packaging==23.0
+packaging==25.0
     # via
     #   drf-yasg
     #   gunicorn
+    #   kombu
     #   ods-tools
 pandas==1.5.3
     # via
@@ -194,104 +199,108 @@ pandas==1.5.3
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-server.in
-portalocker==2.10.1
-    # via msal-extensions
-prompt-toolkit==3.0.38
+prompt-toolkit==3.0.51
     # via click-repl
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.10
     # via -r requirements-server.in
-pyarrow==14.0.1
+pyarrow==14.0.2
     # via -r requirements-server.in
-pyasn1==0.4.8
+pyasn1==0.6.1
     # via
     #   pyasn1-modules
     #   service-identity
-pyasn1-modules==0.2.8
+pyasn1-modules==0.4.2
     # via service-identity
-pycparser==2.21
+pycparser==2.22
     # via cffi
-pyjwt[crypto]==2.6.0
+pyjwt[crypto]==2.10.1
     # via
     #   djangorestframework-simplejwt
     #   msal
 pymysql==1.1.1
     # via -r requirements-server.in
-pyopenssl==24.0.0
+pyopenssl==25.1.0
     # via twisted
-pyrsistent==0.19.3
-    # via jsonschema
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   botocore
-    #   pandas
-pytz==2022.7.1
-    # via
     #   celery
+    #   pandas
+pytz==2025.2
+    # via
     #   django
-    #   djangorestframework
     #   drf-yasg
     #   pandas
-requests==2.31.0
+referencing==0.36.2
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
+requests==2.32.4
     # via
     #   azure-core
     #   coreapi
     #   msal
-ruamel-yaml==0.17.21
-    # via drf-yasg
-ruamel-yaml-clib==0.2.7
-    # via ruamel-yaml
-s3transfer==0.6.0
-    # via boto3
-service-identity==21.1.0
-    # via twisted
-six==1.16.0
+rpds-py==0.26.0
     # via
-    #   automat
+    #   jsonschema
+    #   referencing
+ruamel-yaml==0.18.14
+    # via drf-yasg
+ruamel-yaml-clib==0.2.12
+    # via ruamel-yaml
+s3transfer==0.13.1
+    # via boto3
+service-identity==24.2.0
+    # via twisted
+six==1.17.0
+    # via
     #   azure-core
-    #   click-repl
-    #   isodate
     #   pathlib2
     #   python-dateutil
-    #   service-identity
-sqlalchemy==2.0.5.post1
+sqlalchemy==2.0.42
     # via -r requirements-server.in
-sqlparse==0.5.0
+sqlparse==0.5.3
     # via
     #   django
     #   django-debug-toolbar
-tomli==2.0.1
+tomli==2.2.1
     # via incremental
-twisted[tls]==24.7.0rc1
+twisted[tls]==25.5.0
     # via
     #   -r requirements-server.in
     #   daphne
-txaio==23.1.1
+txaio==25.6.1
     # via autobahn
-typing-extensions==4.5.0
+typing-extensions==4.14.1
     # via
+    #   asgiref
     #   azure-core
     #   azure-identity
     #   azure-storage-blob
+    #   pyopenssl
+    #   referencing
     #   sqlalchemy
     #   twisted
-uritemplate==4.1.1
+tzdata==2025.2
+    # via kombu
+uritemplate==4.2.0
     # via
     #   coreapi
     #   drf-yasg
-urllib3==1.26.18
+urllib3==2.5.0
     # via
     #   botocore
     #   requests
-vine==5.0.0
+vine==5.1.0
     # via
     #   amqp
     #   celery
     #   kombu
-wcwidth==0.2.6
+wcwidth==0.2.13
     # via prompt-toolkit
-whitenoise==6.4.0
+whitenoise==6.9.0
     # via -r requirements-server.in
-zope-interface==5.5.2
+zope-interface==7.2
     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:

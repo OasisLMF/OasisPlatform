@@ -34,7 +34,7 @@ class ServerInfo(WebTest):
             expect_errors=True,
         )
         server_info_json = response.json
-        self.assertEqual(403, response.status_code)
+        self.assertIn(response.status_code, [401, 403])
 
     def test_user_is_authenticated___response_is_ok(self):
         user = fake_user()
