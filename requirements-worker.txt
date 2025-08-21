@@ -223,8 +223,6 @@ propcache==0.3.2
     # via
     #   aiohttp
     #   yarl
-psycopg2-binary==2.9.10
-    # via -r requirements-worker.in
 pyarrow==21.0.0
     # via oasislmf
 pycparser==2.22
