@@ -26,7 +26,7 @@ joblib==1.5.1
     # via -r kubernetes/worker-controller/requirements.in
 kubernetes-asyncio==18.20.0
     # via -r kubernetes/worker-controller/requirements.in
-multidict==6.6.3
+multidict==6.6.4
     # via
     #   aiohttp
     #   yarl
