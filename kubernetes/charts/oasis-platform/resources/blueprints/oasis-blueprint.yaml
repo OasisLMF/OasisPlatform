@@ -1,36 +1,165 @@
 version: 1
 metadata:
-  name: oasis-full-blueprint
+  name: custom-oasis-providers
   labels:
-    managed-by: helm
+    system: "false"
+
+# See here: https://github.com/zviedris/authentik_traefik_setup_blueprints/blob/main/traefik-blueprint/domain-forward-auth-provider.yaml
+# and here: https://github.com/goauthentik/authentik/tree/main/blueprints
 
 entries:
-  ##########################################
-  # GROUPS (Keycloak realm roles & groups) #
-  ##########################################
-  # Admin group
-  - model: authentik_core.group
-    identifiers:
-      name: admin
-    attrs:
-      name: admin
+- model: authentik_providers_oauth2.oauth2provider
+  state: present
+  identifiers:
+    name: provider-for-swagger
+  attrs:
+    name: "Provider for swagger"
+    client_id: swagger
+    client_secret: ZEbHaO5irVER9MJRu48PSglwHTbk4fHTkRSrdABYGpvkWlIgj1uReEXXkhBOnLHV5TwzuM5ASqFH4fHv6c9bDNYNnQqp3a5QT7niJSs5ulfu1ASFdYZb5s16m4UlHcPE
+    client_type: public
+    include_claims_in_id_token: true
+    access_code_validity: minutes=1
+    access_token_validity: minutes=5
+    refresh_token_validity: days=30
+    authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+    invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+    issuer_mode: per_provider
+    signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+    sub_mode: hashed_user_id
+    redirect_uris:
+      - matching_mode: strict
+        url: "*"
+    property_mappings:
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
 
-  # Default roles group
-  - model: authentik_core.group
-    identifiers:
-      name: default-roles-oasis
-    attrs:
-      name: default-roles-oasis
+- model: authentik_core.application
+  state: present
+  identifiers:
+    slug: swagger
+  attrs:
+    name: swagger
+    slug: swagger
+    policy_engine_mode: any
+    provider: !Find [authentik_providers_oauth2.oauth2provider, [name, provider-for-swagger]]
 
-  # Map Keycloak "offline_access", "uma_authorization", etc. to groups
-  - model: authentik_core.group
-    identifiers:
-      name: offline_access
-    attrs:
-      name: offline_access
+- model: authentik_providers_oauth2.oauth2provider
+  state: present
+  identifiers:
+    name: provider-for-oasis-server
+  attrs:
+    name: "Provider for oasis-server"
+    client_id: oasis-server
+    client_secret: EfNMUM3GG1bd1CYUvNfiBGWKfvbGFiNAdutEqHSarZ9H7oL0sZfKLvPT1ujaqVm2839Vka8Ky0elliMQ6yWKN8Jv8dzh3BeVFn0F7LPquGkIus6JJ9nGH1vtfCt7AhtO
+    client_type: public
+    include_claims_in_id_token: true
+    access_code_validity: minutes=1
+    access_token_validity: minutes=5
+    refresh_token_validity: days=30
+    authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+    invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+    issuer_mode: per_provider
+    signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+    sub_mode: hashed_user_id
+    redirect_uris:
+      - matching_mode: strict
+        url: "*"
+    property_mappings:
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
 
-  - model: authentik_core.group
-    identifiers:
-      name: uma_authorization
-    attrs:
-      name: uma_authorization
+- model: authentik_core.application
+  state: present
+  identifiers:
+    slug: oasis-server
+  attrs:
+    name: oasis-server
+    slug: oasis-server
+    policy_engine_mode: any
+    provider: !Find [authentik_providers_oauth2.oauth2provider, [name, provider-for-oasis-server]]
+
+
+### EXPORTED BLUEPRINT DIFF
+# - attrs:
+#     access_code_validity: minutes=1
+#     access_token_validity: minutes=5
+#     authorization_flow: 65ef508a-7e3d-4114-9c13-fc9ecf016500
+#     client_id: ZX6BRxTjpfe2jq2a31rCcqLJvk1cSUfq1234YhiZ
+#     client_secret: ZEbHaO5irVER9MJRu48PSglwHTbk4fHTkRSrdABYGpvkWlIgj1uReEXXkhBOnLHV5TwzuM5ASqFH4fHv6c9bDNYNnQqp3a5QT7niJSs5ulfu1ASFdYZb5s16m4UlHcPE
+#     client_type: public
+#     include_claims_in_id_token: true
+#     invalidation_flow: 1d9b8e4c-c295-4001-a946-55f5bf3d8e88
+#     issuer_mode: per_provider
+#     name: Provider for swagger
+#     property_mappings:
+#     - 15720955-472e-4084-aec3-b96eedab3286
+#     - f3888d84-7a18-469e-a206-c44180276876
+#     - 19393d86-1a5e-424b-b996-837ba72c8855
+#     - ee176e8c-17a5-4e58-b676-7cd8f792271e
+#     redirect_uris:
+#     - matching_mode: strict
+#       url: '*'
+#     refresh_token_validity: days=30
+#     signing_key: 308590d6-8dd5-4408-a3ad-99f98e0f6a78
+#     sub_mode: hashed_user_id
+#   conditions: []
+#   identifiers:
+#     pk: 9
+#   model: authentik_providers_oauth2.oauth2provider
+#   permissions: []
+#   state: present
+# - attrs:
+#     access_code_validity: minutes=1
+#     access_token_validity: minutes=5
+#     authorization_flow: 65ef508a-7e3d-4114-9c13-fc9ecf016500
+#     client_id: uD2m69HT9hdGEtpmOjm5rmavg9zRnH4mrKmAUVTM
+#     client_secret: EfNMUM3GG1bd1CYUvNfiBGWKfvbGFiNAdutEqHSarZ9H7oL0sZfKLvPT1ujaqVm2839Vka8Ky0elliMQ6yWKN8Jv8dzh3BeVFn0F7LPquGkIus6JJ9nGH1vtfCt7AhtO
+#     client_type: public
+#     include_claims_in_id_token: true
+#     invalidation_flow: 1d9b8e4c-c295-4001-a946-55f5bf3d8e88
+#     issuer_mode: per_provider
+#     name: Provider for oasis-server
+#     property_mappings:
+#     - 15720955-472e-4084-aec3-b96eedab3286
+#     - f3888d84-7a18-469e-a206-c44180276876
+#     - 19393d86-1a5e-424b-b996-837ba72c8855
+#     - ee176e8c-17a5-4e58-b676-7cd8f792271e
+#     redirect_uris:
+#     - matching_mode: strict
+#       url: '*'
+#     refresh_token_validity: days=30
+#     signing_key: 308590d6-8dd5-4408-a3ad-99f98e0f6a78
+#     sub_mode: hashed_user_id
+#   conditions: []
+#   identifiers:
+#     pk: 7
+#   model: authentik_providers_oauth2.oauth2provider
+#   permissions: []
+#   state: present
+
+# - attrs:
+#     name: oasis-server
+#     policy_engine_mode: any
+#     provider: 7
+#     slug: oasis-server
+#   conditions: []
+#   identifiers:
+#     pk: 6cf4b7c2-faae-4bce-beca-c5b72b2ada0f
+#   model: authentik_core.application
+#   permissions: []
+#   state: present
+# - attrs:
+#     name: swagger
+#     policy_engine_mode: any
+#     provider: 9
+#     slug: swagger
+#   conditions: []
+#   identifiers:
+#     pk: e3ada79d-a4d7-48e5-a0cd-fa277c0fea8b
+#   model: authentik_core.application
+#   permissions: []
+#   state: present
