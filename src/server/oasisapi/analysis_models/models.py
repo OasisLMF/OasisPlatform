@@ -112,6 +112,20 @@ class SettingsTemplate(TimeStampedModel):
         else:
             return None
 
+    def _update_ns(self, request=None):
+        """ WORKAROUND - this is needed for when a copy request is issued
+                         from the portfolio view '/{ver}/portfolios/{id}/create_analysis/'
+
+                         The inncorrect namespace '{ver}-portfolios' is inherited from the
+                         original request. This needs to be replaced with '{ver}-analyses'
+        """
+        if not request:
+            return None
+        ns_ver, ns_view = request.version.split('-', 1)
+        if ns_view != 'models':
+            request.version = f'{ns_ver}-models'
+        return request
+
     def get_absolute_settings_template_url(self, model_pk, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=self._update_ns(request))
