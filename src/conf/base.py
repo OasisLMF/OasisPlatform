@@ -15,7 +15,8 @@ BROKER_URL = settings.get(
 
 #: Celery config - result backend URI
 CELERY_RESULTS_DB_ENGINE = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')
-CELERY_RESULTS_DB_ENGINE.replace('psycopg2', 'psycopg') # Compatibility workaround, 'db+postgresql+psycopg2' will fail and needs to be replaced with 'db+postgresql+psycopg'
+# Compatibility workaround, 'db+postgresql+psycopg2' will fail and needs to be replaced with 'db+postgresql+psycopg'
+CELERY_RESULTS_DB_ENGINE.replace('psycopg2', 'psycopg')
 
 if CELERY_RESULTS_DB_ENGINE == 'db+sqlite':
     CELERY_RESULT_BACKEND = '{DB_ENGINE}:///{DB_NAME}'.format(
