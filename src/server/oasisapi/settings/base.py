@@ -131,11 +131,6 @@ if DEBUG:
 if DEBUG_TOOLBAR:
     INSTALLED_APPS.append('debug_toolbar')
     MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
-    DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda request: DEBUG,
-        'SHOW_COLLAPSED': False,
-        'SHOW_TEMPLATE_CONTEXT': True,
-    }
 
 
 ROOT_URLCONF = 'src.server.oasisapi.urls'
