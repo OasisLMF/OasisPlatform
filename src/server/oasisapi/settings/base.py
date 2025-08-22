@@ -172,8 +172,7 @@ DB_POOL_MAX_IDLE = iniconf.settings.getint('server', 'db_pool_max_idle', fallbac
 # Compatibility workaround, 'django.db.backends.postgresql_psycopg2' will fail and needs to be replaced with ' django.db.backends.postgresql'
 if '_psycopg2' in DB_ENGINE and DB_POOL_ENABLE:
     DB_ENGINE = DB_ENGINE.replace('_psycopg2', '')
-    # Print warning here 
-    print('WARNING swapping psycopg2 -->  psycopg3 !!!!!~~~')
+    print('WARNING:  DB_POOL_ENABLE=True and DB driver is psycopg2. Drive does not support pooling, automaticlly switching to psycopg3')
 
 
 if DB_ENGINE == 'django.db.backends.sqlite3':
@@ -206,11 +205,11 @@ elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
             'DISABLE_SERVER_SIDE_CURSORS': DB_DISABLE_SERVER_SIDE_CURSORS,
             'OPTIONS': {
                 'pool': {
-                    'min_size': 2,
-                    'max_size': 10,
-                    'timeout': 30,
-                    'max_lifetime': 3600,
-                    'max_idle': 600,
+                    'min_size': DB_POOL_MIN_SIZE,
+                    'max_size': DB_POOL_MAX_SIZE,
+                    'timeout': DB_POOL_TIMEOUT,
+                    'max_lifetime': DB_POOL_MAX_LIFETIME,
+                    'max_idle': DB_POOL_MAX_IDLE,
                 } if DB_POOL_ENABLE else {},
             },
         }
@@ -233,11 +232,11 @@ else:
             'DISABLE_SERVER_SIDE_CURSORS': DB_DISABLE_SERVER_SIDE_CURSORS,
             'OPTIONS': {
                 'pool': {
-                    'min_size': 2,
-                    'max_size': 10,
-                    'timeout': 30,
-                    'max_lifetime': 3600,
-                    'max_idle': 600,
+                    'min_size': DB_POOL_MIN_SIZE,
+                    'max_size': DB_POOL_MAX_SIZE,
+                    'timeout': DB_POOL_TIMEOUT,
+                    'max_lifetime': DB_POOL_MAX_LIFETIME,
+                    'max_idle': DB_POOL_MAX_IDLE,
                 } if DB_POOL_ENABLE else {},
             },
         }
