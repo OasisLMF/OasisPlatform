@@ -14,18 +14,15 @@ BROKER_URL = settings.get(
 )
 
 #: Celery config - result backend URI
-CELERY_RESULTS_DB_ENGINE = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')
-if CELERY_RESULTS_DB_ENGINE == 'db+sqlite':
+CELERY_RESULTS_DB_BACKEND = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')
+if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
     CELERY_RESULT_BACKEND = '{DB_ENGINE}:///{DB_NAME}'.format(
-        DB_ENGINE=CELERY_RESULTS_DB_ENGINE,
+        DB_ENGINE=CELERY_RESULTS_DB_BACKEND,
         DB_NAME=settings.get('celery', 'db_name', fallback='celery.db.sqlite'),
     )
 else:
-    # Compatibility workaround, 'db+postgresql+psycopg2' will fail and needs to be replaced with 'db+postgresql+psycopg'
-    CELERY_RESULTS_DB_ENGINE.replace('2', '')
-
     CELERY_RESULT_BACKEND = '{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}{SSL_MODE}'.format(
-        DB_ENGINE=CELERY_RESULTS_DB_ENGINE,
+        DB_ENGINE=settings.get('celery', 'db_engine'),
         DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
         DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
         DB_HOST=settings.get('celery', 'db_host'),

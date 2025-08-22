@@ -156,8 +156,6 @@ TEMPLATES = [
 # Database
 # Django 5.1+ Native Connection Pooling Settings
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
-# Compatibility workaround, 'django.db.backends.postgresql_psycopg2' will fail and needs to be replaced with 'django.db.backends.postgresql'
-DB_ENGINE = DB_ENGINE.replace('_psycopg2', '')
 DB_CONN_MAX_AGE = iniconf.settings.getint('server', 'db_conn_max_age', fallback=600)
 DB_CONN_HEALTH_CHECKS = iniconf.settings.getboolean('server', 'db_conn_health_checks', fallback=True)
 DB_DISABLE_SERVER_SIDE_CURSORS = iniconf.settings.getboolean('server', 'db_disable_server_side_cursors', fallback=False)
