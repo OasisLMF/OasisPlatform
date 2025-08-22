@@ -54,8 +54,8 @@ class AccessToken(WebTest):
         actual_refresh_ident = token_backend.decode(data.get('refresh_token').encode())
         actual_access_ident = token_backend.decode(data.get('access_token').encode())
 
-        self.assertEqual(user.id, actual_refresh_ident['user_id'])
-        self.assertEqual(user.id, actual_access_ident['user_id'])
+        self.assertEqual(user.id, int(actual_refresh_ident['user_id']))
+        self.assertEqual(user.id, int(actual_access_ident['user_id']))
         self.assertEqual(data['expires_in'], 3600)
         self.assertEqual(data['token_type'], 'Bearer')
 
@@ -82,6 +82,6 @@ class RefreshToken(WebTest):
 
         actual_access_ident = token_backend.decode(data.get('access_token').encode())
 
-        self.assertEqual(user.id, actual_access_ident['user_id'])
+        self.assertEqual(user.id, int(actual_access_ident['user_id']))
         self.assertEqual(data['expires_in'], 3600)
         self.assertEqual(data['token_type'], 'Bearer')
