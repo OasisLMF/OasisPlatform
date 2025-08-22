@@ -43,6 +43,13 @@ spec:
                 name: keycloak
                 port:
                   number: 8080
+          - path: /authentik
+            pathType: Prefix
+            backend:
+              service:
+                name: authentik
+                port:
+                  number: 9000
           - path: /api
             pathType: Prefix
             backend:
