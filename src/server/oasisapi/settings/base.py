@@ -169,6 +169,13 @@ DB_POOL_MAX_LIFETIME = iniconf.settings.getint('server', 'db_pool_max_lifetime',
 DB_POOL_MAX_IDLE = iniconf.settings.getint('server', 'db_pool_max_idle', fallback=600)
 
 
+# Compatibility workaround, 'django.db.backends.postgresql_psycopg2' will fail and needs to be replaced with ' django.db.backends.postgresql'
+if '_psycopg2' in DB_ENGINE and DB_POOL_ENABLE:
+    DB_ENGINE = DB_ENGINE.replace('_psycopg2', '')
+    # Print warning here 
+    print('WARNING swapping psycopg2 -->  psycopg3 !!!!!~~~')
+
+
 if DB_ENGINE == 'django.db.backends.sqlite3':
     # SQLite doesn't benefit from persistent connections
     DATABASES = {

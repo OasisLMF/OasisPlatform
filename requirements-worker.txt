@@ -202,7 +202,7 @@ packaging==25.0
     #   ods-tools
     #   pyogrio
     #   pytest
-pandas==2.3.1
+pandas==2.3.2
     # via
     #   fastparquet
     #   geopandas
@@ -225,6 +225,8 @@ psycopg-binary==3.2.9
     # via psycopg
 psycopg-pool==3.2.6
     # via psycopg
+psycopg2-binary==2.9.10
+    # via -r requirements-worker.in
 pyarrow==21.0.0
     # via oasislmf
 pycparser==2.22
