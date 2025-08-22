@@ -225,16 +225,7 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         logger.info(f"New update received on run {pk}")
 
         if "counter" in content:
-            logger.info("New event started")
-            analysis.num_events_total = int(content["counter"])
-            analysis.num_events_completed = 0
-        elif "num_completed" in content:  # V2 gives batch update, V1 gives individual updates
-            num_completed = content["num_completed"]
-            logger.info(f"Update on run: {num_completed}")
-            analysis.num_events_complete = int(num_completed)
-        else:
-            logger.info("New event completion")
-            analysis.num_events_complete = F('num_events_complete') + 1
+            analysis.num_events_complete = F('num_events_complete') + int(content["counter"])
 
         await sync_to_async(analysis.save)()
 
