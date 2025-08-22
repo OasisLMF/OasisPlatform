@@ -1,38 +1,11 @@
-import os
 from django.contrib.auth.models import Group
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
 from mozilla_django_oidc import auth
 
 from urllib3.util import connection
-from urllib3.util.connection import create_connection as urllib3_create_connection
-from src.server.oasisapi.oidc.models import KeycloakUserId
-
-
-def keycloak_create_connection(address, *args, **kwargs):
-    """
-    Wrap urllib3's create_connection to replace keycloak external host
-    with its internal IP (Ingress address)
-
-    Keycloak is bound to a specific hostname which requires us to use the same url to query keycloak in backend that is
-    used in the UI for authentication (the JWT will contain the authenticaiton URL). We can't access the external ingress
-    hostname but we can remap map it in this function.
-
-    The kubernetes chart will export these two ENV vars
-      ❯ export INGRESS_EXTERNAL_HOST='ui.oasis.local'
-      ❯ export INGRESS_INTERNAL_HOST='10.107.69.196'
-
-     replace 'INGRESS_EXTERNAL_HOST' with 'INGRESS_INTERNAL_HOST'
-     and then call urllib3s connection
-    """
-    host, port = address
-
-    external_host = os.getenv('INGRESS_EXTERNAL_HOST')
-    internal_host = os.getenv('INGRESS_INTERNAL_HOST')
-
-    if host == external_host:
-        host = internal_host
-    return urllib3_create_connection((host, port), *args, **kwargs)
+from src.server.oasisapi.oidc.common import auth_server_create_connection
+from src.server.oasisapi.oidc.models import OIDCUserId
 
 
 class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
@@ -48,7 +21,7 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
      user will be renamed to <username>-<keycloak-id>.
 
     """
-    connection.create_connection = keycloak_create_connection
+    connection.create_connection = auth_server_create_connection
 
     def get_or_create_user(self, access_token, id_token, payload):
         """
@@ -123,7 +96,7 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         """
 
         if keycloak_id:
-            keycloak_ids = KeycloakUserId.objects.filter(keycloak_user_id__iexact=keycloak_id)
+            keycloak_ids = OIDCUserId.objects.filter(oidc_sub__iexact=keycloak_id)
 
             if len(keycloak_ids) == 1:
                 return keycloak_ids[0].user
@@ -205,7 +178,7 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :param user_id: Keycloak user id
         """
 
-        KeycloakUserId.objects.create(user=user, keycloak_user_id=user_id)
+        OIDCUserId.objects.create(user=user, oidc_sub=user_id)
 
     def is_keycloak_user_id_same(self, user, sub) -> bool:
         """
@@ -216,9 +189,9 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :return: True if they are identical, False otherwise.
         """
 
-        filter = KeycloakUserId.objects.filter(pk=user)
+        filter = OIDCUserId.objects.filter(pk=user)
 
-        return len(filter) == 1 and filter[0].keycloak_user_id == sub
+        return len(filter) == 1 and filter[0].oidc_sub == sub
 
     def get_userinfo_attribute(self, user_info, key):
         """

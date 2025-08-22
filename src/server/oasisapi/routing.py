@@ -9,6 +9,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from src.server.oasisapi import settings
 from src.server.oasisapi.oidc.keycloak_auth import KeycloakOIDCAuthenticationBackend
+from src.server.oasisapi.oidc.authentik_auth import AuthentikOIDCAuthenticationBackend
 from src.server.oasisapi.queues.routing import websocket_urlpatterns
 
 url_patterns = [
@@ -26,6 +27,15 @@ async def get_user(scope):
         if settings.API_AUTH_TYPE == 'keycloak':
 
             backend = KeycloakOIDCAuthenticationBackend()
+            authentication = OIDCAuthentication(backend)
+            async_authentication = sync_to_async(authentication.authenticate, thread_sensitive=True)
+
+            request = type('', (), {'META': {'HTTP_AUTHORIZATION': header_value}})()
+            user, access_token = await async_authentication(request)
+            return user
+        elif settings.API_AUTH_TYPE == 'authentik':
+
+            backend = AuthentikOIDCAuthenticationBackend()
             authentication = OIDCAuthentication(backend)
             async_authentication = sync_to_async(authentication.authenticate, thread_sensitive=True)
 

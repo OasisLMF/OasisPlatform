@@ -256,6 +256,38 @@ if API_AUTH_TYPE == 'keycloak':
         },
         "schemes": ["http", "https"]
     }
+elif API_AUTH_TYPE == 'authentik':
+    INSTALLED_APPS += (
+        'mozilla_django_oidc',
+    )
+    AUTHENTICATION_BACKENDS = ('src.server.oasisapi.oidc.authentik_auth.AuthentikOIDCAuthenticationBackend',)
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('mozilla_django_oidc.contrib.drf.OIDCAuthentication',)
+
+    OIDC_RP_CLIENT_ID = iniconf.settings.get('server', 'OIDC_CLIENT_NAME', fallback='')
+    OIDC_RP_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_CLIENT_SECRET', fallback='')
+    AUTHENTIK_OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
+
+    OIDC_OP_AUTHORIZATION_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'authorize/'
+    OIDC_OP_TOKEN_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'token/'
+    OIDC_OP_USER_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'userinfo/'
+    OIDC_OP_JWKS_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'jwks/'
+
+    # No need to verify our internal self signed keycloak certificate
+    OIDC_VERIFY_SSL = False
+
+    SWAGGER_SETTINGS = {
+        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
+        'USE_SESSION_AUTH': False,
+        'SECURITY_DEFINITIONS': {
+            "authentik": {
+                "type": "oauth2",
+                "authorizationUrl": AUTHENTIK_OIDC_BASE_URL + "authorize/",
+                "flow": "implicit",
+                "scopes": {}
+            }
+        },
+        "schemes": ["http", "https"]
+    }
 else:
     INSTALLED_APPS += ('rest_framework_simplejwt.token_blacklist',)
     REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('rest_framework_simplejwt.authentication.JWTAuthentication',)

@@ -107,9 +107,9 @@ spec:
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
               value: {{ .Release.Name | lower }}-ingress-nginx-controller
-            {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
+            {{- if or (eq .Values.oasisServer.apiAuthType "keycloak") (eq .Values.oasisServer.apiAuthType "authentik") }}
             - name: OASIS_SERVER_API_AUTH_TYPE
-              value: keycloak
+              value: {{ .Values.oasisServer.apiAuthType }}
             - name: OASIS_SERVER_OIDC_CLIENT_NAME
               value: {{ .Values.oasisServer.oidc.clientName }}
             - name: OASIS_SERVER_OIDC_CLIENT_SECRET
@@ -229,9 +229,9 @@ spec:
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
               value: {{ .Release.Name | lower }}-ingress-nginx-controller
-            {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
+            {{- if or (eq .Values.oasisServer.apiAuthType "keycloak") (eq .Values.oasisServer.apiAuthType "authentik") }}
             - name: OASIS_SERVER_API_AUTH_TYPE
-              value: keycloak
+              value: {{ .Values.oasisServer.apiAuthType }}
             - name: OASIS_SERVER_OIDC_CLIENT_NAME
               value: {{ .Values.oasisServer.oidc.clientName }}
             - name: OASIS_SERVER_OIDC_CLIENT_SECRET
