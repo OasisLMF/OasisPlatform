@@ -232,6 +232,7 @@ oasisServer:
   #   clientName: oasis-server
   #   clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
   
+  # Enable OIDC Authentik authentication with 'authentik or set to 'simple' for simple jwt.
   apiAuthType: authentik
   oidc:
     endpoint: https://ui.oasis.local/authentik/application/o/
