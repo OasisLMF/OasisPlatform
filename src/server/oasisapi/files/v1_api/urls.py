@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.urls import include, re_path
 from rest_framework.routers import SimpleRouter
 from .viewsets import FilesViewSet, MappingFilesViewSet
 
@@ -11,5 +11,5 @@ v1_api_router.register('mapping-files', MappingFilesViewSet, basename='mapping-f
 
 
 urlpatterns = [
-    url(r'', include(v1_api_router.urls)),
+    re_path(r'', include(v1_api_router.urls)),
 ]

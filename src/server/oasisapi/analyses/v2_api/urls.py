@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.urls import include, re_path
 from rest_framework.routers import SimpleRouter
 from .viewsets import AnalysisViewSet, AnalysisSettingsView, AnalysisTaskStatusViewSet
 
@@ -17,6 +17,6 @@ analyses_settings = AnalysisSettingsView.as_view({
 
 
 urlpatterns = [
-    url(r'analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
-    url(r'', include(v2_api_router.urls)),
+    re_path(r'analyses/(?P<pk>\d+)/settings/', analyses_settings, name='analysis-settings'),
+    re_path(r'', include(v2_api_router.urls)),
 ]

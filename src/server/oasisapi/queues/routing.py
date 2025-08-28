@@ -1,7 +1,7 @@
-from django.urls import path
+from django.urls import re_path
 
 from src.server.oasisapi.queues import consumers
 
 websocket_urlpatterns = [
-    path('v2/queue-status/', consumers.QueueStatusConsumer),
+    re_path('v2/queue-status/', consumers.QueueStatusConsumer.as_asgi()),
 ]

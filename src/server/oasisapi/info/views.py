@@ -52,7 +52,7 @@ class ServerInfoView(views.APIView):
         server_config['TIME_ZONE'] = settings.TIME_ZONE
 
         # Backends
-        server_config['DEFAULT_FILE_STORAGE'] = settings.DEFAULT_FILE_STORAGE
+        server_config['STORAGES'] = settings.STORAGES
         server_config['DB_ENGINE'] = settings.DB_ENGINE
 
         # Storage
