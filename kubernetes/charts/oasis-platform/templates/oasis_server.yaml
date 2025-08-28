@@ -79,7 +79,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.authentik.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisWebsocket.name }}
@@ -107,9 +107,9 @@ spec:
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
               value: {{ .Release.Name | lower }}-ingress-nginx-controller
-            {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
+            {{- if or (eq .Values.oasisServer.apiAuthType "keycloak") (eq .Values.oasisServer.apiAuthType "authentik") }}
             - name: OASIS_SERVER_API_AUTH_TYPE
-              value: keycloak
+              value: {{ .Values.oasisServer.apiAuthType }}
             - name: OASIS_SERVER_OIDC_CLIENT_NAME
               value: {{ .Values.oasisServer.oidc.clientName }}
             - name: OASIS_SERVER_OIDC_CLIENT_SECRET
@@ -197,7 +197,7 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.authentik.name .Values.databases.broker.name) | nindent 8}}
         - name: set-mount-permissions
           image: busybox
           command: ["sh", "-c", "find /shared-fs -user root -exec chown 1000:1000 {} \\;"]
@@ -229,9 +229,9 @@ spec:
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
               value: {{ .Release.Name | lower }}-ingress-nginx-controller
-            {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
+            {{- if or (eq .Values.oasisServer.apiAuthType "keycloak") (eq .Values.oasisServer.apiAuthType "authentik") }}
             - name: OASIS_SERVER_API_AUTH_TYPE
-              value: keycloak
+              value: {{ .Values.oasisServer.apiAuthType }}
             - name: OASIS_SERVER_OIDC_CLIENT_NAME
               value: {{ .Values.oasisServer.oidc.clientName }}
             - name: OASIS_SERVER_OIDC_CLIENT_SECRET

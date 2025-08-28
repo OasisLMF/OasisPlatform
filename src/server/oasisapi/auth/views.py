@@ -20,7 +20,7 @@ class TokenRefreshView(BaseTokenRefreshView):
 
         Authorization: Bearer <refresh_token>
     """
-    serializer_class = OIDCTokenRefreshSerializer if settings.API_AUTH_TYPE == 'keycloak' else SimpleTokenRefreshSerializer
+    serializer_class = OIDCTokenRefreshSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleTokenRefreshSerializer
     parser_classes = [FormParser]
 
     @swagger_auto_schema(
@@ -36,7 +36,7 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     """
     Fetches a new refresh token from your username and password.
     """
-    serializer_class = OIDCTokenObtainPairSerializer if settings.API_AUTH_TYPE == 'keycloak' else SimpleTokenObtainPairSerializer
+    serializer_class = OIDCTokenObtainPairSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleTokenObtainPairSerializer
 
     @swagger_auto_schema(
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
