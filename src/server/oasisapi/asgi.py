@@ -2,17 +2,31 @@
 ASGI entrypoint. Configures Django and then runs the application
 defined in the ASGI_APPLICATION setting.
 """
-
 import os
 import django
-from channels.routing import get_default_application
+from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "src.server.oasisapi.settings")
 django.setup()
 
-application = get_default_application()
+# Import your websocket routing
+from src.server.oasisapi.routing import websocket_urlpatterns  # Adjust path as needed
 
-# ONLY run the websocket from here (add safeguard to remove HTTP router)
+# Create the application
 if os.getenv('OASIS_DISABLE_HTTP', default=True):
-    if 'http' in application.application_mapping:
-        del application.application_mapping['http']
+    # Only websocket routing
+    application = ProtocolTypeRouter({
+        'websocket': AuthMiddlewareStack(
+            URLRouter(websocket_urlpatterns)
+        ),
+    })
+else:
+    # Both HTTP and websocket routing
+    application = ProtocolTypeRouter({
+        'http': get_asgi_application(),
+        'websocket': AuthMiddlewareStack(
+            URLRouter(websocket_urlpatterns)
+        ),
+    })

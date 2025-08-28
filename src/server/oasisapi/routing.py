@@ -3,7 +3,7 @@ from channels.auth import UserLazyObject
 from channels.middleware import BaseMiddleware
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.contrib.auth.models import AnonymousUser
-from django.urls import path
+from django.urls import re_path
 from mozilla_django_oidc.contrib.drf import OIDCAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -12,7 +12,7 @@ from src.server.oasisapi.oidc.keycloak_auth import KeycloakOIDCAuthenticationBac
 from src.server.oasisapi.queues.routing import websocket_urlpatterns
 
 url_patterns = [
-    path('ws/', URLRouter(websocket_urlpatterns))
+    re_path('ws/', URLRouter(websocket_urlpatterns))
 ]
 
 
