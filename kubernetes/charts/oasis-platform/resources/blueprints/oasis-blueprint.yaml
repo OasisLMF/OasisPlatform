@@ -16,7 +16,7 @@ entries:
     name: "Provider for swagger"
     client_id: swagger
     client_secret: ZEbHaO5irVER9MJRu48PSglwHTbk4fHTkRSrdABYGpvkWlIgj1uReEXXkhBOnLHV5TwzuM5ASqFH4fHv6c9bDNYNnQqp3a5QT7niJSs5ulfu1ASFdYZb5s16m4UlHcPE
-    client_type: public
+    client_type: confidential
     include_claims_in_id_token: true
     access_code_validity: minutes=1
     access_token_validity: minutes=5
@@ -53,7 +53,7 @@ entries:
     name: "Provider for oasis-server"
     client_id: oasis-server
     client_secret: EfNMUM3GG1bd1CYUvNfiBGWKfvbGFiNAdutEqHSarZ9H7oL0sZfKLvPT1ujaqVm2839Vka8Ky0elliMQ6yWKN8Jv8dzh3BeVFn0F7LPquGkIus6JJ9nGH1vtfCt7AhtO
-    client_type: public
+    client_type: confidential
     include_claims_in_id_token: true
     access_code_validity: minutes=1
     access_token_validity: minutes=5

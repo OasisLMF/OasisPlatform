@@ -282,7 +282,8 @@ elif API_AUTH_TYPE == 'authentik':
             "authentik": {
                 "type": "oauth2",
                 "authorizationUrl": AUTHENTIK_OIDC_BASE_URL + "authorize/",
-                "flow": "implicit",
+                "tokenUrl": AUTHENTIK_OIDC_BASE_URL + "token/",
+                "flow": "accessCode",
                 "scopes": {}
             }
         },
