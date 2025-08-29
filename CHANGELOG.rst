@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`1.28.15`_
+ ---------
+* [#1244](https://github.com/OasisLMF/OasisPlatform/pull/1245) - CVE fix request for stable 1.28.x
+* [#1247](https://github.com/OasisLMF/OasisPlatform/pull/1253) - Test older server images with latest build of workers (both V1 / V2)
+.. _`1.28.15`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.14...1.28.15
+
 .. _`1.28.14`:  https://github.com/OasisLMF/OasisPlatform/compare/1.28.13...1.28.14
 
 * [#1190](https://github.com/OasisLMF/OasisPlatform/pull/1190) - Stable/1.28.x - Allianz - Celery DB authentication with Azure Service Principal
