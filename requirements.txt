@@ -346,7 +346,7 @@ packaging==25.0
     #   pyproject-api
     #   pytest
     #   tox
-pandas==2.1.1
+pandas==2.3.2
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in

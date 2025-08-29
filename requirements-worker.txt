@@ -148,7 +148,7 @@ packaging==25.0
     #   ods-tools
     #   pyogrio
     #   pytest
-pandas==2.1.1
+pandas==2.3.2
     # via
     #   -r requirements-worker.in
     #   fastparquet
