@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.18`_
+ ---------
+* [#1257](https://github.com/OasisLMF/OasisPlatform/pull/1256) - settings template causes internal server errors
+* [#1250](https://github.com/OasisLMF/OasisPlatform/pull/1250) - Fix/CVE aug 2025 2.3.x
+* [#1247](https://github.com/OasisLMF/OasisPlatform/pull/1252) - Test older server images with latest build of workers (both V1 / V2)
+.. _`2.3.18`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.17...2.3.18
+
 .. _`2.3.17`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.16...2.3.17
 
 .. _`2.3.16`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.15...2.3.16
