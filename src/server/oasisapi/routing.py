@@ -1,8 +1,6 @@
-from urllib.parse import parse_qs
 import logging
 
 from asgiref.sync import sync_to_async
-from channels.db import database_sync_to_async
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.contrib.auth.models import AnonymousUser
 from django.urls import re_path

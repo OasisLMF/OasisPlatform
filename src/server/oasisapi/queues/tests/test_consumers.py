@@ -1,4 +1,3 @@
-import asyncio
 from unittest.mock import patch
 from asgiref.sync import sync_to_async
 from django.test import TestCase
