@@ -54,12 +54,12 @@ class TokenAuthMiddleware:
         self.inner = inner
 
     async def __call__(self, scope, receive, send):
-        query_string = scope.get("query_string", b"").decode("utf-8")
-        query_params = parse_qs(query_string)
-        token_key = query_params.get("token", [None])[0]
-
-        if token_key:
-            scope["user"] = await get_user(token_key)
+        header_value = next((v for k, v in scope['headers'] if k == b'authorization'), None)
+        if header_value:
+            try:
+                scope["user"] = await get_user(header_value.decode('utf-8').split(' ')[1])
+            except IndexError:
+                scope["user"] = AnonymousUser()
         else:
             scope["user"] = AnonymousUser()
 
