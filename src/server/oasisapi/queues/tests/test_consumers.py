@@ -22,7 +22,7 @@ class TestQueueStatusConsumer(TestCase):
         token = await sync_to_async(AccessToken.for_user)(user)
 
         communicator = WebsocketCommunicator(
-            application, 
+            application,
             "ws/v2/queue-status/",
             headers=[
                 (b"authorization", f"Bearer {token}".encode())
@@ -42,7 +42,7 @@ class TestQueueStatusConsumer(TestCase):
         communicator = WebsocketCommunicator(
             application, "ws/v2/queue-status/?token=invalidtoken"
         )
-        
+
         # Use an in-memory channel layer for testing
         channel_layer = get_channel_layer('default')
         communicator.channel_layer = channel_layer
@@ -58,7 +58,7 @@ class TestQueueStatusConsumer(TestCase):
 
     async def test_connection_without_token(self):
         communicator = WebsocketCommunicator(application, "ws/v2/queue-status/")
-        
+
         # Use an in-memory channel layer for testing
         channel_layer = get_channel_layer('default')
         communicator.channel_layer = channel_layer
