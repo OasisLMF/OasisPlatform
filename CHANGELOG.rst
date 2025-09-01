@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.7`_
+ ---------
+* [#1257](https://github.com/OasisLMF/OasisPlatform/pull/1256) - settings template causes internal server errors
+* [#1249](https://github.com/OasisLMF/OasisPlatform/pull/1249) - Fix/CVE aug 2025 2.4.x
+* [#1247](https://github.com/OasisLMF/OasisPlatform/pull/1251) - Test older server images with latest build of workers (both V1 / V2)
+* [#1209, #1132](https://github.com/OasisLMF/OasisPlatform/pull/1255) - Update server to Django 5 to support DB connection pools
+.. _`2.4.7`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.6...2.4.7
+
 `2.4.6`_
  ---------
 * [#1232](https://github.com/OasisLMF/OasisPlatform/pull/1232) - Tests fixes/new
