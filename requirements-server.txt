@@ -4,8 +4,6 @@
 #
 #    pip-compile requirements-server.in
 #
-aioredis==1.3.1
-    # via channels-redis
 amqp==5.3.1
     # via kombu
 asgiref==3.9.1
@@ -14,8 +12,6 @@ asgiref==3.9.1
     #   channels-redis
     #   daphne
     #   django
-async-timeout==5.0.1
-    # via aioredis
 attrs==25.3.0
     # via
     #   jsonschema
@@ -31,15 +27,15 @@ azure-core==1.35.0
     #   azure-identity
     #   azure-storage-blob
     #   django-storages
-azure-identity==1.23.1
+azure-identity==1.24.0
     # via -r requirements-server.in
 azure-storage-blob==12.26.0
     # via django-storages
 billiard==4.2.1
     # via celery
-boto3==1.40.3
+boto3==1.40.15
     # via -r requirements-server.in
-botocore==1.40.3
+botocore==1.40.15
     # via
     #   boto3
     #   s3transfer
@@ -53,15 +49,15 @@ cffi==1.17.1
     # via cryptography
 chainmap==1.0.3
     # via -r requirements-server.in
-channels==2.4.0
+channels==4.3.1
     # via
     #   -r requirements-server.in
     #   channels-redis
-channels-redis==2.4.2
+channels-redis==4.3.0
     # via -r requirements-server.in
 chardet==5.2.0
     # via ods-tools
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via requests
 click==8.2.1
     # via
@@ -98,9 +94,9 @@ cryptography==45.0.6
     #   pyjwt
     #   pyopenssl
     #   service-identity
-daphne==2.5.0
-    # via channels
-django==3.2.25
+daphne==4.2.1
+    # via -r requirements-server.in
+django==5.2.5
     # via
     #   -r requirements-server.in
     #   channels
@@ -119,7 +115,7 @@ django-celery-results==2.6.0
     # via -r requirements-server.in
 django-cleanup==9.0.0
     # via -r requirements-server.in
-django-debug-toolbar==4.3.0
+django-debug-toolbar==4.4.6
     # via -r requirements-server.in
 django-filter==23.5
     # via -r requirements-server.in
@@ -135,9 +131,9 @@ djangorestframework==3.14.0
     #   djangorestframework-simplejwt
     #   drf-nested-routers
     #   drf-yasg
-djangorestframework-simplejwt==5.3.1
+djangorestframework-simplejwt==5.5.1
     # via -r requirements-server.in
-drf-nested-routers==0.94.0
+drf-nested-routers==0.94.1
     # via -r requirements-server.in
 drf-yasg==1.21.5
     # via -r requirements-server.in
@@ -147,12 +143,10 @@ fsspec==2025.7.0
     # via
     #   fastparquet
     #   oasis-data-manager
-greenlet==3.2.3
+greenlet==3.2.4
     # via sqlalchemy
 gunicorn==23.0.0
     # via -r requirements-server.in
-hiredis==3.2.1
-    # via aioredis
 httplib2==0.22.0
     # via pyrabbit
 hyperlink==21.0.0
@@ -186,7 +180,7 @@ jsonpickle==3.4.2
     # via -r requirements-server.in
 jsonref==1.1.0
     # via ods-tools
-jsonschema==4.25.0
+jsonschema==4.25.1
     # via
     #   -r requirements-server.in
     #   ods-tools
@@ -208,14 +202,12 @@ msal==1.33.0
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-msgpack==0.6.2
+msgpack==1.1.1
     # via channels-redis
 mysqlclient==2.2.7
     # via -r requirements-server.in
 numba==0.61.2
-    # via
-    #   -r requirements-server.in
-    #   ods-tools
+    # via ods-tools
 numpy==2.2.6
     # via
     #   fastparquet
@@ -235,7 +227,7 @@ packaging==25.0
     #   gunicorn
     #   kombu
     #   ods-tools
-pandas==2.3.1
+pandas==2.3.2
     # via
     #   -r requirements-server.in
     #   fastparquet
@@ -245,6 +237,12 @@ pathlib2==2.3.7.post1
     # via -r requirements-server.in
 prompt-toolkit==3.0.51
     # via click-repl
+psycopg[binary,pool]==3.2.9
+    # via -r requirements-server.in
+psycopg-binary==3.2.9
+    # via psycopg
+psycopg-pool==3.2.6
+    # via psycopg
 psycopg2-binary==2.9.10
     # via -r requirements-server.in
 pyarrow==17.0.0
@@ -277,27 +275,28 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2025.2
     # via
-    #   django
     #   djangorestframework
     #   drf-yasg
     #   pandas
 redis==5.3.1
-    # via -r requirements-server.in
+    # via
+    #   -r requirements-server.in
+    #   channels-redis
 referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.4
+requests==2.32.5
     # via
     #   azure-core
     #   coreapi
     #   mozilla-django-oidc
     #   msal
-rpds-py==0.26.0
+rpds-py==0.27.0
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.14
+ruamel-yaml==0.18.15
     # via drf-yasg
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
@@ -310,7 +309,7 @@ six==1.17.0
     #   azure-core
     #   pathlib2
     #   python-dateutil
-sqlalchemy==2.0.42
+sqlalchemy==2.0.43
     # via -r requirements-server.in
 sqlparse==0.5.3
     # via
@@ -326,6 +325,8 @@ typing-extensions==4.14.1
     #   azure-identity
     #   azure-storage-blob
     #   oasis-data-manager
+    #   psycopg
+    #   psycopg-pool
     #   pyopenssl
     #   referencing
     #   sqlalchemy

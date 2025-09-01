@@ -1,10 +1,11 @@
 boto3>=1.0,<2.0
 celery>=5.0,<6.0
 chainmap>=1.0,<2.0
-channels==2.4.0
-channels_redis==2.4.2
+channels>=4.0.0
+channels_redis>=4.0.0
 coreapi>=2.0,<3.0
-django>=3.0,<4.0
+daphne>=4.0,<5.0
+django>=5.0,<6.0
 django-cleanup>=9.0,<10.0
 django-debug-toolbar>=4.0,<5.0
 django-filter>=23.0,<24.0
@@ -22,17 +23,18 @@ jsonpickle>=3.0,<4.0
 jsonschema>=4.0,<5.0
 markdown>=3.0,<4.0
 mozilla_django_oidc
-ods-tools<4.1.0
+ods_tools
 oasis-data-manager>=0.0,<1.0
 pandas>=2.0,<3.0
-numba>=0.0,<1.0
 pathlib2>=2.0,<3.0
+psycopg[binary, pool]
 psycopg2-binary>=2.0,<3.0
 pyarrow>=17.0,<18.0
 pymysql>=1.0,<2.0
 pyrabbit>=1.0,<2.0
 redis>=5.0,<6.0
 sqlalchemy>=2.0,<3.0
+setuptools
 mysqlclient>=2.0,<3.0
 whitenoise>=6.0,<7.0
 azure-identity>=1.0,<2.0
