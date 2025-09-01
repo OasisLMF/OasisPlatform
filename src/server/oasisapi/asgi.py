@@ -11,3 +11,5 @@ django.setup()
 
 # Import your websocket routing
 from src.server.oasisapi.routing import application
+
+application
