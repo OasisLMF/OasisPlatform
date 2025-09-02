@@ -646,17 +646,13 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     @action(methods=['get'], detail=True)
     def run_progress(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the number of gul steps completed
+        """
         analysis = Analysis.objects.get(pk=pk)
-
-        subtasks = analysis.sub_task_statuses.all()
-        if len(subtasks) != 0:
-            completed = subtasks.filter(status='COMPLETED').count()
-            return Response({"Progress": "#" * completed + "~" * (len(subtasks) - completed)})
-
-        if analysis.num_events_total != 0:
-            return Response({"Status": "#" * analysis.num_events_complete + "~" * (analysis.num_events_total - analysis.num_events_complete)})
-
-        return Response({"Status": "Nothing has started"})
+        response = f"{analysis.num_events_complete}/{analysis.num_events_total} gul stages complete"
+        return Response({"Status": response})
 
 
 class AnalysisSettingsView(VerifyGroupAccessModelViewSet):

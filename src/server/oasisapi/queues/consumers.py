@@ -224,8 +224,11 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         analysis = await get_analysis(pk=pk)
         logger.info(f"New update received on run {pk}")
 
-        if "counter" in content:
-            analysis.num_events_complete = F('num_events_complete') + int(content["counter"])
+        if "events_total" in content:
+            analysis.num_events_total = int(float(content["events_total"]))
+
+        if "events_complete" in content:
+            analysis.num_events_complete = F('num_events_complete') + int(content["events_complete"])
 
         await sync_to_async(analysis.save)()
 

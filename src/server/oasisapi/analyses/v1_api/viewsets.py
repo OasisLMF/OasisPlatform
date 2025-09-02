@@ -451,11 +451,11 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def run_progress(self, request, pk=None, version=None):
         """
         get:
-        Gets the progress report
+        Gets the number of gul steps completed
         """
         analysis = Analysis.objects.get(pk=pk)
-
-        return Response({"Complete": analysis.num_events_complete})
+        response = f"{analysis.num_events_complete}/{analysis.num_events_total} gul stages complete"
+        return Response({"Status": response})
 
 
 class AnalysisSettingsView(viewsets.ModelViewSet):
