@@ -151,6 +151,7 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
         """
         return handle_json_data(self.get_object(), 'file', request, AnalysisSettingsSerializer)
 
+
 @extend_schema_view(
     list=extend_schema(responses={200: AnalysisModelListSerializer(many=True)}),
     create=extend_schema(responses={200: AnalysisModelListSerializer()}),
