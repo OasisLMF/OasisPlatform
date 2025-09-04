@@ -308,7 +308,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
-    @extend_schema(responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def input_file(self, request, pk=None, version=None):
         """
