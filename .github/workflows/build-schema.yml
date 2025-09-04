@@ -64,13 +64,13 @@ jobs:
       run: |
         test -d $(dirname ${{ env.SCHEMA_ALL }}) || mkdir -p $(dirname ${{ env.SCHEMA_ALL }})
         python ./manage.py migrate
-        python ./manage.py spectacular --file ${{ env.SCHEMA_ALL }}
+        python ./manage.py spectacular --format openapi-json --file ${{ env.SCHEMA_ALL }}
 
     - name: Generate OpenAPI (only v1)
       run: |
         test -d $(dirname ${{ env.SCHEMA_V1 }}) || mkdir -p $(dirname ${{ env.SCHEMA_V1 }})
         python ./manage.py migrate
-        python ./manage.py spectacular --file ${{ env.SCHEMA_V1 }}
+        python ./manage.py spectacular --format openapi-json --file ${{ env.SCHEMA_V1 }}
       env:
         OASIS_GEN_SWAGGER_V1: 1
 
@@ -78,7 +78,7 @@ jobs:
       run: |
         test -d $(dirname ${{ env.SCHEMA_V2 }}) || mkdir -p $(dirname ${{ env.SCHEMA_V2 }})
         python ./manage.py migrate
-        python ./manage.py spectacular --file ${{ env.SCHEMA_V2 }}
+        python ./manage.py spectacular --format openapi-json --file ${{ env.SCHEMA_V2 }}
       env:
         OASIS_GEN_SWAGGER_V2: 1
 
