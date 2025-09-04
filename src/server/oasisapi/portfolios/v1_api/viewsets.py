@@ -3,8 +3,7 @@ from __future__ import absolute_import
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from django.conf import settings as django_settings
-from django.utils.decorators import method_decorator
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -17,7 +16,7 @@ from ...analyses.v1_api.serializers import AnalysisSerializer
 from ...files.v1_api.views import handle_related_file
 from ...files.v1_api.serializers import RelatedFileSerializer
 from ..models import Portfolio
-from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
+from ...schemas.custom_swagger import FILE_HEADERS, FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
@@ -48,7 +47,7 @@ class PortfolioFilter(TimeStampedFilter):
         ]
 
 
-@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: PortfolioSerializer(many=True)}))
+@extend_schema_view(list=extend_schema(responses={200: PortfolioSerializer(many=True)}))
 class PortfolioViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -142,7 +141,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             status=HTTP_201_CREATED,
         )
 
-    @swagger_auto_schema(methods=['post'], request_body=StorageLinkSerializer)
+    @extend_schema(methods=['POST'], request=StorageLinkSerializer)
     @action(methods=['get', 'post'], detail=True)
     def storage_links(self, request, pk=None, version=None):
         """
@@ -159,8 +158,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -182,8 +181,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
@@ -205,8 +204,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -228,8 +227,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """

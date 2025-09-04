@@ -1,10 +1,9 @@
 from __future__ import absolute_import
 
 from django.utils.translation import gettext_lazy as _
-from django.utils.decorators import method_decorator
 from django_filters import NumberFilter
 from django_filters import rest_framework as filters
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -29,6 +28,7 @@ from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user
 from ...portfolios.models import Portfolio
 from ...schemas.serializers import AnalysisSettingsSerializer
 from ...schemas.custom_swagger import (
+    FILE_HEADERS,
     FILE_RESPONSE,
     RUN_MODE_PARAM,
     SUBTASK_STATUS_PARAM,
@@ -187,10 +187,12 @@ class AnalysisTaskFilter(TimeStampedFilter):
 
 # https://stackoverflow.com/questions/62572389/django-drf-yasg-how-to-add-description-to-tags
 
-@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer(many=True)}))
-@method_decorator(name='create', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
-@method_decorator(name='update', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
-@method_decorator(name='partial_update', decorator=swagger_auto_schema(responses={200: AnalysisListSerializer()}))
+@extend_schema_view(
+    list=extend_schema(responses=AnalysisListSerializer(many=True)),
+    create=extend_schema(responses=AnalysisListSerializer()),
+    update=extend_schema(responses=AnalysisListSerializer()),
+    partial_update=extend_schema(responses=AnalysisListSerializer()),
+)
 class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
@@ -296,7 +298,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(responses={200: AnalysisListSerializer}, manual_parameters=[RUN_MODE_PARAM])
+    @extend_schema(responses=AnalysisListSerializer, parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
@@ -311,7 +313,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisListSerializer})
+    @extend_schema(responses=AnalysisSerializer)
     @action(methods=['post'], detail=True)
     def generate_and_run(self, request, pk=None, version=None):
         """
@@ -325,7 +327,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.generate_and_run(request.user)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisListSerializer})
+    @extend_schema(responses=AnalysisSerializer)
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
@@ -338,7 +340,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.cancel_any()
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisListSerializer})
+    @extend_schema(responses=AnalysisSerializer)
     @action(methods=['post'], detail=True)
     def cancel_analysis_run(self, request, pk=None, version=None):
         """
@@ -350,7 +352,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.cancel_analysis()
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisListSerializer}, manual_parameters=[RUN_MODE_PARAM])
+    @extend_schema(responses=AnalysisListSerializer, parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def generate_inputs(self, request, pk=None, version=None):
         """
@@ -364,7 +366,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.generate_inputs(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisListSerializer})
+    @extend_schema(responses=AnalysisSerializer)
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None, version=None):
         """
@@ -394,7 +396,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
         return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def settings_file(self, request, pk=None, version=None):
         """
@@ -414,7 +416,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def input_file(self, request, pk=None, version=None):
         """
@@ -426,7 +428,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @swagger_auto_schema(methods=["get"], responses={200: FILE_LIST_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_LIST_RESPONSE})
     @action(methods=['get'], detail=True)
     def input_file_tar_list(self, request, pk=None, version=None):
         """
@@ -435,7 +437,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_get_related_file_tar(self.get_object(), "input_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
+    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILENAME_PARAM, FILE_HEADERS])
     @action(methods=['get'], detail=True)
     def input_file_tar_extract(self, request, pk=None, version=None):
         """
@@ -444,7 +446,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_get_related_file_tar(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @swagger_auto_schema(methods=["get"], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
@@ -459,7 +461,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def lookup_success_file(self, request, pk=None, version=None):
         """
@@ -474,7 +476,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def lookup_validation_file(self, request, pk=None, version=None):
         """
@@ -489,7 +491,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_validation_file', request, ['application/json'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def summary_levels_file(self, request, pk=None, version=None):
         """
@@ -504,7 +506,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'summary_levels_file', request, ['application/json'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def input_generation_traceback_file(self, request, pk=None, version=None):
         """
@@ -516,7 +518,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_generation_traceback_file', request, ['text/plain'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def output_file(self, request, pk=None, version=None):
         """
@@ -528,7 +530,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_LIST_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_LIST_RESPONSE})
     @action(methods=['get'], detail=True)
     def output_file_tar_list(self, request, pk=None, version=None):
         """
@@ -537,7 +539,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_get_related_file_tar(self.get_object(), "output_file", request, ["application/x-gzip", "application/gzip", "application/x-tar", "application/tar"])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILENAME_PARAM])
+    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILENAME_PARAM, FILE_HEADERS])
     @action(methods=['get'], detail=True)
     def output_file_tar_extract(self, request, pk=None, version=None):
         """
@@ -547,7 +549,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         return handle_get_related_file_tar(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
     @requires_sql_reader
-    @swagger_auto_schema(methods=['get'], responses={200: NestedRelatedFileSerializer})
+    @extend_schema(methods=["GET"], responses=NestedRelatedFileSerializer)
     @action(methods=['get'], detail=True)
     def output_file_list(self, request, *args, **kwargs):
         """
@@ -558,7 +560,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         return Response(serializer.data)
 
     @requires_sql_reader
-    @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["POST"], responses=FILE_RESPONSE, parameters=FILE_HEADERS)
     @action(methods=['post'], url_path=r'output_file_sql/(?P<file_pk>\d+)', detail=True)
     def output_file_sql(self, request, *args, file_pk=None, **kwargs):
         """
@@ -571,7 +573,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
         return handle_related_file_sql(self.get_object(), "raw_output_files", request, sql, file_pk)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def run_traceback_file(self, request, pk=None, version=None):
         """
@@ -583,7 +585,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'run_traceback_file', request, ['text/plain'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def run_log_file(self, request, pk=None, version=None):
         """
@@ -595,7 +597,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'run_log_file', request, ['text/plain'])
 
-    @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
+    @extend_schema(responses=DataFileSerializer(many=True))
     @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
         df = self.get_object().complex_model_data_files.all()
@@ -613,7 +615,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(self.get_object())
         return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: AnalysisTaskStatusSerializer(many=True)}, manual_parameters=[SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM])
+    @extend_schema(methods=["GET"], responses=AnalysisTaskStatusSerializer(many=True), parameters=[SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM])
     @action(methods=['get'], detail=True)
     def sub_task_list(self, request, pk=None, version=None):
 
@@ -657,8 +659,8 @@ class AnalysisSettingsView(VerifyGroupAccessModelViewSet):
     group_access_sub_model = Portfolio
     group_access_sub_attribute = 'portfolio'
 
-    @swagger_auto_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
-    @swagger_auto_schema(methods=['post'], request_body=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
+    @extend_schema(methods=["GET"], responses=AnalysisSettingsSerializer, request=None)
+    @extend_schema(methods=["POST"], request=AnalysisSettingsSerializer, responses=RelatedFileSerializer)
     @action(methods=['get', 'post', 'delete'], detail=True)
     def analysis_settings(self, request, pk=None, version=None):
         """
@@ -680,7 +682,7 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     filterset_class = AnalysisTaskFilter
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def output_log(self, request, pk=None, version=None):
         """
@@ -692,7 +694,7 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'output_log', request, ['text/plain'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def error_log(self, request, pk=None, version=None):
         """
@@ -704,7 +706,7 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'error_log', request, ['text/plain'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def retry_log(self, request, pk=None, version=None):
         """

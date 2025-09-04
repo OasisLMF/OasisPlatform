@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -10,7 +10,7 @@ from ...files.v1_api.serializers import RelatedFileSerializer
 from ...files.v1_api.views import handle_related_file
 from ...filters import TimeStampedFilter
 from ..models import DataFile
-from ...schemas.custom_swagger import FILE_RESPONSE
+from ...schemas.custom_swagger import FILE_HEADERS, FILE_RESPONSE
 from .serializers import DataFileSerializer, DataFileListSerializer
 
 
@@ -94,7 +94,7 @@ class DataFileViewset(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def content(self, request, pk=None, version=None):
         """

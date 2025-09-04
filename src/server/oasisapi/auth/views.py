@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.parsers import FormParser
 from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView, \
@@ -23,10 +23,10 @@ class TokenRefreshView(BaseTokenRefreshView):
     serializer_class = OIDCTokenRefreshSerializer if settings.API_AUTH_TYPE == 'keycloak' else SimpleTokenRefreshSerializer
     parser_classes = [FormParser]
 
-    @swagger_auto_schema(
-        manual_parameters=[TOKEN_REFRESH_HEADER],
+    @extend_schema(
+        parameters=[TOKEN_REFRESH_HEADER],
         responses={status.HTTP_200_OK: TokenRefreshResponseSerializer},
-        security=[],
+        auth=[],
         tags=['authentication'])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -38,9 +38,9 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     """
     serializer_class = OIDCTokenObtainPairSerializer if settings.API_AUTH_TYPE == 'keycloak' else SimpleTokenObtainPairSerializer
 
-    @swagger_auto_schema(
+    @extend_schema(
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
-        security=[],
+        auth=[],
         tags=['authentication'])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)

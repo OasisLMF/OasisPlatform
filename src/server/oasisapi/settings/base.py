@@ -15,7 +15,6 @@ import sys
 import ssl
 
 from django.core.exceptions import ImproperlyConfigured
-from rest_framework.reverse import reverse_lazy
 
 from oasis_data_manager.filestore.log import set_azure_log_level, set_aws_log_level
 from ....conf import iniconf  # noqa
@@ -52,7 +51,7 @@ else:
 
 
 # Generate All
-DEFAULT_GENERATOR_CLASS = 'drf_yasg.generators.OpenAPISchemaGenerator'          # Generate All
+DEFAULT_GENERATOR_CLASS = 'drf_spectacular.generators.SchemaGenerator'          # Generate All
 if IS_SWAGGER_GEN:
     # generate only V1 endpoints
     if iniconf.settings.getboolean('server', 'GEN_SWAGGER_V1', fallback=False):
@@ -107,7 +106,7 @@ INSTALLED_APPS = [
     #    'django_extensions',
     'django_filters',
     'rest_framework',
-    'drf_yasg',
+    'drf_spectacular',
     'channels',
     'storages',
 
@@ -257,6 +256,7 @@ REST_FRAMEWORK = {
     ),
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Password validation
@@ -267,6 +267,42 @@ AUTH_PASSWORD_VALIDATORS = []
 API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
 
 
+# API INFO DESCRIPTION BASED ON AUTHENTICATION TYPE
+api_info_description = """
+# Workflow
+The general workflow is as follows
+"""
+
+if API_AUTH_TYPE == 'keycloak':
+    api_info_description += """
+1. Authenticate your client:
+    1. Post to the keycloak endpoint:
+       `grant_type=password&client_id=<client-id>&client_secret=<client-secret>&username=<username>&password=<password>`
+       Check your chart values to find the endpoint (`OIDC_ENDPOINT`), <client-id> (`OIDC_CLIENT_NAME`) and
+       <client-secret> (`OIDC_CLIENT_SECRET`).
+    2. Either supply your username and password to the `/access_token/` endpoint or make a `post` request
+       to `/refresh_token/` with the `HTTP_AUTHORIZATION` header set as `Bearer <refresh_token>`.
+    3. Here in swagger - click the `Authorize` button, enter 'swagger' as client_id and click Authorize. This will open
+       a new window with the keycloak login, enter your credentials and click Login. This will close the window and get
+       you back to the authorize dialog which you now can close."""
+else:
+    api_info_description += """
+1. Authenticate your client, either supply your username and password to the `/access_token/`
+   endpoint or make a `post` request to `/refresh_token/` with the `HTTP_AUTHORIZATION` header
+   set as `Bearer <refresh_token>`."""
+
+api_info_description += """
+2. Create a portfolio (post to `/portfolios/`).
+3. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
+4. Create the model object for your model (post to `/models/`).
+5. Create an analysis (post to `/portfolios/<id>/create_analysis`). This will generate the input files
+   for the analysis.
+6. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
+7. Run the analysis (post to `/analyses/<pk>/run/`)
+8. Get the outputs (get `/analyses/<pk>/output_file/`)"""
+
+
+# SPECTACULAR_SETTINGS BASED ON AUTHENTICATION TYPE
 if API_AUTH_TYPE == 'keycloak':
 
     INSTALLED_APPS += (
@@ -286,19 +322,24 @@ if API_AUTH_TYPE == 'keycloak':
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False
 
-    SWAGGER_SETTINGS = {
+    SPECTACULAR_SETTINGS = {
         'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
-        'USE_SESSION_AUTH': False,
-        'SECURITY_DEFINITIONS': {
-            "keycloak": {
-                "type": "oauth2",
-                "authorizationUrl": KEYCLOAK_OIDC_BASE_URL + 'auth',
-                "refreshUrl": OIDC_OP_TOKEN_ENDPOINT + 'auth',
-                "flow": "implicit",
-                "scopes": {}
+        "TITLE": "Oasis Platform",
+        "DESCRIPTION": api_info_description,
+        "VERSION": "v2",
+        "SERVE_PERMISSIONS": ['rest_framework.permissions.AllowAny'],
+        "SERVE_INCLUDE_SCHEMA": False,
+        "AUTHENTICATION_WHITELIST": [],
+        "COMPONENT_SPLIT_REQUEST": True,
+        "SECURITY": [
+            {"keycloak": []},
+        ],
+        "OAUTH2_FLOWS": {
+            "implicit": {
+                "authorizationUrl": KEYCLOAK_OIDC_BASE_URL + "auth",
+                "scopes": {},
             }
         },
-        "schemes": ["http", "https"]
     }
 else:
     INSTALLED_APPS += ('rest_framework_simplejwt.token_blacklist',)
@@ -313,12 +354,25 @@ else:
         'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
     }
 
-    SWAGGER_SETTINGS = {
+    SPECTACULAR_SETTINGS = {
         'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
-        'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
-        'LOGIN_URL': reverse_lazy('rest_framework:login'),
-        'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
-        "schemes": ["http", "https"]
+        "TITLE": "Oasis Platform",
+        "DESCRIPTION": api_info_description,
+        "VERSION": "v2",
+        "SERVE_PERMISSIONS": ['rest_framework.permissions.AllowAny'],
+        "SERVE_INCLUDE_SCHEMA": False,
+        "COMPONENT_SPLIT_REQUEST": True,
+        "SECURITY": [
+            {"BearerAuth": []},
+        ],
+        "AUTHENTICATION_SCHEMES": [
+            {
+                "name": "BearerAuth",
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        ],
     }
 
 
@@ -474,7 +528,7 @@ LOGGING = {
         'handlers': ['console'],
     },
     'loggers': {
-        'drf_yasg': {
+        'drf_spectacular': {
             'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,

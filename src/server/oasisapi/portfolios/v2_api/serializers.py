@@ -7,7 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError
@@ -57,12 +58,12 @@ class PortfolioListSerializer(serializers.Serializer):
     storage_links = serializers.SerializerMethodField(read_only=True)
     groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_storage_links(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request, namespace="v2-portfolios")
 
-    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    @extend_schema_field(InputFileSerializer)
     def get_location_file(self, instance):
         request = self.context.get('request')
         return _serialize_input_file(
@@ -71,7 +72,7 @@ class PortfolioListSerializer(serializers.Serializer):
             request,
         )
 
-    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    @extend_schema_field(InputFileSerializer)
     def get_accounts_file(self, instance):
         request = self.context.get('request')
         return _serialize_input_file(
@@ -80,7 +81,7 @@ class PortfolioListSerializer(serializers.Serializer):
             request,
         )
 
-    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    @extend_schema_field(InputFileSerializer)
     def get_reinsurance_info_file(self, instance):
         request = self.context.get('request')
         return _serialize_input_file(
@@ -89,7 +90,7 @@ class PortfolioListSerializer(serializers.Serializer):
             request,
         )
 
-    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    @extend_schema_field(InputFileSerializer)
     def get_reinsurance_scope_file(self, instance):
         request = self.context.get('request')
         return _serialize_input_file(
@@ -141,7 +142,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             data['creator'] = self.context.get('request').user
         return super(PortfolioSerializer, self).create(data)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_storage_links(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request, namespace="v2-portfolios")
@@ -152,7 +153,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             groups.append(group.name)
         return groups
 
-    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    @extend_schema_field(InputFileSerializer)
     def get_location_file(self, instance):
         request = self.context.get('request')
         return _serialize_input_file(
@@ -161,7 +162,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             request,
         )
 
-    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    @extend_schema_field(InputFileSerializer)
     def get_accounts_file(self, instance):
         request = self.context.get('request')
         return _serialize_input_file(
@@ -170,7 +171,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             request,
         )
 
-    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    @extend_schema_field(InputFileSerializer)
     def get_reinsurance_info_file(self, instance):
         request = self.context.get('request')
         return _serialize_input_file(
@@ -179,7 +180,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             request,
         )
 
-    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    @extend_schema_field(InputFileSerializer)
     def get_reinsurance_scope_file(self, instance):
         request = self.context.get('request')
         return _serialize_input_file(
@@ -204,19 +205,19 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             'reinsurance_scope_file',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(OpenApiTypes.STR)
     def get_location_file(self, instance):
         return file_storage_link(instance.location_file, True)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(OpenApiTypes.STR)
     def get_accounts_file(self, instance):
         return file_storage_link(instance.accounts_file, True)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(OpenApiTypes.STR)
     def get_reinsurance_info_file(self, instance):
         return file_storage_link(instance.reinsurance_info_file, True)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(OpenApiTypes.STR)
     def get_reinsurance_scope_file(self, instance):
         return file_storage_link(instance.reinsurance_scope_file, True)
 
@@ -441,22 +442,22 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
             'reinsurance_scope_validated',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)  # should it be BooleanField ?
+    @extend_schema_field(OpenApiTypes.STR)  # should it be BooleanField ?
     def get_location_validated(self, instance):
         if instance.location_file:
             return instance.location_file.oed_validated
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(OpenApiTypes.STR)
     def get_accounts_validated(self, instance):
         if instance.accounts_file:
             return instance.accounts_file.oed_validated
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(OpenApiTypes.STR)
     def get_reinsurance_info_validated(self, instance):
         if instance.reinsurance_info_file:
             return instance.reinsurance_info_file.oed_validated
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(OpenApiTypes.STR)
     def get_reinsurance_scope_validated(self, instance):
         if instance.reinsurance_scope_file:
             return instance.reinsurance_scope_file.oed_validated

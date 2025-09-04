@@ -1,10 +1,9 @@
 from __future__ import absolute_import
 
 from django.utils.translation import gettext_lazy as _
-from django.utils.decorators import method_decorator
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_filters import rest_framework as filters
 from django.http import Http404
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -74,7 +73,7 @@ class AnalysisModelFilter(TimeStampedFilter):
         ]
 
 
-@method_decorator(name='create', decorator=swagger_auto_schema(request_body=CreateTemplateSerializer))
+@extend_schema_view(create=extend_schema(request=CreateTemplateSerializer))
 class SettingsTemplateViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -132,8 +131,8 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
         model.template_files.add(new_template)
         return Response(TemplateSerializer(new_template, context=context).data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
-    @swagger_auto_schema(methods=['post'], request_body=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
+    @extend_schema(methods=['GET'], responses={200: AnalysisSettingsSerializer})
+    @extend_schema(methods=['POST'], request=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def content(self, request, pk=None, models_pk=None, version=None):
         """
@@ -233,7 +232,7 @@ class AnalysisModelViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         return Response(ModelVersionsSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
+    @extend_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
         df = self.get_object().data_files.all()
@@ -257,8 +256,8 @@ class ModelSettingsView(viewsets.ModelViewSet):
     serializer_class = AnalysisModelSerializer
     filterset_class = AnalysisModelFilter
 
-    @swagger_auto_schema(method='get', responses={200: ModelParametersSerializer})
-    @swagger_auto_schema(method='post', request_body=ModelParametersSerializer, responses={201: RelatedFileSerializer})
+    @extend_schema(methods=['GET'], responses={200: ModelParametersSerializer})
+    @extend_schema(methods=['POST'], request=ModelParametersSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def model_settings(self, request, pk=None, version=None):
         obj = self.get_object()

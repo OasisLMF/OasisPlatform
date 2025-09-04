@@ -1,9 +1,12 @@
+# oasisapi/urls.py
 from django.conf import settings
 from django.urls import include, re_path
 from django.conf.urls.static import static
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
-from rest_framework import permissions
+
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+)
 
 from .swagger import (
     api_v1_urlpatterns,
@@ -17,75 +20,37 @@ if settings.DEBUG_TOOLBAR:
     import debug_toolbar
 
 
-api_info_description = """
-# Workflow
-The general workflow is as follows
-"""
-
-if settings.API_AUTH_TYPE == 'keycloak':
-    api_info_description += """
-1. Authenticate your client:
-    1. Post to the keycloak endpoint:
-       `grant_type=password&client_id=<client-id>&client_secret=<client-secret>&username=<username>&password=<password>`
-       Check your chart values to find the endpoint (`OIDC_ENDPOINT`), <client-id> (`OIDC_CLIENT_NAME`) and
-       <client-secret> (`OIDC_CLIENT_SECRET`).
-    2. Either supply your username and password to the `/access_token/` endpoint or make a `post` request
-       to `/refresh_token/` with the `HTTP_AUTHORIZATION` header set as `Bearer <refresh_token>`.
-    3. Here in swagger - click the `Authorize` button, enter 'swagger' as client_id and click Authorize. This will open
-       a new window with the keycloak login, enter your credentials and click Login. This will close the window and get
-       you back to the authorize dialog which you now can close."""
-else:
-    api_info_description += """
-1. Authenticate your client, either supply your username and password to the `/access_token/`
-   endpoint or make a `post` request to `/refresh_token/` with the `HTTP_AUTHORIZATION` header
-   set as `Bearer <refresh_token>`."""
-
-api_info_description += """
-2. Create a portfolio (post to `/portfolios/`).
-3. Add a locations file to the portfolio (post to `/portfolios/<id>/locations_file/`)
-4. Create the model object for your model (post to `/models/`).
-5. Create an analysis (post to `/portfolios/<id>/create_analysis`). This will generate the input files
-   for the analysis.
-6. Add analysis settings file to the analysis (post to `/analyses/<pk>/analysis_settings/`).
-7. Run the analysis (post to `/analyses/<pk>/run/`)
-8. Get the outputs (get `/analyses/<pk>/output_file/`)"""
-
-
-api_info = openapi.Info(
-    title="Oasis Platform",
-    default_version='v2',
-    description=api_info_description,
+# -------- API Docs --------
+schema_view_all = SpectacularAPIView.as_view(
+    serve_public=True,
 )
-schema_view_all = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
-schema_view_v1 = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
+
+schema_view_v1 = SpectacularAPIView.as_view(
+    serve_public=True,
     generator_class=CustomGeneratorClassV1,
+    api_version="v1"
 )
 
-schema_view_v2 = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
+schema_view_v2 = SpectacularAPIView.as_view(
+    serve_public=True,
     generator_class=CustomGeneratorClassV2,
+    api_version="v2"
 )
 
 
 api_urlpatterns = [
-    # Main Swagger page
-    re_path(r'^(?P<format>\.json|\.yaml)$', schema_view_all.without_ui(cache_timeout=0), name='schema-json'),
-    re_path(r'^$', schema_view_all.with_ui('swagger', cache_timeout=0), name='schema-ui'),
-    # V1 only swagger endpoints
-    re_path(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui-v1'),
-    re_path(r'^v1/(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json'),
-    # V2 only swagger endpoints
-    re_path(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui-v2'),
-    re_path(r'^v2/(?P<format>\.json|\.yaml)$', schema_view_v2.without_ui(cache_timeout=0), name='schema-json'),
+    # Main schema endpoints
+    re_path(r'^schema$', schema_view_all, name='schema'),
+    re_path(r'^$', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-ui'),
+
+    # V1 only schema
+    re_path(r'^v1/schema$', schema_view_v1, name='schema-v1'),
+    re_path(r'^v1/$', SpectacularSwaggerView.as_view(url_name='schema-v1'), name='schema-ui-v1'),
+
+    # V2 only schema
+    re_path(r'^v2/schema$', schema_view_v2, name='schema-v2'),
+    re_path(r'^v2/$', SpectacularSwaggerView.as_view(url_name='schema-v2'), name='schema-ui-v2'),
+
     # basic urls (auth, server info)
     re_path(r'^', include('src.server.oasisapi.base_urls')),
 ]

@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.response import Response
 
@@ -9,7 +9,7 @@ from .consumers import build_all_queue_status_message
 
 
 class QueueViewSet(viewsets.ViewSet):
-    @swagger_auto_schema(responses={200: QueueSerializer(many=True, read_only=True)})
+    @extend_schema(responses={200: QueueSerializer(many=True, read_only=True)})
     def list(self, request, *args, **kwargs):
         """
         Gets the current state of all the registered celery queues
@@ -19,7 +19,7 @@ class QueueViewSet(viewsets.ViewSet):
 
 
 class WebsocketViewSet(viewsets.ViewSet):
-    @swagger_auto_schema(responses={200: WebsocketSerializer(many=False, read_only=True)})
+    @extend_schema(responses={200: WebsocketSerializer(many=False, read_only=True)})
     def list(self, request, *args, **kwargs):
         """
         This endpoint documents the schema for the WebSocket used for async status updates at

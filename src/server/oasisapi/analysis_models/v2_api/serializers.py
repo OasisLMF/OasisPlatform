@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Group
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -39,7 +40,7 @@ class AnalysisModelStorageSerializer(serializers.ModelSerializer):
             'settings_file',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(OpenApiTypes.STR)
     def get_settings_file(self, instance):
         return file_storage_link(instance.resource_file, True)
 
@@ -64,22 +65,22 @@ class AnalysisModelListSerializer(serializers.Serializer):
     data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     namespace = 'v2-models'
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_versions(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_versions_url(request=request, namespace=self.namespace)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_scaling_configuration(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_scaling_configuration_url(request=request, namespace=self.namespace)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_chunking_configuration(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_chunking_configuration_url(request=request, namespace=self.namespace)
@@ -152,22 +153,22 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    @swagger_serializer_method(serializer_or_field=ModelParametersSerializer)
+    @extend_schema_field(ModelParametersSerializer)
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.namespace)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_versions(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_versions_url(request=request, namespace=self.namespace)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_scaling_configuration(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_scaling_configuration_url(request=request, namespace=self.namespace)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_chunking_configuration(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_chunking_configuration_url(request=request, namespace=self.namespace)
@@ -188,7 +189,7 @@ class TemplateSerializer(serializers.ModelSerializer):
             'file_url',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_file_url(self, instance):
         request = self.context.get('request')
         model_pk = request.parser_context.get('kwargs', {}).get('models_pk')
