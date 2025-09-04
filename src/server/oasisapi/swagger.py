@@ -40,7 +40,7 @@ class CustomGeneratorClassV1(SchemaGenerator):
     def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
         super().__init__(
             info=info,
-            version='v1',
+            api_version='v1',
             url=url,
             patterns=swagger_v1_urlpatterns,
             urlconf=urlconf
@@ -51,7 +51,7 @@ class CustomGeneratorClassV2(SchemaGenerator):
     def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
         super().__init__(
             info=info,
-            version='v2',
+            api_version='v2',
             url=url,
             patterns=swagger_v2_urlpatterns,
             urlconf=urlconf

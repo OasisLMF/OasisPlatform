@@ -23,18 +23,17 @@ if settings.DEBUG_TOOLBAR:
 # -------- API Docs --------
 schema_view_all = SpectacularAPIView.as_view(
     serve_public=True,
+    api_version="v2",
 )
 
 schema_view_v1 = SpectacularAPIView.as_view(
     serve_public=True,
     generator_class=CustomGeneratorClassV1,
-    api_version="v1"
 )
 
 schema_view_v2 = SpectacularAPIView.as_view(
     serve_public=True,
     generator_class=CustomGeneratorClassV2,
-    api_version="v2"
 )
 
 

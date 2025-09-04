@@ -32,7 +32,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IS_UNITTEST = sys.argv[0].endswith('pytest')
 IS_TESTSERVER = len(sys.argv) >= 2 and sys.argv[1] == 'runserver'
-IS_SWAGGER_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'generate_swagger'
+IS_SWAGGER_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'spectacular'
 
 if IS_UNITTEST or IS_TESTSERVER:
     # Always set Debug mode when in dev environment
@@ -326,7 +326,6 @@ if API_AUTH_TYPE == 'keycloak':
         'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
         "TITLE": "Oasis Platform",
         "DESCRIPTION": api_info_description,
-        "VERSION": "v2",
         "SERVE_PERMISSIONS": ['rest_framework.permissions.AllowAny'],
         "SERVE_INCLUDE_SCHEMA": False,
         "AUTHENTICATION_WHITELIST": [],
@@ -358,7 +357,6 @@ else:
         'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
         "TITLE": "Oasis Platform",
         "DESCRIPTION": api_info_description,
-        "VERSION": "v2",
         "SERVE_PERMISSIONS": ['rest_framework.permissions.AllowAny'],
         "SERVE_INCLUDE_SCHEMA": False,
         "COMPONENT_SPLIT_REQUEST": True,
