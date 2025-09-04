@@ -42,8 +42,8 @@ metadata:
   name: host-volume-shell
 spec:
   containers:
-    - image: nginx
-      name: nginx
+    - image: traefik
+      name: traefik
       volumeMounts:
         - name: shared-fs-persistent-storage
           mountPath: /mnt/host

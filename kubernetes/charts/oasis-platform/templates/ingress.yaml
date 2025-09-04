@@ -1,32 +1,25 @@
-{{ $name := printf "%s-oasis-ingress" .Release.Name | lower }}
+{{- $name := printf "%s-oasis-ingress" .Release.Name | lower }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $name }}
   annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "X-Forwarded-For $http_x_forwarded_for";
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "86400"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "86400"
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-buffer-size: "64k"
-    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+    kubernetes.io/ingress.class: traefik
+    {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") }}
+    traefik.ingress.kubernetes.io/redirect-scheme: https
+    {{- end }}
     {{- if eq .Values.ingress.tls.strategy "letsencrypt" }}
     cert-manager.io/cluster-issuer: letsencrypt
     {{- end }}
 spec:
-  {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") }}
+  {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") (eq .Values.ingress.tls.strategy "default") }}
   tls:
-    - secretName: {{ .Values.ingress.tls.certificateSecret }}
+    - secretName: {{ .Values.ingress.tls.certificateSecret | default (printf "%s-tls" $name) }}
       hosts:
         - {{ .Values.ingress.uiHostname }}
-  {{- else }}
-  tls: []
   {{- end }}
   rules:
     - host: {{ .Values.ingress.uiHostname }}
-
       http:
         paths:
           - path: /

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e 
+
 # cd to repo root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PIWIND_PATH_FILE=$SCRIPT_DIR/piwind-path-cfg
