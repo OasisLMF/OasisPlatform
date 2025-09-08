@@ -45,11 +45,11 @@ api_urlpatterns = [
     re_path(r'^$', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-ui'),
 
     # V1 only schema
-    re_path(r'^schema/v1$', schema_view_v1, name='schema-v1'),
+    re_path(r'^v1/schema$', schema_view_v1, name='schema-v1'),
     re_path(r'^v1/$', SpectacularSwaggerView.as_view(url_name='schema-v1'), name='schema-ui-v1'),
 
     # V2 only schema
-    re_path(r'^schema/v2$', schema_view_v2, name='schema-v2'),
+    re_path(r'^v2/schema$', schema_view_v2, name='schema-v2'),
     re_path(r'^v2/$', SpectacularSwaggerView.as_view(url_name='schema-v2'), name='schema-ui-v2'),
 
     # basic urls (auth, server info)
