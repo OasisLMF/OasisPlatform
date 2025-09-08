@@ -141,7 +141,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             status=HTTP_201_CREATED,
         )
 
-    @extend_schema(methods=['POST'], request=StorageLinkSerializer)
+    @extend_schema(methods=['post'], request=StorageLinkSerializer)
     @action(methods=['get', 'post'], detail=True)
     def storage_links(self, request, pk=None, version=None):
         """
@@ -158,8 +158,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
-    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['post'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -181,8 +181,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
-    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['post'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
@@ -204,8 +204,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
-    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['post'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -227,8 +227,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
-    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['post'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """

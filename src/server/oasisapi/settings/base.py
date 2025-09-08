@@ -334,9 +334,21 @@ if API_AUTH_TYPE == 'keycloak':
         "SECURITY": [
             {"keycloak": []},
         ],
+        'SWAGGER_UI_SETTINGS': {
+            'displayRequestDuration': True,
+            'docExpansion': 'none',
+            'tryItOutEnabled': True,
+            'filter': True,
+        },
+        'SWAGGER_UI_OAUTH2_CONFIG': {
+            'clientId': OIDC_RP_CLIENT_ID,
+        },
         "OAUTH2_FLOWS": {
+            'name': 'keycloak',
+            "type": "oauth2",
             "implicit": {
                 "authorizationUrl": KEYCLOAK_OIDC_BASE_URL + "auth",
+                'refreshUrl': OIDC_OP_TOKEN_ENDPOINT + 'auth',
                 "scopes": {},
             }
         },
@@ -365,6 +377,12 @@ else:
         "SECURITY": [
             {"BearerAuth": []},
         ],
+        'SWAGGER_UI_SETTINGS': {
+            'displayRequestDuration': True,
+            'docExpansion': 'none',
+            'tryItOutEnabled': True,
+            'filter': True,
+        },
         "AUTHENTICATION_SCHEMES": [
             {
                 "name": "BearerAuth",

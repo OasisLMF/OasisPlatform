@@ -151,7 +151,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             status=HTTP_201_CREATED,
         )
 
-    @extend_schema(methods=['POST'], request=StorageLinkSerializer)
+    @extend_schema(methods=['post'], request=StorageLinkSerializer)
     @action(methods=['get', 'post'], detail=True)
     def storage_links(self, request, pk=None, version=None):
         """
@@ -168,8 +168,8 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
-    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['post'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -191,8 +191,8 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
-    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['post'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
@@ -214,8 +214,8 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
-    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['post'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -237,8 +237,8 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
-    @extend_schema(methods=['POST'], parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=[FILE_HEADERS, FILE_FORMAT_PARAM])
+    @extend_schema(methods=['post'], parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
@@ -278,8 +278,8 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
-    @extend_schema(methods=['POST'], request=ExposureRunSerializer)
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=['post'], request=ExposureRunSerializer)
     @action(methods=['get', 'post'], detail=True)
     def exposure_run(self, request, pk=None, version=None):
         """
@@ -299,7 +299,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         instance.exposure_run(request.data.get('params'), request.user.pk)
         return Response({"message": "in queue"})
 
-    @extend_schema(methods=['POST'], request=ExposureTransformSerializer)
+    @extend_schema(methods=['post'], request=ExposureTransformSerializer)
     @action(methods=['post'], detail=True)
     def exposure_transform(self, request, pk=None, version=None):
         """
@@ -318,7 +318,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         instance.exposure_transform(request)
         return Response({"message": "in queue"})
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def errors_file(self, request, pk=None, version=None):
         return handle_related_file(self.get_object(), 'run_errors_file', request, ['text/csv'])

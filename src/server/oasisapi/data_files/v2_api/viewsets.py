@@ -100,7 +100,7 @@ class DataFileViewset(VerifyGroupAccessModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @extend_schema(methods=['GET'], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=['get'], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def content(self, request, pk=None, version=None):
         """

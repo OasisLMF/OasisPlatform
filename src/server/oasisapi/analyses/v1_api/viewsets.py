@@ -288,7 +288,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def settings_file(self, request, pk=None, version=None):
         """
@@ -308,7 +308,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def input_file(self, request, pk=None, version=None):
         """
@@ -320,7 +320,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
@@ -335,7 +335,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def lookup_success_file(self, request, pk=None, version=None):
         """
@@ -350,7 +350,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def lookup_validation_file(self, request, pk=None, version=None):
         """
@@ -365,7 +365,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_validation_file', request, ['application/json'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get'], detail=True)
     def summary_levels_file(self, request, pk=None, version=None):
         """
@@ -380,7 +380,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'summary_levels_file', request, ['application/json'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def input_generation_traceback_file(self, request, pk=None, version=None):
         """
@@ -392,7 +392,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_generation_traceback_file', request, ['text/plain'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def output_file(self, request, pk=None, version=None):
         """
@@ -404,7 +404,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def run_traceback_file(self, request, pk=None, version=None):
         """
@@ -416,7 +416,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'run_traceback_file', request, ['text/plain'])
 
-    @extend_schema(methods=["GET"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
+    @extend_schema(methods=["get"], responses={200: FILE_RESPONSE}, parameters=FILE_HEADERS)
     @action(methods=['get', 'delete'], detail=True)
     def run_log_file(self, request, pk=None, version=None):
         """
@@ -456,8 +456,8 @@ class AnalysisSettingsView(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filterset_class = AnalysisFilter
 
-    @extend_schema(methods=["GET"], responses={200: AnalysisSettingsSerializer})
-    @extend_schema(methods=["POST"], request=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
+    @extend_schema(methods=["get"], responses={200: AnalysisSettingsSerializer})
+    @extend_schema(methods=["post"], request=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def analysis_settings(self, request, pk=None, version=None):
         """

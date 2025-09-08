@@ -135,8 +135,8 @@ class SettingsTemplateViewSet(viewsets.ModelViewSet):
         model.template_files.add(new_template)
         return Response(TemplateSerializer(new_template, context=context).data)
 
-    @extend_schema(methods=['GET'], responses={200: AnalysisSettingsSerializer})
-    @extend_schema(methods=['POST'], request=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
+    @extend_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
+    @extend_schema(methods=['post'], request=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def content(self, request, pk=None, models_pk=None, version=None):
         """
@@ -457,8 +457,8 @@ class ModelSettingsView(viewsets.ModelViewSet):
     serializer_class = AnalysisModelSerializer
     filterset_class = AnalysisModelFilter
 
-    @extend_schema(methods=['GET'], responses={200: ModelParametersSerializer})
-    @extend_schema(methods=['POST'], request=ModelParametersSerializer, responses={201: RelatedFileSerializer})
+    @extend_schema(methods=['get'], responses={200: ModelParametersSerializer})
+    @extend_schema(methods=['post'], request=ModelParametersSerializer, responses={201: RelatedFileSerializer})
     @action(methods=['get', 'post', 'delete'], detail=True)
     def model_settings(self, request, pk=None, version=None):
         obj = self.get_object()

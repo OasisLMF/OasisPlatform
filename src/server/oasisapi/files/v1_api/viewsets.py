@@ -99,7 +99,7 @@ class FilesViewSet(viewsets.GenericViewSet):
         return JsonResponse(RelatedFileSerializer(instance).data)
 
 
-@extend_schema(methods=['POST', 'GET'])
+@extend_schema(methods=['post', 'get'])
 class MappingFilesViewSet(VerifyGroupAccessModelViewSet):
     parser_classes = (MultiPartParser,)
 
