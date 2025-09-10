@@ -121,6 +121,10 @@ class AnalysisListSerializer(serializers.Serializer):
     storage_links = serializers.SerializerMethodField(read_only=True)
     chunking_configuration = serializers.SerializerMethodField(read_only=True)
 
+    class Meta:
+        model = Analysis
+        fields = "__all__"
+
     @extend_schema_field(serializers.URLField)
     def get_input_file(self, instance):
         request = self.context.get('request')

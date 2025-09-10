@@ -54,10 +54,14 @@ api_urlpatterns = [
 
     # basic urls (auth, server info)
     re_path(r'^', include('src.server.oasisapi.base_urls')),
+
+    re_path(r'^', include('src.server.oasisapi.urlsv1', namespace="v1")),
+    re_path(r'^', include('src.server.oasisapi.urlsv2', namespace="v2")),
 ]
-api_urlpatterns += api_v1_urlpatterns
-if not settings.DISABLE_V2_API:
-    api_urlpatterns += api_v2_urlpatterns
+
+# api_urlpatterns += api_v1_urlpatterns
+# if not settings.DISABLE_V2_API:
+#     api_urlpatterns += api_v2_urlpatterns
 
 urlpatterns = static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.URL_SUB_PATH:
