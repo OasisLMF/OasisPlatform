@@ -313,7 +313,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @extend_schema(responses=AnalysisSerializer)
+    @extend_schema(responses=AnalysisListSerializer)
     @action(methods=['post'], detail=True)
     def generate_and_run(self, request, pk=None, version=None):
         """
@@ -327,7 +327,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.generate_and_run(request.user)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @extend_schema(responses=AnalysisSerializer)
+    @extend_schema(responses=AnalysisListSerializer)
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
@@ -340,7 +340,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.cancel_any()
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @extend_schema(responses=AnalysisSerializer)
+    @extend_schema(responses=AnalysisListSerializer)
     @action(methods=['post'], detail=True)
     def cancel_analysis_run(self, request, pk=None, version=None):
         """
@@ -366,7 +366,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.generate_inputs(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @extend_schema(responses=AnalysisSerializer)
+    @extend_schema(responses=AnalysisListSerializer)
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None, version=None):
         """
