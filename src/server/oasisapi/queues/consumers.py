@@ -147,8 +147,10 @@ class QueueStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
 
     async def connect(self):
         if self.scope['user'].is_authenticated:
-            await super().connect()
+            await self.accept()
             await self.send_json(await sync_to_async(build_all_queue_status_message, thread_sensitive=True)())
+        else:
+            await self.close()
 
     async def receive_json(self, content, **kwargs):
         if not isinstance(content, dict):

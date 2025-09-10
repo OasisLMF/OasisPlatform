@@ -22,7 +22,7 @@ from ....conf import iniconf  # noqa
 from ....conf.base import *
 
 
-IN_TEST = 'test' in sys.argv
+IN_TEST = 'test' in sys.argv or 'test' in sys.argv[0]
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -154,22 +154,40 @@ TEMPLATES = [
 ]
 
 # Database
-
+# Django 5.1+ Native Connection Pooling Settings
 DB_ENGINE = iniconf.settings.get('server', 'db_engine', fallback='django.db.backends.sqlite3')
+DB_CONN_MAX_AGE = iniconf.settings.getint('server', 'db_conn_max_age', fallback=600)
+DB_CONN_HEALTH_CHECKS = iniconf.settings.getboolean('server', 'db_conn_health_checks', fallback=True)
+DB_DISABLE_SERVER_SIDE_CURSORS = iniconf.settings.getboolean('server', 'db_disable_server_side_cursors', fallback=False)
+
+# DB pool options
+DB_POOL_ENABLE = iniconf.settings.getboolean('server', 'db_pool_enable', fallback=True)
+DB_POOL_MIN_SIZE = iniconf.settings.getint('server', 'db_pool_min_size', fallback=2)
+DB_POOL_MAX_SIZE = iniconf.settings.getint('server', 'db_pool_max_size', fallback=10)
+DB_POOL_TIMEOUT = iniconf.settings.getint('server', 'db_pool_timeout', fallback=30)
+DB_POOL_MAX_LIFETIME = iniconf.settings.getint('server', 'db_pool_max_lifetime', fallback=3600)
+DB_POOL_MAX_IDLE = iniconf.settings.getint('server', 'db_pool_max_idle', fallback=600)
+
+
+# Compatibility workaround, 'django.db.backends.postgresql_psycopg2' will fail and needs to be replaced with ' django.db.backends.postgresql'
+if '_psycopg2' in DB_ENGINE and DB_POOL_ENABLE:
+    DB_ENGINE = DB_ENGINE.replace('_psycopg2', '')
+    print('WARNING:  DB_POOL_ENABLE=True and DB driver is psycopg2. Drive does not support pooling, automaticlly switching to psycopg3')
+
 
 if DB_ENGINE == 'django.db.backends.sqlite3':
+    # SQLite doesn't benefit from persistent connections
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
             'NAME': os.path.join(BASE_DIR, iniconf.settings.get('server', 'db_name', fallback='db.sqlite3')),
+            'CONN_MAX_AGE': 0,  # Disable connection pooling for SQLite
         }
     }
 
 
 elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
-
-    # For Azure Service Principal Authentication with token rotation
-
+    # For Azure Service Principal Authentication with token rotation + connection pooling
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
@@ -181,12 +199,25 @@ elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
             'TENANT_ID': iniconf.settings.get('server', 'AZURE_TENANT_ID', fallback=None),
             'CLIENT_ID': iniconf.settings.get('server', 'AZURE_CLIENT_ID', fallback=None),
             'CLIENT_SECRET': iniconf.settings.get('server', 'AZURE_CLIENT_SECRET', fallback=None),
+            # Django 5.1+ native connection pooling
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE if not DB_POOL_ENABLE else 0,  # either persistent connections OR pooling not both
+            'CONN_HEALTH_CHECKS': DB_CONN_HEALTH_CHECKS,
+            'DISABLE_SERVER_SIDE_CURSORS': DB_DISABLE_SERVER_SIDE_CURSORS,
+            'OPTIONS': {
+                'pool': {
+                    'min_size': DB_POOL_MIN_SIZE,
+                    'max_size': DB_POOL_MAX_SIZE,
+                    'timeout': DB_POOL_TIMEOUT,
+                    'max_lifetime': DB_POOL_MAX_LIFETIME,
+                    'max_idle': DB_POOL_MAX_IDLE,
+                } if DB_POOL_ENABLE else {},
+            },
         }
     }
 
 
 else:
-
+    # Standard database engines (PostgreSQL, MySQL, etc.) with native Django 5.1+ connection pooling
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
@@ -195,6 +226,19 @@ else:
             'PORT': iniconf.settings.get('server', 'db_port'),
             'USER': iniconf.settings.get('server', 'db_user'),
             'PASSWORD': iniconf.settings.get('server', 'db_pass'),
+            # Django 5.1+ native connection pooling
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE if not DB_POOL_ENABLE else 0,
+            'CONN_HEALTH_CHECKS': DB_CONN_HEALTH_CHECKS,
+            'DISABLE_SERVER_SIDE_CURSORS': DB_DISABLE_SERVER_SIDE_CURSORS,
+            'OPTIONS': {
+                'pool': {
+                    'min_size': DB_POOL_MIN_SIZE,
+                    'max_size': DB_POOL_MAX_SIZE,
+                    'timeout': DB_POOL_TIMEOUT,
+                    'max_lifetime': DB_POOL_MAX_LIFETIME,
+                    'max_idle': DB_POOL_MAX_IDLE,
+                } if DB_POOL_ENABLE else {},
+            },
         }
     }
 
@@ -288,7 +332,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
-USE_L10N = True
+# USE_L10N = True  # Deprecated in Django 4.0+, now enabled by default
 USE_TZ = True
 
 # Place the app in a sub path (swagger still available in /)
@@ -303,7 +347,7 @@ MEDIA_URL = '/api/media/'
 STATIC_URL = '/api/static/'
 STATIC_DEBUG_URL = '/static/'  # when running
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Django 5+ STORAGES configuration will be set below
 
 # https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
 # Authenticate with S3
@@ -370,17 +414,39 @@ LOCAL_FS = ['local-fs', 'shared-fs']
 AWS_S3 = ['aws-s3', 's3', 'aws']
 AZURE = ['azure']
 
+# Django 5+ STORAGES configuration
 if STORAGE_TYPE in LOCAL_FS:
     # Set Storage to shared volumn mount
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 elif STORAGE_TYPE in AWS_S3:
     # AWS S3 Object Store via `Django-Storages`
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
     set_aws_log_level(AWS_LOG_LEVEL)
 
 elif STORAGE_TYPE in AZURE:
-    DEFAULT_FILE_STORAGE = 'storages.backends.azure_abfs.AzureStorage'
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.azure_abfs.AzureStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
     set_azure_log_level(AZURE_LOG_LEVEL)
 
 else:
