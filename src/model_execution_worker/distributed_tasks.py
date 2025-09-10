@@ -290,19 +290,29 @@ def update_all_tasks_ids(task_request):
     except TypeError:
         logger.debug('Task chain header is already sorted')
     chain_tasks = task_request.chain[0]
-    task_update_list = list()
 
-    # Sequential tasks - in the celery task chain, important for stopping stalls on a cancellation request
-    seq = {t['options']['task_id']: t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
-    for task_id in seq:
-        task_update_list.append((task_id, seq[task_id]['analysis_id'], seq[task_id]['slug']))
+    task_queue = [chain_tasks]
+    task_update_list = []
 
-    # Chunked tasks - This call might get heavy as the chunk load increases (possibly remove later)
-    chunks = {t['options']['task_id']: t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
-    for task_id in chunks:
-        task_update_list.append((task_id, chunks[task_id]['analysis_id'], chunks[task_id]['slug']))
+    while task_queue:
+        curr_level = task_queue.pop(0)
+
+        # extract valid task
+        if "analysis_id" in curr_level.get("kwargs", {}):
+            task_update_list.append((curr_level['options']['task_id'],
+                                     curr_level['kwargs']['analysis_id'],
+                                     curr_level['kwargs']['slug']))
+
+        # add nested tasks to queue
+        if "body" in curr_level["kwargs"]:
+            new_tasks = curr_level["kwargs"]["body"].get("kwargs", {}).get("tasks", [])
+            task_queue.extend(new_tasks)
+
+        if "header" in curr_level["kwargs"]:
+            new_tasks = curr_level["kwargs"]["header"].get("kwargs", {}).get("tasks", [])
+            task_queue.extend(new_tasks)
+
     signature('update_task_id').delay(task_update_list)
-
 
 # --- input generation tasks ------------------------------------------------ #
 
