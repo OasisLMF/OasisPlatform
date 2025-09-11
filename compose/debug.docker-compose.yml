@@ -5,6 +5,7 @@ volumes:
   filestore-OasisData:
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
+  OASIS_DEBUG_TOOLBAR: 1
   OASIS_KEEP_RUN_DIR: 1
   OASIS_KEEP_LOCAL_DATA: 1
   OASIS_KEEP_REMOTE_DATA: 1
@@ -17,8 +18,8 @@ x-shared-env: &shared-env
   OASIS_SERVER_DB_NAME: oasis
   OASIS_SERVER_DB_PORT: 5432
   OASIS_SERVER_CHANNEL_LAYER_HOST: channel-layer
-  OASIS_SERVER_DB_ENGINE: django.db.backends.postgresql_psycopg2
-  OASIS_CELERY_DB_ENGINE: db+postgresql+psycopg2
+  OASIS_SERVER_DB_ENGINE: django.db.backends.postgresql
+  OASIS_CELERY_DB_ENGINE: db+postgresql+psycopg
   OASIS_CELERY_DB_HOST: celery-db
   OASIS_CELERY_DB_PASS: password
   OASIS_CELERY_DB_USER: celery
@@ -32,7 +33,7 @@ x-oasis-env-v1: &oasis-env-v1
   OASIS_RABBIT_PORT: 5672
   OASIS_RABBIT_USER: rabbit
   OASIS_RABBIT_PASS: rabbit
-  OASIS_CELERY_DB_ENGINE: db+postgresql+psycopg2
+  OASIS_CELERY_DB_ENGINE: db+postgresql+psycopg
   OASIS_CELERY_DB_HOST: celery-db
   OASIS_CELERY_DB_PASS: password
   OASIS_CELERY_DB_USER: celery

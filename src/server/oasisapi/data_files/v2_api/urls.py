@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.urls import include, re_path
 from rest_framework.routers import SimpleRouter
 from .viewsets import DataFileViewset
 
@@ -9,5 +9,5 @@ v2_api_router.include_root_view = False
 v2_api_router.register('data_files', DataFileViewset, basename='data-file')
 
 urlpatterns = [
-    url(r'', include(v2_api_router.urls)),
+    re_path(r'', include(v2_api_router.urls)),
 ]

@@ -114,7 +114,7 @@ class SettingsTemplate(TimeStampedModel):
 
     def get_absolute_settings_template_url(self, model_pk, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
-        return reverse(f'{override_ns}models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=self._update_ns(request))
+        return reverse(f'{override_ns}models-setting_templates-content', kwargs={'pk': self.pk, 'models_pk': model_pk}, request=request)
 
 
 class AnalysisModel(TimeStampedModel):
@@ -159,7 +159,7 @@ class AnalysisModel(TimeStampedModel):
         """ WORKAROUND - this is needed for when a copy request is issued
                          from the portfolio view '/{ver}/portfolios/{id}/create_analysis/'
 
-                         The inncorrect namespace '{ver}-portfolios' is inherited from the
+                         The incorrect namespace '{ver}-portfolios' is inherited from the
                          original request. This needs to be replaced with '{ver}-analyses'
         """
         if not request:
