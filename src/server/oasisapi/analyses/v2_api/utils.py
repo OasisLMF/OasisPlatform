@@ -1,5 +1,6 @@
 from rest_framework.exceptions import ValidationError
 
+
 def verify_model_scaling(model):
     if model.run_mode:
         if model.run_mode.lower() == "v1" and model.scaling_options:
