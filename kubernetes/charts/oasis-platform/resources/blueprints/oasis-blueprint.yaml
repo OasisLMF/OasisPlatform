@@ -29,6 +29,8 @@ entries:
     redirect_uris:
       - matching_mode: regex
         url: ".*"
+      - matching_mode: strict
+        url: "http://ui.oasis.local"
     property_mappings:
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
@@ -66,6 +68,8 @@ entries:
     redirect_uris:
       - matching_mode: regex
         url: ".*"
+      - matching_mode: strict
+        url: "http://ui.oasis.local"
     property_mappings:
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
       - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]

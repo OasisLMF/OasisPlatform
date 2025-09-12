@@ -294,7 +294,8 @@ if API_AUTH_TYPE == 'keycloak':
                 "type": "oauth2",
                 "authorizationUrl": KEYCLOAK_OIDC_BASE_URL + 'auth',
                 "refreshUrl": OIDC_OP_TOKEN_ENDPOINT + 'auth',
-                "flow": "implicit",
+                "tokenUrl": KEYCLOAK_OIDC_BASE_URL + 'token',
+                "flow": "accessCode",
                 "scopes": {}
             }
         },
