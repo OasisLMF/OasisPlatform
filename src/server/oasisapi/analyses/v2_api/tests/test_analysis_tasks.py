@@ -18,7 +18,7 @@ from .fakes import fake_analysis, fake_analysis_task_status
 from ...models import Analysis, AnalysisTaskStatus
 from ....auth.tests.fakes import fake_user
 from ...v2_api.tasks import (
-    chord_error_callback, record_sub_task_failure, record_sub_task_success, record_sub_task_start,
+    chord_error_callback, record_sub_task_failure, record_sub_task_success, record_sub_task_start, start_input_and_loss_generation_task,
     start_loss_generation_task, start_input_generation_task
 )
 from ...v1_api.tasks import (
@@ -174,6 +174,18 @@ class StartInputGenerationTask(TestCase):
             start_input_generation_task(analysis.pk, initiator.pk, 37)
 
         task_controller.generate_inputs.assert_called_once_with(analysis, initiator, 37)
+
+
+class StartInputAndLossGenerationTask(TestCase):
+    def test_generate_input_and_loss_called_on_task_controller(self):
+        analysis = fake_analysis()
+        initiator = fake_user()
+
+        task_controller = Mock()
+        with patch('src.server.oasisapi.analyses.v2_api.tasks.get_analysis_task_controller', return_value=task_controller):
+            start_input_and_loss_generation_task(analysis.pk, initiator.pk, 10, 39)
+
+        task_controller.generate_input_and_losses.assert_called_once_with(analysis, initiator, 10, 39)
 
 
 class StartLossGenerationTask(TestCase):
