@@ -169,7 +169,7 @@ decorator==5.2.1
     #   ipython
 distlib==0.4.0
     # via virtualenv
-django==5.2.5
+django==5.2.6
     # via
     #   -r requirements-server.in
     #   channels
