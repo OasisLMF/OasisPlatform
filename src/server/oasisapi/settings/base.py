@@ -161,7 +161,7 @@ DB_CONN_HEALTH_CHECKS = iniconf.settings.getboolean('server', 'db_conn_health_ch
 DB_DISABLE_SERVER_SIDE_CURSORS = iniconf.settings.getboolean('server', 'db_disable_server_side_cursors', fallback=False)
 
 # DB pool options
-DB_POOL_ENABLE = iniconf.settings.getboolean('server', 'db_pool_enable', fallback=True)
+DB_POOL_ENABLE = iniconf.settings.getboolean('server', 'db_pool_enable', fallback=False)
 DB_POOL_MIN_SIZE = iniconf.settings.getint('server', 'db_pool_min_size', fallback=2)
 DB_POOL_MAX_SIZE = iniconf.settings.getint('server', 'db_pool_max_size', fallback=10)
 DB_POOL_TIMEOUT = iniconf.settings.getint('server', 'db_pool_timeout', fallback=30)
@@ -169,10 +169,13 @@ DB_POOL_MAX_LIFETIME = iniconf.settings.getint('server', 'db_pool_max_lifetime',
 DB_POOL_MAX_IDLE = iniconf.settings.getint('server', 'db_pool_max_idle', fallback=600)
 
 
-# Compatibility workaround, 'django.db.backends.postgresql_psycopg2' will fail and needs to be replaced with ' django.db.backends.postgresql'
-if '_psycopg2' in DB_ENGINE and DB_POOL_ENABLE:
-    DB_ENGINE = DB_ENGINE.replace('_psycopg2', '')
-    print('WARNING:  DB_POOL_ENABLE=True and DB driver is psycopg2. Drive does not support pooling, automaticlly switching to psycopg3')
+
+
+
+# Compatibility workaround, Pooling is only supported in postgresql and must be set to the psycopg3 driver
+if not (DB_ENGINE == 'django.db.backends.postgresql') and DB_POOL_ENABLE:
+    DB_POOL_ENABLE = False
+    print('WARNING:  DB_POOL_ENABLE=True, is only supported on psycopg3 and up, setting pooling disabled')
 
 
 if DB_ENGINE == 'django.db.backends.sqlite3':
@@ -210,8 +213,8 @@ elif DB_ENGINE == 'src.server.oasisapi.custom_db_backend.base':
                     'timeout': DB_POOL_TIMEOUT,
                     'max_lifetime': DB_POOL_MAX_LIFETIME,
                     'max_idle': DB_POOL_MAX_IDLE,
-                } if DB_POOL_ENABLE else {},
-            },
+                },
+            } if DB_POOL_ENABLE else {},
         }
     }
 
@@ -237,8 +240,8 @@ else:
                     'timeout': DB_POOL_TIMEOUT,
                     'max_lifetime': DB_POOL_MAX_LIFETIME,
                     'max_idle': DB_POOL_MAX_IDLE,
-                } if DB_POOL_ENABLE else {},
-            },
+                },
+            } if DB_POOL_ENABLE else {},
         }
     }
 
