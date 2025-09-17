@@ -169,9 +169,6 @@ DB_POOL_MAX_LIFETIME = iniconf.settings.getint('server', 'db_pool_max_lifetime',
 DB_POOL_MAX_IDLE = iniconf.settings.getint('server', 'db_pool_max_idle', fallback=600)
 
 
-
-
-
 # Compatibility workaround, Pooling is only supported in postgresql and must be set to the psycopg3 driver
 if not (DB_ENGINE == 'django.db.backends.postgresql') and DB_POOL_ENABLE:
     DB_POOL_ENABLE = False
