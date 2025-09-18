@@ -84,9 +84,6 @@ ingress:
 
 
 traefik:
-  #enabled: true
-  #installCRDs: true
-  
   # Entry points configuration
   ports:
     web:
@@ -99,34 +96,11 @@ traefik:
         default: true
       tls:
         enabled: true
-    traefik:
-      port: 8080
-      expose:
-        default: true
-    metrics:
-      port: 9100
-      expose:
-        default: true
 
-  # Enable dashboard
-  api:
-    dashboard: true
-  
   # Enable debug logging
   logs:
     general:
       level: DEBUG
-  
-  ## Configure providers
-  #providers:
-  #  kubernetesCRD:
-  #    enabled: true
-  #    allowEmptyServices: true
-  #  kubernetesIngress:
-  #    enabled: true
-  #    allowEmptyServices: true
-  #    publishedService:
-  #      enabled: true
 
 
 # Generate all password secrets - get them by using kubectl:
