@@ -4,7 +4,7 @@ from rest_framework.parsers import FormParser
 from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView, \
     TokenObtainPairView as BaseTokenObtainPairView
 
-from .serializers import OIDCTokenRefreshSerializer, OIDCTokenObtainPairSerializer, SimpleTokenObtainPairSerializer, \
+from .serializers import OIDCServiceTokenObtainPairSerializer, OIDCTokenRefreshSerializer, OIDCTokenObtainPairSerializer, SimpleTokenObtainPairSerializer, \
     SimpleTokenRefreshSerializer
 from .. import settings
 from ..schemas.custom_swagger import TOKEN_REFRESH_HEADER
@@ -37,6 +37,21 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     Fetches a new refresh token from your username and password.
     """
     serializer_class = OIDCTokenObtainPairSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleTokenObtainPairSerializer
+
+    @swagger_auto_schema(
+        responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
+        security=[],
+        tags=['authentication'])
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+
+class ServiceTokenObtainPairView(BaseTokenObtainPairView):
+    """
+    Fetches a new refresh token from your username and password.
+    """
+    serializer_class =\
+        OIDCServiceTokenObtainPairSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleTokenObtainPairSerializer
 
     @swagger_auto_schema(
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},

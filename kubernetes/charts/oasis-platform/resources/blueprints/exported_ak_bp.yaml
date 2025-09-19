@@ -1,149 +1,149 @@
-{"event": "Loaded config", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585997.0121088, "file": "/authentik/lib/default.yml"}
-{"event": "Loaded environment variables", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585997.0127242, "count": 28}
-{"event": "Starting authentik bootstrap", "level": "info", "logger": "authentik.lib.config", "timestamp": 1755585997.4428566}
-{"event": "PostgreSQL connection successful", "level": "info", "logger": "authentik.lib.config", "timestamp": 1755585997.458113}
-{"event": "Redis Connection successful", "level": "info", "logger": "authentik.lib.config", "timestamp": 1755585997.4609551}
-{"event": "Finished authentik bootstrap", "level": "info", "logger": "authentik.lib.config", "timestamp": 1755585997.461147}
-{"event": "Booting authentik", "level": "info", "logger": "authentik.lib.config", "timestamp": 1755585998.2071066, "version": "2025.6.4"}
-{"event": "Enabled authentik enterprise", "level": "info", "logger": "authentik.lib.config", "timestamp": 1755585998.2102232}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2116022, "path": "authentik.enterprise.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2130008, "path": "authentik.sources.plex.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2148068, "path": "authentik.sources.ldap.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.219642, "path": "authentik.blueprints.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.220404, "path": "authentik.enterprise.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2234516, "path": "authentik.sources.kerberos.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.224471, "path": "authentik.stages.authenticator_totp.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2264001, "path": "authentik.providers.scim.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2291405, "path": "authentik.crypto.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2309225, "path": "authentik.enterprise.providers.google_workspace.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2324302, "path": "authentik.enterprise.providers.microsoft_entra.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2359962, "path": "authentik.enterprise.policies.unique_password.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2387598, "path": "authentik.stages.authenticator_webauthn.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2399724, "path": "authentik.sources.oauth.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2461944, "path": "authentik.admin.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.252565, "path": "authentik.events.settings"}
-{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1755585998.2744591, "path": "authentik.outposts.settings"}
-{"domain_url": null, "event": "Loaded MMDB database", "file": "/geoip/GeoLite2-ASN.mmdb", "last_write": 1753188965.0, "level": "info", "logger": "authentik.events.context_processors.mmdb", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:39.036070"}
-{"domain_url": null, "event": "Loaded MMDB database", "file": "/geoip/GeoLite2-City.mmdb", "last_write": 1753188965.0, "level": "info", "logger": "authentik.events.context_processors.mmdb", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:39.037583"}
-{"app_name": "authentik.tenants", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.tenants.checks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.043768"}
-{"app_name": "authentik.tenants", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.tenants.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.044559"}
-{"app_name": "authentik.admin", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.admin.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.059938"}
-{"app_name": "authentik.admin", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.admin.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.062043"}
-{"app_name": "authentik.crypto", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.crypto.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.064788"}
-{"app_name": "authentik.flows", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.flows.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.122923"}
-{"app_name": "authentik.outposts", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.outposts.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.168508"}
-{"app_name": "authentik.outposts", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.outposts.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.169926"}
-{"app_name": "authentik.policies.reputation", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.policies.reputation.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.171395"}
-{"app_name": "authentik.policies", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.policies.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.186696"}
-{"app_name": "authentik.providers.oauth2", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.oauth2.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.188113"}
-{"app_name": "authentik.providers.proxy", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.proxy.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.189214"}
-{"app_name": "authentik.providers.proxy", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.proxy.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.190258"}
-{"app_name": "authentik.providers.rac", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.rac.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.195841"}
-{"app_name": "authentik.providers.scim", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.scim.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.199627"}
-{"app_name": "authentik.providers.scim", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.scim.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.201402"}
-{"app_name": "authentik.rbac", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.rbac.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.203021"}
-{"app_name": "authentik.sources.kerberos", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.kerberos.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.205907"}
-{"app_name": "authentik.sources.kerberos", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.kerberos.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.207004"}
-{"app_name": "authentik.sources.ldap", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.ldap.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.218481"}
-{"app_name": "authentik.sources.ldap", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.ldap.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.225991"}
-{"app_name": "authentik.sources.oauth", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.oauth.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.253868"}
-{"app_name": "authentik.sources.saml", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.saml.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.255309"}
-{"app_name": "authentik.sources.scim", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.scim.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.263222"}
-{"app_name": "authentik.stages.authenticator_duo", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.stages.authenticator_duo.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.264896"}
-{"app_name": "authentik.stages.authenticator_static", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.stages.authenticator_static.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.266438"}
-{"app_name": "authentik.stages.authenticator_webauthn", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.stages.authenticator_webauthn.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.302130"}
-{"app_name": "authentik.stages.email", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.stages.email.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.302656"}
-{"app_name": "authentik.core", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.core.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.304948"}
-{"app_name": "authentik.core", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.core.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.305209"}
-{"app_name": "authentik.enterprise", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.306665"}
-{"app_name": "authentik.enterprise", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.308036"}
-{"app_name": "authentik.enterprise.policies.unique_password", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.policies.unique_password.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.310079"}
-{"app_name": "authentik.enterprise.policies.unique_password", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.policies.unique_password.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.311139"}
-{"app_name": "authentik.enterprise.providers.google_workspace", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.google_workspace.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.312661"}
-{"app_name": "authentik.enterprise.providers.google_workspace", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.google_workspace.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.314128"}
-{"app_name": "authentik.enterprise.providers.microsoft_entra", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.microsoft_entra.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.315163"}
-{"app_name": "authentik.enterprise.providers.microsoft_entra", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.microsoft_entra.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.316138"}
-{"app_name": "authentik.enterprise.providers.ssf", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.ssf.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.319121"}
-{"app_name": "authentik.enterprise.providers.ssf", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.ssf.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.321792"}
-{"app_name": "authentik.events", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.events.tasks", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.323031"}
-{"app_name": "authentik.events", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.events.signals", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.323296"}
-{"app_name": "authentik.tenants", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.372033"}
-{"app_name": "authentik.admin", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.379037"}
-{"app_name": "authentik.api", "domain_url": null, "event": "App does not define API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.379569"}
-{"app_name": "authentik.crypto", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.388016"}
-{"app_name": "authentik.flows", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.401125"}
-{"app_name": "authentik.outposts", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.409892"}
-{"app_name": "authentik.policies.dummy", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.415303"}
-{"app_name": "authentik.policies.event_matcher", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.418562"}
-{"app_name": "authentik.policies.expiry", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.420475"}
-{"app_name": "authentik.policies.expression", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.422280"}
-{"app_name": "authentik.policies.geoip", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.455442"}
-{"app_name": "authentik.policies.password", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.457078"}
-{"app_name": "authentik.policies.reputation", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.459305"}
-{"app_name": "authentik.policies", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.467401"}
-{"app_name": "authentik.providers.ldap", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.473589"}
-{"app_name": "authentik.providers.oauth2", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.541828"}
-{"app_name": "authentik.providers.proxy", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.547290"}
-{"app_name": "authentik.providers.rac", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.563180"}
-{"app_name": "authentik.providers.radius", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.585217"}
-{"app_name": "authentik.providers.saml", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.617204"}
-{"app_name": "authentik.providers.scim", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.627533"}
-{"app_name": "authentik.rbac", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.645225"}
-{"app_name": "authentik.recovery", "domain_url": null, "event": "App does not define API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.647048"}
-{"app_name": "authentik.sources.kerberos", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.658004"}
-{"app_name": "authentik.sources.ldap", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.662884"}
-{"app_name": "authentik.sources.oauth", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.672486"}
-{"app_name": "authentik.sources.plex", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.680860"}
-{"app_name": "authentik.sources.saml", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.695869"}
-{"app_name": "authentik.sources.scim", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.860375"}
-{"app_name": "authentik.stages.authenticator_duo", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.865421"}
-{"app_name": "authentik.stages.authenticator_email", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.868066"}
-{"app_name": "authentik.stages.authenticator_sms", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.870438"}
-{"app_name": "authentik.stages.authenticator_static", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.873625"}
-{"app_name": "authentik.stages.authenticator_totp", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.877045"}
-{"app_name": "authentik.stages.authenticator_validate", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.881121"}
-{"app_name": "authentik.stages.authenticator_webauthn", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.884493"}
-{"app_name": "authentik.stages.captcha", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.886393"}
-{"app_name": "authentik.stages.consent", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.888787"}
-{"app_name": "authentik.stages.deny", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.890412"}
-{"app_name": "authentik.stages.dummy", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.892171"}
-{"app_name": "authentik.stages.email", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.894914"}
-{"app_name": "authentik.stages.identification", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.897131"}
-{"app_name": "authentik.stages.invitation", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.900595"}
-{"app_name": "authentik.stages.password", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.902580"}
-{"app_name": "authentik.stages.prompt", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.905989"}
-{"app_name": "authentik.stages.redirect", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.908090"}
-{"app_name": "authentik.stages.user_delete", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.909424"}
-{"app_name": "authentik.stages.user_login", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.911160"}
-{"app_name": "authentik.stages.user_logout", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.912938"}
-{"app_name": "authentik.stages.user_write", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.914655"}
-{"app_name": "authentik.brands", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.915508"}
-{"app_name": "authentik.blueprints", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:40.916333"}
-{"app_name": "authentik.core", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.155009"}
-{"app_name": "authentik.enterprise", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.155610"}
-{"app_name": "authentik.enterprise.policies.unique_password", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.157159"}
-{"app_name": "authentik.enterprise.providers.google_workspace", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.160960"}
-{"app_name": "authentik.enterprise.providers.microsoft_entra", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.164320"}
-{"app_name": "authentik.enterprise.providers.ssf", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.170746"}
-{"app_name": "authentik.enterprise.stages.authenticator_endpoint_gdtc", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.245962"}
-{"app_name": "authentik.enterprise.stages.mtls", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.248209"}
-{"app_name": "authentik.enterprise.stages.source", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.250576"}
-{"app_name": "authentik.events", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.260407"}
-{"app_mountpoint": "api/", "app_name": "authentik.api", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_api", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.304049"}
-{"app_mountpoint": "flows/", "app_name": "authentik.flows", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_flows", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.304336"}
-{"app_mountpoint": "", "app_name": "authentik.providers.oauth2", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_oauth2_root", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.307928"}
-{"app_mountpoint": "application/o/", "app_name": "authentik.providers.oauth2", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_oauth2", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.308246"}
-{"app_mountpoint": "", "app_name": "authentik.providers.rac", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_rac", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.308516"}
-{"app_mountpoint": "application/saml/", "app_name": "authentik.providers.saml", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_saml", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.308803"}
-{"app_mountpoint": "recovery/", "app_name": "authentik.recovery", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_recovery", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.309048"}
-{"app_mountpoint": "source/kerberos/", "app_name": "authentik.sources.kerberos", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_sources_kerberos", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.309292"}
-{"app_mountpoint": "source/oauth/", "app_name": "authentik.sources.oauth", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_sources_oauth", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.309575"}
-{"app_mountpoint": "source/saml/", "app_name": "authentik.sources.saml", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_sources_saml", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.309859"}
-{"app_mountpoint": "source/scim/", "app_name": "authentik.sources.scim", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_sources_scim", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.310197"}
-{"app_mountpoint": "", "app_name": "authentik.brands", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_brands_root", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.312551"}
-{"app_mountpoint": "", "app_name": "authentik.core", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_core", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.312850"}
-{"app_mountpoint": "", "app_name": "authentik.enterprise.providers.ssf", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_ssf", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.313062"}
-{"app_mountpoint": "endpoint/gdtc/", "app_name": "authentik.enterprise.stages.authenticator_endpoint_gdtc", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_stages_authenticator_endpoint_gdtc", "pid": 255, "schema_name": "public", "timestamp": "2025-08-19T06:46:41.313286"}
+{"event": "Loaded config", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189706.8752055, "file": "/authentik/lib/default.yml"}
+{"event": "Loaded environment variables", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189706.8757708, "count": 28}
+{"event": "Starting authentik bootstrap", "level": "info", "logger": "authentik.lib.config", "timestamp": 1758189707.2675598}
+{"event": "PostgreSQL connection successful", "level": "info", "logger": "authentik.lib.config", "timestamp": 1758189707.2828588}
+{"event": "Redis Connection successful", "level": "info", "logger": "authentik.lib.config", "timestamp": 1758189707.2852378}
+{"event": "Finished authentik bootstrap", "level": "info", "logger": "authentik.lib.config", "timestamp": 1758189707.2854023}
+{"event": "Booting authentik", "level": "info", "logger": "authentik.lib.config", "timestamp": 1758189707.8610497, "version": "2025.6.4"}
+{"event": "Enabled authentik enterprise", "level": "info", "logger": "authentik.lib.config", "timestamp": 1758189707.864228}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8656366, "path": "authentik.enterprise.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8667417, "path": "authentik.sources.plex.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8685236, "path": "authentik.stages.authenticator_totp.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8709464, "path": "authentik.sources.oauth.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8720942, "path": "authentik.enterprise.providers.google_workspace.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.873726, "path": "authentik.events.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8767934, "path": "authentik.outposts.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8776538, "path": "authentik.admin.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.878101, "path": "authentik.enterprise.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.878957, "path": "authentik.stages.authenticator_webauthn.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.879847, "path": "authentik.enterprise.policies.unique_password.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8812728, "path": "authentik.sources.ldap.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.883116, "path": "authentik.enterprise.providers.microsoft_entra.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8847046, "path": "authentik.providers.scim.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8867795, "path": "authentik.sources.kerberos.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.8898954, "path": "authentik.crypto.settings"}
+{"event": "Loaded app settings", "level": "debug", "logger": "authentik.lib.config", "timestamp": 1758189707.89233, "path": "authentik.blueprints.settings"}
+{"domain_url": null, "event": "Loaded MMDB database", "file": "/geoip/GeoLite2-ASN.mmdb", "last_write": 1753188965.0, "level": "info", "logger": "authentik.events.context_processors.mmdb", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:48.222312"}
+{"domain_url": null, "event": "Loaded MMDB database", "file": "/geoip/GeoLite2-City.mmdb", "last_write": 1753188965.0, "level": "info", "logger": "authentik.events.context_processors.mmdb", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:48.223803"}
+{"app_name": "authentik.tenants", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.tenants.checks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:48.938083"}
+{"app_name": "authentik.tenants", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.tenants.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:48.938715"}
+{"app_name": "authentik.admin", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.admin.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:48.947716"}
+{"app_name": "authentik.admin", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.admin.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:48.949475"}
+{"app_name": "authentik.crypto", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.crypto.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:48.951730"}
+{"app_name": "authentik.flows", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.flows.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:48.997130"}
+{"app_name": "authentik.outposts", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.outposts.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.032141"}
+{"app_name": "authentik.outposts", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.outposts.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.033816"}
+{"app_name": "authentik.policies.reputation", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.policies.reputation.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.035359"}
+{"app_name": "authentik.policies", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.policies.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.046873"}
+{"app_name": "authentik.providers.oauth2", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.oauth2.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.047978"}
+{"app_name": "authentik.providers.proxy", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.proxy.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.049286"}
+{"app_name": "authentik.providers.proxy", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.proxy.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.050490"}
+{"app_name": "authentik.providers.rac", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.rac.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.055681"}
+{"app_name": "authentik.providers.scim", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.scim.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.058851"}
+{"app_name": "authentik.providers.scim", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.providers.scim.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.060504"}
+{"app_name": "authentik.rbac", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.rbac.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.061988"}
+{"app_name": "authentik.sources.kerberos", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.kerberos.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.064532"}
+{"app_name": "authentik.sources.kerberos", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.kerberos.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.065648"}
+{"app_name": "authentik.sources.ldap", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.ldap.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.075015"}
+{"app_name": "authentik.sources.ldap", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.ldap.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.079457"}
+{"app_name": "authentik.sources.oauth", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.oauth.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.098448"}
+{"app_name": "authentik.sources.saml", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.saml.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.099473"}
+{"app_name": "authentik.sources.scim", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.sources.scim.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.105515"}
+{"app_name": "authentik.stages.authenticator_duo", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.stages.authenticator_duo.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.107291"}
+{"app_name": "authentik.stages.authenticator_static", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.stages.authenticator_static.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.108981"}
+{"app_name": "authentik.stages.authenticator_webauthn", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.stages.authenticator_webauthn.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.136750"}
+{"app_name": "authentik.stages.email", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.stages.email.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.136993"}
+{"app_name": "authentik.core", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.core.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.138302"}
+{"app_name": "authentik.core", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.core.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.138436"}
+{"app_name": "authentik.enterprise", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.139912"}
+{"app_name": "authentik.enterprise", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.141315"}
+{"app_name": "authentik.enterprise.policies.unique_password", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.policies.unique_password.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.143238"}
+{"app_name": "authentik.enterprise.policies.unique_password", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.policies.unique_password.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.144177"}
+{"app_name": "authentik.enterprise.providers.google_workspace", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.google_workspace.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.145483"}
+{"app_name": "authentik.enterprise.providers.google_workspace", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.google_workspace.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.146939"}
+{"app_name": "authentik.enterprise.providers.microsoft_entra", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.microsoft_entra.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.148076"}
+{"app_name": "authentik.enterprise.providers.microsoft_entra", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.microsoft_entra.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.149110"}
+{"app_name": "authentik.enterprise.providers.ssf", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.ssf.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.151479"}
+{"app_name": "authentik.enterprise.providers.ssf", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.enterprise.providers.ssf.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.153781"}
+{"app_name": "authentik.events", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.events.tasks", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.154828"}
+{"app_name": "authentik.events", "domain_url": null, "event": "Imported related module", "level": "info", "logger": "authentik.blueprints.apps", "module": "authentik.events.signals", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.155028"}
+{"app_name": "authentik.tenants", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.188721"}
+{"app_name": "authentik.admin", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.194179"}
+{"app_name": "authentik.api", "domain_url": null, "event": "App does not define API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.194524"}
+{"app_name": "authentik.crypto", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.199744"}
+{"app_name": "authentik.flows", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.209529"}
+{"app_name": "authentik.outposts", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.215780"}
+{"app_name": "authentik.policies.dummy", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.219066"}
+{"app_name": "authentik.policies.event_matcher", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.222195"}
+{"app_name": "authentik.policies.expiry", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.223812"}
+{"app_name": "authentik.policies.expression", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.225454"}
+{"app_name": "authentik.policies.geoip", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.240319"}
+{"app_name": "authentik.policies.password", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.242125"}
+{"app_name": "authentik.policies.reputation", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.244372"}
+{"app_name": "authentik.policies", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.251287"}
+{"app_name": "authentik.providers.ldap", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.254487"}
+{"app_name": "authentik.providers.oauth2", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.296309"}
+{"app_name": "authentik.providers.proxy", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.300417"}
+{"app_name": "authentik.providers.rac", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.310064"}
+{"app_name": "authentik.providers.radius", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.324889"}
+{"app_name": "authentik.providers.saml", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.347062"}
+{"app_name": "authentik.providers.scim", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.353014"}
+{"app_name": "authentik.rbac", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.362906"}
+{"app_name": "authentik.recovery", "domain_url": null, "event": "App does not define API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.364554"}
+{"app_name": "authentik.sources.kerberos", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.374105"}
+{"app_name": "authentik.sources.ldap", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.378200"}
+{"app_name": "authentik.sources.oauth", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.383278"}
+{"app_name": "authentik.sources.plex", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.387483"}
+{"app_name": "authentik.sources.saml", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.399920"}
+{"app_name": "authentik.sources.scim", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.543121"}
+{"app_name": "authentik.stages.authenticator_duo", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.548266"}
+{"app_name": "authentik.stages.authenticator_email", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.550982"}
+{"app_name": "authentik.stages.authenticator_sms", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.553271"}
+{"app_name": "authentik.stages.authenticator_static", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.555917"}
+{"app_name": "authentik.stages.authenticator_totp", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.557955"}
+{"app_name": "authentik.stages.authenticator_validate", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.560284"}
+{"app_name": "authentik.stages.authenticator_webauthn", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.562402"}
+{"app_name": "authentik.stages.captcha", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.563439"}
+{"app_name": "authentik.stages.consent", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.565406"}
+{"app_name": "authentik.stages.deny", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.566448"}
+{"app_name": "authentik.stages.dummy", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.567496"}
+{"app_name": "authentik.stages.email", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.569108"}
+{"app_name": "authentik.stages.identification", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.570327"}
+{"app_name": "authentik.stages.invitation", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.572264"}
+{"app_name": "authentik.stages.password", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.573393"}
+{"app_name": "authentik.stages.prompt", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.575505"}
+{"app_name": "authentik.stages.redirect", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.576827"}
+{"app_name": "authentik.stages.user_delete", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.577866"}
+{"app_name": "authentik.stages.user_login", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.578958"}
+{"app_name": "authentik.stages.user_logout", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.579982"}
+{"app_name": "authentik.stages.user_write", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.581099"}
+{"app_name": "authentik.brands", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.581588"}
+{"app_name": "authentik.blueprints", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.582031"}
+{"app_name": "authentik.core", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.718452"}
+{"app_name": "authentik.enterprise", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.719240"}
+{"app_name": "authentik.enterprise.policies.unique_password", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.720911"}
+{"app_name": "authentik.enterprise.providers.google_workspace", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.723697"}
+{"app_name": "authentik.enterprise.providers.microsoft_entra", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.726353"}
+{"app_name": "authentik.enterprise.providers.ssf", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.732224"}
+{"app_name": "authentik.enterprise.stages.authenticator_endpoint_gdtc", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.770877"}
+{"app_name": "authentik.enterprise.stages.mtls", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.772118"}
+{"app_name": "authentik.enterprise.stages.source", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.774053"}
+{"app_name": "authentik.events", "domain_url": null, "event": "Mounted API URLs", "level": "debug", "logger": "authentik.api.v3.urls", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.782353"}
+{"app_mountpoint": "api/", "app_name": "authentik.api", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_api", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.804966"}
+{"app_mountpoint": "flows/", "app_name": "authentik.flows", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_flows", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.805153"}
+{"app_mountpoint": "", "app_name": "authentik.providers.oauth2", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_oauth2_root", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.807599"}
+{"app_mountpoint": "application/o/", "app_name": "authentik.providers.oauth2", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_oauth2", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.807762"}
+{"app_mountpoint": "", "app_name": "authentik.providers.rac", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_rac", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.807873"}
+{"app_mountpoint": "application/saml/", "app_name": "authentik.providers.saml", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_saml", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.807961"}
+{"app_mountpoint": "recovery/", "app_name": "authentik.recovery", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_recovery", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.808037"}
+{"app_mountpoint": "source/kerberos/", "app_name": "authentik.sources.kerberos", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_sources_kerberos", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.808108"}
+{"app_mountpoint": "source/oauth/", "app_name": "authentik.sources.oauth", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_sources_oauth", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.808213"}
+{"app_mountpoint": "source/saml/", "app_name": "authentik.sources.saml", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_sources_saml", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.808304"}
+{"app_mountpoint": "source/scim/", "app_name": "authentik.sources.scim", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_sources_scim", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.808419"}
+{"app_mountpoint": "", "app_name": "authentik.brands", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_brands_root", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.810081"}
+{"app_mountpoint": "", "app_name": "authentik.core", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_core", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.810298"}
+{"app_mountpoint": "", "app_name": "authentik.enterprise.providers.ssf", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_providers_ssf", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.810438"}
+{"app_mountpoint": "endpoint/gdtc/", "app_name": "authentik.enterprise.stages.authenticator_endpoint_gdtc", "domain_url": null, "event": "Mounted URLs", "level": "debug", "logger": "authentik.root.urls", "namespace": "authentik_stages_authenticator_endpoint_gdtc", "pid": 2054, "schema_name": "public", "timestamp": "2025-09-18T10:01:49.810769"}
 [31;1m[31mSwitching to schema '[0m[1mpublic[0m[31m'[0m
 [0mcontext: {}
 entries:
@@ -151,7 +151,7 @@ entries:
     name: authentik Internal JWT Certificate
   conditions: []
   identifiers:
-    pk: 5ed5ed52-b3a2-41e5-9573-a8b21f05161a
+    pk: 383f1303-3bc1-4e77-bf33-ac49404c0b08
   model: authentik_crypto.certificatekeypair
   permissions: []
   state: present
@@ -159,7 +159,7 @@ entries:
     name: authentik Self-signed Certificate
   conditions: []
   identifiers:
-    pk: 308590d6-8dd5-4408-a3ad-99f98e0f6a78
+    pk: db75e24f-9e49-4b6e-a7b6-c2d277fb5987
   model: authentik_crypto.certificatekeypair
   permissions: []
   state: present
@@ -174,7 +174,7 @@ entries:
     title: Default Invalidation Flow
   conditions: []
   identifiers:
-    pk: 97412c34-668b-4d35-8c5e-0bed0f8ca418
+    pk: 799b0167-6957-490a-94ba-4337a0a70f2b
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -189,7 +189,7 @@ entries:
     title: Redirecting to %(app)s
   conditions: []
   identifiers:
-    pk: 65ef508a-7e3d-4114-9c13-fc9ecf016500
+    pk: 8a282f1c-d90a-4a82-bbdd-298c58a2e52a
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -204,7 +204,7 @@ entries:
     title: Setup Static OTP Tokens
   conditions: []
   identifiers:
-    pk: 4beccdfd-5138-4fef-8d72-f4d7f8f0c31f
+    pk: 2755204a-5363-45ce-a75f-2396672b70f2
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -219,7 +219,7 @@ entries:
     title: Welcome to authentik!
   conditions: []
   identifiers:
-    pk: 1768c942-aab0-424f-bacd-562a86538946
+    pk: 85b8df99-4d4f-4633-a8d9-fa9b5cea9c78
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -234,7 +234,7 @@ entries:
     title: Update your info
   conditions: []
   identifiers:
-    pk: f51541a4-fe99-4cbf-ae09-6d3af75ce300
+    pk: 91e0fb8e-9ec5-49ff-86dc-12fa6b43bcb3
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -249,22 +249,7 @@ entries:
     title: Welcome to authentik!
   conditions: []
   identifiers:
-    pk: afe3bef8-a3f5-4ffe-ae36-d8202dd5b691
-  model: authentik_flows.flow
-  permissions: []
-  state: present
-- attrs:
-    authentication: require_authenticated
-    denied_action: message_continue
-    designation: authorization
-    layout: stacked
-    name: Authorize Application
-    policy_engine_mode: any
-    slug: default-provider-authorization-explicit-consent
-    title: Redirecting to %(app)s
-  conditions: []
-  identifiers:
-    pk: b6e5fa44-0d79-4823-b4cb-a23ca2e81af3
+    pk: 40731378-16bc-4670-9b8a-20ef08fedfeb
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -279,7 +264,22 @@ entries:
     title: Welcome to authentik! Please select a username.
   conditions: []
   identifiers:
-    pk: 0223febd-2a77-4084-8f75-2652b59e5c52
+    pk: 0ccf1cc8-e876-48b5-8b97-10f3af6a9859
+  model: authentik_flows.flow
+  permissions: []
+  state: present
+- attrs:
+    authentication: require_authenticated
+    denied_action: message_continue
+    designation: authorization
+    layout: stacked
+    name: Authorize Application
+    policy_engine_mode: any
+    slug: default-provider-authorization-explicit-consent
+    title: Redirecting to %(app)s
+  conditions: []
+  identifiers:
+    pk: 368202ad-e37b-4f33-9a59-e08a8415fe67
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -294,7 +294,7 @@ entries:
     title: Set up Two-Factor authentication
   conditions: []
   identifiers:
-    pk: 493155c2-f00d-4564-b6fb-5ae76bd34d27
+    pk: 2b4b9fc4-805d-4104-984d-2a0187ea8789
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -309,7 +309,7 @@ entries:
     title: Pre-authentication
   conditions: []
   identifiers:
-    pk: d462ea5d-969c-4b3b-909b-b008e24b6a6c
+    pk: 4ca4f543-3066-43f4-b090-23c4c049d8d6
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -324,7 +324,7 @@ entries:
     title: Setup WebAuthn
   conditions: []
   identifiers:
-    pk: f8c0a38d-f57c-4eaa-8d06-4b35dee6cd92
+    pk: 53b14b85-98de-4611-9ed3-87e8b64be57f
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -339,7 +339,7 @@ entries:
     title: You've logged out of %(app)s.
   conditions: []
   identifiers:
-    pk: 1d9b8e4c-c295-4001-a946-55f5bf3d8e88
+    pk: 9f3569a6-e3b1-446f-bbfe-fb688b92dda3
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -354,7 +354,7 @@ entries:
     title: Change password
   conditions: []
   identifiers:
-    pk: 746d7822-d1f8-415a-8828-1fadfeb73525
+    pk: 60bb2a54-8c6d-427e-94e3-2242148df137
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -369,7 +369,7 @@ entries:
     title: Welcome to authentik!
   conditions: []
   identifiers:
-    pk: c8cfd877-c1fc-4ba2-a79e-7d1ce1decfb9
+    pk: 78aaf3c8-e726-4b5c-804f-a69a1669354e
   model: authentik_flows.flow
   permissions: []
   state: present
@@ -378,11 +378,11 @@ entries:
     order: 0
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: ec7fb9fd-5618-48e3-af35-b8f99104c2e6
-    target: 0223febd-2a77-4084-8f75-2652b59e5c52
+    stage: 5aa8db2c-c913-49ea-bbb2-d1749d5b1965
+    target: 0ccf1cc8-e876-48b5-8b97-10f3af6a9859
   conditions: []
   identifiers:
-    pk: ca93c2fb-c893-494e-97bb-33cf5da49a16
+    pk: aa336f06-8bc2-4135-8403-d645a8fcad72
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -391,11 +391,11 @@ entries:
     order: 1
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 3fc054cf-f949-4c6c-a0b9-2e34ad249804
-    target: 0223febd-2a77-4084-8f75-2652b59e5c52
+    stage: 17e87c2e-8430-4bde-b16c-a0468feb4655
+    target: 0ccf1cc8-e876-48b5-8b97-10f3af6a9859
   conditions: []
   identifiers:
-    pk: 8d9003ce-7c92-4027-9a3a-c5c5cfb047b2
+    pk: bc5f2d9a-a59b-4aee-b317-6fc1921076cf
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -404,50 +404,11 @@ entries:
     order: 2
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 44fe8542-62c7-48df-8521-66856925677d
-    target: 0223febd-2a77-4084-8f75-2652b59e5c52
+    stage: ae35bf60-a492-41cc-917a-cb018b08f2f2
+    target: 0ccf1cc8-e876-48b5-8b97-10f3af6a9859
   conditions: []
   identifiers:
-    pk: 61a04d71-9086-40b7-bd7b-fd7ce6291c22
-  model: authentik_flows.flowstagebinding
-  permissions: []
-  state: present
-- attrs:
-    evaluate_on_plan: true
-    invalid_response_action: retry
-    order: 10
-    policy_engine_mode: any
-    stage: 6a77c1e6-7f1c-47ff-8e20-46ae40358e1b
-    target: 1768c942-aab0-424f-bacd-562a86538946
-  conditions: []
-  identifiers:
-    pk: 37f8fd1d-df8f-4482-b7a5-c6270fa55a1c
-  model: authentik_flows.flowstagebinding
-  permissions: []
-  state: present
-- attrs:
-    invalid_response_action: retry
-    order: 20
-    policy_engine_mode: any
-    re_evaluate_policies: true
-    stage: d86343e3-ec67-407d-9245-7abe00007834
-    target: 1768c942-aab0-424f-bacd-562a86538946
-  conditions: []
-  identifiers:
-    pk: d911b06f-6a85-4691-8b4c-4d224fee2ce8
-  model: authentik_flows.flowstagebinding
-  permissions: []
-  state: present
-- attrs:
-    evaluate_on_plan: true
-    invalid_response_action: retry
-    order: 100
-    policy_engine_mode: any
-    stage: 90542525-04ce-42b6-9e3c-9e6d2aed7454
-    target: 1768c942-aab0-424f-bacd-562a86538946
-  conditions: []
-  identifiers:
-    pk: ee63930a-884b-4d31-a1e9-3eb867b9df0b
+    pk: 8d8d4520-8dab-4bc0-961f-ef992fcd4a30
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -456,11 +417,11 @@ entries:
     order: 0
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 0899f894-e017-4635-95f3-8ebfbab7fc10
-    target: 493155c2-f00d-4564-b6fb-5ae76bd34d27
+    stage: 5bfe0707-13da-4dad-bea2-242561194150
+    target: 2755204a-5363-45ce-a75f-2396672b70f2
   conditions: []
   identifiers:
-    pk: c29a01a6-e8c8-4df8-9ad3-e582c8a17467
+    pk: 72360751-3388-4279-9ff9-2646fd960653
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -469,11 +430,11 @@ entries:
     order: 0
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 2880af3b-fc81-4947-9825-588fb33ee5e7
-    target: 4beccdfd-5138-4fef-8d72-f4d7f8f0c31f
+    stage: 0578d558-f36d-478c-99b7-7611790c8f24
+    target: 2b4b9fc4-805d-4104-984d-2a0187ea8789
   conditions: []
   identifiers:
-    pk: 9dd21ccb-f375-49a7-b9da-04fc3481a960
+    pk: 7b77f052-d7d0-4c9b-a975-72e55eee2712
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -482,11 +443,50 @@ entries:
     order: 0
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 2915df10-6382-4bd3-96ae-00665247fd0b
-    target: 746d7822-d1f8-415a-8828-1fadfeb73525
+    stage: fe4d3156-dffb-484f-866f-b046f1e88eba
+    target: 368202ad-e37b-4f33-9a59-e08a8415fe67
   conditions: []
   identifiers:
-    pk: b55b294b-6905-473d-82eb-d1906f5bc5ab
+    pk: 52e96d4f-3467-4997-973e-07f0f7d07484
+  model: authentik_flows.flowstagebinding
+  permissions: []
+  state: present
+- attrs:
+    invalid_response_action: retry
+    order: 0
+    policy_engine_mode: any
+    re_evaluate_policies: true
+    stage: 5afb9800-bbc5-4b19-8fc2-825dbcfa1b70
+    target: 40731378-16bc-4670-9b8a-20ef08fedfeb
+  conditions: []
+  identifiers:
+    pk: 9b651b0a-006e-460e-8e0c-52d11308471b
+  model: authentik_flows.flowstagebinding
+  permissions: []
+  state: present
+- attrs:
+    invalid_response_action: retry
+    order: 0
+    policy_engine_mode: any
+    re_evaluate_policies: true
+    stage: 3e647319-685b-4502-abd9-ce454a3c44e0
+    target: 53b14b85-98de-4611-9ed3-87e8b64be57f
+  conditions: []
+  identifiers:
+    pk: b8de3062-0d30-4bf5-88ba-432fa4fdf9c1
+  model: authentik_flows.flowstagebinding
+  permissions: []
+  state: present
+- attrs:
+    invalid_response_action: retry
+    order: 0
+    policy_engine_mode: any
+    re_evaluate_policies: true
+    stage: 09df815e-8466-4d35-864f-804fbc8d3943
+    target: 60bb2a54-8c6d-427e-94e3-2242148df137
+  conditions: []
+  identifiers:
+    pk: b8b7708f-e2cc-453f-89cc-6ced23ed130a
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -495,50 +495,11 @@ entries:
     order: 1
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: d86343e3-ec67-407d-9245-7abe00007834
-    target: 746d7822-d1f8-415a-8828-1fadfeb73525
+    stage: 311abd5b-9b03-4f5d-9aa9-9892fde73e2b
+    target: 60bb2a54-8c6d-427e-94e3-2242148df137
   conditions: []
   identifiers:
-    pk: b59d9847-c80a-420e-8280-c4239c4321b1
-  model: authentik_flows.flowstagebinding
-  permissions: []
-  state: present
-- attrs:
-    invalid_response_action: retry
-    order: 0
-    policy_engine_mode: any
-    re_evaluate_policies: true
-    stage: 66c372cc-3423-483e-bdf5-daffcfe2ab31
-    target: 97412c34-668b-4d35-8c5e-0bed0f8ca418
-  conditions: []
-  identifiers:
-    pk: 05193a8c-1590-4b26-90f4-3fa7d53892ed
-  model: authentik_flows.flowstagebinding
-  permissions: []
-  state: present
-- attrs:
-    invalid_response_action: retry
-    order: 0
-    policy_engine_mode: any
-    re_evaluate_policies: true
-    stage: 8e8e3237-2892-4740-8b98-a53bac406f93
-    target: afe3bef8-a3f5-4ffe-ae36-d8202dd5b691
-  conditions: []
-  identifiers:
-    pk: fe1ac425-f0ad-4b30-89c3-86a41298f45b
-  model: authentik_flows.flowstagebinding
-  permissions: []
-  state: present
-- attrs:
-    invalid_response_action: retry
-    order: 0
-    policy_engine_mode: any
-    re_evaluate_policies: true
-    stage: 9bdc1783-51d7-41f1-9298-9825e1b5588a
-    target: b6e5fa44-0d79-4823-b4cb-a23ca2e81af3
-  conditions: []
-  identifiers:
-    pk: 39a3f5f7-54ec-4680-9f4a-b6e99237f904
+    pk: 3fa5d98b-c3e4-419d-8a35-146536fbc409
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -547,11 +508,11 @@ entries:
     order: 10
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 21ddc9e9-776c-4719-9b52-03ed1629da80
-    target: c8cfd877-c1fc-4ba2-a79e-7d1ce1decfb9
+    stage: 19b67be9-95a5-4c4f-be7d-b8ac70a29e8d
+    target: 78aaf3c8-e726-4b5c-804f-a69a1669354e
   conditions: []
   identifiers:
-    pk: d4f05fe2-205f-4e59-826d-6338cf325000
+    pk: af99fd99-61eb-4259-9614-7c46f22b5513
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -560,11 +521,11 @@ entries:
     order: 20
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: d8fa902d-fe47-4827-bf0f-9f7fa4b9dea3
-    target: c8cfd877-c1fc-4ba2-a79e-7d1ce1decfb9
+    stage: a55db015-6510-4dd6-8e69-197caedb0db0
+    target: 78aaf3c8-e726-4b5c-804f-a69a1669354e
   conditions: []
   identifiers:
-    pk: dd50f5c8-13ee-43d3-8b1b-0fe5403c69e6
+    pk: 2738fd68-12ce-43db-8fa1-9604c2544d5e
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -573,11 +534,11 @@ entries:
     order: 30
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 99970b61-38e0-450b-9bfe-edcd9b431ca1
-    target: c8cfd877-c1fc-4ba2-a79e-7d1ce1decfb9
+    stage: 9fb2329c-70f9-41d9-9633-9e35d85bc789
+    target: 78aaf3c8-e726-4b5c-804f-a69a1669354e
   conditions: []
   identifiers:
-    pk: f191c5a4-7d67-4173-a685-7c843998131a
+    pk: a734aba6-1dbd-44f7-861e-c32a3acd56fa
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -586,37 +547,11 @@ entries:
     order: 100
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 90542525-04ce-42b6-9e3c-9e6d2aed7454
-    target: c8cfd877-c1fc-4ba2-a79e-7d1ce1decfb9
+    stage: da64031c-c2a7-4db3-8b8c-1b1c77aa35ed
+    target: 78aaf3c8-e726-4b5c-804f-a69a1669354e
   conditions: []
   identifiers:
-    pk: 4123fe98-f8bc-4c5a-a88c-4d25066e9171
-  model: authentik_flows.flowstagebinding
-  permissions: []
-  state: present
-- attrs:
-    invalid_response_action: retry
-    order: 20
-    policy_engine_mode: any
-    re_evaluate_policies: true
-    stage: 449ed428-38cc-44ca-a77c-92e8ac256969
-    target: f51541a4-fe99-4cbf-ae09-6d3af75ce300
-  conditions: []
-  identifiers:
-    pk: 71ab5c5e-fff9-4be6-b747-80b1d37d08b0
-  model: authentik_flows.flowstagebinding
-  permissions: []
-  state: present
-- attrs:
-    invalid_response_action: retry
-    order: 100
-    policy_engine_mode: any
-    re_evaluate_policies: true
-    stage: 7da0c0b3-636f-4327-8861-fa52cd513fb3
-    target: f51541a4-fe99-4cbf-ae09-6d3af75ce300
-  conditions: []
-  identifiers:
-    pk: 361b15dc-40c0-4afc-9c68-687eba470740
+    pk: d5a06108-3963-4169-a915-1e360911def5
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -625,11 +560,76 @@ entries:
     order: 0
     policy_engine_mode: any
     re_evaluate_policies: true
-    stage: 4a4ace22-b607-42af-a846-4b53d0a5a3f7
-    target: f8c0a38d-f57c-4eaa-8d06-4b35dee6cd92
+    stage: f55915c8-1706-4997-bb71-fe0a728d4e26
+    target: 799b0167-6957-490a-94ba-4337a0a70f2b
   conditions: []
   identifiers:
-    pk: e5a9fac4-50a4-437d-8ec0-754ce30f6502
+    pk: 78ed8fa1-58db-4561-9442-6eae47fd02da
+  model: authentik_flows.flowstagebinding
+  permissions: []
+  state: present
+- attrs:
+    evaluate_on_plan: true
+    invalid_response_action: retry
+    order: 10
+    policy_engine_mode: any
+    stage: 95e4b2e9-bae0-40c8-be89-fa7225098888
+    target: 85b8df99-4d4f-4633-a8d9-fa9b5cea9c78
+  conditions: []
+  identifiers:
+    pk: 2d6a82f5-3e57-4e99-af4a-b0d77b28c993
+  model: authentik_flows.flowstagebinding
+  permissions: []
+  state: present
+- attrs:
+    invalid_response_action: retry
+    order: 20
+    policy_engine_mode: any
+    re_evaluate_policies: true
+    stage: 311abd5b-9b03-4f5d-9aa9-9892fde73e2b
+    target: 85b8df99-4d4f-4633-a8d9-fa9b5cea9c78
+  conditions: []
+  identifiers:
+    pk: d431206a-7015-4cde-9108-0fb35b2f763d
+  model: authentik_flows.flowstagebinding
+  permissions: []
+  state: present
+- attrs:
+    evaluate_on_plan: true
+    invalid_response_action: retry
+    order: 100
+    policy_engine_mode: any
+    stage: da64031c-c2a7-4db3-8b8c-1b1c77aa35ed
+    target: 85b8df99-4d4f-4633-a8d9-fa9b5cea9c78
+  conditions: []
+  identifiers:
+    pk: 3aa948da-1dab-4ae4-986b-680d08c57196
+  model: authentik_flows.flowstagebinding
+  permissions: []
+  state: present
+- attrs:
+    invalid_response_action: retry
+    order: 20
+    policy_engine_mode: any
+    re_evaluate_policies: true
+    stage: c3833952-b954-48da-807e-e8da56598bdb
+    target: 91e0fb8e-9ec5-49ff-86dc-12fa6b43bcb3
+  conditions: []
+  identifiers:
+    pk: 22cf5dc3-e659-4b02-a569-f745a03faba8
+  model: authentik_flows.flowstagebinding
+  permissions: []
+  state: present
+- attrs:
+    invalid_response_action: retry
+    order: 100
+    policy_engine_mode: any
+    re_evaluate_policies: true
+    stage: 272d66bb-9bee-4f0b-96b0-d239b8c97881
+    target: 91e0fb8e-9ec5-49ff-86dc-12fa6b43bcb3
+  conditions: []
+  identifiers:
+    pk: acf6ffd1-552c-4e93-93fa-63cc3d000c5a
   model: authentik_flows.flowstagebinding
   permissions: []
   state: present
@@ -640,13 +640,13 @@ entries:
     verify_ssl: true
   conditions: []
   identifiers:
-    pk: 717d01b9-6ea9-4844-9dbf-eb0de9789388
+    pk: b5d1704d-7a8a-4c3f-abe7-7eaf92d9185d
   model: authentik_outposts.kubernetesserviceconnection
   permissions: []
   state: present
 - attrs:
     config:
-      authentik_host: https://ui.oasis.local
+      authentik_host: http://ui.oasis.local
       authentik_host_browser: ''
       authentik_host_insecure: false
       container_image: null
@@ -669,11 +669,11 @@ entries:
       refresh_interval: minutes=5
     managed: goauthentik.io/outposts/embedded
     name: authentik Embedded Outpost
-    service_connection: 717d01b9-6ea9-4844-9dbf-eb0de9789388
+    service_connection: b5d1704d-7a8a-4c3f-abe7-7eaf92d9185d
     type: proxy
   conditions: []
   identifiers:
-    pk: 682d0b40-a387-44fe-96f5-9ef47cbdd516
+    pk: d8b74c88-82fc-48d9-a497-330f82811038
   model: authentik_outposts.outpost
   permissions: []
   state: present
@@ -683,7 +683,7 @@ entries:
     name: default-match-configuration-error
   conditions: []
   identifiers:
-    pk: 95afd5b3-9b77-4f63-8e83-91dda932a58d
+    pk: 0408874d-dc28-421f-a6da-e9f860fa936b
   model: authentik_policies_event_matcher.eventmatcherpolicy
   permissions: []
   state: present
@@ -693,7 +693,7 @@ entries:
     name: default-match-update
   conditions: []
   identifiers:
-    pk: bf29437c-0f3a-4091-bf92-10104eb3d1cd
+    pk: 3466e8ce-681b-4452-a79f-4b635fa71bae
   model: authentik_policies_event_matcher.eventmatcherpolicy
   permissions: []
   state: present
@@ -703,7 +703,7 @@ entries:
     name: default-match-policy-exception
   conditions: []
   identifiers:
-    pk: 79746eda-06b5-4bcd-8a0e-0154ee69cc2e
+    pk: 2975caed-6cf7-43d3-af70-77cf4f7bb73e
   model: authentik_policies_event_matcher.eventmatcherpolicy
   permissions: []
   state: present
@@ -713,7 +713,7 @@ entries:
     name: default-match-property-mapping-exception
   conditions: []
   identifiers:
-    pk: fef23a0c-a349-4140-acc4-1ba2248673f2
+    pk: ae7a83e6-7fe1-4a06-9ae1-34fee42aca16
   model: authentik_policies_event_matcher.eventmatcherpolicy
   permissions: []
   state: present
@@ -734,7 +734,7 @@ entries:
     name: default-user-settings-authorization
   conditions: []
   identifiers:
-    pk: 89ccf720-673c-4132-8bc6-73439b01bdef
+    pk: a472e61a-b09b-40ad-a61f-ac66beb9aafa
   model: authentik_policies_expression.expressionpolicy
   permissions: []
   state: present
@@ -747,7 +747,7 @@ entries:
     name: default-source-authentication-if-sso
   conditions: []
   identifiers:
-    pk: b005d9e0-2b40-4592-b4cf-d0b00a44b3b0
+    pk: 02816a2e-d4f8-495f-89c9-2643274a7de7
   model: authentik_policies_expression.expressionpolicy
   permissions: []
   state: present
@@ -760,7 +760,7 @@ entries:
     name: default-source-enrollment-if-username
   conditions: []
   identifiers:
-    pk: 57e55f65-5e13-419a-8241-2d8b0af60ca1
+    pk: 7f78de07-cc18-4e66-bc68-0b53ab27faee
   model: authentik_policies_expression.expressionpolicy
   permissions: []
   state: present
@@ -777,7 +777,7 @@ entries:
     name: default-oobe-prefill-user
   conditions: []
   identifiers:
-    pk: 8fdee698-1197-4994-b16f-106faee54350
+    pk: 8c120d00-aad6-40ae-b04a-201c139ac8e9
   model: authentik_policies_expression.expressionpolicy
   permissions: []
   state: present
@@ -792,7 +792,7 @@ entries:
     name: default-oobe-password-usable
   conditions: []
   identifiers:
-    pk: 50b71c86-1bc4-48e4-b9ca-d92d1b727783
+    pk: 9c4eab18-c855-483b-aea5-a8c07f8b6ffd
   model: authentik_policies_expression.expressionpolicy
   permissions: []
   state: present
@@ -804,7 +804,7 @@ entries:
     name: default-oobe-flow-set-authentication
   conditions: []
   identifiers:
-    pk: 06041c7a-1385-4e0b-99a5-2999cf8e57cb
+    pk: cc0c053e-949c-4e8c-828c-8015a5b9d7a2
   model: authentik_policies_expression.expressionpolicy
   permissions: []
   state: present
@@ -817,7 +817,7 @@ entries:
     name: default-source-enrollment-if-sso
   conditions: []
   identifiers:
-    pk: 04cc7870-6326-4477-8dbe-b1c7e65e098b
+    pk: 6a19e215-3635-4fa4-9038-d6bd68706cbb
   model: authentik_policies_expression.expressionpolicy
   permissions: []
   state: present
@@ -829,7 +829,17 @@ entries:
     name: default-authentication-flow-password-stage
   conditions: []
   identifiers:
-    pk: 02de3d60-4351-490d-b440-9448e9e272cb
+    pk: ec7d1b4e-30ff-4721-9031-3573d22131d7
+  model: authentik_policies_expression.expressionpolicy
+  permissions: []
+  state: present
+- attrs:
+    execution_logging: true
+    expression: 'return {"is_service_account": True}'
+    name: is_service_account
+  conditions: []
+  identifiers:
+    pk: 63f8ca5c-8a41-47e2-a65b-d17a4b2da823
   model: authentik_policies_expression.expressionpolicy
   permissions: []
   state: present
@@ -849,127 +859,127 @@ entries:
     zxcvbn_score_threshold: 2
   conditions: []
   identifiers:
-    pk: 0a20ab36-4fc1-41f6-859d-bd654313524d
+    pk: 4e225f3a-b2c6-4e96-af27-454f1f535e4a
   model: authentik_policies_password.passwordpolicy
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: 50b71c86-1bc4-48e4-b9ca-d92d1b727783
-    target: 1768c942-aab0-424f-bacd-562a86538946
+    policy: 9c4eab18-c855-483b-aea5-a8c07f8b6ffd
+    target: 85b8df99-4d4f-4633-a8d9-fa9b5cea9c78
     timeout: 30
   conditions: []
   identifiers:
-    pk: 8a5f3051-2ced-4a35-b9c9-007848d83fa6
+    pk: 37c415b2-fc3c-4ee4-9988-76fcdc44cef2
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: 8fdee698-1197-4994-b16f-106faee54350
-    target: d911b06f-6a85-4691-8b4c-4d224fee2ce8
+    policy: 8c120d00-aad6-40ae-b04a-201c139ac8e9
+    target: d431206a-7015-4cde-9108-0fb35b2f763d
     timeout: 30
   conditions: []
   identifiers:
-    pk: 0d7414b8-3055-4629-b2cf-44b9f40d3c6f
+    pk: 5859efd3-2f0a-4a95-bbbe-b232cb36f1eb
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: 06041c7a-1385-4e0b-99a5-2999cf8e57cb
-    target: ee63930a-884b-4d31-a1e9-3eb867b9df0b
+    policy: cc0c053e-949c-4e8c-828c-8015a5b9d7a2
+    target: 3aa948da-1dab-4ae4-986b-680d08c57196
     timeout: 30
   conditions: []
   identifiers:
-    pk: c00cd79b-2012-4a72-9271-5793b0ad2bcd
+    pk: 4c0a93da-3374-4bf3-9f24-7ea25b49806e
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: b005d9e0-2b40-4592-b4cf-d0b00a44b3b0
-    target: afe3bef8-a3f5-4ffe-ae36-d8202dd5b691
+    policy: 02816a2e-d4f8-495f-89c9-2643274a7de7
+    target: 40731378-16bc-4670-9b8a-20ef08fedfeb
     timeout: 30
   conditions: []
   identifiers:
-    pk: 793686a3-892a-464c-b044-3cbf1fe299b7
+    pk: 739aebf1-b263-4297-b1c7-79806a0e6dc2
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: 04cc7870-6326-4477-8dbe-b1c7e65e098b
-    target: 0223febd-2a77-4084-8f75-2652b59e5c52
+    policy: 6a19e215-3635-4fa4-9038-d6bd68706cbb
+    target: 0ccf1cc8-e876-48b5-8b97-10f3af6a9859
     timeout: 30
   conditions: []
   identifiers:
-    pk: f666117d-67a0-40fb-b016-94209fd1fb3a
+    pk: 30658c91-def5-45ac-a820-e109fa2eef1d
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: 57e55f65-5e13-419a-8241-2d8b0af60ca1
-    target: ca93c2fb-c893-494e-97bb-33cf5da49a16
+    policy: 7f78de07-cc18-4e66-bc68-0b53ab27faee
+    target: aa336f06-8bc2-4135-8403-d645a8fcad72
     timeout: 30
   conditions: []
   identifiers:
-    pk: c51227c8-8c51-491b-baca-d60a0f279fa9
+    pk: 23d2975b-e0d9-4ad0-908f-11ff130540d7
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: 95afd5b3-9b77-4f63-8e83-91dda932a58d
-    target: bd55d040-3978-414a-bf89-e65f53206777
+    policy: 0408874d-dc28-421f-a6da-e9f860fa936b
+    target: 584dc567-3ee1-487b-b792-f43fb934de3b
     timeout: 30
   conditions: []
   identifiers:
-    pk: 3247b5f3-259c-4cd2-8384-3fe00870291b
+    pk: 36c96919-7b27-433c-8230-ca62e4942d59
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: bf29437c-0f3a-4091-bf92-10104eb3d1cd
-    target: 9b5da760-dda6-4ca0-aadc-744f15adbe4a
+    policy: 3466e8ce-681b-4452-a79f-4b635fa71bae
+    target: c29a549c-30d5-42e2-8fd0-581cfda06347
     timeout: 30
   conditions: []
   identifiers:
-    pk: d13afbfb-7b5f-4410-80c7-360c2208a08a
+    pk: 87855c62-2d97-4437-b64d-f4603b4f75e2
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 0
-    policy: 79746eda-06b5-4bcd-8a0e-0154ee69cc2e
-    target: 28ea21a2-3e50-4077-8880-0b883a87396d
+    policy: 2975caed-6cf7-43d3-af70-77cf4f7bb73e
+    target: e0682bf8-9240-48fa-8beb-0a66b11e25a9
     timeout: 30
   conditions: []
   identifiers:
-    pk: ae998837-c12f-4e0f-bc86-f90e99e98de8
+    pk: dd952f8f-f8ef-472a-8371-fb0653d216e6
   model: authentik_policies.policybinding
   permissions: []
   state: present
 - attrs:
     enabled: true
     order: 1
-    policy: fef23a0c-a349-4140-acc4-1ba2248673f2
-    target: 28ea21a2-3e50-4077-8880-0b883a87396d
+    policy: ae7a83e6-7fe1-4a06-9ae1-34fee42aca16
+    target: e0682bf8-9240-48fa-8beb-0a66b11e25a9
     timeout: 30
   conditions: []
   identifiers:
-    pk: d23e6322-893c-484d-9144-d6af38cc2adb
+    pk: 314c070b-1078-45ec-93de-0ca270f8611c
   model: authentik_policies.policybinding
   permissions: []
   state: present
@@ -977,13 +987,24 @@ entries:
     enabled: true
     failure_result: true
     order: 10
-    policy: 02de3d60-4351-490d-b440-9448e9e272cb
-    target: dd50f5c8-13ee-43d3-8b1b-0fe5403c69e6
+    policy: ec7d1b4e-30ff-4721-9031-3573d22131d7
+    target: 2738fd68-12ce-43db-8fa1-9604c2544d5e
     timeout: 30
   conditions: []
   identifiers:
-    pk: c58c0e6e-4beb-45bf-bc42-c3bd6da4fd1c
+    pk: e6d078d8-129b-4d62-87c0-1611dc8b8639
   model: authentik_policies.policybinding
+  permissions: []
+  state: present
+- attrs:
+    expression: 'return {"is_service_account": True}'
+    managed: null
+    name: scope-is-service-account
+    scope_name: is_service_account
+  conditions: []
+  identifiers:
+    pk: f8897284-5e72-4dc6-9978-823c9c6c2bd3
+  model: authentik_providers_oauth2.scopemapping
   permissions: []
   state: present
 - attrs:
@@ -998,7 +1019,7 @@ entries:
     scope_name: openid
   conditions: []
   identifiers:
-    pk: 15720955-472e-4084-aec3-b96eedab3286
+    pk: 71e4a70e-ccfc-4b20-83f2-7517da3d39a4
   model: authentik_providers_oauth2.scopemapping
   permissions: []
   state: present
@@ -1011,7 +1032,7 @@ entries:
     scope_name: email
   conditions: []
   identifiers:
-    pk: f3888d84-7a18-469e-a206-c44180276876
+    pk: 357a932f-95d3-43f7-a7a1-65ab40e73e68
   model: authentik_providers_oauth2.scopemapping
   permissions: []
   state: present
@@ -1029,7 +1050,7 @@ entries:
     scope_name: profile
   conditions: []
   identifiers:
-    pk: 19393d86-1a5e-424b-b996-837ba72c8855
+    pk: 5066e612-e716-4f2e-ad37-1f3c2f37ed18
   model: authentik_providers_oauth2.scopemapping
   permissions: []
   state: present
@@ -1043,7 +1064,7 @@ entries:
     scope_name: entitlements
   conditions: []
   identifiers:
-    pk: f4c6f773-c6ac-41e2-bbfd-f8d18aabe4c5
+    pk: 3dbcb809-a989-4dde-9f7d-e621568f9cbd
   model: authentik_providers_oauth2.scopemapping
   permissions: []
   state: present
@@ -1060,7 +1081,7 @@ entries:
     scope_name: offline_access
   conditions: []
   identifiers:
-    pk: ee176e8c-17a5-4e58-b676-7cd8f792271e
+    pk: e00d5fcf-aee3-40f7-a425-e60d8c25d98f
   model: authentik_providers_oauth2.scopemapping
   permissions: []
   state: present
@@ -1077,7 +1098,7 @@ entries:
     scope_name: goauthentik.io/api
   conditions: []
   identifiers:
-    pk: 6ac609c0-ca11-4b19-a2fb-ad4354bb21fa
+    pk: d0c8e047-d7b5-4f10-89e4-215f208a4bc4
   model: authentik_providers_oauth2.scopemapping
   permissions: []
   state: present
@@ -1092,8 +1113,98 @@ entries:
     scope_name: ak_proxy
   conditions: []
   identifiers:
-    pk: 08bfeaf6-6ab9-4b14-b6e0-43b1c8cdb705
+    pk: 0e2c7eb6-d4c7-4307-8a46-478172fd44e4
   model: authentik_providers_oauth2.scopemapping
+  permissions: []
+  state: present
+- attrs:
+    access_code_validity: minutes=1
+    access_token_validity: minutes=5
+    authorization_flow: 8a282f1c-d90a-4a82-bbdd-298c58a2e52a
+    client_id: swagger
+    client_secret: ZEbHaO5irVER9MJRu48PSglwHTbk4fHTkRSrdABYGpvkWlIgj1uReEXXkhBOnLHV5TwzuM5ASqFH4fHv6c9bDNYNnQqp3a5QT7niJSs5ulfu1ASFdYZb5s16m4UlHcPE
+    client_type: confidential
+    include_claims_in_id_token: true
+    invalidation_flow: 9f3569a6-e3b1-446f-bbfe-fb688b92dda3
+    issuer_mode: global
+    name: provider-for-swagger
+    property_mappings:
+    - 71e4a70e-ccfc-4b20-83f2-7517da3d39a4
+    - 357a932f-95d3-43f7-a7a1-65ab40e73e68
+    - 5066e612-e716-4f2e-ad37-1f3c2f37ed18
+    - e00d5fcf-aee3-40f7-a425-e60d8c25d98f
+    redirect_uris:
+    - matching_mode: regex
+      url: .*
+    - matching_mode: strict
+      url: http://ui.oasis.local
+    refresh_token_validity: days=30
+    signing_key: db75e24f-9e49-4b6e-a7b6-c2d277fb5987
+    sub_mode: hashed_user_id
+  conditions: []
+  identifiers:
+    pk: 4
+  model: authentik_providers_oauth2.oauth2provider
+  permissions: []
+  state: present
+- attrs:
+    access_code_validity: minutes=1
+    access_token_validity: minutes=5
+    authorization_flow: 8a282f1c-d90a-4a82-bbdd-298c58a2e52a
+    client_id: oasis-server
+    client_secret: EfNMUM3GG1bd1CYUvNfiBGWKfvbGFiNAdutEqHSarZ9H7oL0sZfKLvPT1ujaqVm2839Vka8Ky0elliMQ6yWKN8Jv8dzh3BeVFn0F7LPquGkIus6JJ9nGH1vtfCt7AhtO
+    client_type: confidential
+    include_claims_in_id_token: true
+    invalidation_flow: 9f3569a6-e3b1-446f-bbfe-fb688b92dda3
+    issuer_mode: global
+    name: provider-for-oasis-server
+    property_mappings:
+    - 71e4a70e-ccfc-4b20-83f2-7517da3d39a4
+    - 357a932f-95d3-43f7-a7a1-65ab40e73e68
+    - 5066e612-e716-4f2e-ad37-1f3c2f37ed18
+    - e00d5fcf-aee3-40f7-a425-e60d8c25d98f
+    redirect_uris:
+    - matching_mode: regex
+      url: .*
+    - matching_mode: strict
+      url: http://ui.oasis.local
+    refresh_token_validity: days=30
+    signing_key: db75e24f-9e49-4b6e-a7b6-c2d277fb5987
+    sub_mode: hashed_user_id
+  conditions: []
+  identifiers:
+    pk: 5
+  model: authentik_providers_oauth2.oauth2provider
+  permissions: []
+  state: present
+- attrs:
+    access_code_validity: minutes=1
+    access_token_validity: minutes=5
+    authorization_flow: 8a282f1c-d90a-4a82-bbdd-298c58a2e52a
+    client_id: oasis-service
+    client_secret: xzX0J4Pe777Y2gdT4gtU5qZ4BTuBYJDyIYQpI3ebxHBQLRpziDfBVmiZX07JCXVSPHTZDdtuWCGURtBfg7FHMiI6SAbLhmyjnp4xP3p3cNgATDDMsiWFn6HUC9mSemUh
+    client_type: confidential
+    invalidation_flow: 9f3569a6-e3b1-446f-bbfe-fb688b92dda3
+    issuer_mode: global
+    name: provider-for-oasis-service
+    property_mappings:
+    - 71e4a70e-ccfc-4b20-83f2-7517da3d39a4
+    - 357a932f-95d3-43f7-a7a1-65ab40e73e68
+    - 5066e612-e716-4f2e-ad37-1f3c2f37ed18
+    - e00d5fcf-aee3-40f7-a425-e60d8c25d98f
+    - f8897284-5e72-4dc6-9978-823c9c6c2bd3
+    redirect_uris:
+    - matching_mode: regex
+      url: .*
+    - matching_mode: strict
+      url: http://ui.oasis.local
+    refresh_token_validity: days=30
+    signing_key: db75e24f-9e49-4b6e-a7b6-c2d277fb5987
+    sub_mode: hashed_user_id
+  conditions: []
+  identifiers:
+    pk: 6
+  model: authentik_providers_oauth2.oauth2provider
   permissions: []
   state: present
 - attrs:
@@ -1105,7 +1216,7 @@ entries:
       resize-method: display-update
   conditions: []
   identifiers:
-    pk: 1ae573f7-d9c2-49c5-b5f9-36ac9dc0866c
+    pk: b85f017f-38f2-429f-9ff6-79b33a52d3bc
   model: authentik_providers_rac.racpropertymapping
   permissions: []
   state: present
@@ -1121,7 +1232,7 @@ entries:
       enable-wallpaper: 'true'
   conditions: []
   identifiers:
-    pk: c686051e-e517-4783-a8fc-657d1ce1d1e4
+    pk: fd3cb2a4-13a1-4807-b139-bd719fc46d0f
   model: authentik_providers_rac.racpropertymapping
   permissions: []
   state: present
@@ -1132,7 +1243,7 @@ entries:
       terminal-type: xterm-256color
   conditions: []
   identifiers:
-    pk: f5ee8ac6-98a0-4e06-bccd-f5b2674c7ce1
+    pk: b5a6c2cc-1a88-469f-a987-8526a76ad97d
   model: authentik_providers_rac.racpropertymapping
   permissions: []
   state: present
@@ -1144,7 +1255,7 @@ entries:
     saml_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn
   conditions: []
   identifiers:
-    pk: c14285d6-283d-4523-b8b9-0afbdfc8ea70
+    pk: 5301fd9a-743e-435e-ab53-1385869e155a
   model: authentik_providers_saml.samlpropertymapping
   permissions: []
   state: present
@@ -1156,7 +1267,7 @@ entries:
     saml_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name
   conditions: []
   identifiers:
-    pk: 989ef6f8-1d17-4f37-92ef-d99984677861
+    pk: d3698666-f2d8-41eb-a97e-3814cd75c466
   model: authentik_providers_saml.samlpropertymapping
   permissions: []
   state: present
@@ -1168,7 +1279,7 @@ entries:
     saml_name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
   conditions: []
   identifiers:
-    pk: 02f0917c-984c-4165-9418-94bc1f142398
+    pk: b5a37bd0-86f1-4e28-a7c0-34af4cd52c9b
   model: authentik_providers_saml.samlpropertymapping
   permissions: []
   state: present
@@ -1180,7 +1291,7 @@ entries:
     saml_name: http://schemas.goauthentik.io/2021/02/saml/username
   conditions: []
   identifiers:
-    pk: 216af0e3-b131-4a1f-8aa8-4245bfdee08a
+    pk: c6ac2902-d400-4b79-81cc-0bd843e7ba3d
   model: authentik_providers_saml.samlpropertymapping
   permissions: []
   state: present
@@ -1192,7 +1303,7 @@ entries:
     saml_name: http://schemas.goauthentik.io/2021/02/saml/uid
   conditions: []
   identifiers:
-    pk: 513d6e3a-ffd4-4ee7-9fa4-8771a3e269e9
+    pk: f86580b9-a915-4374-860b-12f49d7aaa32
   model: authentik_providers_saml.samlpropertymapping
   permissions: []
   state: present
@@ -1204,7 +1315,7 @@ entries:
     saml_name: http://schemas.xmlsoap.org/claims/Group
   conditions: []
   identifiers:
-    pk: f21684b9-84d8-42b7-823a-2b59a3cca76a
+    pk: 8e61e260-6e86-4bdb-a21f-f93c985d99aa
   model: authentik_providers_saml.samlpropertymapping
   permissions: []
   state: present
@@ -1216,7 +1327,7 @@ entries:
     saml_name: http://schemas.microsoft.com/ws/2008/06/identity/claims/windowsaccountname
   conditions: []
   identifiers:
-    pk: a489bbec-abc8-42b2-80ba-05068358c239
+    pk: 6e91ff2e-3370-4985-84eb-1aad490487c2
   model: authentik_providers_saml.samlpropertymapping
   permissions: []
   state: present
@@ -1242,7 +1353,7 @@ entries:
     name: 'authentik default SCIM Mapping: User'
   conditions: []
   identifiers:
-    pk: 806c6a75-7dce-4434-b313-bb855d13b45a
+    pk: 3d63fbc1-6fe4-43a1-a360-445029dbea64
   model: authentik_providers_scim.scimmapping
   permissions: []
   state: present
@@ -1252,7 +1363,7 @@ entries:
     name: 'authentik default SCIM Mapping: Group'
   conditions: []
   identifiers:
-    pk: c931ee47-9201-4cf7-9451-00857b4f8b80
+    pk: 01bd9197-6dfe-4071-9404-4d76d3440487
   model: authentik_providers_scim.scimmapping
   permissions: []
   state: present
@@ -1260,7 +1371,7 @@ entries:
     name: authentik Read-only
   conditions: []
   identifiers:
-    pk: 8344ab3b-8b3a-496b-8ae4-27ba6545005a
+    pk: 1e05fb12-c5d1-4f34-867e-3c7979af63fc
   model: authentik_rbac.role
   permissions: []
   state: present
@@ -1274,7 +1385,7 @@ entries:
       accounts'
   conditions: []
   identifiers:
-    pk: d495e977-8576-47c3-80b4-666b54929ed1
+    pk: 5d6b6149-3b7e-4115-b896-aef324b58e98
   model: authentik_sources_kerberos.kerberossourcepropertymapping
   permissions: []
   state: present
@@ -1285,7 +1396,7 @@ entries:
     name: 'authentik default Kerberos User Mapping: Ignore other realms'
   conditions: []
   identifiers:
-    pk: db7a1868-6e90-4898-9d44-a2b5114bc4f5
+    pk: 30f6bcba-4fc5-410c-a399-d2877986ce73
   model: authentik_sources_kerberos.kerberossourcepropertymapping
   permissions: []
   state: present
@@ -1298,7 +1409,7 @@ entries:
     name: 'authentik default Kerberos User Mapping: Ignore system principals'
   conditions: []
   identifiers:
-    pk: 626f940d-5832-4132-9e4c-600f28ca6d66
+    pk: cb43fb56-370a-4988-9cae-8fe7fcea26c8
   model: authentik_sources_kerberos.kerberossourcepropertymapping
   permissions: []
   state: present
@@ -1309,7 +1420,7 @@ entries:
     name: 'authentik default Kerberos User Mapping: Add realm as group'
   conditions: []
   identifiers:
-    pk: 4ab9f0fb-3b5c-41f6-8791-d3ae0d5a795b
+    pk: cd0827f1-9cc5-4d64-ad50-cb74c292d5f7
   model: authentik_sources_kerberos.kerberossourcepropertymapping
   permissions: []
   state: present
@@ -1324,7 +1435,7 @@ entries:
     name: 'authentik default LDAP Mapping: DN to User Path'
   conditions: []
   identifiers:
-    pk: 8e8ed26e-b9ce-4da1-bb34-67840490e6b4
+    pk: 27e3cfa6-72ff-427a-a53f-b84000f0f66e
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
@@ -1334,7 +1445,7 @@ entries:
     name: 'authentik default LDAP Mapping: Name'
   conditions: []
   identifiers:
-    pk: 877eb82e-edb0-4f5c-ab94-1455d5e33b86
+    pk: 8fca1039-dd28-48ef-98e1-9f5d60be8756
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
@@ -1344,7 +1455,7 @@ entries:
     name: 'authentik default LDAP Mapping: mail'
   conditions: []
   identifiers:
-    pk: 9ca66650-1491-450a-8daf-2347bc295bc4
+    pk: 64c7feaa-976b-47c3-99fc-98738cff401e
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
@@ -1354,7 +1465,7 @@ entries:
     name: 'authentik default Active Directory Mapping: sAMAccountName'
   conditions: []
   identifiers:
-    pk: 617fa62e-db9a-4d6b-bd62-184e234adf56
+    pk: ec229925-e47e-40cd-bdc1-be3cac88dd0a
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
@@ -1365,7 +1476,7 @@ entries:
     name: 'authentik default Active Directory Mapping: userPrincipalName'
   conditions: []
   identifiers:
-    pk: b85eb586-45aa-4b65-b9f5-14dc8dcca2ee
+    pk: e64f20c0-6385-4c20-9de7-fdd38e10a468
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
@@ -1376,7 +1487,7 @@ entries:
     name: 'authentik default Active Directory Mapping: givenName'
   conditions: []
   identifiers:
-    pk: 7020574a-2fc3-4ae5-bf74-566663f5706d
+    pk: 66639f0b-09ec-4e67-bfd1-3199397bf1df
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
@@ -1387,7 +1498,7 @@ entries:
     name: 'authentik default Active Directory Mapping: sn'
   conditions: []
   identifiers:
-    pk: b19d0a99-075c-44f9-bc57-90bd648ef9a2
+    pk: 4ac5ee80-d287-40c6-8b14-1ee692797843
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
@@ -1397,7 +1508,7 @@ entries:
     name: 'authentik default OpenLDAP Mapping: uid'
   conditions: []
   identifiers:
-    pk: f178f119-8043-4a70-8afc-be066cca69dd
+    pk: 8ff27369-9896-448a-b548-3ed6fbc66bf9
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
@@ -1407,30 +1518,30 @@ entries:
     name: 'authentik default OpenLDAP Mapping: cn'
   conditions: []
   identifiers:
-    pk: a2a47cd6-08d1-4cf5-8bef-6166133494a6
+    pk: 5327ad1d-c160-493c-acb7-5626bec786aa
   model: authentik_sources_ldap.ldapsourcepropertymapping
   permissions: []
   state: present
 - attrs:
-    configure_flow: 4beccdfd-5138-4fef-8d72-f4d7f8f0c31f
+    configure_flow: 2755204a-5363-45ce-a75f-2396672b70f2
     friendly_name: Static tokens
     name: default-authenticator-static-setup
     token_count: 6
     token_length: 12
   conditions: []
   identifiers:
-    pk: 2880af3b-fc81-4947-9825-588fb33ee5e7
+    pk: 5bfe0707-13da-4dad-bea2-242561194150
   model: authentik_stages_authenticator_static.authenticatorstaticstage
   permissions: []
   state: present
 - attrs:
-    configure_flow: 493155c2-f00d-4564-b6fb-5ae76bd34d27
+    configure_flow: 2b4b9fc4-805d-4104-984d-2a0187ea8789
     digits: '6'
     friendly_name: TOTP Device
     name: default-authenticator-totp-setup
   conditions: []
   identifiers:
-    pk: 0899f894-e017-4635-95f3-8ebfbab7fc10
+    pk: 0578d558-f36d-478c-99b7-7611790c8f24
   model: authentik_stages_authenticator_totp.authenticatortotpstage
   permissions: []
   state: present
@@ -1448,19 +1559,19 @@ entries:
     webauthn_user_verification: preferred
   conditions: []
   identifiers:
-    pk: 99970b61-38e0-450b-9bfe-edcd9b431ca1
+    pk: 9fb2329c-70f9-41d9-9633-9e35d85bc789
   model: authentik_stages_authenticator_validate.authenticatorvalidatestage
   permissions: []
   state: present
 - attrs:
-    configure_flow: f8c0a38d-f57c-4eaa-8d06-4b35dee6cd92
+    configure_flow: 53b14b85-98de-4611-9ed3-87e8b64be57f
     friendly_name: WebAuthn device
     name: default-authenticator-webauthn-setup
     resident_key_requirement: preferred
     user_verification: preferred
   conditions: []
   identifiers:
-    pk: 4a4ace22-b607-42af-a846-4b53d0a5a3f7
+    pk: 3e647319-685b-4502-abd9-ce454a3c44e0
   model: authentik_stages_authenticator_webauthn.authenticatorwebauthnstage
   permissions: []
   state: present
@@ -1470,7 +1581,7 @@ entries:
     name: default-provider-authorization-consent
   conditions: []
   identifiers:
-    pk: 9bdc1783-51d7-41f1-9298-9825e1b5588a
+    pk: fe4d3156-dffb-484f-866f-b046f1e88eba
   model: authentik_stages_consent.consentstage
   permissions: []
   state: present
@@ -1484,7 +1595,7 @@ entries:
     - username
   conditions: []
   identifiers:
-    pk: 21ddc9e9-776c-4719-9b52-03ed1629da80
+    pk: 19b67be9-95a5-4c4f-be7d-b8ac70a29e8d
   model: authentik_stages_identification.identificationstage
   permissions: []
   state: present
@@ -1494,12 +1605,12 @@ entries:
     - authentik.sources.kerberos.auth.KerberosBackend
     - authentik.sources.ldap.auth.LDAPBackend
     - authentik.core.auth.TokenBackend
-    configure_flow: 746d7822-d1f8-415a-8828-1fadfeb73525
+    configure_flow: 60bb2a54-8c6d-427e-94e3-2242148df137
     failed_attempts_before_cancel: 5
     name: default-authentication-password
   conditions: []
   identifiers:
-    pk: d8fa902d-fe47-4827-bf0f-9f7fa4b9dea3
+    pk: a55db015-6510-4dd6-8e69-197caedb0db0
   model: authentik_stages_password.passwordstage
   permissions: []
   state: present
@@ -1513,7 +1624,7 @@ entries:
     type: password
   conditions: []
   identifiers:
-    pk: c7b1dbda-2271-4379-b857-369825b93ee0
+    pk: b13fd1e1-a721-44ff-9c34-97b879bab068
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1527,7 +1638,7 @@ entries:
     type: password
   conditions: []
   identifiers:
-    pk: 9a570ef9-891a-4827-8b71-7338222bf47e
+    pk: 65df034b-1616-49e9-87c0-432e6bac1ac4
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1543,7 +1654,7 @@ entries:
     type: username
   conditions: []
   identifiers:
-    pk: 65e93982-faec-4709-8df6-3b8ad36ce850
+    pk: 203cfe13-2e08-4319-9903-410eb6597752
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1559,7 +1670,7 @@ entries:
     type: text
   conditions: []
   identifiers:
-    pk: 10a4db53-6dc2-4814-9caa-3a417d8f32fc
+    pk: 9236a43d-b842-429f-9bf6-b923f6943f9d
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1575,7 +1686,7 @@ entries:
     type: email
   conditions: []
   identifiers:
-    pk: f3b93ca7-9301-489f-8ea0-6da40695fc7a
+    pk: 0333f404-2442-4569-ae68-5bdb83d7ca23
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1592,7 +1703,7 @@ entries:
     type: ak-locale
   conditions: []
   identifiers:
-    pk: e59bc752-0426-45f7-9624-b8339bce2a2c
+    pk: ead43bd5-d46d-40cf-8854-a1d07801aa75
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1607,7 +1718,7 @@ entries:
     type: static
   conditions: []
   identifiers:
-    pk: 71adf31a-678c-4e70-aa76-a669735d00ac
+    pk: 26385926-3355-4b2e-9e45-33bfe99f55fb
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1621,7 +1732,7 @@ entries:
     type: email
   conditions: []
   identifiers:
-    pk: 068a5583-6720-449e-a4c3-5fb5dab8c7df
+    pk: ba0fb6d2-1374-4fca-9615-b573ea8d7724
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1635,7 +1746,7 @@ entries:
     type: password
   conditions: []
   identifiers:
-    pk: e0c51e2e-ba4f-4d5b-8088-53146b2c075b
+    pk: 25613c3d-1944-47e4-8b58-cc6c423b74db
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1649,7 +1760,7 @@ entries:
     type: password
   conditions: []
   identifiers:
-    pk: 6a44e073-b5ce-46fc-a28f-3c4be15fcf12
+    pk: d8b6cd9e-2fa4-4580-a8d8-4b95474b9ccf
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
@@ -1663,58 +1774,58 @@ entries:
     type: username
   conditions: []
   identifiers:
-    pk: 4d0a1607-41e7-46be-8049-a9fdc80d986d
+    pk: 5f8d47c8-5397-456e-bf1e-9a5dfddd6cc6
   model: authentik_stages_prompt.prompt
   permissions: []
   state: present
 - attrs:
     fields:
-    - c7b1dbda-2271-4379-b857-369825b93ee0
-    - 9a570ef9-891a-4827-8b71-7338222bf47e
+    - b13fd1e1-a721-44ff-9c34-97b879bab068
+    - 65df034b-1616-49e9-87c0-432e6bac1ac4
     name: default-password-change-prompt
     validation_policies:
-    - 0a20ab36-4fc1-41f6-859d-bd654313524d
+    - 4e225f3a-b2c6-4e96-af27-454f1f535e4a
   conditions: []
   identifiers:
-    pk: 2915df10-6382-4bd3-96ae-00665247fd0b
+    pk: 09df815e-8466-4d35-864f-804fbc8d3943
   model: authentik_stages_prompt.promptstage
   permissions: []
   state: present
 - attrs:
     fields:
-    - 71adf31a-678c-4e70-aa76-a669735d00ac
-    - 068a5583-6720-449e-a4c3-5fb5dab8c7df
-    - e0c51e2e-ba4f-4d5b-8088-53146b2c075b
-    - 6a44e073-b5ce-46fc-a28f-3c4be15fcf12
+    - 26385926-3355-4b2e-9e45-33bfe99f55fb
+    - ba0fb6d2-1374-4fca-9615-b573ea8d7724
+    - 25613c3d-1944-47e4-8b58-cc6c423b74db
+    - d8b6cd9e-2fa4-4580-a8d8-4b95474b9ccf
     name: stage-default-oobe-password
   conditions: []
   identifiers:
-    pk: 6a77c1e6-7f1c-47ff-8e20-46ae40358e1b
+    pk: 95e4b2e9-bae0-40c8-be89-fa7225098888
   model: authentik_stages_prompt.promptstage
   permissions: []
   state: present
 - attrs:
     fields:
-    - 4d0a1607-41e7-46be-8049-a9fdc80d986d
+    - 5f8d47c8-5397-456e-bf1e-9a5dfddd6cc6
     name: default-source-enrollment-prompt
   conditions: []
   identifiers:
-    pk: ec7fb9fd-5618-48e3-af35-b8f99104c2e6
+    pk: 5aa8db2c-c913-49ea-bbb2-d1749d5b1965
   model: authentik_stages_prompt.promptstage
   permissions: []
   state: present
 - attrs:
     fields:
-    - 65e93982-faec-4709-8df6-3b8ad36ce850
-    - 10a4db53-6dc2-4814-9caa-3a417d8f32fc
-    - f3b93ca7-9301-489f-8ea0-6da40695fc7a
-    - e59bc752-0426-45f7-9624-b8339bce2a2c
+    - 203cfe13-2e08-4319-9903-410eb6597752
+    - 9236a43d-b842-429f-9bf6-b923f6943f9d
+    - 0333f404-2442-4569-ae68-5bdb83d7ca23
+    - ead43bd5-d46d-40cf-8854-a1d07801aa75
     name: default-user-settings
     validation_policies:
-    - 89ccf720-673c-4132-8bc6-73439b01bdef
+    - a472e61a-b09b-40ad-a61f-ac66beb9aafa
   conditions: []
   identifiers:
-    pk: 449ed428-38cc-44ca-a77c-92e8ac256969
+    pk: c3833952-b954-48da-807e-e8da56598bdb
   model: authentik_stages_prompt.promptstage
   permissions: []
   state: present
@@ -1726,7 +1837,7 @@ entries:
     session_duration: seconds=0
   conditions: []
   identifiers:
-    pk: 8e8e3237-2892-4740-8b98-a53bac406f93
+    pk: 5afb9800-bbc5-4b19-8fc2-825dbcfa1b70
   model: authentik_stages_user_login.userloginstage
   permissions: []
   state: present
@@ -1738,7 +1849,7 @@ entries:
     session_duration: seconds=0
   conditions: []
   identifiers:
-    pk: 44fe8542-62c7-48df-8521-66856925677d
+    pk: ae35bf60-a492-41cc-917a-cb018b08f2f2
   model: authentik_stages_user_login.userloginstage
   permissions: []
   state: present
@@ -1750,7 +1861,7 @@ entries:
     session_duration: seconds=0
   conditions: []
   identifiers:
-    pk: 90542525-04ce-42b6-9e3c-9e6d2aed7454
+    pk: da64031c-c2a7-4db3-8b8c-1b1c77aa35ed
   model: authentik_stages_user_login.userloginstage
   permissions: []
   state: present
@@ -1758,7 +1869,7 @@ entries:
     name: default-invalidation-logout
   conditions: []
   identifiers:
-    pk: 66c372cc-3423-483e-bdf5-daffcfe2ab31
+    pk: f55915c8-1706-4997-bb71-fe0a728d4e26
   model: authentik_stages_user_logout.userlogoutstage
   permissions: []
   state: present
@@ -1768,7 +1879,7 @@ entries:
     user_type: external
   conditions: []
   identifiers:
-    pk: 3fc054cf-f949-4c6c-a0b9-2e34ad249804
+    pk: 17e87c2e-8430-4bde-b16c-a0468feb4655
   model: authentik_stages_user_write.userwritestage
   permissions: []
   state: present
@@ -1778,7 +1889,7 @@ entries:
     user_type: external
   conditions: []
   identifiers:
-    pk: d86343e3-ec67-407d-9245-7abe00007834
+    pk: 311abd5b-9b03-4f5d-9aa9-9892fde73e2b
   model: authentik_stages_user_write.userwritestage
   permissions: []
   state: present
@@ -1788,7 +1899,7 @@ entries:
     user_type: external
   conditions: []
   identifiers:
-    pk: 7da0c0b3-636f-4327-8861-fa52cd513fb3
+    pk: 272d66bb-9bee-4f0b-96b0-d239b8c97881
   model: authentik_stages_user_write.userwritestage
   permissions: []
   state: present
@@ -1800,24 +1911,13 @@ entries:
     branding_title: authentik
     default: true
     domain: authentik-default
-    flow_authentication: c8cfd877-c1fc-4ba2-a79e-7d1ce1decfb9
-    flow_invalidation: 97412c34-668b-4d35-8c5e-0bed0f8ca418
-    flow_user_settings: f51541a4-fe99-4cbf-ae09-6d3af75ce300
+    flow_authentication: 78aaf3c8-e726-4b5c-804f-a69a1669354e
+    flow_invalidation: 799b0167-6957-490a-94ba-4337a0a70f2b
+    flow_user_settings: 91e0fb8e-9ec5-49ff-86dc-12fa6b43bcb3
   conditions: []
   identifiers:
-    pk: c57b08e4-de76-4b37-a657-236b6c25f986
+    pk: 320f11a5-16cc-407b-9d32-d09f1f822888
   model: authentik_brands.brand
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: System - OAuth2 Provider - Scopes
-    path: system/providers-oauth2.yaml
-  conditions: []
-  identifiers:
-    pk: 7eaddf97-5434-4fe1-a449-cd06cc77f7e6
-  model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
 - attrs:
@@ -1827,128 +1927,18 @@ entries:
     path: system/providers-microsoft-entra.yaml
   conditions: []
   identifiers:
-    pk: c75b6c4a-de72-427d-989a-14eb9d0de8ca
+    pk: 4f41ed92-9412-4d29-8c90-10dc4123f3fe
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
 - attrs:
     context: {}
     enabled: true
-    name: System - SAML Provider - Mappings
-    path: system/providers-saml.yaml
+    name: System - OAuth2 Provider - Scopes
+    path: system/providers-oauth2.yaml
   conditions: []
   identifiers:
-    pk: 4d652576-9295-4e1b-b8bb-f75af07398f3
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: System - RAC Provider - Mappings
-    path: system/providers-rac.yaml
-  conditions: []
-  identifiers:
-    pk: 67079430-2afd-459b-960d-5ccf03f34696
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Events Transport & Rules
-    path: default/events-default.yaml
-  conditions: []
-  identifiers:
-    pk: af667a7e-eb30-4cbe-9235-9a3daf6f3afd
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - WebAuthn MFA setup flow
-    path: default/flow-default-authenticator-webauthn-setup.yaml
-  conditions: []
-  identifiers:
-    pk: 3cd9f8ba-3381-40f8-bd59-cafae1543d7e
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Provider invalidation flow
-    path: default/flow-default-provider-invalidation.yaml
-  conditions: []
-  identifiers:
-    pk: 3fdd7ef3-6a59-48a3-b880-3eae03f85596
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Brand
-    path: default/default-brand.yaml
-  conditions: []
-  identifiers:
-    pk: aa019fbc-26e2-490d-90b4-1949496e2651
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: System - Proxy Provider - Scopes
-    path: system/providers-proxy.yaml
-  conditions: []
-  identifiers:
-    pk: d65ab1fe-aa68-4cb1-b275-f04d2aa1d058
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - TOTP MFA setup flow
-    path: default/flow-default-authenticator-totp-setup.yaml
-  conditions: []
-  identifiers:
-    pk: 404ed640-40fb-4728-8d14-3a7d37a7cf28
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - RBAC - Read-only
-    path: default/rbac-role-read-only.yaml
-  conditions: []
-  identifiers:
-    pk: cd97df27-7b45-4425-8bfb-6fab5f2e18f3
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Out-of-box-experience flow
-    path: default/flow-oobe.yaml
-  conditions: []
-  identifiers:
-    pk: 56eaf8ad-d98b-40ff-933f-fe3de7f8a989
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Source authentication flow
-    path: default/flow-default-source-authentication.yaml
-  conditions: []
-  identifiers:
-    pk: 38986b66-f485-4118-bc38-69f6e5d8e28f
+    pk: deac1db1-83d2-460d-a36b-e2b0692bee86
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
@@ -1959,29 +1949,29 @@ entries:
     path: system/providers-google-workspace.yaml
   conditions: []
   identifiers:
-    pk: 83e67e7a-8344-4856-84b6-38cb1d7a8f19
+    pk: b293f2c8-1c34-4365-88a4-a6ac5da718d9
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
 - attrs:
     context: {}
     enabled: true
-    name: System - Kerberos Source - Mappings
-    path: system/sources-kerberos.yaml
+    name: System - RAC Provider - Mappings
+    path: system/providers-rac.yaml
   conditions: []
   identifiers:
-    pk: 2aaaf245-b68a-4177-9062-c050e0fa45dc
+    pk: 4b5d5b84-1ef5-469f-b425-c280ff6dda2c
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
 - attrs:
     context: {}
     enabled: true
-    name: System - LDAP Source - Mappings
-    path: system/sources-ldap.yaml
+    name: System - SAML Provider - Mappings
+    path: system/providers-saml.yaml
   conditions: []
   identifiers:
-    pk: 24102f46-ad6b-4b60-afc1-e65d46c49c1f
+    pk: 649d20ba-926d-43fa-bce9-368a751318f8
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
@@ -1992,7 +1982,18 @@ entries:
     path: system/providers-scim.yaml
   conditions: []
   identifiers:
-    pk: 5fa9cb01-9bc5-4984-ad1d-607b287f2442
+    pk: bf730d6e-80ae-4dd3-ba73-bf900b2280b3
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: System - Proxy Provider - Scopes
+    path: system/providers-proxy.yaml
+  conditions: []
+  identifiers:
+    pk: 47718dcf-ab04-4ae4-9c86-89fb63ca2104
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
@@ -2003,29 +2004,7 @@ entries:
     path: default/flow-default-source-pre-authentication.yaml
   conditions: []
   identifiers:
-    pk: 6bc3ab7a-b089-44ce-936e-0fa1f978f8d9
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Migration - Remove old prompt fields
-    path: migrations/migrate-prompt-name.yaml
-  conditions: []
-  identifiers:
-    pk: f4e8eb82-6ca9-4026-b279-31233470d840
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Provider authorization flow (implicit consent)
-    path: default/flow-default-provider-authorization-implicit-consent.yaml
-  conditions: []
-  identifiers:
-    pk: c96da2ae-78aa-495f-93f5-8550b796b48f
+    pk: 67eecb47-9612-4b9d-916d-d30be32c50c8
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
@@ -2036,7 +2015,18 @@ entries:
     path: default/flow-default-authenticator-static-setup.yaml
   conditions: []
   identifiers:
-    pk: f5dcfd9d-58eb-439a-acc1-e83cd7d39d22
+    pk: 13a975af-2c54-4529-be20-b7202f03a5ad
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - Source authentication flow
+    path: default/flow-default-source-authentication.yaml
+  conditions: []
+  identifiers:
+    pk: 7e17c5f3-33bb-4d01-aab2-61eb27e83ba5
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
@@ -2047,51 +2037,18 @@ entries:
     path: default/flow-default-provider-authorization-explicit-consent.yaml
   conditions: []
   identifiers:
-    pk: 94971338-bdc0-4fba-b630-b9d3a8b44dc3
+    pk: 390bce18-e548-4b1e-82ca-bc4edf808903
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
 - attrs:
     context: {}
     enabled: true
-    name: authentik Bootstrap
-    path: system/bootstrap.yaml
+    name: Default - Events Transport & Rules
+    path: default/events-default.yaml
   conditions: []
   identifiers:
-    pk: 4ab7f915-e65f-453e-9494-c9e0ff9b7e72
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Source enrollment flow
-    path: default/flow-default-source-enrollment.yaml
-  conditions: []
-  identifiers:
-    pk: 5aa31be8-3bd9-45ba-901f-c792c15b2eb2
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Password change flow
-    path: default/flow-password-change.yaml
-  conditions: []
-  identifiers:
-    pk: 0abc1295-c796-4d97-ae88-c006d0b0b4d7
-  model: authentik_blueprints.blueprintinstance
-  permissions: []
-  state: present
-- attrs:
-    context: {}
-    enabled: true
-    name: Default - Authentication flow
-    path: default/flow-default-authentication-flow.yaml
-  conditions: []
-  identifiers:
-    pk: 78859b89-7fbe-42d1-b59d-236a3358b510
+    pk: 4e955e88-4d21-44ac-8885-c346b3e209c1
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
@@ -2102,7 +2059,18 @@ entries:
     path: default/flow-default-invalidation-flow.yaml
   conditions: []
   identifiers:
-    pk: 31e85bc7-964d-4892-a863-9780eb8bcdd8
+    pk: 8a31dbbf-3a54-4569-a77b-7774546ff50f
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: custom-oasis-users
+    path: oasis-custom-users.yaml
+  conditions: []
+  identifiers:
+    pk: 2c273802-b7e1-423a-9765-6f6e280c235f
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
@@ -2113,7 +2081,172 @@ entries:
     path: default/flow-default-user-settings-flow.yaml
   conditions: []
   identifiers:
-    pk: 404080cd-3832-451d-9497-3c8a9e2534db
+    pk: 1f942b4a-8480-426b-b4fd-26d772d5b7f5
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - Brand
+    path: default/default-brand.yaml
+  conditions: []
+  identifiers:
+    pk: 89dcd9f8-d8f7-4a15-bce0-13d07de36e29
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: custom-oasis-providers
+    path: oasis-blueprint.yaml
+  conditions: []
+  identifiers:
+    pk: daa91244-3e72-4eac-b765-062d574a887c
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: System - Kerberos Source - Mappings
+    path: system/sources-kerberos.yaml
+  conditions: []
+  identifiers:
+    pk: ddf4bbae-ea3a-4cc6-8561-56148fa87dd5
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: System - LDAP Source - Mappings
+    path: system/sources-ldap.yaml
+  conditions: []
+  identifiers:
+    pk: 1e4ba197-acc1-42f4-aa3b-6d7646c53450
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - Provider authorization flow (implicit consent)
+    path: default/flow-default-provider-authorization-implicit-consent.yaml
+  conditions: []
+  identifiers:
+    pk: 76436acc-6e2e-4722-90da-bd89aeb8af6b
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - WebAuthn MFA setup flow
+    path: default/flow-default-authenticator-webauthn-setup.yaml
+  conditions: []
+  identifiers:
+    pk: a95717b8-62a3-40bd-bfd7-6c7e2fe05448
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - TOTP MFA setup flow
+    path: default/flow-default-authenticator-totp-setup.yaml
+  conditions: []
+  identifiers:
+    pk: 74c1a23d-3256-4675-84ee-f3263577bf1f
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - RBAC - Read-only
+    path: default/rbac-role-read-only.yaml
+  conditions: []
+  identifiers:
+    pk: aa9d22b7-d582-4642-b870-1400e7e26d66
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - Out-of-box-experience flow
+    path: default/flow-oobe.yaml
+  conditions: []
+  identifiers:
+    pk: 88b43ac3-3bcf-4148-be30-f42f0cfdcf85
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - Source enrollment flow
+    path: default/flow-default-source-enrollment.yaml
+  conditions: []
+  identifiers:
+    pk: aff2931d-1fac-4c6e-953b-5c6fdd816c0d
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - Provider invalidation flow
+    path: default/flow-default-provider-invalidation.yaml
+  conditions: []
+  identifiers:
+    pk: cd92d1a3-29f9-4e90-8187-03ff27250570
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: authentik Bootstrap
+    path: system/bootstrap.yaml
+  conditions: []
+  identifiers:
+    pk: c81f6062-a8e4-4b0c-866b-2060bb997447
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Migration - Remove old prompt fields
+    path: migrations/migrate-prompt-name.yaml
+  conditions: []
+  identifiers:
+    pk: d52ed98e-6dd3-4034-b4d5-45ce07614bc2
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - Password change flow
+    path: default/flow-password-change.yaml
+  conditions: []
+  identifiers:
+    pk: 4baf709b-104f-49ea-8998-39f7e6603437
+  model: authentik_blueprints.blueprintinstance
+  permissions: []
+  state: present
+- attrs:
+    context: {}
+    enabled: true
+    name: Default - Authentication flow
+    path: default/flow-default-authentication-flow.yaml
+  conditions: []
+  identifiers:
+    pk: cada6f0a-ca52-4e4a-a997-a20eaf77bab4
   model: authentik_blueprints.blueprintinstance
   permissions: []
   state: present
@@ -2122,10 +2255,11 @@ entries:
     is_superuser: true
     name: authentik Admins
     users:
+    - 7
     - 4
   conditions: []
   identifiers:
-    pk: 7d0e183d-4dce-4055-8dc0-8849ba1848e0
+    pk: bd155760-55c6-4810-81a0-ef1e35abef0e
   model: authentik_core.group
   permissions: []
   state: present
@@ -2137,10 +2271,12 @@ entries:
         '
     name: authentik Read-only
     roles:
-    - 8344ab3b-8b3a-496b-8ae4-27ba6545005a
+    - 1e05fb12-c5d1-4f34-867e-3c7979af63fc
+    users:
+    - 8
   conditions: []
   identifiers:
-    pk: 35970063-de75-4ab3-a710-037d4b68ac25
+    pk: d51f16f8-d6aa-442d-b3b1-1d54deb9fb45
   model: authentik_core.group
   permissions: []
   state: present
@@ -2150,7 +2286,7 @@ entries:
     name: Outpost authentik Embedded Outpost Service-Account
     path: goauthentik.io/outposts
     type: internal_service_account
-    username: ak-outpost-682d0b40a38744fe96f59ef47cbdd516
+    username: ak-outpost-d8b74c8882fc48d9a497330f82811038
   conditions: []
   identifiers:
     pk: 2
@@ -2159,11 +2295,43 @@ entries:
   state: present
 - attrs:
     attributes: {}
+    email: admin@example.com
+    groups:
+    - bd155760-55c6-4810-81a0-ef1e35abef0e
+    is_active: true
+    name: admin
+    path: users
+    type: internal
+    username: admin
+  conditions: []
+  identifiers:
+    pk: 7
+  model: authentik_core.user
+  permissions: []
+  state: present
+- attrs:
+    attributes: {}
+    email: user@example.com
+    groups:
+    - d51f16f8-d6aa-442d-b3b1-1d54deb9fb45
+    is_active: true
+    name: user
+    path: users
+    type: internal
+    username: user
+  conditions: []
+  identifiers:
+    pk: 8
+  model: authentik_core.user
+  permissions: []
+  state: present
+- attrs:
+    attributes: {}
     email: akadmin@example.com
     groups:
-    - 7d0e183d-4dce-4055-8dc0-8849ba1848e0
+    - bd155760-55c6-4810-81a0-ef1e35abef0e
     is_active: true
-    last_login: '2025-08-19T06:45:55.150583Z'
+    last_login: '2025-09-18T09:48:03.335743Z'
     name: authentik Default Admin
     path: users
     type: internal
@@ -2175,26 +2343,74 @@ entries:
   permissions: []
   state: present
 - attrs:
+    attributes:
+      goauthentik.io/user/generated: true
+    is_active: true
+    last_login: '2025-09-18T09:57:34.529355Z'
+    name: Autogenerated user from application oasis-service (client credentials)
+    path: goauthentik.io/apps/oasis-service
+    type: service_account
+    username: ak-provider-for-oasis-service-client_credentials
+  conditions: []
+  identifiers:
+    pk: 9
+  model: authentik_core.user
+  permissions: []
+  state: present
+- attrs:
+    name: swagger
+    policy_engine_mode: any
+    provider: 4
+    slug: swagger
+  conditions: []
+  identifiers:
+    pk: 6f9b9d84-7e8b-426f-9f00-6837455a681d
+  model: authentik_core.application
+  permissions: []
+  state: present
+- attrs:
+    name: oasis-server
+    policy_engine_mode: any
+    provider: 5
+    slug: oasis-server
+  conditions: []
+  identifiers:
+    pk: 127bc754-f4aa-4796-8fa8-18da80a12ac7
+  model: authentik_core.application
+  permissions: []
+  state: present
+- attrs:
+    name: oasis-service
+    policy_engine_mode: any
+    provider: 6
+    slug: oasis-service
+  conditions: []
+  identifiers:
+    pk: 38869def-74ad-4695-abcc-ffe312fc74d5
+  model: authentik_core.application
+  permissions: []
+  state: present
+- attrs:
     description: Autogenerated by authentik for Outpost authentik Embedded Outpost
-    identifier: ak-outpost-682d0b40-a387-44fe-96f5-9ef47cbdd516-api
+    identifier: ak-outpost-d8b74c88-82fc-48d9-a497-330f82811038-api
     intent: api
-    managed: goauthentik.io/outpost/ak-outpost-682d0b40-a387-44fe-96f5-9ef47cbdd516-api
+    managed: goauthentik.io/outpost/ak-outpost-d8b74c88-82fc-48d9-a497-330f82811038-api
     user: 2
   conditions: []
   identifiers:
-    pk: e5829c97-db01-4a7b-beaf-356f011f0a76
+    pk: bcae0424-719e-4c00-a827-9b1a8509e71b
   model: authentik_core.token
   permissions: []
   state: present
 - attrs:
-    expires: '2025-08-19T07:14:37.640679Z'
+    expires: '2025-09-18T10:16:18.642301Z'
     identifier: authentik-bootstrap-token
     intent: api
     managed: null
     user: 4
   conditions: []
   identifiers:
-    pk: 3486c3dd-7aac-4364-984f-fb3fb8faa36a
+    pk: 586c3deb-de2c-40ce-8364-af58d92b4621
   model: authentik_core.token
   permissions: []
   state: present
@@ -2214,7 +2430,7 @@ entries:
     name: 'authentik default Google Workspace Mapping: User'
   conditions: []
   identifiers:
-    pk: 4ff4f41e-0f1c-4007-96d1-46e20bd1754b
+    pk: 08b93885-9dc2-429a-acbe-f7df6584963e
   model: authentik_providers_google_workspace.googleworkspaceprovidermapping
   permissions: []
   state: present
@@ -2225,7 +2441,7 @@ entries:
     name: 'authentik default Google Workspace Mapping: Group'
   conditions: []
   identifiers:
-    pk: bdbb2aa1-11fb-4cce-88a0-bb7613de38fa
+    pk: 801df858-643e-43a3-943f-f76ee36f44bd
   model: authentik_providers_google_workspace.googleworkspaceprovidermapping
   permissions: []
   state: present
@@ -2245,7 +2461,7 @@ entries:
     name: 'authentik default Microsoft Entra Mapping: User'
   conditions: []
   identifiers:
-    pk: c38a4471-b079-4a5f-b3de-f75d263b3f25
+    pk: e5ad3c35-8b30-4223-b52b-c95d57ff3d55
   model: authentik_providers_microsoft_entra.microsoftentraprovidermapping
   permissions: []
   state: present
@@ -2259,7 +2475,7 @@ entries:
     name: 'authentik default Microsoft Entra Mapping: Group'
   conditions: []
   identifiers:
-    pk: b6ea02ab-bb2d-4d1a-968a-ced75b13eb80
+    pk: 4a55d693-62ee-4e44-88bd-8fd5ee3304bf
   model: authentik_providers_microsoft_entra.microsoftentraprovidermapping
   permissions: []
   state: present
@@ -2268,7 +2484,7 @@ entries:
     name: default-email-transport
   conditions: []
   identifiers:
-    pk: 45b990f6-c32f-455f-9dcb-335d77403678
+    pk: ac4fda76-14e4-428b-a095-681e22671ef5
   model: authentik_events.notificationtransport
   permissions: []
   state: present
@@ -2277,125 +2493,51 @@ entries:
     name: default-local-transport
   conditions: []
   identifiers:
-    pk: 55c03073-1c7b-4b72-b615-a5ce1b0715d2
+    pk: fe4125fb-273d-411e-acce-665606cc9b1a
   model: authentik_events.notificationtransport
   permissions: []
   state: present
 - attrs:
-    group: 7d0e183d-4dce-4055-8dc0-8849ba1848e0
+    group: bd155760-55c6-4810-81a0-ef1e35abef0e
     name: default-notify-configuration-error
     severity: alert
     transports:
-    - 45b990f6-c32f-455f-9dcb-335d77403678
-    - 55c03073-1c7b-4b72-b615-a5ce1b0715d2
+    - ac4fda76-14e4-428b-a095-681e22671ef5
+    - fe4125fb-273d-411e-acce-665606cc9b1a
   conditions: []
   identifiers:
-    pk: bd55d040-3978-414a-bf89-e65f53206777
+    pk: 584dc567-3ee1-487b-b792-f43fb934de3b
   model: authentik_events.notificationrule
   permissions: []
   state: present
 - attrs:
-    group: 7d0e183d-4dce-4055-8dc0-8849ba1848e0
+    group: bd155760-55c6-4810-81a0-ef1e35abef0e
     name: default-notify-update
     severity: alert
     transports:
-    - 45b990f6-c32f-455f-9dcb-335d77403678
-    - 55c03073-1c7b-4b72-b615-a5ce1b0715d2
+    - ac4fda76-14e4-428b-a095-681e22671ef5
+    - fe4125fb-273d-411e-acce-665606cc9b1a
   conditions: []
   identifiers:
-    pk: 9b5da760-dda6-4ca0-aadc-744f15adbe4a
+    pk: c29a549c-30d5-42e2-8fd0-581cfda06347
   model: authentik_events.notificationrule
   permissions: []
   state: present
 - attrs:
-    group: 7d0e183d-4dce-4055-8dc0-8849ba1848e0
+    group: bd155760-55c6-4810-81a0-ef1e35abef0e
     name: default-notify-exception
     severity: alert
     transports:
-    - 45b990f6-c32f-455f-9dcb-335d77403678
-    - 55c03073-1c7b-4b72-b615-a5ce1b0715d2
+    - ac4fda76-14e4-428b-a095-681e22671ef5
+    - fe4125fb-273d-411e-acce-665606cc9b1a
   conditions: []
   identifiers:
-    pk: 28ea21a2-3e50-4077-8880-0b883a87396d
+    pk: e0682bf8-9240-48fa-8beb-0a66b11e25a9
   model: authentik_events.notificationrule
   permissions: []
   state: present
 metadata:
   labels:
     blueprints.goauthentik.io/generated: 'true'
-  name: authentik Export - 2025-08-19 06:46:41.434516+00:00
-version: 1
-/graph/api/group-post-groups?view=graph-rest-1.0&tabs=http#request-body\n\
-      return {\n    \"display_name\": group.name,\n    \"mail_enabled\": False,\n\
-      \    \"security_enabled\": True,\n    \"mail_nickname\": slugify(group.name),\n\
-      }"
-    managed: goauthentik.io/providers/microsoft_entra/group
-    name: 'authentik default Microsoft Entra Mapping: Group'
-  conditions: []
-  identifiers:
-    pk: b6ea02ab-bb2d-4d1a-968a-ced75b13eb80
-  model: authentik_providers_microsoft_entra.microsoftentraprovidermapping
-  permissions: []
-  state: present
-- attrs:
-    mode: email
-    name: default-email-transport
-  conditions: []
-  identifiers:
-    pk: 45b990f6-c32f-455f-9dcb-335d77403678
-  model: authentik_events.notificationtransport
-  permissions: []
-  state: present
-- attrs:
-    mode: local
-    name: default-local-transport
-  conditions: []
-  identifiers:
-    pk: 55c03073-1c7b-4b72-b615-a5ce1b0715d2
-  model: authentik_events.notificationtransport
-  permissions: []
-  state: present
-- attrs:
-    group: 7d0e183d-4dce-4055-8dc0-8849ba1848e0
-    name: default-notify-configuration-error
-    severity: alert
-    transports:
-    - 45b990f6-c32f-455f-9dcb-335d77403678
-    - 55c03073-1c7b-4b72-b615-a5ce1b0715d2
-  conditions: []
-  identifiers:
-    pk: bd55d040-3978-414a-bf89-e65f53206777
-  model: authentik_events.notificationrule
-  permissions: []
-  state: present
-- attrs:
-    group: 7d0e183d-4dce-4055-8dc0-8849ba1848e0
-    name: default-notify-update
-    severity: alert
-    transports:
-    - 45b990f6-c32f-455f-9dcb-335d77403678
-    - 55c03073-1c7b-4b72-b615-a5ce1b0715d2
-  conditions: []
-  identifiers:
-    pk: 9b5da760-dda6-4ca0-aadc-744f15adbe4a
-  model: authentik_events.notificationrule
-  permissions: []
-  state: present
-- attrs:
-    group: 7d0e183d-4dce-4055-8dc0-8849ba1848e0
-    name: default-notify-exception
-    severity: alert
-    transports:
-    - 45b990f6-c32f-455f-9dcb-335d77403678
-    - 55c03073-1c7b-4b72-b615-a5ce1b0715d2
-  conditions: []
-  identifiers:
-    pk: 28ea21a2-3e50-4077-8880-0b883a87396d
-  model: authentik_events.notificationrule
-  permissions: []
-  state: present
-metadata:
-  labels:
-    blueprints.goauthentik.io/generated: 'true'
-  name: authentik Export - 2025-08-19 06:46:41.434516+00:00
+  name: authentik Export - 2025-09-18 10:01:49.876103+00:00
 version: 1

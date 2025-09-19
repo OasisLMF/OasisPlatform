@@ -11,19 +11,16 @@ TMP_PATH="/tmp/"
 #fi
 
 API_URL="${OASIS_API_URL:-https://ui.oasis.local/api}"
-OASIS_USERNAME="${OASIS_USERNAME:-admin}"
-OASIS_PASSWORD="${OASIS_PASSWORD:-password}"
 OASIS_AUTH_API="${OASIS_AUTH_API:-1}"
 KEYCLOAK_TOKEN_URL="${KEYCLOAK_TOKEN_URL:-https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/token}"
 CLIENT_ID=oasis-server
 CLIENT_SECRET=e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
 
 if [ "$OASIS_AUTH_API" == "1" ]; then
-  R="$($CURL -X POST "${API_URL}/access_token/" -H "accept: application/json" -H "Content-Type: application/json" \
-         -d "{ \"username\": \"${OASIS_USERNAME}\", \"password\": \"${OASIS_PASSWORD}\"}")"
+  R="$($CURL -X POST "${API_URL}/service/access_token/" -H "accept: application/json" -H "Content-Type: application/json"
   ACCESS_TOKEN=$(echo "$R" | jq -r '.access_token // empty')
 else
-  R="$($CURL --data-urlencode "grant_type=password" --data-urlencode "client_id=$CLIENT_ID" --data-urlencode "client_secret=$CLIENT_SECRET" --data-urlencode "username=$OASIS_USERNAME" --data-urlencode "password=$OASIS_PASSWORD" "$KEYCLOAK_TOKEN_URL")"
+  R="$($CURL --data-urlencode "grant_type=password" --data-urlencode "client_id=$CLIENT_ID" --data-urlencode "client_secret=$CLIENT_SECRET"  "$KEYCLOAK_TOKEN_URL")"
   ACCESS_TOKEN=$(echo "$R" | jq -r '.access_token // empty')
 fi
 

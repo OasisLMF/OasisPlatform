@@ -21,8 +21,14 @@ class AuthentikOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
 
     def get_or_create_user(self, access_token, id_token, payload):
         user_info = self.get_userinfo(access_token, id_token, payload)
+        is_service_account = user_info.get("is_service_account", False)
+
         sub = self.get_userinfo_attribute(user_info, 'sub')
-        username = self.get_userinfo_attribute(user_info, 'preferred_username')
+        username = user_info.get("preferred_username", None)
+        if not username and is_service_account:
+            username = "tmp-service-account-username"
+        elif not username:
+            raise SuspiciousOperation('Required key not found in claim: preferred_username')
 
         user = self.get_user_by_oidc_id(sub)
 
@@ -70,10 +76,11 @@ class AuthentikOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         return username
 
     def update_groups(self, user, claims):
+        is_service_account = claims.get("is_service_account", False)
         authentik_groups = claims.get('groups', [])
 
         if authentik_groups is None:
-            if (user.is_superuser or user.is_staff):
+            if (user.is_superuser or user.is_staff or is_service_account):
                 authentik_groups = []
             else:
                 raise SuspiciousOperation('No group found in claim / user_info')
@@ -97,8 +104,9 @@ class AuthentikOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         If user belongs to the "admin" group → superuser/staff.
         Authentik doesn't use realm_access, so we check groups.
         """
+        is_service_account = claims.get("is_service_account", False)
         authentik_groups = claims.get('groups', [])
-        is_admin = 'admin' in authentik_groups
+        is_admin = 'admin' in authentik_groups or is_service_account
 
         if is_admin != user.is_superuser or is_admin != user.is_staff:
             user.is_superuser = is_admin

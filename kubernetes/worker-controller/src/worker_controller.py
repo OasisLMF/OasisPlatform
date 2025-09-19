@@ -60,8 +60,6 @@ def parse_args():
     parser.add_argument('--websocket-host', help='The websocket hostname', default=getenv('OASIS_WEBSOCKET_HOST', default='localhost'))
     parser.add_argument('--websocket-port', help='The websocket portnumber', default=getenv('OASIS_WEBSOCKET_PORT', default=8001))
     parser.add_argument('--secure', help='Flag if https and wss should be used', default=bool(getenv('OASIS_API_SECURE')), action='store_true')
-    parser.add_argument('--username', help='The username of the worker controller user', default=getenv('OASIS_USERNAME', default='admin'))
-    parser.add_argument('--password', help='The password of the worker controller user', default=getenv('OASIS_PASSWORD', default='password'))
     parser.add_argument('--namespace', help='Namespace of cluster where oasis is deployed to',
                         default=getenv('OASIS_CLUSTER_NAMESPACE', default='default'))
     parser.add_argument('--limit', help='Hard limit for the total number of workers created', default=getenv('OASIS_TOTAL_WORKER_LIMIT'))
@@ -101,8 +99,6 @@ def main():
         cli_args.websocket_host,
         cli_args.websocket_port,
         cli_args.secure,
-        cli_args.username,
-        cli_args.password
     )
 
     # Set worker-controller logger

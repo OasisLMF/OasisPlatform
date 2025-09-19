@@ -277,6 +277,8 @@ if API_AUTH_TYPE == 'keycloak':
 
     OIDC_RP_CLIENT_ID = iniconf.settings.get('server', 'OIDC_CLIENT_NAME', fallback='')
     OIDC_RP_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_CLIENT_SECRET', fallback='')
+    OIDC_RP_SERVICE_CLIENT_ID = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_NAME', fallback='')
+    OIDC_RP_SERVICE_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_SECRET', fallback='')
     KEYCLOAK_OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
 
     OIDC_OP_AUTHORIZATION_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'auth'
@@ -310,6 +312,8 @@ elif API_AUTH_TYPE == 'authentik':
 
     OIDC_RP_CLIENT_ID = iniconf.settings.get('server', 'OIDC_CLIENT_NAME', fallback='')
     OIDC_RP_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_CLIENT_SECRET', fallback='')
+    OIDC_RP_SERVICE_CLIENT_ID = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_NAME', fallback='')
+    OIDC_RP_SERVICE_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_SECRET', fallback='')
     AUTHENTIK_OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
 
     OIDC_OP_AUTHORIZATION_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'authorize/'

@@ -85,9 +85,8 @@ jobs:
           delay=1
           for i in {1..8}; do
             delay=$((delay * 2))
-            RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
-              -H "Content-Type: application/json" \
-              -d '{"username": "admin", "password": "password"}')
+            RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/service/access_token/ \
+              -H "Content-Type: application/json"
 
             if echo "$RESPONSE" | jq -e . > /dev/null 2>&1; then
               TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')

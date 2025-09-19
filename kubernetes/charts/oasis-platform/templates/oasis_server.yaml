@@ -85,16 +85,6 @@ spec:
           name: {{ .Values.oasisWebsocket.name }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
-            - name: OASIS_ADMIN_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.oasisWebsocket.name }}
-                  key: user
-            - name: OASIS_ADMIN_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.oasisWebsocket.name }}
-                  key: password
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
@@ -116,6 +106,10 @@ spec:
               value: {{ .Values.oasisServer.oidc.clientSecret }}
             - name: OASIS_SERVER_OIDC_ENDPOINT
               value: {{ .Values.oasisServer.oidc.endpoint }}
+            - name: OASIS_SERVER_OIDC_SERVICE_CLIENT_NAME
+              value: {{ .Values.oasisServer.oidc.serviceClientName }}
+            - name: OASIS_SERVER_OIDC_SERVICE_CLIENT_SECRET
+              value: {{ .Values.oasisServer.oidc.serviceClientSecret }}
             {{- end }}
           ports:
             - containerPort: {{ .Values.oasisWebsocket.port }}
@@ -209,16 +203,6 @@ spec:
           name: {{ .Values.oasisServer.name }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
-            - name: OASIS_ADMIN_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.oasisServer.name }}
-                  key: user
-            - name: OASIS_ADMIN_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.oasisServer.name }}
-                  key: password
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
@@ -238,6 +222,10 @@ spec:
               value: {{ .Values.oasisServer.oidc.clientSecret }}
             - name: OASIS_SERVER_OIDC_ENDPOINT
               value: {{ .Values.oasisServer.oidc.endpoint }}
+            - name: OASIS_SERVER_OIDC_SERVICE_CLIENT_NAME
+              value: {{ .Values.oasisServer.oidc.serviceClientName }}
+            - name: OASIS_SERVER_OIDC_SERVICE_CLIENT_SECRET
+              value: {{ .Values.oasisServer.oidc.serviceClientSecret }}
             {{- end }}
             {{- toYaml .Values.oasisServer.env | nindent 12 }}
           ports:

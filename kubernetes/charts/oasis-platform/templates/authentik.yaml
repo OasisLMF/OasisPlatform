@@ -36,13 +36,6 @@ data:
     {{- $userTemplate := .Files.Get "resources/blueprints/oasis-users-blueprint-template.yaml" }}
     {{- $userEntries := list -}}
 
-    {{- $userGroups := list " - !Find [authentik_core.group, [name, authentik Admins]]" }}
-    {{- $entry := $userTemplate |
-        replace "___USERNAME___" .Values.authentik.oasisRestApi.platformServiceAccount.username |
-        replace "___PASSWORD___" .Values.authentik.oasisRestApi.platformServiceAccount.password |
-        replace "___GROUPS___" (join "\n    " $userGroups) -}}
-    {{- $userEntries = append $userEntries $entry }}
-
     {{- range $i, $user := .Values.authentik.oasisRestApi.users }}
       {{- $groups := list " - !Find [authentik_core.group, [name, authentik Read-only]]" }}
       {{- if $user.admin }}

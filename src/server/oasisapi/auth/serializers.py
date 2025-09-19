@@ -60,6 +60,48 @@ class SimpleTokenRefreshSerializer(BaseTokenRefreshSerializer):
         return data
 
 
+class OIDCServiceTokenObtainPairSerializer(TokenObtainSerializer):
+    """
+    Token serializer to authenticate against the configured OIDC provider
+    (Keycloak or Authentik) and obtain an access token.
+    """
+    connection.create_connection = auth_server_create_connection
+
+    def __init__(self, *args, **kwargs):
+        super(OIDCServiceTokenObtainPairSerializer, self).__init__(*args, **kwargs)
+
+        self.fields.pop(self.username_field, None)
+        self.fields.pop("password", None)
+
+    def validate(self, attrs):
+
+        response = requests.post(
+            settings.OIDC_OP_TOKEN_ENDPOINT,
+            data={
+                'grant_type': 'client_credentials',
+                'client_id': settings.OIDC_RP_SERVICE_CLIENT_ID,
+                'client_secret': settings.OIDC_RP_SERVICE_CLIENT_SECRET,
+                'scope': 'openid profile',
+            },
+            verify=False,
+        )
+
+        json = response.json()
+
+        if response.status_code != 200 or 'access_token' not in json:
+            raise AuthenticationFailed({'Detail': 'invalid credentials'})
+
+        allowed_keys = ["access_token", "token_type", "expires_in"]
+
+        # Only include refresh_token if it exists in the response
+        if "refresh_token" in json:
+            allowed_keys.append("refresh_token")
+
+        cleaned = {key: json[key] for key in allowed_keys if key in json}
+
+        return cleaned
+
+
 class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
     """
     Token serializer to authenticate against the configured OIDC provider
@@ -70,20 +112,18 @@ class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
     def __init__(self, *args, **kwargs):
         super(OIDCTokenObtainPairSerializer, self).__init__(*args, **kwargs)
 
-        self.fields[self.username_field].help_text = _('Your username')
-        self.fields['password'].help_text = _('your password')
+        self.fields.pop(self.username_field, None)
+        self.fields.pop("password", None)
 
     def validate(self, attrs):
 
         response = requests.post(
             settings.OIDC_OP_TOKEN_ENDPOINT,
             data={
-                'grant_type': 'password',
+                'grant_type': 'client_credentials',
                 'client_id': settings.OIDC_RP_CLIENT_ID,
                 'client_secret': settings.OIDC_RP_CLIENT_SECRET,
                 'scope': 'openid',
-                'username': attrs.get('username', None),
-                'password': attrs.get('password', None)
             },
             verify=False,
         )
@@ -93,7 +133,13 @@ class OIDCTokenObtainPairSerializer(TokenObtainSerializer):
         if response.status_code != 200 or 'access_token' not in json:
             raise AuthenticationFailed({'Detail': 'invalid credentials'})
 
-        cleaned = {key: json[key] for key in ['access_token', 'refresh_token', 'token_type', 'expires_in']}
+        allowed_keys = ["access_token", "token_type", "expires_in"]
+
+        # Only include refresh_token if it exists in the response
+        if "refresh_token" in json:
+            allowed_keys.append("refresh_token")
+
+        cleaned = {key: json[key] for key in allowed_keys if key in json}
 
         return cleaned
 

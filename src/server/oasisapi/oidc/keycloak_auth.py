@@ -30,8 +30,14 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         """
 
         user_info = self.get_userinfo(access_token, id_token, payload)
+        is_service_account = user_info.get("is_service_account", False)
+
         sub = self.get_userinfo_attribute(user_info, 'sub')
-        username = self.get_userinfo_attribute(user_info, 'preferred_username')
+        username = user_info.get("preferred_username", None)
+        if not username and is_service_account:
+            username = "tmp-service-account-username"
+        elif not username:
+            raise SuspiciousOperation('Required key not found in claim: preferred_username')
 
         user = self.get_user_by_keycloak_id(sub)
 
@@ -130,10 +136,11 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         """
         Persist Keycloak groups as local Django groups.
         """
+        is_service_account = claims.get("is_service_account", False)
         keycloak_groups = claims.get('groups', None)
 
         if keycloak_groups is None:
-            if (user.is_superuser or user.is_staff):
+            if (user.is_superuser or user.is_staff or is_service_account):
                 keycloak_groups = []
             else:
                 msg = 'No group found in claim / user_info'
@@ -161,9 +168,10 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         """
         If a user belongs to the group admin we will enable django attributes is_superuser and is_admin.
         """
+        is_service_account = claims.get("is_service_account", False)
         keycloak_roles = claims.get('realm_access', dict()).get('roles', [])
 
-        is_admin = 'admin' in keycloak_roles
+        is_admin = 'admin' in keycloak_roles or is_service_account
         if is_admin != user.is_superuser or is_admin != user.is_staff:
             user.is_superuser = is_admin
             user.is_staff = is_admin
