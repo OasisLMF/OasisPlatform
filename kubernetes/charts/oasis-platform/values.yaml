@@ -96,6 +96,10 @@ traefik:
         default: true
       tls:
         enabled: true
+    traefik:
+      port: 8080
+      expose:
+        default: true
 
   # Enable debug logging
   logs:
