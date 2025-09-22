@@ -4,8 +4,8 @@ from rest_framework.parsers import FormParser
 from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView, \
     TokenObtainPairView as BaseTokenObtainPairView
 
-from .serializers import OIDCServiceTokenObtainPairSerializer, OIDCTokenRefreshSerializer, OIDCTokenObtainPairSerializer, SimpleTokenObtainPairSerializer, \
-    SimpleTokenRefreshSerializer
+from .serializers import OIDCServiceTokenObtainPairSerializer, OIDCTokenRefreshSerializer, OIDCTokenObtainPairSerializer, \
+    SimpleServiceTokenObtainPairSerializer, SimpleTokenObtainPairSerializer, SimpleTokenRefreshSerializer
 from .. import settings
 from ..schemas.custom_swagger import TOKEN_REFRESH_HEADER
 from ..schemas.serializers import TokenObtainPairResponseSerializer, TokenRefreshResponseSerializer
@@ -51,7 +51,7 @@ class ServiceTokenObtainPairView(BaseTokenObtainPairView):
     Fetches a new refresh token from your username and password.
     """
     serializer_class =\
-        OIDCServiceTokenObtainPairSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleTokenObtainPairSerializer
+        OIDCServiceTokenObtainPairSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleServiceTokenObtainPairSerializer
 
     @swagger_auto_schema(
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},

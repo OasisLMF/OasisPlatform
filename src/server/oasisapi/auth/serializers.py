@@ -1,4 +1,5 @@
 import requests
+from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
@@ -6,11 +7,35 @@ from rest_framework_simplejwt import settings as jwt_settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer as BaseTokenRefreshSerializer
+from rest_framework_simplejwt.tokens import AccessToken
 
 from .. import settings
 
 from ..oidc.common import auth_server_create_connection
 from urllib3.util import connection
+
+
+class SimpleServiceTokenObtainPairSerializer(BaseTokenObtainPairSerializer):
+    def __init__(self, *args, **kwargs):
+        super(SimpleServiceTokenObtainPairSerializer, self).__init__(*args, **kwargs)
+
+        self.fields.pop(self.username_field, None)
+        self.fields.pop("password", None)
+
+    def validate(self, attrs):
+        User = get_user_model()
+        service_user, _ = User.objects.get_or_create(
+            username="service",
+            defaults={"is_active": True, "is_staff": False, "is_superuser": False}
+        )
+
+        token = AccessToken.for_user(service_user)
+
+        return {
+            "access_token": str(token),
+            "token_type": "Bearer",
+            "expires_in": int(token.lifetime.total_seconds()),
+        }
 
 
 class SimpleTokenObtainPairSerializer(BaseTokenObtainPairSerializer):
