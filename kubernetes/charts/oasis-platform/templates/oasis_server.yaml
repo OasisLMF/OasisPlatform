@@ -203,6 +203,16 @@ spec:
           name: {{ .Values.oasisServer.name }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
+            - name: OASIS_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisServer.name }}
+                  key: user
+            - name: OASIS_ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oasisServer.name }}
+                  key: password
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
