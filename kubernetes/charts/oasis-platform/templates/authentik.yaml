@@ -1,4 +1,4 @@
-{{- if (.Values.authentik) }}
+{{- if and (eq .Values.oasisServer.apiAuthType "authentik") .Values.authentik }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

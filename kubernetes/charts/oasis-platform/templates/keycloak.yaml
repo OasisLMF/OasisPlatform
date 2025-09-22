@@ -1,4 +1,4 @@
-{{- if (.Values.keycloak) }}
+{{- if and (eq .Values.oasisServer.apiAuthType "keycloak") .Values.keycloak }}
 {{ $realmSecretName := printf "%s-realm" .Values.keycloak.name }}
 apiVersion: v1
 kind: ConfigMap

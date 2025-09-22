@@ -79,7 +79,17 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.authentik.name .Values.databases.broker.name) | nindent 8}}
+        {{- $checks := list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.broker.name }}
+
+        {{- if and (eq .Values.oasisServer.apiAuthType "keycloak") .Values.keycloak.name }}
+        {{- $checks = append $checks .Values.keycloak.name }}
+        {{- end }}
+
+        {{- if and (eq .Values.oasisServer.apiAuthType "authentik") .Values.authentik.name }}
+        {{- $checks = append $checks .Values.authentik.name }}
+        {{- end }}
+
+        {{- include "h.initTcpAvailabilityCheckBySecret" $checks | nindent 8 }}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisWebsocket.name }}
@@ -191,7 +201,17 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.authentik.name .Values.databases.broker.name) | nindent 8}}
+        {{- $checks := list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.broker.name }}
+
+        {{- if and (eq .Values.oasisServer.apiAuthType "keycloak") .Values.keycloak.name }}
+        {{- $checks = append $checks .Values.keycloak.name }}
+        {{- end }}
+
+        {{- if and (eq .Values.oasisServer.apiAuthType "authentik") .Values.authentik.name }}
+        {{- $checks = append $checks .Values.authentik.name }}
+        {{- end }}
+
+        {{- include "h.initTcpAvailabilityCheckBySecret" $checks | nindent 8 }}
         - name: set-mount-permissions
           image: busybox
           command: ["sh", "-c", "find /shared-fs -user root -exec chown 1000:1000 {} \\;"]
