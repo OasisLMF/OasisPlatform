@@ -14,7 +14,7 @@ metadata:
 spec:
   {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") (eq .Values.ingress.tls.strategy "default") }}
   tls:
-    - secretName: {{ .Values.ingress.tls.certificateSecret | default (printf "%s-tls" $name) }}
+    - secretName: {{ .Values.ingress.tls.certificateSecret }}
       hosts:
         - {{ .Values.ingress.uiHostname }}
   {{- end }}
