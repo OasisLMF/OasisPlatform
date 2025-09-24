@@ -34,6 +34,18 @@ if settings.API_AUTH_TYPE == 'keycloak':
     3. Here in swagger - click the `Authorize` button, enter 'swagger' as client_id and click Authorize. This will open
        a new window with the keycloak login, enter your credentials and click Login. This will close the window and get
        you back to the authorize dialog which you now can close."""
+elif settings.API_AUTH_TYPE == 'authentik':
+    api_info_description += """
+1. Authenticate your client:
+    1. Post to the authentik endpoint:
+       `grant_type=password&client_id=<client-id>&client_secret=<client-secret>&username=<username>&password=<password>`
+       Check your chart values to find the endpoint (`OIDC_ENDPOINT`), <client-id> (`OIDC_CLIENT_NAME`) and
+       <client-secret> (`OIDC_CLIENT_SECRET`).
+    2. Either supply your username and password to the `/access_token/` endpoint or make a `post` request
+       to `/refresh_token/` with the `HTTP_AUTHORIZATION` header set as `Bearer <refresh_token>`.
+    3. Here in swagger - click the `Authorize` button, enter 'swagger' as client_id and click Authorize. This will open
+       a new window with the authentik login, enter your credentials and click Login. This will close the window and get
+       you back to the authorize dialog which you now can close."""
 else:
     api_info_description += """
 1. Authenticate your client, either supply your username and password to the `/access_token/`

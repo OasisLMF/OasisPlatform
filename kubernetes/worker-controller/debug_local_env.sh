@@ -6,8 +6,6 @@
 #  3. install requirememts, 'pip install -r requirements.txt'
 #  4. Run controller, './src/worker_controller.py'
 
-export OASIS_USERNAME=admin
-export OASIS_PASSWORD=password
 export OASIS_CONTINUE_UPDATE_SCALING=0
 export OASIS_NEVER_SHUTDOWN_FIXED_WORKERS=0
 export OASIS_API_HOST=ui.oasis.local/api

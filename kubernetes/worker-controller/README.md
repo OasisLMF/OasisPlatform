@@ -22,8 +22,6 @@ Argument     | Env. var. name     | Default     | Description
 `--api-host` | `OASIS_API_HOST`   | `localhost` | The hostname of the oasis API
 `--api-port` | `OASIS_API_PORT`   | `8000`      | The port of the oasis API
 `--secure`   | `OASIS_API_SECURE` | `false`     | Use TLS in web socket communication
-`--username` | `OASIS_ADMIN_USER` | `admin`     | The username of the user to use for authentication against the API
-`--password` | `OASIS_ADMIN_PASS` | `password`  | The password of the user to use for authentication against the API
 `--cluster`  | `CLUSTER`          | `in`        | How to connect to the kubernetes cluster. Either `local` to connect to a cluster on the same machine (development), or `in` to connect to a cluster hosting this container.
 
 ## Development

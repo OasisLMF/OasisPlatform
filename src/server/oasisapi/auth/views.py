@@ -4,8 +4,8 @@ from rest_framework.parsers import FormParser
 from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView, \
     TokenObtainPairView as BaseTokenObtainPairView
 
-from .serializers import OIDCTokenRefreshSerializer, OIDCTokenObtainPairSerializer, SimpleTokenObtainPairSerializer, \
-    SimpleTokenRefreshSerializer
+from .serializers import OIDCServiceTokenObtainPairSerializer, OIDCTokenRefreshSerializer, OIDCTokenObtainPairSerializer, \
+    SimpleServiceTokenObtainPairSerializer, SimpleTokenObtainPairSerializer, SimpleTokenRefreshSerializer
 from .. import settings
 from ..schemas.custom_swagger import TOKEN_REFRESH_HEADER
 from ..schemas.serializers import TokenObtainPairResponseSerializer, TokenRefreshResponseSerializer
@@ -20,7 +20,7 @@ class TokenRefreshView(BaseTokenRefreshView):
 
         Authorization: Bearer <refresh_token>
     """
-    serializer_class = OIDCTokenRefreshSerializer if settings.API_AUTH_TYPE == 'keycloak' else SimpleTokenRefreshSerializer
+    serializer_class = OIDCTokenRefreshSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleTokenRefreshSerializer
     parser_classes = [FormParser]
 
     @swagger_auto_schema(
@@ -36,7 +36,22 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     """
     Fetches a new refresh token from your username and password.
     """
-    serializer_class = OIDCTokenObtainPairSerializer if settings.API_AUTH_TYPE == 'keycloak' else SimpleTokenObtainPairSerializer
+    serializer_class = OIDCTokenObtainPairSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleTokenObtainPairSerializer
+
+    @swagger_auto_schema(
+        responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
+        security=[],
+        tags=['authentication'])
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+
+class ServiceTokenObtainPairView(BaseTokenObtainPairView):
+    """
+    Fetches a new refresh token from your username and password.
+    """
+    serializer_class =\
+        OIDCServiceTokenObtainPairSerializer if settings.API_AUTH_TYPE in ["authentik", "keycloak"] else SimpleServiceTokenObtainPairSerializer
 
     @swagger_auto_schema(
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},

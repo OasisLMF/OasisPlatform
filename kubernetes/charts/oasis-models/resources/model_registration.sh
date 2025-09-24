@@ -39,21 +39,14 @@ if [ -z "$OASIS_SERVER_HOST" ] || [ -z "$OASIS_SERVER_PORT" ]; then
   exit 1
 fi
 
-if [ -z "$OASIS_ADMIN_USER" ] || [ -z "$OASIS_ADMIN_PASS" ]; then
-  echo "Missing required API credentials env var(s)"
-  exit 1
-fi
 
-
-ACCESS_TOKEN=$(curl -s -X POST "${BASE_URL}/access_token/" -H "accept: application/json" -H "Content-Type: application/json" \
-  -d "{ \"username\": \"${OASIS_ADMIN_USER}\", \"password\": \"${OASIS_ADMIN_PASS}\"}" | jq -r '.access_token // empty')
+ACCESS_TOKEN=$(curl -s -X POST "${BASE_URL}/service/access_token/" -H "accept: application/json" -H "Content-Type: application/json" | jq -r '.access_token // empty')
 
 if [ -n "$ACCESS_TOKEN" ]; then
   echo "Authenticated"
 else
   echo "Failed to authenticate:"
-  curl -X POST "${BASE_URL}/access_token/" -H "accept: application/json" -H "Content-Type: application/json" \
-    -d "{ \"username\": \"${OASIS_ADMIN_USER}\", \"password\": \"${OASIS_ADMIN_PASS}\"}"
+  curl -X POST "${BASE_URL}/service/access_token/" -H "accept: application/json" -H "Content-Type: application/json"
   exit 1
 fi
 

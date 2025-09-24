@@ -26,7 +26,5 @@ Supported environment variables:
 
 | Name                    | Default  | Description                                                                             |
 |-------------------------|----------|-----------------------------------------------------------------------------------------|
-| OASIS_USERNAME          | admin    | Oasis username                                                                          |
-| OASIS_PASSWORD          | password | Oasis password                                                                          |
 | OASIS_AUTH_API          | 1        | How to authenticate. 1=directly against keycloak on ui.oasis.local, 0=through oasis API |
 | OASIS_CLUSTER_NAMESPACE | default  | Namespace to use for kubernetes operations                                              |

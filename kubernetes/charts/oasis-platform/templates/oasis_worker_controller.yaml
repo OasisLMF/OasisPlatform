@@ -60,16 +60,6 @@ spec:
           name: main
           env:
             {{- include "h.serverApiVars" . | nindent 12}}
-            - name: OASIS_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: oasis-rest-service-account
-                  key: username
-            - name: OASIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: oasis-rest-service-account
-                  key: password
             - name: OASIS_CONTINUE_UPDATE_SCALING
               value: "{{ .Values.workerController.continueUpdateScaling }}"
             - name: OASIS_NEVER_SHUTDOWN_FIXED_WORKERS
