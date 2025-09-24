@@ -4,6 +4,7 @@ import json
 import os
 import uuid
 from datetime import datetime
+from datetime import timezone as dt_timezone
 from shutil import rmtree
 from tempfile import TemporaryFile
 from urllib.parse import urlparse
@@ -596,7 +597,7 @@ def record_losses_error_files(analysis_id, initiator_id, output_location=None, r
 
 @celery_app_v2.task(bind=True, name='record_sub_task_start')
 def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None, dt=None):
-    _now = timezone.now() if not dt else datetime.fromtimestamp(dt, tz=timezone.utc)
+    _now = timezone.now() if not dt else datetime.fromtimestamp(dt, tz=dt_timezone.utc)
 
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
@@ -776,7 +777,7 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
     ).update(
         task_id=task_id,
         status=AnalysisTaskStatus.status_choices.QUEUED,
-        queue_time=datetime.fromtimestamp(dt, tz=timezone.utc),
+        queue_time=datetime.fromtimestamp(dt, tz=dt_timezone.utc),
     )
 
 
@@ -827,7 +828,7 @@ def set_task_status(analysis_pk, task_status, dt):
         analysis = Analysis.objects.get(pk=analysis_pk)
         if analysis.status not in [analysis.status_choices.INPUTS_GENERATION_CANCELLED, analysis.status_choices.RUN_CANCELLED]:
             analysis.status = task_status
-            analysis.task_started = datetime.fromtimestamp(dt, tz=timezone.utc)
+            analysis.task_started = datetime.fromtimestamp(dt, tz=dt_timezone.utc)
             analysis.save(update_fields=["status", "task_started"])
         logger.info('Task Status Update: analysis_pk: {}, status: {}, time: {}'.format(analysis_pk, task_status, analysis.task_started))
     except Exception as e:
