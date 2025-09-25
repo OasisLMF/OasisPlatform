@@ -80,9 +80,18 @@ if _allowed_hosts:
 else:
     ALLOWED_HOSTS = []
 
+
+''' Needed in Django 4.0 and above
+This controls whether popup windows can access their parent window across different origins.
+See: https://docs.djangoproject.com/en/5.2/ref/middleware/#cross-origin-opener-policy
+
+the new default is 'same-origin' which causes OAuth2 redirects to loose access to their parent window
+and fail.
+'''
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # Default changed from 'same-origin'
+
+
 # Application definition
-
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
