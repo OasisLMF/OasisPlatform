@@ -9,6 +9,7 @@ from django.db.models import F
 from rest_framework.serializers import DateTimeField
 
 from celery.utils.log import get_task_logger
+import json
 
 logger = get_task_logger(__name__)
 
@@ -153,6 +154,7 @@ class QueueStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
             await self.close()
 
     async def receive_json(self, content, **kwargs):
+        logger.info(content)
         if not isinstance(content, dict):
             await self.send_json(wrap_message_content(
                 None,
@@ -211,15 +213,19 @@ class QueueStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
 
 
 class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
-    # class QueueStatusConsumer(AsyncJsonWebsocketConsumer):
-    groups = ['queue_status']
-
     async def connect(self):
         logger.info("New connection")
         await super().connect()
 
     async def receive_json(self, content, **kwargs):
-        self.send_json({"Thank": "You"})
+        logger.info(f"received {content}")
+        await self.handle_content(content)
+
+    async def receive(self, text_data=None, bytes_data=None, **kwargs):
+        logger.info(f"received {(text_data, bytes_data)}")
+        await self.handle_content(json.loads(text_data))
+
+    async def handle_content(self, content):
         if "analysis_pk" not in content:
             return
         pk = content["analysis_pk"]
@@ -233,6 +239,7 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
             analysis.num_events_complete = F('num_events_complete') + int(content["events_complete"])
 
         await sync_to_async(analysis.save)()
+
 
 
 @sync_to_async
