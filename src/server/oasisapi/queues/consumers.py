@@ -241,7 +241,6 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         await sync_to_async(analysis.save)()
 
 
-
 @sync_to_async
 def get_analysis(pk):
     from src.server.oasisapi.analyses.models import Analysis
