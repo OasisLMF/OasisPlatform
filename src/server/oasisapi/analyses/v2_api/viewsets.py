@@ -644,6 +644,16 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
             obj.save()
         return Response(serializer.data)
 
+    @action(methods=['get'], detail=True)
+    def run_progress(self, request, pk=None, version=None):
+        """
+        get:
+        Gets the number of gul steps completed
+        """
+        analysis = Analysis.objects.get(pk=pk)
+        response = f"{analysis.num_events_complete}/{analysis.num_events_total} gul stages complete"
+        return Response({"Status": response})
+
 
 class AnalysisSettingsView(VerifyGroupAccessModelViewSet):
     """

@@ -71,8 +71,8 @@ metadata:
   name: host-data-volume-pod
 spec:
   containers:
-    - image: nginx
-      name: nginx
+    - image: traefik
+      name: traefik
       volumeMounts:
         - name: shared-fs-persistent-storage
           mountPath: /mnt/host

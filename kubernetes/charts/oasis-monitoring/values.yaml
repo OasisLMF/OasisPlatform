@@ -31,7 +31,7 @@ kube-prometheus-stack:
       routePrefix: '/prometheus/'
     ingress:
       enabled: true
-      ingressClassName: nginx
+      ingressClassName: traefik
       hosts:
         - ui.oasis.local
       paths:
@@ -42,7 +42,7 @@ kube-prometheus-stack:
       routePrefix: /alert-manager/
     ingress:
       enabled: true
-      ingressClassName: nginx
+      ingressClassName: traefik
       hosts:
         - ui.oasis.local
       paths:
@@ -60,7 +60,7 @@ kube-prometheus-stack:
     ingress:
       enabled: true
       annotations:
-        kubernetes.io/ingress.class: nginx
+        kubernetes.io/ingress.class: traefik
       hosts:
         - ui.oasis.local
       path: /grafana/

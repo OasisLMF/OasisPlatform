@@ -12,12 +12,11 @@ from datetime import datetime
 import filelock
 import numpy as np
 import pandas as pd
-import numpy as np
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
-from oasislmf.model_preparation.lookup import OasisLookupFactory
+from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
@@ -290,21 +289,32 @@ def update_all_tasks_ids(task_request):
     except TypeError:
         logger.debug('Task chain header is already sorted')
     chain_tasks = task_request.chain[0]
-    task_update_list = list()
 
-    # Sequential tasks - in the celery task chain, important for stopping stalls on a cancellation request
-    seq = {t['options']['task_id']: t['kwargs'] for t in chain_tasks['kwargs']['body']['kwargs']['tasks']}
-    for task_id in seq:
-        task_update_list.append((task_id, seq[task_id]['analysis_id'], seq[task_id]['slug']))
+    task_queue = [chain_tasks]
+    task_update_list = []
 
-    # Chunked tasks - This call might get heavy as the chunk load increases (possibly remove later)
-    chunks = {t['options']['task_id']: t['kwargs'] for t in chain_tasks['kwargs']['header']['kwargs']['tasks']}
-    for task_id in chunks:
-        task_update_list.append((task_id, chunks[task_id]['analysis_id'], chunks[task_id]['slug']))
+    while task_queue:
+        curr_level = task_queue.pop(0)
+
+        # extract valid task
+        if "analysis_id" in curr_level.get("kwargs", {}):
+            task_update_list.append((curr_level['options']['task_id'],
+                                     curr_level['kwargs']['analysis_id'],
+                                     curr_level['kwargs']['slug']))
+
+        # add nested tasks to queue
+        if "body" in curr_level["kwargs"]:
+            new_tasks = curr_level["kwargs"]["body"].get("kwargs", {}).get("tasks", [])
+            task_queue.extend(new_tasks)
+
+        if "header" in curr_level["kwargs"]:
+            new_tasks = curr_level["kwargs"]["header"].get("kwargs", {}).get("tasks", [])
+            task_queue.extend(new_tasks)
+
     signature('update_task_id').delay(task_update_list)
 
-
 # --- input generation tasks ------------------------------------------------ #
+
 
 def keys_generation_task(fn):
     def maybe_prepare_complex_data_files(complex_data_files, user_data_dir):
@@ -987,6 +997,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             ),
         }),
         'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
+        'analysis_pk': analysis_id
     }
 
     with tempfile.NamedTemporaryFile(mode="w+") as f:
@@ -1016,7 +1027,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             'ktools_work_dir': chunk_params['ktools_work_dir'],
             'process_number': chunk_idx + 1,
             'max_process_id': max_chunk_id,
-            'log_location': filestore.put(kwargs.get('log_filename')),
+            'log_location': filestore.put(kwargs.get('log_filename'))
         }
 
 

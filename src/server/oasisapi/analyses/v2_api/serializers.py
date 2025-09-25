@@ -93,6 +93,8 @@ class AnalysisListSerializer(serializers.Serializer):
     task_finished = serializers.DateTimeField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     priority = serializers.IntegerField(read_only=True)
+    num_events_total = serializers.IntegerField(read_only=True)
+    num_events_complete = serializers.IntegerField(read_only=True)
 
     # Groups - inherited from portfolio
     groups = serializers.SerializerMethodField(read_only=True)
@@ -281,7 +283,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'sub_task_list',
             'sub_task_error_ids',
             'status_count',
-            "priority",
+            'priority',
+            'num_events_complete',
+            'num_events_total',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
