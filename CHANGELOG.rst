@@ -1,6 +1,18 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.8`_
+ ---------
+* [#1242](https://github.com/OasisLMF/OasisPlatform/pull/1242) - Progress bar in platform with websocket
+* [#1267](https://github.com/OasisLMF/OasisPlatform/pull/1270) - Issue in worker monitor V2 - 2.4.7
+* [#1266](https://github.com/OasisLMF/OasisPlatform/pull/1271) - Error extracting sub-task celery ids in 2.4.7
+* [#1264](https://github.com/OasisLMF/OasisPlatform/pull/1272) - Check for scaling config = None  in V1 models
+* [#1273](https://github.com/OasisLMF/OasisPlatform/pull/1273) - Update Django CVE-2025-57833
+* [#1265](https://github.com/OasisLMF/OasisPlatform/pull/1274) - Django 5 + connection pooling fails with MySQL 8.0
+* [#652](https://github.com/OasisLMF/OasisPlatform/pull/1275) - Oasis UI - idle session crash 
+* [#1278](https://github.com/OasisLMF/OasisPlatform/pull/1278) - Fixed OAuth2 redirects
+.. _`2.4.8`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.7...2.4.8
+
 `2.4.7`_
  ---------
 * [#1257](https://github.com/OasisLMF/OasisPlatform/pull/1256) - settings template causes internal server errors
