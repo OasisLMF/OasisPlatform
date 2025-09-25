@@ -187,6 +187,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'chunking_configuration': f'http://testserver/v2/analyses/{analysis.id}/chunking_configuration/',
                     'lookup_chunks': None,
                     'priority': 4,
+                    'num_events_total': 0,
+                    'num_events_complete': 0
                 }, response.json)
 
     @given(
@@ -267,6 +269,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'chunking_configuration': 'http://testserver/v2/analyses/1/chunking_configuration/',
                     'lookup_chunks': None,
                     'priority': 4,
+                    'num_events_total': 0,
+                    'num_events_complete': 0
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):

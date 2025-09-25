@@ -144,6 +144,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'summary_levels_file': response.request.application_url + analysis.get_absolute_summary_levels_file_url(namespace=NAMESPACE),
                     'task_started': None,
                     'task_finished': None,
+                    'num_events_complete': 0,
+                    'num_events_total': 0
                 }, response.json)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
@@ -204,6 +206,8 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'summary_levels_file': None,
                     'task_started': None,
                     'task_finished': None,
+                    'num_events_complete': 0,
+                    'num_events_total': 0
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):

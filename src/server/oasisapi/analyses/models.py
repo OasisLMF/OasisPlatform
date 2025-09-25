@@ -218,6 +218,8 @@ class Analysis(TimeStampedModel):
                                             default=None, related_name='summary_levels_file_analyses')
 
     chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
+    num_events_total = models.IntegerField(null=False, default=0, blank=True)
+    num_events_complete = models.IntegerField(null=False, default=0, blank=True)
 
     class Meta:
         ordering = ['id']

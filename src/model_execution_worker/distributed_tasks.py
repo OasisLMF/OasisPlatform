@@ -12,12 +12,11 @@ from datetime import datetime
 import filelock
 import numpy as np
 import pandas as pd
-import numpy as np
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
-from oasislmf.model_preparation.lookup import OasisLookupFactory
+from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
@@ -998,6 +997,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             ),
         }),
         'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
+        'analysis_pk': analysis_id
     }
 
     with tempfile.NamedTemporaryFile(mode="w+") as f:
@@ -1027,7 +1027,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             'ktools_work_dir': chunk_params['ktools_work_dir'],
             'process_number': chunk_idx + 1,
             'max_process_id': max_chunk_id,
-            'log_location': filestore.put(kwargs.get('log_filename')),
+            'log_location': filestore.put(kwargs.get('log_filename'))
         }
 
 
