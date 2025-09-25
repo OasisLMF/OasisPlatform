@@ -1,13 +1,11 @@
 apiVersion: v2
 name: oasis
-version: 0.1.1
+version: 2.4.6
 type: application
 description: Deploys the Oasis Platform
-
 appVersion: "1.26.2"
 home: https://github.com/OasisLMF
-
 dependencies:
-  - name: ingress-nginx
-    version: "4.0.6"
-    repository: https://kubernetes.github.io/ingress-nginx
+  - name: traefik
+    version: "37.1.0"  # Latest stable version
+    repository: https://traefik.github.io/charts

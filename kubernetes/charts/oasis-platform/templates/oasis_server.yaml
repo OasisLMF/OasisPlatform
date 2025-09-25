@@ -106,7 +106,7 @@ spec:
             - name: INGRESS_EXTERNAL_HOST
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
-              value: {{ .Release.Name | lower }}-ingress-nginx-controller
+              value: {{ .Release.Name | lower }}-traefik
             {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
             - name: OASIS_SERVER_API_AUTH_TYPE
               value: keycloak
@@ -228,7 +228,7 @@ spec:
             - name: INGRESS_EXTERNAL_HOST
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
-              value: {{ .Release.Name | lower }}-ingress-nginx-controller
+              value: {{ .Release.Name | lower }}-traefik
             {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
             - name: OASIS_SERVER_API_AUTH_TYPE
               value: keycloak
