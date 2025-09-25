@@ -1,9 +1,10 @@
+# oasisapi/swagger.py
 __all__ = [
     'CustomGeneratorClassV1',
     'CustomGeneratorClassV2',
 ]
 
-from drf_yasg.generators import OpenAPISchemaGenerator
+from drf_spectacular.generators import SchemaGenerator
 from django.urls import include, re_path
 from django.conf import settings
 
@@ -35,23 +36,13 @@ else:
     swagger_v2_urlpatterns = api_v2_urlpatterns
 
 
-class CustomGeneratorClassV1(OpenAPISchemaGenerator):
-    def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
-        super().__init__(
-            info=info,
-            version='v1',
-            url=url,
-            patterns=swagger_v1_urlpatterns,
-            urlconf=urlconf
-        )
+class CustomGeneratorClassV1(SchemaGenerator):
+    def __init__(self, *args, **kwargs):
+        kwargs['patterns'] = swagger_v1_urlpatterns
+        super().__init__(*args, **kwargs)
 
 
-class CustomGeneratorClassV2(OpenAPISchemaGenerator):
-    def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
-        super().__init__(
-            info=info,
-            version='v2',
-            url=url,
-            patterns=swagger_v2_urlpatterns,
-            urlconf=urlconf
-        )
+class CustomGeneratorClassV2(SchemaGenerator):
+    def __init__(self, *args, **kwargs):
+        kwargs['patterns'] = swagger_v2_urlpatterns
+        super().__init__(*args, **kwargs)
