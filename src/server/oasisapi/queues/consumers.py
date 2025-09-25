@@ -234,6 +234,7 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
 
         if "events_total" in content:
             analysis.num_events_total = int(float(content["events_total"]))
+            analysis.num_events_complete = 0
 
         if "events_complete" in content:
             analysis.num_events_complete = F('num_events_complete') + int(content["events_complete"])
