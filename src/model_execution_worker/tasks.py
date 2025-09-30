@@ -25,6 +25,7 @@ from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings, settings_local
 
+from .celery_error_handler import OasisWorkerTask
 from .utils import (
     LoggingTaskContext,
     log_params,
@@ -45,7 +46,7 @@ LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
-app = Celery()
+app = Celery(task_cls=OasisWorkerTask)
 app.config_from_object(celery_conf)
 model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 
@@ -58,31 +59,31 @@ logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
 
 
-def check_worker_lost(task, analysis_pk):
-    """
-    SAFE GUARD: - Fail any tasks received from dead workers
-    -------------------------------------------------------
-    Setting the option `acks_late` means tasks will remain on the Queue until after
-    a tasks has completed. If the worker goes down during the execution of `generate_input`
-    or `start_analysis_task` then if another work is available the task will be picked up
-    on an active worker.
-
-    When the task is picked up for a 2nd time, the new worker will reject it will
-    'WorkerLostError' and mark the execution as failed.
-
-    Note that this is not the ideal approach, since at least one alive worker is required to
-    fail as crash workers task.
-
-    A better method is to use either tasks signals or celery events to fail the task immediately,
-    so this should be viewed as a fallback option.
-    """
-    current_state = task.AsyncResult(task.request.id).state
-    logger.info(current_state)
-    if current_state == RUNNING_TASK_STATUS:
-        raise WorkerLostError(
-            'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
-        )
-    task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
+#def check_worker_lost(task, analysis_pk):
+#    """
+#    SAFE GUARD: - Fail any tasks received from dead workers
+#    -------------------------------------------------------
+#    Setting the option `acks_late` means tasks will remain on the Queue until after
+#    a tasks has completed. If the worker goes down during the execution of `generate_input`
+#    or `start_analysis_task` then if another work is available the task will be picked up
+#    on an active worker.
+#
+#    When the task is picked up for a 2nd time, the new worker will reject it will
+#    'WorkerLostError' and mark the execution as failed.
+#
+#    Note that this is not the ideal approach, since at least one alive worker is required to
+#    fail as crash workers task.
+#
+#    A better method is to use either tasks signals or celery events to fail the task immediately,
+#    so this should be viewed as a fallback option.
+#    """
+#    current_state = task.AsyncResult(task.request.id).state
+#    logger.info(current_state)
+#    if current_state == RUNNING_TASK_STATUS:
+#        raise WorkerLostError(
+#            'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
+#        )
+#    task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
 
 # When a worker connects send a task to the worker-monitor to register a new model
 
@@ -241,7 +242,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
 
         try:
             # Check if this task was re-queued from a lost worker
-            check_worker_lost(self, analysis_pk)
+            #check_worker_lost(self, analysis_pk)
 
             notify_api_status(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
@@ -408,7 +409,7 @@ def generate_input(self,
     task_logger.info(str(get_worker_versions()))
 
     # Check if this task was re-queued from a lost worker
-    check_worker_lost(self, analysis_pk)
+    #check_worker_lost(self, analysis_pk)
 
     # Start Oasis file generation
     notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')

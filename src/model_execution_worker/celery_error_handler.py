@@ -7,6 +7,20 @@ from billiard.einfo import ExceptionWithTraceback
 logger = logging.getLogger(__name__)
 
 
+
+
+
+### PUT THIS IN UTILS 
+def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
+    logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
+    signature(
+        'set_subtask_status',
+        args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),
+        queue='celery-v2'
+    ).delay()
+
+
+
 #class CustomRequest(CeleryRequest):
 #    """ Using 'reject_on_worker_lost=True' to re-queue a task on `WorkerLostError` results
 #        in an infinite loop if the task OOM errors each try.
@@ -20,7 +34,7 @@ logger = logging.getLogger(__name__)
 #
 #
 #
-#    #def before_start(self, task_id, args, kwargs): 
+#    #def before_start(self, task_id, args, kwargs):
 #    def execute_using_pool(self, pool, loglevel, logfile):
 #        # call task_redelivered_guard here?
 #        from celery.contrib import rdb; rdb.set_trace()
@@ -76,7 +90,7 @@ logger = logging.getLogger(__name__)
 
 
 
-#def task_redelivered_guard(self, task, analysis_id, initiator_id, task_slug, error_state):                                                                           
+#def task_redelivered_guard(self, task, analysis_id, initiator_id, task_slug, error_state):
 #    """ Safe guard to check if task has been attempted on worker
 #    and was redelivered.
 
@@ -100,7 +114,7 @@ logger = logging.getLogger(__name__)
 #                task_slug=task_slug,
 #                subtask_status='ERROR',
 #                error_msg='Task revoked, possible out of memory error or cancellation'
-#            )    
+#            )
 #            notify_api_status(analysis_id, error_state)
 #            task.app.control.revoke(task.request.id, terminate=True)
 #            return
@@ -121,10 +135,23 @@ class OasisWorkerTask(Task):
 
 
     def before_start(self, task_id, args, kwargs):
-        # https://docs.celeryq.dev/en/latest/_modules/celery/app/task.html 
-        # must be celery v5.2 and above
-        from celery.contrib import rdb; rdb.set_trace()
-        pass
+        """ Only supported in celery v5.2 and above
+        https://docs.celeryq.dev/en/latest/_modules/celery/app/task.html
+        """
+
+        if 'V1_task_logger' in self.__qualname__:
+            # V1 task 
+            analysis_id = args[0] 
+            initiator_id = None
+            slug = None
+        else:
+            # V2 task
+            analysis_id = kwargs.get('analysis_id', None)
+            initiator_id = kwargs.get('initiator_id', None)
+            slug = kwargs.get('slug', None)
+
+        if analysis_id:
+            self.task_redelivered_guard(analysis_id, initiator_id, slug)
 
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -133,15 +160,86 @@ class OasisWorkerTask(Task):
         except Exception as e:
             logger.info('Unhandled Exception in: {}'.format(self.name))
             logger.exception(str(e))
-        super(LogTaskError, self).on_failure(exc, task_id, args, kwargs, einfo)
+        super(OasisWorkerTask, self).on_failure(exc, task_id, args, kwargs, einfo)
 
 
 
     def task_failure_handler(self, exc, task_id, args, kwargs, traceback):
-
-
-    def task_redelivered_guard()
-
+        #from celery.contrib import rdb; rdb.set_trace()
 
 
 
+        if 'V1_task_logger' in self.__qualname__:
+            pass
+
+
+        else:    
+            from celery.contrib import rdb; rdb.set_trace()
+            task_id = self.task_id
+            analysis_id = kwargs.get('analysis_id', None)
+            initiator_id = kwargs.get('initiator_id', None)
+            task_slug = kwargs.get('slug', None)
+
+            if analysis_id and initiator_id and task_slug:
+                signature('subtask_retry_log').delay(
+                    analysis_id,
+                    initiator_id,
+                    task_slug,
+                    task_id,
+                    exc_info.traceback,
+                )
+
+
+    def task_redelivered_guard(self, analysis_id, initiator_id, slug):
+
+        #from celery.contrib import rdb; rdb.set_trace()
+        # need to test both V1 / V2
+
+        #from celery.contrib import rdb; rdb.set_trace()
+
+
+        redelivered = self.request.delivery_info.get('redelivered')
+        state = self.AsyncResult(self.request.id).state
+        logger.info('--- check_task_redelivered ---')
+        logger.info(f'task: {slug}')
+        logger.info(f"redelivered: {redelivered}")
+        logger.info(f"state: {state}")
+
+        if state == 'REVOKED':
+            logger.error('ERROR: task requeued three times or cancelled - aborting task')
+
+            if slug:
+                # V2 analyses will always have a slug
+                notify_subtask_status(
+                    analysis_id=analysis_id,
+                    initiator_id=initiator_id,
+                    task_slug=slug,
+                    subtask_status='ERROR',
+                    error_msg='Task revoked, possible out of memory error or cancellation'
+                )
+
+            notify_api_status(analysis_id, self.__get_analyses_error_status())
+            self.app.control.revoke(self.request.id, terminate=True)
+            return
+        if state == 'RETRY':
+            logger.info('WARNING: task requeue detected - retry 2')
+            self.update_state(state='REVOKED')
+            return
+        if redelivered:
+            logger.info('WARNING: task requeue detected - retry 1')
+            self.update_state(state='RETRY')
+            return
+
+
+    def __get_analyses_error_status(self):
+
+        # V2 tasks
+        if 'keys_generation_task' in self.__qualname__:
+            return 'INPUTS_GENERATION_ERROR'
+        if 'loss_generation_task' in self.__qualname__:
+            return 'RUN_ERROR'
+
+        # V1 tasks
+        if self.name is 'generate_input':
+            return 'INPUTS_GENERATION_ERROR'
+        #if self.name is 
