@@ -3,6 +3,12 @@ from celery import Task, signature
 #from celery.worker.request import Request as CeleryRequest
 from celery.exceptions import WorkerLostError
 
+
+
+from .utils import notify_api_status, notify_subtask_status
+
+
+
 from billiard.einfo import ExceptionWithTraceback
 logger = logging.getLogger(__name__)
 
@@ -10,14 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 
-### PUT THIS IN UTILS 
-def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
-    logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
-    signature(
-        'set_subtask_status',
-        args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),
-        queue='celery-v2'
-    ).delay()
 
 
 
@@ -140,8 +138,8 @@ class OasisWorkerTask(Task):
         """
 
         if 'V1_task_logger' in self.__qualname__:
-            # V1 task 
-            analysis_id = args[0] 
+            # V1 task
+            analysis_id = args[0]
             initiator_id = None
             slug = None
         else:
@@ -173,9 +171,8 @@ class OasisWorkerTask(Task):
             pass
 
 
-        else:    
+        else:
             from celery.contrib import rdb; rdb.set_trace()
-            task_id = self.task_id
             analysis_id = kwargs.get('analysis_id', None)
             initiator_id = kwargs.get('initiator_id', None)
             task_slug = kwargs.get('slug', None)
@@ -242,4 +239,4 @@ class OasisWorkerTask(Task):
         # V1 tasks
         if self.name is 'generate_input':
             return 'INPUTS_GENERATION_ERROR'
-        #if self.name is 
+        #if self.name is

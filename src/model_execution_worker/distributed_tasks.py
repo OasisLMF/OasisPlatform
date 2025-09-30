@@ -37,6 +37,7 @@ from .utils import (
     prepare_complex_model_file_inputs,
     config_strip_default_exposure,
     unwrap_task_args,
+    notify_api_status,
 )
 
 
@@ -67,25 +68,16 @@ logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
 
 
-def notify_api_status(analysis_pk, task_status):
-    logger.info("Notify API: analysis_id={}, status={}".format(
-        analysis_pk,
-        task_status
-    ))
-    signature(
-        'set_task_status_v2',
-        args=(analysis_pk, task_status, datetime.now().timestamp()),
-        queue='celery-v2'
-    ).delay()
-
-
-def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
-    logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
-    signature(
-        'set_subtask_status',
-        args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),
-        queue='celery-v2'
-    ).delay()
+#def notify_api_status(analysis_pk, task_status):
+#    logger.info("Notify API: analysis_id={}, status={}".format(
+#        analysis_pk,
+#        task_status
+#    ))
+#    signature(
+#        'set_task_status_v2',
+#        args=(analysis_pk, task_status, datetime.now().timestamp()),
+#        queue='celery-v2'
+#    ).delay()
 
 
 def load_location_data(loc_filepath, oed_schema_info=None):
@@ -484,7 +476,7 @@ def prepare_input_generation_params(
     initiator_id=None,
     slug=None,
     **kwargs,
-):
+):notify_api_status
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
