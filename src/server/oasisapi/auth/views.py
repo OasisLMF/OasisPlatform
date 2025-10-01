@@ -145,12 +145,17 @@ class OIDCCallbackView(APIView):
             'code': request.GET.get('code'),
             'state': request.GET.get('state'),
         }
-        serializer = OIDCAuthorizationCodeExchangeSerializer(data=data, context={'request': request})
+        serializer = OIDCAuthorizationCodeExchangeSerializer(
+            data=data, context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
         tokens = serializer.validated_data.get('_tokens')
 
         next_url = request.GET.get('state', '/')
-        return Response(tokens, status=status.HTTP_200_OK)
+
+        redirect_url = f"{next_url}?access_token={tokens['access_token']}&refresh_token={tokens['refresh_token']}"
+
+        return HttpResponseRedirect(redirect_url)
 
     @swagger_auto_schema(
         request_body=OIDCAuthorizationCodeExchangeSerializer,
