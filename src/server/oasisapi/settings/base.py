@@ -266,60 +266,35 @@ AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallba
 AUTH_PASSWORD_VALIDATORS = []
 API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
 
+SUPPORTED_OIDC_PROVIDERS = [
+    "keycloak",
+    "authentik",
+]
 
-if API_AUTH_TYPE == 'keycloak':
+OIDC_AUTH_CODE_REDIRECT_URI = "https://ui.oasis.local/api/oidc/callback/"
 
+
+if API_AUTH_TYPE in SUPPORTED_OIDC_PROVIDERS:
     INSTALLED_APPS += (
         'mozilla_django_oidc',
     )
-    AUTHENTICATION_BACKENDS = ('src.server.oasisapi.oidc.keycloak_auth.KeycloakOIDCAuthenticationBackend',)
+    AUTHENTICATION_BACKENDS = ('src.server.oasisapi.oidc.generic_auth.GenericOIDCAuthenticationBackend',)
     REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('mozilla_django_oidc.contrib.drf.OIDCAuthentication',)
 
     OIDC_RP_CLIENT_ID = iniconf.settings.get('server', 'OIDC_CLIENT_NAME', fallback='')
     OIDC_RP_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_CLIENT_SECRET', fallback='')
     OIDC_RP_SERVICE_CLIENT_ID = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_NAME', fallback='')
     OIDC_RP_SERVICE_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_SECRET', fallback='')
-    KEYCLOAK_OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
+    OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
 
-    OIDC_OP_AUTHORIZATION_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'auth'
-    OIDC_OP_TOKEN_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'token'
-    OIDC_OP_USER_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'userinfo'
-
-    # No need to verify our internal self signed keycloak certificate
-    OIDC_VERIFY_SSL = False
-
-    SWAGGER_SETTINGS = {
-        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
-        'USE_SESSION_AUTH': False,
-        'SECURITY_DEFINITIONS': {
-            "keycloak": {
-                "type": "oauth2",
-                "authorizationUrl": KEYCLOAK_OIDC_BASE_URL + 'auth',
-                "refreshUrl": OIDC_OP_TOKEN_ENDPOINT + 'auth',
-                "tokenUrl": KEYCLOAK_OIDC_BASE_URL + 'token',
-                "flow": "accessCode",
-                "scopes": {}
-            }
-        },
-        "schemes": ["http", "https"]
-    }
-elif API_AUTH_TYPE == 'authentik':
-    INSTALLED_APPS += (
-        'mozilla_django_oidc',
-    )
-    AUTHENTICATION_BACKENDS = ('src.server.oasisapi.oidc.authentik_auth.AuthentikOIDCAuthenticationBackend',)
-    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('mozilla_django_oidc.contrib.drf.OIDCAuthentication',)
-
-    OIDC_RP_CLIENT_ID = iniconf.settings.get('server', 'OIDC_CLIENT_NAME', fallback='')
-    OIDC_RP_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_CLIENT_SECRET', fallback='')
-    OIDC_RP_SERVICE_CLIENT_ID = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_NAME', fallback='')
-    OIDC_RP_SERVICE_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_SECRET', fallback='')
-    AUTHENTIK_OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
-
-    OIDC_OP_AUTHORIZATION_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'authorize/'
-    OIDC_OP_TOKEN_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'token/'
-    OIDC_OP_USER_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'userinfo/'
-    OIDC_OP_JWKS_ENDPOINT = AUTHENTIK_OIDC_BASE_URL + 'jwks/'
+    if API_AUTH_TYPE == "keycloak":
+        OIDC_OP_AUTHORIZATION_ENDPOINT = OIDC_BASE_URL + 'auth'
+        OIDC_OP_TOKEN_ENDPOINT = OIDC_BASE_URL + 'token'
+        OIDC_OP_USER_ENDPOINT = OIDC_BASE_URL + 'userinfo'
+    elif API_AUTH_TYPE == "authentik":
+        OIDC_OP_AUTHORIZATION_ENDPOINT = OIDC_BASE_URL + 'authorize/'
+        OIDC_OP_TOKEN_ENDPOINT = OIDC_BASE_URL + 'token/'
+        OIDC_OP_USER_ENDPOINT = OIDC_BASE_URL + 'userinfo/'
 
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False
@@ -330,8 +305,8 @@ elif API_AUTH_TYPE == 'authentik':
         'SECURITY_DEFINITIONS': {
             "authentik": {
                 "type": "oauth2",
-                "authorizationUrl": AUTHENTIK_OIDC_BASE_URL + "authorize/",
-                "tokenUrl": AUTHENTIK_OIDC_BASE_URL + "token/",
+                "authorizationUrl": OIDC_OP_AUTHORIZATION_ENDPOINT,
+                "tokenUrl": OIDC_OP_TOKEN_ENDPOINT,
                 "flow": "accessCode",
                 "scopes": {}
             }

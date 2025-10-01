@@ -60,6 +60,7 @@ set -e
     pushd kubernetes/worker-controller
         docker build -t coreoasis/worker_controller:dev .
     popd
+    docker build -f ../OasisUI/docker/Dockerfile.oasisui_development -t coreoasis/oasisui_dev:dev ../OasisUI
 set +e
 
 # Upload piwind data

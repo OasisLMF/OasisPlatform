@@ -201,3 +201,61 @@ class OIDCTokenRefreshSerializer(serializers.Serializer):
         cleaned = {key: json[key] for key in ['access_token', 'refresh_token', 'token_type', 'expires_in']}
 
         return cleaned
+
+
+class OIDCBaseSerializer(serializers.Serializer):
+    """
+    Base to ensure the urllib3 connection hack for OIDC Provider is applied if needed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        connection.create_connection = auth_server_create_connection
+        super().__init__(*args, **kwargs)
+
+
+class OIDCAuthorizationCodeExchangeSerializer(OIDCBaseSerializer):
+    """
+    Exchanges an authorization code for tokens.
+    Expected input:
+      - code (from OIDC redirect)
+    """
+    code = serializers.CharField(required=True)
+    redirect_uri = serializers.CharField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        code = attrs.get('code')
+        redirect_uri = attrs.get('redirect_uri') or settings.OIDC_AUTH_CODE_REDIRECT_URI
+
+        client_id = settings.OIDC_RP_CLIENT_ID
+        client_secret = settings.OIDC_RP_CLIENT_SECRET
+
+        data = {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': redirect_uri,
+            'client_id': client_id,
+            'client_secret': client_secret
+        }
+
+        response = requests.post(
+            settings.OIDC_OP_TOKEN_ENDPOINT,
+            data=data,
+            verify=False
+        )
+
+        try:
+            json_data = response.json()
+        except Exception:
+            raise AuthenticationFailed({'Detail': 'Invalid response from OIDC provider'})
+
+        if response.status_code != 200 or 'access_token' not in json_data:
+            raise AuthenticationFailed({'Detail': 'invalid authorization code'})
+
+        cleaned = {
+            'access_token': json_data.get('access_token'),
+            'token_type': json_data.get('token_type'),
+            'expires_in': json_data.get('expires_in'),
+            'refresh_token': json_data.get('refresh_token') if 'refresh_token' in json_data else None,
+        }
+        attrs['_tokens'] = cleaned
+        return attrs

@@ -8,8 +8,8 @@ images:
       version: dev
       imagePullPolicy: Never
     ui:
-      image: coreoasis/oasisui_app
-      version: 1.11.7
+      image: coreoasis/oasisui_dev
+      version: dev
     worker_controller:
       image: coreoasis/worker_controller
       version: dev
@@ -218,22 +218,22 @@ oasisServer:
   password: password
 
   # Enable OIDC Keycloak authentication with 'keycloak or set to 'simple' for simple jwt.
-  # apiAuthType: keycloak
-  # oidc:
-  #   endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
-  #   clientName: oasis-server
-  #   clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
-  #   serviceClientName: oasis-service
-  #   serviceClientSecret: f0a12881-f991-412f-9f26-c7d9e73e255f
+  apiAuthType: keycloak
+  oidc:
+    endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
+    clientName: oasis-server
+    clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
+    serviceClientName: oasis-service
+    serviceClientSecret: f0a12881-f991-412f-9f26-c7d9e73e255f
   
   # Enable OIDC Authentik authentication with 'authentik or set to 'simple' for simple jwt.
-  apiAuthType: authentik
-  oidc:
-    endpoint: https://ui.oasis.local/authentik/application/o/
-    clientName: oasis-server
-    clientSecret: EfNMUM3GG1bd1CYUvNfiBGWKfvbGFiNAdutEqHSarZ9H7oL0sZfKLvPT1ujaqVm2839Vka8Ky0elliMQ6yWKN8Jv8dzh3BeVFn0F7LPquGkIus6JJ9nGH1vtfCt7AhtO
-    serviceClientName: oasis-service
-    serviceClientSecret: xzX0J4Pe777Y2gdT4gtU5qZ4BTuBYJDyIYQpI3ebxHBQLRpziDfBVmiZX07JCXVSPHTZDdtuWCGURtBfg7FHMiI6SAbLhmyjnp4xP3p3cNgATDDMsiWFn6HUC9mSemUh
+  # apiAuthType: authentik
+  # oidc:
+  #   endpoint: https://ui.oasis.local/authentik/application/o/
+  #   clientName: oasis-server
+  #   clientSecret: EfNMUM3GG1bd1CYUvNfiBGWKfvbGFiNAdutEqHSarZ9H7oL0sZfKLvPT1ujaqVm2839Vka8Ky0elliMQ6yWKN8Jv8dzh3BeVFn0F7LPquGkIus6JJ9nGH1vtfCt7AhtO
+  #   serviceClientName: oasis-service
+  #   serviceClientSecret: xzX0J4Pe777Y2gdT4gtU5qZ4BTuBYJDyIYQpI3ebxHBQLRpziDfBVmiZX07JCXVSPHTZDdtuWCGURtBfg7FHMiI6SAbLhmyjnp4xP3p3cNgATDDMsiWFn6HUC9mSemUh
 
   # Set environment variables for the Oasis API server.
   env:
