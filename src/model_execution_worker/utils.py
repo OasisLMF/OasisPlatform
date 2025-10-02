@@ -43,10 +43,10 @@ from ..conf.iniconf import settings
 
 
 def notify_api_status(analysis_pk, task_status):
-    logger.info("Notify API: analysis_id={}, status={}".format(
-        analysis_pk,
-        task_status
-    ))
+    #logger.info("Notify API: analysis_id={}, status={}".format(
+    #    analysis_pk,
+    #    task_status
+    #))
     signature(
         'set_task_status_v2',
         args=(analysis_pk, task_status, datetime.now().timestamp()),
@@ -56,7 +56,7 @@ def notify_api_status(analysis_pk, task_status):
 
 ### PUT THIS IN UTILS 
 def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
-    logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
+    #logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
     signature(
         'set_subtask_status',
         args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),

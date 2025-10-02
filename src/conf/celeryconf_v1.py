@@ -31,6 +31,11 @@ CELERYD_CONCURRENCY = 1
 #: https://docs.celeryproject.org/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
 CELERYD_PREFETCH_MULTIPLIER = 1
 
+
+CELERY_ACKS_LATE = True
+CELERY_REJECT_ON_WORKER_LOST = False
+
+
 worker_task_kwargs = {
     'autoretry_for': (Exception,),
     'max_retries': 2,               # The task will be run max_retries + 1 times

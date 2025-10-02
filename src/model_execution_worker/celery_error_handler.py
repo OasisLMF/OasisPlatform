@@ -172,7 +172,7 @@ class OasisWorkerTask(Task):
 
 
         else:
-            from celery.contrib import rdb; rdb.set_trace()
+            #from celery.contrib import rdb; rdb.set_trace()
             analysis_id = kwargs.get('analysis_id', None)
             initiator_id = kwargs.get('initiator_id', None)
             task_slug = kwargs.get('slug', None)
@@ -189,24 +189,35 @@ class OasisWorkerTask(Task):
 
     def task_redelivered_guard(self, analysis_id, initiator_id, slug):
 
-        #from celery.contrib import rdb; rdb.set_trace()
-        # need to test both V1 / V2
-
-        #from celery.contrib import rdb; rdb.set_trace()
-
-
+        # check and invoke retry if 
         redelivered = self.request.delivery_info.get('redelivered')
+        if redelivered:
+            logger.info('WARNING: task requeue detected - triggering a retry')
+            self.update_state(state='RETRY')
+            self.retry(countdown=0)
+            return
+
+
+
+        # Debugging info 
         state = self.AsyncResult(self.request.id).state
         logger.info('--- check_task_redelivered ---')
         logger.info(f'task: {slug}')
         logger.info(f"redelivered: {redelivered}")
         logger.info(f"state: {state}")
 
-        if state == 'REVOKED':
-            logger.error('ERROR: task requeued three times or cancelled - aborting task')
+        logger.info(f"default_retry_delay: {self.default_retry_delay}")
+        logger.info(f"max_retries: {self.max_retries}")
+        logger.info(f"retries: {self.request.retries}")
 
+
+
+
+        # Kill task 
+        if self.request.retries >= self.max_retries:
+            #from celery.contrib import rdb; rdb.set_trace()
+            logger.error('ERROR: task requeued max times - aborting task')
             if slug:
-                # V2 analyses will always have a slug
                 notify_subtask_status(
                     analysis_id=analysis_id,
                     initiator_id=initiator_id,
@@ -217,15 +228,6 @@ class OasisWorkerTask(Task):
 
             notify_api_status(analysis_id, self.__get_analyses_error_status())
             self.app.control.revoke(self.request.id, terminate=True)
-            return
-        if state == 'RETRY':
-            logger.info('WARNING: task requeue detected - retry 2')
-            self.update_state(state='REVOKED')
-            return
-        if redelivered:
-            logger.info('WARNING: task requeue detected - retry 1')
-            self.update_state(state='RETRY')
-            return
 
 
     def __get_analyses_error_status(self):
@@ -239,4 +241,5 @@ class OasisWorkerTask(Task):
         # V1 tasks
         if self.name is 'generate_input':
             return 'INPUTS_GENERATION_ERROR'
-        #if self.name is
+        if self.name is 'run_analysis':
+            return 'RUN_ERROR'
