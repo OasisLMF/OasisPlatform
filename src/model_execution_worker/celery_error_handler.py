@@ -194,7 +194,7 @@ class OasisWorkerTask(Task):
         if redelivered:
             logger.info('WARNING: task requeue detected - triggering a retry')
             self.update_state(state='RETRY')
-            self.retry(countdown=0)
+            self.retry()
             return
 
 

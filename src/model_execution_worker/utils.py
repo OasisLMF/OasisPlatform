@@ -11,7 +11,7 @@ __all__ = [
     'prepare_complex_model_file_inputs',
     'config_strip_default_exposure',
     'unwrap_task_args',
-    
+
     'notify_api_status',
     'notify_subtask_status',
 ]
@@ -23,6 +23,7 @@ import re
 import tempfile
 import shutil
 import subprocess
+from datetime import datetime
 from copy import deepcopy
 from celery import signature
 
@@ -37,16 +38,17 @@ from urllib.parse import urlparse
 from ..conf.iniconf import settings
 
 
+logger = logging.getLogger(__name__)
 
 
 
 
 
 def notify_api_status(analysis_pk, task_status):
-    #logger.info("Notify API: analysis_id={}, status={}".format(
-    #    analysis_pk,
-    #    task_status
-    #))
+    logger.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
     signature(
         'set_task_status_v2',
         args=(analysis_pk, task_status, datetime.now().timestamp()),
@@ -54,9 +56,8 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
-### PUT THIS IN UTILS 
 def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
-    #logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
+    logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
     signature(
         'set_subtask_status',
         args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),

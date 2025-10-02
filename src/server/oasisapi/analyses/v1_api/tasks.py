@@ -263,7 +263,7 @@ def log_worker_monitor(sender, **k):
     logger.info('DEBUG: {}'.format(settings.DEBUG))
     logger.info('DB_ENGINE: {}'.format(settings.DB_ENGINE))
     logger.info('STORAGE_TYPE: {}'.format(settings.STORAGE_TYPE))
-    logger.info('STORAGES: {}'.format(settings.STORAGES))
+    logger.info('DEFAULT_FILE_STORAGE: {}'.format(settings.DEFAULT_FILE_STORAGE))
     logger.info('MEDIA_ROOT: {}'.format(settings.MEDIA_ROOT))
     logger.info('AWS_STORAGE_BUCKET_NAME: {}'.format(settings.AWS_STORAGE_BUCKET_NAME))
     logger.info('AWS_LOCATION: {}'.format(settings.AWS_LOCATION))

@@ -211,7 +211,7 @@ def V1_task_logger(fn):
     return run
 
 
-@app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,))
+@app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,), **celery_conf.worker_task_kwargs)
 @V1_task_logger
 def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None, **kwargs):
     """Task wrapper for running an analysis.
@@ -375,7 +375,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
     return output_location, traceback_location, log_location, returncode
 
 
-@app.task(name='generate_input', bind=True, acks_late=True, throws=(Terminated,))
+@app.task(name='generate_input', bind=True, acks_late=True, throws=(Terminated,), **celery_conf.worker_task_kwargs)
 @V1_task_logger
 def generate_input(self,
                    analysis_pk,
@@ -518,7 +518,7 @@ def generate_input(self,
         return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, returncode, analysis_settings
 
 
-@app.task(name='on_error')
+@app.task(name='on_error', **celery_conf.worker_task_kwargs)
 def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk):
     """
     Because of how celery works we need to include a celery task registered in the
