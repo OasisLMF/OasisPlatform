@@ -81,7 +81,6 @@ jobs:
           echo "$MINIKUBE_IP ui.oasis.local" | sudo tee -a /etc/hosts
 
       - name: Authenticate
-        shell: bash
         run: |
           USERNAME_OR_ID=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.username_or_id}" | base64 -d)
           PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.password_or_secret}" | base64 -d)
@@ -93,12 +92,12 @@ jobs:
             if [ "$USE_OIDC" = "true" ]; then
               echo "Using OIDC authentication"
               RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
-                -H "Content-Type: application/json") \
+                -H "Content-Type: application/json" \
                 -d '{\"client_id\": \"$USERNAME_OR_ID\", \"client_secret\": \"$PASSWORD_OR_SECRET\"}'')
             else
               echo "Using Simple JWT authentication"
               RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
-                -H "Content-Type: application/json") \
+                -H "Content-Type: application/json" \
                 -d '{\"username\": \"$USERNAME_OR_ID\", \"password\": \"$PASSWORD_OR_SECRET\"}'')
             fi
 
