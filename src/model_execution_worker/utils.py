@@ -41,9 +41,6 @@ from ..conf.iniconf import settings
 logger = logging.getLogger(__name__)
 
 
-
-
-
 def notify_api_status(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
@@ -63,9 +60,6 @@ def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, 
         args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),
         queue='celery-v2'
     ).delay()
-
-
-
 
 
 class LoggingTaskContext:
