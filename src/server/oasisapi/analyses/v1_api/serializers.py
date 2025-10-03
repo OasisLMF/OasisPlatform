@@ -22,6 +22,8 @@ class AnalysisListSerializer(serializers.Serializer):
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
     complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    num_events_total = serializers.CharField(read_only=True)
+    num_events_complete = serializers.CharField(read_only=True)
 
     # file fields
     input_file = serializers.SerializerMethodField(read_only=True)
@@ -142,6 +144,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'run_traceback_file',
             'run_log_file',
             'storage_links',
+            'num_events_complete',
+            'num_events_total',
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)

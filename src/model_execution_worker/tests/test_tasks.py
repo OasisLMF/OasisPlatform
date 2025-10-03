@@ -117,6 +117,7 @@ class StartAnalysis(TestCase):
                         os.path.join('analysis_settings.json'),
                         os.path.join('location.tar'),
                         log_filename=log_file,
+                        analysis_pk=1
                     )
 
                     cmd_mock.assert_called_once()
@@ -158,5 +159,6 @@ class StartAnalysisTask(TestCase):
                     analysis_settings_path,
                     location,
                     complex_data_files=None,
-                    log_filename=f'{log_dir}/analysis_{pk}_None.log'
+                    log_filename=f'{log_dir}/analysis_{pk}_None.log',
+                    analysis_pk=str(pk)
                 )

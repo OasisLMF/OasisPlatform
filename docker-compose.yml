@@ -25,6 +25,9 @@ x-shared-env: &shared-env
   OASIS_CELERY_DB_NAME: celery
   OASIS_CELERY_DB_PORT: 5432
   OASIS_TASK_CONTROLLER_QUEUE: task-controller
+  OASIS_WEBSOCKET_PORT: 8001
+  OASIS_WEBSOCKET_URL: ws://server-websocket
+
 
 x-oasis-env-v1: &oasis-env-v1
   OASIS_DEBUG: ${DEBUG:-0}
@@ -63,7 +66,7 @@ services:
      OASIS_ADMIN_PASS: password
    volumes:
      - filestore-OasisData:/shared-fs:rw
-  server_websocket:
+  server-websocket:
    restart: always
    image: coreoasis/api_server:dev
    command: ["./asgi/run-asgi.sh"]

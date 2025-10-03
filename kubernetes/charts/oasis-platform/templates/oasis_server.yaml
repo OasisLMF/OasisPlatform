@@ -97,7 +97,7 @@ spec:
             - name: INGRESS_EXTERNAL_HOST
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
-              value: {{ .Release.Name | lower }}-ingress-nginx-controller
+              value: {{ .Release.Name | lower }}-traefik
             {{- if has .Values.oasisServer.apiAuthType .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_ALLOWED_OIDC_AUTH_PROVIDERS
               value: {{ join "," .Values.oasisServer.allowedOIDCAuthProviders }}
@@ -240,7 +240,7 @@ spec:
             - name: INGRESS_EXTERNAL_HOST
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
-              value: {{ .Release.Name | lower }}-ingress-nginx-controller
+              value: {{ .Release.Name | lower }}-traefik
             {{- if has .Values.oasisServer.apiAuthType .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_ALLOWED_OIDC_AUTH_PROVIDERS
               value: {{ join "," .Values.oasisServer.allowedOIDCAuthProviders }}
