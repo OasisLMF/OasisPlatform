@@ -49,8 +49,8 @@ CELERY_INHERIT_PARENT_PRIORITY = True
 # setup the beat schedule
 
 # control resource usage of workers
-CELERYD_MAX_MEMORY_PER_CHILD=settings.get('celery', 'worker_max_memory_per_child', fallback=None)
-CELERYD_MAX_TASKS_PER_CHILD=settings.get('celery', 'worker_max_tasks_per_child', fallback=None)
+CELERYD_MAX_MEMORY_PER_CHILD = settings.get('celery', 'worker_max_memory_per_child', fallback=None)
+CELERYD_MAX_TASKS_PER_CHILD = settings.get('celery', 'worker_max_tasks_per_child', fallback=None)
 
 
 def crontab_from_string(s):
