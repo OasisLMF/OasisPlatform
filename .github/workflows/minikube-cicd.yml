@@ -83,9 +83,9 @@ jobs:
       - name: Authenticate
         shell: bash
         run: |
-          USERNAME_OR_ID=$(kubectl get secret oasis-service-account-credentials -o jsonpath='{.data.username_or_id}' | base64 -d)
-          PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath='{.data.password_or_secret}' | base64 -d)
-          USE_OIDC=$(kubectl get secret oasis-service-account-credentials -o jsonpath='{.data.use_oidc}' | base64 -d)
+          USERNAME_OR_ID=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.username_or_id}" | base64 -d)
+          PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.password_or_secret}" | base64 -d)
+          USE_OIDC=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.use_oidc}" | base64 -d)
 
           delay=1
           for i in {1..8}; do
