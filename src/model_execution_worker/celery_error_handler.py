@@ -1,15 +1,18 @@
 import logging
 from celery import Task, signature
-from celery.exceptions import WorkerLostError
+from celery.exceptions import WorkerLostError, MaxRetriesExceededError
 
-from .utils import notify_api_status, notify_subtask_status
+from .utils import (
+	notify_api_status_v1,
+	notify_api_status_v2,
+	notify_subtask_status_v2,
+)
 
 from billiard.einfo import ExceptionWithTraceback
 logger = logging.getLogger(__name__)
 
 
 class OasisWorkerTask(Task):
-    # Request = CustomRequest
 
     def before_start(self, task_id, args, kwargs):
         """ Only supported in celery v5.2 and above
@@ -72,31 +75,30 @@ class OasisWorkerTask(Task):
         logger.info(f"retries: {self.request.retries}")
 
         # check and invoke retry if
-        if redelivered:
-            logger.info('WARNING: task requeue detected - triggering a retry')
-            self.update_state(state='RETRY')
-            self.retry()
-            return
+        try:
+            if redelivered:
+                logger.info('WARNING: task requeue detected - triggering a retry')
+                self.update_state(state='RETRY')
+                self.retry()
+                return
 
-        # Kill task
-        if self.request.retries >= self.max_retries:
+        except MaxRetriesExceededError:
             # from celery.contrib import rdb; rdb.set_trace()
             logger.error('ERROR: task requeued max times - aborting task')
             if slug:
-                notify_subtask_status(
+                notify_subtask_status_v2(
                     analysis_id=analysis_id,
                     initiator_id=initiator_id,
                     task_slug=slug,
                     subtask_status='ERROR',
                     error_msg='Task revoked, possible out of memory error or cancellation'
-                )
+				)
+				notify_api_status_v2(analysis_id, self.__get_analyses_error_status())
 
-            notify_api_status(analysis_id, self.__get_analyses_error_status())
+			else:
+				notify_api_status_v1(analysis_id, self.__get_analyses_error_status())
             self.app.control.revoke(self.request.id, terminate=True)
 
-#           raise WorkerLostError(
-#               'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
-#           )
 
     def __get_analyses_error_status(self):
 

@@ -12,8 +12,9 @@ __all__ = [
     'config_strip_default_exposure',
     'unwrap_task_args',
 
-    'notify_api_status',
-    'notify_subtask_status',
+    'notify_api_status_v1',
+    'notify_api_status_v2',
+    'notify_subtask_status_v2',
 ]
 
 import logging
@@ -41,7 +42,23 @@ from ..conf.iniconf import settings
 logger = logging.getLogger(__name__)
 
 
-def notify_api_status(analysis_pk, task_status):
+# Send notification back to the API Once task is read from Queue
+def notify_api_status_v1(analysis_pk, task_status)
+    logger.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status',
+        args=(analysis_pk, task_status),
+        queue='celery'
+    ).delay()
+
+
+
+
+
+def notify_api_status_v2(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
         task_status
@@ -53,7 +70,7 @@ def notify_api_status(analysis_pk, task_status):
     ).delay()
 
 
-def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
+def notify_subtask_status_v2(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
     logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
     signature(
         'set_subtask_status',

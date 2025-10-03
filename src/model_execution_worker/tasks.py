@@ -36,6 +36,7 @@ from .utils import (
     get_worker_versions,
     prepare_complex_model_file_inputs,
     config_strip_default_exposure,
+    notify_api_status_v1,
 )
 
 '''
@@ -155,7 +156,7 @@ def get_lock():
 
 
 # Send notification back to the API Once task is read from Queue
-def notify_api_status(analysis_pk, task_status):
+def notify_api_status_v1(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
         task_status
@@ -212,7 +213,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
         task_logger.info("Acquired resource lock")
 
         try:
-            notify_api_status(analysis_pk, 'RUN_STARTED')
+            notify_api_status_v1(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
             kwargs["analysis_pk"] = str(analysis_pk)
             output_location, traceback_location, log_location, return_code = start_analysis(
@@ -377,7 +378,7 @@ def generate_input(self,
     task_logger.info(str(get_worker_versions()))
 
     # Start Oasis file generation
-    notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
+    notify_api_status_v1(analysis_pk, 'INPUTS_GENERATION_STARTED')
     filestore = get_filestore(settings)
     from oasislmf.manager import OasisManager
 

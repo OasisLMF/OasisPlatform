@@ -25,6 +25,7 @@ from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
+
 from .utils import (
     LoggingTaskContext,
     log_params,
@@ -37,7 +38,7 @@ from .utils import (
     prepare_complex_model_file_inputs,
     config_strip_default_exposure,
     unwrap_task_args,
-    notify_api_status,
+    notify_api_status_v2,
 )
 
 
@@ -66,18 +67,6 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
-
-
-# def notify_api_status(analysis_pk, task_status):
-#    logger.info("Notify API: analysis_id={}, status={}".format(
-#        analysis_pk,
-#        task_status
-#    ))
-#    signature(
-#        'set_task_status_v2',
-#        args=(analysis_pk, task_status, datetime.now().timestamp()),
-#        queue='celery-v2'
-#    ).delay()
 
 
 def load_location_data(loc_filepath, oed_schema_info=None):
@@ -431,7 +420,7 @@ def prepare_input_generation_params(
     slug=None,
     **kwargs,
 ):
-    notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
+    notify_api_status_v2(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
@@ -853,7 +842,7 @@ def prepare_losses_generation_params(
     num_chunks=None,
     **kwargs,
 ):
-    notify_api_status(analysis_id, 'RUN_STARTED')
+    notify_api_status_v2(analysis_id, 'RUN_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
