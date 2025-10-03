@@ -39,14 +39,25 @@ if [ -z "$OASIS_SERVER_HOST" ] || [ -z "$OASIS_SERVER_PORT" ]; then
   exit 1
 fi
 
+if [ -z "$OASIS_SERVICE_USERNAME_OR_ID" ] || [ -z "$OASIS_SERVICE_PASSWORD_OR_SECRET" ]; then
+  echo "Missing required API credentials env var(s)"
+  exit 1
+fi
 
-ACCESS_TOKEN=$(curl -s -X POST "${BASE_URL}/service/access_token/" -H "accept: application/json" -H "Content-Type: application/json" | jq -r '.access_token // empty')
+if [ "$OASIS_USE_OIDC" == "true" ]; then
+  DATA="{\"client_id\": \"${OASIS_SERVICE_USERNAME_OR_ID}\", \"client_secret\": \"${OASIS_SERVICE_PASSWORD_OR_SECRET}\"}"
+else
+  DATA="{\"username\": \"${OASIS_SERVICE_USERNAME_OR_ID}\", \"password\": \"${OASIS_SERVICE_PASSWORD_OR_SECRET}\"}"
+fi
+
+
+ACCESS_TOKEN=$(curl -s -X POST "${BASE_URL}/access_token/" -H "accept: application/json" -H "Content-Type: application/json" -d "$DATA" | jq -r '.access_token // empty')
 
 if [ -n "$ACCESS_TOKEN" ]; then
   echo "Authenticated"
 else
   echo "Failed to authenticate:"
-  curl -X POST "${BASE_URL}/service/access_token/" -H "accept: application/json" -H "Content-Type: application/json"
+  curl -X POST "${BASE_URL}/access_token/" -H "accept: application/json" -H "Content-Type: application/json" -d "$DATA"
   exit 1
 fi
 

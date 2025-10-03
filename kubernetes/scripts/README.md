@@ -24,7 +24,10 @@ A few helpful scripts for development
 
 Supported environment variables:
 
-| Name                    | Default  | Description                                                                             |
-|-------------------------|----------|-----------------------------------------------------------------------------------------|
-| OASIS_AUTH_API          | 1        | How to authenticate. 1=directly against keycloak on ui.oasis.local, 0=through oasis API |
-| OASIS_CLUSTER_NAMESPACE | default  | Namespace to use for kubernetes operations                                              |
+| Name                                | Default            | Description                                                                             |
+|-------------------------------------|--------------------|-----------------------------------------------------------------------------------------|
+| OASIS_SERVICE_USERNAME_OR_ID        | oasis-service      | Oasis username or client_id for OIDC                                                    |
+| OASIS_SERVICE_PASSWORD_OR_SECRET    | serviceNotSoSecret | Oasis password or client_secret for OIDC                                                |
+| OASIS_USE_OIDC                      | true               | What method to authenticate services with, OIDC client_credentials or simple JWT        |
+| OASIS_AUTH_API                      | 1                  | How to authenticate. 1=directly against keycloak on ui.oasis.local, 0=through oasis API |
+| OASIS_CLUSTER_NAMESPACE             | default            | Namespace to use for kubernetes operations                                              |

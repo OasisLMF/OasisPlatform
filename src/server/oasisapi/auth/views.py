@@ -1,7 +1,7 @@
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.parsers import FormParser
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshView, \
@@ -10,8 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from urllib.parse import urlencode
 
-from .serializers import OIDCAuthorizationCodeExchangeSerializer, OIDCServiceTokenObtainPairSerializer, OIDCTokenRefreshSerializer, OIDCTokenObtainPairSerializer, \
-    SimpleServiceTokenObtainPairSerializer, SimpleTokenObtainPairSerializer, SimpleTokenRefreshSerializer
+from .serializers import OIDCAuthorizationCodeExchangeSerializer, OIDCClientCredentialsSerializer, OIDCTokenRefreshSerializer, \
+    SimpleTokenObtainPairSerializer, SimpleTokenRefreshSerializer
 from .. import settings
 from ..schemas.custom_swagger import TOKEN_REFRESH_HEADER
 from ..schemas.serializers import TokenObtainPairResponseSerializer, TokenRefreshResponseSerializer
@@ -26,7 +26,7 @@ class TokenRefreshView(BaseTokenRefreshView):
 
         Authorization: Bearer <refresh_token>
     """
-    serializer_class = OIDCTokenRefreshSerializer if settings.API_AUTH_TYPE in settings.SUPPORTED_OIDC_PROVIDERS else SimpleTokenRefreshSerializer
+    serializer_class = OIDCTokenRefreshSerializer if settings.API_AUTH_TYPE in settings.ALLOWED_OIDC_AUTH_PROVIDERS else SimpleTokenRefreshSerializer
     parser_classes = [FormParser]
 
     @swagger_auto_schema(
@@ -40,10 +40,8 @@ class TokenRefreshView(BaseTokenRefreshView):
 
 class TokenObtainPairView(BaseTokenObtainPairView):
     """
-    Fetches a new refresh token from your username and password.
+    Authenticates users via simple JWT or clients via OIDC based on request data.
     """
-    serializer_class = OIDCTokenObtainPairSerializer if settings.API_AUTH_TYPE in settings.SUPPORTED_OIDC_PROVIDERS else SimpleTokenObtainPairSerializer
-
     @swagger_auto_schema(
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
         security=[],
@@ -51,20 +49,16 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
+    def get_serializer_class(self):
+        request_data = self.request.data
 
-class ServiceTokenObtainPairView(BaseTokenObtainPairView):
-    """
-    Fetches a new refresh token from your username and password.
-    """
-    serializer_class =\
-        OIDCServiceTokenObtainPairSerializer if settings.API_AUTH_TYPE in settings.SUPPORTED_OIDC_PROVIDERS else SimpleServiceTokenObtainPairSerializer
-
-    @swagger_auto_schema(
-        responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
-        security=[],
-        tags=['authentication'])
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        # If `client_id` and `client_secret` are present, use the OIDC flow
+        if 'client_id' in request_data and 'client_secret' in request_data:
+            return OIDCClientCredentialsSerializer
+        # If `username` and `password` are present, use the Simple JWT flow
+        if 'username' in request_data and 'password' in request_data:
+            return SimpleTokenObtainPairSerializer
+        raise serializers.ValidationError("ERROR: Can only call access_token with \"username AND password\" or \"client_id AND client_secret\"")
 
 
 class OIDCAuthorizeView(APIView):
@@ -90,7 +84,7 @@ class OIDCAuthorizeView(APIView):
         tags=['authentication']
     )
     def get(self, request, *args, **kwargs):
-        if settings.API_AUTH_TYPE not in settings.SUPPORTED_OIDC_PROVIDERS:
+        if settings.API_AUTH_TYPE not in settings.ALLOWED_OIDC_AUTH_PROVIDERS:
             return HttpResponseBadRequest("OIDC authorization flow not enabled on this platform.")
 
         client_id = settings.OIDC_RP_CLIENT_ID

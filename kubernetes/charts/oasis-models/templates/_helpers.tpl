@@ -214,6 +214,21 @@ Oasis server client variables
     configMapKeyRef:
       name: {{ .Values.oasisServer.name }}
       key: port
+- name: OASIS_SERVICE_USERNAME_OR_ID
+  valueFrom:
+    secretKeyRef:
+      name: oasis-service-account-credentials
+      key: username_or_id
+- name: OASIS_SERVICE_PASSWORD_OR_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: oasis-service-account-credentials
+      key: password_or_secret
+- name: OASIS_USE_OIDC
+  valueFrom:
+    secretKeyRef:
+      name: oasis-service-account-credentials
+      key: use_oidc
 {{- end }}
 
 {{/*

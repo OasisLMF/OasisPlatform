@@ -60,6 +60,21 @@ spec:
           name: main
           env:
             {{- include "h.serverApiVars" . | nindent 12}}
+            - name: OASIS_SERVICE_USERNAME_OR_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: username_or_id
+            - name: OASIS_SERVICE_PASSWORD_OR_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: password_or_secret
+            - name: OASIS_USE_OIDC
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: use_oidc
             - name: OASIS_CONTINUE_UPDATE_SCALING
               value: "{{ .Values.workerController.continueUpdateScaling }}"
             - name: OASIS_NEVER_SHUTDOWN_FIXED_WORKERS

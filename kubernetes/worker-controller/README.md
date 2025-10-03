@@ -17,12 +17,15 @@ Read the oasis-models chart documentation for more details on how to configure e
 
 Settings can be passed to the application by either using the command line or environment variables.
 
-Argument     | Env. var. name     | Default     | Description
--------------|--------------------|-------------|------------
-`--api-host` | `OASIS_API_HOST`   | `localhost` | The hostname of the oasis API
-`--api-port` | `OASIS_API_PORT`   | `8000`      | The port of the oasis API
-`--secure`   | `OASIS_API_SECURE` | `false`     | Use TLS in web socket communication
-`--cluster`  | `CLUSTER`          | `in`        | How to connect to the kubernetes cluster. Either `local` to connect to a cluster on the same machine (development), or `in` to connect to a cluster hosting this container.
+Argument               | Env. var. name                     | Default                | Description
+-----------------------|------------------------------------|------------------------|------------
+`--api-host`           | `OASIS_API_HOST`                   | `localhost`            | The hostname of the oasis API
+`--api-port`           | `OASIS_API_PORT`                   | `8000`                 | The port of the oasis API
+`--secure`             | `OASIS_API_SECURE`                 | `false`                | Use TLS in web socket communication
+`--oidc`               | `OASIS_USE_OIDC`                   | `true`                 | Use OIDC authentication for services via the same endpoint access_token/, but internally using client_credentials
+`--username_or_id`     | `OASIS_SERVICE_USERNAME_OR_ID`     | `oasis-service`        | The username of the user to use for authentication against the API, or client_id for OIDC client_credentials
+`--password_or_secret` | `OASIS_SERVICE_PASSWORD_OR_SECRET` | `serviceNotSoSecret`   | The password of the user to use for authentication against the API, or client_secret for OIDC client_credentials
+`--cluster`            | `CLUSTER`                          | `in`                   | How to connect to the kubernetes cluster. Either `local` to connect to a cluster on the same machine (development), or `in` to connect to a cluster hosting this container.
 
 ## Development
 

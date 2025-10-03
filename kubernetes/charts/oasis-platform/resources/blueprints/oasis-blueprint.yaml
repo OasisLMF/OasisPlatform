@@ -113,7 +113,7 @@ entries:
   attrs:
     name: "Provider for oasis-service"
     client_id: oasis-service
-    client_secret: xzX0J4Pe777Y2gdT4gtU5qZ4BTuBYJDyIYQpI3ebxHBQLRpziDfBVmiZX07JCXVSPHTZDdtuWCGURtBfg7FHMiI6SAbLhmyjnp4xP3p3cNgATDDMsiWFn6HUC9mSemUh
+    client_secret: serviceNotSoSecret
     client_type: confidential
     include_claims_in_id_token: true
     access_code_validity: minutes=1

@@ -26,7 +26,7 @@ async def get_user(token_key):
             logger.warning('No token provided, returning AnonymousUser')
             return AnonymousUser()
 
-        if settings.API_AUTH_TYPE in settings.SUPPORTED_OIDC_PROVIDERS:
+        if settings.API_AUTH_TYPE in settings.ALLOWED_OIDC_AUTH_PROVIDERS:
             logger.info(f'Using {settings.API_AUTH_TYPE} authentication')
 
             backend = GenericOIDCAuthenticationBackend()

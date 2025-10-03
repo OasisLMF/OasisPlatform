@@ -264,17 +264,14 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
 AUTH_PASSWORD_VALIDATORS = []
-API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
+API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback=None)
 
-SUPPORTED_OIDC_PROVIDERS = [
-    "keycloak",
-    "authentik",
-]
+ALLOWED_OIDC_AUTH_PROVIDERS = iniconf.settings.get('server', 'ALLOWED_OIDC_AUTH_PROVIDERS', fallback='').split(",")
 
 OIDC_AUTH_CODE_REDIRECT_URI = "https://ui.oasis.local/api/oidc/callback/"
 
 
-if API_AUTH_TYPE in SUPPORTED_OIDC_PROVIDERS:
+if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
     INSTALLED_APPS += (
         'mozilla_django_oidc',
     )
@@ -283,8 +280,6 @@ if API_AUTH_TYPE in SUPPORTED_OIDC_PROVIDERS:
 
     OIDC_RP_CLIENT_ID = iniconf.settings.get('server', 'OIDC_CLIENT_NAME', fallback='')
     OIDC_RP_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_CLIENT_SECRET', fallback='')
-    OIDC_RP_SERVICE_CLIENT_ID = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_NAME', fallback='')
-    OIDC_RP_SERVICE_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_SERVICE_CLIENT_SECRET', fallback='')
     OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
 
     if API_AUTH_TYPE == "keycloak":

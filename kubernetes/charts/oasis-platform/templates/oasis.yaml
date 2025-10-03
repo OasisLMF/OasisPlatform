@@ -1,15 +1,22 @@
----
 apiVersion: v1
 kind: Secret
 metadata:
-  name: oasis-rest-service-account
+  name: oasis-service-account-credentials
   namespace: {{ .Release.Namespace }}
   labels:
   {{- include "h.labels" . | nindent 4 }}
 type: Opaque
 data:
-  username: {{ .Values.oasisServer.user | b64enc }}
-  password: {{ .Values.oasisServer.password | b64enc }}
+  {{- $allowedOIDCAuthProviders := .Values.oasisServer.allowedOIDCAuthProviders}}
+  {{- if has .Values.oasisServer.apiAuthType $allowedOIDCAuthProviders }}
+  username_or_id: {{ .Values.oasisService.serviceClientName | b64enc }}
+  password_or_secret: {{ .Values.oasisService.serviceClientSecret | b64enc }}
+  use_oidc: {{ tpl "true" . | b64enc }}
+  {{- else }}
+  username_or_id: {{ .Values.oasisService.user | b64enc }}
+  password_or_secret: {{ .Values.oasisService.password | b64enc }}
+  use_oidc: {{ "" | b64enc }}
+  {{- end }}
 ---
 apiVersion: v1
 kind: Service

@@ -15,13 +15,15 @@ class OasisClient:
     A simple client for the Oasis API. Takes care of the access token and supports searching for models.
     """
 
-    def __init__(self, http_host, http_port, http_subpath, ws_host, ws_port, secure):
+    def __init__(self, http_host, http_port, http_subpath, ws_host, ws_port, secure, oidc, username_or_id, password_or_secret):
         """
         :param http_host: Oasis API hostname.
         :param http_port: Oasis API port.
         :param ws_host: Oasis Websocket hostname.
         :param ws_port: Oasis Websocket port.
         :param secure: Use secure connection.
+        :param username_or_id: Username for API authentication, or client_id with OIDC client_credentials.
+        :param password_or_secret: Password for API authentication, or client_secret with OIDC client_credentials.
         """
         self.ws_host = ws_host
         self.ws_port = ws_port
@@ -33,6 +35,9 @@ class OasisClient:
         api_path = f'/{http_subpath}' if http_subpath else ''
         self.http_host = f'{api_proto}{api_host}{api_port}{api_path}'
 
+        self.oidc = oidc
+        self.username_or_id = username_or_id
+        self.password_or_secret = password_or_secret
         self.access_token = None
         self.token_expire_time = None
         print('Connecting to: ' + self.http_host)
@@ -47,14 +52,15 @@ class OasisClient:
 
     async def authenticate(self):
         """
-        Authenticates with just client_credentials grant type which does not require username/password and on success stores the access token
+        Authenticates with username/password password grant for Simple JWT, or client_credentials grant type for OIDC authentication, on success stores the access token
         and expire time.
         """
 
         async with aiohttp.ClientSession(loop=asyncio.get_event_loop()) as session:
-            params = {}
-
-            async with session.post(urljoin(self.http_host, '/service/access_token/'), data=params) as response:
+            params = {'username': self.username_or_id, 'password': self.password_or_secret}
+            if self.oidc:
+                params = {'client_id': self.username_or_id, 'client_secret': self.password_or_secret}
+            async with session.post(urljoin(self.http_host, 'access_token/'), data=params) as response:
                 data = await self.parse_answer(response)
                 self.access_token = data['access_token']
                 self.token_expire_time = time.time() + round(data['expires_in'] / 2)

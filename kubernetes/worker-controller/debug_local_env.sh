@@ -6,6 +6,15 @@
 #  3. install requirememts, 'pip install -r requirements.txt'
 #  4. Run controller, './src/worker_controller.py'
 
+# For Simple JWT
+# export OASIS_SERVICE_USERNAME_OR_ID=admin
+# export OASIS_SERVICE_PASSWORD_OR_SECRET=password
+# export OASUS_USE_OIDC=""
+# For OIDC
+export OASIS_SERVICE_USERNAME_OR_ID=oasis-service
+export OASIS_SERVICE_PASSWORD_OR_SECRET=serviceNotSoSecret
+export OASIS_USE_OIDC="true"
+
 export OASIS_CONTINUE_UPDATE_SCALING=0
 export OASIS_NEVER_SHUTDOWN_FIXED_WORKERS=0
 export OASIS_API_HOST=ui.oasis.local/api
