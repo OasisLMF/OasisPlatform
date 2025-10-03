@@ -3,9 +3,9 @@ from celery import Task, signature
 from celery.exceptions import WorkerLostError, MaxRetriesExceededError
 
 from .utils import (
-	notify_api_status_v1,
-	notify_api_status_v2,
-	notify_subtask_status_v2,
+    notify_api_status_v1,
+    notify_api_status_v2,
+    notify_subtask_status_v2,
 )
 
 from billiard.einfo import ExceptionWithTraceback
@@ -92,11 +92,11 @@ class OasisWorkerTask(Task):
                     task_slug=slug,
                     subtask_status='ERROR',
                     error_msg='Task revoked, possible out of memory error or cancellation'
-				)
-				notify_api_status_v2(analysis_id, self.__get_analyses_error_status())
+                )
+                notify_api_status_v2(analysis_id, self.__get_analyses_error_status())
 
-			else:
-				notify_api_status_v1(analysis_id, self.__get_analyses_error_status())
+            else:
+                notify_api_status_v1(analysis_id, self.__get_analyses_error_status())
             self.app.control.revoke(self.request.id, terminate=True)
 
 
