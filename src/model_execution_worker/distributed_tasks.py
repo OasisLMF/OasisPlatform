@@ -1021,7 +1021,7 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
 @task_failure.connect
 def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     logger.info("Task error handler")
-    task_args = sender.request.kwargs
+    task_args = kwargs.get('kwargs')
     task_params = unwrap_task_args(kwargs.get('args'))
 
     # Store output log

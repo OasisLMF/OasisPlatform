@@ -17,6 +17,9 @@ class OasisWorkerTask(Task):
     def before_start(self, task_id, args, kwargs):
         """ Only supported in celery v5.2 and above
         https://docs.celeryq.dev/en/latest/_modules/celery/app/task.html
+
+        At the start of each task, before its run( .. ) is executed, check if its been redelivered
+        meaning the executing work died unexpectedly 
         """
 
         if 'V1_task_logger' in self.__qualname__:
@@ -34,9 +37,10 @@ class OasisWorkerTask(Task):
             self.task_redelivered_guard(analysis_id, initiator_id, slug)
 
     def on_retry(self, exc, task_id, args, kwargs, einfo):
-        # from celery.contrib import rdb; rdb.set_trace()
-
-        # only run if task is V2
+        """ (only run if task is V2)
+        sub-tasks in V2 workflows record the traceback on each failed run, 
+        this task send the traceback details to the worker-monitor for storage. 
+        """
         if not 'V1_task_logger' in self.__qualname__:
             analysis_id = kwargs.get('analysis_id', None)
             initiator_id = kwargs.get('initiator_id', None)
@@ -56,14 +60,14 @@ class OasisWorkerTask(Task):
         state = self.AsyncResult(self.request.id).state
 
         # Debugging info
-        logger.info('--- check_task_redelivered ---')
-        logger.info(f'task: {slug}')
-        logger.info(f"redelivered: {redelivered}")
-        logger.info(f"state: {state}")
+        logger.debug('--- check_task_redelivered ---')
+        logger.debug(f'task: {slug}')
+        logger.debug(f"redelivered: {redelivered}")
+        logger.debug(f"state: {state}")
 
-        logger.info(f"default_retry_delay: {self.default_retry_delay}")
-        logger.info(f"max_retries: {self.max_retries}")
-        logger.info(f"retries: {self.request.retries}")
+        logger.debug(f"default_retry_delay: {self.default_retry_delay}")
+        logger.debug(f"max_retries: {self.max_retries}")
+        logger.debug(f"retries: {self.request.retries}")
 
         # check and invoke retry if
         try:
@@ -73,10 +77,8 @@ class OasisWorkerTask(Task):
                 self.retry(
                     exc=WorkerLostError('Task requeue detected - A worker container crashed while executing this task')
                 )
-                # return
 
         except MaxRetriesExceededError:
-            # from celery.contrib import rdb; rdb.set_trace()
             logger.error('ERROR: task requeued max times - aborting task')
             if slug:
                 notify_subtask_status_v2(
