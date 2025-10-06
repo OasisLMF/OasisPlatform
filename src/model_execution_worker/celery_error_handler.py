@@ -33,32 +33,26 @@ class OasisWorkerTask(Task):
         if analysis_id:
             self.task_redelivered_guard(analysis_id, initiator_id, slug)
 
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        try:
-            self.task_failure_handler(exc, task_id, args, kwargs, einfo)
-        except Exception as e:
-            logger.info('Unhandled Exception in: {}'.format(self.name))
-            logger.exception(str(e))
-        super(OasisWorkerTask, self).on_failure(exc, task_id, args, kwargs, einfo)
 
-    def task_failure_handler(self, exc, task_id, args, kwargs, traceback):
-        if 'V1_task_logger' in self.__qualname__:
-            pass
 
-        else:
-            # from celery.contrib import rdb; rdb.set_trace()
-            analysis_id = kwargs.get('analysis_id', None)
-            initiator_id = kwargs.get('initiator_id', None)
-            task_slug = kwargs.get('slug', None)
+    def on_retry(self, exc, task_id, args, kwargs, einfo):
+       #from celery.contrib import rdb; rdb.set_trace()
 
-            if analysis_id and initiator_id and task_slug:
-                signature('subtask_retry_log').delay(
-                    analysis_id,
-                    initiator_id,
-                    task_slug,
-                    task_id,
-                    exc.traceback,
-                )
+       # only run if task is V2
+       if not 'V1_task_logger' in self.__qualname__:
+           analysis_id = kwargs.get('analysis_id', None)
+           initiator_id = kwargs.get('initiator_id', None)
+           task_slug = kwargs.get('slug', None)
+
+           if analysis_id and initiator_id and task_slug:
+               signature('subtask_retry_log').delay(
+                   analysis_id,
+                   initiator_id,
+                   task_slug,
+                   task_id,
+                   einfo.traceback,
+               )
+
 
     def task_redelivered_guard(self, analysis_id, initiator_id, slug):
         redelivered = self.request.delivery_info.get('redelivered')
@@ -93,14 +87,15 @@ class OasisWorkerTask(Task):
                     subtask_status='ERROR',
                     error_msg='Task revoked, possible out of memory error or cancellation'
                 )
-                notify_api_status_v2(analysis_id, self.__get_analyses_error_status())
+                notify_api_status_v2(analysis_id, self._get_analyses_error_status())
 
             else:
-                notify_api_status_v1(analysis_id, self.__get_analyses_error_status())
+                notify_api_status_v1(analysis_id, self._get_analyses_error_status())
             self.app.control.revoke(self.request.id, terminate=True)
 
-    def __get_analyses_error_status(self):
 
+
+    def _get_analyses_error_status(self):
         # V2 tasks
         if 'keys_generation_task' in self.__qualname__:
             return 'INPUTS_GENERATION_ERROR'
