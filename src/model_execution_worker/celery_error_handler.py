@@ -8,7 +8,6 @@ from .utils import (
     notify_subtask_status_v2,
 )
 
-from billiard.einfo import ExceptionWithTraceback
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +18,7 @@ class OasisWorkerTask(Task):
         https://docs.celeryq.dev/en/latest/_modules/celery/app/task.html
 
         At the start of each task, before its run( .. ) is executed, check if its been redelivered
-        meaning the executing work died unexpectedly 
+        meaning the executing work died unexpectedly
         """
 
         if 'V1_task_logger' in self.__qualname__:
@@ -38,8 +37,8 @@ class OasisWorkerTask(Task):
 
     def on_retry(self, exc, task_id, args, kwargs, einfo):
         """ (only run if task is V2)
-        sub-tasks in V2 workflows record the traceback on each failed run, 
-        this task send the traceback details to the worker-monitor for storage. 
+        sub-tasks in V2 workflows record the traceback on each failed run,
+        this task send the traceback details to the worker-monitor for storage.
         """
         if not 'V1_task_logger' in self.__qualname__:
             analysis_id = kwargs.get('analysis_id', None)
