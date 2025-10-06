@@ -70,8 +70,10 @@ class OasisWorkerTask(Task):
             if redelivered:
                 logger.info('WARNING: task requeue detected - triggering a retry')
                 self.update_state(state='RETRY')
-                self.retry()
-                return
+                self.retry(
+                    exc=WorkerLostError('Task requeue detected - A worker container crashed while executing this task')
+                )
+                # return
 
         except MaxRetriesExceededError:
             # from celery.contrib import rdb; rdb.set_trace()
