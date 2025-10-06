@@ -86,6 +86,8 @@ jobs:
           PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.password_or_secret}" | base64 -d)
           USE_OIDC=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.use_oidc}" | base64 -d)
 
+          echo "Delay to wait for authentication server to start"
+          sleep 60
           delay=1
           for i in {1..8}; do
             delay=$((delay * 2))
