@@ -15,7 +15,7 @@ from contextlib import contextmanager, suppress
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import worker_ready
-from celery.exceptions import WorkerLostError, Terminated
+from celery.exceptions import Terminated
 
 
 from oasislmf.utils.data import get_json
