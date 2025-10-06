@@ -93,12 +93,12 @@ jobs:
               echo "Using OIDC authentication"
               RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
                 -H "Content-Type: application/json" \
-                -d '{\"client_id\": \"$USERNAME_OR_ID\", \"client_secret\": \"$PASSWORD_OR_SECRET\"}')
+                -d "{\"client_id\": \"$USERNAME_OR_ID\", \"client_secret\": \"$PASSWORD_OR_SECRET\"}")
             else
               echo "Using Simple JWT authentication"
               RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
                 -H "Content-Type: application/json" \
-                -d '{\"username\": \"$USERNAME_OR_ID\", \"password\": \"$PASSWORD_OR_SECRET\"}')
+                -d "{\"username\": \"$USERNAME_OR_ID\", \"password\": \"$PASSWORD_OR_SECRET\"}")
             fi
 
             if echo "$RESPONSE" | jq -e . > /dev/null 2>&1; then
