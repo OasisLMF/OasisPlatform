@@ -33,26 +33,23 @@ class OasisWorkerTask(Task):
         if analysis_id:
             self.task_redelivered_guard(analysis_id, initiator_id, slug)
 
-
-
     def on_retry(self, exc, task_id, args, kwargs, einfo):
-       #from celery.contrib import rdb; rdb.set_trace()
+        # from celery.contrib import rdb; rdb.set_trace()
 
-       # only run if task is V2
-       if not 'V1_task_logger' in self.__qualname__:
-           analysis_id = kwargs.get('analysis_id', None)
-           initiator_id = kwargs.get('initiator_id', None)
-           task_slug = kwargs.get('slug', None)
+        # only run if task is V2
+        if not 'V1_task_logger' in self.__qualname__:
+            analysis_id = kwargs.get('analysis_id', None)
+            initiator_id = kwargs.get('initiator_id', None)
+            task_slug = kwargs.get('slug', None)
 
-           if analysis_id and initiator_id and task_slug:
-               signature('subtask_retry_log').delay(
-                   analysis_id,
-                   initiator_id,
-                   task_slug,
-                   task_id,
-                   einfo.traceback,
-               )
-
+            if analysis_id and initiator_id and task_slug:
+                signature('subtask_retry_log').delay(
+                    analysis_id,
+                    initiator_id,
+                    task_slug,
+                    task_id,
+                    einfo.traceback,
+                )
 
     def task_redelivered_guard(self, analysis_id, initiator_id, slug):
         redelivered = self.request.delivery_info.get('redelivered')
@@ -92,8 +89,6 @@ class OasisWorkerTask(Task):
             else:
                 notify_api_status_v1(analysis_id, self._get_analyses_error_status())
             self.app.control.revoke(self.request.id, terminate=True)
-
-
 
     def _get_analyses_error_status(self):
         # V2 tasks
