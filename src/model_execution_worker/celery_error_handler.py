@@ -99,7 +99,6 @@ class OasisWorkerTask(Task):
                 notify_api_status_v1(analysis_id, self.__get_analyses_error_status())
             self.app.control.revoke(self.request.id, terminate=True)
 
-
     def __get_analyses_error_status(self):
 
         # V2 tasks

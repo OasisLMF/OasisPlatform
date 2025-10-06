@@ -55,9 +55,6 @@ def notify_api_status_v1(analysis_pk, task_status):
     ).delay()
 
 
-
-
-
 def notify_api_status_v2(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
