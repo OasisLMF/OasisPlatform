@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 # Send notification back to the API Once task is read from Queue
-def notify_api_status_v1(analysis_pk, task_status)
+def notify_api_status_v1(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
         task_status
