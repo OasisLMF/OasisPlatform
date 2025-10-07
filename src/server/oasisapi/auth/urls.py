@@ -1,5 +1,5 @@
 from django.urls import re_path
-from .views import OIDCAuthorizeView, OIDCCallbackView, TokenObtainPairView, TokenRefreshView
+from .views import OIDCAuthorizeView, OIDCCallbackView, OIDCLogoutView, TokenObtainPairView, TokenRefreshView
 app_name = 'auth'
 
 urlpatterns = [
@@ -7,4 +7,5 @@ urlpatterns = [
     re_path(r'^refresh_token/$', TokenRefreshView.as_view(), name='refresh_token'),
     re_path(r'^oidc/authorize/$', OIDCAuthorizeView.as_view(), name='oidc_authorize'),
     re_path(r'^oidc/callback/$', OIDCCallbackView.as_view(), name='oidc_callback'),
+    re_path(r'^oidc/logout/$', OIDCLogoutView.as_view(), name='oidc_logout'),
 ]

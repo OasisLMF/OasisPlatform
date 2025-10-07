@@ -1,3 +1,4 @@
+import logging
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -15,6 +16,9 @@ from .serializers import OIDCAuthorizationCodeExchangeSerializer, OIDCClientCred
 from .. import settings
 from ..schemas.custom_swagger import TOKEN_REFRESH_HEADER
 from ..schemas.serializers import TokenObtainPairResponseSerializer, TokenRefreshResponseSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class TokenRefreshView(BaseTokenRefreshView):
@@ -147,7 +151,7 @@ class OIDCCallbackView(APIView):
 
         next_url = request.GET.get('state', '/')
 
-        redirect_url = f"{next_url}?access_token={tokens['access_token']}&refresh_token={tokens['refresh_token']}"
+        redirect_url = f"{next_url}?access_token={tokens['access_token']}&refresh_token={tokens['refresh_token']}&id_token={tokens['id_token']}"
 
         return HttpResponseRedirect(redirect_url)
 
@@ -161,3 +165,43 @@ class OIDCCallbackView(APIView):
         serializer.is_valid(raise_exception=True)
         tokens = serializer.validated_data.get('_tokens')
         return Response(tokens, status=status.HTTP_200_OK)
+
+
+class OIDCLogoutView(APIView):
+    """
+    Logs out the user from the OIDC provider and redirects back to the UI.
+    """
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'id_token_hint',
+                openapi.IN_QUERY,
+                description="ID token hint for OIDC logout",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
+        responses={302: 'Redirect to OIDC logout endpoint'},
+        security=[],
+        tags=['authentication']
+    )
+    def get(self, request, *args, **kwargs):
+        if settings.API_AUTH_TYPE not in settings.ALLOWED_OIDC_AUTH_PROVIDERS:
+            return HttpResponseBadRequest("OIDC logout flow not enabled on this platform.")
+
+        logout_endpoint = settings.OIDC_OP_ENDSESSION_ENDPOINT
+        if not logout_endpoint:
+            return HttpResponseBadRequest("Logout endpoint not configured for this OIDC provider.")
+
+        id_token_hint = request.GET.get('id_token_hint')
+        post_logout_redirect_uri = settings.EXTERNAL_URI  # Home page
+
+        params = {
+            'post_logout_redirect_uri': post_logout_redirect_uri,
+            'id_token_hint': id_token_hint,
+        }
+
+        logout_url = f"{logout_endpoint}?{urlencode(params)}"
+        return HttpResponseRedirect(logout_url)

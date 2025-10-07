@@ -277,7 +277,9 @@ API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback=None)
 
 ALLOWED_OIDC_AUTH_PROVIDERS = iniconf.settings.get('server', 'ALLOWED_OIDC_AUTH_PROVIDERS', fallback='').split(",")
 
-OIDC_AUTH_CODE_REDIRECT_URI = "https://ui.oasis.local/api/oidc/callback/"
+INGRESS_EXTERNAL_HOST = iniconf.settings.get('server', 'INGRESS_EXTERNAL_HOST', fallback='ui.oasis.local')
+EXTERNAL_URI = "https://" + INGRESS_EXTERNAL_HOST + "/"
+OIDC_AUTH_CODE_REDIRECT_URI = EXTERNAL_URI + "api/oidc/callback/"
 
 
 if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
@@ -295,10 +297,12 @@ if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
         OIDC_OP_AUTHORIZATION_ENDPOINT = OIDC_BASE_URL + 'auth'
         OIDC_OP_TOKEN_ENDPOINT = OIDC_BASE_URL + 'token'
         OIDC_OP_USER_ENDPOINT = OIDC_BASE_URL + 'userinfo'
+        OIDC_OP_ENDSESSION_ENDPOINT = OIDC_BASE_URL + 'logout'
     elif API_AUTH_TYPE == "authentik":
         OIDC_OP_AUTHORIZATION_ENDPOINT = OIDC_BASE_URL + 'authorize/'
         OIDC_OP_TOKEN_ENDPOINT = OIDC_BASE_URL + 'token/'
         OIDC_OP_USER_ENDPOINT = OIDC_BASE_URL + 'userinfo/'
+        OIDC_OP_ENDSESSION_ENDPOINT = OIDC_BASE_URL + OIDC_RP_CLIENT_ID + '/end-session/'
 
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False

@@ -183,6 +183,7 @@ class OIDCAuthorizationCodeExchangeSerializer(OIDCBaseSerializer):
             'access_token': json_data.get('access_token'),
             'token_type': json_data.get('token_type'),
             'expires_in': json_data.get('expires_in'),
+            'id_token': json_data.get('id_token'),
             'refresh_token': json_data.get('refresh_token') if 'refresh_token' in json_data else None,
         }
         attrs['_tokens'] = cleaned
