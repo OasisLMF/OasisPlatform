@@ -1,4 +1,5 @@
-import logging
+import datetime
+import jwt
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -16,9 +17,6 @@ from .serializers import OIDCAuthorizationCodeExchangeSerializer, OIDCClientCred
 from .. import settings
 from ..schemas.custom_swagger import TOKEN_REFRESH_HEADER
 from ..schemas.serializers import TokenObtainPairResponseSerializer, TokenRefreshResponseSerializer
-
-
-logger = logging.getLogger(__name__)
 
 
 class TokenRefreshView(BaseTokenRefreshView):
@@ -149,10 +147,14 @@ class OIDCCallbackView(APIView):
         serializer.is_valid(raise_exception=True)
         tokens = serializer.validated_data.get('_tokens')
 
+        session_payload = {
+            "tokens": tokens,
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=1)
+        }
+        session_token = jwt.encode(session_payload, settings.SECRET_KEY, algorithm="HS256")
+
         next_url = request.GET.get('state', '/')
-
-        redirect_url = f"{next_url}?access_token={tokens['access_token']}&refresh_token={tokens['refresh_token']}&id_token={tokens['id_token']}"
-
+        redirect_url = f"{next_url}?session_token={session_token}"
         return HttpResponseRedirect(redirect_url)
 
     @swagger_auto_schema(
@@ -165,6 +167,55 @@ class OIDCCallbackView(APIView):
         serializer.is_valid(raise_exception=True)
         tokens = serializer.validated_data.get('_tokens')
         return Response(tokens, status=status.HTTP_200_OK)
+
+
+class OIDCSessionTokenView(APIView):
+    """
+    Exchange a temporary session_token (received after OIDC login redirect) for an access and refresh token pair.
+    Expected input:
+    - session_token: The one-time identifier returned in the query string from /oidc/callback/.
+    Example flow:
+    1. User is redirected back to frontend with ?session_token=abc123
+    2. Frontend POSTs { \"session_token\": \"abc123\" } to this endpoint
+    3. Backend returns `access_token`, `refresh_token`, etc.
+    """
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'session_token': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Temporary session token obtained from OIDC callback redirect"
+                )
+            },
+            required=['session_token']
+        ),
+        responses={
+            status.HTTP_200_OK: openapi.Response(
+                description="Access and refresh tokens successfully returned",
+                schema=TokenObtainPairResponseSerializer
+            ),
+            status.HTTP_400_BAD_REQUEST: openapi.Response(
+                description="Missing or invalid session_token"
+            ),
+        },
+        security=[],
+        tags=['authentication']
+    )
+    def post(self, request):
+        session_token = request.data.get("session_token")
+        if not session_token:
+            return Response({"detail": "Missing session_token"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            payload = jwt.decode(session_token, settings.SECRET_KEY, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            return Response({"detail": "Expired session_token"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({"detail": "Invalid session_token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(payload.get("tokens"))
 
 
 class OIDCLogoutView(APIView):
