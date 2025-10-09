@@ -8,7 +8,7 @@ metadata:
 data:
   host: {{ .Values.authentik.name }}
   port: {{ .Values.authentik.port | quote }}
----
+---  
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,30 +16,14 @@ metadata:
   labels:
     {{- include "h.labels" . | nindent 4 }}
 data:
-  oasis-blueprint.yaml: |
-    {{ .Files.Get "resources/blueprints/oasis-blueprint.yaml" | nindent 4 }}
----  
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.authentik.name }}-custom-users-blueprint
-  labels:
-    {{- include "h.labels" . | nindent 4 }}
-data:
-  oasis-custom-users.yaml: |-
-    version: 1
-    metadata:
-      name: custom-oasis-users
-      labels:
-        system: "false"
-    entries:
+  oasis-blueprint.yaml: |-
     {{- $userTemplate := .Files.Get "resources/blueprints/oasis-users-blueprint-template.yaml" }}
     {{- $userEntries := list -}}
 
     {{- range $i, $user := .Values.authentik.oasisRestApi.users }}
       {{- $groups := list " - !Find [authentik_core.group, [name, authentik Read-only]]" }}
       {{- if $user.admin }}
-        {{- $groups = list " - !Find [authentik_core.group, [name, authentik Admins]]" }}
+        {{- $groups = append $groups " - !Find [authentik_core.group, [name, admin]]" }}
       {{- end }}
       {{- $entry := $userTemplate |
           replace "___USERNAME___" $user.username |
@@ -48,9 +32,7 @@ data:
       {{- $userEntries = append $userEntries $entry }}
     {{- end }}
 
-    {{- range $userEntries }}
-    {{ . | nindent 4 }}
-    {{- end }}
+    {{- .Files.Get "resources/blueprints/oasis-blueprint.yaml" | replace "___USERS___" (join "\n" $userEntries) | nindent 4 }}
 ---
 apiVersion: v1
 kind: Secret
@@ -191,9 +173,6 @@ spec:
             - name: blueprint-config
               mountPath: /blueprints/oasis-blueprint.yaml
               subPath: oasis-blueprint.yaml
-            - name: users-blueprint-config
-              mountPath: /blueprints/oasis-custom-users.yaml
-              subPath: oasis-custom-users.yaml
           startupProbe:
             exec:
               command:
@@ -225,7 +204,4 @@ spec:
         - name: blueprint-config
           configMap:
             name: {{ .Values.authentik.name }}-blueprint
-        - name: users-blueprint-config
-          configMap:
-            name: {{ .Values.authentik.name }}-custom-users-blueprint
 {{- end }}
