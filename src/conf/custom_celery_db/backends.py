@@ -6,11 +6,13 @@ from celery.backends.database import DatabaseBackend
 from celery.backends.database.session import SessionManager
 from celery.exceptions import BackendError
 
+import logging
 
 import urllib
 from src.conf.iniconf import settings
 
 
+logger = logging.getLogger(__name__)
 
 
 class ExpiringTokenSessionManager(SessionManager):
@@ -22,25 +24,60 @@ class ExpiringTokenSessionManager(SessionManager):
         self.backend = backend  # Keep a reference to our backend instance
         super().__init__(*args, **kwargs)
 
-    def create_session(self, dburi, **kwargs):
-        """
-        This method IS called every time a new engine is created.
-        We override it to attach our listener.
-        """
-        # Create the engine as normal
-        from celery.contrib import rdb; rdb.set_trace()
+    def get_engine(self, dburi, **kwargs):
+        # Always get fresh token before creating engine
+        #self.backend._ensure_token_valid()
+        #
+        ## Update the URI with fresh token
+        #from sqlalchemy.engine.url import make_url
+        #url = make_url(dburi)
+        #url = url.set(password=self.backend._token)
+        #
         engine = super().get_engine(dburi, **kwargs)
 
-        # Now, attach the listener that will inject the fresh token
-        @event.listens_for(engine, "do_connect")
-        def _do_connect(dialect, conn_rec, cargs, ckwargs):
-            print("CUSTOME CONNECT")
-            # We call the _ensure_token_valid method on our backend instance
-            self.backend._ensure_token_valid()
-            # Overwrite the password with our temporary token
-            ckwargs["password"] = self.backend._token
+        # this should be called when establishing a connection
+        @event.listens_for(engine, "connect")
+        def _on_connect(dbapi_connection, connection_record):
+            logger.info("New connection established")
+
+        # this is called when connection failed
+        @event.listens_for(engine, "invalidate")
+        def _on_invalidate(dbapi_connection, connection_record, exception):
+            logger.info(f"Connection invalidated: {exception}")
+            # Next connection attempt will call get_engine again
+
+
+        @event.listens_for(engine, "handle_error")
+        def handle_token_error(exception_context):
+            from celery.contrib import rdb; rdb.set_trace()
+            error_msg = str(exception_context.original_exception).lower()
+            
+            ## Check if it's a token/auth related error
+            #if any(pattern in error_msg for pattern in [
+            #    'authentication failed', 'access denied', 'token expired',
+            #    'invalid authorization', 'password authentication failed'
+            #]):
+            #    print("Token authentication failed, refreshing...")
+            #    
+            #    # Refresh the token
+            #    self.backend._ensure_token_valid()
+            #    
+            #    # Update connection info for future connections
+            #    from sqlalchemy.engine.url import make_url
+            #    url = make_url(dburi)
+            #    url = url.set(password=self.backend._token)
+            #    
+            #    # Invalidate current connections to force new ones
+            #    engine.dispose()
+            #    
+            #    # Optionally return True to suppress the original error
+            #    # and let SQLAlchemy retry with the new token
+            #    return True
+
 
         return engine
+
+
 
 
 
@@ -50,6 +87,7 @@ class ExpiringTokenDatabaseBackend(DatabaseBackend):
     to handle expiring database tokens (e.g., IAM tokens for PostgreSQL/MySQL).
     """
     def __init__(self, dburi=None, *args, **kwargs):
+        logger.info("RUNNING CELERY CUSTOM RESULTS DB BACKEND")
         # # We keep our token management logic
         # self._token = None
         # self._token_expiry = None
@@ -63,7 +101,8 @@ class ExpiringTokenDatabaseBackend(DatabaseBackend):
         new_dburi = '{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}{SSL_MODE}'.format(
             #DB_ENGINE=settings.get('celery', 'db_engine'),
             DB_ENGINE='postgresql+psycopg',
-            DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
+            #DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
+            DB_USER='INVALID',
             DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
             DB_HOST=settings.get('celery', 'db_host'),
             DB_PORT=settings.get('celery', 'db_port'),
@@ -103,61 +142,3 @@ class ExpiringTokenDatabaseBackend(DatabaseBackend):
         #        if self._token is None or datetime.utcnow() > self._token_expiry - timedelta(seconds=60):
         #            self._token, self._token_expiry = self._get_new_token()
 
-
-
-    #def _get_new_token(self):
-    #    """
-    #    This is where you fetch a new database token/password.
-    #    For example, using AWS Boto3 to get an IAM RDS token.
-    #    """
-    #    print(f"[{datetime.utcnow().isoformat()}] FETCHING NEW DATABASE TOKEN...")
-
-    #    # --- YOUR TOKEN FETCHING LOGIC GOES HERE ---
-    #    # This function should return the token (which will be used as the password)
-    #    # and its expiry time.
-
-    #    # Simulated example:
-    #    new_token = f"db_token_{int(datetime.utcnow().timestamp())}"
-    #    expiry_time = datetime.utcnow() + timedelta(minutes=10) # Tokens are valid for 10 mins
-
-    #    print(f"[{datetime.utcnow().isoformat()}] NEW TOKEN ACQUIRED, EXPIRES AT {expiry_time.isoformat()}Z")
-    #    return new_token, expiry_time
-
-    #def _ensure_token_valid(self):
-    #    """
-    #    Checks if the current token is valid, and refreshes it if not.
-    #    This method is thread-safe.
-    #    """
-    #    # Check with a 60-second buffer to be safe
-    #    if self._token is None or datetime.utcnow() > self._token_expiry - timedelta(seconds=60):
-    #        with self._token_lock:
-    #            # Double-checked locking pattern
-    #            if self._token is None or datetime.utcnow() > self._token_expiry - timedelta(seconds=60):
-    #                self._token, self._token_expiry = self._get_new_token()
-
-    # This is the magic part: We override how the SQLAlchemy engine is created.
-    #def _create_engine(self, dburi, **kwargs):
-    #    """
-    #    Override _create_engine to attach our token-refreshing event listener.
-    #    """
-    #    # Create the engine as Celery normally would.
-    #    from celery.contrib import rdb; rdb.set_trace()
-    #    engine = super()._create_engine(dburi, **kwargs)
-
-    #    # Now, attach a listener that will execute BEFORE any new connection
-    #    # is made to the database.
-    #    @event.listens_for(engine, "do_connect")
-    #    def _do_connect(dialect, conn_rec, cargs, ckwargs):
-    #        """
-    #        Listen for the 'do_connect' event and inject the fresh token.
-    #        """
-
-    #        # Ensure our token is fresh before connecting.
-    #        #self._ensure_token_valid()
-
-    #        # The 'ckwargs' dictionary contains connection arguments.
-    #        # We will overwrite the password with our temporary token.
-    #        # For PostgreSQL, the argument is 'password'. This may vary for other DBs.
-    #        #ckwargs["password"] = self._token
-
-    #    return engine
