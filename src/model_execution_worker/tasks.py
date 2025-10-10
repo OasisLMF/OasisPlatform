@@ -15,7 +15,7 @@ from contextlib import contextmanager, suppress
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import worker_ready
-from celery.exceptions import WorkerLostError, Terminated
+from celery.exceptions import Terminated
 
 
 from oasislmf.utils.data import get_json
@@ -25,6 +25,7 @@ from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings, settings_local
 
+from .celery_error_handler import OasisWorkerTask
 from .utils import (
     LoggingTaskContext,
     log_params,
@@ -35,6 +36,7 @@ from .utils import (
     get_worker_versions,
     prepare_complex_model_file_inputs,
     config_strip_default_exposure,
+    notify_api_status_v1,
 )
 
 '''
@@ -45,7 +47,7 @@ LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
-app = Celery()
+app = Celery(task_cls=OasisWorkerTask)
 app.config_from_object(celery_conf)
 model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
 
@@ -56,35 +58,6 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
-
-
-def check_worker_lost(task, analysis_pk):
-    """
-    SAFE GUARD: - Fail any tasks received from dead workers
-    -------------------------------------------------------
-    Setting the option `acks_late` means tasks will remain on the Queue until after
-    a tasks has completed. If the worker goes down during the execution of `generate_input`
-    or `start_analysis_task` then if another work is available the task will be picked up
-    on an active worker.
-
-    When the task is picked up for a 2nd time, the new worker will reject it will
-    'WorkerLostError' and mark the execution as failed.
-
-    Note that this is not the ideal approach, since at least one alive worker is required to
-    fail as crash workers task.
-
-    A better method is to use either tasks signals or celery events to fail the task immediately,
-    so this should be viewed as a fallback option.
-    """
-    current_state = task.AsyncResult(task.request.id).state
-    logger.info(current_state)
-    if current_state == RUNNING_TASK_STATUS:
-        raise WorkerLostError(
-            'Task received from dead worker - A worker container crashed when executing a task from analysis_id={}'.format(analysis_pk)
-        )
-    task.update_state(state=RUNNING_TASK_STATUS, meta={'analysis_pk': analysis_pk})
-
-# When a worker connects send a task to the worker-monitor to register a new model
 
 
 @worker_ready.connect
@@ -183,7 +156,7 @@ def get_lock():
 
 
 # Send notification back to the API Once task is read from Queue
-def notify_api_status(analysis_pk, task_status):
+def notify_api_status_v1(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
         task_status
@@ -210,7 +183,7 @@ def V1_task_logger(fn):
     return run
 
 
-@app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,))
+@app.task(name='run_analysis', bind=True, acks_late=True, throws=(Terminated,), **celery_conf.worker_task_kwargs)
 @V1_task_logger
 def start_analysis_task(self, analysis_pk, input_location, analysis_settings, complex_data_files=None, **kwargs):
     """Task wrapper for running an analysis.
@@ -240,10 +213,7 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
         task_logger.info("Acquired resource lock")
 
         try:
-            # Check if this task was re-queued from a lost worker
-            check_worker_lost(self, analysis_pk)
-
-            notify_api_status(analysis_pk, 'RUN_STARTED')
+            notify_api_status_v1(analysis_pk, 'RUN_STARTED')
             self.update_state(state=RUNNING_TASK_STATUS)
             kwargs["analysis_pk"] = str(analysis_pk)
             output_location, traceback_location, log_location, return_code = start_analysis(
@@ -374,7 +344,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
     return output_location, traceback_location, log_location, returncode
 
 
-@app.task(name='generate_input', bind=True, acks_late=True, throws=(Terminated,))
+@app.task(name='generate_input', bind=True, acks_late=True, throws=(Terminated,), **celery_conf.worker_task_kwargs)
 @V1_task_logger
 def generate_input(self,
                    analysis_pk,
@@ -407,11 +377,8 @@ def generate_input(self,
     task_logger = logging.getLogger('oasislmf')
     task_logger.info(str(get_worker_versions()))
 
-    # Check if this task was re-queued from a lost worker
-    check_worker_lost(self, analysis_pk)
-
     # Start Oasis file generation
-    notify_api_status(analysis_pk, 'INPUTS_GENERATION_STARTED')
+    notify_api_status_v1(analysis_pk, 'INPUTS_GENERATION_STARTED')
     filestore = get_filestore(settings)
     from oasislmf.manager import OasisManager
 
@@ -517,7 +484,7 @@ def generate_input(self,
         return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, returncode, analysis_settings
 
 
-@app.task(name='on_error')
+@app.task(name='on_error', **celery_conf.worker_task_kwargs)
 def on_error(request, ex, traceback, record_task_name, analysis_pk, initiator_pk):
     """
     Because of how celery works we need to include a celery task registered in the
