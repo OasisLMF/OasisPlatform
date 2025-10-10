@@ -14,8 +14,12 @@ BROKER_URL = settings.get(
 )
 
 
-CELERY_RESULT_BACKEND = "src.conf.custom_celery_db.backends.ExpiringTokenDatabaseBackend"
-
+CELERY_RESULT_BACKEND = "src.conf.custom_celery_db.backends.AuthTokenDatabaseBackend"
+CELERY_BACKEND_TOKEN_CLASS = "src.conf.custom_celery_db.token_providers.StaticTokenProvider"
+CELERY_BACKEND_TOKEN_CONFIG = {
+    #'token': urllib.parse.quote(settings.get('celery', 'db_pass')),
+    'token': 'INVALID',
+}
 
 
 ##: Celery config - result backend URI
