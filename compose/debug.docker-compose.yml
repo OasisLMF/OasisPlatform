@@ -66,7 +66,7 @@ services:
      OASIS_ADMIN_PASS: password
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+     - ../src:/var/www/oasis/src
   server-websocket:
    restart: always
    image: coreoasis/api_server:dev
@@ -81,7 +81,7 @@ services:
      <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+     - ../src:/var/www/oasis/src
   v1-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
@@ -94,7 +94,7 @@ services:
      <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+     - ../src:/var/www/oasis/src
   v2-worker-monitor:
    restart: always
    image: coreoasis/api_server:dev
@@ -107,7 +107,7 @@ services:
      <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
-     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
+     - ../src:/var/www/oasis/src
   v2-task-controller:
    restart: always
    image: coreoasis/api_server:dev
