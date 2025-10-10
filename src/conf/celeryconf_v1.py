@@ -36,6 +36,10 @@ CELERYD_PREFETCH_MULTIPLIER = 1
 CELERYD_MAX_MEMORY_PER_CHILD = settings.get('celery', 'worker_max_memory_per_child', fallback=None)
 CELERYD_MAX_TASKS_PER_CHILD = settings.getint('celery', 'worker_max_tasks_per_child', fallback=None)
 
+CELERY_ACKS_LATE = True
+CELERY_REJECT_ON_WORKER_LOST = False
+
+
 worker_task_kwargs = {
     'autoretry_for': (Exception,),
     'max_retries': 2,               # The task will be run max_retries + 1 times

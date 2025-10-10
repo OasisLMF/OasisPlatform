@@ -24,7 +24,8 @@ from pathlib2 import Path
 from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
-from .celery_request_handler import WorkerLostRetry
+from .celery_error_handler import OasisWorkerTask
+
 from .utils import (
     LoggingTaskContext,
     log_params,
@@ -37,6 +38,7 @@ from .utils import (
     prepare_complex_model_file_inputs,
     config_strip_default_exposure,
     unwrap_task_args,
+    notify_api_status_v2,
 )
 
 
@@ -52,7 +54,7 @@ TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/t
 FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback=True)
 
 
-app = Celery(task_cls=WorkerLostRetry)
+app = Celery(task_cls=OasisWorkerTask)
 app.config_from_object(celery_conf)
 filestore = get_filestore(settings)
 model_storage = get_filestore(settings_local, "worker.model_data", raise_error=False)
@@ -65,27 +67,6 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
-
-
-def notify_api_status(analysis_pk, task_status):
-    logger.info("Notify API: analysis_id={}, status={}".format(
-        analysis_pk,
-        task_status
-    ))
-    signature(
-        'set_task_status_v2',
-        args=(analysis_pk, task_status, datetime.now().timestamp()),
-        queue='celery-v2'
-    ).delay()
-
-
-def notify_subtask_status(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
-    logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
-    signature(
-        'set_subtask_status',
-        args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),
-        queue='celery-v2'
-    ).delay()
 
 
 def load_location_data(loc_filepath, oed_schema_info=None):
@@ -108,46 +89,6 @@ def load_location_data(loc_filepath, oed_schema_info=None):
         from oasislmf.utils.data import prepare_location_df
         exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
         return exposure.location.dataframe
-
-
-def check_task_redelivered(task, analysis_id, initiator_id, task_slug, error_state):
-    """ Safe guard to check if task has been attempted on worker
-    and was redelivered.
-
-    If 'OASIS_FAIL_ON_REDELIVERED=True' attempt the task 3 times
-    then give up and mark it as failed. This is to prevent a worker
-    crashing with OOM repeatedly failing on the same sub-task
-    """
-    if FAIL_ON_REDELIVERY:
-        redelivered = task.request.delivery_info.get('redelivered')
-        state = task.AsyncResult(task.request.id).state
-        logger.debug('--- check_task_redelivered ---')
-        logger.debug(f'task: {task_slug}')
-        logger.debug(f"redelivered: {redelivered}")
-        logger.debug(f"state: {state}")
-
-        if state == 'REVOKED':
-            logger.error('ERROR: task requeued three times or cancelled - aborting task')
-            notify_subtask_status(
-                analysis_id=analysis_id,
-                initiator_id=initiator_id,
-                task_slug=task_slug,
-                subtask_status='ERROR',
-                error_msg='Task revoked, possible out of memory error or cancellation'
-            )
-            notify_api_status(analysis_id, error_state)
-            task.app.control.revoke(task.request.id, terminate=True)
-            return
-        if state == 'RETRY':
-            logger.info('WARNING: task requeue detected - retry 2')
-            task.update_state(state='REVOKED')
-            return
-        if redelivered:
-            logger.info('WARNING: task requeue detected - retry 1')
-            task.update_state(state='RETRY')
-            return
-
-# https://docs.celeryproject.org/en/latest/userguide/signals.html#task-revoked
 
 
 @task_revoked.connect
@@ -451,12 +392,6 @@ def keys_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_task_params(params, kwargs)
-            check_task_redelivered(self,
-                                   analysis_id=analysis_id,
-                                   initiator_id=kwargs.get('initiator_id'),
-                                   task_slug=kwargs.get('slug'),
-                                   error_state='INPUTS_GENERATION_ERROR'
-                                   )
             try:
                 return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
             except Exception as error:
@@ -485,7 +420,7 @@ def prepare_input_generation_params(
     slug=None,
     **kwargs,
 ):
-    notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
+    notify_api_status_v2(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
@@ -887,12 +822,6 @@ def loss_generation_task(fn):
                 _prepare_directories(params, analysis_id, run_data_uuid, kwargs)
 
             log_task_params(params, kwargs)
-            check_task_redelivered(self,
-                                   analysis_id=analysis_id,
-                                   initiator_id=kwargs.get('initiator_id'),
-                                   task_slug=kwargs.get('slug'),
-                                   error_state='RUN_ERROR'
-                                   )
             try:
                 return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
             except Exception as error:
@@ -913,7 +842,7 @@ def prepare_losses_generation_params(
     num_chunks=None,
     **kwargs,
 ):
-    notify_api_status(analysis_id, 'RUN_STARTED')
+    notify_api_status_v2(analysis_id, 'RUN_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
 
     model_id = settings.get('worker', 'model_id')
@@ -1092,7 +1021,7 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
 @task_failure.connect
 def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     logger.info("Task error handler")
-    task_args = sender.request.kwargs
+    task_args = kwargs.get('kwargs')
     task_params = unwrap_task_args(kwargs.get('args'))
 
     # Store output log

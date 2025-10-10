@@ -135,9 +135,8 @@ class StartAnalysisTask(TestCase):
     def test_lock_is_not_acquireable___retry_esception_is_raised(self, pk, location, analysis_settings_path):
         with TemporaryDirectory() as log_dir:
             with patch('fasteners.InterProcessLock.acquire', Mock(return_value=False)), \
-                    patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
                     patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
-                    patch('src.model_execution_worker.tasks.notify_api_status'):
+                    patch('src.model_execution_worker.tasks.notify_api_status_v1'):
 
                 with self.assertRaises(Retry):
                     start_analysis_task(pk, location, analysis_settings_path)
@@ -146,9 +145,8 @@ class StartAnalysisTask(TestCase):
     def test_lock_is_acquireable___start_analysis_is_ran(self, pk, location, analysis_settings_path):
         with TemporaryDirectory() as log_dir:
             with patch('src.model_execution_worker.tasks.start_analysis', Mock(return_value=('', '', '', 0))) as start_analysis_mock, \
-                    patch('src.model_execution_worker.tasks.check_worker_lost', Mock(return_value='')), \
                     patch('src.model_execution_worker.tasks.TASK_LOG_DIR', log_dir), \
-                    patch('src.model_execution_worker.tasks.notify_api_status') as api_notify:
+                    patch('src.model_execution_worker.tasks.notify_api_status_v1') as api_notify:
 
                 start_analysis_task.update_state = Mock()
                 start_analysis_task(pk, location, analysis_settings_path)
