@@ -8,6 +8,7 @@ import pathlib
 import tempfile
 import shutil
 from datetime import datetime
+import tracemalloc
 
 import filelock
 import numpy as np
@@ -169,6 +170,7 @@ def revoked_handler(*args, **kwargs):
 @worker_ready.connect
 def register_worker(sender, **k):
 
+
     m_supplier = os.environ.get('OASIS_MODEL_SUPPLIER_ID')
     m_name = os.environ.get('OASIS_MODEL_ID')
     m_id = os.environ.get('OASIS_MODEL_VERSION_ID')
@@ -255,6 +257,8 @@ def register_worker(sender, **k):
     # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
         os.rmdir(tmpdir)
+
+    logger.info(f"Worker PID: {os.getpid()}")
 
 
 # Send notification back to the API Once task is read from Queue
@@ -438,11 +442,17 @@ def keys_generation_task(fn):
             params['user_data_dir'] = None
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
+
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
         # log_level = 'DEBUG' if debug_worker else 'INFO'
         log_level = 'INFO'
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
             log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
+
+            # logger.info("Starting tracemalloc")
+            # tracemalloc.start()
+            # logger.info("Taking initial snapshot")
+            # snapshot_start = tracemalloc.take_snapshot()
 
             if isinstance(params, list):
                 for p in params:
@@ -458,11 +468,20 @@ def keys_generation_task(fn):
                                    error_state='INPUTS_GENERATION_ERROR'
                                    )
             try:
-                return fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+                output = fn(self, params, *args, analysis_id=analysis_id, run_data_uuid=run_data_uuid, **kwargs)
+                # logger.info('Taking end snapshot')
+                # snapshot_end = tracemalloc.take_snapshot()
+
+                # top_stats = snapshot_end.compare_to(snapshot_start, 'lineno')
+                # logger.info("Top 10 stats")
+                # for stat in top_stats[:10]:
+                #     logger.info(stat)
+                return output
             except Exception as error:
                 # fallback only needed if celery can't serialize the exception
                 logger.exception("Error occured in 'keys_generation_task':")
                 raise error
+
 
     return run
 
@@ -487,6 +506,7 @@ def prepare_input_generation_params(
 ):
     notify_api_status(analysis_id, 'INPUTS_GENERATION_STARTED')
     update_all_tasks_ids(self.request)  # updates all the assigned task_ids
+
 
     model_id = settings.get('worker', 'model_id')
     config_path = get_oasislmf_config_path(settings, model_id)
@@ -578,6 +598,9 @@ def prepare_keys_file_chunk(
     with TemporaryDir() as chunk_target_dir:
         chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx + 1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
+        logger.info("Waiting for memray attach")
+        logger.info(f"Current process: {os.getpid()}")
+        breakpoint()
 
         _, lookup = OasisLookupFactory.create(
             lookup_config_fp=params.get('lookup_config_json', None),
@@ -619,6 +642,7 @@ def prepare_keys_file_chunk(
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['log_storage'][slug] = params['log_location']
+
     return params
 
 
@@ -712,6 +736,7 @@ def collect_keys(
 
     chunk_params['log_location'] = filestore.put(kwargs.get('log_filename'))
     chunk_params['log_storage'][slug] = chunk_params['log_location']
+
     return chunk_params
 
 
@@ -779,6 +804,7 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
             filestore.delete_file(params.get('pre_scope_file'))
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+
     return {'input-location_generate-and-run': params.get('output_location')}
 
 
@@ -879,6 +905,12 @@ def loss_generation_task(fn):
         # log_level = 'DEBUG' if debug_worker else 'INFO'
         log_level = 'INFO'
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
+            # logger.info("Starting tracemalloc")
+            # tracemalloc.start()
+            # logger.info("Taking initial snapshot")
+            # snapshot_start = tracemalloc.take_snapshot()
+
+
             log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
             if isinstance(params, list):
                 for p in params:
@@ -894,7 +926,16 @@ def loss_generation_task(fn):
                                    error_state='RUN_ERROR'
                                    )
             try:
-                return fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+                ret_val = fn(self, params, *args, analysis_id=analysis_id, **kwargs)
+
+                # logger.info('Taking end snapshot')
+                # snapshot_end = tracemalloc.take_snapshot()
+
+                # top_stats = snapshot_end.compare_to(snapshot_start, 'lineno')
+                # logger.info("Top 10 stats")
+                # for stat in top_stats[:10]:
+                #     logger.info(stat)
+                return ret_val
             except Exception as error:
                 # fallback only needed if celery can't serialize the exception
                 logger.exception("Error occured in 'loss_generation_task':")
@@ -1086,6 +1127,7 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
         # Delete remote copy of run data
         filestore.delete_dir(params['storage_subdir'])
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
+    # breakpoint()
     return params
 
 

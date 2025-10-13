@@ -128,6 +128,28 @@ services:
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-../OasisPiWind}/:/home/worker/model
      - filestore-OasisData:/shared-fs:rw
+  nepal-worker:
+    restart: always
+    image: ${WORKER_IMG:-coreoasis/model_worker}:${VERS_WORKER:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.model_worker
+    links:
+     - celery-db
+     - broker:mybroker
+    environment:
+     <<: *shared-env
+     OASIS_MODEL_SUPPLIER_ID: OasisLMF
+     OASIS_MODEL_ID: Nepal-Worker
+     OASIS_MODEL_VERSION_ID: 'v2'
+     OASIS_RUN_MODE: v2
+     # NUMBA_DISABLE_JIT: 1
+     OASIS_CELERY_WORKER_MAX_TASKS_PER_CHILD: 1
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+     - ../Scenarios/JBA/Nepal/E432557/combined/:/home/worker/model
+     - filestore-OasisData:/shared-fs:rw
   v1-worker:
     restart: always
     image: ${WORKER_IMG:-coreoasis/model_worker}:${VERS_WORKER:-latest}
@@ -143,6 +165,7 @@ services:
      OASIS_MODEL_ID: PiWind
      OASIS_MODEL_VERSION_ID: 'v1'
      OASIS_RUN_MODE: v1
+     OASIS_CELERY_WORKER_MAX_TASKS_PER_CHILD: 1
     volumes:
      - ${OASIS_MODEL_DATA_DIR:-../OasisPiWind}/:/home/worker/model
      - filestore-OasisData:/shared-fs:rw

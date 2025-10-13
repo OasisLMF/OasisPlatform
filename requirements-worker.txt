@@ -352,3 +352,7 @@ wrapt==1.17.3
     # via aiobotocore
 yarl==1.20.1
     # via aiohttp
+objgraph==3.6.2
+# guppy3==3.1.5
+memray==1.19.0
+graphviz

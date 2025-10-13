@@ -39,7 +39,7 @@ USER worker
 FROM ubuntu:24.04
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends vim git  python3 python3-pip libspatialindex-dev curl procps \
+ && apt-get install -y --no-install-recommends vim git  python3 python3-pip libspatialindex-dev curl procps htop telnet net-tools gdb graphviz \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy built python packages
