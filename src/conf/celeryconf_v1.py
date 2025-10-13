@@ -34,7 +34,7 @@ CELERYD_PREFETCH_MULTIPLIER = 1
 
 # control resource usage of workers
 CELERYD_MAX_MEMORY_PER_CHILD = settings.get('celery', 'worker_max_memory_per_child', fallback=None)
-CELERYD_MAX_TASKS_PER_CHILD = settings.getint('celery', 'worker_max_tasks_per_child', fallback=None)
+CELERYD_MAX_TASKS_PER_CHILD = settings.getint('celery', 'worker_max_tasks_per_child', fallback=1)
 
 CELERY_ACKS_LATE = True
 CELERY_REJECT_ON_WORKER_LOST = False
