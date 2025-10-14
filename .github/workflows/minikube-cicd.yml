@@ -172,15 +172,15 @@ jobs:
 
           if [ "$USE_OIDC" = "true" ]; then
             echo "Using OIDC authentication"
-            CREDENTIALS='{\"client_id\": \"$USERNAME_OR_ID\", \"client_secret\": \"$PASSWORD_OR_SECRET\"}'
+            CREDENTIALS=$(printf '{"client_id": "%s", "client_secret": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET")
           else
             echo "Using Simple JWT authentication"
-            CREDENTIALS='{\"username\": \"$USERNAME_OR_ID\", \"password\": \"$PASSWORD_OR_SECRET\"}'
+            CREDENTIALS=$(printf '{"username": "%s", "password": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET")
           fi
 
           {
             oasislmf api run \
-              --server-login-json $CREDENTIALS \
+              --server-login-json "$CREDENTIALS" \
               --server-version 'v1' \
               --server-url 'http://ui.oasis.local/api' \
               --model-id 1 \
