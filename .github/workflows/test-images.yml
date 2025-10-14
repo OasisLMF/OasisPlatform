@@ -45,7 +45,7 @@ jobs:
       ignore_unfixed: true
       #cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
       cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'SKIP' ||  inputs.cve_severity }}
-      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
+      oasislmf_branch: feature/generic_oidc
       ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
 
   setup:
