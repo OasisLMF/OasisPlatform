@@ -136,7 +136,7 @@ jobs:
       - name: Install OasisLMF
         run: |
           pip install --upgrade pip
-          pip install "git+https://github.com/OasisLMF/OasisLMF.git@feature%2Fgeneric_oidc"
+          pip install "git+https://github.com/OasisLMF/OasisLMF.git@feature/generic_oidc"
 
       - name: Create test settings
         run: |
