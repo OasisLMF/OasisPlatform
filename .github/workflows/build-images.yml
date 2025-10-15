@@ -150,7 +150,6 @@ jobs:
         context: ${{ matrix.context }}
         push: ${{ env.DOCKER_PUSH }}
         tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
-        no-cache: true
         build-args: |
           oasislmf_branch=${{ inputs.oasislmf_branch }}
           ods_tools_branch=${{ inputs.ods_branch }}
