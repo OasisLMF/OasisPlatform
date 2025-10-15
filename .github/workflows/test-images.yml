@@ -35,6 +35,9 @@ env:
   semver_major: '2'    # Search for published images but limited to {semvar_major}.x.x
   #semver_minor: '27'   # Search for published images but limited to x.{semvar_minor}.x
   server_min_supported: '2.4.4'
+  # OASISLMF_BRANCH: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
+  OASISLMF_BRANCH: feature/generic_oidc
+  OASISPIWIND_BRANCH: fix/integration_workflow
 
 jobs:
   build_images:
@@ -45,7 +48,7 @@ jobs:
       ignore_unfixed: true
       #cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
       cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'SKIP' ||  inputs.cve_severity }}
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
       ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
 
   setup:
@@ -162,7 +165,7 @@ jobs:
     name: V1 all checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -173,13 +176,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
       storage_suffix: '-all-checks-v1'
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   all_checks_v2:
     name: V2 all checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -190,13 +193,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
       storage_suffix: '-all-checks-v2'
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   storage_s3_v1:
     name: V1 Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -207,13 +210,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '_s3-v1'
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   storage_s3_v2:
     name: V2 Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -224,13 +227,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '_s3-v2'
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   worker_debian:
     name: Worker Debian
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -241,13 +244,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-worker-debian'
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   stable_worker_1-15:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-15 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: 'stable/1.15.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -258,13 +261,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-15 }}"
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   stable_worker_1-23:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-23 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: 'stable/1.23.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -275,13 +278,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-23 }}"
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   stable_worker_1-27:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-27 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: 'stable/1.27.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -292,13 +295,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-27 }}"
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   stable_worker_1-28:
     name: test stable worker (${{ needs.setup.outputs.release_stable_1-28 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: 'stable/1.28.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -309,13 +312,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-28 }}"
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   stable_worker_2-3:
     name: test stable worker (${{ needs.setup.outputs.release_stable_2-3 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: 'stable/2.3.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -326,13 +329,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-3 }}"
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   stable_worker_2-4:
     name: test stable worker (${{ needs.setup.outputs.release_stable_2-4 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: 'stable/2.4.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -343,13 +346,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-4 }}"
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   stable_server_v1:
     name: test stable server (${{ needs.setup.outputs.server_min_supported }}) v1
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: 'stable/2.4.x'
       server_image: 'coreoasis/api_server'
@@ -360,13 +363,13 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_server-${{ needs.setup.outputs.server_min_supported }}_v1"
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
 
   stable_server_v2:
     name: test stable server (${{ needs.setup.outputs.server_min_supported }}) v2
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@${{ env.OASISPIWIND_BRANCH }}
     with:
       piwind_branch: 'stable/2.4.x'
       server_image: 'coreoasis/api_server'
@@ -377,4 +380,4 @@ jobs:
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_server-${{ needs.setup.outputs.server_min_supported }}_v2"
-      oasislmf_branch: feature/generic_oidc
+      oasislmf_branch: ${{ env.OASISLMF_BRANCH }}
