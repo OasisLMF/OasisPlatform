@@ -98,11 +98,11 @@ spec:
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
               value: {{ .Release.Name | lower }}-traefik
-            {{- if has .Values.oasisServer.apiAuthType .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_ALLOWED_OIDC_AUTH_PROVIDERS
               value: {{ join "," .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_API_AUTH_TYPE
               value: {{ .Values.oasisServer.apiAuthType }}
+            {{- if has .Values.oasisServer.apiAuthType .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_OIDC_CLIENT_NAME
               value: {{ .Values.oasisServer.oidc.clientName }}
             - name: OASIS_SERVER_OIDC_CLIENT_SECRET
@@ -241,11 +241,11 @@ spec:
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
               value: {{ .Release.Name | lower }}-traefik
-            {{- if has .Values.oasisServer.apiAuthType .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_ALLOWED_OIDC_AUTH_PROVIDERS
               value: {{ join "," .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_API_AUTH_TYPE
               value: {{ .Values.oasisServer.apiAuthType }}
+            {{- if has .Values.oasisServer.apiAuthType .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_OIDC_CLIENT_NAME
               value: {{ .Values.oasisServer.oidc.clientName }}
             - name: OASIS_SERVER_OIDC_CLIENT_SECRET

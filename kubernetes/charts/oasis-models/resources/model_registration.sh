@@ -45,8 +45,10 @@ if [ -z "$OASIS_SERVICE_USERNAME_OR_ID" ] || [ -z "$OASIS_SERVICE_PASSWORD_OR_SE
 fi
 
 if [ "$OASIS_USE_OIDC" == "true" ]; then
+  echo "Using OIDC Authentication"
   DATA="{\"client_id\": \"${OASIS_SERVICE_USERNAME_OR_ID}\", \"client_secret\": \"${OASIS_SERVICE_PASSWORD_OR_SECRET}\"}"
 else
+  echo "Using Simple JWT Authentication"
   DATA="{\"username\": \"${OASIS_SERVICE_USERNAME_OR_ID}\", \"password\": \"${OASIS_SERVICE_PASSWORD_OR_SECRET}\"}"
 fi
 

@@ -57,12 +57,14 @@ class TokenObtainPairView(BaseTokenObtainPairView):
         # If `client_id` and `client_secret` are present, use the OIDC flow
         if 'client_id' in request_data and 'client_secret' in request_data:
             if settings.API_AUTH_TYPE not in settings.ALLOWED_OIDC_AUTH_PROVIDERS:
-                raise serializers.ValidationError("OIDC client credentials flow is disabled on this server.")
+                raise serializers.ValidationError(
+                    f"OIDC client credentials flow is disabled on this server for api auth_type {settings.API_AUTH_TYPE}.")
             return OIDCClientCredentialsSerializer
         # If `username` and `password` are present, use the Simple JWT flow
         if 'username' in request_data and 'password' in request_data:
             if settings.API_AUTH_TYPE != "simple":
-                raise serializers.ValidationError("Simple JWT username/password flow is disabled on this server.")
+                raise serializers.ValidationError(
+                    f"Simple JWT username/password flow is disabled on this server for api auth_type {settings.API_AUTH_TYPE}.")
             return SimpleTokenObtainPairSerializer
         raise serializers.ValidationError("ERROR: Can only call access_token with \"username AND password\" or \"client_id AND client_secret\"")
 
