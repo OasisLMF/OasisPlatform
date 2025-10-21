@@ -37,7 +37,7 @@ for arg in "${@}"; do
     forwards+=("deployment/keycloak 8081:8080")
     ;;
   "authentik")
-    forwards+=("deployment/authentik 9000")
+    forwards+=("deployment/authentik 9001:9000")
     ;;
   "monitoring")
     forwards+=("deployment/monitoring-grafana 3000:3000")
