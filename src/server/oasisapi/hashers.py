@@ -2,6 +2,5 @@ from django.contrib.auth.hashers import PBKDF2PasswordHasher
 
 
 class FastPBKDF2PasswordHasher(PBKDF2PasswordHasher):
-    # Set your desired lower iteration count here.
-    # For example, using Django 3.2's 260,000 count.
+    # Django 3.2 had a count of ~260,000 by default, which was upped to 870,000 for Django 5.1.
     iterations = 260000
