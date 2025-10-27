@@ -35,6 +35,12 @@ IS_UNITTEST = sys.argv[0].endswith('pytest')
 IS_TESTSERVER = len(sys.argv) >= 2 and sys.argv[1] == 'runserver'
 IS_SWAGGER_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'generate_swagger'
 
+# Adds custom password hasher as Django 5 has >3x default iterations compared to Django 3, which slows down existing test cases signficantly
+PASSWORD_HASHERS = [
+    'src.server.oasisapi.hashers.FastPBKDF2PasswordHasher',
+]
+
+
 if IS_UNITTEST or IS_TESTSERVER:
     # Always set Debug mode when in dev environment
     MEDIA_ROOT = './shared-fs/'
