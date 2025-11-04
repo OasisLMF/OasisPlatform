@@ -38,7 +38,9 @@ jobs:
         python-version: '3.12'
 
     - name: Install piptools
-      run: pip install pip-tools setuptools-rust
+      run: |
+        python -m pip install --upgrade "pip<23.3"
+        pip install pip-tools setuptools-rust
 
     - name: Update Requirements files
       run: |
