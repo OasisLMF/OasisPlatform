@@ -1,4 +1,5 @@
 from .base import *
+from src.conf.iniconf import settings
 
 # Default Queue Name
 CELERY_DEFAULT_QUEUE = "celery"
@@ -31,6 +32,9 @@ CELERYD_CONCURRENCY = 1
 #: https://docs.celeryproject.org/en/stable/userguide/configuration.html#std-setting-worker_prefetch_multiplier
 CELERYD_PREFETCH_MULTIPLIER = 1
 
+# control resource usage of workers
+CELERYD_MAX_MEMORY_PER_CHILD = settings.get('celery', 'worker_max_memory_per_child', fallback=None)
+CELERYD_MAX_TASKS_PER_CHILD = settings.getint('celery', 'worker_max_tasks_per_child', fallback=1)
 
 CELERY_ACKS_LATE = True
 CELERY_REJECT_ON_WORKER_LOST = False
