@@ -124,7 +124,7 @@ spec:
                   key: user
           volumeMounts:
             - name: db-persistent-storage
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
           startupProbe:
             exec:
               command: ["bash", "-c", "psql -w -U $POSTGRES_USER -d $POSTGRES_DB -c 'SELECT 1'"]
