@@ -176,6 +176,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
       storage_suffix: '-all-checks-v1'
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   all_checks_v2:
     name: V2 all checks
@@ -193,6 +194,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
       storage_suffix: '-all-checks-v2'
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   storage_s3_v1:
     name: V1 Storage Compatibility (S3)
@@ -210,6 +212,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '_s3-v1'
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   storage_s3_v2:
     name: V2 Storage Compatibility (S3)
@@ -227,6 +230,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '_s3-v2'
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   worker_debian:
     name: Worker Debian
@@ -244,6 +248,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-worker-debian'
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   stable_worker_1-15:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-15 }})
@@ -261,6 +266,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-15 }}"
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   stable_worker_1-23:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-23 }})
@@ -278,6 +284,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-23 }}"
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   stable_worker_1-27:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-27 }})
@@ -295,6 +302,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-27 }}"
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   stable_worker_1-28:
     name: test stable worker (${{ needs.setup.outputs.release_stable_1-28 }})
@@ -312,6 +320,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-28 }}"
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   stable_worker_2-3:
     name: test stable worker (${{ needs.setup.outputs.release_stable_2-3 }})
@@ -329,6 +338,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-3 }}"
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   stable_worker_2-4:
     name: test stable worker (${{ needs.setup.outputs.release_stable_2-4 }})
@@ -346,6 +356,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-4 }}"
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   stable_server_v1:
     name: test stable server (${{ needs.setup.outputs.server_min_supported }}) v1
@@ -363,6 +374,7 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_server-${{ needs.setup.outputs.server_min_supported }}_v1"
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
 
   stable_server_v2:
     name: test stable server (${{ needs.setup.outputs.server_min_supported }}) v2
@@ -380,3 +392,4 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: "_server-${{ needs.setup.outputs.server_min_supported }}_v2"
       oasislmf_branch: feature/generic_oidc
+      oasisplatform_branch: feature/generic_oidc
