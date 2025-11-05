@@ -46,7 +46,7 @@ jobs:
       #cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'CRITICAL,HIGH' ||  inputs.cve_severity }}
       cve_severity: ${{ github.event_name != 'workflow_dispatch' && 'SKIP' ||  inputs.cve_severity }}
       # oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      # TODO: Remove this and other references, including fix/integration_workflow, should point to main after releases
+      # TODO: Remove this and other references, including fix/integration_workflow and oasisplatform_branch, should point to main after releases
       oasislmf_branch: feature/generic_oidc
       ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
 
