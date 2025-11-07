@@ -256,9 +256,10 @@ pyasn1-modules==0.4.2
     # via service-identity
 pycparser==2.22
     # via cffi
-pyjwt==2.10.1
+pyjwt[crypto]==2.10.1
     # via
     #   djangorestframework-simplejwt
+    #   msal
     #   redis
 pymysql==1.1.1
     # via -r requirements-server.in
@@ -290,6 +291,7 @@ requests==2.32.4
     #   azure-core
     #   coreapi
     #   mozilla-django-oidc
+    #   msal
 rpds-py==0.26.0
     # via
     #   jsonschema
