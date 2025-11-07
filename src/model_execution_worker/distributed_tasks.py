@@ -77,7 +77,7 @@ def load_location_data(loc_filepath, oed_schema_info=None):
     from ods_tools.oed.exposure import OedExposure
     exposure = OedExposure(
         location=pathlib.Path(os.path.abspath(loc_filepath)),
-        oed_schema_info=oed_schema_info)
+        oed_schema_info=oed_schema_info or os.environ.get("OASIS_OED_SCHEMA_VERSION", None))
 
     try:
         # Oasislmf 2.4.x
