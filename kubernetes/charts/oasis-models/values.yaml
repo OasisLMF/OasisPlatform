@@ -50,7 +50,7 @@ workers:
       - name: OASIS_ODM_VERSION
         value: # Empty = latest version
       - name: OASIS_OED_SCHEMA_VERSION
-        value:
+        value: # In format v1.2.3
     volumes: # Volume defined in modelVolumes
     #      - name: name of volume defined in modelVolumes.
     #        type: Type of volume, set 'model-data' for model data mounts. Any other value for additional mounts
@@ -99,7 +99,7 @@ workers:
       - name: ODM_VERSION
         value: # Empty = latest version
       - name: OASIS_OED_SCHEMA_VERSION
-        value:
+        value: # In format v1.2.3
     volumes: # Volume defined in modelVolumes
       - name: piwind-model-data-pv
         type: model-data
