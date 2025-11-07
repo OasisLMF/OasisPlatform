@@ -53,7 +53,8 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             account=account,
             ri_info=ri_info,
             ri_scope=ri_scope,
-            validation_config=validation_config
+            validation_config=validation_config,
+            oed_schema_info=os.environ.get("OASIS_OED_SCHEMA_VERSION", None)
         )
         try:
             res = portfolio_exposure.check()

@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import io
+import os
 from pathlib import Path
 
 from drf_yasg.utils import swagger_serializer_method
@@ -27,7 +28,8 @@ EXPOSURE_ARGS = {
     'accounts_file': 'account',
     'location_file': 'location',
     'reinsurance_info_file': 'ri_info',
-    'reinsurance_scope_file': 'ri_scope'
+    'reinsurance_scope_file': 'ri_scope',
+    'oed_schema_info': os.environ.get("OASIS_OED_SCHEMA_VERSION", None)
 }
 
 

@@ -11,6 +11,10 @@ __all__ = [
     'prepare_complex_model_file_inputs',
     'config_strip_default_exposure',
     'unwrap_task_args',
+
+    'notify_api_status_v1',
+    'notify_api_status_v2',
+    'notify_subtask_status_v2',
 ]
 
 import logging
@@ -20,7 +24,9 @@ import re
 import tempfile
 import shutil
 import subprocess
+from datetime import datetime
 from copy import deepcopy
+from celery import signature
 
 from pathlib2 import Path
 from oasislmf import __version__ as mdk_version
@@ -31,6 +37,43 @@ from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
 import boto3
 from urllib.parse import urlparse
 from ..conf.iniconf import settings
+
+
+logger = logging.getLogger(__name__)
+
+
+# Send notification back to the API Once task is read from Queue
+def notify_api_status_v1(analysis_pk, task_status):
+    logger.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status',
+        args=(analysis_pk, task_status),
+        queue='celery'
+    ).delay()
+
+
+def notify_api_status_v2(analysis_pk, task_status):
+    logger.info("Notify API: analysis_id={}, status={}".format(
+        analysis_pk,
+        task_status
+    ))
+    signature(
+        'set_task_status_v2',
+        args=(analysis_pk, task_status, datetime.now().timestamp()),
+        queue='celery-v2'
+    ).delay()
+
+
+def notify_subtask_status_v2(analysis_id, initiator_id, task_slug, subtask_status, error_msg=''):
+    logger.info(f"Notify API: analysis_id={analysis_id}, task_slug={task_slug}  status={subtask_status}, error={error_msg}")
+    signature(
+        'set_subtask_status',
+        args=(analysis_id, initiator_id, task_slug, subtask_status, error_msg),
+        queue='celery-v2'
+    ).delay()
 
 
 class LoggingTaskContext:
@@ -178,6 +221,9 @@ def get_model_settings(settings):
 def get_oed_version():
     try:
         from ods_tools.oed.oed_schema import OedSchema
+        version = os.environ.get('OASIS_OED_SCHEMA_VERSION', None)
+        if version is not None:
+            return version
         OedSchemaData = OedSchema.from_oed_schema_info(oed_schema_info=None)
         return OedSchemaData.schema['version']
     except Exception:
