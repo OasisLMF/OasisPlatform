@@ -36,8 +36,11 @@ automat==25.4.16
 azure-core==1.35.0
     # via
     #   -r requirements-worker.in
+    #   azure-identity
     #   azure-storage-blob
     #   django-storages
+azure-identity==1.20.0
+    # via -r requirements-server.in
 azure-storage-blob==12.26.0
     # via
     #   -r requirements-worker.in
@@ -129,9 +132,12 @@ cramjam==2.11.0
 cryptography==44.0.3
     # via
     #   autobahn
+    #   azure-identity
     #   azure-storage-blob
     #   josepy
     #   mozilla-django-oidc
+    #   msal
+    #   pyjwt
     #   pyopenssl
     #   service-identity
 daphne==2.5.0
@@ -293,6 +299,12 @@ model-mommy==2.0.0
     # via -r requirements.in
 mozilla-django-oidc==4.0.1
     # via -r requirements-server.in
+msal==1.34.0
+    # via
+    #   azure-identity
+    #   msal-extensions
+msal-extensions==1.3.1
+    # via azure-identity
 msgpack==0.6.2
     # via
     #   channels-redis
@@ -326,7 +338,7 @@ oasis-data-manager==0.1.5
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.18
+oasislmf[extra]==2.3.19
     # via -r requirements-worker.in
 ods-tools==3.2.10
     # via
@@ -406,9 +418,10 @@ pygments==2.19.2
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
-pyjwt==2.10.1
+pyjwt[crypto]==2.10.1
     # via
     #   djangorestframework-simplejwt
+    #   msal
     #   redis
 pymysql==1.1.1
     # via
@@ -470,6 +483,7 @@ requests==2.32.4
     #   coreapi
     #   forex-python
     #   mozilla-django-oidc
+    #   msal
     #   oasislmf
     #   requests-toolbelt
 requests-toolbelt==1.0.0
@@ -542,6 +556,7 @@ txaio==25.6.1
 typing-extensions==4.14.1
     # via
     #   azure-core
+    #   azure-identity
     #   azure-storage-blob
     #   beautifulsoup4
     #   oasis-data-manager

@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.19`_
+ ---------
+* [#1250](https://github.com/OasisLMF/OasisPlatform/pull/1250) - Fix/CVE aug 2025 2.3.x
+* [#1280](https://github.com/OasisLMF/OasisPlatform/pull/1286) - Backport - Azure Service Principal for Postgres SQL authentication (2.3.x)
+* [#1291](https://github.com/OasisLMF/OasisPlatform/pull/1291) - Fixes for CI 
+* [#1169](https://github.com/OasisLMF/OasisPlatform/pull/1169) - Azure Service Principal for Postgres SQL authentication - 
+* [#1170](https://github.com/OasisLMF/OasisPlatform/pull/1170) - Azure Service Principal for Postgres SQL authentication -  (#1169)
+.. _`2.3.19`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.18...2.3.19
+
 `2.3.18`_
  ---------
 * [#1257](https://github.com/OasisLMF/OasisPlatform/pull/1256) - settings template causes internal server errors

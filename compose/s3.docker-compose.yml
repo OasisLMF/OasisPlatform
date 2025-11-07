@@ -171,7 +171,7 @@ services:
       - POSTGRES_USER=oasis
       - POSTGRES_PASSWORD=oasis
     volumes:
-      - server-db-OasisData:/var/lib/postgresql/data:rw
+      - server-db-OasisData:/var/lib/postgresql:rw
     ports:
       - 33307:3306
   celery-db:
@@ -182,7 +182,7 @@ services:
       - POSTGRES_USER=celery
       - POSTGRES_PASSWORD=password
     volumes:
-      - celery-db-OasisData:/var/lib/postgresql/data:rw
+      - celery-db-OasisData:/var/lib/postgresql:rw
     ports:
       - 33306:5432
   broker:
