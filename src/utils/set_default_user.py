@@ -9,12 +9,12 @@ from django.contrib.auth.models import User
 try:
     # The default django admin user is created here only when "simple" apiAuthType is used.
     # For OIDC, the users are created by the OIDC provider and backend classes.
-     
+
     if not bool(os.environ.get('OASIS_USE_OIDC', False)):
         env_username = os.environ.get('OASIS_SERVICE_USERNAME_OR_ID', '')
         env_password = os.environ.get('OASIS_SERVICE_PASSWORD_OR_SECRET', '')
 
-        # backwards compatibly 
+        # backwards compatibly
         if not env_username:
             env_username = os.environ.get('OASIS_ADMIN_USER', '')
         if not env_password:
