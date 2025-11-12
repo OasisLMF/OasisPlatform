@@ -18,7 +18,7 @@ try:
         if not env_username:
             env_username = os.environ.get('OASIS_ADMIN_USER', '')
         if not env_password:
-            env_password = os.environ.get('OASIS_ADMIN_PASSWORD', '')
+            env_password = os.environ.get('OASIS_ADMIN_PASS', '')
 
         try:
             print('Creating user: "{}"'.format(env_username))
