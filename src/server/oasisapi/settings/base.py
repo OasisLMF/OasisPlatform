@@ -273,7 +273,7 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
 AUTH_PASSWORD_VALIDATORS = []
-API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback=None)
+API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='simple')
 
 ALLOWED_OIDC_AUTH_PROVIDERS = iniconf.settings.get('server', 'ALLOWED_OIDC_AUTH_PROVIDERS', fallback='').split(",")
 
