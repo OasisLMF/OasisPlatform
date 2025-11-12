@@ -297,8 +297,8 @@ jobs:
       piwind_branch: 'stable/1.28.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: ${{ needs.setup.outputs.build_worker_img }}
-      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_1-28 }}
       worker_api_ver: 'v1'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
@@ -313,8 +313,8 @@ jobs:
       piwind_branch: 'stable/2.3.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: ${{ needs.setup.outputs.build_worker_img }}
-      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_2-3 }}
       worker_api_ver: 'v2'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
@@ -329,8 +329,8 @@ jobs:
       piwind_branch: 'stable/2.4.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: ${{ needs.setup.outputs.build_worker_img }}
-      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      worker_image: 'coreoasis/model_worker'
+      worker_tag: ${{ needs.setup.outputs.release_stable_2-4 }}
       worker_api_ver: 'v2'
       debug_mode: 1
       pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"

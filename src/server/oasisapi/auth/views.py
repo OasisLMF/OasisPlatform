@@ -42,9 +42,31 @@ class TokenRefreshView(BaseTokenRefreshView):
 
 class TokenObtainPairView(BaseTokenObtainPairView):
     """
-    Authenticates users via simple JWT or clients via OIDC based on request data.
+    Authenticates services via simple JWT or clients via OIDC based on request data.
     """
     @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=[],
+            properties={
+                'username': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Username for Simple JWT Service Authentication",
+                ),
+                'password': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Password for Simple JWT Service Authentication",
+                ),
+                'client_id': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    escription="Client ID for OIDC Service Authentication",
+                ),
+                'client_secret': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Client Secret for OIDC Service Authentication",
+                ),
+            },
+        ),
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
         security=[],
         tags=['authentication'])
