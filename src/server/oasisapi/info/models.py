@@ -10,7 +10,10 @@ def get_components_version():
 
     try:
         from ods_tools.oed.oed_schema import OedSchema
-        components_versions['oed_version'] = OedSchema.from_oed_schema_info(oed_schema_info=os.environ["OASIS_OED_SCHEMA_INFO"]).schema['version']
+        if os.environ.get("OASIS_OED_SCHEMA_VERSION", False):
+            components_versions['oed_version'] = os.environ["OASIS_OED_SCHEMA_VERSION"]
+        else:
+            components_versions['oed_version'] = OedSchema.from_oed_schema_info(oed_schema_info=None).schema['version']
 
     except Exception:
         logging.exception("Failed to get OED version info")
