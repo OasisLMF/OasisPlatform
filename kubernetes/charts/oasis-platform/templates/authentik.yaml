@@ -1,0 +1,207 @@
+{{- if and (eq .Values.oasisServer.apiAuthType "authentik") .Values.authentik }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.authentik.name }}
+  labels:
+  {{- include "h.labels" . | nindent 4 }}
+data:
+  host: {{ .Values.authentik.name }}
+  port: {{ .Values.authentik.port | quote }}
+---  
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.authentik.name }}-blueprint
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+data:
+  oasis-blueprint.yaml: |-
+    {{- $userTemplate := .Files.Get "resources/blueprints/oasis-users-blueprint-template.yaml" }}
+    {{- $userEntries := list -}}
+
+    {{- range $i, $user := .Values.authentik.oasisRestApi.users }}
+      {{- $groups := list " - !Find [authentik_core.group, [name, authentik Read-only]]" }}
+      {{- if $user.admin }}
+        {{- $groups = append $groups " - !Find [authentik_core.group, [name, admin]]" }}
+      {{- end }}
+      {{- $entry := $userTemplate |
+          replace "___USERNAME___" $user.username |
+          replace "___PASSWORD___" $user.password |
+          replace "___GROUPS___" (join "\n    " $groups) -}}
+      {{- $userEntries = append $userEntries $entry }}
+    {{- end }}
+
+    {{- .Files.Get "resources/blueprints/oasis-blueprint.yaml" | replace "___USERS___" (join "\n" $userEntries) | nindent 4 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.authentik.name }}-secret
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+type: Opaque
+stringData:
+  # Authentik automated-install envs (read only on first startup)
+  AUTHENTIK_BOOTSTRAP_PASSWORD: {{ .Values.authentik.bootstrapPassword | quote }}
+  AUTHENTIK_BOOTSTRAP_EMAIL: {{ .Values.authentik.bootstrapEmail | quote }}
+  AUTHENTIK_BOOTSTRAP_TOKEN: {{ .Values.authentik.bootstrapToken | quote }}
+  AUTHENTIK_SECRET_KEY: {{ .Values.authentik.secretKey | quote }}
+
+  # Database connection (mapped from your values)
+  AUTHENTIK_POSTGRESQL__HOST: {{ .Values.databases.authentik_db.name | quote }}
+  AUTHENTIK_POSTGRESQL__PORT: {{ .Values.databases.authentik_db.port | quote }}
+  AUTHENTIK_POSTGRESQL__NAME: {{ .Values.databases.authentik_db.dbName | quote }}
+  AUTHENTIK_POSTGRESQL__USER: {{ .Values.databases.authentik_db.user | quote }}
+  AUTHENTIK_POSTGRESQL__PASSWORD: {{ .Values.databases.authentik_db.password | quote }}
+
+  # Redis
+  AUTHENTIK_REDIS__HOST: {{ .Values.authentik.redis.host | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.authentik.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.authentik.port }}
+      targetPort: {{ .Values.authentik.port }}
+      protocol: TCP
+      name: authentik-http
+  selector:
+    {{- include "h.selectorLabels" . | nindent 4 }}
+    app: {{ .Values.authentik.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.authentik.name }}
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.authentik.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "h.labels" . | nindent 8 }}
+        app: {{ .Values.authentik.name }}
+    spec:
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.authentik_db.name) | nindent 8}}
+      containers:
+        - name: {{ .Values.authentik.name }}
+          image: {{ .Values.images.authentik.image }}:{{ .Values.images.authentik.version }}
+          args:
+            - server
+          ports:
+            - containerPort: {{ .Values.authentik.port }}
+          env:
+            - name: AUTHENTIK_LOG_LEVEL 
+              value: DEBUG
+            - name: AUTHENTIK_WEB__PATH
+              value: /authentik/
+            - name: AUTHENTIK_DISABLE_UPDATE_CHECK
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: {{ .Values.authentik.name }}-secret
+          startupProbe:
+            httpGet:
+              path: "/authentik/-/health/live/"
+              port: {{ .Values.authentik.port }}
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 30
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: "/authentik/-/health/live/"
+              port: {{ .Values.authentik.port }}
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: "/authentik/-/health/ready/"
+              port: {{ .Values.authentik.port }}
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.authentik.name }}-worker
+  labels:
+    {{- include "h.labels" . | nindent 4}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.authentik.name }}-worker
+  template:
+    metadata:
+      labels:
+        {{- include "h.labels" . | nindent 8 }}
+        app: {{ .Values.authentik.name }}-worker
+    spec:
+      initContainers:
+        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.authentik_db.name) | nindent 8}}
+      containers:
+        - name: {{ .Values.authentik.name }}-worker
+          image: {{ .Values.images.authentik.image }}:{{ .Values.images.authentik.version }}
+          args:
+            - worker
+          env:
+            - name: AUTHENTIK_LOG_LEVEL 
+              value: DEBUG
+            - name: AUTHENTIK_DISABLE_UPDATE_CHECK
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: {{ .Values.authentik.name }}-secret
+          volumeMounts:
+            - name: blueprint-config
+              mountPath: /blueprints/oasis-blueprint.yaml
+              subPath: oasis-blueprint.yaml
+          startupProbe:
+            exec:
+              command:
+                - ak
+                - healthcheck
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 30
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command:
+                - ak
+                - healthcheck
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                - ak
+                - healthcheck
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 60
+      volumes:
+        - name: blueprint-config
+          configMap:
+            name: {{ .Values.authentik.name }}-blueprint
+{{- end }}

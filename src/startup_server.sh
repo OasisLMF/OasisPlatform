@@ -29,7 +29,9 @@ if [ "${STARTUP_RUN_MIGRATIONS}" = true ]; then
 fi
 
 set -e 
-# Create default admin if `$OASIS_ADMIN_USER` && `$OASIS_ADMIN_PASS` are set
+# Create default admin if `$OASIS_SERVICE_USERNAME_OR_ID` && `$OASIS_SERVICE_PASSWORD_OR_SECRET` are set
+# These will only be set by the script if "simple" apiAuthType is set.
+# For OIDC, the users are created by the OIDC provider and backend classes.
 python3 set_default_user.py
 
 exec "$@"

@@ -82,12 +82,26 @@ jobs:
 
       - name: Authenticate
         run: |
+          USERNAME_OR_ID=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.username_or_id}" | base64 -d)
+          PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.password_or_secret}" | base64 -d)
+          USE_OIDC=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.use_oidc}" | base64 -d)
+
+          echo "Delay to wait for authentication server to start"
+          sleep 60
           delay=1
           for i in {1..8}; do
             delay=$((delay * 2))
-            RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
-              -H "Content-Type: application/json" \
-              -d '{"username": "admin", "password": "password"}')
+            if [ "$USE_OIDC" = "true" ]; then
+              echo "Using OIDC authentication"
+              RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
+                -H "Content-Type: application/json" \
+                -d "{\"client_id\": \"$USERNAME_OR_ID\", \"client_secret\": \"$PASSWORD_OR_SECRET\"}")
+            else
+              echo "Using Simple JWT authentication"
+              RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
+                -H "Content-Type: application/json" \
+                -d "{\"username\": \"$USERNAME_OR_ID\", \"password\": \"$PASSWORD_OR_SECRET\"}")
+            fi
 
             if echo "$RESPONSE" | jq -e . > /dev/null 2>&1; then
               TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
@@ -120,7 +134,10 @@ jobs:
           kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
 
       - name: Install OasisLMF
-        run: pip install oasislmf
+        run: |
+          pip install --upgrade pip
+          # TODO: replace with just "oasislmf" once OasisLMF branch is merged
+          pip install "git+https://github.com/OasisLMF/OasisLMF.git@feature/generic_oidc"
 
       - name: Create test settings
         run: |
@@ -150,9 +167,21 @@ jobs:
 
       - name: Run analysis
         run: |
+          USERNAME_OR_ID=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.username_or_id}" | base64 -d)
+          PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.password_or_secret}" | base64 -d)
+          USE_OIDC=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.use_oidc}" | base64 -d)
+
+          if [ "$USE_OIDC" = "true" ]; then
+            echo "Using OIDC authentication"
+            CREDENTIALS=$(printf '{"client_id": "%s", "client_secret": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET")
+          else
+            echo "Using Simple JWT authentication"
+            CREDENTIALS=$(printf '{"username": "%s", "password": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET")
+          fi
+
           {
             oasislmf api run \
-              --server-login-json '{"username": "admin", "password": "password"}' \
+              --server-login-json "$CREDENTIALS" \
               --server-version 'v1' \
               --server-url 'http://ui.oasis.local/api' \
               --model-id 1 \
