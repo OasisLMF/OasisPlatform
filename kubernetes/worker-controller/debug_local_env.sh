@@ -9,7 +9,7 @@
 # For Simple JWT
 # export OASIS_SERVICE_USERNAME_OR_ID=admin
 # export OASIS_SERVICE_PASSWORD_OR_SECRET=password
-# export OASUS_USE_OIDC=""
+# export OASIS_USE_OIDC=""
 # For OIDC
 export OASIS_SERVICE_USERNAME_OR_ID=oasis-service
 export OASIS_SERVICE_PASSWORD_OR_SECRET=serviceNotSoSecret
