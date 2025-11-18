@@ -62,8 +62,6 @@ set -e
     pushd kubernetes/worker-controller
         docker build -t coreoasis/worker_controller:dev .
     popd
-    # TODO: remove this line and replace values.yml version with latest OasisUI release once deployed
-    docker build -f ../OasisUI/docker/Dockerfile.oasisui_development -t coreoasis/oasisui_dev:dev ../OasisUI
 set +e
 
 # Upload piwind data
