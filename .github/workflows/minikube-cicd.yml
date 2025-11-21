@@ -151,6 +151,7 @@ jobs:
       - name: Run analysis
         run: |
           {
+            set -e -o pipefail
             oasislmf api run \
               --server-login-json '{"username": "admin", "password": "password"}' \
               --server-version 'v1' \
