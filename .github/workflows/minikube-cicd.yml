@@ -1,6 +1,9 @@
 name: Kube - Helm deploy test
 on:
   pull_request:
+  workflow_call:
+  workflow_dispatch:
+
 jobs:
   minikube:
     runs-on: ubuntu-latest
