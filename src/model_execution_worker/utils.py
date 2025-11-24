@@ -223,7 +223,8 @@ def get_oed_version():
         from ods_tools.oed.oed_schema import OedSchema
         OedSchemaData = OedSchema.from_oed_schema_info(oed_schema_info=os.environ.get('OASIS_OED_SCHEMA_INFO', None))
         return OedSchemaData.schema['version']
-    except Exception:
+    except Exception as e:
+        raise ValueError(f"Failed to get info from schema={str(os.environ.get('OASIS_OED_SCHEMA_INFO', None))} error {e}")
         logging.exception("Failed to get OED version info")
         return None
 
