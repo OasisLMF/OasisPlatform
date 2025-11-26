@@ -285,7 +285,7 @@ internalWorker:
       value: # Empty = latest version
     - name: OASIS_ODM_VERSION
       value: # Empty = latest version
-    - name: OASIS_OED_SCHEMA_VERSION
+    - name: OASIS_OED_SCHEMA_INFO
       value: # In format v1.2.3
 
 # Volumes to mount and use within the platform
