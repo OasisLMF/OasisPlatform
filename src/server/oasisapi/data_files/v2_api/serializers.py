@@ -1,5 +1,5 @@
 from django.contrib.auth.models import Group
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ..models import DataFile
@@ -24,7 +24,7 @@ class DataFileListSerializer(serializers.Serializer):
     stored = serializers.SerializerMethodField(read_only=True)
     content_type = serializers.SerializerMethodField(read_only=True)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_data_file_url(request=request) if instance.file_id else None
@@ -61,7 +61,7 @@ class DataFileSerializer(serializers.ModelSerializer):
             'content_type',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_data_file_url(request=request) if instance.file else None
