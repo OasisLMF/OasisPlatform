@@ -157,8 +157,7 @@ jobs:
       - name: Install OasisLMF
         run: |
           pip install --upgrade pip
-          # TODO: replace with just "oasislmf" once OasisLMF branch is merged
-          pip install "git+https://github.com/OasisLMF/OasisLMF.git@feature/generic_oidc"
+          pip install oasislmf
 
       - name: Create test settings
         run: |

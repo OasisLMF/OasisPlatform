@@ -8,8 +8,8 @@ images:
       version: dev
       imagePullPolicy: Never
     ui:
-      image: coreoasis/oasisui_dev
-      version: dev
+      image: coreoasis/oasisui_app
+      version: latest
     worker_controller:
       image: coreoasis/worker_controller
       version: dev
