@@ -1,6 +1,17 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.9`_
+ ---------
+* [#1240](https://github.com/OasisLMF/OasisPlatform/pull/1282) - Add task redelivery check to V1 workers
+* [#1276](https://github.com/OasisLMF/OasisPlatform/pull/1283) - Zombie celery processes or memory building up in worker.
+* [#1284](https://github.com/OasisLMF/OasisPlatform/pull/1284) - update django CVE-2025-59681
+* [#1269](https://github.com/OasisLMF/OasisPlatform/pull/1289) - python unit testing takes 1h
+* [#1291](https://github.com/OasisLMF/OasisPlatform/pull/1291) - Fixes for CI 
+* [#1293](https://github.com/OasisLMF/OasisPlatform/pull/1293) - Enhancement/oed schema version
+* [#1294](https://github.com/OasisLMF/OasisPlatform/pull/1294) - CVE-2025-64458
+.. _`2.4.9`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.8...2.4.9
+
 `2.4.8`_
  ---------
 * [#1242](https://github.com/OasisLMF/OasisPlatform/pull/1242) - Progress bar in platform with websocket

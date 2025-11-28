@@ -35,6 +35,7 @@ IS_UNITTEST = sys.argv[0].endswith('pytest')
 IS_TESTSERVER = len(sys.argv) >= 2 and sys.argv[1] == 'runserver'
 IS_SWAGGER_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'generate_swagger'
 
+
 if IS_UNITTEST or IS_TESTSERVER:
     # Always set Debug mode when in dev environment
     MEDIA_ROOT = './shared-fs/'
@@ -42,6 +43,10 @@ if IS_UNITTEST or IS_TESTSERVER:
     DEBUG_TOOLBAR = True
     URL_SUB_PATH = False
     CONSOLE_DEBUG = True  # disable celery / db checks in health check
+    # Adds custom password hasher as Django 5 has >3x default iterations compared to Django 3, which slows down existing test cases signficantly
+    PASSWORD_HASHERS = [
+        'src.server.oasisapi.hashers.FastPBKDF2PasswordHasher',
+    ]
 else:
     # SECURITY WARNING: don't run with debug turned on in production!
     MEDIA_ROOT = iniconf.settings.get('server', 'media_root', fallback=os.path.join(BASE_DIR, 'media'))

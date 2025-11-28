@@ -336,6 +336,8 @@ internalWorker:
       value: # Empty = latest version
     - name: OASIS_ODM_VERSION
       value: # Empty = latest version
+    - name: OASIS_OED_SCHEMA_INFO
+      value: # In format v1.2.3
 
 # Volumes to mount and use within the platform
 # Use either the host.sharedFs for host path or azureFiles.sharedFs to Azure files mount

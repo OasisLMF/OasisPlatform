@@ -221,7 +221,7 @@ def get_model_settings(settings):
 def get_oed_version():
     try:
         from ods_tools.oed.oed_schema import OedSchema
-        OedSchemaData = OedSchema.from_oed_schema_info(oed_schema_info=None)
+        OedSchemaData = OedSchema.from_oed_schema_info(oed_schema_info=os.environ.get('OASIS_OED_SCHEMA_INFO', None))
         return OedSchemaData.schema['version']
     except Exception:
         logging.exception("Failed to get OED version info")

@@ -57,7 +57,7 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :param claims: User information from the JWT
         :return: A User object
         """
-        user = self.UserModel.objects.create_user(username)
+        user, _ = self.UserModel.objects.get_or_create(username=username)
         self.update_roles(user, claims)
         self.update_groups(user, claims)
         self.create_oidc_user_id(user, claims.get('sub'))
@@ -212,7 +212,13 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :param sub: OIDC user id. Used for renaming the user to a unique name.
         """
         user_filter = self.UserModel.objects.filter(username__iexact=username)
+
         for user in user_filter:
-            user.username += f'-{sub}'
+            # check for and remove exisiting users before rename
+            new_username = f'{user.username}-{sub}'
+            self.UserModel.objects.filter(username=new_username).delete()
+
+            user.username = new_username
             user.active = False
             user.save()
+    
