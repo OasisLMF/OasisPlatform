@@ -221,4 +221,3 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
             user.username = new_username
             user.active = False
             user.save()
-    
