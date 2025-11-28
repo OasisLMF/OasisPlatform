@@ -1,3 +1,4 @@
+{{- if and (eq .Values.oasisServer.apiAuthType "keycloak") .Values.keycloak }}
 {{ $realmSecretName := printf "%s-realm" .Values.keycloak.name }}
 apiVersion: v1
 kind: ConfigMap
@@ -29,13 +30,6 @@ data:
   oasis: |-
     {{- $userTemplate := .Files.Get "resources/oasis-realm-user.json" }}
     {{- $userJson := list -}}
-    {{- $userJson = $userTemplate |
-      replace "___UUID___" uuidv4 |
-      replace "___USERNAME___" .Values.keycloak.oasisRestApi.platformServiceAccount.username |
-      replace "___PASSWORD___" .Values.keycloak.oasisRestApi.platformServiceAccount.password |
-      replace "___ROLES___" (join ", " (list "\"default-roles-oasis\"" "\"admin\"")) |
-      replace "___GROUPS___" "" |
-      append $userJson -}}
     {{- range $i, $user := .Values.keycloak.oasisRestApi.users }}
       {{- $groups := list }}
       {{- if $user.admin }}
@@ -209,3 +203,4 @@ spec:
             volumeAttributes:
               secretProviderClass: "azure-secret-provider"
     {{- end }}
+{{- end }}

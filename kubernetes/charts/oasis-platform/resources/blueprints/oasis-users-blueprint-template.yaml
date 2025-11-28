@@ -1,0 +1,12 @@
+- model: authentik_core.user
+  state: present
+  identifiers:
+    username: ___USERNAME___
+  attrs:
+    username: ___USERNAME___
+    name: ___USERNAME___
+    email: "___USERNAME___@example.com"
+    is_active: true
+    password: ___PASSWORD___
+    groups:
+    ___GROUPS___

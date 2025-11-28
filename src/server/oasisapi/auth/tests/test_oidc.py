@@ -3,6 +3,7 @@ import json
 import mock
 from django_webtest import WebTest
 from rest_framework.reverse import reverse
+from unittest import skipIf
 
 from src.server.oasisapi import settings
 
@@ -76,6 +77,7 @@ class TestKeycloakOIDCAuthenticationBackend(WebTest):
         settings.OIDC_RP_CLIENT_ID = ''
         settings.OIDC_RP_CLIENT_SECRET = ''
 
+    @skipIf(settings.API_AUTH_TYPE == "simple", "client_id/client_secret grant disabled for simple JWT mode")
     @mock.patch('requests.post', side_effect=mocked_requests_get)
     def test_access_token_valid(self, mock_post):
         """
@@ -104,6 +106,7 @@ class TestKeycloakOIDCAuthenticationBackend(WebTest):
             "expires_in": "3600"
         })
 
+    @skipIf(settings.API_AUTH_TYPE == "simple", "client_id/client_secret grant disabled for simple JWT mode")
     @mock.patch('requests.post', side_effect=mocked_requests_get)
     def test_access_token_invalid(self, mock_post):
         """
