@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.10`_
+ ---------
+* [#1297](https://github.com/OasisLMF/OasisPlatform/pull/1297) - Consistency with LMF oed_schema_info
+* [#1300](https://github.com/OasisLMF/OasisPlatform/pull/1300) - Fix/minikube test always pass
+* [#1301](https://github.com/OasisLMF/OasisPlatform/pull/1301) - Minikube cicd workflow
+* [#1298](https://github.com/OasisLMF/OasisPlatform/pull/1303) - Server error with OIDC due to DB tables not matching
+.. _`2.4.10`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.9...2.4.10
+
 `2.4.9`_
  ---------
 * [#1240](https://github.com/OasisLMF/OasisPlatform/pull/1282) - Add task redelivery check to V1 workers

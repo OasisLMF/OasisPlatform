@@ -1,6 +1,27 @@
 name: Kube - Helm deploy test
 on:
   pull_request:
+  workflow_call:
+    inputs:
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+        type: string
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+        type: string
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
+        type: string
+
 jobs:
   minikube:
     runs-on: ubuntu-latest
@@ -25,8 +46,8 @@ jobs:
         run: |
           eval $(minikube docker-env)
 
-          docker build -f Dockerfile.api_server -t coreoasis/api_server:dev .
-          docker build -f Dockerfile.model_worker -t coreoasis/model_worker:dev .
+          docker build -f Dockerfile.api_server --build-arg ods_tools_branch=${{ inputs.ods_branch }} --build-arg oasislmf_branch=${{ inputs.oasislmf_branch }} -t coreoasis/api_server:dev .
+          docker build -f Dockerfile.model_worker --build-arg ods_tools_branch=${{ inputs.ods_branch }} --build-arg oasislmf_branch=${{ inputs.oasislmf_branch }} -t coreoasis/model_worker:dev .
 
           pushd kubernetes/worker-controller
               docker build -t coreoasis/worker_controller:dev .
@@ -150,6 +171,7 @@ jobs:
 
       - name: Run analysis
         run: |
+          set -e -o pipefail
           {
             oasislmf api run \
               --server-login-json '{"username": "admin", "password": "password"}' \
