@@ -1,28 +1,4 @@
 apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .Values.oasisServer.name }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "h.labels" . | nindent 4}}
-type: Opaque
-data:
-  user: {{ required (printf "A valid user for oasis api is required") .Values.oasisServer.user | b64enc }}
-  password: {{ include "h.password" (list .Values.oasisServer.name "password" . .Values.oasisServer.password (printf "A valid password for %s is required" .Values.oasisServer.name)) }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .Values.oasisWebsocket.name }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "h.labels" . | nindent 4}}
-type: Opaque
-data:
-  user: {{ required (printf "A valid user for oasis api is required") .Values.oasisWebsocket.user | b64enc }}
-  password: {{ include "h.password" (list .Values.oasisWebsocket.name "password" . .Values.oasisWebsocket.password (printf "A valid password for %s is required" .Values.oasisWebsocket.name)) }}
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.oasisServer.name }}
@@ -79,26 +55,41 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
+        {{- $checks := list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.broker.name }}
+
+        {{- if and (eq .Values.oasisServer.apiAuthType "keycloak") .Values.keycloak.name }}
+        {{- $checks = append $checks .Values.keycloak.name }}
+        {{- end }}
+
+        {{- if and (eq .Values.oasisServer.apiAuthType "authentik") .Values.authentik.name }}
+        {{- $checks = append $checks .Values.authentik.name }}
+        {{- end }}
+
+        {{- include "h.initTcpAvailabilityCheckBySecret" $checks | nindent 8 }}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisWebsocket.name }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
-            - name: OASIS_ADMIN_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.oasisWebsocket.name }}
-                  key: user
-            - name: OASIS_ADMIN_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.oasisWebsocket.name }}
-                  key: password
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
             {{- include "h.channelLayerVars" . | indent 12 }}
+            - name: OASIS_SERVICE_USERNAME_OR_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: username_or_id
+            - name: OASIS_SERVICE_PASSWORD_OR_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: password_or_secret
+            - name: OASIS_USE_OIDC
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: use_oidc
             - name: OASIS_DEBUG
               value: "1"
             - name: OASIS_URL_SUB_PATH
@@ -107,15 +98,21 @@ spec:
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
               value: {{ .Release.Name | lower }}-traefik
-            {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
+            - name: OASIS_SERVER_ALLOWED_OIDC_AUTH_PROVIDERS
+              value: {{ join "," .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_API_AUTH_TYPE
-              value: keycloak
+              value: {{ .Values.oasisServer.apiAuthType }}
+            {{- if has .Values.oasisServer.apiAuthType .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_OIDC_CLIENT_NAME
               value: {{ .Values.oasisServer.oidc.clientName }}
             - name: OASIS_SERVER_OIDC_CLIENT_SECRET
               value: {{ .Values.oasisServer.oidc.clientSecret }}
             - name: OASIS_SERVER_OIDC_ENDPOINT
               value: {{ .Values.oasisServer.oidc.endpoint }}
+            - name: OASIS_SERVER_OIDC_SERVICE_CLIENT_NAME
+              value: {{ .Values.oasisServer.oidc.serviceClientName }}
+            - name: OASIS_SERVER_OIDC_SERVICE_CLIENT_SECRET
+              value: {{ .Values.oasisServer.oidc.serviceClientSecret }}
             {{- end }}
           ports:
             - containerPort: {{ .Values.oasisWebsocket.port }}
@@ -197,7 +194,17 @@ spec:
     spec:
       {{- include "h.affinity" . | nindent 6 }}
       initContainers:
-        {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.keycloak.name .Values.databases.broker.name) | nindent 8}}
+        {{- $checks := list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.broker.name }}
+
+        {{- if and (eq .Values.oasisServer.apiAuthType "keycloak") .Values.keycloak.name }}
+        {{- $checks = append $checks .Values.keycloak.name }}
+        {{- end }}
+
+        {{- if and (eq .Values.oasisServer.apiAuthType "authentik") .Values.authentik.name }}
+        {{- $checks = append $checks .Values.authentik.name }}
+        {{- end }}
+
+        {{- include "h.initTcpAvailabilityCheckBySecret" $checks | nindent 8 }}
         - name: set-mount-permissions
           image: busybox
           command: ["sh", "-c", "find /shared-fs -user root -exec chown 1000:1000 {} \\;"]
@@ -209,35 +216,46 @@ spec:
           name: {{ .Values.oasisServer.name }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           env:
-            - name: OASIS_ADMIN_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.oasisServer.name }}
-                  key: user
-            - name: OASIS_ADMIN_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.oasisServer.name }}
-                  key: password
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
             {{- include "h.channelLayerVars" . | indent 12 }}
+            - name: OASIS_SERVICE_USERNAME_OR_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: username_or_id
+            - name: OASIS_SERVICE_PASSWORD_OR_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: password_or_secret
+            - name: OASIS_USE_OIDC
+              valueFrom:
+                secretKeyRef:
+                  name: oasis-service-account-credentials
+                  key: use_oidc
             - name: STARTUP_RUN_MIGRATIONS
               value: "true"
             - name: INGRESS_EXTERNAL_HOST
               value: {{ .Values.ingress.uiHostname }}
             - name: INGRESS_INTERNAL_HOST
               value: {{ .Release.Name | lower }}-traefik
-            {{- if eq .Values.oasisServer.apiAuthType "keycloak" }}
+            - name: OASIS_SERVER_ALLOWED_OIDC_AUTH_PROVIDERS
+              value: {{ join "," .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_API_AUTH_TYPE
-              value: keycloak
+              value: {{ .Values.oasisServer.apiAuthType }}
+            {{- if has .Values.oasisServer.apiAuthType .Values.oasisServer.allowedOIDCAuthProviders }}
             - name: OASIS_SERVER_OIDC_CLIENT_NAME
               value: {{ .Values.oasisServer.oidc.clientName }}
             - name: OASIS_SERVER_OIDC_CLIENT_SECRET
               value: {{ .Values.oasisServer.oidc.clientSecret }}
             - name: OASIS_SERVER_OIDC_ENDPOINT
               value: {{ .Values.oasisServer.oidc.endpoint }}
+            - name: OASIS_SERVER_OIDC_SERVICE_CLIENT_NAME
+              value: {{ .Values.oasisServer.oidc.serviceClientName }}
+            - name: OASIS_SERVER_OIDC_SERVICE_CLIENT_SECRET
+              value: {{ .Values.oasisServer.oidc.serviceClientSecret }}
             {{- end }}
             {{- toYaml .Values.oasisServer.env | nindent 12 }}
           ports:

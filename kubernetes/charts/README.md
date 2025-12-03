@@ -190,7 +190,8 @@ Now you should be able to access the following pages:
 
 - Oasis API - [https://ui.oasis.local/api/](https://api.oasis.local/api/)
 - Oasis UI - [https://ui.oasis.local](https://ui.oasis.local)
-- Keycloak - [https://ui.oasis.local/auth/admin](https://ui.oasis.local/admin/auth/)
+- Keycloak - [https://ui.oasis.local/auth/admin](https://ui.oasis.local/admin/auth/) (If "keycloak" is set as auth_type in oasis-platform/values.yaml)
+- Authentik - [https://ui.oasis.local/authentik/](https://ui.oasis.local/authentik/) (If "authentik" is set as auth_type in oasis-platform/values.yaml)
 - Prometheus - [https://ui.oasis.local/prometheus/](https://ui.oasis.local/prometheus/)
 - Alert manager - [https://ui.oasis.local/alert-manager/](https://ui.oasis.local/alert-manager/)
 - Grafana - [https://ui.oasis.local/grafana/](https://ui.oasis.local/grafana/)
@@ -212,6 +213,9 @@ kubectl port-forward deployment/oasis-ui 8080:3838
 
 # Access Keycloak UI on http://localhost:8081
 kubectl port-forward deployment/keycloak 8081:8080
+
+# Access Authentik UI on http://localhost:9001
+kubectl port-forward deployment/authentik 9001:9000
 
 # Access Prometheus on http://localhost:9090
 kubectl port-forward statefulset/prometheus-monitoring-kube-prometheus-prometheus 9090
@@ -283,12 +287,16 @@ only.
    cp oasis-montoring/values.yaml monitoring-values.yaml
    ```
 3. Then we need to edit our value files to change the credentials:
-    1. Edit `platform-values.yaml` and set the `oasisServer.user` and `oasisServer.password` to your new credentials:
+    1. Edit `platform-values.yaml` and set the `oasisService.user` and `oasisService.password` to your new credentials or `oasisService.serviceClientName` and `oasisService.serviceClientSecret` to your new credentials. These set the credentials for all service authentication (oasis-server, worker-controller, model-registration etc.):
 
        ```
-       oasisServer:
+       oasisService:
+         # Modify this if using Simple JWT
          user: oasis
          password: password123
+         # Modifying this if using OIDC client_credentials (keycloak, authentik, etc.)
+         serviceClientName: oasis-service  # or whatever your service authentication client_id is called
+         serviceClientSecret: verySecureSecret  # Set secret to whatever the service client_secret is. 
        ```
     2. Edit `monitoring-values.yaml` and set your new password for Grafana (we can't change the username):
 
@@ -529,7 +537,8 @@ Default credentials are admin/password.
 !!! Please note that upgrading this chart might reset changes in Prometheus, Alert manager and Grafana. Always make a
 backup of your changes before your upgrade.
 
-# Keycloak
+# OIDC
+## Keycloak
 
 [Keycloak](https://keycloak.org) is now the default user manager and authentication service (can be disabled by chart
 settings). Read more about Keycloak [here](https://www.keycloak.org/docs/latest/getting_started/index.html).
@@ -546,11 +555,40 @@ oasisServer:
     clientSecret: <client secret>
 ```
 
+## Authentik
+
+[Authentik](https://goauthentik.io/) is an alternative user manager and authentication service (can be disabled by chart
+settings). Read more about Authentik [here](https://docs.goauthentik.io/).
+
+You can pick your preferred authentication by changing `oasisServer.apiAuthType` to either `authentik` or `simple` for
+the standard simple jwt authentication.
+
+```
+oasisServer:
+  apiAuthType: authentik
+  oidc:
+    endpoint: <open connect endpoint url>
+    clientName: <client name>
+    clientSecret: <client secret>
+```
+
+## Service Authentication
+
+Services must use a different client to authenticate, and this client must be configured to use client_credentials authentication, and must be configured to return `is_service_account=True` in the response.
+
+You must also set the `oasisService.serviceClientName` and `oasisService.serviceClientSecret` to ensure services have the correct credentials to authenticate.
+
+```
+oasisService:
+  serviceClientName: <client name>
+  serviceClientSecret: <client secret>
+```
+
 ## Administration console
 
-Read [Accessing user interfaces](#accessing-user-interfaces) on how to access keycloak the administration console or use
-the default ingress link:
+Read [Accessing user interfaces](#accessing-user-interfaces) on how to access the administration console for your OIDC provideror use the default ingress link:
 
+### Keycloak
 [https://ui.oasis.local/auth/admin/](https://ui.oasis.local/auth/admin/)
 
 The keycloak administrator user is defined in your oasis-platform chart values:
@@ -563,6 +601,20 @@ keycloak:
 
 Full admin console documentation is found
 on [keycloak.org](https://www.keycloak.org/docs/latest/server_admin/#admin-console).
+
+### Authentik
+[https://ui.oasis.local/authentik/](https://ui.oasis.local/authentik/)
+
+The authentik administrator user is defined in your oasis-platform chart values:
+
+```
+authentik:
+  bootstrapUser: akadmin  # Do not change this, this is the default username set by authentik.
+  bootstrapPassword: password
+```
+
+Full admin console documentation is found
+on [authentik.org](https://docs.goauthentik.io/).
 
 ### Realm Settings
 
@@ -587,13 +639,12 @@ Manage groups from here and then add them to each user in the `Manage / Users` p
 
 ## Default settings
 
-The oasis-platform chart creates a default realm (keycloak security context) on the first deployment to manage all
-users, credentials, roles etc. for the oasis REST API.
+The oasis-platform chart creates a default realm on the first deployment to manage all users, credentials, roles etc. for the oasis REST API. This is the same structure for both keycloak and authentik.
 
 A default REST API user is created on `helm install` and to change the username and password edit the values:
 
 ```
-keycloak:
+<oidc provider>:
   oasisRestApi:
     users:
       # A default user is created at first deployment.
@@ -606,7 +657,7 @@ Default username is `oasis` with password `password`.
 
 ## Groups
 
-Groups are now supported by creating them in Keycloak and assign them to users. A user can then set groups on objects
+Groups are now supported by creating them in Keycloak and assign them to users. Authentik has groups by default. A user can then set groups on objects
 like portfolio, model and data files. A user can set all or a subset of the groups the user belongs to and if no group
 is set it will automatically get all the users groups.
 
