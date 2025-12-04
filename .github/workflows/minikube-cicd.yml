@@ -43,8 +43,11 @@ jobs:
     steps:
       - name: Clone OasisPiWind model data
         run: |
-          [[ -z "${{ env.piwind_branch }}" ]] || echo "piwind_branch=main" >> $GITHUB_ENV;
-          git clone -b ${{ env.piwind_branch }} https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
+          if [[ -z "${{ env.piwind_branch }}" ]]; then
+            git clone https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
+          else
+            git clone -b ${{ env.piwind_branch }} https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
+          fi
 
       - name: Set OASIS_MODEL_DATA_DIR env
         run: echo "OASIS_MODEL_DATA_DIR=/tmp/piwind" >> $GITHUB_ENV
