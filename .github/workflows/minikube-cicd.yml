@@ -43,6 +43,7 @@ jobs:
     steps:
       - name: Clone OasisPiWind model data
         run: |
+          [[ -z "${{ env.piwind_branch }}" ]] || echo "piwind_branch=main" >> $GITHUB_ENV;
           git clone -b ${{ env.piwind_branch }} https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
 
       - name: Set OASIS_MODEL_DATA_DIR env
@@ -175,6 +176,9 @@ jobs:
         run: |
           cat <<EOF > test_settings.json
           {
+            "computation_settings": {
+              "ktools_num_processes": 1
+            },
             "version": "3",
             "analysis_tag": "base_example",
             "source_tag": "MDK",
