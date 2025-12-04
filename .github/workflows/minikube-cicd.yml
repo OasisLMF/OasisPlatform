@@ -234,7 +234,8 @@ jobs:
           } 2>&1 | tee logs.txt
           echo "exit_code=$?" >> "$GITHUB_ENV"
 
-      - name: Print Mem stats
+      - name: Minikube memory usage
+        if: always()
         run: |
           # per pod memory data
           kubectl top pods --all-namespaces --no-headers 2>/dev/null || {
