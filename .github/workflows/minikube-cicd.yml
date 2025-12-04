@@ -270,11 +270,11 @@ jobs:
                   printf "%-20s %6.0fMi (%d pods)\n", ns, ns_mem[ns], ns_count[ns]
           }' | sort -k2 -nr
 
-echo
-echo "Top 5 Memory Users:"
-echo "-------------------"
-kubectl top pods --all-namespaces --no-headers | sort -k4 -hr | head -5 | \
-    awk '{printf "%-30s %s\n", $1"/"$2, $4}'
+          echo
+          echo "Top 5 Memory Users:"
+          echo "-------------------"
+          kubectl top pods --all-namespaces --no-headers | sort -k4 -hr | head -5 | \
+              awk '{printf "%-30s %s\n", $1"/"$2, $4}'
 
 
 
