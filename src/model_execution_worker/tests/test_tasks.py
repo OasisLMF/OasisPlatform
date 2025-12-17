@@ -93,7 +93,6 @@ class StartAnalysis(TestCase):
                 Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
                 log_file = Path(log_dir, 'log-file.log').touch()
 
-
                 settings_file_path = Path(media_root, 'analysis_settings.json')
                 analysis_settings = {
                     "computation_settings": {
@@ -138,7 +137,8 @@ class StartAnalysis(TestCase):
 
                     cmd_mock.assert_called_once()
                     called_args = cmd_mock.call_args.kwargs
-                    self.assertEqual(called_args.get('ktools_num_processes', None), analysis_settings.get("computation_settings").get("ktools_num_processes"))
+                    self.assertEqual(called_args.get('ktools_num_processes', None),
+                                     analysis_settings.get("computation_settings").get("ktools_num_processes"))
                     self.assertEqual(called_args.get('oasis_files_dir', None), params.get('oasis_files_dir'))
                     self.assertEqual(called_args.get('model_run_dir', None), params.get('model_run_dir'))
                     self.assertEqual(called_args.get('ktools_fifo_relative', None), params.get('ktools_fifo_relative'))
