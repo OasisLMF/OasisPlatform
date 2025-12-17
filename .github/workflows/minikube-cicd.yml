@@ -58,9 +58,6 @@ jobs:
       - name: Start Minikube
         uses: medyagh/setup-minikube@latest
 
-#      - name: Enable metrics
-#        run: minikube addons enable metrics-server
-
       - name: Build Docker images
         run: |
           eval $(minikube docker-env)
@@ -190,11 +187,10 @@ jobs:
             "source_tag": "MDK",
             "model_name_id": "PiWind",
             "model_supplier_id": "OasisLMF",
-            "gul_threshold": 0,
             "gul_output": true,
+            "number_of_samples": 1,
+            "event_ids": [1],
             "model_settings": {
-              "event_set": "p",
-              "event_occurrence_id": "lt"
             },
             "gul_summaries": [
               {
@@ -233,50 +229,6 @@ jobs:
               -V
           } 2>&1 | tee logs.txt
           echo "exit_code=$?" >> "$GITHUB_ENV"
-
-#      - name: Minikube memory usage
-#        if: always()
-#        run: |
-#          # per pod memory data
-#          kubectl top pods --all-namespaces --no-headers 2>/dev/null || {
-#              echo "Failed to get metrics. Check metrics server."; exit 1;
-#          }
-#          echo
-#          echo "Memory Usage Summary:"
-#          echo "===================="
-#
-#          # total memory
-#          PODS=$(kubectl top pods --all-namespaces --no-headers | wc -l)
-#          TOTAL=$(kubectl top pods --all-namespaces --no-headers | awk '{
-#              mem=$4;
-#              gsub(/[^0-9.]/, "", mem);
-#              if($4 ~ /Gi/) mem*=1024;
-#              total+=mem
-#          } END {printf "%.0f", total}')
-#
-#          echo "Total pods: $PODS"
-#          echo "Total memory: ${TOTAL}Mi"
-#          echo "Average: $(echo "scale=0; $TOTAL / $PODS" | bc)Mi per pod"
-#
-#          echo
-#          echo "By Namespace:"
-#          echo "-------------"
-#          kubectl top pods --all-namespaces --no-headers | awk '{
-#              ns=$1; mem=$4;
-#              gsub(/[^0-9.]/, "", mem);
-#              if($4 ~ /Gi/) mem*=1024;
-#              ns_mem[ns]+=mem; ns_count[ns]++
-#          } END {
-#              for(ns in ns_mem)
-#                  printf "%-20s %6.0fMi (%d pods)\n", ns, ns_mem[ns], ns_count[ns]
-#          }' | sort -k2 -nr
-#
-#          echo
-#          echo "Top 5 Memory Users:"
-#          echo "-------------------"
-#          kubectl top pods --all-namespaces --no-headers | sort -k4 -hr | head -5 | \
-#              awk '{printf "%-30s %s\n", $1"/"$2, $4}'
-
 
 
       - name: Upload Artifact
