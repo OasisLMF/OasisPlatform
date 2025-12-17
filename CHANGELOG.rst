@@ -1,6 +1,12 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.11`_
+ ---------
+* [#1307](https://github.com/OasisLMF/OasisPlatform/pull/1307) - Update urllib3 to 2.6.0
+* [#1308](https://github.com/OasisLMF/OasisPlatform/pull/1308) - Update test for analyses_settings computation_settings merge
+.. _`2.4.11`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.10...2.4.11
+
 `2.4.10`_
  ---------
 * [#1297](https://github.com/OasisLMF/OasisPlatform/pull/1297) - Consistency with LMF oed_schema_info
