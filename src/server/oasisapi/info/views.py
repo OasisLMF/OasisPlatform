@@ -65,7 +65,7 @@ class ServerInfoView(views.APIView):
         server_config['AWS_QUERYSTRING_AUTH'] = settings.AWS_QUERYSTRING_AUTH
 
         # Auth Conf
-        if settings.API_AUTH_TYPE in ['authentik', 'keycloak']:
+        if settings.API_AUTH_TYPE in settings.ALLOWED_OIDC_AUTH_PROVIDERS:
             server_config['API_AUTH_TYPE'] = settings.API_AUTH_TYPE
             server_config['OIDC_OP_AUTHORIZATION_ENDPOINT'] = settings.OIDC_OP_AUTHORIZATION_ENDPOINT
             server_config['OIDC_OP_TOKEN_ENDPOINT'] = settings.OIDC_OP_TOKEN_ENDPOINT

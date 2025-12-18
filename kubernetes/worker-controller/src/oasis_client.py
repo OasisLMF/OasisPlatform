@@ -60,7 +60,7 @@ class OasisClient:
             params = {'username': self.username_or_id, 'password': self.password_or_secret}
             if self.oidc:
                 params = {'client_id': self.username_or_id, 'client_secret': self.password_or_secret}
-            async with session.post(urljoin(self.http_host, 'access_token/'), data=params) as response:
+            async with session.post(urljoin(self.http_host, '/access_token/'), data=params) as response:
                 data = await self.parse_answer(response)
                 self.access_token = data['access_token']
                 self.token_expire_time = time.time() + round(data['expires_in'] / 2)
