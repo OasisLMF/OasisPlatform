@@ -8,7 +8,7 @@ from mozilla_django_oidc.contrib.drf import OIDCAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from src.server.oasisapi import settings
-from src.server.oasisapi.oidc.keycloak_auth import KeycloakOIDCAuthenticationBackend
+from src.server.oasisapi.oidc.generic_auth import GenericOIDCAuthenticationBackend
 from src.server.oasisapi.queues.routing import websocket_urlpatterns
 
 url_patterns = [
@@ -26,13 +26,17 @@ async def get_user(token_key):
             logger.warning('No token provided, returning AnonymousUser')
             return AnonymousUser()
 
-        if settings.API_AUTH_TYPE == 'keycloak':
-            logger.info('Using Keycloak authentication')
-            backend = KeycloakOIDCAuthenticationBackend()
+        if settings.API_AUTH_TYPE in settings.ALLOWED_OIDC_AUTH_PROVIDERS:
+            logger.info(f'Using {settings.API_AUTH_TYPE} authentication')
+
+            backend = GenericOIDCAuthenticationBackend()
             authentication = OIDCAuthentication(backend)
+
+            async_authentication = sync_to_async(authentication.authenticate, thread_sensitive=True)
             request = type('', (), {'META': {'HTTP_AUTHORIZATION': header_value}})()
-            user, access_token = await sync_to_async(authentication.authenticate, thread_sensitive=True)(request)
+            user, access_token = await async_authentication(request)
             logger.info(f'Successfully authenticated user: {user}')
+
             return user
         else:
             logger.info('Using JWT authentication')

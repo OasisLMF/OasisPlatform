@@ -1,5 +1,5 @@
-# Update default oasis realm
-
+# Update default oasis OIDC configuration
+## Keycloak Realms
 1. Open a shell on the keycloak pod:
 
    ```
@@ -27,3 +27,8 @@
    # Download the export:
    kubectl cp $PN:/tmp/oasis-realm.json oasis-realm.json
    ```
+
+# Authentik Blueprints
+Authentik does have the functionality to export blueprints, however these are often exported into a large, unordered yaml file containing all default authentik configuration data, and everything is linked together by random primary keys, making this file essentially not human readable and difficult to cut down and edit.
+
+The best way to modify Authentiks configuration is to directly edit the `blueprints/oasis-blueprint.yaml` file, using the [default github blueprints](https://github.com/goauthentik/authentik/tree/main/blueprints) as an example.
