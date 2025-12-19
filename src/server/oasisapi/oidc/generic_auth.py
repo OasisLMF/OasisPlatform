@@ -37,7 +37,7 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         sub = self.get_userinfo_attribute(user_info, 'sub')
         username = user_info.get("preferred_username", None)
         if not username and is_service_account:
-            username = "tmp-service-account-username"
+            username = f"svc-{sub}"
         elif not username:
             raise SuspiciousOperation('Required key not found in claim: preferred_username')
 
