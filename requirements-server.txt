@@ -218,7 +218,7 @@ oasis-data-manager==0.1.6
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools==4.0.4
+ods-tools==4.0.5
     # via -r requirements-server.in
 packaging==25.0
     # via
@@ -341,7 +341,7 @@ uritemplate==4.2.0
     # via
     #   coreapi
     #   drf-yasg
-urllib3==2.5.0
+urllib3==2.6.0
     # via
     #   botocore
     #   requests
