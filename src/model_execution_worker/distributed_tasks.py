@@ -335,7 +335,7 @@ def keys_generation_task(fn):
         params.setdefault('lookup_complex_config_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
         params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
-        # Generate keys files
+        # Generate keys filesprepare_k
         params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
         params.setdefault('keys_errors_fp', os.path.join(params['root_run_dir'], 'keys-errors.csv'))
 
@@ -348,6 +348,7 @@ def keys_generation_task(fn):
         acc_filepath, acc_source = get_file_ref(kwargs, params, 'acc_file')
         info_filepath, info_source = get_file_ref(kwargs, params, 'info_file')
         scope_filepath, scope_source = get_file_ref(kwargs, params, 'scope_file')
+        currency_conversion_json, currency_source = get_file_ref(kwargs, params, 'currency_conversion_json')
 
         # Prepare 'generate-oasis-files' inploc_filepath
         if loc_filepath:
@@ -366,6 +367,10 @@ def keys_generation_task(fn):
             scope_extention = "".join(pathlib.Path(scope_filepath).suffixes)
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'{scope_source}reinsscope{scope_extention}')
             maybe_fetch_file(scope_filepath, params['oed_scope_csv'])
+        if currency_conversion_json and kwargs['reporting_currency'] != "NONE":
+            params['reporting_currency'] = kwargs['reporting_currency']
+            params['currency_conversion_json'] = os.path.join(params['root_run_dir'], f'{currency_source}currency_conversion.json')
+            maybe_fetch_file(currency_conversion_json, params['currency_conversion_json'])
 
         # Complex model lookup files
         if settings_file:
@@ -431,6 +436,8 @@ def prepare_input_generation_params(
     from oasislmf.manager import OasisManager
     gen_files_params = OasisManager()._params_generate_oasis_files(**lookup_params)
     params = paths_to_absolute_paths({**gen_files_params}, config_path)
+    if params['oed_schema_info']:  # "" -> "/home/worker" from paths so undo needed
+        params['oed_schema_info'] = gen_files_params['oed_schema_info']
 
     params['log_storage'] = dict()
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -509,7 +516,6 @@ def prepare_keys_file_chunk(
     slug=None,
     **kwargs
 ):
-
     with TemporaryDir() as chunk_target_dir:
         chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx + 1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
@@ -853,6 +859,8 @@ def prepare_losses_generation_params(
     from oasislmf.manager import OasisManager
     gen_losses_params = OasisManager()._params_generate_oasis_losses(**run_params)
     params = paths_to_absolute_paths({**gen_losses_params}, config_path)
+    if params['oed_schema_info']:
+        params['oed_schema_info'] = gen_losses_params['oed_schema_info']
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker

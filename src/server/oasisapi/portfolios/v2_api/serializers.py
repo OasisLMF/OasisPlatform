@@ -106,6 +106,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     reinsurance_scope_file = serializers.SerializerMethodField()
     storage_links = serializers.SerializerMethodField()
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    currency_conversion_json = serializers.SerializerMethodField()
 
     class Meta:
         model = Portfolio
@@ -125,7 +126,9 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'storage_links',
             'exposure_status',
             'validation_status',
-            'exposure_transform_status'
+            'exposure_transform_status',
+            'currency_conversion_json',
+            'reporting_currency'
         )
 
     def validate(self, attrs):
@@ -187,6 +190,18 @@ class PortfolioSerializer(serializers.ModelSerializer):
             instance.get_absolute_reinsurance_scope_file_url(request=request),
             request,
         )
+
+    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    def get_currency_conversion_json(self, instance):
+        if not instance.currency_conversion_json:
+            return None
+        else:
+            request = self.context.get('request')
+            return {
+                "uri": instance.get_absolute_currency_conversion_json_url(request=request),
+                "name": instance.currency_conversion_json.filename,
+                "stored": str(instance.currency_conversion_json.file)
+            }
 
 
 class PortfolioStorageSerializer(serializers.ModelSerializer):
@@ -506,3 +521,11 @@ class ExposureTransformSerializer(serializers.Serializer):
 
     mapping_file = serializers.FileField(required=True)
     transform_file = serializers.FileField(required=True)
+
+
+class CurrencyConversionSerializer(serializers.Serializer):
+    file = serializers.FileField(required=True, help_text="currency_conversion_json file")
+
+
+class ReportingCurrencySerializer(serializers.Serializer):
+    reporting_currency = serializers.CharField(required=True)

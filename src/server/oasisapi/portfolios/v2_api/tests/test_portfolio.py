@@ -175,6 +175,8 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'exposure_status': "NONE",
                     'validation_status': "NONE",
                     'exposure_transform_status': "NONE",
+                    'currency_conversion_json': None,
+                    'reporting_currency': "NONE"
                 }, response.json)
 
     @pytest.mark.skip(reason="LOT3 DISABLE")

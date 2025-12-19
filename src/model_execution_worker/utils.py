@@ -146,7 +146,9 @@ def config_strip_default_exposure(config):
         'oed_accounts_csv',
         'oed_info_csv',
         'oed_scope_csv',
-        'analysis_settings_json'
+        'analysis_settings_json',
+        'reporting_currency',
+        'currency_conversion_json'
     ]
     return {k: v for k, v in config.items() if k not in exclude_list}
 
@@ -374,7 +376,7 @@ def get_destination_file(filename, destination_dir, destination_title):
     raise ValueError(f"File must be either Parquet or CSV: {filename, ext}")
 
 
-def get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir):
+def get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir):
     loc_temp = acc_temp = ri_temp = rl_temp = None
     if loc_filepath:
         loc_temp = get_destination_file(loc_filepath, temp_dir, "location")

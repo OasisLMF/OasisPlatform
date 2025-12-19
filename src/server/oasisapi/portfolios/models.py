@@ -93,6 +93,9 @@ class Portfolio(TimeStampedModel):
                                      default=None, related_name='mapping_file_portfolios')
     run_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                         default=None, related_name='errors_file_portfolios')
+    currency_conversion_json = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                                 default=None, related_name='currency_conversion_json')
+    reporting_currency = models.CharField(default="NONE", editable=False)
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
@@ -135,6 +138,10 @@ class Portfolio(TimeStampedModel):
     def get_absolute_reinsurance_scope_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}portfolio-reinsurance-scope-file', kwargs={'pk': self.pk}, request=request)
+
+    def get_absolute_currency_conversion_json_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-currency-conversion-json', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_storage_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''

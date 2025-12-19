@@ -398,10 +398,12 @@ class Analysis(TimeStampedModel):
         scope_file = file_storage_link(self.portfolio.reinsurance_scope_file)
         settings_file = file_storage_link(self.settings_file)
         complex_data_files = self.create_complex_model_data_file_dicts()
+        currency_conversion_json = file_storage_link(self.portfolio.currency_conversion_json)
+        reporting_currency = self.portfolio.reporting_currency
 
         return celery_app_v1.signature(
             'generate_input',
-            args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files),
+            args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files, currency_conversion_json, reporting_currency),
             queue=self.model.queue_name,
         )
 

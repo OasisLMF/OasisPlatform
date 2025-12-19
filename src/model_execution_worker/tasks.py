@@ -354,6 +354,8 @@ def generate_input(self,
                    scope_file=None,
                    settings_file=None,
                    complex_data_files=None,
+                   currency_conversion_json=None,
+                   reporting_currency="NONE",
                    **kwargs):
     """Generates the input files for the loss calculation stage.
 
@@ -428,14 +430,20 @@ def generate_input(self,
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir, filestore)
             task_params['user_data_dir'] = input_data_dir
+        if currency_conversion_json and reporting_currency != "NONE":
+            task_params['reporting_currency'] = reporting_currency
+            task_params['currency_conversion_json'] = filestore.get(
+                currency_conversion_json,
+                os.path.join(oasis_files_dir, 'currency_conversion.json')
+            )
 
         config_path = get_oasislmf_config_path(settings)
         config = config_strip_default_exposure(get_json(config_path))
         lookup_params = {**config, **task_params}
+        logger.info(f"HELLO HARRY config = {config}\ntask_params = {task_params}\nlookup_params={lookup_params}")
         gen_files_params = OasisManager()._params_generate_oasis_files(**lookup_params)
         gen_files_params['oed_schema_info'] = config.get('oed_schema_info', get_worker_versions()['oed-schema'])
         params = paths_to_absolute_paths({**gen_files_params}, config_path)
-
         if debug_worker:
             log_params(params, kwargs, exclude_keys=[
                 'profile_loc',

@@ -20,7 +20,9 @@ from .serializers import (
     PortfolioListSerializer,
     PortfolioValidationSerializer,
     ExposureRunSerializer,
-    ExposureTransformSerializer
+    ExposureTransformSerializer,
+    CurrencyConversionSerializer,
+    ReportingCurrencySerializer
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
@@ -122,12 +124,15 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             'file_sql': FileSQLSerializer,
             'exposure_run': ExposureRunSerializer,
             'exposure_transform': ExposureTransformSerializer,
+            'currency_conversion_json': CurrencyConversionSerializer,
+            'reporting_currency': ReportingCurrencySerializer,
         }
         return action_serializer_map.get(self.action, super().get_serializer_class())
 
     @property
     def parser_classes(self):
-        upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file', 'exposure_transform']
+        upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
+                        'exposure_transform', 'currency_conversion_json']
         if getattr(self, 'action', None) in upload_views:
             return [MultiPartParser]
         else:
@@ -323,6 +328,31 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
     @action(methods=['get'], detail=True)
     def errors_file(self, request, pk=None, version=None):
         return handle_related_file(self.get_object(), 'run_errors_file', request, ['text/csv'])
+
+    @swagger_auto_schema(method='post', request_body=CurrencyConversionSerializer)
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete', 'post'], detail=True)
+    def currency_conversion_json(self, request, pk=None, version=None):
+        method = request.method.lower()
+        instance = self.get_object()
+        file_types = ['application/json', 'text/csv']
+        if method == 'delete':
+            return handle_related_file(instance, 'currency_conversion_json', request, file_types)
+        elif method == 'get':
+            return handle_related_file(instance, 'currency_conversion_json', request, file_types)
+        return handle_related_file(instance, 'currency_conversion_json', request, file_types)
+
+    @swagger_auto_schema(method='post', request_body=ReportingCurrencySerializer)
+    @action(methods=['get', 'delete', 'post'], detail=True)
+    def reporting_currency(self, request, pk=None, version=None):
+        method = request.method.lower()
+        instance = self.get_object()
+        if method == 'delete':
+            instance.reporting_currency = "NONE"
+        elif method == 'post':
+            instance.reporting_currency = request.data['reporting_currency']
+        instance.save()
+        return Response({"reporting_currency": instance.reporting_currency})
 
     # LOT3 DISABLE
     # @requires_sql_reader

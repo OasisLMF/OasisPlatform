@@ -4,7 +4,7 @@ from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
 from ..common.filestore.filestore import get_filestore
 from oasislmf.manager import OasisManager
-from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_files
+from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_exposure_files
 import os
 from celery import Celery
 from ods_tools.oed.exposure import OedExposure
@@ -24,7 +24,7 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, give
     """
     original_dir = os.getcwd()
     with TemporaryDir() as temp_dir:
-        get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir)
+        get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir)
         os.chdir(temp_dir)
         try:
             params = OasisManager()._params_run_exposure()
@@ -46,7 +46,7 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
     Returns either an error (unraised) or a possibly empty list of errors
     """
     with TemporaryDir() as temp_dir:
-        location, account, ri_info, ri_scope = get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir)
+        location, account, ri_info, ri_scope = get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir)
         portfolio_exposure = True
         portfolio_exposure = OedExposure(
             location=location,
