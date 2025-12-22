@@ -491,7 +491,6 @@ class ExposureRunParamsSerializer(serializers.Serializer):
     )
     extra_summary_cols = serializers.ListField(child=serializers.CharField(), default=[], help_text="Extra columns to include in the summary")
     ktools_alloc_rule_ri = serializers.IntegerField(default=3, help_text="Set the fmcalc allocation rule used in reinsurance")
-    reporting_currency = serializers.CharField(default=None, help_text="Currency to use in the results reported")
     check_oed = serializers.BooleanField(default=True, help_text="If True, check input OED files")
     do_disaggregation = serializers.BooleanField(default=True, help_text="If True, run the Oasis disaggregation")
     verbose = serializers.BooleanField(default=False, help_text="Use verbose logging")

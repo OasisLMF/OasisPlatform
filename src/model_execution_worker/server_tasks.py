@@ -17,19 +17,29 @@ app.config_from_object(celery_conf)
 
 
 @app.task(name='run_exposure_task')
-def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, given_params):
+def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
+                      currency_conversion_json_filepath, reporting_currency, given_params):
     """
     Returns a tuple of a file containing either the result or an error log, and a flag
     to say whether the run was successful to update the portfolio.exposure_status
     """
     original_dir = os.getcwd()
-    with TemporaryDir() as temp_dir:
-        get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir)
-        os.chdir(temp_dir)
+    with TemporaryDir() as tmpdir:
+        # Put all files in dir so that reachable for OedExposure fromdir
+        loc, acc, ri, rl, currency_conversion_json = get_all_exposure_files(
+            loc_filepath, acc_filepath, ri_filepath, rl_filepath, currency_conversion_json_filepath, tmpdir
+        )
+        os.chdir(tmpdir)
+
+        params = OasisManager()._params_run_exposure()
+        params['print_summary'] = False
+        update_params(params, given_params)
+        if reporting_currency != "NONE" and currency_conversion_json:
+            params['currency_conversion_json'] = currency_conversion_json
+            params['reporting_currency'] = reporting_currency
+        logging.info(f"Exposure run params: {params}")
+
         try:
-            params = OasisManager()._params_run_exposure()
-            params['print_summary'] = False
-            update_params(params, given_params)
             OasisManager().run_exposure(**params)
             return (get_filestore(settings).put("outfile.csv"), True)
         except Exception as e:
@@ -41,20 +51,27 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath, give
 
 
 @app.task(name='run_oed_validation')
-def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, validation_config):
+def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, validation_config, currency_conversion_filepath, reporting_currency):
     """
     Returns either an error (unraised) or a possibly empty list of errors
     """
     with TemporaryDir() as temp_dir:
-        location, account, ri_info, ri_scope = get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir)
-        portfolio_exposure = True
+        location, account, ri_info, ri_scope, currency_conversion_json = get_all_exposure_files(
+            loc_filepath, acc_filepath, ri_filepath, rl_filepath, currency_conversion_filepath, temp_dir
+        )
+        if reporting_currency == "NONE" or currency_conversion_json is None:
+            reporting_currency = None
+            currency_conversion_json = None
+
         portfolio_exposure = OedExposure(
             location=location,
             account=account,
             ri_info=ri_info,
             ri_scope=ri_scope,
             validation_config=validation_config,
-            oed_schema_info=os.environ.get("OASIS_OED_SCHEMA_INFO", None)
+            currency_conversion_json=currency_conversion_json,
+            oed_schema_info=os.environ.get("OASIS_OED_SCHEMA_INFO", None),
+            reporting_currency=reporting_currency,
         )
         try:
             res = portfolio_exposure.check()
