@@ -277,6 +277,16 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete', 'post'], detail=True)
     def currency_conversion_json(self, request, pk=None, version=None):
+        """
+        get:
+        Return currency_conversion.json attached to portfolio
+
+        delete:
+        Removes currency_conversion.json stored
+
+        post:
+        Adds a currency_conversion.json to the portfolio for analysis, exposure run or validation
+        """
         method = request.method.lower()
         instance = self.get_object()
         file_types = ['application/json', 'text/csv']
@@ -289,6 +299,16 @@ class PortfolioViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(method='post', request_body=ReportingCurrencySerializer)
     @action(methods=['get', 'delete', 'post'], detail=True)
     def reporting_currency(self, request, pk=None, version=None):
+        """
+        get:
+        Returns current portfolio reporting currency
+
+        delete:
+        Deletes current portfolio reporting currency
+
+        post:
+        adds reporting currency to portfolio
+        """
         method = request.method.lower()
         instance = self.get_object()
         if method == 'delete':

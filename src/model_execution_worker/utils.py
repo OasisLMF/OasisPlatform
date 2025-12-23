@@ -367,6 +367,20 @@ def copy_or_download(source, destination):
 
 
 def get_destination_file(filename, destination_dir, destination_title):
+    """Returns desired location for file to go into as csv or parquet (does not move the file itself!)
+
+    Args:
+        filename: name of file existing
+        destination_dir: dir to send file to
+        destination_title: name to store as
+
+    Raises:
+        ValueError: file is not csv or parquet
+
+    Returns:
+        (path) path for file
+
+    """
     _, ext = os.path.splitext(filename)
     if ext.startswith('.csv'):  # Some can be stored like '.csv_abc4def'
         return os.path.join(destination_dir, destination_title + ".csv")
@@ -375,21 +389,34 @@ def get_destination_file(filename, destination_dir, destination_title):
     raise ValueError(f"File must be either Parquet or CSV: {filename, ext}")
 
 
-def get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, conv_filepath, temp_dir):
+def get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, conv_filepath, directory):
+    """Gets all files required and puts them in directory
+
+    Args:
+        loc_filepath: filepath to find location file at
+        acc_filepath: filepath to find accounts file at
+        ri_filepath: filepath to find reinsurance info file at
+        rl_filepath: filepath to find reinsurance loss file at
+        conv_filepath: filepath to find currency_converion.json at
+        directory: place all files moved to
+
+    Returns:
+        (file, file, file, file, file): files in order of arguments
+    """
     loc_temp = acc_temp = ri_temp = rl_temp = conv_temp = None
     if loc_filepath:
-        loc_temp = get_destination_file(loc_filepath, temp_dir, "location")
+        loc_temp = get_destination_file(loc_filepath, directory, "location")
         copy_or_download(loc_filepath, loc_temp)
     if acc_filepath:
-        acc_temp = get_destination_file(acc_filepath, temp_dir, "account")
+        acc_temp = get_destination_file(acc_filepath, directory, "account")
         copy_or_download(acc_filepath, acc_temp)
     if ri_filepath:
-        ri_temp = get_destination_file(ri_filepath, temp_dir, "ri_info")
+        ri_temp = get_destination_file(ri_filepath, directory, "ri_info")
         copy_or_download(ri_filepath, ri_temp)
     if rl_filepath:
-        rl_temp = get_destination_file(rl_filepath, temp_dir, "ri_scope")
+        rl_temp = get_destination_file(rl_filepath, directory, "ri_scope")
         copy_or_download(rl_filepath, rl_temp)
     if conv_filepath:
-        conv_temp = os.path.join(temp_dir, "currency_conversion.json")
+        conv_temp = os.path.join(directory, "currency_conversion.json")
         copy_or_download(conv_filepath, conv_temp)
     return (loc_temp, acc_temp, ri_temp, rl_temp, conv_temp)

@@ -1,5 +1,5 @@
 from hypothesis.extra.django import TestCase
-from src.model_execution_worker.server_tasks import run_oed_validation, run_exposure_task, run_exposure_transform
+from src.model_execution_worker.server_tasks import run_oed_validation, run_exposure_run, run_exposure_transform
 from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output, record_exposure_output, record_transform_output
 from src.server.oasisapi.auth.tests.fakes import fake_user
 from django.conf import settings as django_settings
@@ -232,7 +232,7 @@ class ExposureRun(TestCase):
             signature = Portfolio.exposure_run_signature(mock_portfolio, "params")
             self.assertEqual(signature, "hello")
             mock_signature.assert_called_once_with(
-                'run_exposure_task',
+                'run_exposure_run',
                 args=(1, 2, 3, 4, 5, "BTC", "params"),
                 priority=10,
                 immutable=True,
@@ -249,7 +249,7 @@ class ExposureRun(TestCase):
         self.assertEqual(mock_portfolio.exposure_status, "Insufficient Data")
         mock_portfolio.save.assert_called_once_with()
 
-    def test_run_exposure_task_success(self):
+    def test_run_exposure_run_success(self):
         def side_effect(text):
             if text == "outfile.csv":
                 return "hello"
@@ -264,26 +264,26 @@ class ExposureRun(TestCase):
             mock_store.put.side_effect = side_effect
             mock_filestore.return_value = mock_store
 
-            effect, result = run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, None, None, {})
+            effect, result = run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, None, None, {})
             self.assertEqual(result, True)
             self.assertEqual(effect, "hello")
             mock_store.put.assert_called_once_with("outfile.csv")
             mock_store.reset_mock()
 
-            effect, result = run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, None, None, {})
+            effect, result = run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, None, None, None, None, {})
             self.assertEqual(result, True)
             self.assertEqual(effect, "hello")
             mock_store.put.assert_called_once_with("outfile.csv")
             mock_store.reset_mock()
 
-            effect, result = run_exposure_task(LOCATION_INVALID, ACCOUNTS_VALID, None, None, None, None, {})
+            effect, result = run_exposure_run(LOCATION_INVALID, ACCOUNTS_VALID, None, None, None, None, {})
             self.assertEqual(result, False)
             self.assertEqual(effect, "world")
             mock_store.put.assert_called_once_with("error.txt")
 
             self.assertEqual(dir, os.getcwd())
 
-    def test_run_exposure_task_output_no_conversion(self):
+    def test_run_exposure_run_output_no_conversion(self):
         def side_effect(arg):
             assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_EXPOSURE)
 
@@ -292,9 +292,9 @@ class ExposureRun(TestCase):
             mock_store.put.side_effect = side_effect
             mock_filestore.return_value = mock_store
 
-            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, None, None, {})
+            run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, None, None, None, None, {})
 
-    def test_run_exposure_task_output_with_conversion(self):
+    def test_run_exposure_run_output_with_conversion(self):
         def side_effect(arg):
             assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_USD)
 
@@ -303,9 +303,9 @@ class ExposureRun(TestCase):
             mock_store.put.side_effect = side_effect
             mock_filestore.return_value = mock_store
 
-            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, CURRENCY_SETTINGS, "USD", {})
+            run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, None, None, CURRENCY_SETTINGS, "USD", {})
 
-    def test_run_exposure_task_output_ri_rl_no_conversion(self):
+    def test_run_exposure_run_output_ri_rl_no_conversion(self):
         def side_effect(arg):
             with open("outfile.csv", "r") as f:
                 print(f.readlines())
@@ -316,9 +316,9 @@ class ExposureRun(TestCase):
             mock_store.put.side_effect = side_effect
             mock_filestore.return_value = mock_store
 
-            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, None, None, {})
+            run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, None, None, {})
 
-    def test_run_exposure_task_output_ri_rl_with_conversion(self):
+    def test_run_exposure_run_output_ri_rl_with_conversion(self):
         def side_effect(arg):
             assert filecmp.cmp("outfile.csv", EXPECTED_ALL_USD)
 
@@ -327,7 +327,7 @@ class ExposureRun(TestCase):
             mock_store.put.side_effect = side_effect
             mock_filestore.return_value = mock_store
 
-            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, CURRENCY_SETTINGS, "USD", {})
+            run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, CURRENCY_SETTINGS, "USD", {})
 
     def test_record_exposure_output(self):
         mock_portfolio_get = MagicMock()
@@ -397,8 +397,8 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
             'currency_conversion_json': None,
             'reporting_currency': None
         }
-        run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, currency_conversion_json, reporting_currency,
-                          {**allowed_params, **disallowed_params})
+        run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, None, None, currency_conversion_json, reporting_currency,
+                         {**allowed_params, **disallowed_params})
         args, kwargs = fake_manager.return_value.run_exposure.call_args
         assert args == ()
         for k, v in allowed_params.items():

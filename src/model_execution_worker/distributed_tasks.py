@@ -335,7 +335,7 @@ def keys_generation_task(fn):
         params.setdefault('lookup_complex_config_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
         params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
-        # Generate keys filesprepare_k
+        # Generate keys files
         params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
         params.setdefault('keys_errors_fp', os.path.join(params['root_run_dir'], 'keys-errors.csv'))
 

@@ -237,7 +237,7 @@ class Portfolio(TimeStampedModel):
         reporting_currency = self.reporting_currency
 
         return celery_app_v2.signature(
-            'run_exposure_task',
+            'run_exposure_run',
             args=(location, account, ri_info, ri_scope, currency_conversion_json, reporting_currency, params),
             priority=10,
             immutable=True,

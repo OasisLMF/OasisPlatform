@@ -16,12 +16,21 @@ app = Celery()
 app.config_from_object(celery_conf)
 
 
-@app.task(name='run_exposure_task')
-def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
-                      currency_conversion_json_filepath, reporting_currency, given_params):
+@app.task(name='run_exposure_run')
+def run_exposure_run(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
+                     currency_conversion_json_filepath, reporting_currency, given_params):
     """
-    Returns a tuple of a file containing either the result or an error log, and a flag
-    to say whether the run was successful to update the portfolio.exposure_status
+    Performs an exposure run
+    Args:
+        loc_filepath: path to location file or None
+        acc_filepath: path to accounts file or None
+        ri_filepath: path to ri file or None
+        rl_filepath: path to rl file or None
+        currency_conversion_json_filepath: path to currency_conversion_json or None
+        reporting_currency: currency to use with currency_conversion_json or "NONE"
+        given_params: run parameters for exposure run (e.g. {'check_oed': False})
+    Returns:
+        (Path, Boolean): Path to exposure file or errors file, with boolean flag for success
     """
     original_dir = os.getcwd()
     with TemporaryDir() as tmpdir:
@@ -37,7 +46,7 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
             params['currency_conversion_json'] = currency_conversion_json
             params['reporting_currency'] = reporting_currency
 
-        logging.info(f"Exposure run params: {params}")
+        logging.debug(f"Exposure run params: {params}")
 
         try:
             OasisManager().run_exposure(**params)
@@ -53,7 +62,16 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
 @app.task(name='run_oed_validation')
 def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, validation_config, currency_conversion_filepath, reporting_currency):
     """
-    Returns either an error (unraised) or a possibly empty list of errors
+    Performs an oed validation on the given data
+    Args:
+        loc_filepath: path to location file or None
+        acc_filepath: path to accounts file or None
+        ri_filepath: path to ri file or None
+        rl_filepath: path to rl file or None
+        currency_conversion_filepath: path to currency_conversion_json or None
+        reporting_currency: currency to use with currency_conversion_json or "NONE"
+    Returns:
+        list[str] | str: errors in validation (empty list = no errors)
     """
     with TemporaryDir() as temp_dir:
         location, account, ri_info, ri_scope, currency_conversion_json = get_all_exposure_files(
@@ -84,7 +102,12 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
 @app.task(name='run_exposure_transform')
 def run_exposure_transform(filepath, mapping_file):
     """
-    Returns a tuple of a file and a boolean flag of success
+    Transforms a file from one format to OED
+    args:
+        filepath: location of file to transform
+        mapping_file: file determining how transform is made
+    returns:
+        (file | error, Boolean): result file/error and boolean flag for success
     """
     with TemporaryDir() as temp_dir:
         local_file = get_destination_file(filepath, temp_dir, 'local_file')
