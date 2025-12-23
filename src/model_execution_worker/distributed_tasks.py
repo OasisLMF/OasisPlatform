@@ -436,7 +436,7 @@ def prepare_input_generation_params(
     from oasislmf.manager import OasisManager
     gen_files_params = OasisManager()._params_generate_oasis_files(**lookup_params)
     params = paths_to_absolute_paths({**gen_files_params}, config_path)
-    params['oed_schema_info'] = gen_files_params.get('oed_schema_info', None)
+    params['oed_schema_info'] = gen_files_params.get('oed_schema_info', None) or os.environ.get('OASIS_OED_SCHEMA_INFO', None)
 
     params['log_storage'] = dict()
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -858,7 +858,7 @@ def prepare_losses_generation_params(
     from oasislmf.manager import OasisManager
     gen_losses_params = OasisManager()._params_generate_oasis_losses(**run_params)
     params = paths_to_absolute_paths({**gen_losses_params}, config_path)
-    params['oed_schema_info'] = gen_losses_params.get('oed_schema_info', None)
+    params['oed_schema_info'] = gen_losses_params.get('oed_schema_info', None) or os.environ.get('OASIS_OED_SCHEMA_INFO', None)
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['verbose'] = debug_worker
