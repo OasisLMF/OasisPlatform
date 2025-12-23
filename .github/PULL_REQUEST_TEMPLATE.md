@@ -1,5 +1,3 @@
-**IMPORTANT: Please attach or create an issue after submitting a Pull Request.
-
 <!--start_release_notes-->
 ### Release notes feature title 
 ... Release notes description / summary 
