@@ -169,12 +169,11 @@ class PortfolioApi(WebTestMixin, TestCase):
                         'converted_uri': None,
                     },
                     'storage_links': response.request.application_url + portfolio.get_absolute_storage_url(namespace=NAMESPACE),
-                    'run_errors_file': None,
-                    'mapping_file': None,
-                    'transform_file': None,
                     'exposure_status': "NONE",
                     'validation_status': "NONE",
                     'exposure_transform_status': "NONE",
+                    'currency_conversion_json': None,
+                    'reporting_currency': "NONE"
                 }, response.json)
 
     @pytest.mark.skip(reason="LOT3 DISABLE")

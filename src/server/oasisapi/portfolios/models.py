@@ -93,6 +93,9 @@ class Portfolio(TimeStampedModel):
                                      default=None, related_name='mapping_file_portfolios')
     run_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                         default=None, related_name='errors_file_portfolios')
+    currency_conversion_json = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                                 default=None, related_name='currency_conversion_json')
+    reporting_currency = models.CharField(default="NONE", editable=False)
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
@@ -135,6 +138,10 @@ class Portfolio(TimeStampedModel):
     def get_absolute_reinsurance_scope_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}portfolio-reinsurance-scope-file', kwargs={'pk': self.pk}, request=request)
+
+    def get_absolute_currency_conversion_json_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-currency-conversion-json', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_storage_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
@@ -204,11 +211,13 @@ class Portfolio(TimeStampedModel):
         account = get_path_or_url(self.accounts_file)
         ri_info = get_path_or_url(self.reinsurance_info_file)
         ri_scope = get_path_or_url(self.reinsurance_scope_file)
+        currency_conversion = get_path_or_url(self.currency_conversion_json)
+        reporting_currency = self.reporting_currency
         validation_config = settings.PORTFOLIO_VALIDATION_CONFIG
 
         return celery_app_v2.signature(
             'run_oed_validation',
-            args=(location, account, ri_info, ri_scope, validation_config),
+            args=(location, account, ri_info, ri_scope, validation_config, currency_conversion, reporting_currency),
             priority=10,
             immutable=True,
             queue='oasis-internal-worker'
@@ -218,16 +227,18 @@ class Portfolio(TimeStampedModel):
         if not self.location_file or not self.accounts_file:
             self.exposure_status = self.exposure_status_choices.INSUFFICIENT_DATA
             self.save()
-            raise ValidationError("Exposure run requires a location and an accounts file!")
+            raise ValidationError("Exposure run requires a location file and an accounts file!")
 
         location = get_path_or_url(self.location_file)
         account = get_path_or_url(self.accounts_file)
         ri_info = get_path_or_url(self.reinsurance_info_file)
         ri_scope = get_path_or_url(self.reinsurance_scope_file)
+        currency_conversion_json = get_path_or_url(self.currency_conversion_json)
+        reporting_currency = self.reporting_currency
 
         return celery_app_v2.signature(
-            'run_exposure_task',
-            args=(location, account, ri_info, ri_scope, params),
+            'run_exposure_run',
+            args=(location, account, ri_info, ri_scope, currency_conversion_json, reporting_currency, params),
             priority=10,
             immutable=True,
             queue='oasis-internal-worker'
