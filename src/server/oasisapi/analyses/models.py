@@ -403,7 +403,8 @@ class Analysis(TimeStampedModel):
 
         return celery_app_v1.signature(
             'generate_input',
-            args=(self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files, currency_conversion_json, reporting_currency),
+            args=(self.pk, loc_file, acc_file, info_file, scope_file,
+                  settings_file, complex_data_files, currency_conversion_json, reporting_currency),
             queue=self.model.queue_name,
         )
 
