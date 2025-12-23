@@ -30,13 +30,13 @@ def run_exposure_task(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
             loc_filepath, acc_filepath, ri_filepath, rl_filepath, currency_conversion_json_filepath, tmpdir
         )
         os.chdir(tmpdir)
-
         params = OasisManager()._params_run_exposure()
         params['print_summary'] = False
         update_params(params, given_params)
         if reporting_currency != "NONE" and currency_conversion_json:
             params['currency_conversion_json'] = currency_conversion_json
             params['reporting_currency'] = reporting_currency
+
         logging.info(f"Exposure run params: {params}")
 
         try:
@@ -63,17 +63,17 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
             reporting_currency = None
             currency_conversion_json = None
 
-        portfolio_exposure = OedExposure(
-            location=location,
-            account=account,
-            ri_info=ri_info,
-            ri_scope=ri_scope,
-            validation_config=validation_config,
-            currency_conversion_json=currency_conversion_json,
-            oed_schema_info=os.environ.get("OASIS_OED_SCHEMA_INFO", None),
-            reporting_currency=reporting_currency,
-        )
         try:
+            portfolio_exposure = OedExposure(
+                location=location,
+                account=account,
+                ri_info=ri_info,
+                ri_scope=ri_scope,
+                validation_config=validation_config,
+                currency_conversion=currency_conversion_json,
+                oed_schema_info=os.environ.get("OASIS_OED_SCHEMA_INFO", None),
+                reporting_currency=reporting_currency,
+            )
             res = portfolio_exposure.check()
             return [str(e) for e in res]
         except Exception as e:

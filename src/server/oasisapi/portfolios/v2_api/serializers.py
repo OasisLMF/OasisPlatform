@@ -120,9 +120,6 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'accounts_file',
             'reinsurance_info_file',
             'reinsurance_scope_file',
-            'run_errors_file',
-            'mapping_file',
-            'transform_file',
             'storage_links',
             'exposure_status',
             'validation_status',
@@ -480,10 +477,13 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
 class ExposureRunParamsSerializer(serializers.Serializer):
     """ The expected structure for the `params` field """
     ktools_alloc_rule_il = serializers.IntegerField(default=2, help_text="Set the fmcalc allocation rule used in direct insured loss")
-    model_perils_covered = serializers.CharField(default='AA1', help_text="List of perils covered by the model")
+    model_perils_covered = serializers.ListField(default=['AA1'], help_text="List of perils covered by the model")
     loss_factor = serializers.ListField(child=serializers.FloatField(), default=[1.0], help_text="Loss factor")
     supported_oed_coverage_types = serializers.ListField(
-        child=serializers.IntegerField(), default=None, help_text="Select List of supported coverage_types [1, .. ,15]"
+        child=serializers.IntegerField(min_value=1, max_value=15),
+        required=False,
+        allow_null=True,
+        default=None
     )
     fmpy_sort_output = serializers.BooleanField(default=True, help_text="Order fmpy output by item_id")
     fmpy_low_memory = serializers.BooleanField(

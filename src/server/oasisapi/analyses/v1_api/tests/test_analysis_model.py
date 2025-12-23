@@ -248,5 +248,5 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig = analysis.v1_generate_input_signature
 
                 self.assertEqual(sig.task, 'generate_input')
-                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))
+                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, [], None, "NONE"))
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)

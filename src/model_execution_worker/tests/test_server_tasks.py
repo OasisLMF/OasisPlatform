@@ -19,6 +19,11 @@ RI_INFO_VALID = os.path.join(TEST_DIR, "inputs", "ri_info.csv")
 RI_SCOPE_VALID = os.path.join(TEST_DIR, "inputs", "ri_scope.csv")
 LOCATION_INVALID = os.path.join(TEST_DIR, "inputs", "location_invalid.csv")
 CONFIG = django_settings.PORTFOLIO_VALIDATION_CONFIG
+CURRENCY_SETTINGS = os.path.join(TEST_DIR, "inputs", "currency_config.json")
+EXPECTED_ALL_EXPOSURE = os.path.join(TEST_DIR, "inputs", "expected_output_all.csv")
+EXPECTED_ALL_USD = os.path.join(TEST_DIR, "inputs", "expected_output_all_usd.csv")
+EXPECTED_ACC_LOC_EXPOSURE = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc.csv")
+EXPECTED_ACC_LOC_USD = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc_usd.csv")
 
 
 class PortfolioValidation(TestCase):
@@ -37,20 +42,21 @@ class PortfolioValidation(TestCase):
 
     def test_signature_creation(self):
         mock_portfolio = MagicMock()
-        with (patch("src.server.oasisapi.portfolios.models.get_path_or_url", side_effect=[1, 2, 3, 4]),
+        mock_portfolio.reporting_currency = "Riot Points"
+        with (patch("src.server.oasisapi.portfolios.models.get_path_or_url", side_effect=[1, 2, 3, 4, 5]),
               patch("src.server.oasisapi.portfolios.models.celery_app_v2.signature", return_value="hello") as mock_signature):
             signature = Portfolio.run_oed_validation_signature(mock_portfolio)
             self.assertEqual(signature, "hello")
             mock_signature.assert_called_once_with(
                 'run_oed_validation',
-                args=(1, 2, 3, 4, django_settings.PORTFOLIO_VALIDATION_CONFIG),
+                args=(1, 2, 3, 4, django_settings.PORTFOLIO_VALIDATION_CONFIG, 5, "Riot Points"),
                 priority=10,
                 immutable=True,
                 queue='oasis-internal-worker'
             )
 
     def test_all_exposure__are_valid(self):
-        validation_errors = run_oed_validation(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, CONFIG)
+        validation_errors = run_oed_validation(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, CONFIG, None, None)
         assert validation_errors == []
         fake_portfolio = MagicMock()
         with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio) as mock_get:
@@ -83,7 +89,7 @@ class PortfolioValidation(TestCase):
             assert mock_save.call_count == 1
 
     def test_location_file__is_valid(self):
-        validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG)
+        validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, None, None)
         assert validation_errors == []
         fake_portfolio = MagicMock()
         with patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio) as mock_get:
@@ -108,7 +114,7 @@ class PortfolioValidation(TestCase):
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_location_file__is_invalid(self, mock_oed_cob_workaround):
-        validation_errors = run_oed_validation(LOCATION_INVALID, None, None, None, CONFIG)
+        validation_errors = run_oed_validation(LOCATION_INVALID, None, None, None, CONFIG, None, None)
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
@@ -127,7 +133,7 @@ class PortfolioValidation(TestCase):
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_account_file__is_invalid(self, mock_oed_cob_workaround):
-        validation_errors = run_oed_validation(None, LOCATION_VALID, None, None, CONFIG)
+        validation_errors = run_oed_validation(None, LOCATION_VALID, None, None, CONFIG, None, None)
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
@@ -146,7 +152,7 @@ class PortfolioValidation(TestCase):
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_info_file__is_invalid(self, mock_oed_cob_workaround):
-        validation_errors = run_oed_validation(None, None, LOCATION_VALID, None, CONFIG)
+        validation_errors = run_oed_validation(None, None, LOCATION_VALID, None, CONFIG, None, None)
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
@@ -165,7 +171,7 @@ class PortfolioValidation(TestCase):
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_scope_file__is_invalid(self, mock_oed_cob_workaround):
-        validation_errors = run_oed_validation(None, None, None, LOCATION_VALID, CONFIG)
+        validation_errors = run_oed_validation(None, None, None, LOCATION_VALID, CONFIG, None, None)
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
@@ -181,6 +187,26 @@ class PortfolioValidation(TestCase):
                 mock_oed_cob_workaround.assert_called_once_with(validation_errors)
                 assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
                 fake_portfolio.save.assert_called_once()
+
+    def test_passes_with_reporting_currency(self):
+        validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, None, "USD")
+        assert validation_errors == []
+
+    def test_passes_with_currency_conversion(self):
+        validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, CURRENCY_SETTINGS, None)
+        assert validation_errors == []
+
+    def test_passes_with_valid_json_and_reporting(self):
+        validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, CURRENCY_SETTINGS, "USD")
+        assert validation_errors == []
+
+    def test_fails_with_invalid_json(self):
+        validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, LOCATION_VALID, "USD")
+        assert validation_errors != []
+
+    def test_fails_with_invalid_reporting(self):
+        validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, CURRENCY_SETTINGS, "Emeralds")
+        assert validation_errors != []
 
 
 class ExposureRun(TestCase):
@@ -200,13 +226,14 @@ class ExposureRun(TestCase):
     def test_signature_creation(self):
         mock_portfolio = MagicMock()
         mock_portfolio.location_file = True
-        with (patch("src.server.oasisapi.portfolios.models.get_path_or_url", side_effect=[1, 2, 3, 4]),
+        mock_portfolio.reporting_currency = "BTC"
+        with (patch("src.server.oasisapi.portfolios.models.get_path_or_url", side_effect=[1, 2, 3, 4, 5]),
               patch("src.server.oasisapi.portfolios.models.celery_app_v2.signature", return_value="hello") as mock_signature):
             signature = Portfolio.exposure_run_signature(mock_portfolio, "params")
             self.assertEqual(signature, "hello")
             mock_signature.assert_called_once_with(
                 'run_exposure_task',
-                args=(1, 2, 3, 4, "params"),
+                args=(1, 2, 3, 4, 5, "BTC", "params"),
                 priority=10,
                 immutable=True,
                 queue='oasis-internal-worker'
@@ -237,35 +264,70 @@ class ExposureRun(TestCase):
             mock_store.put.side_effect = side_effect
             mock_filestore.return_value = mock_store
 
-            effect, result = run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, {})
+            effect, result = run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, None, None, {})
             self.assertEqual(result, True)
             self.assertEqual(effect, "hello")
             mock_store.put.assert_called_once_with("outfile.csv")
             mock_store.reset_mock()
 
-            effect, result = run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, {})
+            effect, result = run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, None, None, {})
             self.assertEqual(result, True)
             self.assertEqual(effect, "hello")
             mock_store.put.assert_called_once_with("outfile.csv")
             mock_store.reset_mock()
 
-            effect, result = run_exposure_task(LOCATION_INVALID, ACCOUNTS_VALID, None, None, {})
+            effect, result = run_exposure_task(LOCATION_INVALID, ACCOUNTS_VALID, None, None, None, None, {})
             self.assertEqual(result, False)
             self.assertEqual(effect, "world")
             mock_store.put.assert_called_once_with("error.txt")
 
             self.assertEqual(dir, os.getcwd())
 
-    def test_run_exposure_task_output(self):
+    def test_run_exposure_task_output_no_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", os.path.join(TEST_DIR, "inputs", "expected_output.csv"))
+            assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_EXPOSURE)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
             mock_store.put.side_effect = side_effect
             mock_filestore.return_value = mock_store
 
-            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, {})
+            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, None, None, {})
+
+    def test_run_exposure_task_output_with_conversion(self):
+        def side_effect(arg):
+            assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_USD)
+
+        with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
+            mock_store = MagicMock()
+            mock_store.put.side_effect = side_effect
+            mock_filestore.return_value = mock_store
+
+            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, CURRENCY_SETTINGS, "USD", {})
+
+    def test_run_exposure_task_output_ri_rl_no_conversion(self):
+        def side_effect(arg):
+            with open("outfile.csv", "r") as f:
+                print(f.readlines())
+            assert filecmp.cmp("outfile.csv", EXPECTED_ALL_EXPOSURE)
+
+        with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
+            mock_store = MagicMock()
+            mock_store.put.side_effect = side_effect
+            mock_filestore.return_value = mock_store
+
+            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, None, None, {})
+
+    def test_run_exposure_task_output_ri_rl_with_conversion(self):
+        def side_effect(arg):
+            assert filecmp.cmp("outfile.csv", EXPECTED_ALL_USD)
+
+        with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
+            mock_store = MagicMock()
+            mock_store.put.side_effect = side_effect
+            mock_filestore.return_value = mock_store
+
+            run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, CURRENCY_SETTINGS, "USD", {})
 
     def test_record_exposure_output(self):
         mock_portfolio_get = MagicMock()
@@ -287,6 +349,72 @@ class ExposureRun(TestCase):
             record_exposure_output((None, False), 28, 29)
             mock_portfolio.save.assert_called_once_with()
             self.assertEqual(mock_portfolio.exposure_status, "ERROR")
+
+
+@pytest.mark.parametrize(
+    "currency_conversion_json, reporting_currency",
+    [
+        (None, "NONE"),
+        (None, "world"),
+        (CURRENCY_SETTINGS, "NONE"),
+        (CURRENCY_SETTINGS, "world"),
+    ]
+)
+def test_exposure_run_params(currency_conversion_json, reporting_currency):
+    allowed_params = {
+        'ktools_alloc_rule_il': 1,
+        'model_perils_covered': 2,
+        'loss_factor': 3,
+        'supported_oed_coverage_types': 4,
+        'fmpy_sort_output': 5,
+        'fmpy_low_memory': 6,
+        'extra_summary_cols': 7,
+        'ktools_alloc_rule_ri': 8,
+        'check_oed': 9,
+        'do_disaggregation': 10,
+        'verbose': 11
+    }
+    disallowed_params = {
+        'fake_param': 'not allowed',
+        'six': 'seven',
+        'reporting_currency': 'endpoint_only'
+    }
+    with (patch("src.model_execution_worker.server_tasks.OasisManager") as fake_manager,
+            patch('src.model_execution_worker.server_tasks.get_filestore') as _):
+        fake_manager.return_value._params_run_exposure.return_value = {
+            'ktools_alloc_rule_il': "a",
+            'model_perils_covered': "b",
+            'loss_factor': "c",
+            'supported_oed_coverage_types': "d",
+            'fmpy_sort_output': "e",
+            'fmpy_low_memory': "f",
+            'extra_summary_cols': "g",
+            'ktools_alloc_rule_ri': "h",
+            'check_oed': "i",
+            'do_disaggregation': "j",
+            'verbose': "k",
+            'log_level': "l",
+            'currency_conversion_json': None,
+            'reporting_currency': None
+        }
+        run_exposure_task(LOCATION_VALID, ACCOUNTS_VALID, None, None, currency_conversion_json, reporting_currency,
+                          {**allowed_params, **disallowed_params})
+        args, kwargs = fake_manager.return_value.run_exposure.call_args
+        assert args == ()
+        for k, v in allowed_params.items():
+            assert kwargs[k] == v
+        for k, v in disallowed_params.items():
+            if k in kwargs:
+                assert kwargs[k] != v
+        assert 'log_level' in kwargs
+        assert kwargs['output_file'] == 'outfile.csv'
+        assert not kwargs['print_summary'] and kwargs['print_summary'] is not None
+        if reporting_currency == "NONE" or currency_conversion_json is None:
+            assert kwargs['reporting_currency'] is None
+            assert kwargs['currency_conversion_json'] is None
+        else:
+            assert kwargs['reporting_currency'] == reporting_currency
+            assert 'currency_conversion_json' in kwargs
 
 
 class Transform(TestCase):
