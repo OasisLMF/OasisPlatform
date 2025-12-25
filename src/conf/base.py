@@ -13,20 +13,29 @@ BROKER_URL = settings.get(
     )
 )
 
-#: Celery config - result backend URI
-CELERY_RESULTS_DB_BACKEND = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')
-if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
-    CELERY_RESULT_BACKEND = '{DB_ENGINE}:///{DB_NAME}'.format(
-        DB_ENGINE=CELERY_RESULTS_DB_BACKEND,
-        DB_NAME=settings.get('celery', 'db_name', fallback='celery.db.sqlite'),
-    )
-else:
-    CELERY_RESULT_BACKEND = '{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}{SSL_MODE}'.format(
-        DB_ENGINE=settings.get('celery', 'db_engine'),
-        DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
-        DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
-        DB_HOST=settings.get('celery', 'db_host'),
-        DB_PORT=settings.get('celery', 'db_port'),
-        DB_NAME=settings.get('celery', 'db_name', fallback='celery'),
-        SSL_MODE=settings.get('celery', 'db_ssl_mode', fallback='?sslmode=prefer'),
-    )
+
+CELERY_RESULT_BACKEND = "src.conf.custom_celery_db.backends.AuthTokenDatabaseBackend"
+CELERY_BACKEND_TOKEN_CLASS = "src.conf.custom_celery_db.token_providers.StaticTokenProvider"
+CELERY_BACKEND_TOKEN_CONFIG = {
+    #'token': urllib.parse.quote(settings.get('celery', 'db_pass')),
+    'token': 'INVALID',
+}
+
+
+##: Celery config - result backend URI
+#CELERY_RESULTS_DB_BACKEND = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')
+#if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
+#    CELERY_RESULT_BACKEND = '{DB_ENGINE}:///{DB_NAME}'.format(
+#        DB_ENGINE=CELERY_RESULTS_DB_BACKEND,
+#        DB_NAME=settings.get('celery', 'db_name', fallback='celery.db.sqlite'),
+#    )
+#else:
+#    CELERY_RESULT_BACKEND = '{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}{SSL_MODE}'.format(
+#        DB_ENGINE=settings.get('celery', 'db_engine'),
+#        DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
+#        DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
+#        DB_HOST=settings.get('celery', 'db_host'),
+#        DB_PORT=settings.get('celery', 'db_port'),
+#        DB_NAME=settings.get('celery', 'db_name', fallback='celery'),
+#        SSL_MODE=settings.get('celery', 'db_ssl_mode', fallback='?sslmode=prefer'),
+#    )
