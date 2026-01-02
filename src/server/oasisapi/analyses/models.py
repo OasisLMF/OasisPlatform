@@ -400,7 +400,7 @@ class Analysis(TimeStampedModel):
         complex_data_files = self.create_complex_model_data_file_dicts()
         currency_conversion_json = file_storage_link(self.portfolio.currency_conversion_json)
         reporting_currency = self.portfolio.reporting_currency
-        if currency_conversion_json is None or reporting_currency == "None":
+        if currency_conversion_json is None or reporting_currency == "None":  # Ensure old models which cant handle **kwargs are fine
             kwargs = {}
         else:
             kwargs = {'currency_conversion_json': currency_conversion_json, 'reporting_currency': reporting_currency}

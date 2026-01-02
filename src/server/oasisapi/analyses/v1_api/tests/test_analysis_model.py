@@ -240,7 +240,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     self.assertEqual(Analysis.status_choices.NEW, analysis.status)
                     self.assertFalse(res_factory.revoke_called)
 
-    def test_v1_generate_input_signature_is_correct(self):
+    def test_v1_generate_input_signature_is_correct_no_conversion(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 analysis = fake_analysis(portfolio=fake_portfolio(location_file=fake_related_file()))
@@ -248,5 +248,22 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig = analysis.v1_generate_input_signature
 
                 self.assertEqual(sig.task, 'generate_input')
-                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, [], None, "NONE"))
+                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))
+                self.assertEqual(sig.kwargs, {})
+                self.assertEqual(sig.options['queue'], analysis.model.queue_name)
+
+    def test_v1_generate_input_signature_is_correct_conversion(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                portfolio = fake_portfolio(location_file=fake_related_file())
+                portfolio.currency_conversion_json = fake_related_file()
+                portfolio.reporting_currency = "world"
+
+                analysis = fake_analysis(portfolio=portfolio)
+
+                sig = analysis.v1_generate_input_signature
+
+                self.assertEqual(sig.task, 'generate_input')
+                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))
+                self.assertEqual(sig.kwargs, {portfolio.currency_conversion_json, portfolio.reporting_currency})
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)
