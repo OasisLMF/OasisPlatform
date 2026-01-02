@@ -208,6 +208,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
     location_file = serializers.SerializerMethodField()
     reinsurance_info_file = serializers.SerializerMethodField()
     reinsurance_scope_file = serializers.SerializerMethodField()
+    currency_conversion_json = serializers.SerializerMethodField()
 
     class Meta:
         ref_name = __qualname__.split('.')[0] + 'V1'
@@ -217,6 +218,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             'accounts_file',
             'reinsurance_info_file',
             'reinsurance_scope_file',
+            'currency_conversion_json'
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
