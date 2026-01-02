@@ -143,6 +143,10 @@ class Portfolio(TimeStampedModel):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}portfolio-currency-conversion-json', kwargs={'pk': self.pk}, request=request)
 
+    def get_absolute_reporting_currency_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-reporting-currency', kwargs={'pk': self.pk}, request=request)
+
     def get_absolute_storage_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}portfolio-storage-links', kwargs={'pk': self.pk}, request=request)

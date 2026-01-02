@@ -24,6 +24,7 @@ EXPECTED_ALL_EXPOSURE = os.path.join(TEST_DIR, "inputs", "expected_output_all.cs
 EXPECTED_ALL_USD = os.path.join(TEST_DIR, "inputs", "expected_output_all_usd.csv")
 EXPECTED_ACC_LOC_EXPOSURE = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc.csv")
 EXPECTED_ACC_LOC_USD = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc_usd.csv")
+EXPECTED_LOSS_HALF = os.path.join(TEST_DIR, "inputs", "expected_loss_factor_half.csv")
 
 
 class PortfolioValidation(TestCase):
@@ -307,8 +308,6 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_ri_rl_no_conversion(self):
         def side_effect(arg):
-            with open("outfile.csv", "r") as f:
-                print(f.readlines())
             assert filecmp.cmp("outfile.csv", EXPECTED_ALL_EXPOSURE)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
@@ -350,6 +349,17 @@ class ExposureRun(TestCase):
             mock_portfolio.save.assert_called_once_with()
             self.assertEqual(mock_portfolio.exposure_status, "ERROR")
 
+    def test_run_with_different_parameters(self):
+        def side_effect(arg):
+            assert filecmp.cmp("outfile.csv", EXPECTED_LOSS_HALF)
+
+        with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
+            mock_store = MagicMock()
+            mock_store.put.side_effect = side_effect
+            mock_filestore.return_value = mock_store
+
+            run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, RI_INFO_VALID, RI_SCOPE_VALID, None, None, {"loss_factor": [0.5]})
+
 
 @pytest.mark.parametrize(
     "currency_conversion_json, reporting_currency",
@@ -362,40 +372,40 @@ class ExposureRun(TestCase):
 )
 def test_exposure_run_params(currency_conversion_json, reporting_currency):
     allowed_params = {
-        'ktools_alloc_rule_il': 1,
-        'model_perils_covered': 2,
-        'loss_factor': 3,
-        'supported_oed_coverage_types': 4,
-        'fmpy_sort_output': 5,
-        'fmpy_low_memory': 6,
-        'extra_summary_cols': 7,
-        'ktools_alloc_rule_ri': 8,
-        'check_oed': 9,
-        'do_disaggregation': 10,
-        'verbose': 11
+        'ktools_alloc_rule_il': 2,
+        'model_perils_covered': 3,
+        'loss_factor': 5,
+        'fmpy_sort_output': 7,
+        'fmpy_low_memory': 11,
+        'extra_summary_cols': 13,
+        'ktools_alloc_rule_ri': 17,
+        'check_oed': 19,
+        'do_disaggregation': 23,
+        'verbose': 29
     }
     disallowed_params = {
         'fake_param': 'not allowed',
         'six': 'seven',
-        'reporting_currency': 'endpoint_only'
+        'reporting_currency': 'endpoint_only',
+        'supported_oed_coverage_types': [0],
     }
     with (patch("src.model_execution_worker.server_tasks.OasisManager") as fake_manager,
             patch('src.model_execution_worker.server_tasks.get_filestore') as _):
         fake_manager.return_value._params_run_exposure.return_value = {
-            'ktools_alloc_rule_il': "a",
-            'model_perils_covered': "b",
-            'loss_factor': "c",
-            'supported_oed_coverage_types': "d",
-            'fmpy_sort_output': "e",
-            'fmpy_low_memory': "f",
-            'extra_summary_cols': "g",
-            'ktools_alloc_rule_ri': "h",
-            'check_oed': "i",
-            'do_disaggregation': "j",
-            'verbose': "k",
-            'log_level': "l",
-            'currency_conversion_json': None,
-            'reporting_currency': None
+            'ktools_alloc_rule_il': "H",
+            'model_perils_covered': "e",
+            'loss_factor': "l",
+            'supported_oed_coverage_types': "l",
+            'fmpy_sort_output': "o",
+            'fmpy_low_memory': " ",
+            'extra_summary_cols': "W",
+            'ktools_alloc_rule_ri': "o",
+            'check_oed': "r",
+            'do_disaggregation': "l",
+            'verbose': "d",
+            'log_level': "!",
+            'reporting_currency': None,
+            'currency_conversion_json': None
         }
         run_exposure_run(LOCATION_VALID, ACCOUNTS_VALID, None, None, currency_conversion_json, reporting_currency,
                          {**allowed_params, **disallowed_params})
@@ -408,13 +418,13 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
                 assert kwargs[k] != v
         assert 'log_level' in kwargs
         assert kwargs['output_file'] == 'outfile.csv'
-        assert not kwargs['print_summary'] and kwargs['print_summary'] is not None
+        assert kwargs['print_summary'] is False  # Making sure it isn't false-y
         if reporting_currency == "NONE" or currency_conversion_json is None:
             assert kwargs['reporting_currency'] is None
             assert kwargs['currency_conversion_json'] is None
         else:
             assert kwargs['reporting_currency'] == reporting_currency
-            assert 'currency_conversion_json' in kwargs
+            assert 'currency_conversion_json' in kwargs and kwargs['currency_conversion_json'] is not None  # will be a weird filepath
 
 
 class Transform(TestCase):

@@ -3,6 +3,7 @@ import mimetypes
 import string
 import io
 import pandas as pd
+import pytest
 
 from backports.tempfile import TemporaryDirectory
 from django.test import override_settings
@@ -928,6 +929,110 @@ class PortfolioReinsuranceInfoFile(WebTestMixin, TestCase):
                     input_data.ri_info.dataframe)
 
 
+class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        portfolio = fake_portfolio()
+
+        response = self.app.get(portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE), expect_errors=True)
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_currency_conversion_json_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.get(
+            portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_currency_conversion_json_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.delete(
+            portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_currency_conversion_json_is_not_a_valid_format___response_is_400(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file.tar', b'content'),
+                    ),
+                    expect_errors=True,
+                )
+
+                self.assertEqual(400, response.status_code)
+
+    @given(file_content=binary(min_size=1), content_type=sampled_from(['application/json']))
+    def test_currency_conversion_json_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                )
+
+                response = self.app.get(
+                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, file_content)
+                self.assertEqual(response.content_type, content_type)
+
+    def test_currency_conversion_json_invalid_uploaded___parquet_exception_raised(self):
+        content_type = 'text/csv'
+        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
+        file_content = test_data.to_csv(index=False).encode('utf-8')
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                response = self.app.post(
+                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                    ),
+                    expect_errors=True
+                )
+                self.assertEqual(400, response.status_code)
+
+
 LOCATION_DATA_VALID = """PortNumber,AccNumber,LocNumber,IsTenant,BuildingID,CountryCode,Latitude,Longitude,StreetAddress,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion
 1,A11111,10002082046,1,1,GB,52.76698052,-0.895469856,1 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,220000,0,0,0,GBP,2.0.0
 1,A11111,10002082047,1,1,GB,52.76697956,-0.89536613,2 ABINGDON ROAD,LE13 0HL,1050,5000,WW1,790000,0,0,0,GBP,2.0.0
@@ -1247,3 +1352,81 @@ class PortfolioValidation(WebTestMixin, TestCase):
                     'accounts_validated': None,
                     'reinsurance_info_validated': None,
                     'reinsurance_scope_validated': False})
+
+
+class PortfolioReportingCurrency(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        portfolio = fake_portfolio()
+
+        response = self.app.get(portfolio.get_absolute_reporting_currency_url(namespace=NAMESPACE), expect_errors=True)
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_reporting_currency_is_not_present___get_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.get(
+            portfolio.get_absolute_reporting_currency_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_reporting_currency_is_not_present___delete_response_is_404(self):
+        user = fake_user()
+        portfolio = fake_portfolio()
+
+        response = self.app.delete(
+            portfolio.get_absolute_reporting_currency_url(namespace=NAMESPACE),
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            },
+            expect_errors=True,
+        )
+
+        self.assertEqual(404, response.status_code)
+
+    def test_reporting_currency_is_not_a_valid_format___response_is_error(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+                params = json.dumps({'Merry': 'Christmas'})
+                with pytest.raises(KeyError):
+                    self.app.post(
+                        portfolio.get_absolute_reporting_currency_url(namespace=NAMESPACE),
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        },
+                        params=params,
+                        content_type='application/json',
+                        expect_errors=True,
+                    )
+
+    def test_reporting_currency_is_uploaded___value_can_be_retrieved(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+                params = json.dumps({"reporting_currency": "USD"})
+                self.app.post(
+                    portfolio.get_absolute_reporting_currency_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    params=params,
+                    content_type='application/json'
+                )
+
+                response = self.app.get(
+                    portfolio.get_absolute_reporting_currency_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(json.loads(response.body), json.loads(params))  # Without loads you get one with a space after : and one without ;-;
+                self.assertEqual(response.content_type, "application/json")

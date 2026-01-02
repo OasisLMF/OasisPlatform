@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from django.conf import settings as django_settings
+from django.http import Http404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -345,7 +346,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         """
         method = request.method.lower()
         instance = self.get_object()
-        file_types = ['application/json', 'text/csv']
+        file_types = ['application/json']
         if method == 'delete':
             return handle_related_file(instance, 'currency_conversion_json', request, file_types)
         elif method == 'get':
@@ -368,9 +369,14 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         method = request.method.lower()
         instance = self.get_object()
         if method == 'delete':
+            if instance.reporting_currency == "NONE":
+                raise Http404()
             instance.reporting_currency = "NONE"
         elif method == 'post':
             instance.reporting_currency = request.data['reporting_currency']
+        else:
+            if instance.reporting_currency == "NONE":
+                raise Http404()
         instance.save()
         return Response({"reporting_currency": instance.reporting_currency})
 

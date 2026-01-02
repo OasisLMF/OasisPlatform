@@ -28,8 +28,7 @@ def _serialize_input_file(file_obj, abs_uri, request):
         return None
     else:
         converted = (
-            file_obj.conversion_state == RelatedFile.ConversionState.DONE and
-            file_obj.converted_file
+            file_obj.conversion_state == RelatedFile.ConversionState.DONE and file_obj.converted_file
         )
         return {
             "uri": abs_uri,
@@ -480,10 +479,11 @@ class ExposureRunParamsSerializer(serializers.Serializer):
     model_perils_covered = serializers.ListField(default=['AA1'], help_text="List of perils covered by the model")
     loss_factor = serializers.ListField(child=serializers.FloatField(), default=[1.0], help_text="Loss factor")
     supported_oed_coverage_types = serializers.ListField(
-        child=serializers.IntegerField(min_value=1, max_value=15),
+        child=serializers.IntegerField(min_value=0, max_value=15),
         required=False,
         allow_null=True,
-        default=None
+        default=[0],
+        help_text="1-15 for coverage types to support: [0] gives None"
     )
     fmpy_sort_output = serializers.BooleanField(default=True, help_text="Order fmpy output by item_id")
     fmpy_low_memory = serializers.BooleanField(

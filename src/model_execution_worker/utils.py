@@ -234,7 +234,7 @@ def get_ktools_version():
     ktool_ver_str = subprocess.getoutput('fmcalc -v')
 
     # Match version x.x.x , x.x or x
-    reg_pattern = "(\d+\.)?(\d+\.)?(\d+)"
+    reg_pattern = r"(\d+\.)?(\d+\.)?(\d+)"
     match_ver = re.search(reg_pattern, ktool_ver_str)
 
     if match_ver:
@@ -341,7 +341,8 @@ def update_params(params, given_params):
     for k, v in given_params.items():
         if k in ALLOWED_PARAMS:
             params[k] = v
-
+    if params['supported_oed_coverage_types'] == [0]:
+        params['supported_oed_coverage_types'] = None
     params["output_file"] = "outfile.csv"
 
 
