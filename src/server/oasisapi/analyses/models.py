@@ -405,6 +405,7 @@ class Analysis(TimeStampedModel):
             'generate_input',
             args=(self.pk, loc_file, acc_file, info_file, scope_file,
                   settings_file, complex_data_files, currency_conversion_json, reporting_currency),
+            kwargs={'currency_conversion_json': currency_conversion_json, 'reporting_currency': reporting_currency},
             queue=self.model.queue_name,
         )
 
