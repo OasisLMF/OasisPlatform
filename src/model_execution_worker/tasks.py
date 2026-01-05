@@ -440,7 +440,6 @@ def generate_input(self,
         config_path = get_oasislmf_config_path(settings)
         config = config_strip_default_exposure(get_json(config_path))
         lookup_params = {**config, **task_params}
-        logger.info(f"HELLO HARRY config = {config}\ntask_params = {task_params}\nlookup_params={lookup_params}")
         gen_files_params = OasisManager()._params_generate_oasis_files(**lookup_params)
         gen_files_params['oed_schema_info'] = config.get('oed_schema_info', get_worker_versions()['oed-schema'])
         params = paths_to_absolute_paths({**gen_files_params}, config_path)
