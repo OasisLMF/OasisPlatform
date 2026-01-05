@@ -53,6 +53,7 @@ class PortfolioListSerializer(serializers.Serializer):
     location_file = serializers.SerializerMethodField(read_only=True)
     reinsurance_info_file = serializers.SerializerMethodField(read_only=True)
     reinsurance_scope_file = serializers.SerializerMethodField(read_only=True)
+    currency_conversion_json = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
     groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
@@ -99,15 +100,16 @@ class PortfolioListSerializer(serializers.Serializer):
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
     def get_currency_conversion_json(self, instance):
-        if not instance.currency_conversion_json:
-            return None
-        else:
-            request = self.context.get('request')
-            return {
-                "uri": instance.get_absolute_currency_conversion_json_url(request=request),
-                "name": instance.currency_conversion_json.filename,
-                "stored": str(instance.currency_conversion_json.file)
-            }
+        return
+        # if not instance.currency_conversion_json:
+        #     return None
+        # else:
+        #     request = self.context.get('request')
+        #     return {
+        #         "uri": instance.get_absolute_currency_conversion_json_url(request=request),
+        #         "name": instance.currency_conversion_json.filename,
+        #         "stored": str(instance.currency_conversion_json.file)
+        #     }
 
 
 class PortfolioSerializer(serializers.ModelSerializer):
@@ -201,15 +203,16 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
     @swagger_serializer_method(serializer_or_field=InputFileSerializer)
     def get_currency_conversion_json(self, instance):
-        if not instance.currency_conversion_json:
-            return None
-        else:
-            request = self.context.get('request')
-            return {
-                "uri": instance.get_absolute_currency_conversion_json_url(request=request),
-                "name": instance.currency_conversion_json.filename,
-                "stored": str(instance.currency_conversion_json.file)
-            }
+        return
+        # if not instance.currency_conversion_json:
+        #     return None
+        # else:
+        #     request = self.context.get('request')
+        #     return {
+        #         "uri": instance.get_absolute_currency_conversion_json_url(request=request),
+        #         "name": instance.currency_conversion_json.filename,
+        #         "stored": str(instance.currency_conversion_json.file)
+        #     }
 
 
 class PortfolioStorageSerializer(serializers.ModelSerializer):
@@ -217,6 +220,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
     location_file = serializers.SerializerMethodField()
     reinsurance_info_file = serializers.SerializerMethodField()
     reinsurance_scope_file = serializers.SerializerMethodField()
+    currency_conversion_json = serializers.SerializerMethodField()
 
     class Meta:
         model = Portfolio
@@ -225,6 +229,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             'accounts_file',
             'reinsurance_info_file',
             'reinsurance_scope_file',
+            'currency_conversion_json'
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
@@ -245,7 +250,8 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_currency_conversion_json(self, instance):
-        return file_storage_link(instance.currency_conversion_json, True)
+        return
+        # return file_storage_link(instance.currency_conversion_json, True)
 
     def is_in_storage(self, value):
         # Check AWS storage

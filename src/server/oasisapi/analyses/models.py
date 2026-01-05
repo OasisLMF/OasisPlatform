@@ -403,6 +403,7 @@ class Analysis(TimeStampedModel):
         if currency_conversion_json is None or reporting_currency == "None":  # Ensure old models which cant handle **kwargs are fine
             kwargs = {}
         else:
+            logging.warning("Using currency conversion will cause worker images before 1.28 without **kwargs to fail.")
             kwargs = {'currency_conversion_json': currency_conversion_json, 'reporting_currency': reporting_currency}
 
         return celery_app_v1.signature(
