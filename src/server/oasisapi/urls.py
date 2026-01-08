@@ -22,18 +22,70 @@ api_info_description = """
 The general workflow is as follows
 """
 
-if settings.API_AUTH_TYPE == 'keycloak':
+if settings.API_AUTH_TYPE in settings.ALLOWED_OIDC_AUTH_PROVIDERS:
     api_info_description += """
-1. Authenticate your client:
-    1. Post to the keycloak endpoint:
-       `grant_type=password&client_id=<client-id>&client_secret=<client-secret>&username=<username>&password=<password>`
-       Check your chart values to find the endpoint (`OIDC_ENDPOINT`), <client-id> (`OIDC_CLIENT_NAME`) and
-       <client-secret> (`OIDC_CLIENT_SECRET`).
-    2. Either supply your username and password to the `/access_token/` endpoint or make a `post` request
-       to `/refresh_token/` with the `HTTP_AUTHORIZATION` header set as `Bearer <refresh_token>`.
-    3. Here in swagger - click the `Authorize` button, enter 'swagger' as client_id and click Authorize. This will open
-       a new window with the keycloak login, enter your credentials and click Login. This will close the window and get
-       you back to the authorize dialog which you now can close."""
+### Authentication Overview
+
+Your application can authenticate either as a **service** or as a **user**.  
+Two different flows are supported:
+---
+## 1. Service Authentication (Client Credentials Flow)
+
+This flow is intended for service-to-service communication where no user is involved.
+1. **Request an access token**
+   - Make a POST request to the `/access_token/` endpoint with:
+     ```
+     grant_type=client_credentials
+     client_id=<client-id>
+     client_secret=<client-secret>
+     ```
+   - The response will include an `access_token` and an optional `refresh_token` (depending on configuration).
+2. **Use the token**
+   - Include the access token in the `Authorization` header when calling protected endpoints:
+     ```
+     Authorization: Bearer <access_token>
+     ```
+3. **Refresh the token**
+   - When the access token expires, request a new one using the same `client_credentials` flow, you cannot call `/refresh_token/` for OIDC client_credentials
+---
+## 2. User Authentication (Authorization Code Flow with Session Token)
+
+This flow is intended for authenticating end-users through OpenID Connect.
+1. **Authorize the user**
+   - Redirect the user’s browser to the `oidc/authorize/` endpoint, including the client and redirect parameters.
+   - Example:
+     ```
+     GET /oidc/authorize/?client_id=<client-id>&redirect_uri=<redirect-uri>&response_type=code&scope=openid&next=<callback-url>
+     ```
+   - The user will log in via the identity provider (e.g., Keycloak, Authentik) and be redirected back to your configured callback URL by the OIDC provider automatically.
+2. **Handle the authorization callback**
+   - Your callback endpoint (e.g., `/oidc/callback/`) will receive a short-lived `session_token` (valid for about one minute).
+   - This session token contains encoded information allowing you to retrieve the user’s access and refresh tokens.
+3. **Exchange the session token**
+   - Make a POST request to the `/oidc/session_token/` endpoint with:
+     ```
+     session_token=<session-token>
+     ```
+   - The response will contain the user’s `access_token` and `refresh_token`.
+4. **Use the tokens**
+   - Include the user’s access token in the `Authorization` header when making API calls:
+     ```
+     Authorization: Bearer <access_token>
+     ```
+5. **Refreshing tokens**
+   - When the access token expires, use the `/refresh_token/` endpoint with:
+     ```
+     grant_type=refresh_token
+     refresh_token=<refresh_token>
+     ```
+   - to obtain a new access token.
+---
+## 3. Swagger Authentication
+In Swagger UI:
+1. Click the **Authorize** button.
+2. Enter the client_id and client_secret and click **Authorize**. This will open a new window with your OIDC login page where you enter credentials and click login.
+3. You should get redirected back to the api page with the authorize dialog.
+"""
 else:
     api_info_description += """
 1. Authenticate your client, either supply your username and password to the `/access_token/`

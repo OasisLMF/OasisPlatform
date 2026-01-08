@@ -2,14 +2,17 @@ from django.conf import settings
 from django.db import models
 
 
-class KeycloakUserId(models.Model):
+class OIDCUserId(models.Model):
     """
-    This model is used to persist a Keycloak user id (uuid) and helps us verify our django user still represents
-    the user in Keycloak it once was created for. I changed Keycloak user id would tell us that the user in
-    Keycloak with this username has been replaced by a new account.
+    Persist the OIDC subject claim (`sub`) for a Django user.
+
+    Works with both Keycloak and Authentik (or any OIDC provider).
     """
     # Django user
     user = models.OneToOneField(settings.AUTH_USER_MODEL, primary_key=True, on_delete=models.CASCADE)
 
-    # Keycloak user ID (uuid)
-    keycloak_user_id = models.CharField(max_length=100, default='')
+    # The "sub" (subject) claim from the OIDC provider (Keycloak, Authentik, etc.)
+    oidc_sub = models.CharField(max_length=100, default='')
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.oidc_sub}"

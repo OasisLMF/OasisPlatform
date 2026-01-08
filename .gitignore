@@ -112,3 +112,5 @@ out/
 # Static web
 src/server/static/
 
+# PiWind config
+scripts/piwind-path-cfg
