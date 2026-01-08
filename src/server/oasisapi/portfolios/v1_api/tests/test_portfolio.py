@@ -143,7 +143,7 @@ class PortfolioApi(WebTestMixin, TestCase):
                     'validation_status': "NONE",
                     'exposure_transform_status': "NONE",
                     'currency_conversion_json': None,
-                    'reporting_currency': "NONE"
+                    'reporting_currency': ""
                 }, response.json)
 
 

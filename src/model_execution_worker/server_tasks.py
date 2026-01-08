@@ -27,7 +27,7 @@ def run_exposure_run(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
         ri_filepath: path to ri file or None
         rl_filepath: path to rl file or None
         currency_conversion_json_filepath: path to currency_conversion_json or None
-        reporting_currency: currency to use with currency_conversion_json or "NONE"
+        reporting_currency: currency to use with currency_conversion_json or ""
         given_params: run parameters for exposure run (e.g. {'check_oed': False})
     Returns:
         (Path, Boolean): Path to exposure file or errors file, with boolean flag for success
@@ -42,7 +42,7 @@ def run_exposure_run(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
         params = OasisManager()._params_run_exposure()
         params['print_summary'] = False
         update_params(params, given_params)
-        if reporting_currency != "NONE" and currency_conversion_json:
+        if reporting_currency != "" and currency_conversion_json:
             params['currency_conversion_json'] = currency_conversion_json
             params['reporting_currency'] = reporting_currency
 
@@ -69,7 +69,7 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
         ri_filepath: path to ri file or None
         rl_filepath: path to rl file or None
         currency_conversion_filepath: path to currency_conversion_json or None
-        reporting_currency: currency to use with currency_conversion_json or "NONE"
+        reporting_currency: currency to use with currency_conversion_json or ""
     Returns:
         list[str] | str: errors in validation (empty list = no errors)
     """
@@ -77,7 +77,7 @@ def run_oed_validation(loc_filepath, acc_filepath, ri_filepath, rl_filepath, val
         location, account, ri_info, ri_scope, currency_conversion_json = get_all_exposure_files(
             loc_filepath, acc_filepath, ri_filepath, rl_filepath, currency_conversion_filepath, temp_dir
         )
-        if reporting_currency == "NONE" or currency_conversion_json is None:
+        if reporting_currency == "" or currency_conversion_json is None:
             reporting_currency = None
             currency_conversion_json = None
 

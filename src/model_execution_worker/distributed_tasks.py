@@ -367,7 +367,7 @@ def keys_generation_task(fn):
             scope_extention = "".join(pathlib.Path(scope_filepath).suffixes)
             params['oed_scope_csv'] = os.path.join(params['root_run_dir'], f'{scope_source}reinsscope{scope_extention}')
             maybe_fetch_file(scope_filepath, params['oed_scope_csv'])
-        if currency_conversion_json and kwargs['reporting_currency'] != "NONE":
+        if currency_conversion_json and kwargs['reporting_currency'] != "":
             params['reporting_currency'] = kwargs['reporting_currency']
             params['currency_conversion_json'] = os.path.join(params['root_run_dir'], f'{currency_source}currency_conversion.json')
             maybe_fetch_file(currency_conversion_json, params['currency_conversion_json'])

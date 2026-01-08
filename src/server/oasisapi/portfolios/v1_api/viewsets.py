@@ -288,13 +288,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         post:
         Adds a currency_conversion.json to the portfolio for analysis, exposure run or validation
         """
-        method = request.method.lower()
         instance = self.get_object()
         file_types = ['application/json']
-        if method == 'delete':
-            return handle_related_file(instance, 'currency_conversion_json', request, file_types)
-        elif method == 'get':
-            return handle_related_file(instance, 'currency_conversion_json', request, file_types)
         return handle_related_file(instance, 'currency_conversion_json', request, file_types)
 
     @swagger_auto_schema(method='post', request_body=ReportingCurrencySerializer)
@@ -313,13 +308,13 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         method = request.method.lower()
         instance = self.get_object()
         if method == 'delete':
-            if instance.reporting_currency == "NONE":
+            if instance.reporting_currency == "":
                 raise Http404()
-            instance.reporting_currency = "NONE"
+            instance.reporting_currency = ""
         elif method == 'post':
             instance.reporting_currency = request.data['reporting_currency']
         else:
-            if instance.reporting_currency == "NONE":
+            if instance.reporting_currency == "":
                 raise Http404()
         instance.save()
         return Response({"reporting_currency": instance.reporting_currency})

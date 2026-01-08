@@ -95,7 +95,7 @@ class Portfolio(TimeStampedModel):
                                         default=None, related_name='errors_file_portfolios')
     currency_conversion_json = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                                  default=None, related_name='currency_conversion_json')
-    reporting_currency = models.CharField(default="NONE", editable=False, max_length=15)  # No idea on reasonable max here: needed one
+    reporting_currency = models.CharField(default="", editable=False, max_length=15)  # No idea on reasonable max here: needed one
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True

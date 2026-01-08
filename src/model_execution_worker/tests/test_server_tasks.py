@@ -1,15 +1,18 @@
+import pytest
+import filecmp
+import os
+
 from hypothesis.extra.django import TestCase
+from django.conf import settings as django_settings
+from unittest.mock import MagicMock, patch, call
+from rest_framework.exceptions import ValidationError
+from ods_tools.oed import OdsException
+
+from src.server.oasisapi.portfolios.models import Portfolio
+from src.server.oasisapi.files.models import RelatedFile
 from src.model_execution_worker.server_tasks import run_oed_validation, run_exposure_run, run_exposure_transform
 from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output, record_exposure_output, record_transform_output
 from src.server.oasisapi.auth.tests.fakes import fake_user
-from django.conf import settings as django_settings
-import os
-from unittest.mock import MagicMock, patch, call
-from rest_framework.exceptions import ValidationError
-from src.server.oasisapi.portfolios.models import Portfolio
-from src.server.oasisapi.files.models import RelatedFile
-import pytest
-import filecmp
 
 TEST_DIR = os.path.dirname(__file__)
 TRANSFORM_DIR = os.path.join(TEST_DIR, "inputs", "test_transform")
@@ -119,18 +122,20 @@ class PortfolioValidation(TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
-            fake_user(pk=29)
+            user = fake_user(pk=29)
             with (patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio),
                   patch('src.server.oasisapi.portfolios.v2_api.tasks.ContentFile') as mock_file,
                   patch('src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile') as mock_related_file):
                 mock_file.return_value = MagicMock()
                 record_validation_output(validation_errors, 5, 29)
-                mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_5_errors.txt")
-                mock_related_file.assert_called_once_with(file=mock_file, content_type='text/csv', creator=fake_user,
-                                                          filename=mock_file.name, store_as_filename=True)
-                mock_oed_cob_workaround.assert_called_once_with(validation_errors)
-                assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
-                fake_portfolio.save.assert_called_once()
+        mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_5_errors.txt")
+        mock_related_file.objects.create.assert_called_once_with(file=mock_file(), content_type='text/csv', creator=user,
+                                                                 filename=mock_file().name, store_as_filename=True)
+        mock_oed_cob_workaround.assert_called_once()
+        assert str(mock_oed_cob_workaround.call_args.args[0]) == str(OdsException(str(validation_errors)))  # Cant equality directly on exceptions
+        assert len(mock_oed_cob_workaround.call_args.args) == 1
+        assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
+        fake_portfolio.save.assert_called_once()
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_account_file__is_invalid(self, mock_oed_cob_workaround):
@@ -138,18 +143,21 @@ class PortfolioValidation(TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
-            fake_user(pk=29)
+            user = fake_user(pk=29)
             with (patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio),
                   patch('src.server.oasisapi.portfolios.v2_api.tasks.ContentFile') as mock_file,
                   patch('src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile') as mock_related_file):
                 mock_file.return_value = MagicMock()
                 record_validation_output(validation_errors, 7, 29)
-                mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_7_errors.txt")
-                mock_related_file.assert_called_once_with(file=mock_file, content_type='text/csv', creator=fake_user,
-                                                          filename=mock_file.name, store_as_filename=True)
-                mock_oed_cob_workaround.assert_called_once_with(validation_errors)
-                assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
-                fake_portfolio.save.assert_called_once()
+
+        mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_7_errors.txt")
+        mock_related_file.objects.create.assert_called_once_with(file=mock_file(), content_type='text/csv', creator=user,
+                                                                 filename=mock_file().name, store_as_filename=True)
+        mock_oed_cob_workaround.assert_called_once()
+        assert str(mock_oed_cob_workaround.call_args.args[0]) == str(OdsException(str(validation_errors)))
+        assert len(mock_oed_cob_workaround.call_args.args) == 1
+        assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
+        fake_portfolio.save.assert_called_once()
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_info_file__is_invalid(self, mock_oed_cob_workaround):
@@ -157,18 +165,21 @@ class PortfolioValidation(TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
-            fake_user(pk=29)
+            user = fake_user(pk=29)
             with (patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio),
                   patch('src.server.oasisapi.portfolios.v2_api.tasks.ContentFile') as mock_file,
                   patch('src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile') as mock_related_file):
                 mock_file.return_value = MagicMock()
                 record_validation_output(validation_errors, 11, 29)
-                mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_5_errors.txt")
-                mock_related_file.assert_called_once_with(file=mock_file, content_type='text/csv', creator=fake_user,
-                                                          filename=mock_file.name, store_as_filename=True)
-                mock_oed_cob_workaround.assert_called_once_with(validation_errors)
-                assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
-                fake_portfolio.save.assert_called_once()
+
+        mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_11_errors.txt")
+        mock_related_file.objects.create.assert_called_once_with(file=mock_file(), content_type='text/csv', creator=user,
+                                                                 filename=mock_file().name, store_as_filename=True)
+        mock_oed_cob_workaround.assert_called_once()
+        assert str(mock_oed_cob_workaround.call_args.args[0]) == str(OdsException(str(validation_errors)))
+        assert len(mock_oed_cob_workaround.call_args.args) == 1
+        assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
+        fake_portfolio.save.assert_called_once()
 
     @patch('src.server.oasisapi.portfolios.models.oed_class_of_businesses__workaround')
     def test_ri_scope_file__is_invalid(self, mock_oed_cob_workaround):
@@ -176,18 +187,21 @@ class PortfolioValidation(TestCase):
         assert isinstance(validation_errors, str)
         with self.assertRaises(ValidationError):
             fake_portfolio = MagicMock()
-            fake_user(pk=29)
+            user = fake_user(pk=29)
             with (patch('src.server.oasisapi.portfolios.models.Portfolio.objects.get', return_value=fake_portfolio),
                   patch('src.server.oasisapi.portfolios.v2_api.tasks.ContentFile') as mock_file,
                   patch('src.server.oasisapi.portfolios.v2_api.tasks.RelatedFile') as mock_related_file):
                 mock_file.return_value = MagicMock()
                 record_validation_output(validation_errors, 13, 29)
-                mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_5_errors.txt")
-                mock_related_file.assert_called_once_with(file=mock_file, content_type='text/csv', creator=fake_user,
-                                                          filename=mock_file.name, store_as_filename=True)
-                mock_oed_cob_workaround.assert_called_once_with(validation_errors)
-                assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
-                fake_portfolio.save.assert_called_once()
+
+        mock_file.assert_called_once_with(content=str(validation_errors), name="portfolio_13_errors.txt")
+        mock_related_file.objects.create.assert_called_once_with(file=mock_file(), content_type='text/csv', creator=user,
+                                                                 filename=mock_file().name, store_as_filename=True)
+        mock_oed_cob_workaround.assert_called_once()
+        assert str(mock_oed_cob_workaround.call_args.args[0]) == str(OdsException(str(validation_errors)))
+        assert len(mock_oed_cob_workaround.call_args.args) == 1
+        assert fake_portfolio.validation_status == fake_portfolio.validation_status_choices.ERROR
+        fake_portfolio.save.assert_called_once()
 
     def test_passes_with_reporting_currency(self):
         validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, None, "USD")
@@ -203,11 +217,12 @@ class PortfolioValidation(TestCase):
 
     def test_fails_with_invalid_json(self):
         validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, LOCATION_VALID, "USD")
-        assert validation_errors != []
+        # TODO: change ods_tools so error reflects the actual issue here
+        assert validation_errors == "Expecting value: line 1 column 1 (char 0)"
 
     def test_fails_with_invalid_reporting(self):
         validation_errors = run_oed_validation(LOCATION_VALID, None, None, None, CONFIG, CURRENCY_SETTINGS, "Emeralds")
-        assert validation_errors != []
+        assert validation_errors == "currency pair ('GBP', 'Emeralds') is missing"
 
 
 class ExposureRun(TestCase):
@@ -364,9 +379,9 @@ class ExposureRun(TestCase):
 @pytest.mark.parametrize(
     "currency_conversion_json, reporting_currency",
     [
-        (None, "NONE"),
+        (None, ""),
         (None, "world"),
-        (CURRENCY_SETTINGS, "NONE"),
+        (CURRENCY_SETTINGS, ""),
         (CURRENCY_SETTINGS, "world"),
     ]
 )
@@ -419,7 +434,7 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
         assert 'log_level' in kwargs
         assert kwargs['output_file'] == 'outfile.csv'
         assert kwargs['print_summary'] is False  # Making sure it isn't false-y
-        if reporting_currency == "NONE" or currency_conversion_json is None:
+        if reporting_currency == "" or currency_conversion_json is None:
             assert kwargs['reporting_currency'] is None
             assert kwargs['currency_conversion_json'] is None
         else:

@@ -355,7 +355,7 @@ def generate_input(self,
                    settings_file=None,
                    complex_data_files=None,
                    currency_conversion_json=None,
-                   reporting_currency="NONE",
+                   reporting_currency="",
                    **kwargs):
     """Generates the input files for the loss calculation stage.
 
@@ -430,7 +430,7 @@ def generate_input(self,
         if complex_data_files:
             prepare_complex_model_file_inputs(complex_data_files, input_data_dir, filestore)
             task_params['user_data_dir'] = input_data_dir
-        if currency_conversion_json and reporting_currency != "NONE":
+        if currency_conversion_json and reporting_currency != "":
             task_params['reporting_currency'] = reporting_currency
             task_params['currency_conversion_json'] = filestore.get(
                 currency_conversion_json,

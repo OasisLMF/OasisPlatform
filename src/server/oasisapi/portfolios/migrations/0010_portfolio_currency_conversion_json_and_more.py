@@ -20,6 +20,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='portfolio',
             name='reporting_currency',
-            field=models.CharField(default='NONE', editable=False, max_length=15),
+            field=models.CharField(default='', editable=False, max_length=15),
         ),
     ]
