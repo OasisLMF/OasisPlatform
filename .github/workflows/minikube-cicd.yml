@@ -219,10 +219,10 @@ jobs:
 
           if [ "$USE_OIDC" = "true" ]; then
             echo "Using OIDC authentication"
-            printf '{"client_id": "%s", "client_secret": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET" > CREDENTIALS_FILE
+            printf '{"client_id": "%s", "client_secret": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET" > "$CREDENTIALS_FILE"
           else
             echo "Using Simple JWT authentication"
-            printf '{"username": "%s", "password": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET" > CREDENTIALS_FILE
+            printf '{"username": "%s", "password": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET" > "$CREDENTIALS_FILE"
           fi
 
           {
