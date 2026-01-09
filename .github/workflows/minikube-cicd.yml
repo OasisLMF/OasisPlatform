@@ -214,17 +214,20 @@ jobs:
           PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.password_or_secret}" | base64 -d)
           USE_OIDC=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.use_oidc}" | base64 -d)
 
+          CREDENTIALS_FILE="$(mktemp)"
+          trap 'rm -f "$CREDENTIALS_FILE"' EXIT
+
           if [ "$USE_OIDC" = "true" ]; then
             echo "Using OIDC authentication"
-            CREDENTIALS=$(printf '{"client_id": "%s", "client_secret": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET")
+            printf '{"client_id": "%s", "client_secret": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET" > "$CREDENTIALS_FILE"
           else
             echo "Using Simple JWT authentication"
-            CREDENTIALS=$(printf '{"username": "%s", "password": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET")
+            printf '{"username": "%s", "password": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET" > "$CREDENTIALS_FILE"
           fi
 
           {
             oasislmf api run \
-              --server-login-json "$CREDENTIALS" \
+              --server-login-json "$CREDENTIALS_FILE" \
               --server-version 'v1' \
               --server-url 'http://ui.oasis.local/api' \
               --model-id 1 \
