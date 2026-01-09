@@ -25,3 +25,5 @@ networkx>=3.0,<4.0
 pyodbc>=5.0,<6.0
 sqlparams>=6.0,<7.0
 sqlparse>=0.0,<1.0
+aiohttp>=3.13.3,<4
+urllib3 >=2.6.3,<3.0
