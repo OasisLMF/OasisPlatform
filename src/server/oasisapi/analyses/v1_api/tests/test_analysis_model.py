@@ -266,7 +266,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                 sig = analysis.v1_generate_input_signature
 
                 self.assertEqual(sig.task, 'generate_input')
-                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))
-                self.assertEqual(sig.kwargs, {'currency_conversion_json': file_storage_link(portfolio.currency_conversion_json),
-                                              'reporting_currency': portfolio.reporting_currency})
+                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, [],
+                                            file_storage_link(portfolio.currency_conversion_json), portfolio.reporting_currency))
+                self.assertEqual(sig.kwargs, {})
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)

@@ -400,17 +400,14 @@ class Analysis(TimeStampedModel):
         complex_data_files = self.create_complex_model_data_file_dicts()
         currency_conversion_json = file_storage_link(self.portfolio.currency_conversion_json)
         reporting_currency = self.portfolio.reporting_currency
-        if currency_conversion_json is None or reporting_currency == "None":  # Ensure old models which cant handle **kwargs are fine
-            kwargs = {}
-        else:
+        args = [self.pk, loc_file, acc_file, info_file, scope_file, settings_file, complex_data_files]
+        if currency_conversion_json and reporting_currency:
             logging.warning("Using currency conversion will cause worker images before 1.28 without **kwargs to fail.")
-            kwargs = {'currency_conversion_json': currency_conversion_json, 'reporting_currency': reporting_currency}
+            args.extend([currency_conversion_json, reporting_currency])
 
         return celery_app_v1.signature(
             'generate_input',
-            args=(self.pk, loc_file, acc_file, info_file, scope_file,
-                  settings_file, complex_data_files),
-            kwargs=kwargs,
+            args=tuple(args),
             queue=self.model.queue_name,
         )
 
