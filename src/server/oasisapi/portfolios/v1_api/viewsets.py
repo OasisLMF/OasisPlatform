@@ -17,7 +17,7 @@ from ...filters import TimeStampedFilter
 from ...analyses.v1_api.serializers import AnalysisSerializer
 from ...files.v1_api.views import handle_related_file
 from ...files.v1_api.serializers import RelatedFileSerializer
-from ..models import Portfolio
+from ..models import Portfolio, csv_into_currency_conversion_json
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
 from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
@@ -290,6 +290,13 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         """
         instance = self.get_object()
         file_types = ['application/json']
+        if request.method.lower() == "post":
+            if request.data.get('csv_file', False):  # Takes priority because json files with csv files will reference for conversion
+                request.data['file'] = csv_into_currency_conversion_json(request.data['csv_file'])
+            elif request.data.get('json_file', False):
+                request.data['file'] = request.data['json_file']
+            else:
+                raise ValueError("Either csv file or json file must be provided")
         return handle_related_file(instance, 'currency_conversion_json', request, file_types)
 
     @swagger_auto_schema(method='post', request_body=ReportingCurrencySerializer)

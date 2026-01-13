@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.core.files.uploadedfile import SimpleUploadedFile
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.reverse import reverse
@@ -17,6 +18,9 @@ from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from .v2_api.tasks import record_exposure_output, record_validation_output, record_transform_output
 
 import re
+import csv
+import json
+import io
 
 # from ods_tools.oed.exposure import OedExposure
 from ods_tools.oed import OdsException
@@ -316,3 +320,18 @@ def delete_connected_files(sender, instance, **kwargs):
         file_ref = getattr(instance, ref)
         if file_ref:
             file_ref.delete()
+
+
+def csv_into_currency_conversion_json(csv_file):
+    csv_file.seek(0)
+    reader = csv.reader(io.StringIO(csv_file.read().decode("utf-8")))
+    next(reader)
+    currency_rates = [[row[0], row[1], float(row[2])] for row in reader]
+    complete_json = {
+        'currency_conversion_type': 'DictBasedCurrencyRates',
+        'source_type': 'list',
+        'currency_rates': currency_rates
+    }
+
+    json_str = json.dumps(complete_json).encode("utf-8")
+    return SimpleUploadedFile(name='currency_conversion.json', content=json_str, content_type="application/json")

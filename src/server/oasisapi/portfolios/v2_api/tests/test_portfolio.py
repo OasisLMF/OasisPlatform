@@ -36,6 +36,35 @@ settings.register_profile("ci", deadline=1000.0)
 settings.load_profile("ci")
 NAMESPACE = 'v2-portfolios'
 
+CURRENCY_CONVERSION_JSON = json.dumps(
+    {
+        "currency_conversion_type": "DictBasedCurrencyRates",
+        "source_type": "list",
+        "currency_rates": [
+            ["A", "B", 1.1],
+            ["C", "D", 2.2],
+            ["E", "F", 3.3]
+        ]
+    }).encode("utf-8")
+
+CURRENCY_CONVERSION_CSV = pd.DataFrame.from_dict(
+    {
+        "cur_from": ["G", "I", "K"],
+        "cur_to": ["H", "J", "L"],
+        "roe": [4.4, 5.5, 6.6]
+    }).to_csv(index=False).encode('utf-8')
+
+CURRENCY_CONVERSION_CSV_TO_JSON = json.dumps(
+    {
+        "currency_conversion_type": "DictBasedCurrencyRates",
+        "source_type": "list",
+        "currency_rates": [
+            ["G", "H", 4.4],
+            ["I", "J", 5.5],
+            ["K", "L", 6.6]
+        ]
+    }).encode("utf-8")
+
 
 class PortfolioApi(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
@@ -1220,15 +1249,14 @@ class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                     upload_files=(
-                        ('file', 'file.tar', b'content'),
+                        ('json_file', 'file.tar', b'content'),
                     ),
                     expect_errors=True,
                 )
 
                 self.assertEqual(400, response.status_code)
 
-    @given(file_content=binary(min_size=1), content_type=sampled_from(['application/json']))
-    def test_currency_conversion_json_is_uploaded___file_can_be_retrieved(self, file_content, content_type):
+    def test_currency_conversion_json_is_uploaded_as_json___file_can_be_retrieved(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
@@ -1240,7 +1268,7 @@ class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                     upload_files=(
-                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                        ('json_file', 'file.json', CURRENCY_CONVERSION_JSON),
                     ),
                 )
 
@@ -1251,8 +1279,71 @@ class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
                     },
                 )
 
-                self.assertEqual(response.body, file_content)
-                self.assertEqual(response.content_type, content_type)
+                self.assertEqual(response.body, CURRENCY_CONVERSION_JSON)
+
+    def test_currency_conversion_json_is_uploaded_as_csv___file_can_be_retrieved(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('csv_file', 'file.csv', CURRENCY_CONVERSION_CSV),
+                    ),
+                )
+
+                response = self.app.get(
+                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, CURRENCY_CONVERSION_CSV_TO_JSON)
+
+    def test_currency_conversion_json_is_uploaded_as_both___correct_file_can_be_retrieved(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+
+                self.app.post(
+                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                    upload_files=(
+                        ('json_file', 'file.json', CURRENCY_CONVERSION_JSON),
+                        ('csv_file', 'file.csv', CURRENCY_CONVERSION_CSV)
+                    )
+                )
+
+                response = self.app.get(
+                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                    },
+                )
+
+                self.assertEqual(response.body, CURRENCY_CONVERSION_CSV_TO_JSON)
+
+    def test_no_files_uploaded___error_reached(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
+                user = fake_user()
+                portfolio = fake_portfolio()
+                with self.assertRaises(ValueError):
+                    self.app.post(
+                        portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
+                        headers={
+                            'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                        }
+                    )
 
     def test_currency_conversion_json_invalid_uploaded___parquet_exception_raised(self):
         content_type = 'text/csv'
@@ -1270,7 +1361,7 @@ class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                     upload_files=(
-                        ('file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
+                        ('json_file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
                     ),
                     expect_errors=True
                 )

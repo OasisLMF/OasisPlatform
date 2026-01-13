@@ -11,7 +11,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
-from ..models import Portfolio
+from ..models import Portfolio, csv_into_currency_conversion_json
 # from ...decorators import requires_sql_reader -- LOT3
 from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
@@ -346,6 +346,13 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         """
         instance = self.get_object()
         file_types = ['application/json']
+        if request.method.lower() == "post":
+            if request.data.get('csv_file', False):  # Takes priority because json files with csv files will reference for conversion
+                request.data['file'] = csv_into_currency_conversion_json(request.data['csv_file'])
+            elif request.data.get('json_file', False):
+                request.data['file'] = request.data['json_file']
+            else:
+                raise ValueError("Either csv file or json file must be provided")
         return handle_related_file(instance, 'currency_conversion_json', request, file_types)
 
     @swagger_auto_schema(method='post', request_body=ReportingCurrencySerializer)
