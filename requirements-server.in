@@ -38,3 +38,4 @@ setuptools
 mysqlclient>=2.0,<3.0
 whitenoise>=6.0,<7.0
 azure-identity>=1.0,<2.0
+urllib3 >=2.6.3,<3.0

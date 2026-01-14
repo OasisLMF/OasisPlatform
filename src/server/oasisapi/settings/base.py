@@ -278,24 +278,36 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = iniconf.settings.get('server', 'auth_backends', fallback='django.contrib.auth.backends.ModelBackend').split(',')
 AUTH_PASSWORD_VALIDATORS = []
-API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='')
+API_AUTH_TYPE = iniconf.settings.get('server', 'API_AUTH_TYPE', fallback='simple')
+
+ALLOWED_OIDC_AUTH_PROVIDERS = iniconf.settings.get('server', 'ALLOWED_OIDC_AUTH_PROVIDERS', fallback='').split(",")
+
+INGRESS_EXTERNAL_HOST = iniconf.settings.get('server', 'INGRESS_EXTERNAL_HOST', fallback='ui.oasis.local')
+EXTERNAL_URI = "https://" + INGRESS_EXTERNAL_HOST + "/"
+OIDC_AUTH_CODE_REDIRECT_URI = EXTERNAL_URI + "api/oidc/callback/"
 
 
-if API_AUTH_TYPE == 'keycloak':
-
+if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
     INSTALLED_APPS += (
         'mozilla_django_oidc',
     )
-    AUTHENTICATION_BACKENDS = ('src.server.oasisapi.oidc.keycloak_auth.KeycloakOIDCAuthenticationBackend',)
+    AUTHENTICATION_BACKENDS = ('src.server.oasisapi.oidc.generic_auth.GenericOIDCAuthenticationBackend',)
     REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('mozilla_django_oidc.contrib.drf.OIDCAuthentication',)
 
     OIDC_RP_CLIENT_ID = iniconf.settings.get('server', 'OIDC_CLIENT_NAME', fallback='')
     OIDC_RP_CLIENT_SECRET = iniconf.settings.get('server', 'OIDC_CLIENT_SECRET', fallback='')
-    KEYCLOAK_OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
+    OIDC_BASE_URL = iniconf.settings.get('server', 'OIDC_ENDPOINT', fallback='')
 
-    OIDC_OP_AUTHORIZATION_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'auth'
-    OIDC_OP_TOKEN_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'token'
-    OIDC_OP_USER_ENDPOINT = KEYCLOAK_OIDC_BASE_URL + 'userinfo'
+    if API_AUTH_TYPE == "keycloak":
+        OIDC_OP_AUTHORIZATION_ENDPOINT = OIDC_BASE_URL + 'auth'
+        OIDC_OP_TOKEN_ENDPOINT = OIDC_BASE_URL + 'token'
+        OIDC_OP_USER_ENDPOINT = OIDC_BASE_URL + 'userinfo'
+        OIDC_OP_ENDSESSION_ENDPOINT = OIDC_BASE_URL + 'logout'
+    elif API_AUTH_TYPE == "authentik":
+        OIDC_OP_AUTHORIZATION_ENDPOINT = OIDC_BASE_URL + 'authorize/'
+        OIDC_OP_TOKEN_ENDPOINT = OIDC_BASE_URL + 'token/'
+        OIDC_OP_USER_ENDPOINT = OIDC_BASE_URL + 'userinfo/'
+        OIDC_OP_ENDSESSION_ENDPOINT = OIDC_BASE_URL + OIDC_RP_CLIENT_ID + '/end-session/'
 
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False
@@ -304,11 +316,11 @@ if API_AUTH_TYPE == 'keycloak':
         'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
         'USE_SESSION_AUTH': False,
         'SECURITY_DEFINITIONS': {
-            "keycloak": {
+            "authentik": {
                 "type": "oauth2",
-                "authorizationUrl": KEYCLOAK_OIDC_BASE_URL + 'auth',
-                "refreshUrl": OIDC_OP_TOKEN_ENDPOINT + 'auth',
-                "flow": "implicit",
+                "authorizationUrl": OIDC_OP_AUTHORIZATION_ENDPOINT,
+                "tokenUrl": OIDC_OP_TOKEN_ENDPOINT,
+                "flow": "accessCode",
                 "scopes": {}
             }
         },
