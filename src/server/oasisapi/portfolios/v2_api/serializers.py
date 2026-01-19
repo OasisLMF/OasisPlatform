@@ -542,8 +542,7 @@ class ExposureTransformSerializer(serializers.Serializer):
 
 
 class CurrencyConversionSerializer(serializers.Serializer):
-    json_file = serializers.FileField(required=False, help_text="currency_conversion_json file")
-    csv_file = serializers.FileField(required=False, help_text="roe table csv to convert into currency_conversion_json file")
+    file = serializers.FileField(required=True, help_text="currency_conversion_json or roe table csv file")
 
 
 class ReportingCurrencySerializer(serializers.Serializer):

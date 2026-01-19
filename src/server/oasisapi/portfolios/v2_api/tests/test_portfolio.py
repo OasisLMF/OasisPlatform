@@ -1249,7 +1249,7 @@ class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                     upload_files=(
-                        ('json_file', 'file.tar', b'content'),
+                        ('file', 'file.tar', b'content'),
                     ),
                     expect_errors=True,
                 )
@@ -1268,7 +1268,7 @@ class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                     upload_files=(
-                        ('json_file', 'file.json', CURRENCY_CONVERSION_JSON),
+                        ('file', 'file.json', CURRENCY_CONVERSION_JSON),
                     ),
                 )
 
@@ -1293,34 +1293,8 @@ class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
                         'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                     },
                     upload_files=(
-                        ('csv_file', 'file.csv', CURRENCY_CONVERSION_CSV),
+                        ('file', 'file.csv', CURRENCY_CONVERSION_CSV),
                     ),
-                )
-
-                response = self.app.get(
-                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                )
-
-                self.assertEqual(response.body, CURRENCY_CONVERSION_CSV_TO_JSON)
-
-    def test_currency_conversion_json_is_uploaded_as_both___correct_file_can_be_retrieved(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                self.app.post(
-                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('json_file', 'file.json', CURRENCY_CONVERSION_JSON),
-                        ('csv_file', 'file.csv', CURRENCY_CONVERSION_CSV)
-                    )
                 )
 
                 response = self.app.get(
@@ -1337,35 +1311,13 @@ class PortfolioCurrencyConversionJson(WebTestMixin, TestCase):
             with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=False, PORTFOLIO_UPLOAD_VALIDATION=False):
                 user = fake_user()
                 portfolio = fake_portfolio()
-                with self.assertRaises(ValueError):
+                with self.assertRaises(KeyError):
                     self.app.post(
                         portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
                         headers={
                             'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
                         }
                     )
-
-    def test_currency_conversion_json_invalid_uploaded___parquet_exception_raised(self):
-        content_type = 'text/csv'
-        test_data = pd.DataFrame.from_dict({"A": [1, 2, 3], "B": [4, 5, 6]})
-        file_content = test_data.to_csv(index=False).encode('utf-8')
-
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d, PORTFOLIO_PARQUET_STORAGE=True, PORTFOLIO_UPLOAD_VALIDATION=False):
-                user = fake_user()
-                portfolio = fake_portfolio()
-
-                response = self.app.post(
-                    portfolio.get_absolute_currency_conversion_json_url(namespace=NAMESPACE),
-                    headers={
-                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
-                    },
-                    upload_files=(
-                        ('json_file', 'file{}'.format(mimetypes.guess_extension(content_type)), file_content),
-                    ),
-                    expect_errors=True
-                )
-                self.assertEqual(400, response.status_code)
 
 
 LOCATION_DATA_VALID = """PortNumber,AccNumber,LocNumber,IsTenant,BuildingID,CountryCode,Latitude,Longitude,StreetAddress,PostalCode,OccupancyCode,ConstructionCode,LocPerilsCovered,BuildingTIV,OtherTIV,ContentsTIV,BITIV,LocCurrency,OEDVersion

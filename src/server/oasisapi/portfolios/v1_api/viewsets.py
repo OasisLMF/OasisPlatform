@@ -290,13 +290,8 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         """
         instance = self.get_object()
         file_types = ['application/json']
-        if request.method.lower() == "post":
-            if request.data.get('csv_file', False):  # Takes priority because json files with csv files will reference for conversion
-                request.data['file'] = csv_into_currency_conversion_json(request.data['csv_file'])
-            elif request.data.get('json_file', False):
-                request.data['file'] = request.data['json_file']
-            else:
-                raise ValueError("Either csv file or json file must be provided")
+        if request.method.lower() == "post" and request.data['file'].content_type == "text/csv":
+            request.data['file'] = csv_into_currency_conversion_json(request.data['file'])
         return handle_related_file(instance, 'currency_conversion_json', request, file_types)
 
     @swagger_auto_schema(method='post', request_body=ReportingCurrencySerializer)
