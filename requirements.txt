@@ -185,7 +185,7 @@ django==5.2.8
     #   djangorestframework-simplejwt
     #   drf-nested-routers
     #   drf-yasg
-    #   model-mommy
+    #   model-bakery
     #   mozilla-django-oidc
 django-celery-results==2.6.0
     # via -r requirements-server.in
@@ -326,7 +326,7 @@ mccabe==0.7.0
     # via flake8
 mock==5.2.0
     # via -r requirements.in
-model-mommy==2.0.0
+model-bakery==1.23.0
     # via -r requirements.in
 mozilla-django-oidc==4.0.1
     # via -r requirements-server.in

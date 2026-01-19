@@ -1,7 +1,7 @@
 import six
 from django.core.files import File
 from io import StringIO, BytesIO
-from model_mommy import mommy
+from model_bakery import baker
 
 from ...models import RelatedFile, MappingFile
 
@@ -23,8 +23,8 @@ def fake_related_file(**kwargs):
     elif isinstance(kwargs['file'], six.string_types):
         kwargs['file'] = File(BytesIO(kwargs['file'].encode()), 'filename')
 
-    return mommy.make(RelatedFile, **kwargs)
+    return baker.make(RelatedFile, **kwargs)
 
 
 def fake_mapping_file(**kwargs):
-    return mommy.make(MappingFile, **kwargs)
+    return baker.make(MappingFile, **kwargs)
