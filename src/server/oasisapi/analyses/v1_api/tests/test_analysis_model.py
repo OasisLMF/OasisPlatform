@@ -13,6 +13,7 @@ from rest_framework.exceptions import ValidationError
 from src.server.oasisapi.portfolios.v1_api.tests.fakes import fake_portfolio
 from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.auth.tests.fakes import fake_user
+from src.server.oasisapi.files.models import file_storage_link
 from ...models import Analysis
 from ..tasks import record_run_analysis_result, record_generate_input_result
 from .fakes import fake_analysis, FakeAsyncResultFactory
@@ -215,7 +216,8 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                         analysis.generate_inputs(initiator, run_mode_override='V1')
 
                     self.assertEqual({'status': [
-                        'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
+                        'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, '
+                        'RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
                     ]}, ex.exception.detail)
                     self.assertEqual(status, analysis.status)
                     self.assertFalse(res_factory.revoke_called)
@@ -240,7 +242,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     self.assertEqual(Analysis.status_choices.NEW, analysis.status)
                     self.assertFalse(res_factory.revoke_called)
 
-    def test_v1_generate_input_signature_is_correct(self):
+    def test_v1_generate_input_signature_is_correct_no_conversion(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
                 analysis = fake_analysis(portfolio=fake_portfolio(location_file=fake_related_file()))
@@ -249,4 +251,22 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
 
                 self.assertEqual(sig.task, 'generate_input')
                 self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, []))
+                self.assertEqual(sig.kwargs, {})
+                self.assertEqual(sig.options['queue'], analysis.model.queue_name)
+
+    def test_v1_generate_input_signature_is_correct_conversion(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                portfolio = fake_portfolio(location_file=fake_related_file())
+                portfolio.currency_conversion_json = fake_related_file()
+                portfolio.reporting_currency = "world"
+
+                analysis = fake_analysis(portfolio=portfolio)
+
+                sig = analysis.v1_generate_input_signature
+
+                self.assertEqual(sig.task, 'generate_input')
+                self.assertEqual(sig.args, (analysis.id, analysis.portfolio.location_file.file.name, None, None, None, None, [],
+                                            file_storage_link(portfolio.currency_conversion_json), portfolio.reporting_currency))
+                self.assertEqual(sig.kwargs, {})
                 self.assertEqual(sig.options['queue'], analysis.model.queue_name)

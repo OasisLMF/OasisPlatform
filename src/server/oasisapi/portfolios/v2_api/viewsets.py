@@ -4,13 +4,14 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from django.conf import settings as django_settings
+from django.http import Http404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
-from ..models import Portfolio
+from ..models import Portfolio, csv_into_currency_conversion_json
 # from ...decorators import requires_sql_reader -- LOT3
 from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
@@ -20,7 +21,9 @@ from .serializers import (
     PortfolioListSerializer,
     PortfolioValidationSerializer,
     ExposureRunSerializer,
-    ExposureTransformSerializer
+    ExposureTransformSerializer,
+    CurrencyConversionSerializer,
+    ReportingCurrencySerializer
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
@@ -122,12 +125,15 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             'file_sql': FileSQLSerializer,
             'exposure_run': ExposureRunSerializer,
             'exposure_transform': ExposureTransformSerializer,
+            'currency_conversion_json': CurrencyConversionSerializer,
+            'reporting_currency': ReportingCurrencySerializer,
         }
         return action_serializer_map.get(self.action, super().get_serializer_class())
 
     @property
     def parser_classes(self):
-        upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file', 'exposure_transform']
+        upload_views = ['accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
+                        'exposure_transform', 'currency_conversion_json']
         if getattr(self, 'action', None) in upload_views:
             return [MultiPartParser]
         else:
@@ -323,6 +329,53 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
     @action(methods=['get'], detail=True)
     def errors_file(self, request, pk=None, version=None):
         return handle_related_file(self.get_object(), 'run_errors_file', request, ['text/csv'])
+
+    @swagger_auto_schema(method='post', request_body=CurrencyConversionSerializer)
+    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @action(methods=['get', 'delete', 'post'], detail=True)
+    def currency_conversion_json(self, request, pk=None, version=None):
+        """
+        get:
+        Return currency_conversion.json attached to portfolio
+
+        delete:
+        Removes currency_conversion.json stored
+
+        post:
+        Adds a currency_conversion.json to the portfolio for analysis, exposure run or validation
+        """
+        instance = self.get_object()
+        file_types = ['application/json']
+        if request.method.lower() == "post" and request.data['file'].content_type == "text/csv":
+            request.data['file'] = csv_into_currency_conversion_json(request.data['file'])
+        return handle_related_file(instance, 'currency_conversion_json', request, file_types)
+
+    @swagger_auto_schema(method='post', request_body=ReportingCurrencySerializer)
+    @action(methods=['get', 'delete', 'post'], detail=True)
+    def reporting_currency(self, request, pk=None, version=None):
+        """
+        get:
+        Returns current portfolio reporting currency
+
+        delete:
+        Deletes current portfolio reporting currency
+
+        post:
+        adds reporting currency to portfolio
+        """
+        method = request.method.lower()
+        instance = self.get_object()
+        if method == 'delete':
+            if instance.reporting_currency == "":
+                raise Http404()
+            instance.reporting_currency = ""
+        elif method == 'post':
+            instance.reporting_currency = request.data['reporting_currency']
+        else:
+            if instance.reporting_currency == "":
+                raise Http404()
+        instance.save()
+        return Response({"reporting_currency": instance.reporting_currency})
 
     # LOT3 DISABLE
     # @requires_sql_reader
