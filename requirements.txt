@@ -46,8 +46,9 @@ autobahn==24.4.2
     # via daphne
 automat==25.4.16
     # via twisted
-azure-core==1.35.0
+azure-core==1.38.0
     # via
+    #   -r requirements-server.in
     #   -r requirements-worker.in
     #   adlfs
     #   azure-identity
@@ -449,8 +450,9 @@ pyarrow==17.0.0
     # via
     #   -r requirements-server.in
     #   oasislmf
-pyasn1==0.6.1
+pyasn1==0.6.2
     # via
+    #   -r requirements-server.in
     #   pyasn1-modules
     #   service-identity
 pyasn1-modules==0.4.2
@@ -574,7 +576,6 @@ simplejson==3.20.1
     # via forex-python
 six==1.17.0
     # via
-    #   azure-core
     #   pathlib2
     #   python-dateutil
 sortedcontainers==2.4.0
