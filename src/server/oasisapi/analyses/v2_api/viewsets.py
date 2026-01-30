@@ -15,7 +15,7 @@ from rest_framework.settings import api_settings
 
 from ..models import Analysis, AnalysisTaskStatus
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
-    AnalysisStorageSerializer, AnalysisListSerializer
+    AnalysisStorageSerializer, AnalysisListSerializer, CombineAnalysesSerializer
 from .utils import verify_model_scaling
 from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
@@ -310,6 +310,18 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_model_scaling(obj.model)
         obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
+
+
+    @swagger_auto_schema(responses={200: AnalysisListSerializer}, request_body=CombineAnalysesSerializer)
+    @action(methods=['post'], detail=False)
+    def run_combine(self, request):
+        analysis_ids = request.data['analysis_ids']
+        logger = logging.getLogger(__name__)
+        logger.info(f'combine anlaysis ids: {analysis_ids}')
+        queryset = Analysis.objects.filter(pk__in=analysis_ids)
+        serializer = AnalysisSerializer(queryset, many=True)
+        return Response(serializer.data)
+
 
     @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)

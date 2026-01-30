@@ -582,3 +582,8 @@ class AnalysisCopySerializer(AnalysisSerializer):
         self.fields['portfolio'].required = False
         self.fields['model'].required = False
         self.fields['name'].required = False
+
+class CombineAnalysesSerializer(serializers.Serializer):
+    analysis_ids = serializers.ListField(
+            child=serializers.IntegerField()
+            )
