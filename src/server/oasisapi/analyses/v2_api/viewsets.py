@@ -15,7 +15,8 @@ from rest_framework.settings import api_settings
 
 from ..models import Analysis, AnalysisTaskStatus
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
-    AnalysisStorageSerializer, AnalysisListSerializer, CombineAnalysesSerializer
+    AnalysisStorageSerializer, AnalysisListSerializer
+from ...combine.serializers import CombineAnalysesSerializer
 from .utils import verify_model_scaling
 from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
@@ -315,7 +316,12 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
     @swagger_auto_schema(responses={200: AnalysisListSerializer}, request_body=CombineAnalysesSerializer)
     @action(methods=['post'], detail=False)
     def run_combine(self, request):
+        """
+        Combine the output of multiple analyses with ORD output. Requires the
+        `analysis_ids` to correspond to analyses in the `RUN_COMPLETED` state.
+        """
         analysis_ids = request.data['analysis_ids']
+        config_file = request.data['config_file']
         logger = logging.getLogger(__name__)
         logger.info(f'combine anlaysis ids: {analysis_ids}')
         queryset = Analysis.objects.filter(pk__in=analysis_ids)
