@@ -75,6 +75,32 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
 
     #    return res
 
+class AnalysisQuerySet(models.QuerySet):
+    def run_combine(self, request):
+        logger = logging.getLogger(__name__)
+        logger.info('Inside run combine')
+
+        for analysis in self:
+            logger.info(analysis)
+
+        selected_analyses = self
+
+        valid_statuses = ['RUN_COMPLETED']
+        valid_analyses = selected_analyses.filter(status__in=valid_statuses)
+
+        if len(valid_analyses) != len(selected_analyses):
+            raise ValidationError('Selected analyses must be in `RUN_COMPLETED` status')
+
+        from celery.contrib import rdb
+        rdb.set_trace()
+        # dummy_analysis = valid_analyses[0]
+        combine_analysis = CombineAnalysis.objects.create(creator=request.user,
+                                                   name=request.data['name'])
+
+        logger.info('Created analysis')
+        logger.info(combine_analysis)
+
+
 
 class AnalysisTaskStatus(models.Model):
     status_choices = Choices(

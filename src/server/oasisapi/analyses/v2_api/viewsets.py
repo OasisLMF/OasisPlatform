@@ -17,7 +17,7 @@ from ..models import Analysis, AnalysisTaskStatus
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
     AnalysisStorageSerializer, AnalysisListSerializer
 from ...combine.serializers import CombineAnalysesSerializer
-from .utils import verify_model_scaling
+from .utils import validate_and_get_combine_queryset, verify_model_scaling
 from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
@@ -37,6 +37,8 @@ from ...schemas.custom_swagger import (
     FILENAME_PARAM,
     FILE_LIST_RESPONSE,
 )
+
+import logging
 
 
 class AnalysisFilter(TimeStampedFilter):
@@ -321,11 +323,18 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         `analysis_ids` to correspond to analyses in the `RUN_COMPLETED` state.
         """
         analysis_ids = request.data['analysis_ids']
-        config_file = request.data['config_file']
+        config = request.data['config']
         logger = logging.getLogger(__name__)
+        logger.info(f'request object: {request}')
         logger.info(f'combine anlaysis ids: {analysis_ids}')
-        queryset = Analysis.objects.filter(pk__in=analysis_ids)
+        logger.info(f'combine config: {config}')
+
+        queryset = validate_and_get_combine_queryset(analysis_ids)
+
+        queryset.run_combine(request)
+
         serializer = AnalysisSerializer(queryset, many=True)
+        logger.info(f'combine queryset: {type(queryset)}')
         return Response(serializer.data)
 
 
