@@ -309,8 +309,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         obj = self.get_object()
         run_mode_override = request.GET.get('run_mode_override', None)
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        verify_model_scaling(obj.model)
+        if obj.model is not None:
+            verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+            verify_model_scaling(obj.model)
         obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -347,8 +348,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         `INPUTS_GENERATION_CANCELLED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or `RUN_ERROR`.
         """
         obj = self.get_object()
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        verify_model_scaling(obj.model)
+        if obj.model is not None:
+            verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+            verify_model_scaling(obj.model)
         obj.generate_and_run(request.user)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -386,8 +388,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         obj = self.get_object()
         run_mode_override = request.GET.get('run_mode_override', None)
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        verify_model_scaling(obj.model)
+        if obj.model is not None:
+            verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+            verify_model_scaling(obj.model)
         obj.generate_inputs(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 

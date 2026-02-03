@@ -91,10 +91,8 @@ class AnalysisQuerySet(models.QuerySet):
         if len(valid_analyses) != len(selected_analyses):
             raise ValidationError('Selected analyses must be in `RUN_COMPLETED` status')
 
-        from celery.contrib import rdb
-        rdb.set_trace()
         # dummy_analysis = valid_analyses[0]
-        combine_analysis = CombineAnalysis.objects.create(creator=request.user,
+        combine_analysis = Analysis.objects.create(creator=request.user,
                                                    name=request.data['name'])
 
         logger.info('Created analysis')
@@ -203,8 +201,14 @@ class Analysis(TimeStampedModel):
     input_generation_traceback_file_id = None
 
     creator = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
-    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
-    model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE,
+                                  related_name='analyses',
+                                  help_text=_('The portfolio to link the analysis to'),
+                                  null=True)
+    model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE,
+                              related_name='analyses',
+                              help_text=_('The model to link the analysis to'),
+                              null=True)
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values),
                               choices=status_choices, default=status_choices.NEW, editable=False, db_index=True)
@@ -246,6 +250,8 @@ class Analysis(TimeStampedModel):
     chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
     num_events_total = models.IntegerField(null=False, default=0, blank=True)
     num_events_complete = models.IntegerField(null=False, default=0, blank=True)
+
+    objects = AnalysisQuerySet.as_manager()
 
     class Meta:
         ordering = ['id']
@@ -362,6 +368,10 @@ class Analysis(TimeStampedModel):
 
     def get_groups(self):
         groups = []
+
+        if self.portfolio is None:
+            return groups
+
         try:
             portfolio_groups = self.portfolio.groups.all()
         except Portfolio.DoesNotExist as e:
@@ -476,6 +486,8 @@ class Analysis(TimeStampedModel):
         self.save()
 
     def run(self, initiator, run_mode_override=None):
+        self.validate_standard_analysis()
+
         valid_choices = [
             self.status_choices.READY,
             self.status_choices.RUN_COMPLETED,
@@ -566,10 +578,19 @@ class Analysis(TimeStampedModel):
         self.save()
         send_task_status_message(build_all_queue_status_message())
 
-    def raise_validate_errors(self, errors):
-        raise ValidationError(detail=errors)
+    def validate_standard_analysis(self):
+        errors = {}
+        if self.portfolio is None:
+            errors['portfolio'] = 'Portfolio not assigned to anlaysis'
+        if self.model is None:
+            errors['model'] = 'Model not assigned to analysis'
+
+        if errors:
+            raise ValidationError(detail=errors)
 
     def generate_and_run(self, initiator):
+        self.validate_standard_analysis()
+
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
@@ -638,6 +659,8 @@ class Analysis(TimeStampedModel):
             cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
+        self.validate_standard_analysis()
+
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
