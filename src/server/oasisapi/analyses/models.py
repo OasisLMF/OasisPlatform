@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 import logging
+from collections import defaultdict
 
 from celery.result import AsyncResult
 from django.conf import settings as django_settings
@@ -22,7 +23,7 @@ from src.server.oasisapi.queues.consumers import send_task_status_message, TaskS
 from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
 from ..data_files.models import DataFile
 from ..files.models import RelatedFile, file_storage_link
-from ..portfolios.models import Portfolio
+from ..portfolios.models import Portfolio, get_path_or_url
 from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
@@ -80,24 +81,58 @@ class AnalysisQuerySet(models.QuerySet):
         logger = logging.getLogger(__name__)
         logger.info('Inside run combine')
 
-        for analysis in self:
-            logger.info(analysis)
-
+        # Validate queryset
         selected_analyses = self
-
         valid_statuses = ['RUN_COMPLETED']
         valid_analyses = selected_analyses.filter(status__in=valid_statuses)
 
+        errors = defaultdict(list)
         if len(valid_analyses) != len(selected_analyses):
-            raise ValidationError('Selected analyses must be in `RUN_COMPLETED` status')
+            errors['status'].append('Analyses status must be in one of [{}]'.format(', '.join(valid_statuses)))
 
-        # dummy_analysis = valid_analyses[0]
+        # Get inputs from queryset
+        analysis_output_files = []
+        analysis_input_files = []
+        for analysis in valid_analyses:
+            input_file = get_path_or_file(analysis.input_file)
+            output_file = get_path_or_file(analysis.output_file)
+
+            if input_file is None:
+                errors['input_file'].append(f'Analysis ID {analysis.id} does not have an input file')
+            if output_file is None:
+                errors['output_file'].append(f'Analysis ID {analysis.id} does not have an output_file')
+
+            analysis_input_files.append(input_file)
+            analysis_output_files.append(output_file)
+
+        if errors:
+            raise ValidationError(detail=errors)
+
+        # Create combine analysis
+        logger.info('Creating analysis for combine')
         combine_analysis = Analysis.objects.create(creator=request.user,
                                                    name=request.data['name'])
-
-        logger.info('Created analysis')
         logger.info(combine_analysis)
 
+        # Prepare celery tasks
+        task = celery_app_v2.signature(
+                'run_combine',
+                args=(analysis_output_files, analysis_input_files, config),
+                priority=10,
+                immutable=True,
+                queue='oasis-internal-worker'
+                )
+        task.link(record_combine_output.s(combine_analysis.pk, request.user.pk))
+
+        # Dispatch task
+        combine_analysis.status = combine_analysis.status_choices.RUN_STARTED
+        task_id = task.apply_async(queue='oasis-internal-worker', priority=10).id
+        combine_analysis.run_task_id = task_id
+        combine_analysis.task_started = timezone.now()
+        combine_analysis.task_finished = None
+        combine_analysis.save()
+
+        return combine_analysis
 
 
 class AnalysisTaskStatus(models.Model):

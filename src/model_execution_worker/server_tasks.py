@@ -123,18 +123,18 @@ def run_exposure_transform(filepath, mapping_file):
             return (str(e), False)
 
 @app.task(name='run_combine_analyses')
-def run_combine_analyses(output_tar_paths, input_tar_paths, config):
+def run_combine_analyses(input_tar_paths, output_tar_paths, config):
     """
     Combines the output of multiple analyses using ods_tools.combine.
 
     Note the paths at index {i} in output_tar_paths, input_tar_paths are
-    considered to belong to the same anlaysis.
+    considered to belong to the same analysis.
 
-    e.g. output_paths[i], occurrence_paths[i] belong to the same analysis.
+    e.g. output_tar_paths[i], input_tar_paths[i] belong to the same analysis.
 
     Args:
-        output_paths: list of paths/URLs to analysis output tar files to combine
-        occurrence_paths: list of paths to input tar files for each analyis
+        input_tar_paths: list of paths to input tar files for each analyis
+        output_tar_paths: list of paths/URLs to analysis output tar files to combine
         settings_paths: list of paths to analysis settings files
         config: combine configuration dict (validated against CombineSettingsSchema)
 
@@ -158,7 +158,7 @@ def run_combine_analyses(output_tar_paths, input_tar_paths, config):
             _tmp_output_tar = get_destination_file(_output_path, _curr_tmp_dir, 'output')
             copy_or_download(_output_path, _tmp_output_tar)
 
-            # extract necessary files and place in correct repos
+            # extract necessary files and place in correct dirs
             try:
                 with tarfile.open(_tmp_input_tar, 'r:gz') as f:
                     f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=required_input_files)

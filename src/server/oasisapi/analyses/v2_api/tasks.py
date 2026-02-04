@@ -595,6 +595,39 @@ def record_losses_error_files(analysis_id, initiator_id, output_location=None, r
     analysis.save(update_fields=["output_file", "run_log_file"])
 
 
+@celery_app_v2.task(name='record_combine_output')
+def record_combine_output(result, analysis_id, user_id):
+    file_path_or_error, success = result
+    analysis = Analysis.objects.get(pk=analysis_id)
+    initiator = get_user_model().objects.get(pk=user_id)
+
+    if success:
+        logger.info(f'Combine task completed successfully for analysis {analysis_id}')
+        output_location = result.get('output_location')
+        input_location = result.get('input_location')
+        summary_levels_location = result.get('summary_levels_location')
+
+        logger.info('args: {}'.format({
+            'output_location': output_location,
+            'input_location': input_location
+        }))
+
+        analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
+        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_outputs.tar.gz')
+        analysis.summary_levels_file = store_file(summary_levels_location, 'application/json', initiator,
+                                                  filename=f'analysis_{analysis_id}_exposure_summary_levels.json')
+        analysis.status = analysis.status_choices.RUN_COMPLETED
+    else:
+        logger.error(f'Combine task failed for analysis {analysis_id}: {file_path_or_error}')
+        error_file = ContentFile(content=str(file_path_or_error), name=f'analysis_{analysis_id}_errors.txt')
+        analysis.run_traceback_file = RelatedFile.objects.create(
+                file=error_file, content_type='text/plain', creator=initiator, filename=error_file.name,
+                store_as_filename=True)
+        analysis.status = analysis.status_choices.RUN_ERROR
+
+    analysis.save()
+
+
 @celery_app_v2.task(bind=True, name='record_sub_task_start')
 def record_sub_task_start(self, analysis_id=None, task_slug=None, task_id=None, dt=None):
     _now = timezone.now() if not dt else datetime.fromtimestamp(dt, tz=dt_timezone.utc)
@@ -853,3 +886,5 @@ def update_task_id(task_update_list):
                 analysis_id=analysis_id,
                 slug=slug,
             ).update(task_id=task_id, queue_time=dt_now)
+
+
