@@ -368,7 +368,8 @@ def copy_or_download(source, destination):
 
 
 def get_destination_file(filename, destination_dir, destination_title):
-    """Returns desired location for file to go into as csv or parquet (does not move the file itself!)
+    """Returns desired location for file to go into as csv, parquet, tar.gz
+    (does not move the file itself!)
 
     Args:
         filename: name of file existing
@@ -387,7 +388,9 @@ def get_destination_file(filename, destination_dir, destination_title):
         return os.path.join(destination_dir, destination_title + ".csv")
     if ext.startswith('.parquet'):
         return os.path.join(destination_dir, destination_title + ".parquet")
-    raise ValueError(f"File must be either Parquet or CSV: {filename, ext}")
+    if ext.startswith('.gz'):
+        return os.path.join(destination_dir, destination_title + 'tar.gz')
+    raise ValueError(f"File must be either Parquet, CSV, tar.gz: {filename, ext}")
 
 
 def get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, conv_filepath, directory):
