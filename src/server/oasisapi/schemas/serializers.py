@@ -154,7 +154,6 @@ class ModelParametersSerializer(JsonSettingsSerializer):
         self.filename = 'model_settings.json'  # Store POSTED JSON using this fname
         self.schemaClass = ModelSettingHandler.make()
 
-
     def validate(self, data):
         return super(ModelParametersSerializer, self).validate_json(data)
 
