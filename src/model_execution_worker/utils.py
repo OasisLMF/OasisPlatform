@@ -146,7 +146,9 @@ def config_strip_default_exposure(config):
         'oed_accounts_csv',
         'oed_info_csv',
         'oed_scope_csv',
-        'analysis_settings_json'
+        'analysis_settings_json',
+        'reporting_currency',
+        'currency_conversion_json'
     ]
     return {k: v for k, v in config.items() if k not in exclude_list}
 
@@ -232,7 +234,7 @@ def get_ktools_version():
     ktool_ver_str = subprocess.getoutput('fmcalc -v')
 
     # Match version x.x.x , x.x or x
-    reg_pattern = "(\d+\.)?(\d+\.)?(\d+)"
+    reg_pattern = r"(\d+\.)?(\d+\.)?(\d+)"
     match_ver = re.search(reg_pattern, ktool_ver_str)
 
     if match_ver:
@@ -324,23 +326,23 @@ def update_params(params, given_params):
     Changes exposure run's given parameters.
     """
     ALLOWED_PARAMS = [
-        'ktools-alloc-rule-il',
-        'model-perils-covered',
-        'loss-factor',
-        'supported-oed-coverage-types',
-        'fmpy-sort-output',
-        'fmpy-low-memory',
-        'extra-summary-cols',
-        'ktools-alloc-rule-ri',
-        'reporting-currency',
-        'check-oed',
-        'do-disaggregation',
+        'ktools_alloc_rule_il',
+        'model_perils_covered',
+        'loss_factor',
+        'supported_oed_coverage_types',
+        'fmpy_sort_output',
+        'fmpy_low_memory',
+        'extra_summary_cols',
+        'ktools_alloc_rule_ri',
+        'check_oed',
+        'do_disaggregation',
         'verbose'
     ]
     for k, v in given_params.items():
         if k in ALLOWED_PARAMS:
             params[k] = v
-
+    if params['supported_oed_coverage_types'] == [0]:
+        params['supported_oed_coverage_types'] = None
     params["output_file"] = "outfile.csv"
 
 
@@ -366,6 +368,20 @@ def copy_or_download(source, destination):
 
 
 def get_destination_file(filename, destination_dir, destination_title):
+    """Returns desired location for file to go into as csv or parquet (does not move the file itself!)
+
+    Args:
+        filename: name of file existing
+        destination_dir: dir to send file to
+        destination_title: name to store as
+
+    Raises:
+        ValueError: file is not csv or parquet
+
+    Returns:
+        (path) path for file
+
+    """
     _, ext = os.path.splitext(filename)
     if ext.startswith('.csv'):  # Some can be stored like '.csv_abc4def'
         return os.path.join(destination_dir, destination_title + ".csv")
@@ -374,18 +390,34 @@ def get_destination_file(filename, destination_dir, destination_title):
     raise ValueError(f"File must be either Parquet or CSV: {filename, ext}")
 
 
-def get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir):
-    loc_temp = acc_temp = ri_temp = rl_temp = None
+def get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, conv_filepath, directory):
+    """Gets all files required and puts them in directory
+
+    Args:
+        loc_filepath: filepath to find location file at
+        acc_filepath: filepath to find accounts file at
+        ri_filepath: filepath to find reinsurance info file at
+        rl_filepath: filepath to find reinsurance loss file at
+        conv_filepath: filepath to find currency_converion.json at
+        directory: place all files moved to
+
+    Returns:
+        (file, file, file, file, file): files in order of arguments
+    """
+    loc_temp = acc_temp = ri_temp = rl_temp = conv_temp = None
     if loc_filepath:
-        loc_temp = get_destination_file(loc_filepath, temp_dir, "location")
+        loc_temp = get_destination_file(loc_filepath, directory, "location")
         copy_or_download(loc_filepath, loc_temp)
     if acc_filepath:
-        acc_temp = get_destination_file(acc_filepath, temp_dir, "account")
+        acc_temp = get_destination_file(acc_filepath, directory, "account")
         copy_or_download(acc_filepath, acc_temp)
     if ri_filepath:
-        ri_temp = get_destination_file(ri_filepath, temp_dir, "ri_loss")
+        ri_temp = get_destination_file(ri_filepath, directory, "ri_info")
         copy_or_download(ri_filepath, ri_temp)
     if rl_filepath:
-        rl_temp = get_destination_file(rl_filepath, temp_dir, "ri_scope")
+        rl_temp = get_destination_file(rl_filepath, directory, "ri_scope")
         copy_or_download(rl_filepath, rl_temp)
-    return (loc_temp, acc_temp, ri_temp, rl_temp)
+    if conv_filepath:
+        conv_temp = os.path.join(directory, "currency_conversion.json")
+        copy_or_download(conv_filepath, conv_temp)
+    return (loc_temp, acc_temp, ri_temp, rl_temp, conv_temp)

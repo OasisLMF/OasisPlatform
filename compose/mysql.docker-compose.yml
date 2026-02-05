@@ -62,8 +62,9 @@ services:
    environment:
      <<: *shared-env
      STARTUP_RUN_MIGRATIONS: "true"
-     OASIS_ADMIN_USER: admin
-     OASIS_ADMIN_PASS: password
+     OASIS_USE_OIDC: ""
+     OASIS_SERVICE_USERNAME_OR_ID: admin
+     OASIS_SERVICE_PASSWORD_OR_SECRET: password
    volumes:
      - filestore-OasisData:/shared-fs:rw
      - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi

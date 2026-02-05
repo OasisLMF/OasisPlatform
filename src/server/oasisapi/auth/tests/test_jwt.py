@@ -3,11 +3,14 @@ import json
 from django.urls import reverse
 from django_webtest import WebTest
 from rest_framework_simplejwt.state import token_backend
+from unittest import skipIf
 
 from .fakes import fake_user
+from src.server.oasisapi import settings
 
 
 class AccessToken(WebTest):
+    @skipIf(settings.API_AUTH_TYPE != "simple", "Username/password grant disabled for OIDC mode")
     def test_username_is_not_correct___response_is_401(self):
         username = 'dirk'
         password = 'supersecret'
@@ -23,6 +26,7 @@ class AccessToken(WebTest):
 
         self.assertEqual(401, response.status_code)
 
+    @skipIf(settings.API_AUTH_TYPE != "simple", "Username/password grant disabled for OIDC mode")
     def test_password_is_not_correct___response_is_401(self):
         username = 'dirk'
         password = 'supersecret'
@@ -38,6 +42,7 @@ class AccessToken(WebTest):
 
         self.assertEqual(401, response.status_code)
 
+    @skipIf(settings.API_AUTH_TYPE != "simple", "Username/password grant disabled for OIDC mode")
     def test_username_and_password_are_correct___returned_token_represents_the_user(self):
         username = 'dirk'
         password = 'supersecret'
@@ -61,6 +66,7 @@ class AccessToken(WebTest):
 
 
 class RefreshToken(WebTest):
+    @skipIf(settings.API_AUTH_TYPE != "simple", "Username/password grant disabled for OIDC mode")
     def test_username_and_password_are_correct___refresh_token_can_be_used_to_get_access_token(self):
         username = 'dirk'
         password = 'supersecret'

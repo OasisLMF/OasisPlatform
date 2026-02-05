@@ -40,8 +40,6 @@ class WorkerDeployments:
         self.worker_deployments: [WorkerDeployment] = []
         self.api_host = args.api_host
         self.api_port = args.api_port
-        self.username = args.username
-        self.password = args.password
 
     async def update_worker(self, name, supplier_id, model_id, model_version_id, api_version, replicas: int):
         """

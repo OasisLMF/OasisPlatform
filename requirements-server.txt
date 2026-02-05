@@ -22,8 +22,9 @@ autobahn==24.4.2
     # via daphne
 automat==25.4.16
     # via twisted
-azure-core==1.35.0
+azure-core==1.38.0
     # via
+    #   -r requirements-server.in
     #   azure-identity
     #   azure-storage-blob
     #   django-storages
@@ -96,7 +97,7 @@ cryptography==45.0.6
     #   service-identity
 daphne==4.2.1
     # via -r requirements-server.in
-django==5.2.8
+django==5.2.11
     # via
     #   -r requirements-server.in
     #   channels
@@ -247,8 +248,9 @@ psycopg2-binary==2.9.10
     # via -r requirements-server.in
 pyarrow==17.0.0
     # via -r requirements-server.in
-pyasn1==0.6.1
+pyasn1==0.6.2
     # via
+    #   -r requirements-server.in
     #   pyasn1-modules
     #   service-identity
 pyasn1-modules==0.4.2
@@ -306,7 +308,6 @@ service-identity==24.2.0
     # via twisted
 six==1.17.0
     # via
-    #   azure-core
     #   pathlib2
     #   python-dateutil
 sqlalchemy==2.0.43
@@ -341,8 +342,9 @@ uritemplate==4.2.0
     # via
     #   coreapi
     #   drf-yasg
-urllib3==2.6.0
+urllib3==2.6.3
     # via
+    #   -r requirements-server.in
     #   botocore
     #   requests
 vine==5.1.0

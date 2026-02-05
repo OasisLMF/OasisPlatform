@@ -101,7 +101,7 @@ class OasisWorkerTask(Task):
             return 'RUN_ERROR'
 
         # V1 tasks
-        if self.name is 'generate_input':
+        if self.name == 'generate_input':
             return 'INPUTS_GENERATION_ERROR'
-        if self.name is 'run_analysis':
+        if self.name == 'run_analysis':
             return 'RUN_ERROR'
