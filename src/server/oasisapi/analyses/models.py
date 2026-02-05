@@ -23,7 +23,7 @@ from src.server.oasisapi.queues.consumers import send_task_status_message, TaskS
 from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
 from ..data_files.models import DataFile
 from ..files.models import RelatedFile, file_storage_link
-from ..portfolios.models import Portfolio, get_path_or_url
+from ..portfolios.models import Portfolio
 from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
@@ -91,11 +91,12 @@ class AnalysisQuerySet(models.QuerySet):
             errors['status'].append('Analyses status must be in one of [{}]'.format(', '.join(valid_statuses)))
 
         # Get inputs from queryset
+        logger.info("Creating input lists.")
         analysis_output_files = []
         analysis_input_files = []
         for analysis in valid_analyses:
-            input_file = get_path_or_file(analysis.input_file)
-            output_file = get_path_or_file(analysis.output_file)
+            input_file = file_storage_link(analysis.input_file)
+            output_file = file_storage_link(analysis.output_file)
 
             if input_file is None:
                 errors['input_file'].append(f'Analysis ID {analysis.id} does not have an input file')
@@ -107,22 +108,25 @@ class AnalysisQuerySet(models.QuerySet):
 
         if errors:
             raise ValidationError(detail=errors)
+        logger.info(f"input files: {analysis_input_files}")
+        logger.info(f"output files: {analysis_output_files}")
 
         # Create combine analysis
         logger.info('Creating analysis for combine')
         combine_analysis = Analysis.objects.create(creator=request.user,
                                                    name=request.data['name'])
+
         logger.info(combine_analysis)
 
         # Prepare celery tasks
         task = celery_app_v2.signature(
                 'run_combine',
-                args=(analysis_output_files, analysis_input_files, config),
+                args=(analysis_input_files, analysis_output_files, request.data['config']),
                 priority=10,
                 immutable=True,
                 queue='oasis-internal-worker'
                 )
-        task.link(record_combine_output.s(combine_analysis.pk, request.user.pk))
+        # task.link(record_combine_output.s(combine_analysis.pk, request.user.pk))
 
         # Dispatch task
         combine_analysis.status = combine_analysis.status_choices.RUN_STARTED

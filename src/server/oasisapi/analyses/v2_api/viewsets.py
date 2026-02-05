@@ -318,7 +318,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
     @swagger_auto_schema(responses={200: AnalysisListSerializer}, request_body=CombineAnalysesSerializer)
     @action(methods=['post'], detail=False)
-    def run_combine(self, request):
+    def combine(self, request):
         """
         Combine the output of multiple analyses with ORD output. Requires the
         `analysis_ids` to correspond to analyses in the `RUN_COMPLETED` state.
@@ -332,11 +332,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
         queryset = validate_and_get_combine_queryset(analysis_ids)
 
-        queryset.run_combine(request)
+        combine_analysis = queryset.run_combine(request)
 
-        serializer = AnalysisSerializer(queryset, many=True)
-        logger.info(f'combine queryset: {type(queryset)}')
-        return Response(serializer.data)
+        return Response(AnalysisListSerializer(instance=combine_analysis, context=self.get_serializer_context()).data)
 
 
     @swagger_auto_schema(responses={200: AnalysisListSerializer})

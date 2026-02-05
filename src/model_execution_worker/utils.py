@@ -389,7 +389,7 @@ def get_destination_file(filename, destination_dir, destination_title):
     if ext.startswith('.parquet'):
         return os.path.join(destination_dir, destination_title + ".parquet")
     if ext.startswith('.gz'):
-        return os.path.join(destination_dir, destination_title + 'tar.gz')
+        return os.path.join(destination_dir, destination_title + '.tar.gz')
     raise ValueError(f"File must be either Parquet, CSV, tar.gz: {filename, ext}")
 
 

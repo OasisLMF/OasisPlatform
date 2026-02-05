@@ -31,6 +31,6 @@ class CombineAnalysesSerializer(serializers.Serializer):
             required=True
             )
 
-    config = CombineSettingSerializer()
+    config = CombineSettingSerializer(required=True)
 
     name = serializers.CharField(required=False, default='combine-analysis')
