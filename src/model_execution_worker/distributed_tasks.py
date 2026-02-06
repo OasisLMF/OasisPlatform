@@ -785,6 +785,7 @@ def loss_generation_task(fn):
         if params.get('input-location_generate-and-run'):
             kwargs['input_location'] = params.get('input-location_generate-and-run')
         input_location = kwargs.get('input_location')
+        params['input_location_storage'] = input_location
 
         if input_location:
             maybe_extract_tar(
@@ -994,6 +995,22 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         with TemporaryDir() as d:
             filestore.extract(p['chunk_log_location'], d, p['storage_subdir'])
             merge_dirs(d, abs_log_dir)
+
+    # store additional input files
+    additional_input_files = ['occurrence.bin']
+    curr_input_files = list(os.listdir(res['oasis_files_dir']))
+
+    input_files_added = False
+    for fname in additional_input_files:
+        if fname in curr_input_files:
+            continue
+
+        fpath = os.path.join(res['model_run_dir'], 'input', fname)
+        shutil.copy2(fpath, res['oasis_files_dir'])
+        input_files_added = True
+
+    if input_files_added:
+        filestore.put(res['oasis_files_dir'], filename=res['input_location_storage'])
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')
