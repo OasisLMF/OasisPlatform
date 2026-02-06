@@ -178,9 +178,9 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
             ("model_version_id", "model_name_id"),
         ]
         for old_key, new_key in compatibility_fields:
-        if old_key in data and new_key not in data:
-            data[new_key] = data[old_key]
-        if new_key in data and old_key not in data:
-            data[old_key] = data[new_key]
+            if old_key in data and new_key not in data:
+                data[new_key] = data[old_key]
+            if new_key in data and old_key not in data:
+                data[old_key] = data[new_key]
 
         return super(AnalysisSettingsSerializer, self).validate_json(data)
