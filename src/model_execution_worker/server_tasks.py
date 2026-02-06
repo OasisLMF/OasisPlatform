@@ -15,6 +15,7 @@ import logging
 import tarfile
 from celery.utils.log import get_task_logger
 import filelock
+import shutil
 
 app = Celery()
 
@@ -190,12 +191,17 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             lst_path = os.path.join(_curr_tmp_dir, 'input')
             logging.info(f'Extracted files: {os.listdir(lst_path)}')
 
+            # copy analysis settings to analysis root
+            shutil.copy2(os.path.join(_curr_tmp_dir, 'input', 'analysis_settings.json'),
+                         os.path.join(_curr_tmp_dir, 'analysis_settings.json'))
+
 
             logging.info('Extracting output files...')
             with tarfile.open(_tmp_output_tar, 'r:gz') as f:
                 f.extractall(path=_curr_tmp_dir) # tar already has `output/`
             lst_path = os.path.join(_curr_tmp_dir, 'output')
             logging.info(f'Extracted files: {os.listdir(lst_path)}')
+
 
             analysis_dirs.append(_curr_tmp_dir)
 

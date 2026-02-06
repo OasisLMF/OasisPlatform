@@ -39,6 +39,7 @@ from src.server.oasisapi.files.upload import wait_for_blob_copy
 from ..models import AnalysisTaskStatus, Analysis
 from .task_controller import get_analysis_task_controller
 from ...celery_app_v2 import v2 as celery_app_v2
+from .utils import delete_prev_output, store_file
 
 
 logger = get_task_logger(__name__)
@@ -46,164 +47,6 @@ logger = get_task_logger(__name__)
 
 TaskId = str
 PathStr = str
-
-
-def is_valid_url(url):
-    if url:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
-    else:
-        return False
-
-
-def is_in_bucket(object_key):
-    if not hasattr(default_storage, 'bucket'):
-        return False
-    else:
-        try:
-            default_storage.bucket.Object(object_key).load()
-            return True
-        except S3_ClientError as e:
-            if e.response['Error']['Code'] == "404":
-                return False
-            else:
-                raise e
-
-
-def is_in_container(object_key):
-    if not hasattr(default_storage, 'azure_container'):
-        return False
-    else:
-        try:
-            blob = default_storage.client.get_blob_client(object_key)
-            blob.get_blob_properties()
-            return True
-        except Blob_ResourceNotFoundError:
-            return False
-
-
-def store_file(reference, content_type, creator, required=True, filename=None):
-    """ Returns a `RelatedFile` obejct to store
-
-    :param reference: Storage reference of file (url or file path)
-    :type  reference: string
-
-    :param content_type: Mime type of file
-    :type  content_type: string
-
-    :param creator: Id of Django user
-    :type  creator: int
-
-    :param required: Allow for None returns if set to false
-    :type  required: boolean
-
-    :return: Model Object holding a Django file
-    :rtype RelatedFile
-    """
-
-    # Download data from URL
-    if is_valid_url(reference):
-        response = urlopen(reference)
-        fdata = response.read()
-
-        # Find file name
-        header_fname = response.headers.get('Content-Disposition', '').split('filename=')[-1]
-        ref = header_fname if header_fname else os.path.basename(urlparse(reference).path)
-        fname = filename if filename else ref
-        logger.info('Store file: {}'.format(ref))
-
-        # Create temp file, download content and store
-        with TemporaryFile() as tmp_file:
-            tmp_file.write(fdata)
-            tmp_file.seek(0)
-            return RelatedFile.objects.create(
-                file=File(tmp_file, name=fname),
-                filename=fname,
-                content_type=content_type,
-                creator=creator,
-                store_as_filename=True,
-            )
-
-    # Issue S3 object Copy
-    if is_in_bucket(reference):
-        fname = filename if filename else os.path.basename(reference)
-        new_file = ContentFile(b'')
-        new_file.name = fname
-        new_related_file = RelatedFile.objects.create(
-            file=new_file,
-            filename=fname,
-            content_type=content_type,
-            creator=creator,
-            store_as_filename=True,
-        )
-        stored_file = default_storage.open(new_related_file.file.name)
-        stored_file.obj.copy({"Bucket": default_storage.bucket.name, "Key": reference})
-        stored_file.obj.wait_until_exists()
-        return new_related_file
-
-    # Issue Azure object Copy
-    if is_in_container(reference):
-        new_filename = filename if filename else os.path.basename(reference)
-        fname = default_storage._get_valid_path(new_filename)
-        source_blob = default_storage.client.get_blob_client(reference)
-        dest_blob = default_storage.client.get_blob_client(fname)
-
-        try:
-            lease = BlobLeaseClient(source_blob)
-            lease.acquire()
-            dest_blob.start_copy_from_url(source_blob.url)
-            wait_for_blob_copy(dest_blob)
-            lease.break_lease()
-        except Exception as e:
-            # copy failed, break file lease and re-raise
-            lease.break_lease()
-            raise e
-
-        stored_blob = default_storage.open(os.path.basename(fname))
-        new_related_file = RelatedFile.objects.create(
-            file=File(stored_blob, name=fname),
-            filename=fname,
-            content_type=content_type,
-            creator=creator,
-            store_as_filename=True)
-        return new_related_file
-
-    try:
-        # Copy via shared FS
-        ref = str(os.path.basename(reference))
-        fname = filename if filename else ref
-        return RelatedFile.objects.create(
-            file=ref,
-            filename=fname,
-            content_type=content_type,
-            creator=creator,
-            store_as_filename=True,
-        )
-    except TypeError as e:
-        if not required:
-            logger.warning(f'Failed to store file reference: {reference} - {e}')
-            return None
-        else:
-            raise e
-
-
-def delete_prev_output(object_model, field_list=[]):
-    files_for_removal = list()
-
-    # collect prev attached files
-    for field in field_list:
-        current_file = getattr(object_model, field)
-        if current_file:
-            logger.info('delete {}: {}'.format(field, current_file))
-            setattr(object_model, field, None)
-            files_for_removal.append(current_file)
-
-    # Clear fields
-    object_model.save(update_fields=field_list)
-
-    # delete old files
-    for f in files_for_removal:
-        f.delete()
 
 
 class LogTaskError(Task):
@@ -593,39 +436,6 @@ def record_losses_error_files(analysis_id, initiator_id, output_location=None, r
         analysis.run_log_file = store_file(run_logs, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
 
     analysis.save(update_fields=["output_file", "run_log_file"])
-
-
-@celery_app_v2.task(name='record_combine_output')
-def record_combine_output(result, analysis_id, user_id):
-    file_path_or_error, success = result
-    analysis = Analysis.objects.get(pk=analysis_id)
-    initiator = get_user_model().objects.get(pk=user_id)
-
-    if success:
-        logger.info(f'Combine task completed successfully for analysis {analysis_id}')
-        output_location = result.get('output_location')
-        input_location = result.get('input_location')
-        summary_levels_location = result.get('summary_levels_location')
-
-        logger.info('args: {}'.format({
-            'output_location': output_location,
-            'input_location': input_location
-        }))
-
-        analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
-        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_outputs.tar.gz')
-        analysis.summary_levels_file = store_file(summary_levels_location, 'application/json', initiator,
-                                                  filename=f'analysis_{analysis_id}_exposure_summary_levels.json')
-        analysis.status = analysis.status_choices.RUN_COMPLETED
-    else:
-        logger.error(f'Combine task failed for analysis {analysis_id}: {file_path_or_error}')
-        error_file = ContentFile(content=str(file_path_or_error), name=f'analysis_{analysis_id}_errors.txt')
-        analysis.run_traceback_file = RelatedFile.objects.create(
-                file=error_file, content_type='text/plain', creator=initiator, filename=error_file.name,
-                store_as_filename=True)
-        analysis.status = analysis.status_choices.RUN_ERROR
-
-    analysis.save()
 
 
 @celery_app_v2.task(bind=True, name='record_sub_task_start')

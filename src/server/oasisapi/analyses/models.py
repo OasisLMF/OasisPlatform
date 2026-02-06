@@ -27,6 +27,7 @@ from ..portfolios.models import Portfolio
 from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
+from ..combine.tasks import record_combine_output
 
 from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
 
@@ -119,19 +120,17 @@ class AnalysisQuerySet(models.QuerySet):
         logger.info(combine_analysis)
 
         # Prepare celery tasks
-        task = celery_app_v2.signature(
-                'run_combine',
-                args=(analysis_input_files, analysis_output_files, request.data['config']),
-                priority=10,
-                immutable=True,
-                queue='oasis-internal-worker'
-                )
-        # task.link(record_combine_output.s(combine_analysis.pk, request.user.pk))
+        combine_run_task = celery_app_v2.signature('run_combine',
+            args=(analysis_input_files, analysis_output_files, request.data['config']),
+            immutable=True)
+
+        record_combine_task = record_combine_output.s(combine_analysis.pk, request.user.pk)
+        task = (combine_run_task | record_combine_task)
+        res = task.apply_async(queue='oasis-internal-worker', priority=10)
 
         # Dispatch task
         combine_analysis.status = combine_analysis.status_choices.RUN_STARTED
-        task_id = task.apply_async(queue='oasis-internal-worker', priority=10).id
-        combine_analysis.run_task_id = task_id
+        combine_analysis.run_task_id = res.id
         combine_analysis.task_started = timezone.now()
         combine_analysis.task_finished = None
         combine_analysis.save()

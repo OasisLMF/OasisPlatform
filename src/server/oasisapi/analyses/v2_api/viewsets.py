@@ -12,12 +12,13 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.settings import api_settings
+from rest_framework.exceptions import ValidationError
 
 from ..models import Analysis, AnalysisTaskStatus
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
     AnalysisStorageSerializer, AnalysisListSerializer
 from ...combine.serializers import CombineAnalysesSerializer
-from .utils import validate_and_get_combine_queryset, verify_model_scaling
+from .utils import verify_model_scaling
 from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
@@ -330,11 +331,14 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         logger.info(f'combine anlaysis ids: {analysis_ids}')
         logger.info(f'combine config: {config}')
 
-        queryset = validate_and_get_combine_queryset(analysis_ids)
+        queryset = Analysis.objects.filter(pk__in=analysis_ids)
+        if len(queryset) != len(analysis_ids):
+            raise ValidationError(f'Not all selected analyses {analysis_ids} found.')
 
         combine_analysis = queryset.run_combine(request)
 
         return Response(AnalysisListSerializer(instance=combine_analysis, context=self.get_serializer_context()).data)
+
 
 
     @swagger_auto_schema(responses={200: AnalysisListSerializer})
