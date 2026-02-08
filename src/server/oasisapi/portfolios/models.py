@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.core.files.uploadedfile import SimpleUploadedFile
 from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.reverse import reverse
@@ -17,6 +18,9 @@ from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from .v2_api.tasks import record_exposure_output, record_validation_output, record_transform_output
 
 import re
+import csv
+import json
+import io
 
 # from ods_tools.oed.exposure import OedExposure
 from ods_tools.oed import OdsException
@@ -93,6 +97,9 @@ class Portfolio(TimeStampedModel):
                                      default=None, related_name='mapping_file_portfolios')
     run_errors_file = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
                                         default=None, related_name='errors_file_portfolios')
+    currency_conversion_json = models.ForeignKey(RelatedFile, on_delete=models.CASCADE, blank=True, null=True,
+                                                 default=None, related_name='currency_conversion_json')
+    reporting_currency = models.CharField(default="", editable=False, max_length=15)  # No idea on reasonable max here: needed one
     exposure_status = models.CharField(
         max_length=max(len(c) for c in exposure_status_choices._db_values),
         choices=exposure_status_choices, default=exposure_status_choices.NONE, editable=False, db_index=True
@@ -135,6 +142,14 @@ class Portfolio(TimeStampedModel):
     def get_absolute_reinsurance_scope_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}portfolio-reinsurance-scope-file', kwargs={'pk': self.pk}, request=request)
+
+    def get_absolute_currency_conversion_json_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-currency-conversion-json', kwargs={'pk': self.pk}, request=request)
+
+    def get_absolute_reporting_currency_url(self, request=None, namespace=None):
+        override_ns = f'{namespace}:' if namespace else ''
+        return reverse(f'{override_ns}portfolio-reporting-currency', kwargs={'pk': self.pk}, request=request)
 
     def get_absolute_storage_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
@@ -204,11 +219,13 @@ class Portfolio(TimeStampedModel):
         account = get_path_or_url(self.accounts_file)
         ri_info = get_path_or_url(self.reinsurance_info_file)
         ri_scope = get_path_or_url(self.reinsurance_scope_file)
+        currency_conversion = get_path_or_url(self.currency_conversion_json)
+        reporting_currency = self.reporting_currency
         validation_config = settings.PORTFOLIO_VALIDATION_CONFIG
 
         return celery_app_v2.signature(
             'run_oed_validation',
-            args=(location, account, ri_info, ri_scope, validation_config),
+            args=(location, account, ri_info, ri_scope, validation_config, currency_conversion, reporting_currency),
             priority=10,
             immutable=True,
             queue='oasis-internal-worker'
@@ -218,16 +235,18 @@ class Portfolio(TimeStampedModel):
         if not self.location_file or not self.accounts_file:
             self.exposure_status = self.exposure_status_choices.INSUFFICIENT_DATA
             self.save()
-            raise ValidationError("Exposure run requires a location and an accounts file!")
+            raise ValidationError("Exposure run requires a location file and an accounts file!")
 
         location = get_path_or_url(self.location_file)
         account = get_path_or_url(self.accounts_file)
         ri_info = get_path_or_url(self.reinsurance_info_file)
         ri_scope = get_path_or_url(self.reinsurance_scope_file)
+        currency_conversion_json = get_path_or_url(self.currency_conversion_json)
+        reporting_currency = self.reporting_currency
 
         return celery_app_v2.signature(
-            'run_exposure_task',
-            args=(location, account, ri_info, ri_scope, params),
+            'run_exposure_run',
+            args=(location, account, ri_info, ri_scope, currency_conversion_json, reporting_currency, params),
             priority=10,
             immutable=True,
             queue='oasis-internal-worker'
@@ -301,3 +320,18 @@ def delete_connected_files(sender, instance, **kwargs):
         file_ref = getattr(instance, ref)
         if file_ref:
             file_ref.delete()
+
+
+def csv_into_currency_conversion_json(csv_file):
+    csv_file.seek(0)
+    reader = csv.reader(io.StringIO(csv_file.read().decode("utf-8")))
+    next(reader)
+    currency_rates = [[row[0], row[1], float(row[2])] for row in reader]
+    complete_json = {
+        'currency_conversion_type': 'DictBasedCurrencyRates',
+        'source_type': 'list',
+        'currency_rates': currency_rates
+    }
+
+    json_str = json.dumps(complete_json).encode("utf-8")
+    return SimpleUploadedFile(name='currency_conversion.json', content=json_str, content_type="application/json")

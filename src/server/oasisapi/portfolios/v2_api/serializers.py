@@ -28,8 +28,7 @@ def _serialize_input_file(file_obj, abs_uri, request):
         return None
     else:
         converted = (
-            file_obj.conversion_state == RelatedFile.ConversionState.DONE and
-            file_obj.converted_file
+            file_obj.conversion_state == RelatedFile.ConversionState.DONE and file_obj.converted_file
         )
         return {
             "uri": abs_uri,
@@ -54,6 +53,7 @@ class PortfolioListSerializer(serializers.Serializer):
     location_file = serializers.SerializerMethodField(read_only=True)
     reinsurance_info_file = serializers.SerializerMethodField(read_only=True)
     reinsurance_scope_file = serializers.SerializerMethodField(read_only=True)
+    currency_conversion_json = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
     groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
@@ -98,6 +98,18 @@ class PortfolioListSerializer(serializers.Serializer):
             request,
         )
 
+    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    def get_currency_conversion_json(self, instance):
+        if not instance.currency_conversion_json:
+            return None
+        else:
+            request = self.context.get('request')
+            return {
+                "uri": instance.get_absolute_currency_conversion_json_url(request=request),
+                "name": instance.currency_conversion_json.filename,
+                "stored": str(instance.currency_conversion_json.file)
+            }
+
 
 class PortfolioSerializer(serializers.ModelSerializer):
     accounts_file = serializers.SerializerMethodField()
@@ -106,6 +118,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     reinsurance_scope_file = serializers.SerializerMethodField()
     storage_links = serializers.SerializerMethodField()
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    currency_conversion_json = serializers.SerializerMethodField()
 
     class Meta:
         model = Portfolio
@@ -119,13 +132,12 @@ class PortfolioSerializer(serializers.ModelSerializer):
             'accounts_file',
             'reinsurance_info_file',
             'reinsurance_scope_file',
-            'run_errors_file',
-            'mapping_file',
-            'transform_file',
             'storage_links',
             'exposure_status',
             'validation_status',
-            'exposure_transform_status'
+            'exposure_transform_status',
+            'currency_conversion_json',
+            'reporting_currency'
         )
 
     def validate(self, attrs):
@@ -188,12 +200,25 @@ class PortfolioSerializer(serializers.ModelSerializer):
             request,
         )
 
+    @swagger_serializer_method(serializer_or_field=InputFileSerializer)
+    def get_currency_conversion_json(self, instance):
+        if not instance.currency_conversion_json:
+            return None
+        else:
+            request = self.context.get('request')
+            return {
+                "uri": instance.get_absolute_currency_conversion_json_url(request=request),
+                "name": instance.currency_conversion_json.filename,
+                "stored": str(instance.currency_conversion_json.file)
+            }
+
 
 class PortfolioStorageSerializer(serializers.ModelSerializer):
     accounts_file = serializers.SerializerMethodField()
     location_file = serializers.SerializerMethodField()
     reinsurance_info_file = serializers.SerializerMethodField()
     reinsurance_scope_file = serializers.SerializerMethodField()
+    currency_conversion_json = serializers.SerializerMethodField()
 
     class Meta:
         model = Portfolio
@@ -202,6 +227,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             'accounts_file',
             'reinsurance_info_file',
             'reinsurance_scope_file',
+            'currency_conversion_json'
         )
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
@@ -219,6 +245,10 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_reinsurance_scope_file(self, instance):
         return file_storage_link(instance.reinsurance_scope_file, True)
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_currency_conversion_json(self, instance):
+        return file_storage_link(instance.currency_conversion_json, True)
 
     def is_in_storage(self, value):
         # Check AWS storage
@@ -465,10 +495,14 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
 class ExposureRunParamsSerializer(serializers.Serializer):
     """ The expected structure for the `params` field """
     ktools_alloc_rule_il = serializers.IntegerField(default=2, help_text="Set the fmcalc allocation rule used in direct insured loss")
-    model_perils_covered = serializers.CharField(default='AA1', help_text="List of perils covered by the model")
+    model_perils_covered = serializers.ListField(default=['AA1'], help_text="List of perils covered by the model")
     loss_factor = serializers.ListField(child=serializers.FloatField(), default=[1.0], help_text="Loss factor")
     supported_oed_coverage_types = serializers.ListField(
-        child=serializers.IntegerField(), default=None, help_text="Select List of supported coverage_types [1, .. ,15]"
+        child=serializers.IntegerField(min_value=0, max_value=15),
+        required=False,
+        allow_null=True,
+        default=[0],
+        help_text="1-15 for coverage types to support: [0] gives None"
     )
     fmpy_sort_output = serializers.BooleanField(default=True, help_text="Order fmpy output by item_id")
     fmpy_low_memory = serializers.BooleanField(
@@ -476,7 +510,6 @@ class ExposureRunParamsSerializer(serializers.Serializer):
     )
     extra_summary_cols = serializers.ListField(child=serializers.CharField(), default=[], help_text="Extra columns to include in the summary")
     ktools_alloc_rule_ri = serializers.IntegerField(default=3, help_text="Set the fmcalc allocation rule used in reinsurance")
-    reporting_currency = serializers.CharField(default=None, help_text="Currency to use in the results reported")
     check_oed = serializers.BooleanField(default=True, help_text="If True, check input OED files")
     do_disaggregation = serializers.BooleanField(default=True, help_text="If True, run the Oasis disaggregation")
     verbose = serializers.BooleanField(default=False, help_text="Use verbose logging")
@@ -506,3 +539,11 @@ class ExposureTransformSerializer(serializers.Serializer):
 
     mapping_file = serializers.FileField(required=True)
     transform_file = serializers.FileField(required=True)
+
+
+class CurrencyConversionSerializer(serializers.Serializer):
+    file = serializers.FileField(required=True, help_text="currency_conversion_json or roe table csv file")
+
+
+class ReportingCurrencySerializer(serializers.Serializer):
+    reporting_currency = serializers.CharField(required=True)

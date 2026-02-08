@@ -4,7 +4,8 @@
 # https://docs.gunicorn.org/en/stable/settings.html
 
 BIND_ADDR='0.0.0.0:8000'
-WORKERS=$(nproc --all)
+WORKERS=$(python3 -c "import os; print(len(os.sched_getaffinity(0)))" 2>/dev/null)
+WORKERS=${WORKERS:-1}
 TIMEOUT=600
 LOG_LEVEL='info'
 

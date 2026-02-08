@@ -11,6 +11,10 @@ on:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
         type: string
+      piwind_branch:
+        description: 'PiWind branch [git ref] (default=main)'
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       oasislmf_branch:
@@ -21,6 +25,10 @@ on:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
         type: string
+      piwind_branch:
+        description: 'PiWind branch [git ref] (default=main)'
+        required: false
+        type: string
 
 jobs:
   minikube:
@@ -28,10 +36,18 @@ jobs:
     env:
       OASIS_MODEL_DATA_DIR: /shared-fs/PIWIND
       ACTIONS_STEP_DEBUG: true
+      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.oasislmf_branch }}
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.ods_branch }}
+      piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.piwind_branch }}
+
     steps:
       - name: Clone OasisPiWind model data
         run: |
-          git clone https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
+          if [[ -z "${{ env.piwind_branch }}" ]]; then
+            git clone https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
+          else
+            git clone -b ${{ env.piwind_branch }} https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
+          fi
 
       - name: Set OASIS_MODEL_DATA_DIR env
         run: echo "OASIS_MODEL_DATA_DIR=/tmp/piwind" >> $GITHUB_ENV
@@ -42,12 +58,15 @@ jobs:
       - name: Start Minikube
         uses: medyagh/setup-minikube@latest
 
+#      - name: Enable metrics
+#        run: minikube addons enable metrics-server
+
       - name: Build Docker images
         run: |
           eval $(minikube docker-env)
 
-          docker build -f Dockerfile.api_server --build-arg ods_tools_branch=${{ inputs.ods_branch }} --build-arg oasislmf_branch=${{ inputs.oasislmf_branch }} -t coreoasis/api_server:dev .
-          docker build -f Dockerfile.model_worker --build-arg ods_tools_branch=${{ inputs.ods_branch }} --build-arg oasislmf_branch=${{ inputs.oasislmf_branch }} -t coreoasis/model_worker:dev .
+          docker build -f Dockerfile.api_server --build-arg ods_tools_branch=${{ env.ods_branch }} --build-arg oasislmf_branch=${{ env.oasislmf_branch }} -t coreoasis/api_server:dev .
+          docker build -f Dockerfile.model_worker --build-arg ods_tools_branch=${{ env.ods_branch }} --build-arg oasislmf_branch=${{ env.oasislmf_branch }} -t coreoasis/model_worker:dev .
 
           pushd kubernetes/worker-controller
               docker build -t coreoasis/worker_controller:dev .
@@ -79,7 +98,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: OasisLMF/OasisPiWind
-          ref: main
+          ref: ${{ env.piwind_branch }}
       - name: Start Minikube Tunnel
         run: |
           nohup minikube tunnel > /dev/null 2>&1 &
@@ -103,12 +122,26 @@ jobs:
 
       - name: Authenticate
         run: |
+          USERNAME_OR_ID=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.username_or_id}" | base64 -d)
+          PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.password_or_secret}" | base64 -d)
+          USE_OIDC=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.use_oidc}" | base64 -d)
+
+          echo "Delay to wait for authentication server to start"
+          sleep 60
           delay=1
           for i in {1..8}; do
             delay=$((delay * 2))
-            RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
-              -H "Content-Type: application/json" \
-              -d '{"username": "admin", "password": "password"}')
+            if [ "$USE_OIDC" = "true" ]; then
+              echo "Using OIDC authentication"
+              RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
+                -H "Content-Type: application/json" \
+                -d "{\"client_id\": \"$USERNAME_OR_ID\", \"client_secret\": \"$PASSWORD_OR_SECRET\"}")
+            else
+              echo "Using Simple JWT authentication"
+              RESPONSE=$(curl -s -k -X POST https://ui.oasis.local/api/access_token/ \
+                -H "Content-Type: application/json" \
+                -d "{\"username\": \"$USERNAME_OR_ID\", \"password\": \"$PASSWORD_OR_SECRET\"}")
+            fi
 
             if echo "$RESPONSE" | jq -e . > /dev/null 2>&1; then
               TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
@@ -141,12 +174,17 @@ jobs:
           kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
 
       - name: Install OasisLMF
-        run: pip install oasislmf
+        run: |
+          pip install --upgrade pip
+          pip install -v "git+https://git@github.com/OasisLMF/OasisLMF.git@${{ env.oasislmf_branch }}#egg=oasislmf"
 
       - name: Create test settings
         run: |
           cat <<EOF > test_settings.json
           {
+            "computation_settings": {
+              "ktools_num_processes": 1
+            },
             "version": "3",
             "analysis_tag": "base_example",
             "source_tag": "MDK",
@@ -160,10 +198,11 @@ jobs:
             },
             "gul_summaries": [
               {
-                "aalcalc": false,
-                "eltcalc": true,
                 "id": 1,
-                "lec_output": false
+                "ord_output": {
+                  "alt_period": false,
+                  "elt_sample": true
+                }
               }
             ]
           }
@@ -172,9 +211,24 @@ jobs:
       - name: Run analysis
         run: |
           set -e -o pipefail
+          USERNAME_OR_ID=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.username_or_id}" | base64 -d)
+          PASSWORD_OR_SECRET=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.password_or_secret}" | base64 -d)
+          USE_OIDC=$(kubectl get secret oasis-service-account-credentials -o jsonpath="{.data.use_oidc}" | base64 -d)
+
+          CREDENTIALS_FILE="$(mktemp)"
+          trap 'rm -f "$CREDENTIALS_FILE"' EXIT
+
+          if [ "$USE_OIDC" = "true" ]; then
+            echo "Using OIDC authentication"
+            printf '{"client_id": "%s", "client_secret": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET" > "$CREDENTIALS_FILE"
+          else
+            echo "Using Simple JWT authentication"
+            printf '{"username": "%s", "password": "%s"}' "$USERNAME_OR_ID" "$PASSWORD_OR_SECRET" > "$CREDENTIALS_FILE"
+          fi
+
           {
             oasislmf api run \
-              --server-login-json '{"username": "admin", "password": "password"}' \
+              --server-login-json "$CREDENTIALS_FILE" \
               --server-version 'v1' \
               --server-url 'http://ui.oasis.local/api' \
               --model-id 1 \
@@ -183,6 +237,51 @@ jobs:
               -V
           } 2>&1 | tee logs.txt
           echo "exit_code=$?" >> "$GITHUB_ENV"
+
+#      - name: Minikube memory usage
+#        if: always()
+#        run: |
+#          # per pod memory data
+#          kubectl top pods --all-namespaces --no-headers 2>/dev/null || {
+#              echo "Failed to get metrics. Check metrics server."; exit 1;
+#          }
+#          echo
+#          echo "Memory Usage Summary:"
+#          echo "===================="
+#
+#          # total memory
+#          PODS=$(kubectl top pods --all-namespaces --no-headers | wc -l)
+#          TOTAL=$(kubectl top pods --all-namespaces --no-headers | awk '{
+#              mem=$4;
+#              gsub(/[^0-9.]/, "", mem);
+#              if($4 ~ /Gi/) mem*=1024;
+#              total+=mem
+#          } END {printf "%.0f", total}')
+#
+#          echo "Total pods: $PODS"
+#          echo "Total memory: ${TOTAL}Mi"
+#          echo "Average: $(echo "scale=0; $TOTAL / $PODS" | bc)Mi per pod"
+#
+#          echo
+#          echo "By Namespace:"
+#          echo "-------------"
+#          kubectl top pods --all-namespaces --no-headers | awk '{
+#              ns=$1; mem=$4;
+#              gsub(/[^0-9.]/, "", mem);
+#              if($4 ~ /Gi/) mem*=1024;
+#              ns_mem[ns]+=mem; ns_count[ns]++
+#          } END {
+#              for(ns in ns_mem)
+#                  printf "%-20s %6.0fMi (%d pods)\n", ns, ns_mem[ns], ns_count[ns]
+#          }' | sort -k2 -nr
+#
+#          echo
+#          echo "Top 5 Memory Users:"
+#          echo "-------------------"
+#          kubectl top pods --all-namespaces --no-headers | sort -k4 -hr | head -5 | \
+#              awk '{printf "%-30s %s\n", $1"/"$2, $4}'
+
+
 
       - name: Upload Artifact
         if: always()

@@ -17,7 +17,7 @@ from rest_framework import serializers
 from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
 from jsonschema.exceptions import SchemaError as JSONSchemaError
 
-from ods_tools.oed.setting_schema import ModelSettingSchema, AnalysisSettingSchema
+from ods_tools.oed import AnalysisSettingHandler, ModelSettingHandler
 from ods_tools.oed.common import OdsException
 
 
@@ -145,14 +145,14 @@ class JsonSettingsSerializer(serializers.Serializer):
 class ModelParametersSerializer(JsonSettingsSerializer):
     class Meta:
         swagger_schema_fields = load_json_schema(
-            schema=ModelSettingSchema().schema,
+            schema=ModelSettingHandler.make().get_schema('model_settings_schema'),
             link_prefix='#/definitions/ModelSettings'
         )
 
     def __init__(self, *args, **kwargs):
         super(ModelParametersSerializer, self).__init__(*args, **kwargs)
         self.filename = 'model_settings.json'  # Store POSTED JSON using this fname
-        self.schemaClass = ModelSettingSchema()
+        self.schemaClass = ModelSettingHandler.make()
 
     def validate(self, data):
         return super(ModelParametersSerializer, self).validate_json(data)
@@ -161,32 +161,26 @@ class ModelParametersSerializer(JsonSettingsSerializer):
 class AnalysisSettingsSerializer(JsonSettingsSerializer):
     class Meta:
         swagger_schema_fields = load_json_schema(
-            schema=AnalysisSettingSchema().schema,
+            schema=AnalysisSettingHandler.make().get_schema('analysis_settings_schema'),
             link_prefix='#/definitions/AnalysisSettings'
         )
 
     def __init__(self, *args, **kwargs):
         super(AnalysisSettingsSerializer, self).__init__(*args, **kwargs)
         self.filename = 'analysis_settings.json'  # Store POSTED JSON using this fname
-        self.schemaClass = AnalysisSettingSchema()
+        self.schemaClass = AnalysisSettingHandler.make()
 
     def validate(self, data):
-
         # Note: Workaround for to support workers 1.15.x and older. With the analysis settings schema change the workers with
         # These are added into existing files as a 'fix' so older workers can run without patching the worker schema
-        # This *SHOULD* be removed at a later date once older models are not longer used
-        data = self.schemaClass.compatibility(data)
-        compatibility_field_map = {
-            "module_supplier_id": {
-                "updated_to": "model_supplier_id"
-            },
-            "model_version_id": {
-                "updated_to": "model_name_id"
-            },
-        }
-        for key in compatibility_field_map:
-            if key not in data:
-                if compatibility_field_map[key]['updated_to'] in data:
-                    data[key] = data[compatibility_field_map[key]['updated_to']]
+        compatibility_fields = [
+            ("module_supplier_id", "model_supplier_id"),
+            ("model_version_id", "model_name_id"),
+        ]
+        for old_key, new_key in compatibility_fields:
+            if old_key in data and new_key not in data:
+                data[new_key] = data[old_key]
+            if new_key in data and old_key not in data:
+                data[old_key] = data[new_key]
 
         return super(AnalysisSettingsSerializer, self).validate_json(data)

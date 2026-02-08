@@ -1,4 +1,4 @@
-from model_mommy import mommy
+from model_bakery import baker
 
 from src.server.oasisapi.data_files.models import DataFile
 
@@ -13,4 +13,4 @@ def fake_data_file(**kwargs):
         ComplexModelDataFile: A faked DataFile
 
     """
-    return mommy.make(DataFile, **kwargs)
+    return baker.make(DataFile, **kwargs)

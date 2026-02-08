@@ -299,6 +299,8 @@ class Controller:
             'loc_file': file_storage_link(analysis.portfolio.location_file),
             'analysis_settings_file': file_storage_link(analysis.settings_file),
             'complex_data_files': analysis.create_complex_model_data_file_dicts() or None,
+            'reporting_currency': analysis.portfolio.reporting_currency,
+            'currency_conversion_json': file_storage_link(analysis.portfolio.currency_conversion_json)
         }
         files_kwargs = {
             'loc_file': file_storage_link(analysis.portfolio.location_file),

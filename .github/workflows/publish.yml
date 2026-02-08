@@ -3,11 +3,6 @@ name: Platform Release
 on:
   workflow_dispatch:
     inputs:
-      push_latest:
-        description: 'Push images with the "latest" tag'
-        required: false
-        type: boolean
-
       pre_release:
         description: 'Mark GitHub release as pre-release: [true, false]'
         required: true
@@ -32,10 +27,6 @@ on:
 
       ods_tools_release:
         description: '(OVERRIDE) The ods-tools version in this release [semvar]'
-        required: false
-
-      ktools_release:
-        description: '(OVERRIDE) The ktools version in this release [semvar] "v{n}.{n}.{n}"'
         required: false
 
       cve_severity:
@@ -95,25 +86,21 @@ jobs:
 
     env:
       pre_release: ${{ inputs.pre_release == '' && 'false' || inputs.pre_release }}
-      push_latest: ${{ inputs.push_latest == '' && 'false' || inputs.push_latest }}
-      latest_tag: 'latest'
+      latest_tag: '2.5'
 
       release_tag: ${{ inputs.release_tag }}
       prev_release_tag: ${{ inputs.prev_release_tag }}
 
       oasislmf_release: ${{ inputs.oasislmf_release }}
       ods_tools_release: ${{ inputs.ods_tools_release }}
-      ktools_release: ${{ inputs.ktools_release }}
 
       dir_platform: ${{ github.workspace }}/platform
       dir_oasislmf: ${{ github.workspace }}/oasislmf
       dir_ods_tools: ${{ github.workspace }}/ods_tools
-      dir_ktools: ${{ github.workspace }}/ktools
 
       branch_platform: ${{ github.ref_name }}
       branch_oasislmf: 'main'
       branch_ods_tools: 'main'
-      branch_ktools: 'master'
 
     steps:
      ## RELEASE CHECKS
@@ -145,7 +132,7 @@ jobs:
       if: startsWith(github.ref_name, 'stable/')
       run: echo "branch_oasislmf=${{ env.branch_platform }}" >> $GITHUB_ENV
 
-    ## CLONE REPOS (plat / oasislmf / ktools / UI)
+    ## CLONE REPOS (plat / oasislmf / UI)
     - name: Setup github user
       run: |
         git config --global user.email ${{ env.GIT_EMAIL }}
@@ -179,14 +166,6 @@ jobs:
         ref: ${{ env.branch_ods_tools }}
         fetch-depth: 0
 
-    - name: Checkout Ktools
-      uses: actions/checkout@v3
-      with:
-        path: ${{ env.dir_ktools }}
-        repository: Oasislmf/ktools
-        ref: ${{ env.branch_ktools }}
-        fetch-depth: 0
-
     # If overrides not set, auto-load the current / prev release for each repo
     - name: Find 'prev_release_tag'
       if: inputs.prev_release_tag == ''
@@ -201,16 +180,13 @@ jobs:
         docker pull coreoasis/model_worker:${{ env.prev_release_tag }}
         docker run --entrypoint "oasislmf" coreoasis/model_worker:${{ env.prev_release_tag }} 'version' > OASISLMF_VERSION_PREV
         docker run --entrypoint "python3" coreoasis/model_worker:${{ env.prev_release_tag }} '-cimport ods_tools; print(ods_tools.__version__)' > ODS_VERSION_PREV
-        docker run --entrypoint "eve" coreoasis/model_worker:${{ env.prev_release_tag }} '-v' 2> KTOOLS_VERSION_PREV
 
     - name: Set prev component versions
       run: |
         PREV_OASISLMF_VER=$(cat OASISLMF_VERSION_PREV)
         PREV_ODS_VER=$(cat ODS_VERSION_PREV)
-        PREV_KTOOL_VER=$(head -1 KTOOLS_VERSION_PREV | grep -oP "(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)")
         echo "oasislmf_release_prev=$PREV_OASISLMF_VER" >> $GITHUB_ENV
         echo "ods_tools_release_prev=$PREV_ODS_VER" >> $GITHUB_ENV
-        echo "ktools_release_prev=v$PREV_KTOOL_VER" >> $GITHUB_ENV
 
     - name: oasislmf tag (OVERRIDE)
       working-directory: ${{ env.dir_oasislmf }}
@@ -239,22 +215,6 @@ jobs:
       run: |
         tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1)
         echo "ods_tools_release=$tag" >> $GITHUB_ENV
-
-    - name: Ktools tag (OVERRIDE)
-      working-directory: ${{ env.dir_ktools }}
-      #if: ! inputs.ktools_release == ''
-      if: env.ktools_release != ''   # TESTING
-      run: |
-        git checkout ${{ env.branch_ktools }}
-        git reset  --hard $(git rev-list -n 1 v${{ env.ktools_release }} )
-
-    - name: Find 'ktools_release'
-      if: inputs.ktools_release == ''
-      working-directory: ${{ env.dir_ktools }}
-      run: |
-        tag=$( ${{ env.dir_platform }}/scripts/find_release.sh -p "${{ env.pre_release }}" -t 1 -v 'v')
-        echo "ktools_release=$tag" >> $GITHUB_ENV
-
 
     ## TAG & assests
     - name: Login to Docker Hub
@@ -327,7 +287,6 @@ jobs:
       run: |
         docker run --entrypoint "oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
         docker run --entrypoint "python3" ${{ needs.build_images.outputs.worker_image }} '-cimport ods_tools; print(ods_tools.__version__)' > ODS_VERSION
-        docker run --entrypoint "eve" ${{ needs.build_images.outputs.worker_image }} '-v' 2> KTOOLS_VERSION
 
     - name: 'store OASISLMF_VERSION'
       uses: actions/upload-artifact@v4
@@ -343,23 +302,11 @@ jobs:
         path: ODS_VERSION
         retention-days: 5
 
-    - name: 'store KTOOLS_VERSION'
-      uses: actions/upload-artifact@v4
-      with:
-        name: KTOOLS_VERSION
-        path: KTOOLS_VERSION
-        retention-days: 5
-
     - name: Check for Oasislmf version match
       run: test "$(cat OASISLMF_VERSION)" = ${{ env.oasislmf_release }} || exit 1
 
     - name: Check for ods-tools version match
       run: test "$(cat ODS_VERSION)" = ${{ env.ods_tools_release }} || exit 1
-
-    - name: Check for ktools version match
-      run: |
-        KTOOL_VER=$(head -1 KTOOLS_VERSION | grep -oP "(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)")
-        test "v$KTOOL_VER" = ${{ env.ktools_release }} || exit 1
 
     - name: Download API schema
       uses: actions/download-artifact@v4
@@ -439,9 +386,6 @@ jobs:
           --ods-repo-path ${{ env.dir_ods_tools }} \
           --ods-from-tag ${{ env.ods_tools_release_prev }} \
           --ods-to-tag ${{ env.ods_tools_release }} \
-          --ktools-repo-path ${{ env.dir_ktools }} \
-          --ktools-from-tag ${{ env.ktools_release_prev }} \
-          --ktools-to-tag ${{ env.ktools_release }} \
           --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
           --output-path ./RELEASE.md
         cat ./RELEASE.md >> $GITHUB_STEP_SUMMARY
@@ -456,7 +400,7 @@ jobs:
         docker push coreoasis/piwind_worker:${{ env.release_tag }}
 
     - name: Push images (Production)
-      if: ${{ env.pre_release == 'false' && env.push_latest == 'true' }}
+      if: ${{ env.pre_release == 'false' }}
       run: |
         docker push coreoasis/api_server:${{ env.latest_tag }}
         docker push coreoasis/model_worker:${{ env.latest_tag }}
