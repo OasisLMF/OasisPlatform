@@ -198,10 +198,11 @@ jobs:
             },
             "gul_summaries": [
               {
-                "aalcalc": false,
-                "eltcalc": true,
                 "id": 1,
-                "lec_output": false
+                "ord_output": {
+                  "alt_period": false,
+                  "elt_sample": true
+                }
               }
             ]
           }
