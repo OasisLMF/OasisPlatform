@@ -1,6 +1,22 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.0`_
+ ---------
+* [#1296, #1223](https://github.com/OasisLMF/OasisPlatform/pull/1248) - Feature/generic OIDC
+* [#698](https://github.com/OasisLMF/OasisPlatform/pull/1312) - RoE functionality in Platform
+* [#1316](https://github.com/OasisLMF/OasisPlatform/pull/1316) - Fix/current platform errors
+* [#1317](https://github.com/OasisLMF/OasisPlatform/pull/1317) - Use updated setting handlers from ods-tools
+* [#1320](https://github.com/OasisLMF/OasisPlatform/pull/1320) - trivy
+* [#1315](https://github.com/OasisLMF/OasisPlatform/pull/1321) - testing module `model_mommy` deprecated
+* [#1323](https://github.com/OasisLMF/OasisPlatform/pull/1324) - Server DB connection overload
+* [#1327](https://github.com/OasisLMF/OasisPlatform/pull/1327) - test CI 
+* [#1330](https://github.com/OasisLMF/OasisPlatform/pull/1330) - Update/ci publish
+* [#1307](https://github.com/OasisLMF/OasisPlatform/pull/1307) - Update urllib3 to 2.6.0
+* [#1308](https://github.com/OasisLMF/OasisPlatform/pull/1308) - Update test for analyses_settings computation_settings merge
+* [#1310](https://github.com/OasisLMF/OasisPlatform/pull/1310) - Paths causing schema issue in v2
+.. _`2.5.0`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.10...2.5.0
+
 `2.4.10`_
  ---------
 * [#1297](https://github.com/OasisLMF/OasisPlatform/pull/1297) - Consistency with LMF oed_schema_info
