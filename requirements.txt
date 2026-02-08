@@ -377,9 +377,9 @@ oasis-data-manager==0.1.6
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.4.11
+oasislmf[extra]==2.5.0
     # via -r requirements-worker.in
-ods-tools==4.0.5
+ods-tools==5.0.1
     # via
     #   -r requirements-server.in
     #   oasislmf
@@ -451,6 +451,7 @@ pyarrow==17.0.0
     # via
     #   -r requirements-server.in
     #   oasislmf
+    #   ods-tools
 pyasn1==0.6.2
     # via
     #   -r requirements-server.in
@@ -564,6 +565,7 @@ scikit-learn==1.7.1
 scipy==1.16.1
     # via
     #   oasislmf
+    #   ods-tools
     #   scikit-learn
 service-identity==24.2.0
     # via twisted

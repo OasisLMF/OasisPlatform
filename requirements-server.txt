@@ -215,11 +215,12 @@ numpy==2.2.6
     #   numba
     #   pandas
     #   pyarrow
+    #   scipy
 oasis-data-manager==0.1.6
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools==4.0.5
+ods-tools==5.0.1
     # via -r requirements-server.in
 packaging==25.0
     # via
@@ -247,7 +248,9 @@ psycopg-pool==3.2.6
 psycopg2-binary==2.9.10
     # via -r requirements-server.in
 pyarrow==17.0.0
-    # via -r requirements-server.in
+    # via
+    #   -r requirements-server.in
+    #   ods-tools
 pyasn1==0.6.2
     # via
     #   -r requirements-server.in
@@ -304,6 +307,8 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 s3transfer==0.13.1
     # via boto3
+scipy==1.17.0
+    # via ods-tools
 service-identity==24.2.0
     # via twisted
 six==1.17.0
