@@ -89,7 +89,7 @@ class AnalysisQuerySet(models.QuerySet):
 
         errors = defaultdict(list)
         if len(valid_analyses) != len(selected_analyses):
-            errors['status'].append('Analyses status must be in one of [{}]'.format(', '.join(valid_statuses)))
+            errors['status'].append('Analyses status must be [{}]'.format(', '.join(valid_statuses)))
 
         # Get inputs from queryset
         logger.info("Creating input lists.")

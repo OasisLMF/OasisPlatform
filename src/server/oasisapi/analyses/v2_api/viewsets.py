@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from collections import defaultdict
 
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
@@ -324,8 +325,18 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Combine the output of multiple analyses with ORD output. Requires the
         `analysis_ids` to correspond to analyses in the `RUN_COMPLETED` state.
         """
-        analysis_ids = request.data['analysis_ids']
-        config = request.data['config']
+        errors = {}
+        if 'analysis_ids' not in request.data:
+            errors['analysis_ids'] = 'Analysis ids not provided.'
+        if 'config' not in request.data:
+            errors['config'] = 'Combine config not provided.'
+
+        if errors:
+            raise ValidationError(errors)
+
+        analysis_ids = request.data.get('analysis_ids')
+        config = request.data.get('config')
+
         logger = logging.getLogger(__name__)
         logger.info(f'request object: {request}')
         logger.info(f'combine anlaysis ids: {analysis_ids}')
@@ -333,7 +344,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
         queryset = Analysis.objects.filter(pk__in=analysis_ids)
         if len(queryset) != len(analysis_ids):
-            raise ValidationError(f'Not all selected analyses {analysis_ids} found.')
+            raise ValidationError({'analysis_ids': f'Not all selected analyses {analysis_ids} found.'})
 
         combine_analysis = queryset.run_combine(request)
 
