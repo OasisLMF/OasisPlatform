@@ -89,15 +89,30 @@ class StartAnalysis(TestCase):
                     MODEL_DATA_DIRECTORY=model_data_dir,
                     WORKING_DIRECTORY=work_dir,):
                 self.create_tar(str(Path(media_root, 'location.tar')))
-                Path(media_root, 'analysis_settings.json').touch()
                 Path(run_dir, 'output').mkdir(parents=True)
                 Path(model_data_dir, 'supplier', 'model', 'version').mkdir(parents=True)
                 log_file = Path(log_dir, 'log-file.log').touch()
 
+                settings_file_path = Path(media_root, 'analysis_settings.json')
+                analysis_settings = {
+                    "computation_settings": {
+                        "kernel_num_processes": 42
+                    },
+                    "model_settings": {
+                    },
+                    "model_name_id": "PiWind",
+                    "model_supplier_id": "OasisLMF",
+                    "gul_output": False,
+                    "gul_summaries": []
+                }
+
+                with open(settings_file_path, 'w') as f:
+                    json.dump(analysis_settings, f, indent=4)
+
                 params = {
                     "oasis_files_dir": os.path.join(run_dir, 'input'),
                     "model_run_dir": run_dir,
-                    "ktools_fifo_relative": True,
+                    "kernel_fifo_relative": True,
                     "verbose": False
                 }
                 with open(Path(model_data_dir, 'oasislmf.json'), 'w') as f:
@@ -122,9 +137,11 @@ class StartAnalysis(TestCase):
 
                     cmd_mock.assert_called_once()
                     called_args = cmd_mock.call_args.kwargs
+                    self.assertEqual(called_args.get('kernel_num_processes', None),
+                                     analysis_settings.get("computation_settings").get("kernel_num_processes"))
                     self.assertEqual(called_args.get('oasis_files_dir', None), params.get('oasis_files_dir'))
                     self.assertEqual(called_args.get('model_run_dir', None), params.get('model_run_dir'))
-                    self.assertEqual(called_args.get('ktools_fifo_relative', None), params.get('ktools_fifo_relative'))
+                    self.assertEqual(called_args.get('kernel_fifo_relative', None), params.get('kernel_fifo_relative'))
                     self.assertEqual(called_args.get('verbose', None), params.get('verbose'))
                     self.assertEqual(called_args.get('analysis_settings.json', None), params.get('analysis_settings.json'))
                     tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')
