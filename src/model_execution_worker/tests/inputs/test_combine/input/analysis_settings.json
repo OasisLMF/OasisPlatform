@@ -1,0 +1,8 @@
+{
+    "model_name_id": "PiWind",
+    "model_supplier_id": "OasisLMF",
+    "gul_output": false,
+    "model_settings": {},
+    "gul_summaries": [],
+    "number_of_samples": 10
+}
