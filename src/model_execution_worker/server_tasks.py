@@ -155,15 +155,13 @@ def run_combine(input_tar_paths, output_tar_paths, config):
         logger.info(f'dst: {dst}')
         with filelock.FileLock(f'{dst}.lock'):
             if not Path(dst).exists():
-                filestore.get(filestore_ref, dst, storage_subdir)
+                out = filestore.get(filestore_ref, dst, storage_subdir)
 
     required_input_files = ['analysis_settings.json', 'occurrence.bin']
 
-    logging.info('Inside the run combine tasks...')
     with TemporaryDir() as tmpdir:
         analysis_dirs = []
         for i, (_input_path, _output_path) in enumerate(zip(input_tar_paths, output_tar_paths)):
-            logging.info(f'Running setting up directory for analysis {i}')
             # make analysis dir
             _curr_tmp_dir = os.path.join(tmpdir, str(i))
             os.mkdir(_curr_tmp_dir)
@@ -171,44 +169,31 @@ def run_combine(input_tar_paths, output_tar_paths, config):
 
             # download input + output tars
             _tmp_input_tar = get_destination_file(_input_path, _curr_tmp_dir, 'input')
-            logging.info(f'Copying {_input_path} -> {_tmp_input_tar}')
             maybe_get_tar(_input_path, _tmp_input_tar)
-            logging.info(f'Copy exists? {os.path.isfile(_tmp_input_tar)}')
 
             _tmp_output_tar = get_destination_file(_output_path, _curr_tmp_dir, 'output')
-            logging.info(f'Copying {_output_path} -> {_tmp_output_tar}')
             maybe_get_tar(_output_path, _tmp_output_tar)
-            logging.info(f'Copy exists? {os.path.isfile(_tmp_output_tar)}')
 
             # extract necessary files and place in correct dirs
-            logging.info('Extracting input files...')
             try:
                 with tarfile.open(_tmp_input_tar, 'r:gz') as f:
-                    logging.info('Members in input file: ')
-                    logging.info(f.getnames())
                     f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=required_input_files)
             except KeyError as e:
                 logging.error('Combine input files missing: ' + str(e))
-                return ('Input files missing: ' + str(e), False)
-            lst_path = os.path.join(_curr_tmp_dir, 'input')
-            logging.info(f'Extracted files: {os.listdir(lst_path)}')
+                return (False, 'Input files missing: ' + str(e))
 
             # copy analysis settings to analysis root
             shutil.copy2(os.path.join(_curr_tmp_dir, 'input', 'analysis_settings.json'),
                          os.path.join(_curr_tmp_dir, 'analysis_settings.json'))
 
-            logging.info('Extracting output files...')
             with tarfile.open(_tmp_output_tar, 'r:gz') as f:
                 f.extractall(path=_curr_tmp_dir)  # tar already has `output/`
-            lst_path = os.path.join(_curr_tmp_dir, 'output')
-            logging.info(f'Extracted files: {os.listdir(lst_path)}')
 
             analysis_dirs.append(_curr_tmp_dir)
 
         combine_results_dir = os.path.join(tmpdir, 'combine_results')
 
         # run combine task
-        logging.info('Running combine task...')
         try:
             config = combine.prepare_config(config)
             combine.combine(analysis_dirs=analysis_dirs,
