@@ -6,7 +6,7 @@
 #
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.15
+aiohttp==3.13.3
     # via
     #   -r kubernetes/worker-controller/requirements.in
     #   kubernetes-asyncio
@@ -46,7 +46,7 @@ six==1.17.0
     #   python-dateutil
 typing-extensions==4.15.0
     # via aiosignal
-urllib3==2.6.0
+urllib3==2.6.3
     # via kubernetes-asyncio
 websockets==13.1
     # via -r kubernetes/worker-controller/requirements.in
