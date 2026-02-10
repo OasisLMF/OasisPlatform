@@ -1,0 +1,6 @@
+# CI-specific overrides to reduce memory footprint for GitHub Actions runners (~7GB RAM).
+# Usage: helm install platform oasis-platform -f oasis-platform/ci-values.yaml
+
+# Use simple JWT auth instead of OIDC - eliminates keycloak/authentik pods + their DBs
+oasisServer:
+  apiAuthType: simple

@@ -57,9 +57,15 @@ jobs:
 
       - name: Start Minikube
         uses: medyagh/setup-minikube@latest
+        with:
+          memory: 6144
+          extra-config: 'kubelet.system-reserved=memory=512Mi'
 
-#      - name: Enable metrics
-#        run: minikube addons enable metrics-server
+      - name: Enable swap on Minikube
+        run: |
+          # Enable swap inside minikube to handle worker memory spikes
+          minikube ssh "sudo swapon --show || (sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile)"
+          minikube ssh "free -m"
 
       - name: Build Docker images
         run: |
@@ -79,9 +85,9 @@ jobs:
       - name: Deploy Platform
         run: |
           if ! helm status platform > /dev/null 2>&1; then
-              helm install platform oasis-platform
+              helm install platform oasis-platform -f oasis-platform/ci-values.yaml
           else
-              helm upgrade platform oasis-platform
+              helm upgrade platform oasis-platform -f oasis-platform/ci-values.yaml
           fi
         working-directory: kubernetes/charts
 
