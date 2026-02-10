@@ -37,8 +37,8 @@ def record_combine_output(result, analysis_id, user_id):
         logger.error(f'Combine task failed for analysis {analysis_id}: {file_path_or_error}')
         error_file = ContentFile(content=str(file_path_or_error), name=f'analysis_{analysis_id}_errors.txt')
         analysis.run_traceback_file = RelatedFile.objects.create(
-                file=error_file, content_type='text/plain', creator=initiator, filename=error_file.name,
-                store_as_filename=True)
+            file=error_file, content_type='text/plain', creator=initiator, filename=error_file.name,
+            store_as_filename=True)
         analysis.status = analysis.status_choices.RUN_ERROR
 
     analysis.save()

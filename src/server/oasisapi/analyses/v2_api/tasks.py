@@ -7,15 +7,11 @@ from datetime import datetime
 from datetime import timezone as dt_timezone
 from shutil import rmtree
 from tempfile import TemporaryFile
-from urllib.parse import urlparse
-from urllib.request import urlopen
 
 from .....conf import celeryconf_v2 as celery_conf
 from .....conf.iniconf import settings as worker_settings
 
 from botocore.exceptions import ClientError as S3_ClientError
-from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError
-from azure.storage.blob import BlobLeaseClient
 from celery import Task
 from celery import signals
 from celery.result import AsyncResult
@@ -25,8 +21,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.db import transaction
 from django.db.models import When, Case, Value, F
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
@@ -34,7 +28,6 @@ from django.utils import timezone
 from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.files.v1_api.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
-from src.server.oasisapi.files.upload import wait_for_blob_copy
 
 from ..models import AnalysisTaskStatus, Analysis
 from .task_controller import get_analysis_task_controller
@@ -696,5 +689,3 @@ def update_task_id(task_update_list):
                 analysis_id=analysis_id,
                 slug=slug,
             ).update(task_id=task_id, queue_time=dt_now)
-
-

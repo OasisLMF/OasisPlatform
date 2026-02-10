@@ -839,16 +839,16 @@ class AnalysisCancel(WebTestMixin, TestCase):
         self.assertEqual(403, response.status_code)
         self.assertEqual('You are not allowed to cancel this model', response.json.get('detail'))
 
+
 class AnalysisCombine(WebTestMixin, TestCase):
     def test_user_is_not_authenticated___response_is_forbidden(self):
         analysis = fake_analysis()
 
         response = self.app.post(reverse(f'{NAMESPACE}:analysis-combine'),
-                           expect_errors=True,
-                           )
+                                 expect_errors=True,
+                                 )
 
         self.assertIn(response.status_code, [401, 403])
-
 
     def test_missing_analysis_ids__response_is_400(self):
         user = fake_user()
@@ -905,11 +905,10 @@ class AnalysisCombine(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
         self.assertIn('Not all selected analyses', response.json['analysis_ids'])
 
-
     def test_analyses_not_run_completed__response_is_400(self):
         user = fake_user()
-        analysis1 = fake_analysis(status = Analysis.status_choices.NEW)
-        analysis2 = fake_analysis(status = Analysis.status_choices.READY)
+        analysis1 = fake_analysis(status=Analysis.status_choices.NEW)
+        analysis2 = fake_analysis(status=Analysis.status_choices.READY)
 
         response = self.app.post_json(
             reverse(f'{NAMESPACE}:analysis-combine'),
@@ -927,14 +926,13 @@ class AnalysisCombine(WebTestMixin, TestCase):
         self.assertEqual(400, response.status_code)
         self.assertIn('status', response.json)
 
-
     def test_analyses_missing_input_files__response_is_400(self):
         user = fake_user()
-        analysis1 = fake_analysis(status = Analysis.status_choices.RUN_COMPLETED,
-                                  input_file = None,
+        analysis1 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  input_file=None,
                                   output_file=fake_related_file())
-        analysis2 = fake_analysis(status = Analysis.status_choices.RUN_COMPLETED,
-                                  input_file = None,
+        analysis2 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  input_file=None,
                                   output_file=fake_related_file())
 
         response = self.app.post_json(
@@ -955,11 +953,11 @@ class AnalysisCombine(WebTestMixin, TestCase):
 
     def test_analyses_missing_output_files__response_is_400(self):
         user = fake_user()
-        analysis1 = fake_analysis(status = Analysis.status_choices.RUN_COMPLETED,
-                                  output_file = None,
+        analysis1 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  output_file=None,
                                   input_file=fake_related_file())
-        analysis2 = fake_analysis(status = Analysis.status_choices.RUN_COMPLETED,
-                                  output_file = None,
+        analysis2 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  output_file=None,
                                   input_file=fake_related_file())
 
         response = self.app.post_json(
@@ -980,17 +978,17 @@ class AnalysisCombine(WebTestMixin, TestCase):
 
     def test_valid_request(self):
         user = fake_user()
-        analysis1 = fake_analysis(status = Analysis.status_choices.RUN_COMPLETED,
-                                  output_file = fake_related_file(),
+        analysis1 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  output_file=fake_related_file(),
                                   input_file=fake_related_file())
-        analysis2 = fake_analysis(status = Analysis.status_choices.RUN_COMPLETED,
+        analysis2 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
                                   output_file=fake_related_file(),
                                   input_file=fake_related_file())
 
         dummy_config = {'some': 'params'}
 
         with (patch('src.server.oasisapi.analyses.models.celery_app_v2') as mock_celery,
-             patch('src.server.oasisapi.analyses.models.record_combine_output') as mock_record):
+              patch('src.server.oasisapi.analyses.models.record_combine_output') as mock_record):
 
             # Mock celery interactions
             mock_chain = MagicMock()
@@ -1024,7 +1022,7 @@ class AnalysisCombine(WebTestMixin, TestCase):
             self.assertEqual(Analysis.status_choices.RUN_STARTED, combine_analysis.status)
             self.assertEqual(user, combine_analysis.creator)
 
-            # # Make sure celery tasks called
+            # Make sure celery tasks called
             mock_celery.signature.assert_called()
             call_args = mock_celery.signature.call_args[1]['args']
             self.assertEqual(call_args[2], dummy_config)

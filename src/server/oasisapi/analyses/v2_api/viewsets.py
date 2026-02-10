@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from collections import defaultdict
 
 from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
@@ -317,7 +316,6 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-
     @swagger_auto_schema(responses={200: AnalysisListSerializer}, request_body=CombineAnalysesSerializer)
     @action(methods=['post'], detail=False)
     def combine(self, request):
@@ -349,8 +347,6 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         combine_analysis = queryset.run_combine(request)
 
         return Response(AnalysisListSerializer(instance=combine_analysis, context=self.get_serializer_context()).data)
-
-
 
     @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)

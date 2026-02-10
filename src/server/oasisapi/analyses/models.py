@@ -77,6 +77,7 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
 
     #    return res
 
+
 class AnalysisQuerySet(models.QuerySet):
     def run_combine(self, request):
         logger = logging.getLogger(__name__)
@@ -121,8 +122,8 @@ class AnalysisQuerySet(models.QuerySet):
 
         # Prepare celery tasks
         combine_run_task = celery_app_v2.signature('run_combine',
-            args=(analysis_input_files, analysis_output_files, request.data['config']),
-            immutable=True)
+                                                   args=(analysis_input_files, analysis_output_files, request.data['config']),
+                                                   immutable=True)
 
         record_combine_task = record_combine_output.s(combine_analysis.pk, request.user.pk)
         task = (combine_run_task | record_combine_task)

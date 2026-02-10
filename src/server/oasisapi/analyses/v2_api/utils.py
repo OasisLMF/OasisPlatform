@@ -23,6 +23,7 @@ def verify_model_scaling(model):
             if model.scaling_options.scaling_strategy not in ["QUEUE_LOAD", "FIXED_WORKERS", None]:
                 raise ValidationError("Model has invalid scaling setting")
 
+
 def is_valid_url(url):
     if url:
         result = urlparse(url)

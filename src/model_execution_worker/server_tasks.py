@@ -128,6 +128,7 @@ def run_exposure_transform(filepath, mapping_file):
         except Exception as e:
             return (str(e), False)
 
+
 @app.task(name='run_combine')
 def run_combine(input_tar_paths, output_tar_paths, config):
     """
@@ -148,6 +149,7 @@ def run_combine(input_tar_paths, output_tar_paths, config):
         (str, bool): Tuple of (result file path or error message, success flag)
     """
     filestore = get_filestore(settings)
+
     def maybe_get_tar(filestore_ref, dst, storage_subdir=''):
         logger.info(f'filestore_ref: {filestore_ref}')
         logger.info(f'dst: {dst}')
@@ -195,13 +197,11 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             shutil.copy2(os.path.join(_curr_tmp_dir, 'input', 'analysis_settings.json'),
                          os.path.join(_curr_tmp_dir, 'analysis_settings.json'))
 
-
             logging.info('Extracting output files...')
             with tarfile.open(_tmp_output_tar, 'r:gz') as f:
-                f.extractall(path=_curr_tmp_dir) # tar already has `output/`
+                f.extractall(path=_curr_tmp_dir)  # tar already has `output/`
             lst_path = os.path.join(_curr_tmp_dir, 'output')
             logging.info(f'Extracted files: {os.listdir(lst_path)}')
-
 
             analysis_dirs.append(_curr_tmp_dir)
 
