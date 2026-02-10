@@ -3,7 +3,6 @@ from tempfile import TemporaryDirectory
 import pytest
 import filecmp
 import os
-import json
 from pathlib import Path
 import tarfile
 
