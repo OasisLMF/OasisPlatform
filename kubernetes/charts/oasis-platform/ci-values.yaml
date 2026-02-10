@@ -1,4 +1,4 @@
-# CI-specific overrides to reduce memory footprint for GitHub Actions runners (~7GB RAM).
+# CI-specific overrides
 # Usage: helm install platform oasis-platform -f oasis-platform/ci-values.yaml
 
 oasisServer:
