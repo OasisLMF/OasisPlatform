@@ -2,14 +2,14 @@ from collections.abc import Iterable
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from model_mommy import mommy
+from model_bakery import baker
 
 
 def fake_user(**kwargs):
     password = kwargs.pop('password', 'password')
     kwargs.setdefault('is_active', True)
 
-    users = mommy.make(get_user_model(), **kwargs)
+    users = baker.make(get_user_model(), **kwargs)
 
     if password:
         for user in users if isinstance(users, Iterable) else [users]:
@@ -20,7 +20,7 @@ def fake_user(**kwargs):
 
 
 def fake_group(**kwargs):
-    return mommy.make(Group, **kwargs)
+    return baker.make(Group, **kwargs)
 
 
 def add_fake_group(user, group_name):
