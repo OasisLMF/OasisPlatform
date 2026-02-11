@@ -617,6 +617,9 @@ class Analysis(TimeStampedModel):
         self.save()
         send_task_status_message(build_all_queue_status_message())
 
+    def raise_validate_errors(self, errors):
+        raise ValidationError(detail=errors)
+
     def validate_standard_analysis(self):
         errors = {}
         if self.portfolio is None:
