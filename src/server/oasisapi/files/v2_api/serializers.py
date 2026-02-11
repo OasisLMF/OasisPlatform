@@ -4,7 +4,7 @@ import io
 import os
 from pathlib import Path
 
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
 
 from ods_tools.oed.exposure import OedExposure
 

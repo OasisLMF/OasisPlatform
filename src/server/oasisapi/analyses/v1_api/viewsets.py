@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from django.utils.translation import gettext_lazy as _
-from django.utils.decorators import method_decorator
 from django.conf import settings
 
 from rest_framework import viewsets
@@ -13,7 +12,7 @@ from rest_framework.settings import api_settings
 from rest_framework.serializers import Serializer
 from rest_framework.exceptions import APIException
 
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_filters import rest_framework as filters
 from django_filters import NumberFilter
 
@@ -112,7 +111,7 @@ class AnalysisFilter(TimeStampedFilter):
         super(AnalysisFilter, self).__init__(*args, **kwargs)
 
 
-@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: AnalysisSerializer(many=True)}))
+@extend_schema_view(list=extend_schema(responses={200: AnalysisSerializer(many=True)}))
 class AnalysisViewSet(viewsets.ModelViewSet):
     """
     list:
@@ -206,7 +205,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @extend_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
         """
@@ -223,7 +222,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             obj.run(request.user)
             return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @extend_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel(self, request, pk=None, version=None):
         """
@@ -234,7 +233,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj.cancel_any()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @extend_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel_analysis_run(self, request, pk=None, version=None):
         """
@@ -244,7 +243,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         obj.cancel_analysis()
         return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @extend_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def generate_inputs(self, request, pk=None, version=None):
         """
@@ -261,7 +260,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             obj.generate_inputs(request.user)
             return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisSerializer})
+    @extend_schema(responses={200: AnalysisSerializer})
     @action(methods=['post'], detail=True)
     def cancel_generate_inputs(self, request, pk=None, version=None):
         """
@@ -289,7 +288,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def settings_file(self, request, pk=None, version=None):
         """
@@ -309,7 +308,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def input_file(self, request, pk=None, version=None):
         """
@@ -321,7 +320,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
@@ -336,7 +335,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_success_file(self, request, pk=None, version=None):
         """
@@ -351,7 +350,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def lookup_validation_file(self, request, pk=None, version=None):
         """
@@ -366,7 +365,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_validation_file', request, ['application/json'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def summary_levels_file(self, request, pk=None, version=None):
         """
@@ -381,7 +380,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'summary_levels_file', request, ['application/json'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def input_generation_traceback_file(self, request, pk=None, version=None):
         """
@@ -393,7 +392,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'input_generation_traceback_file', request, ['text/plain'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def output_file(self, request, pk=None, version=None):
         """
@@ -405,7 +404,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def run_traceback_file(self, request, pk=None, version=None):
         """
@@ -417,7 +416,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'run_traceback_file', request, ['text/plain'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def run_log_file(self, request, pk=None, version=None):
         """
@@ -429,7 +428,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'run_log_file', request, ['text/plain'])
 
-    @swagger_auto_schema(responses={200: DataFileSerializer(many=True)})
+    @extend_schema(responses={200: DataFileSerializer(many=True)})
     @action(methods=['get'], detail=True)
     def data_files(self, request, pk=None, version=None):
         df = self.get_object().complex_model_data_files.all()
@@ -467,8 +466,7 @@ class AnalysisSettingsView(viewsets.ModelViewSet):
     serializer_class = AnalysisSerializer
     filterset_class = AnalysisFilter
 
-    @swagger_auto_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
-    @swagger_auto_schema(methods=['post'], request_body=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
+    @extend_schema(responses={200: AnalysisSettingsSerializer, 201: RelatedFileSerializer}, request=AnalysisSettingsSerializer)
     @action(methods=['get', 'post', 'delete'], detail=True)
     def analysis_settings(self, request, pk=None, version=None):
         """

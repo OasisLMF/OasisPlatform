@@ -12,6 +12,7 @@ __all__ = [
 import json
 
 from rest_framework import serializers
+from drf_spectacular.extensions import OpenApiSerializerExtension
 
 # import jsonschema
 from jsonschema.exceptions import ValidationError as JSONSchemaValidationError

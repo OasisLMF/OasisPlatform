@@ -1,15 +1,13 @@
 from django.conf import settings
 from django.urls import include, re_path
 from django.conf.urls.static import static
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
-from rest_framework import permissions
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from .swagger import (
     api_v1_urlpatterns,
     api_v2_urlpatterns,
-    CustomGeneratorClassV1,
-    CustomGeneratorClassV2,
+    filter_v1_endpoints,
+    filter_v2_endpoints,
 )
 
 if settings.DEBUG_TOOLBAR:
@@ -26,7 +24,7 @@ if settings.API_AUTH_TYPE in settings.ALLOWED_OIDC_AUTH_PROVIDERS:
     api_info_description += """
 ### Authentication Overview
 
-Your application can authenticate either as a **service** or as a **user**.  
+Your application can authenticate either as a **service** or as a **user**.
 Two different flows are supported:
 ---
 ## 1. Service Authentication (Client Credentials Flow)
@@ -52,7 +50,7 @@ This flow is intended for service-to-service communication where no user is invo
 
 This flow is intended for authenticating end-users through OpenID Connect.
 1. **Authorize the user**
-   - Redirect the user’s browser to the `oidc/authorize/` endpoint, including the client and redirect parameters.
+   - Redirect the user's browser to the `oidc/authorize/` endpoint, including the client and redirect parameters.
    - Example:
      ```
      GET /oidc/authorize/?client_id=<client-id>&redirect_uri=<redirect-uri>&response_type=code&scope=openid&next=<callback-url>
@@ -60,15 +58,15 @@ This flow is intended for authenticating end-users through OpenID Connect.
    - The user will log in via the identity provider (e.g., Keycloak, Authentik) and be redirected back to your configured callback URL by the OIDC provider automatically.
 2. **Handle the authorization callback**
    - Your callback endpoint (e.g., `/oidc/callback/`) will receive a short-lived `session_token` (valid for about one minute).
-   - This session token contains encoded information allowing you to retrieve the user’s access and refresh tokens.
+   - This session token contains encoded information allowing you to retrieve the user's access and refresh tokens.
 3. **Exchange the session token**
    - Make a POST request to the `/oidc/session_token/` endpoint with:
      ```
      session_token=<session-token>
      ```
-   - The response will contain the user’s `access_token` and `refresh_token`.
+   - The response will contain the user's `access_token` and `refresh_token`.
 4. **Use the tokens**
-   - Include the user’s access token in the `Authorization` header when making API calls:
+   - Include the user's access token in the `Authorization` header when making API calls:
      ```
      Authorization: Bearer <access_token>
      ```
@@ -102,42 +100,38 @@ api_info_description += """
 7. Run the analysis (post to `/analyses/<pk>/run/`)
 8. Get the outputs (get `/analyses/<pk>/output_file/`)"""
 
+# Set the description into SPECTACULAR_SETTINGS at import time
+settings.SPECTACULAR_SETTINGS['DESCRIPTION'] = api_info_description
 
-api_info = openapi.Info(
-    title="Oasis Platform",
-    default_version='v2',
-    description=api_info_description,
-)
-schema_view_all = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
-schema_view_v1 = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-    generator_class=CustomGeneratorClassV1,
-)
 
-schema_view_v2 = get_schema_view(
-    api_info,
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-    generator_class=CustomGeneratorClassV2,
-)
+class SpectacularV1SchemaView(SpectacularAPIView):
+    custom_settings = {
+        'PREPROCESSING_HOOKS': [
+            'drf_spectacular.hooks.preprocess_exclude_path_format',
+            'src.server.oasisapi.swagger.filter_v1_endpoints',
+        ],
+    }
+
+
+class SpectacularV2SchemaView(SpectacularAPIView):
+    custom_settings = {
+        'PREPROCESSING_HOOKS': [
+            'drf_spectacular.hooks.preprocess_exclude_path_format',
+            'src.server.oasisapi.swagger.filter_v2_endpoints',
+        ],
+    }
 
 
 api_urlpatterns = [
-    # Main Swagger page
-    re_path(r'^(?P<format>\.json|\.yaml)$', schema_view_all.without_ui(cache_timeout=0), name='schema-json'),
-    re_path(r'^$', schema_view_all.with_ui('swagger', cache_timeout=0), name='schema-ui'),
+    # Main Swagger page - schema endpoints
+    re_path(r'^schema/$', SpectacularAPIView.as_view(), name='schema'),
+    re_path(r'^$', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-ui'),
     # V1 only swagger endpoints
-    re_path(r'^v1/$', schema_view_v1.with_ui('swagger', cache_timeout=0), name='schema-ui-v1'),
-    re_path(r'^v1/(?P<format>\.json|\.yaml)$', schema_view_v1.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^v1/schema/$', SpectacularV1SchemaView.as_view(), name='schema-v1'),
+    re_path(r'^v1/$', SpectacularSwaggerView.as_view(url_name='schema-v1'), name='schema-ui-v1'),
     # V2 only swagger endpoints
-    re_path(r'^v2/$', schema_view_v2.with_ui('swagger', cache_timeout=0), name='schema-ui-v2'),
-    re_path(r'^v2/(?P<format>\.json|\.yaml)$', schema_view_v2.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^v2/schema/$', SpectacularV2SchemaView.as_view(), name='schema-v2'),
+    re_path(r'^v2/$', SpectacularSwaggerView.as_view(url_name='schema-v2'), name='schema-ui-v2'),
     # basic urls (auth, server info)
     re_path(r'^', include('src.server.oasisapi.base_urls')),
 ]

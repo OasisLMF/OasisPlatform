@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel

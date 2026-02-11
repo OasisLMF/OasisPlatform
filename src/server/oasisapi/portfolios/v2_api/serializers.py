@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFoundError

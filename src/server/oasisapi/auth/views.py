@@ -1,8 +1,7 @@
 import datetime
 import jwt
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter, OpenApiResponse, OpenApiTypes
 from rest_framework import status, serializers
 from rest_framework.parsers import FormParser
 from rest_framework.permissions import AllowAny
@@ -31,10 +30,10 @@ class TokenRefreshView(BaseTokenRefreshView):
     serializer_class = OIDCTokenRefreshSerializer if settings.API_AUTH_TYPE in settings.ALLOWED_OIDC_AUTH_PROVIDERS else SimpleTokenRefreshSerializer
     parser_classes = [FormParser]
 
-    @swagger_auto_schema(
-        manual_parameters=[TOKEN_REFRESH_HEADER],
+    @extend_schema(
+        parameters=[TOKEN_REFRESH_HEADER],
         responses={status.HTTP_200_OK: TokenRefreshResponseSerializer},
-        security=[],
+        auth=[],
         tags=['authentication'])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -44,31 +43,30 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     """
     Authenticates services via simple JWT or clients via OIDC based on request data.
     """
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=[],
-            properties={
-                'username': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="Username for Simple JWT Service Authentication",
+    @extend_schema(
+        request=inline_serializer(
+            name='TokenObtainPairRequest',
+            fields={
+                'username': serializers.CharField(
+                    required=False,
+                    help_text="Username for Simple JWT Service Authentication",
                 ),
-                'password': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="Password for Simple JWT Service Authentication",
+                'password': serializers.CharField(
+                    required=False,
+                    help_text="Password for Simple JWT Service Authentication",
                 ),
-                'client_id': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    escription="Client ID for OIDC Service Authentication",
+                'client_id': serializers.CharField(
+                    required=False,
+                    help_text="Client ID for OIDC Service Authentication",
                 ),
-                'client_secret': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="Client Secret for OIDC Service Authentication",
+                'client_secret': serializers.CharField(
+                    required=False,
+                    help_text="Client Secret for OIDC Service Authentication",
                 ),
             },
         ),
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
-        security=[],
+        auth=[],
         tags=['authentication'])
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -99,18 +97,18 @@ class OIDCAuthorizeView(APIView):
     """
     permission_classes = [AllowAny]
 
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                'next',
-                openapi.IN_QUERY,
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='next',
+                location=OpenApiParameter.QUERY,
                 description="Optional path to redirect back to after successful authentication",
-                type=openapi.TYPE_STRING,
+                type=OpenApiTypes.STR,
                 required=False,
             )
         ],
-        responses={302: 'Redirect to OIDC authorization endpoint'},
-        security=[],
+        responses={302: OpenApiResponse(description='Redirect to OIDC authorization endpoint')},
+        auth=[],
         tags=['authentication']
     )
     def get(self, request, *args, **kwargs):
@@ -143,25 +141,25 @@ class OIDCCallbackView(APIView):
     permission_classes = [AllowAny]
     parser_classes = [FormParser]
 
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                'code',
-                openapi.IN_QUERY,
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='code',
+                location=OpenApiParameter.QUERY,
                 description="Authorization code from OIDC Provider",
-                type=openapi.TYPE_STRING,
+                type=OpenApiTypes.STR,
                 required=True
             ),
-            openapi.Parameter(
-                'state',
-                openapi.IN_QUERY,
+            OpenApiParameter(
+                name='state',
+                location=OpenApiParameter.QUERY,
                 description="State parameter (redirect destination)",
-                type=openapi.TYPE_STRING,
+                type=OpenApiTypes.STR,
                 required=False
             )
         ],
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
-        security=[],
+        auth=[],
         tags=['authentication']
     )
     def get(self, request, *args, **kwargs):
@@ -185,10 +183,10 @@ class OIDCCallbackView(APIView):
         redirect_url = f"{next_url}?session_token={session_token}"
         return HttpResponseRedirect(redirect_url)
 
-    @swagger_auto_schema(
-        request_body=OIDCAuthorizationCodeExchangeSerializer,
+    @extend_schema(
+        request=OIDCAuthorizationCodeExchangeSerializer,
         responses={status.HTTP_200_OK: TokenObtainPairResponseSerializer},
-        security=[],
+        auth=[],
         tags=['authentication'])
     def post(self, request, *args, **kwargs):
         serializer = OIDCAuthorizationCodeExchangeSerializer(data=request.data, context={'request': request})
@@ -209,27 +207,25 @@ class OIDCSessionTokenView(APIView):
     """
     permission_classes = [AllowAny]
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'session_token': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="Temporary session token obtained from OIDC callback redirect"
-                )
+    @extend_schema(
+        request=inline_serializer(
+            name='SessionTokenRequest',
+            fields={
+                'session_token': serializers.CharField(
+                    help_text="Temporary session token obtained from OIDC callback redirect"
+                ),
             },
-            required=['session_token']
         ),
         responses={
-            status.HTTP_200_OK: openapi.Response(
+            status.HTTP_200_OK: OpenApiResponse(
                 description="Access and refresh tokens successfully returned",
-                schema=TokenObtainPairResponseSerializer
+                response=TokenObtainPairResponseSerializer,
             ),
-            status.HTTP_400_BAD_REQUEST: openapi.Response(
-                description="Missing or invalid session_token"
+            status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Missing or invalid session_token",
             ),
         },
-        security=[],
+        auth=[],
         tags=['authentication']
     )
     def post(self, request):
@@ -252,18 +248,18 @@ class OIDCLogoutView(APIView):
     """
     permission_classes = [AllowAny]
 
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                'id_token_hint',
-                openapi.IN_QUERY,
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='id_token_hint',
+                location=OpenApiParameter.QUERY,
                 description="ID token hint for OIDC logout",
-                type=openapi.TYPE_STRING,
+                type=OpenApiTypes.STR,
                 required=True
             )
         ],
-        responses={302: 'Redirect to OIDC logout endpoint'},
-        security=[],
+        responses={302: OpenApiResponse(description='Redirect to OIDC logout endpoint')},
+        auth=[],
         tags=['authentication']
     )
     def get(self, request, *args, **kwargs):

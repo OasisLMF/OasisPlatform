@@ -1,11 +1,10 @@
 from __future__ import absolute_import
 
 from django.utils.translation import gettext_lazy as _
-from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from django.conf import settings as django_settings
 from django.http import Http404
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -55,7 +54,7 @@ class PortfolioFilter(TimeStampedFilter):
         ]
 
 
-@method_decorator(name='list', decorator=swagger_auto_schema(responses={200: PortfolioSerializer(many=True)}))
+@extend_schema_view(list=extend_schema(responses={200: PortfolioSerializer(many=True)}))
 class PortfolioViewSet(VerifyGroupAccessModelViewSet):
     """
     list:
@@ -158,7 +157,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             status=HTTP_201_CREATED,
         )
 
-    @swagger_auto_schema(methods=['post'], request_body=StorageLinkSerializer)
+    @extend_schema(request=StorageLinkSerializer)
     @action(methods=['get', 'post'], detail=True)
     def storage_links(self, request, pk=None, version=None):
         """
@@ -175,8 +174,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -198,8 +196,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
@@ -221,8 +218,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -244,8 +240,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             oed_validate = None
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
@@ -285,8 +280,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
-    @swagger_auto_schema(method='post', request_body=ExposureRunSerializer)
+    @extend_schema(responses={200: FILE_RESPONSE}, request=ExposureRunSerializer)
     @action(methods=['get', 'post'], detail=True)
     def exposure_run(self, request, pk=None, version=None):
         """
@@ -306,7 +300,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         instance.exposure_run(request.data.get('params'), request.user.pk)
         return Response({"message": "in queue"})
 
-    @swagger_auto_schema(method='post', request_body=ExposureTransformSerializer)
+    @extend_schema(request=ExposureTransformSerializer)
     @action(methods=['post'], detail=True)
     def exposure_transform(self, request, pk=None, version=None):
         """
@@ -325,13 +319,12 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         instance.exposure_transform(request)
         return Response({"message": "in queue"})
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
     def errors_file(self, request, pk=None, version=None):
         return handle_related_file(self.get_object(), 'run_errors_file', request, ['text/csv'])
 
-    @swagger_auto_schema(method='post', request_body=CurrencyConversionSerializer)
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE}, request=CurrencyConversionSerializer)
     @action(methods=['get', 'delete', 'post'], detail=True)
     def currency_conversion_json(self, request, pk=None, version=None):
         """
@@ -350,7 +343,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             request.data['file'] = csv_into_currency_conversion_json(request.data['file'])
         return handle_related_file(instance, 'currency_conversion_json', request, file_types)
 
-    @swagger_auto_schema(method='post', request_body=ReportingCurrencySerializer)
+    @extend_schema(request=ReportingCurrencySerializer)
     @action(methods=['get', 'delete', 'post'], detail=True)
     def reporting_currency(self, request, pk=None, version=None):
         """

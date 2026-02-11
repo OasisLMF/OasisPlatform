@@ -4,7 +4,6 @@ celery>=5.0,<6.0
 chainmap>=1.0,<2.0
 channels>=4.0.0
 channels_redis>=4.0.0
-coreapi>=2.0,<3.0
 daphne>=4.0,<5.0
 django>=5.0,<6.0
 django-cleanup>=9.0,<10.0
@@ -17,7 +16,7 @@ django_celery_results
 djangorestframework>=3.0,<3.15.0
 djangorestframework_simplejwt
 drf-nested-routers>=0.0,<1.0
-drf-yasg<=1.21.5
+drf-spectacular>=0.27.0
 gunicorn>=23.0,<24.0
 joblib>=1.2.0
 jsonpickle>=3.0,<4.0
