@@ -10,7 +10,7 @@ aiobotocore==2.24.1
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.15
+aiohttp==3.13.3
     # via
     #   adlfs
     #   aiobotocore
@@ -30,7 +30,7 @@ attrs==25.3.0
     #   aiohttp
     #   jsonschema
     #   referencing
-azure-core==1.35.0
+azure-core==1.38.0
     # via
     #   -r requirements-worker.in
     #   adlfs
@@ -116,7 +116,7 @@ fsspec==2024.12.0
     #   fastparquet
     #   oasis-data-manager
     #   s3fs
-geopandas==1.1.1
+geopandas==1.1.2
     # via oasislmf
 greenlet==3.2.4
     # via sqlalchemy
@@ -185,14 +185,14 @@ numpy==2.2.6
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.1.6
+oasis-data-manager==0.2.0
     # via
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.4.11
+oasislmf[extra]==2.4.12
     # via -r requirements-worker.in
-ods-tools==4.0.5
+ods-tools==4.0.6
     # via oasislmf
 packaging==25.0
     # via
@@ -301,7 +301,6 @@ simplejson==3.20.1
     # via forex-python
 six==1.17.0
     # via
-    #   azure-core
     #   pathlib2
     #   python-dateutil
 sqlalchemy==2.0.43
@@ -335,7 +334,7 @@ tzdata==2025.2
     # via
     #   kombu
     #   pandas
-urllib3==2.6.0
+urllib3==2.6.3
     # via
     #   botocore
     #   requests
@@ -350,5 +349,7 @@ websocket-client==1.8.0
     # via oasislmf
 wrapt==1.17.3
     # via aiobotocore
+xxhash==3.6.0
+    # via oasis-data-manager
 yarl==1.20.1
     # via aiohttp

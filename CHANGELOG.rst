@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.12`_
+ ---------
+* [#1323](https://github.com/OasisLMF/OasisPlatform/pull/1324) - Server DB connection overload
+* [#1336](https://github.com/OasisLMF/OasisPlatform/pull/1336) - update default branches and latest tag
+* [#1338](https://github.com/OasisLMF/OasisPlatform/pull/1338) - Update/ci latest 2.4
+* [#1308](https://github.com/OasisLMF/OasisPlatform/pull/1308) - Update test for analyses_settings computation_settings merge
+* [#1310](https://github.com/OasisLMF/OasisPlatform/pull/1310) - Paths causing schema issue in v2
+.. _`2.4.12`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.11...2.4.12
+
 `2.4.11`_
  ---------
 * [#1307](https://github.com/OasisLMF/OasisPlatform/pull/1307) - Update urllib3 to 2.6.0

@@ -31,7 +31,7 @@ jobs:
     uses: OasisLMF/ODS_Tools/.github/workflows/build.yml@main
     secrets: inherit
     with:
-      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/4.0.x' || inputs.ods_branch }}
 
   unittest:
     needs: ods_tools
@@ -51,10 +51,10 @@ jobs:
         repository: OasisLMF/OasisPlatform
         ref: ${{ env.PLAT_BRANCH }}
 
-    - name: Set up Python 3.12
+    - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: '3.11'
     - run: pip install -r requirements.txt
 
     - name: Download package
