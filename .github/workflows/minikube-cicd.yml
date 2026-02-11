@@ -57,15 +57,15 @@ jobs:
 
       - name: Start Minikube
         uses: medyagh/setup-minikube@latest
-        with:
-          memory: 6144
-          extra-config: 'kubelet.system-reserved=memory=512Mi'
+        # with:
+        #   memory: 6144
+        #   extra-config: 'kubelet.system-reserved=memory=512Mi'
 
-      - name: Enable swap on Minikube
-        run: |
-          # Enable swap inside minikube to handle worker memory spikes
-          minikube ssh "sudo swapon --show || (sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile)"
-          minikube ssh "free -m"
+      # - name: Enable swap on Minikube
+      #   run: |
+      #     # Enable swap inside minikube to handle worker memory spikes
+      #     minikube ssh "sudo swapon --show || (sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile)"
+      #     minikube ssh "free -m"
 
       - name: Build Docker images
         run: |
