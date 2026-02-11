@@ -7,6 +7,10 @@ on:
         description: 'If set, pip install oasislmf branch [git ref]'
         required: false
         type: string
+      piwind_branch:
+        description: 'Set piwind  branch [git ref]'
+        required: false
+        type: string
       ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
@@ -17,10 +21,17 @@ on:
         description: 'If set, pip install oasislmf branch [git ref]'
         required: false
         type: string
+        default: 'stable/2.4.x'
+      piwind_branch:
+        description: 'Set piwind branch [git ref]'
+        required: false
+        type: string
+        default: 'stable/2.4.x'
       ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
         type: string
+        default: 'stable/4.0.x'
 
 jobs:
   minikube:
@@ -28,10 +39,13 @@ jobs:
     env:
       OASIS_MODEL_DATA_DIR: /shared-fs/PIWIND
       ACTIONS_STEP_DEBUG: true
+      OASISLMF_BRANCH: ${{ inputs.oasislmf_branch || 'stable/2.4.x' }}
+      PIWIND_BRANCH: ${{ inputs.piwind_branch || 'stable/2.4.x' }}
+      ODS_BRANCH: ${{ inputs.ods_branch || 'stable/4.0.x' }}
     steps:
       - name: Clone OasisPiWind model data
         run: |
-          git clone https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind
+          git clone https://github.com/OasisLMF/OasisPiWind.git /tmp/piwind -b ${{ env.PIWIND_BRANCH }}
 
       - name: Set OASIS_MODEL_DATA_DIR env
         run: echo "OASIS_MODEL_DATA_DIR=/tmp/piwind" >> $GITHUB_ENV
@@ -46,8 +60,8 @@ jobs:
         run: |
           eval $(minikube docker-env)
 
-          docker build -f Dockerfile.api_server --build-arg ods_tools_branch=${{ inputs.ods_branch }} --build-arg oasislmf_branch=${{ inputs.oasislmf_branch }} -t coreoasis/api_server:dev .
-          docker build -f Dockerfile.model_worker --build-arg ods_tools_branch=${{ inputs.ods_branch }} --build-arg oasislmf_branch=${{ inputs.oasislmf_branch }} -t coreoasis/model_worker:dev .
+          docker build -f Dockerfile.api_server --build-arg ods_tools_branch=${{ env.ODS_BRANCH }} --build-arg oasislmf_branch=${{ env.OASISLMF_BRANCH }} -t coreoasis/api_server:dev .
+          docker build -f Dockerfile.model_worker --build-arg ods_tools_branch=${{ env.ODS_BRANCH }} --build-arg oasislmf_branch=${{ env.OASISLMF_BRANCH }} -t coreoasis/model_worker:dev .
 
           pushd kubernetes/worker-controller
               docker build -t coreoasis/worker_controller:dev .
@@ -141,7 +155,7 @@ jobs:
           kubectl scale --replicas=1 deployment/worker-oasislmf-piwind-1-v1
 
       - name: Install OasisLMF
-        run: pip install oasislmf
+        run: pip install -v oasislmf@git+https://git@github.com/OasisLMF/OasisLMF.git@${{ env.OASISLMF_BRANCH }}
 
       - name: Create test settings
         run: |
