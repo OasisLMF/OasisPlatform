@@ -372,7 +372,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
 
     # LOT3 DISABLE
     # @requires_sql_reader
-    # @swagger_auto_schema(methods=['post'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
+    # @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     # @action(methods=['post'], url_path=r'(?P<file>\w+)/sql', detail=True)
     # def file_sql(self, request, *args, **kwargs):
     #     """

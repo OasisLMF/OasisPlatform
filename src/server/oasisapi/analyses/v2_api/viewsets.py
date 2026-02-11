@@ -184,8 +184,6 @@ class AnalysisTaskFilter(TimeStampedFilter):
         ]
 
 
-# https://stackoverflow.com/questions/62572389/django-drf-yasg-how-to-add-description-to-tags
-
 @extend_schema_view(
     list=extend_schema(responses={200: AnalysisListSerializer(many=True)}),
     create=extend_schema(responses={200: AnalysisListSerializer()}),
@@ -614,7 +612,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         serializer = self.get_serializer(self.get_object())
         return Response(serializer.data)
 
-    @swagger_auto_schema(methods=['get'], responses={200: AnalysisTaskStatusSerializer(many=True)}, manual_parameters=[SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM])
+    @extend_schema(responses={200: AnalysisTaskStatusSerializer(many=True)}, parameters=[SUBTASK_STATUS_PARAM, SUBTASK_SLUG_PARAM])
     @action(methods=['get'], detail=True)
     def sub_task_list(self, request, pk=None, version=None):
 
@@ -668,8 +666,7 @@ class AnalysisSettingsView(VerifyGroupAccessModelViewSet):
     group_access_sub_model = Portfolio
     group_access_sub_attribute = 'portfolio'
 
-    @swagger_auto_schema(methods=['get'], responses={200: AnalysisSettingsSerializer})
-    @swagger_auto_schema(methods=['post'], request_body=AnalysisSettingsSerializer, responses={201: RelatedFileSerializer})
+    @extend_schema(responses={200: AnalysisSettingsSerializer, 201: RelatedFileSerializer}, request=AnalysisSettingsSerializer)
     @action(methods=['get', 'post', 'delete'], detail=True)
     def analysis_settings(self, request, pk=None, version=None):
         """
@@ -691,7 +688,7 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     filterset_class = AnalysisTaskFilter
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def output_log(self, request, pk=None, version=None):
         """
@@ -703,7 +700,7 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'output_log', request, ['text/plain'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def error_log(self, request, pk=None, version=None):
         """
@@ -715,7 +712,7 @@ class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'error_log', request, ['text/plain'])
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def retry_log(self, request, pk=None, version=None):
         """

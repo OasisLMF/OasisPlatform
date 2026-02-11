@@ -144,11 +144,6 @@ class JsonSettingsSerializer(serializers.Serializer):
 
 
 class ModelParametersSerializer(JsonSettingsSerializer):
-    class Meta:
-        swagger_schema_fields = load_json_schema(
-            schema=ModelSettingHandler.make().get_schema('model_settings_schema'),
-            link_prefix='#/definitions/ModelSettings'
-        )
 
     def __init__(self, *args, **kwargs):
         super(ModelParametersSerializer, self).__init__(*args, **kwargs)
@@ -160,11 +155,6 @@ class ModelParametersSerializer(JsonSettingsSerializer):
 
 
 class AnalysisSettingsSerializer(JsonSettingsSerializer):
-    class Meta:
-        swagger_schema_fields = load_json_schema(
-            schema=AnalysisSettingHandler.make().get_schema('analysis_settings_schema'),
-            link_prefix='#/definitions/AnalysisSettings'
-        )
 
     def __init__(self, *args, **kwargs):
         super(AnalysisSettingsSerializer, self).__init__(*args, **kwargs)
@@ -185,3 +175,24 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
                 data[old_key] = data[new_key]
 
         return super(AnalysisSettingsSerializer, self).validate_json(data)
+
+
+class _JsonSettingsSchemaExtension(OpenApiSerializerExtension):
+    """Return the raw JSON schema from ods_tools for ModelParametersSerializer and AnalysisSettingsSerializer."""
+    target_class = 'src.server.oasisapi.schemas.serializers.JsonSettingsSerializer'
+    match_subclasses = True
+
+    def map_serializer(self, auto_schema, direction):
+        if isinstance(self.target, ModelParametersSerializer) or self.target.__class__ is ModelParametersSerializer:
+            schema = load_json_schema(
+                schema=ModelSettingHandler.make().get_schema('model_settings_schema'),
+                link_prefix='#/components/schemas/ModelSettings',
+            )
+        elif isinstance(self.target, AnalysisSettingsSerializer) or self.target.__class__ is AnalysisSettingsSerializer:
+            schema = load_json_schema(
+                schema=AnalysisSettingHandler.make().get_schema('analysis_settings_schema'),
+                link_prefix='#/components/schemas/AnalysisSettings',
+            )
+        else:
+            schema = {'type': 'object'}
+        return schema
