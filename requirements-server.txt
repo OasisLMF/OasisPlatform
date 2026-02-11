@@ -26,7 +26,7 @@ autobahn==24.4.2
     # via daphne
 automat==25.4.16
     # via twisted
-azure-core==1.35.0
+azure-core==1.38.0
     # via
     #   azure-identity
     #   azure-storage-blob
@@ -221,7 +221,7 @@ numpy==2.2.6
     #   numba
     #   pandas
     #   pyarrow
-oasis-data-manager==0.1.5
+oasis-data-manager==0.2.0
     # via ods-tools
 ods-tools==3.2.10
     # via -r requirements-server.in
@@ -248,7 +248,7 @@ psycopg2-binary==2.9.10
     # via -r requirements-server.in
 pyarrow==17.0.0
     # via -r requirements-server.in
-pyasn1==0.6.1
+pyasn1==0.6.2
     # via
     #   pyasn1-modules
     #   service-identity
@@ -306,7 +306,6 @@ service-identity==24.2.0
     # via twisted
 six==1.17.0
     # via
-    #   azure-core
     #   pathlib2
     #   python-dateutil
 sqlalchemy==2.0.42
@@ -337,7 +336,7 @@ uritemplate==4.2.0
     # via
     #   coreapi
     #   drf-yasg
-urllib3==2.5.0
+urllib3==2.6.3
     # via
     #   botocore
     #   requests
@@ -350,6 +349,8 @@ wcwidth==0.2.13
     # via prompt-toolkit
 whitenoise==6.9.0
     # via -r requirements-server.in
+xxhash==3.6.0
+    # via oasis-data-manager
 zope-interface==7.2
     # via twisted
 
