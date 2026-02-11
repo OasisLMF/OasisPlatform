@@ -1,6 +1,9 @@
 OasisPlatform Changelog
 =======================
 
+* [#1337](https://github.com/OasisLMF/OasisPlatform/pull/1337) - Update/ci latest 2.3
+.. _`2.3.20`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.19...2.3.20
+
 `2.3.19`_
  ---------
 * [#1250](https://github.com/OasisLMF/OasisPlatform/pull/1250) - Fix/CVE aug 2025 2.3.x
