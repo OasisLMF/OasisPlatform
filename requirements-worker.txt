@@ -134,7 +134,7 @@ oasis-data-manager==0.2.0
     # via
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.3.19
+oasislmf[extra]==2.3.20
     # via -r requirements-worker.in
 ods-tools==3.2.10
     # via
