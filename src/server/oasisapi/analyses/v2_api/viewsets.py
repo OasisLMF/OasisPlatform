@@ -359,9 +359,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         `INPUTS_GENERATION_CANCELLED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or `RUN_ERROR`.
         """
         obj = self.get_object()
-        if obj.model is not None:
-            verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-            verify_model_scaling(obj.model)
+        obj.validate_standard_analysis()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        verify_model_scaling(obj.model)
         obj.generate_and_run(request.user)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -373,7 +373,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED`, `INPUTS_GENERATION_STARTED`, `RUN_QUEUED` or `RUN_STARTED`
         """
         obj = self.get_object()
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
+        if obj.model is not None:
+            verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_any()
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
@@ -385,6 +386,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Cancels a running analysis execution. The analysis must have one of the following statuses, `RUN_QUEUED` or `RUN_STARTED`
         """
         obj = self.get_object()
+        obj.validate_standard_analysis()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_analysis()
@@ -398,10 +400,12 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
+
+        obj.validate_standard_analysis()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        verify_model_scaling(obj.model)
+
         run_mode_override = request.GET.get('run_mode_override', None)
-        if obj.model is not None:
-            verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-            verify_model_scaling(obj.model)
         obj.generate_inputs(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -412,6 +416,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Cancels a currently inputs generation. The analysis status must be `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
+        obj.validate_standard_analysis()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_generate_inputs()
