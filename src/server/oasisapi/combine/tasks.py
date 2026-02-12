@@ -17,18 +17,13 @@ def record_combine_output(result, analysis_id, user_id):
     analysis = Analysis.objects.get(pk=analysis_id)
     initiator = get_user_model().objects.get(pk=user_id)
 
-    logger.info('inside record_combine_output task')
     logger.info('args: {}'.format({
         'result': result,
         'analysis_id': analysis_id,
         'user_id': user_id
     }))
 
-    logging.info('inside record_combine_output task')
-
     if success:
-        logger.info(f'Combine task completed successfully for analysis {analysis_id}')
-
         analysis.output_file = store_file(file_path_or_error,
                                           'application/gzip', initiator,
                                           filename=f'analysis_{analysis_id}_outputs.tar.gz')
