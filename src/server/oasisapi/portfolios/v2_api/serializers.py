@@ -499,7 +499,7 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
 class ExposureRunParamsSerializer(serializers.Serializer):
     """ The expected structure for the `params` field """
     ktools_alloc_rule_il = serializers.IntegerField(default=2, help_text="Set the fmcalc allocation rule used in direct insured loss")
-    model_perils_covered = serializers.ListField(default=['AA1'], help_text="List of perils covered by the model")
+    model_perils_covered = serializers.ListField(child=serializers.CharField(), default=['AA1'], help_text="List of perils covered by the model")
     loss_factor = serializers.ListField(child=serializers.FloatField(), default=[1.0], help_text="Loss factor")
     supported_oed_coverage_types = serializers.ListField(
         child=serializers.IntegerField(min_value=0, max_value=15),

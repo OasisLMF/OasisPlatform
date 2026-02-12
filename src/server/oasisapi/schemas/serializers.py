@@ -183,11 +183,19 @@ def _sanitize_json_schema_for_openapi(schema):
     OpenAPI 3.0 uses a restricted subset of JSON Schema. Attributes like $schema,
     definitions, patternProperties, and unevaluatedProperties are not supported.
     Also, 'type' must be a string (not an array like ["integer", "string"]).
+
+    Since 'definitions' are stripped, any '$ref' pointers into them become dangling.
+    Replace objects containing only '$ref' with 'type: object' so code generators
+    don't emit references to non-existent types.
     """
     # Keys that exist in JSON Schema but not in OA3 Schema Objects
     unsupported_keys = {'$schema', 'definitions', 'definition', 'patternProperties', 'unevaluatedProperties'}
 
     if isinstance(schema, dict):
+        # If this dict is just a $ref, replace with a generic object
+        if '$ref' in schema:
+            return {'type': 'object'}
+
         cleaned = {}
         for key, value in schema.items():
             if key in unsupported_keys:
