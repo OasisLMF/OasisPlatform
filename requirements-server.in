@@ -29,14 +29,15 @@ pandas>=2.0,<3.0
 pathlib2>=2.0,<3.0
 psycopg[binary, pool]
 psycopg2-binary>=2.0,<3.0
-pyarrow>=17.0,<18.0
+pyarrow
 pyasn1>=0.6.2,<1.0
 pymysql>=1.0,<2.0
 pyrabbit>=1.0,<2.0
 redis>=5.0,<6.0
 sqlalchemy>=2.0,<3.0
 setuptools
-mysqlclient>=2.0,<3.0
+mysqlclient
 whitenoise>=6.0,<7.0
 azure-identity>=1.0,<2.0
 urllib3 >=2.6.3,<3.0
+coreschema
