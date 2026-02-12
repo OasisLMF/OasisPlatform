@@ -135,7 +135,7 @@ class AnalysisQuerySet(models.QuerySet):
         combine_analysis.task_started = timezone.now()
         combine_analysis.task_finished = None
         # need to add portfolio to handle permissions
-        dummy_portfolio = Portfolio(name=f'{request.data['name']}-dummy-portfolio',
+        dummy_portfolio = Portfolio(name=f"{request.data['name']}-dummy-portfolio",
                                     creator=request.user)
         dummy_portfolio.save()
         combine_analysis.portfolio = dummy_portfolio
