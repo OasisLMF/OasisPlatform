@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 from django.urls import include, re_path
-from django.conf import settings
+# from django.conf import settings
 
 
 # API v1 Routes

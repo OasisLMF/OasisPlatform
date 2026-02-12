@@ -6,8 +6,8 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from .swagger import (
     api_v1_urlpatterns,
     api_v2_urlpatterns,
-    filter_v1_endpoints,
-    filter_v2_endpoints,
+    # filter_v1_endpoints,
+    # filter_v2_endpoints,
 )
 
 if settings.DEBUG_TOOLBAR:
