@@ -6,14 +6,22 @@ from ..common.filestore.filestore import get_filestore
 from oasislmf.manager import OasisManager
 from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_exposure_files
 import os
+from pathlib import Path
 from celery import Celery
 from ods_tools.oed.exposure import OedExposure
 from ods_tools.odtf.controller import transform_format
+from ods_tools.combine import combine
 import logging
+import tarfile
+from celery.utils.log import get_task_logger
+import filelock
+import shutil
 
 app = Celery()
 
 app.config_from_object(celery_conf)
+
+logger = get_task_logger(__name__)
 
 
 @app.task(name='run_exposure_run')
@@ -119,3 +127,80 @@ def run_exposure_transform(filepath, mapping_file):
             return (result, True)
         except Exception as e:
             return (str(e), False)
+
+
+@app.task(name='run_combine')
+def run_combine(input_tar_paths, output_tar_paths, config):
+    """
+    Combines the output of multiple analyses using ods_tools.combine.
+
+    Note the paths at index {i} in output_tar_paths, input_tar_paths are
+    considered to belong to the same analysis.
+
+    e.g. output_tar_paths[i], input_tar_paths[i] belong to the same analysis.
+
+    Args:
+        input_tar_paths: list of paths to input tar files for each analyis
+        output_tar_paths: list of paths/URLs to analysis output tar files to combine
+        settings_paths: list of paths to analysis settings files
+        config: combine configuration dict (validated against CombineSettingsSchema)
+
+    Returns:
+        (str, bool): Tuple of (result file path or error message, success flag)
+    """
+    filestore = get_filestore(settings)
+
+    def maybe_get_tar(filestore_ref, dst, storage_subdir=''):
+        logger.info(f'filestore_ref: {filestore_ref}')
+        logger.info(f'dst: {dst}')
+        with filelock.FileLock(f'{dst}.lock'):
+            if not Path(dst).exists():
+                out = filestore.get(filestore_ref, dst, storage_subdir)
+
+    required_input_files = ['analysis_settings.json', 'occurrence.bin']
+
+    with TemporaryDir() as tmpdir:
+        analysis_dirs = []
+        for i, (_input_path, _output_path) in enumerate(zip(input_tar_paths, output_tar_paths)):
+            # make analysis dir
+            _curr_tmp_dir = os.path.join(tmpdir, str(i))
+            os.mkdir(_curr_tmp_dir)
+            os.mkdir(os.path.join(_curr_tmp_dir, 'input'))
+
+            # download input + output tars
+            _tmp_input_tar = get_destination_file(_input_path, _curr_tmp_dir, 'input')
+            maybe_get_tar(_input_path, _tmp_input_tar)
+
+            _tmp_output_tar = get_destination_file(_output_path, _curr_tmp_dir, 'output')
+            maybe_get_tar(_output_path, _tmp_output_tar)
+
+            # extract necessary files and place in correct dirs
+            try:
+                with tarfile.open(_tmp_input_tar, 'r:gz') as f:
+                    f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=required_input_files)
+            except KeyError as e:
+                logging.error('Combine input files missing: ' + str(e))
+                return (False, 'Input files missing: ' + str(e))
+
+            # copy analysis settings to analysis root
+            shutil.copy2(os.path.join(_curr_tmp_dir, 'input', 'analysis_settings.json'),
+                         os.path.join(_curr_tmp_dir, 'analysis_settings.json'))
+
+            with tarfile.open(_tmp_output_tar, 'r:gz') as f:
+                f.extractall(path=_curr_tmp_dir)  # tar already has `output/`
+
+            analysis_dirs.append(_curr_tmp_dir)
+
+        combine_results_dir = os.path.join(tmpdir, 'combine_results')
+
+        # run combine task
+        try:
+            config = combine.prepare_config(config)
+            combine.combine(analysis_dirs=analysis_dirs,
+                            output_dir=combine_results_dir,
+                            **config)
+            result_ref = filestore.put(combine_results_dir)
+            return (True, result_ref)
+        except Exception as e:
+            logging.error(f'Combine failed: {str(e)}')
+            return (False, e)

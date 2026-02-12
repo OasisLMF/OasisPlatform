@@ -2,7 +2,9 @@ import six
 from celery.states import STARTED
 from model_bakery import baker
 
+from src.server.oasisapi.analysis_models.v2_api.tests.fakes import fake_analysis_model
 from src.server.oasisapi.files.v2_api.tests.fakes import fake_related_file
+from src.server.oasisapi.portfolios.v2_api.tests.fakes import fake_portfolio
 from ...models import Analysis, AnalysisTaskStatus
 
 
@@ -35,7 +37,7 @@ class FakeAsyncResultFactory(object):
         return self.fake_res(task_id)
 
 
-def fake_analysis(**kwargs):
+def fake_analysis(include_model=True, **kwargs):
     if isinstance(kwargs.get('input_file'), (six.string_types, six.binary_type)):
         kwargs['input_file'] = fake_related_file(file=kwargs['input_file'])
 
@@ -53,6 +55,12 @@ def fake_analysis(**kwargs):
 
     if isinstance(kwargs.get('settings_file'), (six.string_types, six.binary_type)):
         kwargs['settings_file'] = fake_related_file(file=kwargs['settings_file'])
+
+    if include_model and kwargs.get('model') is None:
+        kwargs['model'] = fake_analysis_model()
+
+    if kwargs.get('portfolio') is None:
+        kwargs['portfolio'] = fake_portfolio()
 
     return baker.make(Analysis, **kwargs)
 
