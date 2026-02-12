@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-import logging
 
 from ..celery_app_v2 import v2 as celery_app_v2
 from celery.utils.log import get_task_logger
