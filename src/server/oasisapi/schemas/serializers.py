@@ -185,11 +185,19 @@ def _sanitize_json_schema_for_openapi(schema):
     Also, 'type' must be a string (not an array like ["integer", "string"]).
 
     Since 'definitions' are stripped, any '$ref' pointers into them become dangling.
-    Replace objects containing only '$ref' with 'type: object' so code generators
+    Replace objects containing '$ref' with 'type: object' so code generators
     don't emit references to non-existent types.
+
+    'additionalProperties' and 'minProperties' are stripped because ods_tools
+    schemas place them on array types (invalid in OA3) and code generators
+    produce broken validation code for them. Runtime validation is handled
+    by ods_tools in Python.
     """
     # Keys that exist in JSON Schema but not in OA3 Schema Objects
     unsupported_keys = {'$schema', 'definitions', 'definition', 'patternProperties', 'unevaluatedProperties'}
+    # Keys that confuse code generators when placed on inline schemas (only used
+    # for JSON Schema validation which ods_tools handles in Python at runtime)
+    generator_problematic_keys = {'additionalProperties', 'minProperties'}
 
     if isinstance(schema, dict):
         # If this dict is just a $ref, replace with a generic object
@@ -199,6 +207,8 @@ def _sanitize_json_schema_for_openapi(schema):
         cleaned = {}
         for key, value in schema.items():
             if key in unsupported_keys:
+                continue
+            if key in generator_problematic_keys:
                 continue
             if key == 'type' and isinstance(value, list):
                 # OA3 type must be a string; use oneOf for multi-type
