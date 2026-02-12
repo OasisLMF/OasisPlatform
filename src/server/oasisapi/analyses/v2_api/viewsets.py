@@ -405,6 +405,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
+    @extend_schema(responses={200: FILE_RESPONSE})
     @settings_file.mapping.post
     def set_settings_file(self, request, pk=None, version=None):
         """

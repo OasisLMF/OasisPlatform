@@ -21,7 +21,7 @@ class AnalysisListSerializer(serializers.Serializer):
     status = serializers.CharField(read_only=True)
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
-    complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    complex_model_data_files = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     num_events_total = serializers.CharField(read_only=True)
     num_events_complete = serializers.CharField(read_only=True)
 

@@ -61,7 +61,7 @@ class AnalysisModelListSerializer(serializers.Serializer):
     groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
     settings = serializers.SerializerMethodField()
     run_mode = serializers.CharField(read_only=True)
-    data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    data_files = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     namespace = 'v2-models'
 
     @extend_schema_field(serializers.URLField)

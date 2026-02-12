@@ -16,13 +16,17 @@ class DataFileListSerializer(serializers.Serializer):
     file_category = serializers.CharField(read_only=True)
     created = serializers.DateTimeField(read_only=True)
     modified = serializers.DateTimeField(read_only=True)
-    groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+    groups = serializers.SerializerMethodField(read_only=True)
 
     # File fields
     file = serializers.SerializerMethodField(read_only=True)
     filename = serializers.SerializerMethodField(read_only=True)
     stored = serializers.SerializerMethodField(read_only=True)
     content_type = serializers.SerializerMethodField(read_only=True)
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_groups(self, instance):
+        return list(instance.groups.values_list('name', flat=True))
 
     @extend_schema_field(serializers.URLField)
     def get_file(self, instance):

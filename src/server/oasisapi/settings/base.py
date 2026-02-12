@@ -361,6 +361,7 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'PREPROCESSING_HOOKS': SCHEMA_PREPROCESSING_HOOKS,
     'SCHEMA_PATH_PREFIX': r'/api/',
+    'DEFAULT_GENERATOR_CLASS': 'src.server.oasisapi.schemas.generators.OasisSchemaGenerator',
     **SPECTACULAR_SETTINGS_AUTH,
 }
 

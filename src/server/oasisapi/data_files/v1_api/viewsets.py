@@ -108,6 +108,7 @@ class DataFileViewset(viewsets.ModelViewSet):
         file_response = handle_related_file(self.get_object(), 'file', request, None)
         return file_response
 
+    @extend_schema(responses={200: FILE_RESPONSE})
     @content.mapping.post
     def set_content(self, request, pk=None, version=None):
         """

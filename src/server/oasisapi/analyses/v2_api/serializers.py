@@ -91,7 +91,7 @@ class AnalysisListSerializer(serializers.Serializer):
     run_mode = serializers.CharField(read_only=True)
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
-    complex_model_data_files = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    complex_model_data_files = serializers.ListField(child=serializers.IntegerField(), read_only=True)
     priority = serializers.IntegerField(read_only=True)
     num_events_total = serializers.IntegerField(read_only=True)
     num_events_complete = serializers.IntegerField(read_only=True)

@@ -55,7 +55,11 @@ class PortfolioListSerializer(serializers.Serializer):
     reinsurance_scope_file = serializers.SerializerMethodField(read_only=True)
     currency_conversion_json = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
-    groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+    groups = serializers.SerializerMethodField(read_only=True)
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_groups(self, instance):
+        return list(instance.groups.values_list('name', flat=True))
 
     @extend_schema_field(serializers.URLField)
     def get_storage_links(self, instance):
