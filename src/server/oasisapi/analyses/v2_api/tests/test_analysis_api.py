@@ -738,6 +738,21 @@ class AnalysisRun(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
+    def test_user_is_authenticated_missing_model__response_is_400(self):
+        user = fake_user()
+        analysis = fake_analysis(include_model=False)
+
+        response = self.app.post(
+            analysis.get_absolute_run_url(namespace=NAMESPACE),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('Model not assigned', response.json['model'])
+
     def test_user_is_authenticated_object_exists___run_is_called(self):
         with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True) as run_mock:
             user = fake_user()

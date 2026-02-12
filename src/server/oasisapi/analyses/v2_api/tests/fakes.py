@@ -37,7 +37,7 @@ class FakeAsyncResultFactory(object):
         return self.fake_res(task_id)
 
 
-def fake_analysis(**kwargs):
+def fake_analysis(include_model=True, **kwargs):
     if isinstance(kwargs.get('input_file'), (six.string_types, six.binary_type)):
         kwargs['input_file'] = fake_related_file(file=kwargs['input_file'])
 
@@ -56,8 +56,9 @@ def fake_analysis(**kwargs):
     if isinstance(kwargs.get('settings_file'), (six.string_types, six.binary_type)):
         kwargs['settings_file'] = fake_related_file(file=kwargs['settings_file'])
 
-    if kwargs.get('model') is None:
+    if include_model and kwargs.get('model') is None:
         kwargs['model'] = fake_analysis_model()
+
     if kwargs.get('portfolio') is None:
         kwargs['portfolio'] = fake_portfolio()
 

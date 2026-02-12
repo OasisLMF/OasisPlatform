@@ -309,10 +309,12 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         `RUN_ERROR`
         """
         obj = self.get_object()
+
+        obj.validate_standard_analysis()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        verify_model_scaling(obj.model)
+
         run_mode_override = request.GET.get('run_mode_override', None)
-        if obj.model is not None:
-            verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-            verify_model_scaling(obj.model)
         obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 

@@ -134,6 +134,11 @@ class AnalysisQuerySet(models.QuerySet):
         combine_analysis.run_task_id = res.id
         combine_analysis.task_started = timezone.now()
         combine_analysis.task_finished = None
+        # need to add portfolio to handle permissions
+        dummy_portfolio = Portfolio(name=f'{request.data['name']}-dummy-portfolio',
+                                    creator=request.user)
+        dummy_portfolio.save()
+        combine_analysis.portfolio = dummy_portfolio
         combine_analysis.save()
 
         return combine_analysis
@@ -242,8 +247,7 @@ class Analysis(TimeStampedModel):
     creator = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE,
                                   related_name='analyses',
-                                  help_text=_('The portfolio to link the analysis to'),
-                                  null=True)
+                                  help_text=_('The portfolio to link the analysis to'))
     model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE,
                               related_name='analyses',
                               help_text=_('The model to link the analysis to'),
@@ -622,8 +626,6 @@ class Analysis(TimeStampedModel):
 
     def validate_standard_analysis(self):
         errors = {}
-        if self.portfolio is None:
-            errors['portfolio'] = 'Portfolio not assigned to anlaysis'
         if self.model is None:
             errors['model'] = 'Model not assigned to analysis'
 

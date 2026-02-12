@@ -58,7 +58,5 @@ def fake_analysis(**kwargs):
 
     if kwargs.get('model') is None:
         kwargs['model'] = fake_analysis_model()
-    if kwargs.get('portfolio') is None:
-        kwargs['portfolio'] = fake_portfolio()
 
     return baker.make(Analysis, **kwargs)
