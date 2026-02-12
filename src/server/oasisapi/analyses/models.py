@@ -107,8 +107,13 @@ class AnalysisQuerySet(models.QuerySet):
         if errors:
             raise ValidationError(detail=errors)
         # Create combine analysis
+        # need to add portfolio to handle permissions
+        dummy_portfolio = Portfolio(name=f"{request.data['name']}-dummy-portfolio",
+                                    creator=request.user)
+        dummy_portfolio.save()
         combine_analysis = Analysis.objects.create(creator=request.user,
-                                                   name=request.data['name'])
+                                                   name=request.data['name'],
+                                                   portfolio=dummy_portfolio)
 
         # Prepare celery tasks
         combine_run_task = celery_app_v2.signature('run_combine',
@@ -124,11 +129,6 @@ class AnalysisQuerySet(models.QuerySet):
         combine_analysis.run_task_id = res.id
         combine_analysis.task_started = timezone.now()
         combine_analysis.task_finished = None
-        # need to add portfolio to handle permissions
-        dummy_portfolio = Portfolio(name=f"{request.data['name']}-dummy-portfolio",
-                                    creator=request.user)
-        dummy_portfolio.save()
-        combine_analysis.portfolio = dummy_portfolio
         combine_analysis.save()
 
         return combine_analysis
