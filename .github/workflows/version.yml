@@ -12,6 +12,9 @@ on:
       ods_tools_version:
         description: 'Update the ods-tools package [semvar]'
         required: false
+      odm_version:
+        description: 'Update the oasis-data-manager package [semvar]'
+        required: false
 
   workflow_call:
     inputs:
@@ -24,6 +27,10 @@ on:
         required: false
         type: string
       ods_tools_version:
+        description: 'Update the package version'
+        required: false
+        type: string
+      odm_version:
         description: 'Update the package version'
         required: false
         type: string
@@ -103,6 +110,15 @@ jobs:
         requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
         for fl in "${requ_list[@]}"; do
           pip-compile --upgrade-package ods-tools==${{ inputs.ods_tools_version }} $fl.in
+          git add $fl.txt
+        done
+
+    - name: Update oasis-data-manager Version
+      if: inputs.odm_version != ''
+      run: |
+        requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
+        for fl in "${requ_list[@]}"; do
+          pip-compile --upgrade-package ods-tools==${{ inputs.odm_version }} $fl.in
           git add $fl.txt
         done
 
