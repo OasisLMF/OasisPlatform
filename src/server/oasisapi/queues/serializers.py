@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel
@@ -15,7 +15,7 @@ class QueueSerializer(serializers.Serializer):
     worker_count = serializers.IntegerField()
     models = serializers.SerializerMethodField()
 
-    @swagger_serializer_method(serializer_or_field=AnalysisModelListSerializer(many=True))
+    @extend_schema_field(AnalysisModelListSerializer(many=True))
     def get_models(self, instance, *args, **kwargs):
         queue_name = instance['name'].removesuffix('-v2')
         models = [m for m in AnalysisModel.objects.all() if str(m) == queue_name]
@@ -26,11 +26,11 @@ class WebsocketAnalysesSerializer(serializers.Serializer):
     analysis = serializers.SerializerMethodField()
     updated_tasks = serializers.SerializerMethodField()
 
-    @swagger_serializer_method(serializer_or_field=AnalysisSerializerWebSocket())
+    @extend_schema_field(AnalysisSerializerWebSocket())
     def get_analysis(self, instance, *args, **kwargs):
         pass
 
-    @swagger_serializer_method(serializer_or_field=AnalysisTaskStatusSerializer(many=True))
+    @extend_schema_field(AnalysisTaskStatusSerializer(many=True))
     def get_updated_tasks(self, instance, *args, **kwargs):
         pass
 
@@ -39,11 +39,11 @@ class WebsocketContentSerializer(serializers.Serializer):
     queue = serializers.SerializerMethodField()
     analyses = serializers.SerializerMethodField()
 
-    @swagger_serializer_method(serializer_or_field=QueueSerializer)
+    @extend_schema_field(QueueSerializer)
     def get_queue(self, instance, *args, **kwargs):
         pass
 
-    @swagger_serializer_method(serializer_or_field=WebsocketAnalysesSerializer(many=True))
+    @extend_schema_field(WebsocketAnalysesSerializer(many=True))
     def get_analyses(self, instance, *args, **kwargs):
         pass
 
@@ -57,6 +57,6 @@ class WebsocketSerializer(serializers.Serializer):
     status = serializers.CharField()
     content = serializers.SerializerMethodField()
 
-    @swagger_serializer_method(serializer_or_field=WebsocketContentSerializer(many=True))
+    @extend_schema_field(WebsocketContentSerializer(many=True))
     def get_content(self, instance, *args, **kwargs):
         pass

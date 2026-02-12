@@ -4,7 +4,7 @@ import subprocess
 from django.db import connection
 from django.conf import settings as django_settings
 
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import views, status
 from rest_framework.response import Response
 
@@ -22,7 +22,7 @@ class HealthcheckViewShallow(views.APIView):
     authentication_classes = []
     permission_classes = []
 
-    @swagger_auto_schema(responses={200: HEALTHCHECK})
+    @extend_schema(responses={200: HEALTHCHECK})
     def get(self, request):
         return Response({'status': 'OK'})
 
@@ -36,7 +36,7 @@ class HealthcheckViewDeep(views.APIView):
     authentication_classes = []
     permission_classes = []
 
-    @swagger_auto_schema(responses={200: HEALTHCHECK}, tags=['info'])
+    @extend_schema(responses={200: HEALTHCHECK}, tags=['info'])
     def get(self, request):
         """
         Check db and celery connectivity and return a 200 if healthy, 503 if not.

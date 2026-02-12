@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -35,12 +35,12 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
             data['creator'] = self.context.get('request').user
         return super(AnalysisModelSerializer, self).create(data)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.ns)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_versions(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_versions_url(request=request, namespace=self.ns)
@@ -57,7 +57,7 @@ class AnalysisModelStorageSerializer(serializers.ModelSerializer):
             'settings_file',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(serializers.CharField)
     def get_settings_file(self, instance):
         return file_storage_link(instance.resource_file, True)
 
@@ -78,7 +78,7 @@ class TemplateSerializer(serializers.ModelSerializer):
             'file_url',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_file_url(self, instance):
         request = self.context.get('request')
         model_pk = request.parser_context.get('kwargs', {}).get('models_pk')

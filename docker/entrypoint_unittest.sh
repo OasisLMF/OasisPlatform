@@ -35,7 +35,7 @@ BUILD_OUTPUT_DIR='/tmp/output/'
     source $(find .tox/ -name "*activate" | head -n 1)
     rm -rf $LOG_DIR'openapi-schema.json'
     python ./manage.py migrate
-    python ./manage.py generate_swagger $LOG_DIR'openapi-schema.json'
+    python ./manage.py spectacular --format openapi-json --file $LOG_DIR'openapi-schema.json'
 
 # clean up test run 
 #    find /home/ -name __pycache__ | xargs -r rm -rfv
