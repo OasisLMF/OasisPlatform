@@ -21,7 +21,7 @@ class AnalysisListSerializer(serializers.Serializer):
     status = serializers.CharField(read_only=True)
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
-    complex_model_data_files = serializers.ListField(child=serializers.IntegerField(), read_only=True)
+    complex_model_data_files = serializers.SerializerMethodField(read_only=True)
     num_events_total = serializers.CharField(read_only=True)
     num_events_complete = serializers.CharField(read_only=True)
 
@@ -41,6 +41,10 @@ class AnalysisListSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = __qualname__.split('.')[0] + 'V1'
+
+    @extend_schema_field(serializers.ListField(child=serializers.IntegerField()))
+    def get_complex_model_data_files(self, instance):
+        return list(instance.complex_model_data_files.values_list('pk', flat=True))
 
     @extend_schema_field(serializers.URLField)
     def get_input_file(self, instance):

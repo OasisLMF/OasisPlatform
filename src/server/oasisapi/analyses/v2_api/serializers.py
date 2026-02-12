@@ -91,7 +91,7 @@ class AnalysisListSerializer(serializers.Serializer):
     run_mode = serializers.CharField(read_only=True)
     task_started = serializers.DateTimeField(read_only=True)
     task_finished = serializers.DateTimeField(read_only=True)
-    complex_model_data_files = serializers.ListField(child=serializers.IntegerField(), read_only=True)
+    complex_model_data_files = serializers.SerializerMethodField(read_only=True)
     priority = serializers.IntegerField(read_only=True)
     num_events_total = serializers.IntegerField(read_only=True)
     num_events_complete = serializers.IntegerField(read_only=True)
@@ -121,6 +121,10 @@ class AnalysisListSerializer(serializers.Serializer):
     run_log_file = serializers.SerializerMethodField(read_only=True)
     storage_links = serializers.SerializerMethodField(read_only=True)
     chunking_configuration = serializers.SerializerMethodField(read_only=True)
+
+    @extend_schema_field(serializers.ListField(child=serializers.IntegerField()))
+    def get_complex_model_data_files(self, instance):
+        return list(instance.complex_model_data_files.values_list('pk', flat=True))
 
     @extend_schema_field(serializers.URLField)
     def get_input_file(self, instance):
