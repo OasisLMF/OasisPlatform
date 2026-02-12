@@ -39,8 +39,6 @@ from ...schemas.custom_swagger import (
     FILE_LIST_RESPONSE,
 )
 
-import logging
-
 
 class AnalysisFilter(TimeStampedFilter):
     name = filters.CharFilter(
@@ -336,11 +334,6 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
         analysis_ids = request.data.get('analysis_ids')
         config = request.data.get('config')
-
-        logger = logging.getLogger(__name__)
-        logger.info(f'request object: {request}')
-        logger.info(f'combine anlaysis ids: {analysis_ids}')
-        logger.info(f'combine config: {config}')
 
         queryset = Analysis.objects.filter(pk__in=analysis_ids)
         if len(queryset) != len(analysis_ids):
