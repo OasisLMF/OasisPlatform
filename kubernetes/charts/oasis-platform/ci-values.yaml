@@ -3,4 +3,18 @@
 
 oasisServer:
   # Enable simple jwt.
-  apiAuthType: simple
+  # apiAuthType: simple
+  
+  # Enable OIDC Keycloak authentication with 'keycloak or set to 'simple' for simple jwt.
+  # apiAuthType: keycloak
+  # oidc:
+  #   endpoint: https://ui.oasis.local/auth/realms/oasis/protocol/openid-connect/
+  #   clientName: oasis-server
+  #   clientSecret: e4f4fb25-2250-4210-a7d6-9b16c3d2ab77
+  
+  # Enable OIDC Authentik authentication with 'authentik or set to 'simple' for simple jwt.
+  apiAuthType: authentik
+  oidc:
+    endpoint: https://ui.oasis.local/authentik/application/o/
+    clientName: oasis-server
+    clientSecret: EfNMUM3GG1bd1CYUvNfiBGWKfvbGFiNAdutEqHSarZ9H7oL0sZfKLvPT1ujaqVm2839Vka8Ky0elliMQ6yWKN8Jv8dzh3BeVFn0F7LPquGkIus6JJ9nGH1vtfCt7AhtO
