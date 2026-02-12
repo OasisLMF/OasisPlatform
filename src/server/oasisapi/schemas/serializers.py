@@ -177,6 +177,32 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
         return super(AnalysisSettingsSerializer, self).validate_json(data)
 
 
+def _sanitize_json_schema_for_openapi(schema):
+    """Strip JSON Schema features that are not valid in OpenAPI 3.0.3.
+
+    OpenAPI 3.0 uses a restricted subset of JSON Schema. Attributes like $schema,
+    definitions, patternProperties, and unevaluatedProperties are not supported.
+    Also, 'type' must be a string (not an array like ["integer", "string"]).
+    """
+    # Keys that exist in JSON Schema but not in OA3 Schema Objects
+    unsupported_keys = {'$schema', 'definitions', 'definition', 'patternProperties', 'unevaluatedProperties'}
+
+    if isinstance(schema, dict):
+        cleaned = {}
+        for key, value in schema.items():
+            if key in unsupported_keys:
+                continue
+            if key == 'type' and isinstance(value, list):
+                # OA3 type must be a string; use oneOf for multi-type
+                cleaned['oneOf'] = [{'type': t} for t in value]
+            else:
+                cleaned[key] = _sanitize_json_schema_for_openapi(value)
+        return cleaned
+    elif isinstance(schema, list):
+        return [_sanitize_json_schema_for_openapi(item) for item in schema]
+    return schema
+
+
 class _JsonSettingsSchemaExtension(OpenApiSerializerExtension):
     """Return the raw JSON schema from ods_tools for ModelParametersSerializer and AnalysisSettingsSerializer."""
     target_class = 'src.server.oasisapi.schemas.serializers.JsonSettingsSerializer'
@@ -195,4 +221,4 @@ class _JsonSettingsSchemaExtension(OpenApiSerializerExtension):
             )
         else:
             schema = {'type': 'object'}
-        return schema
+        return _sanitize_json_schema_for_openapi(schema)
