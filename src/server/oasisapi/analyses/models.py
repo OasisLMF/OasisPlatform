@@ -615,12 +615,8 @@ class Analysis(TimeStampedModel):
         raise ValidationError(detail=errors)
 
     def validate_standard_analysis(self):
-        errors = {}
         if self.model is None:
-            errors['model'] = 'Model not assigned to analysis'
-
-        if errors:
-            raise ValidationError(detail=errors)
+            raise ValidationError({'model': 'Model not assigned to analysis'})
 
     def generate_and_run(self, initiator):
         self.validate_standard_analysis()
