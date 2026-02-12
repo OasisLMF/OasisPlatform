@@ -80,9 +80,6 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
 
 class AnalysisQuerySet(models.QuerySet):
     def run_combine(self, request):
-        logger = logging.getLogger(__name__)
-        logger.info('Inside run combine')
-
         # Validate queryset
         selected_analyses = self
         valid_statuses = ['RUN_COMPLETED']
@@ -93,7 +90,6 @@ class AnalysisQuerySet(models.QuerySet):
             errors['status'].append('Analyses status must be [{}]'.format(', '.join(valid_statuses)))
 
         # Get inputs from queryset
-        logger.info("Creating input lists.")
         analysis_output_files = []
         analysis_input_files = []
         for analysis in valid_analyses:
@@ -110,15 +106,9 @@ class AnalysisQuerySet(models.QuerySet):
 
         if errors:
             raise ValidationError(detail=errors)
-        logger.info(f"input files: {analysis_input_files}")
-        logger.info(f"output files: {analysis_output_files}")
-
         # Create combine analysis
-        logger.info('Creating analysis for combine')
         combine_analysis = Analysis.objects.create(creator=request.user,
                                                    name=request.data['name'])
-
-        logger.info(combine_analysis)
 
         # Prepare celery tasks
         combine_run_task = celery_app_v2.signature('run_combine',
