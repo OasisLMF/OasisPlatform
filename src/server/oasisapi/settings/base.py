@@ -316,7 +316,7 @@ if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
         'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
         'USE_SESSION_AUTH': False,
         'SECURITY_DEFINITIONS': {
-            "authentik": {
+            f"OIDC {API_AUTH_TYPE}": {
                 "type": "oauth2",
                 "authorizationUrl": OIDC_OP_AUTHORIZATION_ENDPOINT,
                 "tokenUrl": OIDC_OP_TOKEN_ENDPOINT,
