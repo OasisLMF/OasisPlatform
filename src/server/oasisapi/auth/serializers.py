@@ -115,7 +115,7 @@ class OIDCTokenRefreshSerializer(serializers.Serializer):
                 'grant_type': 'refresh_token',
                 'client_id': settings.OIDC_RP_CLIENT_ID,
                 'client_secret': settings.OIDC_RP_CLIENT_SECRET,
-                'scope': 'openid',
+                'scope': 'openid offline_access',
                 'refresh_token': token
             },
             verify=False,
