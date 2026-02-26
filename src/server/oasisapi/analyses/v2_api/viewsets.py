@@ -12,10 +12,12 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.settings import api_settings
+from rest_framework.exceptions import ValidationError
 
 from ..models import Analysis, AnalysisTaskStatus
 from .serializers import AnalysisSerializer, AnalysisCopySerializer, AnalysisTaskStatusSerializer, \
     AnalysisStorageSerializer, AnalysisListSerializer
+from ...combine.serializers import CombineAnalysesSerializer
 from .utils import verify_model_scaling
 from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
@@ -305,11 +307,41 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         `RUN_ERROR`
         """
         obj = self.get_object()
-        run_mode_override = request.GET.get('run_mode_override', None)
+
+        obj.validate_standard_analysis()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         verify_model_scaling(obj.model)
+
+        run_mode_override = request.GET.get('run_mode_override', None)
         obj.run(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
+
+    @swagger_auto_schema(responses={200: AnalysisListSerializer}, request_body=CombineAnalysesSerializer)
+    @action(methods=['post'], detail=False)
+    def combine(self, request):
+        """
+        Combine the output of multiple analyses with ORD output. Requires the
+        `analysis_ids` to correspond to analyses in the `RUN_COMPLETED` state.
+        """
+        errors = {}
+        if 'analysis_ids' not in request.data:
+            errors['analysis_ids'] = 'Analysis ids not provided.'
+        if 'config' not in request.data:
+            errors['config'] = 'Combine config not provided.'
+
+        if errors:
+            raise ValidationError(errors)
+
+        analysis_ids = request.data.get('analysis_ids')
+        config = request.data.get('config')
+
+        queryset = Analysis.objects.filter(pk__in=analysis_ids)
+        if len(queryset) != len(analysis_ids):
+            raise ValidationError({'analysis_ids': f'Not all selected analyses {analysis_ids} found.'})
+
+        combine_analysis = queryset.run_combine(request)
+
+        return Response(AnalysisListSerializer(instance=combine_analysis, context=self.get_serializer_context()).data)
 
     @swagger_auto_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
@@ -320,6 +352,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         `INPUTS_GENERATION_CANCELLED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or `RUN_ERROR`.
         """
         obj = self.get_object()
+        obj.validate_standard_analysis()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         verify_model_scaling(obj.model)
         obj.generate_and_run(request.user)
@@ -333,7 +366,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED`, `INPUTS_GENERATION_STARTED`, `RUN_QUEUED` or `RUN_STARTED`
         """
         obj = self.get_object()
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
+        if obj.model is not None:
+            verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_any()
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
@@ -345,6 +379,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Cancels a running analysis execution. The analysis must have one of the following statuses, `RUN_QUEUED` or `RUN_STARTED`
         """
         obj = self.get_object()
+        obj.validate_standard_analysis()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_analysis()
@@ -358,9 +393,12 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
-        run_mode_override = request.GET.get('run_mode_override', None)
+
+        obj.validate_standard_analysis()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         verify_model_scaling(obj.model)
+
+        run_mode_override = request.GET.get('run_mode_override', None)
         obj.generate_inputs(request.user, run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
@@ -371,6 +409,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Cancels a currently inputs generation. The analysis status must be `INPUTS_GENERATION_STARTED`
         """
         obj = self.get_object()
+        obj.validate_standard_analysis()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to cancel this model')
         obj.cancel_subtasks()
         obj.cancel_generate_inputs()

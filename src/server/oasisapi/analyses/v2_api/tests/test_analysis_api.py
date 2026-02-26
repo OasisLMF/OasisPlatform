@@ -3,6 +3,7 @@ import json
 import string
 import sys
 from importlib import reload
+from unittest.mock import MagicMock
 import pytest
 
 import pandas as pd
@@ -737,6 +738,21 @@ class AnalysisRun(WebTestMixin, TestCase):
 
         self.assertEqual(404, response.status_code)
 
+    def test_user_is_authenticated_missing_model__response_is_400(self):
+        user = fake_user()
+        analysis = fake_analysis(include_model=False)
+
+        response = self.app.post(
+            analysis.get_absolute_run_url(namespace=NAMESPACE),
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('Model not assigned', response.json['model'])
+
     def test_user_is_authenticated_object_exists___run_is_called(self):
         with patch('src.server.oasisapi.analyses.models.Analysis.run', autospec=True) as run_mock:
             user = fake_user()
@@ -837,6 +853,199 @@ class AnalysisCancel(WebTestMixin, TestCase):
 
         self.assertEqual(403, response.status_code)
         self.assertEqual('You are not allowed to cancel this model', response.json.get('detail'))
+
+
+class AnalysisCombine(WebTestMixin, TestCase):
+    def test_user_is_not_authenticated___response_is_forbidden(self):
+        analysis = fake_analysis()
+
+        response = self.app.post(reverse(f'{NAMESPACE}:analysis-combine'),
+                                 expect_errors=True,
+                                 )
+
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_missing_analysis_ids__response_is_400(self):
+        user = fake_user()
+
+        response = self.app.post_json(
+            reverse(f'{NAMESPACE}:analysis-combine'),
+            params={
+                'config': {},
+                'name': 'test-combine'
+            },
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('analysis_ids', response.json)
+
+    def test_missing_config__response_is_400(self):
+        user = fake_user()
+
+        response = self.app.post_json(
+            reverse(f'{NAMESPACE}:analysis-combine'),
+            params={
+                'analysis_ids': [1, 2],
+                'name': 'test-combine'
+            },
+            expect_errors=True,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('config', response.json)
+
+    def test_nonexistent_analysis_ids__response_is_400(self):
+        user = fake_user()
+
+        response = self.app.post_json(
+            reverse(f'{NAMESPACE}:analysis-combine'),
+            params={
+                'analysis_ids': [12345, 67890],
+                'config': {},
+                'name': 'test-combine'
+            },
+            expect_errors=True,
+            headers={
+                'authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('Not all selected analyses', response.json['analysis_ids'])
+
+    def test_analyses_not_run_completed__response_is_400(self):
+        user = fake_user()
+        analysis1 = fake_analysis(status=Analysis.status_choices.NEW)
+        analysis2 = fake_analysis(status=Analysis.status_choices.READY)
+
+        response = self.app.post_json(
+            reverse(f'{NAMESPACE}:analysis-combine'),
+            params={
+                'analysis_ids': [analysis1.pk, analysis2.pk],
+                'config': {},
+                'name': 'test-combine'
+            },
+            expect_errors=True,
+            headers={
+                'authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('status', response.json)
+
+    def test_analyses_missing_input_files__response_is_400(self):
+        user = fake_user()
+        analysis1 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  input_file=None,
+                                  output_file=fake_related_file())
+        analysis2 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  input_file=None,
+                                  output_file=fake_related_file())
+
+        response = self.app.post_json(
+            reverse(f'{NAMESPACE}:analysis-combine'),
+            params={
+                'analysis_ids': [analysis1.pk, analysis2.pk],
+                'config': {},
+                'name': 'test-combine'
+            },
+            expect_errors=True,
+            headers={
+                'authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('input_file', response.json)
+
+    def test_analyses_missing_output_files__response_is_400(self):
+        user = fake_user()
+        analysis1 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  output_file=None,
+                                  input_file=fake_related_file())
+        analysis2 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  output_file=None,
+                                  input_file=fake_related_file())
+
+        response = self.app.post_json(
+            reverse(f'{NAMESPACE}:analysis-combine'),
+            params={
+                'analysis_ids': [analysis1.pk, analysis2.pk],
+                'config': {},
+                'name': 'test-combine'
+            },
+            expect_errors=True,
+            headers={
+                'authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+            }
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('output_file', response.json)
+
+    def test_valid_request(self):
+        user = fake_user()
+        analysis1 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  output_file=fake_related_file(),
+                                  input_file=fake_related_file())
+        analysis2 = fake_analysis(status=Analysis.status_choices.RUN_COMPLETED,
+                                  output_file=fake_related_file(),
+                                  input_file=fake_related_file())
+
+        dummy_config = {'some': 'params'}
+
+        with (patch('src.server.oasisapi.analyses.models.celery_app_v2') as mock_celery,
+              patch('src.server.oasisapi.analyses.models.record_combine_output') as mock_record):
+
+            # Mock celery interactions
+            mock_chain = MagicMock()
+            mock_celery.signature.return_value.__or__.return_value = mock_chain
+            mock_task = MagicMock()
+            mock_task.id = 'test-task-id'
+            mock_chain.apply_async.return_value = mock_task
+
+            initial_no_analyses = Analysis.objects.count()
+
+            response = self.app.post_json(
+                reverse(f'{NAMESPACE}:analysis-combine'),
+                params={
+                    'analysis_ids': [analysis1.pk, analysis2.pk],
+                    'config': dummy_config,
+                    'name': 'my-combine'
+                },
+                expect_errors=True,
+                headers={
+                    'authorization': 'Bearer {}'.format(AccessToken.for_user(user))
+                }
+            )
+
+            # Make sure analysis created
+            self.assertEqual(200, response.status_code)
+            self.assertEqual('my-combine', response.json['name'])
+            self.assertEqual(initial_no_analyses + 1, Analysis.objects.count())
+
+            # Verify created analysis
+            combine_analysis = Analysis.objects.get(pk=response.json['id'])
+            self.assertEqual(Analysis.status_choices.RUN_STARTED, combine_analysis.status)
+            self.assertEqual(user, combine_analysis.creator)
+
+            # Make sure celery tasks called
+            mock_celery.signature.assert_called()
+            call_args = mock_celery.signature.call_args[1]['args']
+            self.assertEqual(call_args[2], dummy_config)
+
+            mock_record.s.assert_called()
+            mock_chain.apply_async.assert_called()
+            call_args = mock_chain.apply_async.call_args[1]
+            self.assertEqual(call_args['queue'], 'oasis-internal-worker')
 
 
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
