@@ -4,7 +4,7 @@ import io
 import os
 from pathlib import Path
 
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
 
 from ods_tools.oed.exposure import OedExposure
 
@@ -57,17 +57,17 @@ class MappingFileSerializer(serializers.ModelSerializer):
             'output_validation_file',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(serializers.CharField)
     def get_file(self, instance: MappingFile):
         request = self.context.get('request')
         return instance.get_absolute_conversion_file_url(request, namespace="v2-files")
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(serializers.CharField)
     def get_input_validation_file(self, instance: MappingFile):
         request = self.context.get('request')
         return instance.get_absolute_input_validation_file_url(request, namespace="v2-files")
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(serializers.CharField)
     def get_output_validation_file(self, instance: MappingFile):
         request = self.context.get('request')
         return instance.get_absolute_output_validation_file_url(request, namespace="v2-files")
@@ -217,7 +217,7 @@ class NestedRelatedFileSerializer(serializers.ModelSerializer):
         self.analyses = analyses
         super().__init__(*args, **kwargs)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_sql(self, instance):
         request = self.context.get('request')
 
