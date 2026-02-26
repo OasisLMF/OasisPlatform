@@ -127,7 +127,7 @@ class OIDCAuthorizeView(APIView):
             "response_type": "code",
             "client_id": client_id,
             "redirect_uri": redirect_uri,
-            "scope": "openid profile email",
+            "scope": "openid profile email offline_access",
             "state": state
         }
         auth_url = f"{settings.OIDC_OP_AUTHORIZATION_ENDPOINT}?{urlencode(params)}"
