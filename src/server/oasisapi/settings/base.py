@@ -317,16 +317,30 @@ if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
                 'oauth2': {
                     'type': 'oauth2',
                     'flows': {
+                        # User login via browser redirect (authorization code flow)
+                        # The OIDC provider must whitelist the Swagger UI redirect URI:
+                        #   <swagger-ui-url>/oauth2-redirect.html
                         'authorizationCode': {
                             'authorizationUrl': OIDC_OP_AUTHORIZATION_ENDPOINT,
                             'tokenUrl': OIDC_OP_TOKEN_ENDPOINT,
-                            'scopes': {},
-                        }
+                            'scopes': {
+                                'openid': 'OpenID Connect identity token',
+                                'profile': 'User profile (username, name)',
+                                'email': 'User email address',
+                            },
+                        },
                     }
                 }
             }
         },
         'SECURITY': [{'oauth2': []}],
+        'SWAGGER_UI_SETTINGS': {
+            'persistAuthorization': True,
+        },
+        # Pre-fill the client_id in the Authorize dialog so users don't have to type it
+        'SWAGGER_UI_INIT_OAUTH': {
+            'clientId': OIDC_RP_CLIENT_ID,
+        },
     }
 else:
     INSTALLED_APPS += ('rest_framework_simplejwt.token_blacklist',)
@@ -341,25 +355,38 @@ else:
         'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
     }
 
+    _token_url = '/api/access_token/' if URL_SUB_PATH else '/access_token/'
     SPECTACULAR_SETTINGS_AUTH = {
         'APPEND_COMPONENTS': {
             'securitySchemes': {
-                'bearerAuth': {
-                    'type': 'http',
-                    'scheme': 'bearer',
-                    'bearerFormat': 'JWT',
+                'tokenAuth': {
+                    'type': 'oauth2',
+                    'flows': {
+                        'password': {
+                            'tokenUrl': _token_url,
+                            'scopes': {},
+                        }
+                    },
                 }
             }
         },
-        'SECURITY': [{'bearerAuth': []}],
+        'SECURITY': [{'tokenAuth': []}],
+        'SWAGGER_UI_SETTINGS': {
+            'persistAuthorization': True,
+        },
     }
 
 
 SPECTACULAR_SETTINGS = {
+
     'TITLE': 'Oasis Platform',
     'VERSION': 'v2',
     'SERVE_INCLUDE_SCHEMA': False,
     'PREPROCESSING_HOOKS': SCHEMA_PREPROCESSING_HOOKS,
+    'POSTPROCESSING_HOOKS': [
+        'drf_spectacular.hooks.postprocess_schema_enums',
+        'src.server.oasisapi.schemas.generators.remove_session_auth',
+    ],
     'SCHEMA_PATH_PREFIX': r'/api/',
     'DEFAULT_GENERATOR_CLASS': 'src.server.oasisapi.schemas.generators.OasisSchemaGenerator',
     **SPECTACULAR_SETTINGS_AUTH,

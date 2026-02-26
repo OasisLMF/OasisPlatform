@@ -345,7 +345,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
 
         return Response(AnalysisListSerializer(instance=combine_analysis, context=self.get_serializer_context()).data)
 
-    @swagger_auto_schema(responses={200: AnalysisListSerializer})
+    @extend_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
     def generate_and_run(self, request, pk=None, version=None):
         """
