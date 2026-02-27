@@ -3,6 +3,11 @@ name: Platform Release
 on:
   workflow_dispatch:
     inputs:
+      push_latest:
+        description: 'Push images with the "latest" tag'
+        required: false
+        type: boolean
+
       pre_release:
         description: 'Mark GitHub release as pre-release: [true, false]'
         required: true
@@ -86,6 +91,7 @@ jobs:
 
     env:
       pre_release: ${{ inputs.pre_release == '' && 'false' || inputs.pre_release }}
+      push_latest: ${{ inputs.push_latest == '' && 'false' || inputs.push_latest }}
       latest_tag: '2.5'
 
       release_tag: ${{ inputs.release_tag }}
@@ -230,10 +236,12 @@ jobs:
         docker pull ${{ needs.build_images.outputs.server_image }}
         docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.release_tag }}
         docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.latest_tag }}
+        docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:latest
         # Worker
         docker pull ${{ needs.build_images.outputs.worker_image }}
         docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.release_tag }}
         docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.latest_tag }}
+        docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:latest
         # Worker-dev
         docker pull ${{ needs.build_images.outputs.worker_deb_image }}
         docker tag  ${{ needs.build_images.outputs.worker_deb_image }} coreoasis/model_worker:${{ env.release_tag }}-debian
@@ -241,10 +249,12 @@ jobs:
         docker pull ${{ needs.build_images.outputs.worker_controller_image }}
         docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:${{ env.release_tag }}
         docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:${{ env.latest_tag }}
+        docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:latest
         # Worker-PiWind
         docker pull ${{ needs.build_piwind.outputs.piwind_image }}
         docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.release_tag }}
         docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.latest_tag }}
+        docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:latest
 
 
     - name: Check tag matches (Repo)
@@ -398,6 +408,14 @@ jobs:
         docker push coreoasis/worker_controller:${{ env.release_tag }}
         docker push coreoasis/model_worker:${{ env.release_tag }}-debian
         docker push coreoasis/piwind_worker:${{ env.release_tag }}
+
+    - name: Push images (Latest)
+      if: ${{ env.push_latest == 'true' }}
+      run: |
+        docker push coreoasis/api_server:latest
+        docker push coreoasis/model_worker:latest
+        docker push coreoasis/worker_controller:latest
+        docker push coreoasis/piwind_worker:latest
 
     - name: Push images (Production)
       if: ${{ env.pre_release == 'false' }}
