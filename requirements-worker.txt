@@ -186,7 +186,7 @@ numpy==2.2.6
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.1.6
+oasis-data-manager==0.2.0
     # via
     #   -r requirements-worker.in
     #   oasislmf
