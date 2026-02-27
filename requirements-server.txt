@@ -220,7 +220,7 @@ oasis-data-manager==0.1.6
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools==5.0.1
+ods-tools==5.0.2
     # via -r requirements-server.in
 packaging==25.0
     # via
