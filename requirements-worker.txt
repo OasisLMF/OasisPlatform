@@ -186,14 +186,14 @@ numpy==2.2.6
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.1.6
+oasis-data-manager==0.2.0
     # via
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.5.0
+oasislmf[extra]==2.5.1
     # via -r requirements-worker.in
-ods-tools==5.0.1
+ods-tools==5.0.2
     # via oasislmf
 packaging==25.0
     # via
@@ -354,5 +354,7 @@ websocket-client==1.8.0
     # via oasislmf
 wrapt==1.17.3
     # via aiobotocore
+xxhash==3.6.0
+    # via oasis-data-manager
 yarl==1.20.1
     # via aiohttp

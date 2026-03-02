@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 import logging
+from collections import defaultdict
 
 from celery.result import AsyncResult
 from django.conf import settings as django_settings
@@ -26,6 +27,7 @@ from ..portfolios.models import Portfolio
 from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
 from ....conf import iniconf
+from ..combine.tasks import record_combine_output
 
 from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
 
@@ -74,6 +76,62 @@ class AnalysisTaskStatusQuerySet(models.QuerySet):
     #    self._send_socket_messages(self)
 
     #    return res
+
+
+class AnalysisQuerySet(models.QuerySet):
+    def run_combine(self, request):
+        # Validate queryset
+        selected_analyses = self
+        valid_statuses = ['RUN_COMPLETED']
+        valid_analyses = selected_analyses.filter(status__in=valid_statuses)
+
+        errors = defaultdict(list)
+        if len(valid_analyses) != len(selected_analyses):
+            errors['status'].append('Analyses status must be [{}]'.format(', '.join(valid_statuses)))
+
+        # Get inputs from queryset
+        analysis_output_files = []
+        analysis_input_files = []
+        for analysis in valid_analyses:
+            input_file = file_storage_link(analysis.input_file)
+            output_file = file_storage_link(analysis.output_file)
+
+            if input_file is None:
+                errors['input_file'].append(f'Analysis ID {analysis.id} does not have an input file')
+            if output_file is None:
+                errors['output_file'].append(f'Analysis ID {analysis.id} does not have an output_file')
+
+            analysis_input_files.append(input_file)
+            analysis_output_files.append(output_file)
+
+        if errors:
+            raise ValidationError(detail=errors)
+        # Create combine analysis
+        # need to add portfolio to handle permissions
+        dummy_portfolio = Portfolio(name=f"{request.data['name']}-dummy-portfolio",
+                                    creator=request.user)
+        dummy_portfolio.save()
+        combine_analysis = Analysis.objects.create(creator=request.user,
+                                                   name=request.data['name'],
+                                                   portfolio=dummy_portfolio)
+
+        # Prepare celery tasks
+        combine_run_task = celery_app_v2.signature('run_combine',
+                                                   args=(analysis_input_files, analysis_output_files, request.data['config']),
+                                                   immutable=True)
+
+        record_combine_task = record_combine_output.s(combine_analysis.pk, request.user.pk)
+        task = (combine_run_task | record_combine_task)
+        res = task.apply_async(queue='oasis-internal-worker', priority=10)
+
+        # Dispatch task
+        combine_analysis.status = combine_analysis.status_choices.RUN_STARTED
+        combine_analysis.run_task_id = res.id
+        combine_analysis.task_started = timezone.now()
+        combine_analysis.task_finished = None
+        combine_analysis.save()
+
+        return combine_analysis
 
 
 class AnalysisTaskStatus(models.Model):
@@ -177,8 +235,13 @@ class Analysis(TimeStampedModel):
     input_generation_traceback_file_id = None
 
     creator = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
-    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='analyses', help_text=_('The portfolio to link the analysis to'))
-    model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE, related_name='analyses', help_text=_('The model to link the analysis to'))
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE,
+                                  related_name='analyses',
+                                  help_text=_('The portfolio to link the analysis to'))
+    model = models.ForeignKey(AnalysisModel, on_delete=models.CASCADE,
+                              related_name='analyses',
+                              help_text=_('The model to link the analysis to'),
+                              null=True)
     name = models.CharField(help_text='The name of the analysis', max_length=255)
     status = models.CharField(max_length=max(len(c) for c in status_choices._db_values),
                               choices=status_choices, default=status_choices.NEW, editable=False, db_index=True)
@@ -220,6 +283,8 @@ class Analysis(TimeStampedModel):
     chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
     num_events_total = models.IntegerField(null=False, default=0, blank=True)
     num_events_complete = models.IntegerField(null=False, default=0, blank=True)
+
+    objects = AnalysisQuerySet.as_manager()
 
     class Meta:
         ordering = ['id']
@@ -336,6 +401,10 @@ class Analysis(TimeStampedModel):
 
     def get_groups(self):
         groups = []
+
+        if self.portfolio is None:
+            return groups
+
         try:
             portfolio_groups = self.portfolio.groups.all()
         except Portfolio.DoesNotExist as e:
@@ -450,6 +519,8 @@ class Analysis(TimeStampedModel):
         self.save()
 
     def run(self, initiator, run_mode_override=None):
+        self.validate_standard_analysis()
+
         valid_choices = [
             self.status_choices.READY,
             self.status_choices.RUN_COMPLETED,
@@ -543,7 +614,13 @@ class Analysis(TimeStampedModel):
     def raise_validate_errors(self, errors):
         raise ValidationError(detail=errors)
 
+    def validate_standard_analysis(self):
+        if self.model is None:
+            raise ValidationError({'model': 'Model not assigned to analysis'})
+
     def generate_and_run(self, initiator):
+        self.validate_standard_analysis()
+
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,
@@ -612,6 +689,8 @@ class Analysis(TimeStampedModel):
             cancel_tasks.apply_async(args=[self.pk], priority=1).id
 
     def generate_inputs(self, initiator, run_mode_override=None):
+        self.validate_standard_analysis()
+
         valid_choices = [
             self.status_choices.NEW,
             self.status_choices.INPUTS_GENERATION_ERROR,

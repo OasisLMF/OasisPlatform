@@ -57,9 +57,15 @@ jobs:
 
       - name: Start Minikube
         uses: medyagh/setup-minikube@latest
+        with:
+          memory: 12288
+          extra-config: 'kubelet.system-reserved=memory=512Mi'
 
-#      - name: Enable metrics
-#        run: minikube addons enable metrics-server
+      - name: Enable swap on Minikube
+        run: |
+          # Enable swap inside minikube to handle worker memory spikes
+          minikube ssh "sudo swapon --show || (sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile)"
+          minikube ssh "free -m"
 
       - name: Build Docker images
         run: |
@@ -79,9 +85,9 @@ jobs:
       - name: Deploy Platform
         run: |
           if ! helm status platform > /dev/null 2>&1; then
-              helm install platform oasis-platform
+              helm install platform oasis-platform -f oasis-platform/ci-values.yaml
           else
-              helm upgrade platform oasis-platform
+              helm upgrade platform oasis-platform -f oasis-platform/ci-values.yaml
           fi
         working-directory: kubernetes/charts
 
@@ -208,6 +214,20 @@ jobs:
           }
           EOF
 
+      - name: Start memory monitoring
+        run: |
+          # Monitor memory and swap usage during the test
+          (
+            echo "=== Memory monitoring started at $(date) ===" > memory_monitor.log
+            while true; do
+              echo "" >> memory_monitor.log
+              echo "--- $(date) ---" >> memory_monitor.log
+              minikube ssh "free -m" >> memory_monitor.log 2>&1
+              sleep 10
+            done
+          ) &
+          echo "MONITOR_PID=$!" >> $GITHUB_ENV
+
       - name: Run analysis
         run: |
           set -e -o pipefail
@@ -238,57 +258,38 @@ jobs:
           } 2>&1 | tee logs.txt
           echo "exit_code=$?" >> "$GITHUB_ENV"
 
-#      - name: Minikube memory usage
-#        if: always()
-#        run: |
-#          # per pod memory data
-#          kubectl top pods --all-namespaces --no-headers 2>/dev/null || {
-#              echo "Failed to get metrics. Check metrics server."; exit 1;
-#          }
-#          echo
-#          echo "Memory Usage Summary:"
-#          echo "===================="
-#
-#          # total memory
-#          PODS=$(kubectl top pods --all-namespaces --no-headers | wc -l)
-#          TOTAL=$(kubectl top pods --all-namespaces --no-headers | awk '{
-#              mem=$4;
-#              gsub(/[^0-9.]/, "", mem);
-#              if($4 ~ /Gi/) mem*=1024;
-#              total+=mem
-#          } END {printf "%.0f", total}')
-#
-#          echo "Total pods: $PODS"
-#          echo "Total memory: ${TOTAL}Mi"
-#          echo "Average: $(echo "scale=0; $TOTAL / $PODS" | bc)Mi per pod"
-#
-#          echo
-#          echo "By Namespace:"
-#          echo "-------------"
-#          kubectl top pods --all-namespaces --no-headers | awk '{
-#              ns=$1; mem=$4;
-#              gsub(/[^0-9.]/, "", mem);
-#              if($4 ~ /Gi/) mem*=1024;
-#              ns_mem[ns]+=mem; ns_count[ns]++
-#          } END {
-#              for(ns in ns_mem)
-#                  printf "%-20s %6.0fMi (%d pods)\n", ns, ns_mem[ns], ns_count[ns]
-#          }' | sort -k2 -nr
-#
-#          echo
-#          echo "Top 5 Memory Users:"
-#          echo "-------------------"
-#          kubectl top pods --all-namespaces --no-headers | sort -k4 -hr | head -5 | \
-#              awk '{printf "%-30s %s\n", $1"/"$2, $4}'
-
-
+      - name: Stop memory monitoring
+        if: always()
+        run: |
+          kill $MONITOR_PID 2>/dev/null || true
+          echo ""
+          echo "=== GitHub Actions Runner Specifications ==="
+          echo "--- Host Memory ---"
+          free -h
+          echo ""
+          echo "--- Host Disk Space ---"
+          df -h
+          echo ""
+          echo "--- Host CPU Cores ---"
+          nproc
+          echo ""
+          echo "=== Final memory state (inside minikube) ==="
+          minikube ssh "free -m"
+          echo ""
+          echo "=== Peak swap usage (if any) ==="
+          grep -A1 "Swap:" memory_monitor.log | grep -v "^--$" | awk '{if($3>0) print}' | tail -5 || echo "No swap usage detected"
+          echo ""
+          echo "=== Full memory monitoring log ==="
+          cat memory_monitor.log
 
       - name: Upload Artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: piwind-logs
-          path: logs.txt
+          path: |
+            logs.txt
+            memory_monitor.log
 
       - name: Create kube logs
         if: always()
