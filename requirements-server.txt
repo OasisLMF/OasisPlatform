@@ -361,6 +361,8 @@ wcwidth==0.2.13
     # via prompt-toolkit
 whitenoise==6.9.0
     # via -r requirements-server.in
+xxhash==3.6.0
+    # via oasis-data-manager
 zope-interface==7.2
     # via twisted
 
