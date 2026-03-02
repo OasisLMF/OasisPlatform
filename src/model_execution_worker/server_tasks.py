@@ -49,6 +49,7 @@ def run_exposure_run(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
         os.chdir(tmpdir)
         params = OasisManager()._params_run_exposure()
         params['print_summary'] = False
+        params['intermediary_csv'] = True   # workaround for https://github.com/OasisLMF/OasisLMF/issues/1895 remember to remove when fixed
         update_params(params, given_params)
         if reporting_currency != "" and currency_conversion_json:
             params['currency_conversion_json'] = currency_conversion_json
