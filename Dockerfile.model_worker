@@ -9,12 +9,14 @@ COPY ./requirements-worker.txt ./requirements-worker.txt
 RUN pip3 install --user --no-warn-script-location -r ./requirements-worker.txt
 
 # Install MDK from git branch (Optional) 'docker build --build-arg oasislmf_branch=develop'
-ARG oasislmf_branch
-RUN if [ ! -z "$oasislmf_branch" ] ; then \
-    apt update && apt install -y git; \
-    pip uninstall oasislmf -y; \
-    pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisLMF.git@${oasislmf_branch}#egg=oasislmf[extra]; \
-  fi
+#ARG oasislmf_branch
+#RUN if [ ! -z "$oasislmf_branch" ] ; then \
+#    apt update && apt install -y git; \
+#    pip uninstall oasislmf -y; \
+#    pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisLMF.git@${oasislmf_branch}#egg=oasislmf[extra]; \
+#  fi
+
+RUN pip uninstall oasislmf -y && pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisLMF.git@feature/jit-warmup#egg=oasislmf[extra]
 
 # Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
 ARG ods_tools_branch
