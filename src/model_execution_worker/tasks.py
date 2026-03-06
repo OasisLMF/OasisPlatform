@@ -149,8 +149,8 @@ def register_worker(sender, **k):
     warmup_enabled = settings.getboolean('worker', 'NUMBA_WARMUP', fallback=False)
     if warmup_enabled:
         try:
-            from oasislmf import warmup
-            warmup.main()
+            from oasislmf.warmup import main as run_warmup
+            run_warmup()
         except ImportError:
             logger.warning(f"Numba warmup not supported by this version of oasislmf, {m_version['oasislmf']}")
         except Exception as e:
