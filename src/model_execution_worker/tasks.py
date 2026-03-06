@@ -40,7 +40,7 @@ from .utils import (
 )
 
 '''
-Celery task wrapper for Oasis ktools calculation.
+Celery task wrapper for Oasis calculation.
 '''
 
 LOG_FILE_SUFFIX = 'txt'
@@ -276,7 +276,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             'oasis_files_dir': oasis_files_dir,
             'model_run_dir': run_dir,
             'analysis_settings_json': analysis_settings_file,
-            'ktools_fifo_relative': True,
+            'kernel_fifo_relative': True,
             'verbose': debug_worker,
             # 'df_engine': json.dumps({
             #     "path": settings.get(
