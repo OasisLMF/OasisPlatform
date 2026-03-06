@@ -197,6 +197,18 @@ def register_worker(sender, **k):
     for tmpdir in glob.glob("/tmp/pymp-*"):
         os.rmdir(tmpdir)
 
+    # Run numba warm up
+    warmup_enabled = settings.getboolean('worker', 'NUMBA_WARMUP', fallback=False)
+    if warmup_enabled:
+        try:
+            from oasislmf import warmup
+            warmup.main()
+        except ImportError:
+            logger.warning(f"Numba warmup not supported by this version of oasislmf, {m_version['oasislmf']}")
+        except Exception as e:
+            logger.error("Failed to run Numba warmup")
+            logger.exception(e)
+
 
 # Send notification back to the API Once task is read from Queue
 def notify_api_task_started(analysis_id, task_id, task_slug):

@@ -118,6 +118,7 @@ def register_worker(sender, **k):
     logger.info("DEBUG: {}".format(settings.get('worker', 'DEBUG', fallback='False')))
     logger.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logger.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
+    logger.info("NUMBA_WARMUP: {}".format(settings.get('worker', 'NUMBA_WARMUP', fallback='False')))
 
     # Log Env variables
     if debug_worker:
@@ -143,6 +144,18 @@ def register_worker(sender, **k):
     # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
         os.rmdir(tmpdir)
+
+    # Run numba warm up
+    warmup_enabled = settings.getboolean('worker', 'NUMBA_WARMUP', fallback=False)
+    if warmup_enabled:
+        try:
+            from oasislmf import warmup
+            warmup.main()
+        except ImportError:
+            logger.warning(f"Numba warmup not supported by this version of oasislmf, {m_version['oasislmf']}")
+        except Exception as e:
+            logger.error("Failed to run Numba warmup")
+            logger.exception(e)
 
 
 @contextmanager
