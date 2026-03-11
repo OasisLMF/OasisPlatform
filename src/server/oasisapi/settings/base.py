@@ -336,6 +336,7 @@ if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
         'SECURITY': [{'oauth2': []}],
         'SWAGGER_UI_SETTINGS': {
             'persistAuthorization': True,
+            'usePkceWithAuthorizationCodeGrant': False,
         },
         # Pre-fill the client_id in the Authorize dialog so users don't have to type it
         'SWAGGER_UI_INIT_OAUTH': {
