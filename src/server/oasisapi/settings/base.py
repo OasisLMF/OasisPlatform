@@ -344,7 +344,10 @@ if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
     }
 else:
     INSTALLED_APPS += ('rest_framework_simplejwt.token_blacklist',)
-    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('rest_framework_simplejwt.authentication.JWTAuthentication',)
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
 
     # https://github.com/davesque/django-rest-framework-simplejwt
     SIMPLE_JWT = {
@@ -355,22 +358,10 @@ else:
         'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
     }
 
-    _token_url = '/api/access_token/' if URL_SUB_PATH else '/access_token/'
     SPECTACULAR_SETTINGS_AUTH = {
-        'APPEND_COMPONENTS': {
-            'securitySchemes': {
-                'tokenAuth': {
-                    'type': 'oauth2',
-                    'flows': {
-                        'password': {
-                            'tokenUrl': _token_url,
-                            'scopes': {},
-                        }
-                    },
-                }
-            }
-        },
-        'SECURITY': [{'tokenAuth': []}],
+        # basicAuth is auto-generated from BasicAuthentication; jwtAuth from JWTAuthentication.
+        # List basicAuth first so it appears at the top of the Authorize dialog.
+        'SECURITY': [{'basicAuth': []}, {'jwtAuth': []}],
         'SWAGGER_UI_SETTINGS': {
             'persistAuthorization': True,
         },

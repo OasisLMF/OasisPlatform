@@ -15,12 +15,6 @@ def remove_session_auth(result, generator, request, public, **kwargs):
 
     if django_settings.API_AUTH_TYPE in django_settings.ALLOWED_OIDC_AUTH_PROVIDERS:
         schemes.pop('jwtAuth', None)
-    else:
-        # In simple JWT mode, move jwtAuth to the end so the primary tokenAuth
-        # (OAuth2 password flow with username/password form) appears first.
-        jwt_auth = schemes.pop('jwtAuth', None)
-        if jwt_auth is not None:
-            schemes['jwtAuth'] = jwt_auth
 
     return result
 
