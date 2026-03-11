@@ -131,11 +131,13 @@ api_urlpatterns = [
     # V1 only swagger endpoints
     re_path(r'^v1/schema/$', SpectacularV1SchemaView.as_view(), name='schema-v1'),
     re_path(r'^v1/$', SpectacularSwaggerView.as_view(url_name='schema-v1'), name='schema-ui-v1'),
-    re_path(r'^v1/oauth2-redirect\.html$', TemplateView.as_view(template_name='oauth2-redirect.html', content_type='text/html'), name='swagger-oauth2-redirect-v1'),
+    re_path(r'^v1/oauth2-redirect\.html$', TemplateView.as_view(template_name='oauth2-redirect.html',
+            content_type='text/html'), name='swagger-oauth2-redirect-v1'),
     # V2 only swagger endpoints
     re_path(r'^v2/schema/$', SpectacularV2SchemaView.as_view(), name='schema-v2'),
     re_path(r'^v2/$', SpectacularSwaggerView.as_view(url_name='schema-v2'), name='schema-ui-v2'),
-    re_path(r'^v2/oauth2-redirect\.html$', TemplateView.as_view(template_name='oauth2-redirect.html', content_type='text/html'), name='swagger-oauth2-redirect-v2'),
+    re_path(r'^v2/oauth2-redirect\.html$', TemplateView.as_view(template_name='oauth2-redirect.html',
+            content_type='text/html'), name='swagger-oauth2-redirect-v2'),
     # basic urls (auth, server info)
     re_path(r'^', include('src.server.oasisapi.base_urls')),
 ]
