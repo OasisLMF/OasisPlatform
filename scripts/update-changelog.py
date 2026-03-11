@@ -289,28 +289,12 @@ class ReleaseNotesBuilder(object):
 
         # Check that at least one Pull request has been picked up
         for pr in github_data['pull_requests']:
-            num_issues_linked = len(pr['linked_issues'])
-            if num_issues_linked < 1:
-                # Case 0: PR has no linked issues
-                changelog_lines.append("* [#{}]({}) - {}".format(
-                    pr['id'],
-                    pr['pull_request'].html_url,
-                    pr['pull_request'].title
-                ))
-            elif num_issues_linked == 1:
-                # Case 1: PR has a single linked issue
-                changelog_lines.append("* [#{}]({}) - {}".format(
-                    pr['linked_issues'][0].number,
-                    pr['pull_request'].html_url,
-                    pr['linked_issues'][0].title,
-                ))
-            else:
-                # Case 2: PR has multiple linked issues
-                changelog_lines.append("* [{}]({}) - {}".format(
-                    ', '.join([f'#{issue.number}' for issue in pr['linked_issues']]),
-                    pr['pull_request'].html_url,
-                    pr['pull_request'].title
-                ))
+            # Append Title and link to PR
+            changelog_lines.append("* [#{}]({}) - {}".format(
+                pr['id'],
+                pr['pull_request'].html_url,
+                pr['pull_request'].title
+            ))
 
         if not format_markdown:
             # Add RST github compare link
