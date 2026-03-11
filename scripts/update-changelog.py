@@ -22,12 +22,23 @@ START_PR_MARKER = '<!--start_release_notes-->\r\n'
 END_PR_MARKER = '<!--end_release_notes-->'
 DEFAULT_PR_TITLE = '### Release notes feature title'
 
+GITHUB_GRAPHQL_URL = 'https://api.github.com/graphql'
+
+
+@dataclass
+class IssueData:
+    number: int
+    title: str
+    url: str
+
 
 @dataclass
 class PullRequestData:
     id: int
-    pull_request: object   # PyGithub PullRequest
-    linked_issues: list = field(default_factory=list)
+    title: str
+    html_url: str
+    body: str               # may be None for PRs with no description
+    linked_issues: list = field(default_factory=list)   # list[IssueData]
 
 
 @dataclass
@@ -36,48 +47,35 @@ class RepoData:
     url: str
     tag_from: str
     tag_to: str
-    pull_requests: list = field(default_factory=list)
+    pull_requests: list = field(default_factory=list)   # list[PullRequestData]
 
 
 # ---------------------------------------------------------------------------
-# Formatting functions (no GitHub API calls, no class state needed)
+# Formatting functions (pure — no GitHub API calls, no class state)
 # ---------------------------------------------------------------------------
 
 def create_changelog(repo_data, format_markdown=False):
     """
     Build changelog lines from a RepoData object.
-    `format_markdown`: format as markdown; otherwise produces RST output.
+    format_markdown=True produces Markdown; False produces RST.
     """
     changelog_lines = []
 
     if len(repo_data.pull_requests) > 1:
         if format_markdown:
             changelog_lines.append('## {} Changelog - [{}]({}/compare/{}...{})'.format(
-                repo_data.name,
-                repo_data.tag_to,
-                repo_data.url,
-                repo_data.tag_from,
-                repo_data.tag_to))
+                repo_data.name, repo_data.tag_to, repo_data.url,
+                repo_data.tag_from, repo_data.tag_to))
         else:
-            # RST style header
             changelog_lines.append('`{}`_'.format(repo_data.tag_to))
             changelog_lines.append(' ---------')
 
     for pr in repo_data.pull_requests:
-        changelog_lines.append("* [#{}]({}) - {}".format(
-            pr.id,
-            pr.pull_request.html_url,
-            pr.pull_request.title,
-        ))
+        changelog_lines.append("* [#{}]({}) - {}".format(pr.id, pr.html_url, pr.title))
 
     if not format_markdown:
-        # RST github compare link
         changelog_lines.append(".. _`{}`:  {}/compare/{}...{}".format(
-            repo_data.tag_to,
-            repo_data.url,
-            repo_data.tag_from,
-            repo_data.tag_to,
-        ))
+            repo_data.tag_to, repo_data.url, repo_data.tag_from, repo_data.tag_to))
     changelog_lines.append("")
 
     return [l + "\n" for l in changelog_lines]
@@ -112,27 +110,23 @@ def extract_pr_content(repo_data):
     release_note_content = []
 
     for pr in repo_data.pull_requests:
-        pr_body = pr.pull_request.body
-        if pr_body is None:
+        if pr.body is None:
             continue
 
-        idx_start = pr_body.find(START_PR_MARKER)
-        idx_end = pr_body.rfind(END_PR_MARKER)
+        idx_start = pr.body.find(START_PR_MARKER)
+        idx_end = pr.body.rfind(END_PR_MARKER)
         if idx_start == -1 or idx_end == -1:
             continue
 
-        release_desc = pr_body[idx_start + len(START_PR_MARKER):idx_end].strip()
+        release_desc = pr.body[idx_start + len(START_PR_MARKER):idx_end].strip()
         if not release_desc:
             continue
         if DEFAULT_PR_TITLE in release_desc:
-            logger.info('Ignoring PR-{}, release notes have not been updated.  {}'.format(
-                pr.pull_request.number,
-                pr.pull_request.html_url,
-            ))
+            logger.info(f'Ignoring PR-{pr.id}, release notes have not been updated.  {pr.html_url}')
             continue
 
         if release_desc.startswith('###'):
-            pr_link = " - [(PR #{})]({})".format(pr.pull_request.number, pr.pull_request.html_url)
+            pr_link = f" - [(PR #{pr.id})]({pr.html_url})"
             lines = release_desc.split('\r\n')
             release_note_content.append("\r\n".join([lines[0] + pr_link] + lines[1:]))
         else:
@@ -158,6 +152,10 @@ class ReleaseNotesBuilder:
     """
     Fetches commit/PR/issue data from GitHub (and optionally a local git repo)
     and returns structured RepoData objects ready for formatting.
+
+    When a github_token is provided, PR data and linked issues are fetched in a
+    single GraphQL request. Without a token, the script falls back to individual
+    REST calls + HTML scraping (slower, more fragile).
 
     ## packages used
     https://gitpython.readthedocs.io/en/stable/tutorial.html  -- base class used in pydriller
@@ -195,9 +193,7 @@ class ReleaseNotesBuilder:
         return self._tags_cache[repo_name]
 
     def _get_commit_refs(self, repo_url, local_path, from_tag, to_tag):
-        """
-        Scan commits between two tags and return the set of referenced issue/PR numbers.
-        """
+        """Scan commits between two tags and return the set of referenced issue/PR numbers."""
         self.logger.info("Fetching commits between tags {}...{}".format(from_tag, to_tag))
         path = local_path or repo_url
         repo = RepositoryMining(path, from_tag=from_tag, to_tag=to_tag, only_no_merge=True)
@@ -206,20 +202,86 @@ class ReleaseNotesBuilder:
             re.findall(r'#\d+', title) for title in commit_titles))
         return set(int(cm[1:]) for cm in commit_refs)
 
-    def _get_github_pull_requests(self, github, commit_refs):
-        """Filter commit references down to actual Pull Requests."""
+    def _fetch_prs_graphql(self, repo_name, commit_refs):
+        """
+        Fetch all PR data and linked issues in a single GraphQL request.
+
+        Uses the `closingIssuesReferences` field which returns issues linked via
+        "closes #N" / "fixes #N" in the PR body — the same data the REST fallback
+        scraped from HTML. Refs that point to issues (not PRs) come back as null
+        and are silently skipped.
+
+        Requires an auth token; GitHub's GraphQL endpoint is heavily rate-limited
+        without one.
+        """
+        pr_fragments = "\n".join(
+            f'pr_{ref}: pullRequest(number: {ref}) {{'
+            f'  number title url body'
+            f'  closingIssuesReferences(first: 25) {{ nodes {{ number title url }} }}'
+            f'}}'
+            for ref in sorted(commit_refs)
+        )
+        query = f'{{ repository(owner: "{self.github_user}", name: "{repo_name}") {{ {pr_fragments} }} }}'
+
+        resp = requests.post(GITHUB_GRAPHQL_URL, headers=self.gh_headers, json={'query': query})
+        resp.raise_for_status()
+        result = resp.json()
+
+        if 'errors' in result:
+            self.logger.warning(f"GraphQL errors: {result['errors']}")
+
+        repo_result = result.get('data', {}).get('repository', {})
+        pull_requests = []
+        for pr in repo_result.values():
+            if pr is None:
+                continue    # ref pointed to an issue, not a PR
+            linked_issues = [
+                IssueData(number=i['number'], title=i['title'], url=i['url'])
+                for i in pr['closingIssuesReferences']['nodes']
+            ]
+            pull_requests.append(PullRequestData(
+                id=pr['number'],
+                title=pr['title'],
+                html_url=pr['url'],
+                body=pr['body'],
+                linked_issues=linked_issues,
+            ))
+
+        self.logger.info("Fetched {} PRs via GraphQL for {}".format(len(pull_requests), repo_name))
+        return pull_requests
+
+    def _fetch_prs_rest(self, github, commit_refs, repo_url):
+        """
+        Fallback PR fetch using REST API + HTML scraping (used when no auth token).
+        Makes N REST calls for PRs and N HTML scrape calls for linked issues.
+        """
         pull_requests = []
         for ref in commit_refs:
             try:
-                pull_requests.append(github.get_pull(ref))
+                pr = github.get_pull(ref)
             except UnknownObjectException:
-                pass
-        self.logger.info("Filtered to Pull Requests: {}".format([pr.number for pr in pull_requests]))
+                continue    # ref pointed to an issue, not a PR
+
+            linked_issue_nums = self._scrape_linked_issues(pr.number, repo_url)
+            linked_issues = [
+                IssueData(number=issue.number, title=issue.title, url=issue.html_url)
+                for issue in (github.get_issue(n) for n in linked_issue_nums)
+            ]
+            pull_requests.append(PullRequestData(
+                id=pr.number,
+                title=pr.title,
+                html_url=pr.html_url,
+                body=pr.body,
+                linked_issues=linked_issues,
+            ))
+
+        self.logger.info("Fetched {} PRs via REST for {}".format(len(pull_requests), repo_url))
         return pull_requests
 
-    def _get_linked_issues(self, pr_number, repo_url):
+    def _scrape_linked_issues(self, pr_number, repo_url):
         """
-        Scrape linked issue numbers for a PR (no direct GitHub API support yet).
+        Scrape linked issue numbers from the PR page (REST fallback only).
+        BeautifulSoup is only required when running without an auth token.
         """
         issue_urls_found = []
         try:
@@ -228,7 +290,7 @@ class ReleaseNotesBuilder:
             issue_form = soup.find("form", {"aria-label": re.compile('Link issues')})
             issue_urls_found = [re.findall(r'\d+', i["href"]) for i in issue_form.find_all("a")]
         except Exception as e:
-            self.logger.warning(f"Error fetching linked issues for PR-{pr_number}: {e}")
+            self.logger.warning(f"Error scraping linked issues for PR-{pr_number}: {e}")
 
         issue_refs = list(itertools.chain.from_iterable(issue_urls_found))
         self.logger.info("PR-{} linked issues: {}".format(pr_number, issue_refs))
@@ -269,6 +331,8 @@ class ReleaseNotesBuilder:
     def load_data(self, repo_name, local_path=None, tag_from=None, tag_to=None):
         """
         Fetch PR and issue data for a repo between two tags and return a RepoData object.
+        Uses GraphQL (single request) when an auth token is available, otherwise
+        falls back to REST + HTML scraping.
         """
         local_repo_path = None
         if local_path is not None:
@@ -277,20 +341,15 @@ class ReleaseNotesBuilder:
             else:
                 self.logger.warning(f'".git" folder not found in {local_path}, falling back to fresh clone')
 
-        github = self._get_github_repo(repo_name)
         repo_url = f'https://github.com/{self.github_user}/{repo_name}'
-
         all_refs = self._get_commit_refs(repo_url, local_repo_path, tag_from, tag_to)
-        pull_reqs = self._get_github_pull_requests(github, all_refs)
 
-        pull_requests = [
-            PullRequestData(
-                id=pr.number,
-                pull_request=pr,
-                linked_issues=[github.get_issue(ref) for ref in self._get_linked_issues(pr.number, repo_url)],
-            )
-            for pr in pull_reqs
-        ]
+        if self.github_token:
+            pull_requests = self._fetch_prs_graphql(repo_name, all_refs)
+        else:
+            self.logger.warning("No GitHub token provided — using REST fallback (slower, HTML scraping)")
+            github = self._get_github_repo(repo_name)
+            pull_requests = self._fetch_prs_rest(github, all_refs, repo_url)
 
         self.logger.info("{} - data fetch complete".format(repo_name))
         return RepoData(
@@ -304,6 +363,7 @@ class ReleaseNotesBuilder:
     def create_milestones(self, repo_data):
         """
         Assign all PRs and linked issues in repo_data to a GitHub milestone for the release.
+        Fetches PyGithub objects by ID on demand — only needed here for the .edit() call.
         """
         github = self._get_github_repo(repo_data.name)
         milestone_num = self._find_milestone(repo_data.name, repo_data.tag_to)
@@ -314,11 +374,11 @@ class ReleaseNotesBuilder:
             milestone = github.get_milestone(milestone_num)
 
         for pr_data in repo_data.pull_requests:
-            pr_data.pull_request.as_issue().edit(milestone=milestone)
-            self.logger.info(f'PR-{pr_data.pull_request.number}, added to milestone "{milestone.title}"')
-            for issue in pr_data.linked_issues:
-                issue.edit(milestone=milestone)
-                self.logger.info(f'Issue #{issue.number}, added to milestone "{milestone.title}"')
+            github.get_pull(pr_data.id).as_issue().edit(milestone=milestone)
+            self.logger.info(f'PR-{pr_data.id}, added to milestone "{milestone.title}"')
+            for issue_data in pr_data.linked_issues:
+                github.get_issue(issue_data.number).edit(milestone=milestone)
+                self.logger.info(f'Issue #{issue_data.number}, added to milestone "{milestone.title}"')
 
 
 # ---------------------------------------------------------------------------
@@ -433,12 +493,7 @@ def build_release_platform(platform_repo_path, platform_from_tag, platform_to_ta
     ods_data  = builder.load_data('ODS_Tools',     local_path=ods_repo_path,      tag_from=ods_from,  tag_to=ods_to)
 
     title_line = f'Oasis Release v{plat_to} \n'
-    release_notes_data = [
-        title_line,
-        (len(title_line) - 1) * '=' + '\n',
-        '\n',
-    ]
-
+    release_notes_data = [title_line, (len(title_line) - 1) * '=' + '\n', '\n']
     release_notes_data += release_plat_header(plat_to, lmf_to, ods_to, ui_to)
 
     release_notes_data += ["# Changelogs \n", "\n"]
