@@ -10,12 +10,19 @@ on:
       - stable**
   workflow_dispatch:
     inputs:
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
       ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
 
   workflow_call:
     inputs:
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+        type: string
       ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
@@ -69,6 +76,10 @@ jobs:
       run: |
         pip uninstall ods-tools -y
         pip install ${{ needs.ods_tools.outputs.whl_filename }}
+
+    - name: Install oasislmf from branch
+      if: inputs.oasislmf_branch != ''
+      run: pip install -v "git+https://git@github.com/OasisLMF/OasisLMF.git@${{ inputs.oasislmf_branch }}#egg=oasislmf"
 
     - name: Run Pytest
       run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
