@@ -15,8 +15,6 @@ import sys
 import ssl
 
 from django.core.exceptions import ImproperlyConfigured
-from rest_framework.reverse import reverse_lazy
-
 from oasis_data_manager.filestore.log import set_azure_log_level, set_aws_log_level
 from ....conf import iniconf  # noqa
 from ....conf.base import *
@@ -33,7 +31,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 IS_UNITTEST = sys.argv[0].endswith('pytest')
 IS_TESTSERVER = len(sys.argv) >= 2 and sys.argv[1] == 'runserver'
-IS_SWAGGER_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'generate_swagger'
+IS_SCHEMA_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'spectacular'
 
 
 if IS_UNITTEST or IS_TESTSERVER:
@@ -56,15 +54,15 @@ else:
     CONSOLE_DEBUG = False
 
 
-# Generate All
-DEFAULT_GENERATOR_CLASS = 'drf_yasg.generators.OpenAPISchemaGenerator'          # Generate All
-if IS_SWAGGER_GEN:
+# Schema generation preprocessing hook selection
+SCHEMA_PREPROCESSING_HOOKS = ['drf_spectacular.hooks.preprocess_exclude_path_format']
+if IS_SCHEMA_GEN:
     # generate only V1 endpoints
     if iniconf.settings.getboolean('server', 'GEN_SWAGGER_V1', fallback=False):
-        DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV1'
+        SCHEMA_PREPROCESSING_HOOKS.append('src.server.oasisapi.swagger.filter_v1_endpoints')
     # generate only V2 endpoints
     if iniconf.settings.getboolean('server', 'GEN_SWAGGER_V2', fallback=False):
-        DEFAULT_GENERATOR_CLASS = 'src.server.oasisapi.swagger.CustomGeneratorClassV2'
+        SCHEMA_PREPROCESSING_HOOKS.append('src.server.oasisapi.swagger.filter_v2_endpoints')
 
 # Django 3.2 - the default pri-key field changed to 'BigAutoField.',
 # https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
@@ -121,7 +119,7 @@ INSTALLED_APPS = [
     #    'django_extensions',
     'django_filters',
     'rest_framework',
-    'drf_yasg',
+    'drf_spectacular',
     'channels',
     'storages',
 
@@ -271,6 +269,7 @@ REST_FRAMEWORK = {
     ),
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Password validation
@@ -312,23 +311,44 @@ if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
     # No need to verify our internal self signed keycloak certificate
     OIDC_VERIFY_SSL = False
 
-    SWAGGER_SETTINGS = {
-        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
-        'USE_SESSION_AUTH': False,
-        'SECURITY_DEFINITIONS': {
-            f"OIDC {API_AUTH_TYPE}": {
-                "type": "oauth2",
-                "authorizationUrl": OIDC_OP_AUTHORIZATION_ENDPOINT,
-                "tokenUrl": OIDC_OP_TOKEN_ENDPOINT,
-                "flow": "accessCode",
-                "scopes": {}
+    SPECTACULAR_SETTINGS_AUTH = {
+        'APPEND_COMPONENTS': {
+            'securitySchemes': {
+                'oauth2': {
+                    'type': 'oauth2',
+                    'flows': {
+                        # User login via browser redirect (authorization code flow)
+                        # The OIDC provider must whitelist the Swagger UI redirect URI:
+                        #   <swagger-ui-url>/oauth2-redirect.html
+                        'authorizationCode': {
+                            'authorizationUrl': OIDC_OP_AUTHORIZATION_ENDPOINT,
+                            'tokenUrl': OIDC_OP_TOKEN_ENDPOINT,
+                            'scopes': {
+                                'openid': 'OpenID Connect identity token',
+                                'profile': 'User profile (username, name)',
+                                'email': 'User email address',
+                            },
+                        },
+                    }
+                }
             }
         },
-        "schemes": ["http", "https"]
+        'SECURITY': [{'oauth2': []}],
+        'SWAGGER_UI_SETTINGS': {
+            'persistAuthorization': True,
+            'usePkceWithAuthorizationCodeGrant': False,
+        },
+        # Pre-fill the client_id in the Authorize dialog so users don't have to type it
+        'SWAGGER_UI_INIT_OAUTH': {
+            'clientId': OIDC_RP_CLIENT_ID,
+        },
     }
 else:
     INSTALLED_APPS += ('rest_framework_simplejwt.token_blacklist',)
-    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ('rest_framework_simplejwt.authentication.JWTAuthentication',)
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
 
     # https://github.com/davesque/django-rest-framework-simplejwt
     SIMPLE_JWT = {
@@ -339,16 +359,32 @@ else:
         'SIGNING_KEY': iniconf.settings.get('server', 'token_sigining_key', fallback=SECRET_KEY),
     }
 
-    SWAGGER_SETTINGS = {
-        'DEFAULT_GENERATOR_CLASS': DEFAULT_GENERATOR_CLASS,
-        'DEFAULT_INFO': 'src.server.oasisapi.urls.api_info',
-        'LOGIN_URL': reverse_lazy('rest_framework:login'),
-        'LOGOUT_URL': reverse_lazy('rest_framework:logout'),
-        "schemes": ["http", "https"]
+    SPECTACULAR_SETTINGS_AUTH = {
+        # basicAuth is auto-generated from BasicAuthentication; jwtAuth from JWTAuthentication.
+        # List basicAuth first so it appears at the top of the Authorize dialog.
+        'SECURITY': [{'basicAuth': []}, {'jwtAuth': []}],
+        'SWAGGER_UI_SETTINGS': {
+            'persistAuthorization': True,
+        },
     }
 
 
-# Make swagger aware of the protocol used by the client (web browser -> ingress)
+SPECTACULAR_SETTINGS = {
+
+    'TITLE': 'Oasis Platform',
+    'VERSION': 'v2',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'PREPROCESSING_HOOKS': SCHEMA_PREPROCESSING_HOOKS,
+    'POSTPROCESSING_HOOKS': [
+        'drf_spectacular.hooks.postprocess_schema_enums',
+        'src.server.oasisapi.schemas.generators.remove_session_auth',
+    ],
+    'SCHEMA_PATH_PREFIX': r'/api/',
+    'DEFAULT_GENERATOR_CLASS': 'src.server.oasisapi.schemas.generators.OasisSchemaGenerator',
+    **SPECTACULAR_SETTINGS_AUTH,
+}
+
+# Make swagger/spectacular aware of the protocol used by the client (web browser -> ingress)
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -500,7 +536,7 @@ LOGGING = {
         'handlers': ['console'],
     },
     'loggers': {
-        'drf_yasg': {
+        'drf_spectacular': {
             'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,

@@ -12,6 +12,7 @@ __all__ = [
 import json
 
 from rest_framework import serializers
+from drf_spectacular.extensions import OpenApiSerializerExtension
 
 # import jsonschema
 from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
@@ -143,11 +144,6 @@ class JsonSettingsSerializer(serializers.Serializer):
 
 
 class ModelParametersSerializer(JsonSettingsSerializer):
-    class Meta:
-        swagger_schema_fields = load_json_schema(
-            schema=ModelSettingHandler.make().get_schema('model_settings_schema'),
-            link_prefix='#/definitions/ModelSettings'
-        )
 
     def __init__(self, *args, **kwargs):
         super(ModelParametersSerializer, self).__init__(*args, **kwargs)
@@ -159,11 +155,6 @@ class ModelParametersSerializer(JsonSettingsSerializer):
 
 
 class AnalysisSettingsSerializer(JsonSettingsSerializer):
-    class Meta:
-        swagger_schema_fields = load_json_schema(
-            schema=AnalysisSettingHandler.make().get_schema('analysis_settings_schema'),
-            link_prefix='#/definitions/AnalysisSettings'
-        )
 
     def __init__(self, *args, **kwargs):
         super(AnalysisSettingsSerializer, self).__init__(*args, **kwargs)
@@ -184,3 +175,68 @@ class AnalysisSettingsSerializer(JsonSettingsSerializer):
                 data[old_key] = data[new_key]
 
         return super(AnalysisSettingsSerializer, self).validate_json(data)
+
+
+def _sanitize_json_schema_for_openapi(schema):
+    """Strip JSON Schema features that are not valid in OpenAPI 3.0.3.
+
+    OpenAPI 3.0 uses a restricted subset of JSON Schema. Attributes like $schema,
+    definitions, patternProperties, and unevaluatedProperties are not supported.
+    Also, 'type' must be a string (not an array like ["integer", "string"]).
+
+    Since 'definitions' are stripped, any '$ref' pointers into them become dangling.
+    Replace objects containing '$ref' with 'type: object' so code generators
+    don't emit references to non-existent types.
+
+    'additionalProperties' and 'minProperties' are stripped because ods_tools
+    schemas place them on array types (invalid in OA3) and code generators
+    produce broken validation code for them. Runtime validation is handled
+    by ods_tools in Python.
+    """
+    # Keys that exist in JSON Schema but not in OA3 Schema Objects
+    unsupported_keys = {'$schema', 'definitions', 'definition', 'patternProperties', 'unevaluatedProperties'}
+    # Keys that confuse code generators when placed on inline schemas (only used
+    # for JSON Schema validation which ods_tools handles in Python at runtime)
+    generator_problematic_keys = {'additionalProperties', 'minProperties'}
+
+    if isinstance(schema, dict):
+        # If this dict is just a $ref, replace with a generic object
+        if '$ref' in schema:
+            return {'type': 'object'}
+
+        cleaned = {}
+        for key, value in schema.items():
+            if key in unsupported_keys:
+                continue
+            if key in generator_problematic_keys:
+                continue
+            if key == 'type' and isinstance(value, list):
+                # OA3 type must be a string; use oneOf for multi-type
+                cleaned['oneOf'] = [{'type': t} for t in value]
+            else:
+                cleaned[key] = _sanitize_json_schema_for_openapi(value)
+        return cleaned
+    elif isinstance(schema, list):
+        return [_sanitize_json_schema_for_openapi(item) for item in schema]
+    return schema
+
+
+class _JsonSettingsSchemaExtension(OpenApiSerializerExtension):
+    """Return the raw JSON schema from ods_tools for ModelParametersSerializer and AnalysisSettingsSerializer."""
+    target_class = 'src.server.oasisapi.schemas.serializers.JsonSettingsSerializer'
+    match_subclasses = True
+
+    def map_serializer(self, auto_schema, direction):
+        if isinstance(self.target, ModelParametersSerializer) or self.target.__class__ is ModelParametersSerializer:
+            schema = load_json_schema(
+                schema=ModelSettingHandler.make().get_schema('model_settings_schema'),
+                link_prefix='#/components/schemas/ModelSettings',
+            )
+        elif isinstance(self.target, AnalysisSettingsSerializer) or self.target.__class__ is AnalysisSettingsSerializer:
+            schema = load_json_schema(
+                schema=AnalysisSettingHandler.make().get_schema('analysis_settings_schema'),
+                link_prefix='#/components/schemas/AnalysisSettings',
+            )
+        else:
+            schema = {'type': 'object'}
+        return _sanitize_json_schema_for_openapi(schema)

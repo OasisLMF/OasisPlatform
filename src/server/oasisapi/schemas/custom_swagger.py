@@ -11,126 +11,93 @@ __all__ = [
     'FILENAME_PARAM',
 ]
 
-from drf_yasg import openapi
-from drf_yasg.openapi import Schema
+from rest_framework import serializers
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, inline_serializer
 
-FILE_RESPONSE = openapi.Response(
-    'File Download',
-    schema=Schema(type=openapi.TYPE_FILE),
-    headers={
-        "Content-Disposition": {
-            "description": "filename",
-            "type": openapi.TYPE_STRING,
-            "default": 'attachment; filename="<FILE>"'
+FILE_RESPONSE = OpenApiResponse(
+    description='File Download',
+    response=OpenApiTypes.BINARY,
+)
+
+FILE_LIST_RESPONSE = OpenApiResponse(
+    description='File List',
+    response=inline_serializer(
+        name='FileListResponse',
+        fields={
+            'files': serializers.ListField(child=serializers.CharField()),
         },
-        "Content-Type": {
-            "description": "mime type",
-            "type": openapi.TYPE_STRING
-        },
-
-    })
-
-
-FILE_LIST_RESPONSE = openapi.Response(
-    "File List",
-    schema=Schema(
-        type=openapi.TYPE_ARRAY,
-        items=Schema(title="File Name", type=openapi.TYPE_STRING),
     ),
 )
 
-
-HEALTHCHECK = Schema(
-    title='HealthCheck',
-    type='object',
-    properties={
-        "status": Schema(title='status', read_only=True, type='string', enum=['OK'])
-    }
+HEALTHCHECK = inline_serializer(
+    name='HealthCheck',
+    fields={
+        'status': serializers.ChoiceField(choices=['OK'], read_only=True),
+    },
 )
 
-SERVER_INFO = Schema(
-    title='ServerInfo',
-    type='object',
-    required=["version", "config", "components"],
-    properties={
-        "version": Schema(
-            title='Server version',
-            description="Version of oasis platform",
-            read_only=True,
-            type='string',
-        ),
-        "config": Schema(
-            title='Server config',
-            description="Oasis server public configuration",
-            type='object',
-        ),
-        "components": Schema(
-            title='Components version',
-            description="Versions of oasis components",
-            type='object',
-        )
-    }
+SERVER_INFO = inline_serializer(
+    name='ServerInfo',
+    fields={
+        'version': serializers.CharField(read_only=True),
+        'config': serializers.DictField(),
+        'components': serializers.DictField(),
+    },
 )
 
-TOKEN_REFRESH_HEADER = openapi.Parameter(
-    'authorization',
-    'header',
-    description="Refresh Token",
-    type='string',
-    default='Bearer <refresh_token>'
+TOKEN_REFRESH_HEADER = OpenApiParameter(
+    name='authorization',
+    location=OpenApiParameter.HEADER,
+    description='Refresh Token',
+    type=OpenApiTypes.STR,
+    default='Bearer <refresh_token>',
 )
 
-FILE_FORMAT_PARAM = openapi.Parameter(
-    'file_format',
-    openapi.IN_QUERY,
+FILE_FORMAT_PARAM = OpenApiParameter(
+    name='file_format',
+    location=OpenApiParameter.QUERY,
     required=False,
     description="File format returned, default is `csv`",
-    type=openapi.TYPE_STRING,
-    enum=['csv', 'parquet']
+    type=OpenApiTypes.STR,
+    enum=['csv', 'parquet'],
 )
 
-RUN_MODE_PARAM = openapi.Parameter(
-    'run_mode_override',
-    openapi.IN_QUERY,
+RUN_MODE_PARAM = OpenApiParameter(
+    name='run_mode_override',
+    location=OpenApiParameter.QUERY,
     required=False,
     description="Override task run_mode, `V1 = Single server` or `V2 = distributed`",
-    type=openapi.TYPE_STRING,
-    enum=['V1', 'V2']
+    type=OpenApiTypes.STR,
+    enum=['V1', 'V2'],
 )
 
-SUBTASK_STATUS_PARAM = openapi.Parameter(
-    'subtask_status',
-    openapi.IN_QUERY,
+SUBTASK_STATUS_PARAM = OpenApiParameter(
+    name='subtask_status',
+    location=OpenApiParameter.QUERY,
     description="Filter response by status.",
-    type=openapi.TYPE_STRING,
-    enum=('PENDING',
-          'QUEUED',
-          'STARTED',
-          'COMPLETED',
-          'CANCELLED',
-          'ERROR'
-          )
+    type=OpenApiTypes.STR,
+    enum=['PENDING', 'QUEUED', 'STARTED', 'COMPLETED', 'CANCELLED', 'ERROR'],
 )
 
-SUBTASK_SLUG_PARAM = openapi.Parameter(
-    'subtask_slug',
-    openapi.IN_QUERY,
+SUBTASK_SLUG_PARAM = OpenApiParameter(
+    name='subtask_slug',
+    location=OpenApiParameter.QUERY,
     description="Filter response by slug name containing string.",
-    type=openapi.TYPE_STRING
+    type=OpenApiTypes.STR,
 )
 
-FILE_VALIDATION_PARAM = openapi.Parameter(
-    'validate',
-    openapi.IN_QUERY,
+FILE_VALIDATION_PARAM = OpenApiParameter(
+    name='validate',
+    location=OpenApiParameter.QUERY,
     required=False,
     description="Validate OED files on upload, default `True`",
-    type=openapi.TYPE_BOOLEAN,
+    type=OpenApiTypes.BOOL,
 )
 
-FILENAME_PARAM = openapi.Parameter(
-    'filename',
-    openapi.IN_QUERY,
+FILENAME_PARAM = OpenApiParameter(
+    name='filename',
+    location=OpenApiParameter.QUERY,
     required=True,
     description="Filename to extract from tarfile.",
-    type=openapi.TYPE_STRING,
+    type=OpenApiTypes.STR,
 )

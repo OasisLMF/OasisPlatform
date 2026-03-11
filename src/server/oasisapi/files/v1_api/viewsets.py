@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from django.http import JsonResponse, Http404, StreamingHttpResponse
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
-from drf_yasg.utils import swagger_auto_schema
+# from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.parsers import MultiPartParser
 from rest_framework.decorators import action
@@ -99,7 +99,6 @@ class FilesViewSet(viewsets.GenericViewSet):
         return JsonResponse(RelatedFileSerializer(instance).data)
 
 
-@swagger_auto_schema(methods=['post', 'get'])
 class MappingFilesViewSet(VerifyGroupAccessModelViewSet):
     parser_classes = (MultiPartParser,)
 

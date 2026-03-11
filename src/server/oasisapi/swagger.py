@@ -1,11 +1,10 @@
 __all__ = [
-    'CustomGeneratorClassV1',
-    'CustomGeneratorClassV2',
+    'filter_v1_endpoints',
+    'filter_v2_endpoints',
 ]
 
-from drf_yasg.generators import OpenAPISchemaGenerator
 from django.urls import include, re_path
-from django.conf import settings
+# from django.conf import settings
 
 
 # API v1 Routes
@@ -27,31 +26,12 @@ api_v2_urlpatterns = [
     re_path(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
 ]
 
-if settings.URL_SUB_PATH:
-    swagger_v1_urlpatterns = [re_path(r'^api/', include(api_v1_urlpatterns))]
-    swagger_v2_urlpatterns = [re_path(r'^api/', include(api_v2_urlpatterns))]
-else:
-    swagger_v1_urlpatterns = api_v1_urlpatterns
-    swagger_v2_urlpatterns = api_v2_urlpatterns
+
+def filter_v1_endpoints(endpoints, **kwargs):
+    """Preprocessing hook: keep only v1 endpoints (and shared endpoints that aren't v2-specific)."""
+    return [e for e in endpoints if '/v1/' in e[0] or '/v2/' not in e[0]]
 
 
-class CustomGeneratorClassV1(OpenAPISchemaGenerator):
-    def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
-        super().__init__(
-            info=info,
-            version='v1',
-            url=url,
-            patterns=swagger_v1_urlpatterns,
-            urlconf=urlconf
-        )
-
-
-class CustomGeneratorClassV2(OpenAPISchemaGenerator):
-    def __init__(self, info, version='', url=None, patterns=None, urlconf=None):
-        super().__init__(
-            info=info,
-            version='v2',
-            url=url,
-            patterns=swagger_v2_urlpatterns,
-            urlconf=urlconf
-        )
+def filter_v2_endpoints(endpoints, **kwargs):
+    """Preprocessing hook: keep only v2 endpoints (and shared endpoints that aren't v1-specific)."""
+    return [e for e in endpoints if '/v2/' in e[0] or '/v1/' not in e[0]]
