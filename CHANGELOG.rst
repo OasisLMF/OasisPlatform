@@ -1,6 +1,17 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.1`_
+ ---------
+* [#1344](https://github.com/OasisLMF/OasisPlatform/pull/1344) - revert removal of `latest` docker image tag
+* [#1345](https://github.com/OasisLMF/OasisPlatform/pull/1345) - Exposure run fix for oasislmf 2.5.1
+* [#1322](https://github.com/OasisLMF/OasisPlatform/pull/1325) - add platform interface for ORD combining tool
+* [#1334](https://github.com/OasisLMF/OasisPlatform/pull/1334) - Update Oasis Data Manger
+* [#1332](https://github.com/OasisLMF/OasisPlatform/pull/1335) - Kube test failing with authentik
+* [#1339](https://github.com/OasisLMF/OasisPlatform/pull/1339) - fix/cve-2026-26007
+* [#1342](https://github.com/OasisLMF/OasisPlatform/pull/1342) - fix/oidc_token_scopes
+.. _`2.5.1`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.0...2.5.1
+
 `2.5.0`_
  ---------
 * [#1296, #1223](https://github.com/OasisLMF/OasisPlatform/pull/1248) - Feature/generic OIDC

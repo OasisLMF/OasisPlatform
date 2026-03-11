@@ -208,11 +208,11 @@ numpy==2.2.6
     #   numba
     #   pandas
     #   scipy
-oasis-data-manager==0.1.6
+oasis-data-manager==0.2.0
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools==5.0.1
+ods-tools==5.0.2
     # via -r requirements-server.in
 packaging==25.0
     # via
@@ -343,6 +343,8 @@ wcwidth==0.2.13
     # via prompt-toolkit
 whitenoise==6.9.0
     # via -r requirements-server.in
+xxhash==3.6.0
+    # via oasis-data-manager
 zope-interface==7.2
     # via twisted
 
