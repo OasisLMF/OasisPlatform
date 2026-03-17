@@ -211,7 +211,6 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -227,14 +226,11 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         method = request.method.lower()
         if method == 'post':
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-            oed_validate = request.GET.get('validate', str(django_settings.PORTFOLIO_UPLOAD_VALIDATION)).lower() == 'true'
         else:
             store_as_parquet = None
-            oed_validate = None
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """
@@ -250,11 +246,9 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         method = request.method.lower()
         if method == 'post':
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-            oed_validate = request.GET.get('validate', str(django_settings.PORTFOLIO_UPLOAD_VALIDATION)).lower() == 'true'
         else:
             store_as_parquet = None
-            oed_validate = None
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
 
     @action(methods=['get', 'post'], detail=True)
     def validate(self, request, pk=None, version=None):
