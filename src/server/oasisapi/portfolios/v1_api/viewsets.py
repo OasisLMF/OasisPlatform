@@ -181,11 +181,9 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         method = request.method.lower()
         if method == 'post':
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-            oed_validate = request.GET.get('validate', str(django_settings.PORTFOLIO_UPLOAD_VALIDATION)).lower() == 'true'
         else:
             store_as_parquet = None
-            oed_validate = None
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
@@ -204,11 +202,9 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         method = request.method.lower()
         if method == 'post':
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
-            oed_validate = request.GET.get('validate', str(django_settings.PORTFOLIO_UPLOAD_VALIDATION)).lower() == 'true'
         else:
             store_as_parquet = None
-            oed_validate = None
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, oed_validate)
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
