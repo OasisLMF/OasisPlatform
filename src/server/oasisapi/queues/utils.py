@@ -30,16 +30,16 @@ def _add_to_dict(d, k, v):
 
 def _get_broker_queue_names():
     if settings.BROKER_URL.startswith('amqp://'):
-        c = Connection(settings.BROKER_URL)
-        return (q['name'] for q in c.connection.client.manager.get_queues() if 'pidbox' not in q['name'] and 'celeryev' not in q['name'])
+        with Connection(settings.BROKER_URL) as c:
+            return [q['name'] for q in c.connection.client.manager.get_queues() if 'pidbox' not in q['name'] and 'celeryev' not in q['name']]
     if settings.BROKER_URL.startswith('redis://'):
-        c = Connection(settings.BROKER_URL)
-        return (q['name'] for q in c.connection.client.manager.channel.active_queues if 'pidbox' not in q['name'] and 'celeryev' not in q['name'])
+        with Connection(settings.BROKER_URL) as c:
+            return [q['name'] for q in c.connection.client.manager.channel.active_queues if 'pidbox' not in q['name'] and 'celeryev' not in q['name']]
     elif settings.BROKER_URL.startswith('memory://'):
         #
         # TODO: figure out how to get this to work for memory broker
         #
-        return (celery_app_v2.conf.task_default_routing_key, )
+        return [celery_app_v2.conf.task_default_routing_key]
 
     raise NotImplementedError('Support for your broker is not yet supported')
 
@@ -59,19 +59,21 @@ def get_queues_info() -> List[QueueInfo]:
     from src.server.oasisapi.analyses.models import AnalysisTaskStatus
 
     # setup an entry for every element in the broker
-    with celery_app_v2.pool.acquire(block=True) as conn:
+    with celery_app_v2.pool.acquire(block=True, timeout=5) as conn:
         chan = conn.channel()
-        res = [
-            {
-                'name': q,
-                'pending_count': 0,
-                'queued_count': 0,
-                'running_count': 0,
-                'queue_message_count': _get_queue_message_count(q, chan),
-                'worker_count': _get_queue_consumers(q, chan),
-            } for q in _get_broker_queue_names()
-        ]
-        chan.close()
+        try:
+            res = [
+                {
+                    'name': q,
+                    'pending_count': 0,
+                    'queued_count': 0,
+                    'running_count': 0,
+                    'queue_message_count': _get_queue_message_count(q, chan),
+                    'worker_count': _get_queue_consumers(q, chan),
+                } for q in _get_broker_queue_names()
+            ]
+        finally:
+            chan.close()
 
     # get the stats of the running and queued tasks
     pending = reduce(
