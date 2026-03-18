@@ -176,7 +176,6 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             return Response(serializer.data)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -197,7 +196,6 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
         return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
 
     @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE}, manual_parameters=[FILE_FORMAT_PARAM])
-    @swagger_auto_schema(methods=['post'], manual_parameters=[FILE_VALIDATION_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
