@@ -15,7 +15,6 @@ import logging
 import tarfile
 from celery.utils.log import get_task_logger
 import filelock
-import shutil
 
 app = Celery()
 
