@@ -32,7 +32,7 @@ from ...files.v2_api.views import handle_related_file
 # from ...files.v2_api.views import handle_related_file_sql -- LOT3
 from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
-from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
+from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
 from ...files.models import RelatedFile
 
 

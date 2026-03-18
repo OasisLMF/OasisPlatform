@@ -18,7 +18,7 @@ from ...analyses.v1_api.serializers import AnalysisSerializer
 from ...files.v1_api.views import handle_related_file
 from ...files.v1_api.serializers import RelatedFileSerializer
 from ..models import Portfolio, csv_into_currency_conversion_json
-from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_VALIDATION_PARAM
+from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
 from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
