@@ -180,7 +180,6 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
-      oasislmf_branch: 'test/piwind-ci'
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
