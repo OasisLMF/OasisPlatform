@@ -178,9 +178,9 @@ jobs:
     name: V2 all checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@test-temp-ci
     with:
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
+      piwind_branch: 'test-temp-ci'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
