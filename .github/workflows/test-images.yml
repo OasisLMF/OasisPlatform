@@ -242,7 +242,7 @@ jobs:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-15 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.15.x
     with:
       piwind_branch: 'stable/1.15.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -258,7 +258,7 @@ jobs:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-23 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.23.x
     with:
       piwind_branch: 'stable/1.23.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -274,7 +274,7 @@ jobs:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-27 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.27.x
     with:
       piwind_branch: 'stable/1.27.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -290,7 +290,7 @@ jobs:
     name: test stable worker (${{ needs.setup.outputs.release_stable_1-28 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.28.x
     with:
       piwind_branch: 'stable/1.28.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -306,7 +306,7 @@ jobs:
     name: test stable worker (${{ needs.setup.outputs.release_stable_2-3 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/2.3.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
