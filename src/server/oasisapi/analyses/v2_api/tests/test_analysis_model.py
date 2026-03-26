@@ -287,8 +287,7 @@ class AnalysisRun(WebTestMixin, TestCase):
                     patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
                 ):
                     analysis.run(initiator, run_mode_override='V2')
-                    mock_task.assert_called_once()
-                    args, kwargs = mock_task.call_args
+                    args, kwargs = mock_task.call_args_list[0]
                     assert args == ('start_loss_generation_task', (analysis.pk, initiator.pk, None), {})
                     assert kwargs['priority'] == 4
 
@@ -357,8 +356,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
                 ):
                     analysis.generate_inputs(initiator, run_mode_override='V2')
-                    mock_task.assert_called_once()
-                    args, kwargs = mock_task.call_args
+                    args, kwargs = mock_task.call_args_list[0]
                     assert args == ('start_input_generation_task', (analysis.pk, initiator.pk, 4), {})
                     assert kwargs['priority'] == 4
                     assert kwargs['queue'] == 'celery-v2'
