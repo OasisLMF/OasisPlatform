@@ -385,7 +385,7 @@ def keys_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
-        default_log_level = 'DEBUG' if debug_worker else 'INFO'                                                       
+        default_log_level = 'DEBUG' if debug_worker else 'INFO'
         log_level = settings.get('worker', 'package_log_level', fallback=default_log_level)
 
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
@@ -818,7 +818,7 @@ def loss_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
-        default_log_level = 'DEBUG' if debug_worker else 'INFO'                                                       
+        default_log_level = 'DEBUG' if debug_worker else 'INFO'
         log_level = settings.get('worker', 'package_log_level', fallback=default_log_level)
 
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
