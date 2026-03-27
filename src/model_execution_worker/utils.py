@@ -76,6 +76,25 @@ def notify_subtask_status_v2(analysis_id, initiator_id, task_slug, subtask_statu
     ).delay()
 
 
+class TaskLogFilter(logging.Filter):
+    """Block infrastructure loggers from flooding task logs at DEBUG level.
+
+    Allows all task-relevant loggers (oasislmf and its dependencies) through
+    while suppressing unrelated infrastructure packages.
+    """
+    BLOCKED = (
+        'psycopg', 'django', 'celery', 'kombu', 'amqp',
+        'billiard', 'urllib3', 'boto3', 'botocore', 'azure',
+        'numba',
+    )
+
+    def filter(self, record):
+        return not any(
+            record.name == b or record.name.startswith(b + '.')
+            for b in self.BLOCKED
+        )
+
+
 class LoggingTaskContext:
     """ Adds a file log handler to the root logger and pushes a copy all logs to
         the 'log_filename'
@@ -91,17 +110,23 @@ class LoggingTaskContext:
         self.close = close
         self.handler = logging.FileHandler(log_filename)
         self.delete_on_exit = delete_on_exit
+        self._filter = None
 
     def __enter__(self):
         if self.level:
             self.handler.setLevel(self.level)
             self.logger.setLevel(self.level)
+            if logging.getLevelName(self.level) <= logging.DEBUG:
+                self._filter = TaskLogFilter()
+                self.logger.addFilter(self._filter)
         if self.handler:
             self.logger.addHandler(self.handler)
 
     def __exit__(self, et, ev, tb):
         if self.level:
             self.logger.setLevel(self.prev_level)
+            if self._filter:
+                self.logger.removeFilter(self._filter)
         if self.handler:
             self.logger.removeHandler(self.handler)
         if self.handler and self.close:
