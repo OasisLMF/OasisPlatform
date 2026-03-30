@@ -578,9 +578,7 @@ if IN_TEST:
             'BACKEND': 'channels.layers.InMemoryChannelLayer',
         },
     }
-
-
-CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_ALWAYS_EAGER = True
 
 # Option to remote the 'v2' routes and only run the server with 'v1' endpoints
 DISABLE_V2_API = iniconf.settings.getboolean('server', 'disable_v2_api', fallback=False)
