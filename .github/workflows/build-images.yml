@@ -51,20 +51,24 @@ on:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
         type: string
+      checkout_ref:
+        description: 'OasisPlatform branch/ref to build from [git ref] - use when calling cross-repo'
+        required: false
+        type: string
 
     outputs:
       server_image:
         description:
-        value:  'coreoasis/github-actions:api_server-${{ github.sha }}'
+        value:  'coreoasis/github-actions:api_server-${{ jobs.build.outputs.image_tag }}'
       worker_image:
         description:
-        value:  'coreoasis/github-actions:model_worker-${{ github.sha }}'
+        value:  'coreoasis/github-actions:model_worker-${{ jobs.build.outputs.image_tag }}'
       worker_deb_image:
         description:
-        value:  'coreoasis/github-actions:model_worker_deb-${{ github.sha }}'
+        value:  'coreoasis/github-actions:model_worker_deb-${{ jobs.build.outputs.image_tag }}'
       worker_controller_image:
         description:
-        value:  'coreoasis/github-actions:worker_controller-${{ github.sha }}'
+        value:  'coreoasis/github-actions:worker_controller-${{ jobs.build.outputs.image_tag }}'
 
 env:
   # inputs
@@ -79,13 +83,15 @@ jobs:
   build:
     name: Docker build
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set_tag.outputs.image_tag }}
     strategy:
       matrix:
         image: [worker, worker_deb, server, worker_controller]
         include:
 
         - image: server
-          tag: 'api_server-${{ github.sha }}'
+          tag: 'api_server'
           file: 'Dockerfile.api_server'
           report: 'server-scan.sarif'
           dive: 'server-layers.txt'
@@ -93,7 +99,7 @@ jobs:
           context: '.'
 
         - image: worker
-          tag: 'model_worker-${{ github.sha }}'
+          tag: 'model_worker'
           file: 'Dockerfile.model_worker'
           report: 'worker-scan.sarif'
           dive: 'worker-layers.txt'
@@ -101,7 +107,7 @@ jobs:
           context: '.'
 
         - image: worker_deb
-          tag:  'model_worker_deb-${{ github.sha }}'
+          tag: 'model_worker_deb'
           file: 'Dockerfile.model_worker_debian'
           report: 'worker-deb-scan.sarif'
           dive: 'worker-deb-layers.txt'
@@ -109,7 +115,7 @@ jobs:
           context: '.'
 
         - image: worker_controller
-          tag:  'worker_controller-${{ github.sha }}'
+          tag: 'worker_controller'
           file: 'kubernetes/worker-controller/Dockerfile'
           report: 'worker-controller-scan.sarif'
           dive: 'worker-controller-layers.txt'
@@ -131,7 +137,15 @@ jobs:
 
     - uses: actions/checkout@v3
       with:
-        ref: ${{ github.ref }}
+        repository: OasisLMF/OasisPlatform
+        ref: ${{ inputs.checkout_ref || github.ref }}
+
+    - name: Set image tag from platform SHA
+      id: set_tag
+      run: |
+        IMAGE_TAG=$(git rev-parse HEAD)
+        echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+        echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
     - name: Login to Docker Hub
       if: env.DOCKER_PUSH == 'true'
@@ -149,7 +163,7 @@ jobs:
         file: ${{ matrix.file }}
         context: ${{ matrix.context }}
         push: ${{ env.DOCKER_PUSH }}
-        tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+        tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}-${{ env.IMAGE_TAG }}
         build-args: |
           oasislmf_branch=${{ inputs.oasislmf_branch }}
           ods_tools_branch=${{ inputs.ods_branch }}
@@ -157,7 +171,7 @@ jobs:
     - name: Test image efficiency
       if: env.SEVERITY != 'SKIP'
       run: |
-        ./scripts/imagesize.sh ${{ env.IMAGE_REPO }}:${{ matrix.tag }} ${{ matrix.dive }}
+        ./scripts/imagesize.sh ${{ env.IMAGE_REPO }}:${{ matrix.tag }}-${{ env.IMAGE_TAG }} ${{ matrix.dive }}
       env:
         DIVE_HIGHEST_USER_WASTED: '0.20'
         DIVE_HIGHEST_WASTED_BYTES: '50mb'
@@ -173,9 +187,9 @@ jobs:
 
     - name: Vulnerability scanner
       if: env.SEVERITY != 'SKIP'
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
-        image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+        image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}-${{ env.IMAGE_TAG }}
         scan-type: 'image'
         exit-code: ${{ matrix.exit-code }}
         ignore-unfixed: ${{ env.IGNORE_UNFIXED }}
@@ -184,9 +198,9 @@ jobs:
 
     - name: Create Report
       if: ( success() || failure() ) && env.SEVERITY != 'SKIP' && matrix.exit-code == '1'
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
-        image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
+        image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}-${{ env.IMAGE_TAG }}
         format: 'sarif'
         output: ${{ matrix.report }}
         scan-type: 'image'
@@ -213,4 +227,4 @@ jobs:
       if: env.DOCKER_PUSH == 'true'
       run: |
         echo "#### Docker Image: " >> $GITHUB_STEP_SUMMARY
-        echo "* [${{ env.IMAGE_REPO }}:${{ matrix.tag }}](https://hub.docker.com/r/${{ env.IMAGE_REPO }}/tags?name=${{ matrix.tag }})" >> $GITHUB_STEP_SUMMARY
+        echo "* [${{ env.IMAGE_REPO }}:${{ matrix.tag }}-${{ env.IMAGE_TAG }}](https://hub.docker.com/r/${{ env.IMAGE_REPO }}/tags?name=${{ matrix.tag }})" >> $GITHUB_STEP_SUMMARY

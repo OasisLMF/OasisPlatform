@@ -665,7 +665,9 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         if slug:
             filters['slug__contains'] = slug.lower()
 
-        sub_task_queryset = self.get_object().sub_task_statuses.filter(**filters)
+        sub_task_queryset = self.get_object().sub_task_statuses.select_related(
+            'output_log', 'error_log', 'retry_log'
+        ).filter(**filters)
         context = {'request': request}
         serializer = AnalysisTaskStatusSerializer(sub_task_queryset, many=True, context=context)
         return Response(serializer.data)
