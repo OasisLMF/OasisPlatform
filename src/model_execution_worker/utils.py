@@ -89,10 +89,9 @@ class TaskLogFilter(logging.Filter):
     )
 
     def filter(self, record):
-        return not any(
-            record.name == b or record.name.startswith(b + '.')
-            for b in self.BLOCKED
-        )
+        if any(record.name == b or record.name.startswith(b + '.') for b in self.BLOCKED):
+            return record.levelno >= logging.INFO
+        return True
 
 
 class LoggingTaskContext:
