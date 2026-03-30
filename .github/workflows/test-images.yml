@@ -68,8 +68,6 @@ jobs:
       build_server_tag: ${{ steps.built_images.outputs.server_tag }}
       build_worker_img: ${{ steps.built_images.outputs.worker_img }}
       build_worker_tag: ${{ steps.built_images.outputs.worker_tag }}
-      build_deb_worker_img: ${{ steps.built_images.outputs.deb_worker_img }}
-      build_deb_worker_tag: ${{ steps.built_images.outputs.deb_worker_tag }}
 
     steps:
       - name: Checkout Platform
@@ -153,17 +151,13 @@ jobs:
           echo "worker_img=$worker_img" >> $GITHUB_OUTPUT
           echo "worker_tag=$worker_tag" >> $GITHUB_OUTPUT
 
-          deb_worker_img=$(echo ${{ needs.build_images.outputs.worker_deb_image }} | awk '{split($0,a,":"); print a[1];}')
-          deb_worker_tag=$(echo ${{ needs.build_images.outputs.worker_deb_image }} | awk '{split($0,a,":"); print a[2];}')
-          echo "deb_worker_img=$deb_worker_img" >> $GITHUB_OUTPUT
-          echo "deb_worker_tag=$deb_worker_tag" >> $GITHUB_OUTPUT
-
   all_checks_v1:
     name: V1 all checks
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
+      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
@@ -180,6 +174,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
+      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
@@ -196,6 +191,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
+      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
@@ -212,6 +208,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
     with:
+      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
@@ -222,27 +219,11 @@ jobs:
       pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '_s3-v2'
 
-  worker_debian:
-    name: Worker Debian
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
-    with:
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
-      server_image: ${{ needs.setup.outputs.build_server_img }}
-      server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: ${{ needs.setup.outputs.build_deb_worker_img }}
-      worker_tag: ${{ needs.setup.outputs.build_deb_worker_tag }}
-      worker_api_ver: 'v2'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: '-worker-debian'
-
   stable_worker_1-15:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-15 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.15.x
     with:
       piwind_branch: 'stable/1.15.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -258,7 +239,7 @@ jobs:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-23 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.23.x
     with:
       piwind_branch: 'stable/1.23.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -274,7 +255,7 @@ jobs:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-27 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.27.x
     with:
       piwind_branch: 'stable/1.27.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -290,7 +271,7 @@ jobs:
     name: test stable worker (${{ needs.setup.outputs.release_stable_1-28 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.28.x
     with:
       piwind_branch: 'stable/1.28.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
@@ -306,7 +287,7 @@ jobs:
     name: test stable worker (${{ needs.setup.outputs.release_stable_2-3 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/2.3.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
