@@ -20,6 +20,7 @@ from jsonschema.exceptions import SchemaError as JSONSchemaError
 
 from ods_tools.oed import AnalysisSettingHandler, ModelSettingHandler
 from ods_tools.oed.common import OdsException
+from ods_tools.combine.combine import CombineSettingsSchema
 
 
 TaskErrorSerializer = serializers.ListField(child=serializers.IntegerField())
@@ -236,6 +237,11 @@ class _JsonSettingsSchemaExtension(OpenApiSerializerExtension):
             schema = load_json_schema(
                 schema=AnalysisSettingHandler.make().get_schema('analysis_settings_schema'),
                 link_prefix='#/components/schemas/AnalysisSettings',
+            )
+        elif isinstance(getattr(self.target, 'schemaClass', None), CombineSettingsSchema):
+            schema = load_json_schema(
+                schema=self.target.schemaClass.schema,
+                link_prefix='#/components/schemas/CombineSettings',
             )
         else:
             schema = {'type': 'object'}
