@@ -67,7 +67,7 @@ jobs:
 
     - name: Vulnerability scanner
       if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@57a97c7
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
         image-ref: ${{ steps.img.outputs.result }}:${{ steps.ver.outputs.result }}
         scan-type: 'image'
@@ -78,7 +78,7 @@ jobs:
 
     - name: Create Report
       if: success() || failure()
-      uses: aquasecurity/trivy-action@57a97c7
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
         image-ref: ${{ steps.img.outputs.result }}:${{ steps.ver.outputs.result }}
         format: 'sarif'
