@@ -44,12 +44,6 @@ x-oasis-env-v1: &oasis-env-v1
   OASIS_CELERY_DB_NAME: celery
   OASIS_CELERY_DB_PORT: 5432
 
-x-volumes: &shared-volumes
-  - filestore-OasisData:/shared-fs:rw
-
-x-ssl-certs: &ssl-certs
-  - ./rabbitmq-ssl/certs:/ssl:ro
-
 services:
   server:
    restart: always
@@ -144,7 +138,7 @@ services:
    environment:
      <<: *shared-env
    volumes:
-     - *shared-volumes
+     - filestore-OasisData:/shared-fs:rw
      - ./rabbitmq-ssl/certs:/ssl:ro
   stable-worker:
     restart: always
@@ -243,9 +237,6 @@ services:
   broker:
     restart: always
     image: rabbitmq:3.8.14-management
-    environment:
-      - RABBITMQ_DEFAULT_USER=rabbit
-      - RABBITMQ_DEFAULT_PASS=rabbit
     volumes:
       - ./rabbitmq-ssl/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./rabbitmq-ssl/certs:/etc/rabbitmq/ssl:ro

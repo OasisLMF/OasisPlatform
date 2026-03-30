@@ -16,4 +16,7 @@ openssl req -x509 -newkey rsa:4096 \
 # Use the server cert as its own CA (self-signed)
 cp "$CERTS_DIR/server_certificate.pem" "$CERTS_DIR/ca_certificate.pem"
 
+# Ensure the rabbitmq container user can read the files
+chmod 644 "$CERTS_DIR/server_key.pem" "$CERTS_DIR/server_certificate.pem" "$CERTS_DIR/ca_certificate.pem"
+
 echo "Certificates written to $CERTS_DIR"
