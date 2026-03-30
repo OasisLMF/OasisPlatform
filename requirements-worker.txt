@@ -125,8 +125,6 @@ idna==3.10
     # via
     #   requests
     #   yarl
-iniconfig==2.1.0
-    # via pytest
 isodate==0.7.2
     # via azure-storage-blob
 jmespath==1.0.1
@@ -202,7 +200,6 @@ packaging==25.0
     #   kombu
     #   ods-tools
     #   pyogrio
-    #   pytest
 pandas==2.3.2
     # via
     #   fastparquet
@@ -212,8 +209,6 @@ pandas==2.3.2
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-worker.in
-pluggy==1.6.0
-    # via pytest
 prompt-toolkit==3.0.51
     # via click-repl
 propcache==0.3.2
@@ -228,15 +223,13 @@ psycopg-pool==3.2.6
     # via psycopg
 psycopg2-binary==2.9.10
     # via -r requirements-worker.in
-pyarrow==23.0.0
+pyarrow==23.0.1
     # via
     #   oasislmf
     #   ods-tools
 pycparser==2.22
     # via cffi
-pygments==2.19.2
-    # via pytest
-pyjwt[crypto]==2.10.1
+pyjwt[crypto]==2.12.1
     # via
     #   msal
     #   redis
@@ -248,8 +241,6 @@ pyogrio==0.11.1
     # via geopandas
 pyproj==3.7.2
     # via geopandas
-pytest==8.4.1
-    # via -r requirements-worker.in
 python-dateutil==2.9.0.post0
     # via
     #   aiobotocore
