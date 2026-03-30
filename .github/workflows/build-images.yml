@@ -173,7 +173,7 @@ jobs:
 
     - name: Vulnerability scanner
       if: env.SEVERITY != 'SKIP'
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
         image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
         scan-type: 'image'
@@ -184,7 +184,7 @@ jobs:
 
     - name: Create Report
       if: ( success() || failure() ) && env.SEVERITY != 'SKIP' && matrix.exit-code == '1'
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
         image-ref: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}
         format: 'sarif'

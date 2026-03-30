@@ -61,7 +61,7 @@ jobs:
 
     - name: Trivy vulnerability scanner
       if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
         scan-type: 'fs'
         exit-code: '1'
@@ -72,7 +72,7 @@ jobs:
 
     - name: Trivy Configuration scanner (no fail)
       if: env.SEVERITY != ''
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
         scan-type: 'fs'
         exit-code: '0'
@@ -83,7 +83,7 @@ jobs:
 
     - name: Create Report
       if: success() || failure()
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
         format: 'sarif'
         output:  ${{ env.REPORT }}
