@@ -29,8 +29,8 @@ def _add_to_dict(d, k, v):
 
 
 def _get_broker_queue_names():
-    if settings.BROKER_URL.startswith('amqp://'):
-        with Connection(settings.BROKER_URL) as c:
+    if settings.BROKER_URL.startswith('amqp://') or settings.BROKER_URL.startswith('amqps://'):
+        with Connection(settings.BROKER_URL, ssl=getattr(settings, 'BROKER_USE_SSL', False)) as c:
             return [q['name'] for q in c.connection.client.manager.get_queues() if 'pidbox' not in q['name'] and 'celeryev' not in q['name']]
     if settings.BROKER_URL.startswith('redis://'):
         with Connection(settings.BROKER_URL) as c:

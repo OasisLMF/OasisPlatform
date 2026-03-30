@@ -1,3 +1,4 @@
+import ssl
 import urllib
 from src.conf.iniconf import settings
 
@@ -12,6 +13,18 @@ BROKER_URL = settings.get(
         RABBIT_PORT=settings.get('celery', 'rabbit_port', fallback='5672'),
     )
 )
+
+#: Celery config - SSL options when using amqps:// broker URL
+if BROKER_URL.startswith('amqps://'):
+    _broker_ssl_ca_certs = settings.get('celery', 'broker_ssl_ca_certs', fallback=None)
+    _broker_ssl_certfile = settings.get('celery', 'broker_ssl_certfile', fallback=None)
+    _broker_ssl_keyfile = settings.get('celery', 'broker_ssl_keyfile', fallback=None)
+    BROKER_USE_SSL = {
+        'ca_certs': _broker_ssl_ca_certs or None,
+        'certfile': _broker_ssl_certfile or None,
+        'keyfile': _broker_ssl_keyfile or None,
+        'cert_reqs': ssl.CERT_REQUIRED if _broker_ssl_ca_certs else ssl.CERT_NONE,
+    }
 
 #: Celery config - result backend URI
 CELERY_RESULTS_DB_BACKEND = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')
