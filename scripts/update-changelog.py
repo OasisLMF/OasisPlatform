@@ -481,16 +481,16 @@ def build_release_platform(platform_repo_path, platform_from_tag, platform_to_ta
     builder = _make_builder(github_token)
 
     plat_from = platform_from_tag or builder._get_tag('OasisPlatform', idx=1)
-    plat_to   = platform_to_tag   or builder._get_tag('OasisPlatform', idx=0)
-    lmf_from  = lmf_from_tag      or builder._get_tag('OasisLMF', idx=1)
-    lmf_to    = lmf_to_tag        or builder._get_tag('OasisLMF', idx=0)
-    ods_from  = ods_from_tag      or builder._get_tag('ODS_Tools', idx=1)
-    ods_to    = ods_to_tag        or builder._get_tag('ODS_Tools', idx=0)
-    ui_to     = builder._get_tag('OasisUI', idx=0)
+    plat_to = platform_to_tag or builder._get_tag('OasisPlatform', idx=0)
+    lmf_from = lmf_from_tag or builder._get_tag('OasisLMF', idx=1)
+    lmf_to = lmf_to_tag or builder._get_tag('OasisLMF', idx=0)
+    ods_from = ods_from_tag or builder._get_tag('ODS_Tools', idx=1)
+    ods_to = ods_to_tag or builder._get_tag('ODS_Tools', idx=0)
+    ui_to = builder._get_tag('OasisUI', idx=0)
 
     plat_data = builder.load_data('OasisPlatform', local_path=platform_repo_path, tag_from=plat_from, tag_to=plat_to)
-    lmf_data  = builder.load_data('OasisLMF',      local_path=lmf_repo_path,      tag_from=lmf_from,  tag_to=lmf_to)
-    ods_data  = builder.load_data('ODS_Tools',     local_path=ods_repo_path,      tag_from=ods_from,  tag_to=ods_to)
+    lmf_data = builder.load_data('OasisLMF', local_path=lmf_repo_path, tag_from=lmf_from, tag_to=lmf_to)
+    ods_data = builder.load_data('ODS_Tools', local_path=ods_repo_path, tag_from=ods_from, tag_to=ods_to)
 
     title_line = f'Oasis Release v{plat_to} \n'
     release_notes_data = [title_line, (len(title_line) - 1) * '=' + '\n', '\n']
