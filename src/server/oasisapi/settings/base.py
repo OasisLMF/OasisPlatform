@@ -516,7 +516,6 @@ else:
 
 # storage selector for exposure files
 PORTFOLIO_PARQUET_STORAGE = iniconf.settings.getboolean('server', 'PORTFOLIO_PARQUET_STORAGE', fallback=False)
-PORTFOLIO_UPLOAD_VALIDATION = iniconf.settings.getboolean('server', 'PORTFOLIO_UPLOAD_VALIDATION', fallback=False)
 PORTFOLIO_VALIDATION_CONFIG = [
     {'name': 'required_fields', 'on_error': 'return'},
     {'name': 'unknown_column', 'on_error': 'return'},
@@ -547,6 +546,11 @@ LOGGING = {
             'propagate': False,
         },
         'asyncio': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'psycopg': {
             'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,

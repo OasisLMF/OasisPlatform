@@ -9,7 +9,23 @@ on:
       - main
       - stable**  
   workflow_dispatch:
+    inputs:
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
   workflow_call:
+    inputs:
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+        type: string
+      ods_branch:
+        description: 'If set, pip install ods-tools branch [git ref]'
+        required: false
+        type: string
 
 jobs:
   unittest:
@@ -36,6 +52,14 @@ jobs:
     - run: |
         pip install pytest
         pip install -r kubernetes/worker-controller/requirements.txt
+
+    - name: Install ods-tools from branch
+      if: inputs.ods_branch != ''
+      run: pip install -v "git+https://git@github.com/OasisLMF/ODS_Tools.git@${{ inputs.ods_branch }}#egg=ods-tools"
+
+    - name: Install oasislmf from branch
+      if: inputs.oasislmf_branch != ''
+      run: pip install -v "git+https://git@github.com/OasisLMF/OasisLMF.git@${{ inputs.oasislmf_branch }}#egg=oasislmf"
 
     - name: Run Pytest
       run: |

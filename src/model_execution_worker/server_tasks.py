@@ -15,7 +15,6 @@ import logging
 import tarfile
 from celery.utils.log import get_task_logger
 import filelock
-import shutil
 
 app = Celery()
 
@@ -49,7 +48,6 @@ def run_exposure_run(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
         os.chdir(tmpdir)
         params = OasisManager()._params_run_exposure()
         params['print_summary'] = False
-        params['intermediary_csv'] = True   # workaround for https://github.com/OasisLMF/OasisLMF/issues/1895 remember to remove when fixed
         update_params(params, given_params)
         if reporting_currency != "" and currency_conversion_json:
             params['currency_conversion_json'] = currency_conversion_json
@@ -158,7 +156,7 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             if not Path(dst).exists():
                 out = filestore.get(filestore_ref, dst, storage_subdir)
 
-    required_input_files = ['analysis_settings.json', 'occurrence.bin']
+    required_input_files = ['occurrence.bin']
 
     with TemporaryDir() as tmpdir:
         analysis_dirs = []
@@ -182,10 +180,6 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             except KeyError as e:
                 logging.error('Combine input files missing: ' + str(e))
                 return (False, 'Input files missing: ' + str(e))
-
-            # copy analysis settings to analysis root
-            shutil.copy2(os.path.join(_curr_tmp_dir, 'input', 'analysis_settings.json'),
-                         os.path.join(_curr_tmp_dir, 'analysis_settings.json'))
 
             with tarfile.open(_tmp_output_tar, 'r:gz') as f:
                 f.extractall(path=_curr_tmp_dir)  # tar already has `output/`

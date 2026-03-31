@@ -7,7 +7,6 @@ __all__ = [
     'RUN_MODE_PARAM',
     'SUBTASK_STATUS_PARAM',
     'SUBTASK_SLUG_PARAM',
-    'FILE_VALIDATION_PARAM',
     'FILENAME_PARAM',
 ]
 
@@ -84,14 +83,6 @@ SUBTASK_SLUG_PARAM = OpenApiParameter(
     location=OpenApiParameter.QUERY,
     description="Filter response by slug name containing string.",
     type=OpenApiTypes.STR,
-)
-
-FILE_VALIDATION_PARAM = OpenApiParameter(
-    name='validate',
-    location=OpenApiParameter.QUERY,
-    required=False,
-    description="Validate OED files on upload, default `True`",
-    type=OpenApiTypes.BOOL,
 )
 
 FILENAME_PARAM = OpenApiParameter(
