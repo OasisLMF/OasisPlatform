@@ -81,7 +81,9 @@ jobs:
         pip install ${{ needs.ods_tools.outputs.whl_filename }}
 
     - name: Install oasislmf from branch
-      run: pip install -v oasislmf[extra]@git+https://git@github.com/OasisLMF/OasisLMF.git@${{ env.oasislmf_branch }}
+      run: |
+        pip uninstall oasislmf -y
+        pip install -v oasislmf@git+https://git@github.com/OasisLMF/OasisLMF.git@${{ env.oasislmf_branch }}
 
     - name: Run Pytest
       run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
