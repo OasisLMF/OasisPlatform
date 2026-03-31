@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema
 # from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -100,7 +100,7 @@ class DataFileViewset(VerifyGroupAccessModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
-    @swagger_auto_schema(methods=['get'], responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
     def content(self, request, pk=None, version=None):
         """
@@ -114,6 +114,7 @@ class DataFileViewset(VerifyGroupAccessModelViewSet):
         file_response = handle_related_file(self.get_object(), 'file', request, None)
         return file_response
 
+    @extend_schema(responses={200: FILE_RESPONSE})
     @content.mapping.post
     def set_content(self, request, pk=None, version=None):
         """
