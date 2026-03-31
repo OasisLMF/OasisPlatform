@@ -93,9 +93,9 @@ def _handle_get_related_file(parent, field, request):
     return response
 
 
-def _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate):
+def _handle_post_related_file(parent, field, request, content_types, parquet_storage):
     serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={
-                                       'request': request}, parquet_storage=parquet_storage, field=field, oed_validate=oed_validate)
+                                       'request': request}, parquet_storage=parquet_storage, field=field)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 
@@ -159,13 +159,13 @@ def _json_read_from_file(parent, field):
         return Response(json.load(f))
 
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False, oed_validate=None):
+def handle_related_file(parent, field, request, content_types, parquet_storage=False):
     method = request.method.lower()
 
     if method == 'get':
         return _handle_get_related_file(parent, field, request)
     elif method == 'post':
-        return _handle_post_related_file(parent, field, request, content_types, parquet_storage, oed_validate)
+        return _handle_post_related_file(parent, field, request, content_types, parquet_storage)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field, request)
 
