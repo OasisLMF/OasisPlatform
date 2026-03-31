@@ -515,6 +515,11 @@ LOGGING = {
             'level': 'WARNING',
             'propagate': False,
         },
+        'psycopg': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
     },
     'formatters': {
         'verbose': {

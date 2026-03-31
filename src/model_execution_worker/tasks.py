@@ -187,8 +187,9 @@ def V1_task_logger(fn):
         kwargs = {
             'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
         }
-        # log_level = 'DEBUG' if debug_worker else 'INFO'
-        log_level = 'INFO'
+        default_log_level = 'DEBUG' if debug_worker else 'INFO'
+        log_level = settings.get('worker', 'package_log_level', fallback=default_log_level)
+
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
             logger.info(f'====== {fn.__name__} '.ljust(90, '='))
             return fn(self, analysis_pk, *args, **kwargs)
