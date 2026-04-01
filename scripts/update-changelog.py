@@ -297,15 +297,15 @@ class ReleaseNotesBuilder:
 
     # -- public API ----------------------------------------------------------
 
-    def _check_gh_rate_limit(self):
+    def check_gh_rate_limit(self):
         resp = requests.get('https://api.github.com/rate_limit', headers=self.gh_headers)
         resp.raise_for_status()
         return resp.json()
 
-    def _get_tag(self, repo_name, idx=0):
+    def get_tag(self, repo_name, idx=0):
         return self._get_tags_list(repo_name)[idx]['name']
 
-    def _tag_exists(self, repo_name, tag):
+    def tag_exists(self, repo_name, tag):
         resp = requests.get(
             f'https://github.com/{self.github_user}/{repo_name}/releases/tag/{tag}',
             headers=self.gh_headers)
@@ -387,7 +387,7 @@ class ReleaseNotesBuilder:
 def _make_builder(github_token, repo=None, from_tag=None):
     """Create a ReleaseNotesBuilder and validate from_tag if provided."""
     builder = ReleaseNotesBuilder(github_token=github_token)
-    if repo and from_tag and not builder._tag_exists(repo, from_tag):
+    if repo and from_tag and not builder.tag_exists(repo, from_tag):
         raise click.BadParameter(f"from_tag={from_tag}, not found in the {repo} repository")
     return builder
 
@@ -402,7 +402,7 @@ def cli():
 def check_rate_limit(github_token):
     logger = logging.getLogger()
     builder = _make_builder(github_token)
-    logger.info(json.dumps(builder._check_gh_rate_limit(), indent=4))
+    logger.info(json.dumps(builder.check_gh_rate_limit(), indent=4))
 
 
 @cli.command()
@@ -479,13 +479,13 @@ def build_release_platform(platform_repo_path, platform_from_tag, platform_to_ta
     logger = logging.getLogger()
     builder = _make_builder(github_token)
 
-    plat_from = platform_from_tag or builder._get_tag('OasisPlatform', idx=1)
-    plat_to = platform_to_tag or builder._get_tag('OasisPlatform', idx=0)
-    lmf_from = lmf_from_tag or builder._get_tag('OasisLMF', idx=1)
-    lmf_to = lmf_to_tag or builder._get_tag('OasisLMF', idx=0)
-    ods_from = ods_from_tag or builder._get_tag('ODS_Tools', idx=1)
-    ods_to = ods_to_tag or builder._get_tag('ODS_Tools', idx=0)
-    ui_to = builder._get_tag('OasisUI', idx=0)
+    plat_from = platform_from_tag or builder.get_tag('OasisPlatform', idx=1)
+    plat_to = platform_to_tag or builder.get_tag('OasisPlatform', idx=0)
+    lmf_from = lmf_from_tag or builder.get_tag('OasisLMF', idx=1)
+    lmf_to = lmf_to_tag or builder.get_tag('OasisLMF', idx=0)
+    ods_from = ods_from_tag or builder.get_tag('ODS_Tools', idx=1)
+    ods_to = ods_to_tag or builder.get_tag('ODS_Tools', idx=0)
+    ui_to = builder.get_tag('OasisUI', idx=0)
 
     plat_data = builder.load_data('OasisPlatform', local_path=platform_repo_path, tag_from=plat_from, tag_to=plat_to)
     lmf_data = builder.load_data('OasisLMF', local_path=lmf_repo_path, tag_from=lmf_from, tag_to=lmf_to)
