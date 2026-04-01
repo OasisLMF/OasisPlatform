@@ -21,7 +21,6 @@ logging.basicConfig(level=logging.INFO)
 START_PR_MARKER = '<!--start_release_notes-->\r\n'
 END_PR_MARKER = '<!--end_release_notes-->'
 DEFAULT_PR_TITLE = '### Release notes feature title'
-
 GITHUB_GRAPHQL_URL = 'https://api.github.com/graphql'
 
 
@@ -37,8 +36,8 @@ class PullRequestData:
     id: int
     title: str
     html_url: str
-    body: str               # may be None for PRs with no description
-    linked_issues: list = field(default_factory=list)   # list[IssueData]
+    body: str | None
+    linked_issues: list[IssueData]
 
 
 @dataclass
@@ -47,7 +46,7 @@ class RepoData:
     url: str
     tag_from: str
     tag_to: str
-    pull_requests: list = field(default_factory=list)   # list[PullRequestData]
+    pull_requests: list[PullRequestData]
 
 
 # ---------------------------------------------------------------------------
@@ -228,7 +227,7 @@ class ReleaseNotesBuilder:
         result = resp.json()
 
         if 'errors' in result:
-            self.logger.warning(f"GraphQL errors: {result['errors']}")
+            self.logger.error(f"GraphQL errors: {result['errors']}")
 
         repo_result = result.get('data', {}).get('repository', {})
         pull_requests = []
@@ -434,7 +433,7 @@ def build_changelog(repo, from_tag, to_tag, github_token, output_path, apply_mil
             cl.writelines(text[:3] + changelog_data + text[3:])
             logger.info(f'Appended changelog to: "{changelog_path}"')
         else:
-            header = [f'{repo} Changelog\n', (len(repo) + 9) * '=' + '\n', '\n']
+            header = [f'{repo} Changelog\n', (len(repo) + 10) * '=' + '\n', '\n']
             cl.writelines(header + changelog_data)
             logger.info(f'Written changelog to new file: "{changelog_path}"')
 
