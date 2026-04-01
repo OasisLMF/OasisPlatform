@@ -3,20 +3,12 @@ __all__ = [
 ]
 
 from rest_framework import serializers
-from ..schemas.serializers import (
-    JsonSettingsSerializer,
-    load_json_schema,
-)
+from ..schemas.serializers import JsonSettingsSerializer
 
 from ods_tools.combine.combine import CombineSettingsSchema
 
 
 class CombineSettingSerializer(JsonSettingsSerializer):
-    class Meta:
-        swagger_schema_fields = load_json_schema(
-            schema=CombineSettingsSchema().schema,
-            link_prefix='#/definitions/CombineSettings'
-        )
 
     def __init__(self, *args, **kwargs):
         super(CombineSettingSerializer, self).__init__(*args, **kwargs)

@@ -40,7 +40,7 @@ from .utils import (
 )
 
 '''
-Celery task wrapper for Oasis ktools calculation.
+Celery task wrapper for Oasis calculation.
 '''
 
 LOG_FILE_SUFFIX = 'txt'
@@ -118,6 +118,7 @@ def register_worker(sender, **k):
     logger.info("DEBUG: {}".format(settings.get('worker', 'DEBUG', fallback='False')))
     logger.info("BASE_RUN_DIR: {}".format(settings.get('worker', 'BASE_RUN_DIR', fallback='None')))
     logger.info("OASISLMF_CONFIG: {}".format(settings.get('worker', 'oasislmf_config', fallback='None')))
+    logger.info("NUMBA_WARMUP: {}".format(settings.get('worker', 'NUMBA_WARMUP', fallback='False')))
 
     # Log Env variables
     if debug_worker:
@@ -143,6 +144,18 @@ def register_worker(sender, **k):
     # Clean up multiprocess tmp dirs on startup
     for tmpdir in glob.glob("/tmp/pymp-*"):
         os.rmdir(tmpdir)
+
+    # Run numba warm up
+    warmup_enabled = settings.getboolean('worker', 'NUMBA_WARMUP', fallback=False)
+    if warmup_enabled:
+        try:
+            from oasislmf.warmup import main as run_warmup
+            run_warmup()
+        except ImportError:
+            logger.warning(f"Numba warmup not supported by this version of oasislmf, {m_version['oasislmf']}")
+        except Exception as e:
+            logger.error("Failed to run Numba warmup")
+            logger.exception(e)
 
 
 @contextmanager
@@ -174,8 +187,9 @@ def V1_task_logger(fn):
         kwargs = {
             'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
         }
-        # log_level = 'DEBUG' if debug_worker else 'INFO'
-        log_level = 'INFO'
+        default_log_level = 'DEBUG' if debug_worker else 'INFO'
+        log_level = settings.get('worker', 'package_log_level', fallback=default_log_level)
+
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
             logger.info(f'====== {fn.__name__} '.ljust(90, '='))
             return fn(self, analysis_pk, *args, **kwargs)
@@ -276,7 +290,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             'oasis_files_dir': oasis_files_dir,
             'model_run_dir': run_dir,
             'analysis_settings_json': analysis_settings_file,
-            'ktools_fifo_relative': True,
+            'kernel_fifo_relative': True,
             'verbose': debug_worker,
             # 'df_engine': json.dumps({
             #     "path": settings.get(

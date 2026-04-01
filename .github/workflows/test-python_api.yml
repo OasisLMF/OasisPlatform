@@ -10,12 +10,19 @@ on:
       - stable**
   workflow_dispatch:
     inputs:
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
       ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
 
   workflow_call:
     inputs:
+      oasislmf_branch:
+        description: 'If set, pip install oasislmf branch [git ref]'
+        required: false
+        type: string
       ods_branch:
         description: 'If set, pip install ods-tools branch [git ref]'
         required: false
@@ -24,6 +31,9 @@ on:
         description: "Platform branch to test (remote trigger) [git ref]"
         required: True
         type: string
+
+env:
+  oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.oasislmf_branch }}
 
 jobs:
   ods_tools:
@@ -70,13 +80,13 @@ jobs:
         pip uninstall ods-tools -y
         pip install ${{ needs.ods_tools.outputs.whl_filename }}
 
+    - name: Install oasislmf from branch
+      run: |
+        pip uninstall oasislmf -y
+        pip install -v oasislmf@git+https://git@github.com/OasisLMF/OasisLMF.git@${{ env.oasislmf_branch }}
+
     - name: Run Pytest
       run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
-
-   # - name: Run Tox
-   #   run: |
-   #     pip install tox
-   #     tox -e py
 
     - name: Generate Report
       uses: dorny/test-reporter@v1
