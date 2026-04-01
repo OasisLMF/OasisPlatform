@@ -32,6 +32,9 @@ on:
         required: True
         type: string
 
+env:
+  oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.oasislmf_branch }}
+
 jobs:
   ods_tools:
     #if: inputs.ods_branch != ''
@@ -78,16 +81,12 @@ jobs:
         pip install ${{ needs.ods_tools.outputs.whl_filename }}
 
     - name: Install oasislmf from branch
-      if: inputs.oasislmf_branch != ''
-      run: pip install -v "git+https://git@github.com/OasisLMF/OasisLMF.git@${{ inputs.oasislmf_branch }}#egg=oasislmf"
+      run: |
+        pip uninstall oasislmf -y
+        pip install -v oasislmf@git+https://git@github.com/OasisLMF/OasisLMF.git@${{ env.oasislmf_branch }}
 
     - name: Run Pytest
       run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
-
-   # - name: Run Tox
-   #   run: |
-   #     pip install tox
-   #     tox -e py
 
     - name: Generate Report
       uses: dorny/test-reporter@v1

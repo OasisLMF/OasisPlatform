@@ -40,7 +40,7 @@ from .utils import (
 )
 
 '''
-Celery task wrapper for Oasis ktools calculation.
+Celery task wrapper for Oasis calculation.
 '''
 
 LOG_FILE_SUFFIX = 'txt'
@@ -187,8 +187,9 @@ def V1_task_logger(fn):
         kwargs = {
             'log_filename': os.path.join(TASK_LOG_DIR, f"analysis_{analysis_pk}_{self.request.id}.log")
         }
-        # log_level = 'DEBUG' if debug_worker else 'INFO'
-        log_level = 'INFO'
+        default_log_level = 'DEBUG' if debug_worker else 'INFO'
+        log_level = settings.get('worker', 'package_log_level', fallback=default_log_level)
+
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
             logger.info(f'====== {fn.__name__} '.ljust(90, '='))
             return fn(self, analysis_pk, *args, **kwargs)
@@ -289,7 +290,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             'oasis_files_dir': oasis_files_dir,
             'model_run_dir': run_dir,
             'analysis_settings_json': analysis_settings_file,
-            'ktools_fifo_relative': True,
+            'kernel_fifo_relative': True,
             'verbose': debug_worker,
             # 'df_engine': json.dumps({
             #     "path": settings.get(

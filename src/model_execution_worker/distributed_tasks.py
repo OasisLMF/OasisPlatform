@@ -43,7 +43,7 @@ from .utils import (
 
 
 '''
-Celery task wrapper for Oasis ktools calculation.
+Celery task wrapper for Oasis calculation.
 '''
 
 logger = get_task_logger(__name__)
@@ -397,8 +397,9 @@ def keys_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
-        # log_level = 'DEBUG' if debug_worker else 'INFO'
-        log_level = 'INFO'
+        default_log_level = 'DEBUG' if debug_worker else 'INFO'
+        log_level = settings.get('worker', 'package_log_level', fallback=default_log_level)
+
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
             log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
 
@@ -829,8 +830,9 @@ def loss_generation_task(fn):
 
     def run(self, params, *args, run_data_uuid=None, analysis_id=None, **kwargs):
         kwargs['log_filename'] = os.path.join(TASK_LOG_DIR, f"{run_data_uuid}_{kwargs.get('slug')}.log")
-        # log_level = 'DEBUG' if debug_worker else 'INFO'
-        log_level = 'INFO'
+        default_log_level = 'DEBUG' if debug_worker else 'INFO'
+        log_level = settings.get('worker', 'package_log_level', fallback=default_log_level)
+
         with LoggingTaskContext(logging.getLogger(), log_filename=kwargs['log_filename'], level=log_level):
             log_task_entry(kwargs.get('slug'), self.request.id, analysis_id)
             if isinstance(params, list):
@@ -916,12 +918,12 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
 @loss_generation_task
 def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None, slug=None, **kwargs):
     if num_chunks == 1:
-        # Run multiple ktools pipes (based on cpu cores)
+        # Run multiple kernel pipes (based on cpu cores)
         current_chunk_id = None
-        max_chunk_id = params.get('ktools_num_processes', -1)
+        max_chunk_id = params.get('kernel_num_processes', -1)
         work_dir = 'work'
     else:
-        # Run a single ktools pipe
+        # Run a single kernel pipe
         current_chunk_id = chunk_idx + 1
         max_chunk_id = num_chunks
         work_dir = f'{current_chunk_id}.work'
@@ -930,8 +932,8 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         **params,
         'process_number': current_chunk_id,
         'max_process_id': max_chunk_id,
-        'ktools_fifo_relative': True,
-        'ktools_work_dir': os.path.join(params['model_run_dir'], work_dir),
+        'kernel_fifo_relative': True,
+        'kernel_work_dir': os.path.join(params['model_run_dir'], work_dir),
         'df_engine': json.dumps({
             "path": settings.get(
                 'worker',
@@ -944,7 +946,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
                 fallback={}
             ),
         }),
-        'ktools_log_dir': os.path.join(params['model_run_dir'], 'log'),
+        'kernel_log_dir': os.path.join(params['model_run_dir'], 'log'),
         'analysis_pk': analysis_id
     }
 
@@ -956,23 +958,23 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             f.flush()
 
         chunk_params['model_storage_json'] = f.name if model_storage else None
-        Path(chunk_params['ktools_work_dir']).mkdir(parents=True, exist_ok=True)
+        Path(chunk_params['kernel_work_dir']).mkdir(parents=True, exist_ok=True)
         from oasislmf.manager import OasisManager
         OasisManager().generate_losses_partial(**chunk_params)
 
         return {
             **params,
             'chunk_work_location': filestore.put(
-                chunk_params['ktools_work_dir'],
+                chunk_params['kernel_work_dir'],
                 filename=f'work-{chunk_idx + 1}.tar.gz',
                 subdir=params['storage_subdir']
             ),
             'chunk_log_location': filestore.put(
-                chunk_params['ktools_log_dir'],
+                chunk_params['kernel_log_dir'],
                 filename=f'log-{chunk_idx + 1}.tar.gz',
                 subdir=params['storage_subdir']
             ),
-            'ktools_work_dir': chunk_params['ktools_work_dir'],
+            'kernel_work_dir': chunk_params['kernel_work_dir'],
             'process_number': chunk_idx + 1,
             'max_process_id': max_chunk_id,
             'log_location': filestore.put(kwargs.get('log_filename'))
