@@ -671,6 +671,27 @@ def collect_keys(
 @app.task(bind=True, name='write_input_files', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
+    lock_path = os.path.join(params['target_dir'], 'write_input_files.lock')
+    done_path = os.path.join(params['target_dir'], 'write_input_files.done')
+
+    try:
+        with filelock.FileLock(lock_path, timeout=0):
+            if os.path.exists(done_path):
+                logger.info(f'write_input_files: already completed for run_data_uuid={run_data_uuid}, returning cached result')
+                with open(done_path) as f:
+                    return json.load(f)
+
+            result = _write_input_files(self, params, run_data_uuid=run_data_uuid, analysis_id=analysis_id, initiator_id=initiator_id, slug=slug, **kwargs)
+
+            with open(done_path, 'w') as f:
+                json.dump(result, f)
+            return result
+
+    except filelock.Timeout:
+        raise self.retry(countdown=10, max_retries=None)
+
+
+def _write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     # Load Collected keys data
     filestore.extract(params['keys_data'], params['target_dir'], params['storage_subdir'])
     params['keys_data_csv'] = os.path.join(params['target_dir'], 'keys.csv')
