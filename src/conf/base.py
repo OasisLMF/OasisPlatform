@@ -14,6 +14,14 @@ BROKER_URL = settings.get(
     )
 )
 
+#: RabbitMQ management API port - defaults to 443 for amqps://, 15672 for amqp://
+#: Configurable via OASIS_CELERY_BROKER_MANAGEMENT_PORT env var
+BROKER_MANAGEMENT_PORT = int(settings.get(
+    'celery',
+    'broker_management_port',
+    fallback='443' if BROKER_URL.startswith('amqps://') else '15672',
+))
+
 #: Celery config - SSL options when using amqps:// broker URL
 if BROKER_URL.startswith('amqps://'):
     _broker_ssl_ca_certs = settings.get('celery', 'broker_ssl_ca_certs', fallback=None)
