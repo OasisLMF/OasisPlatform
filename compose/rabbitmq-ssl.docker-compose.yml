@@ -27,6 +27,7 @@ x-shared-env: &shared-env
   OASIS_CELERY_DB_USER: celery
   OASIS_CELERY_DB_NAME: celery
   OASIS_CELERY_DB_PORT: 5432
+  OASIS_CELERY_BROKER_MANAGEMENT_PORT: 443
   OASIS_TASK_CONTROLLER_QUEUE: task-controller
   OASIS_WEBSOCKET_PORT: 8001
   OASIS_WEBSOCKET_URL: ws://server-websocket
@@ -242,7 +243,7 @@ services:
       - ./rabbitmq-ssl/certs:/etc/rabbitmq/ssl:ro
     ports:
       - 5671:5671
-      - 15672:15672
+      - 443:443
   channel-layer:
     restart: always
     image: redis:5.0.7
