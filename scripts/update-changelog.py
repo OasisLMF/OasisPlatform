@@ -10,7 +10,7 @@ import requests
 
 from bs4 import BeautifulSoup
 from dataclasses import dataclass, field
-from github import Github, UnknownObjectException
+from github import Auth, Github, UnknownObjectException
 try:
     from pydriller import RepositoryMining
 except ImportError:
@@ -178,7 +178,7 @@ class ReleaseNotesBuilder:
 
     def _get_github_repo(self, repo_name):
         if repo_name not in self._github_repos:
-            self._github_repos[repo_name] = Github(login_or_token=self.github_token).get_repo(
+            self._github_repos[repo_name] = Github(auth=Auth.Token(self.github_token)).get_repo(
                 f'{self.github_user}/{repo_name}')
         return self._github_repos[repo_name]
 
@@ -319,7 +319,7 @@ class ReleaseNotesBuilder:
     def _find_milestone(self, repo_name, title):
         """Return milestone number for title, or None if not found."""
         resp = requests.get(
-            f'https://api.github.com/repos/{self.github_user}/{repo_name}/milestones?per_page=100',
+            f'https://api.github.com/repos/{self.github_user}/{repo_name}/milestones?per_page=100&state=all',
             headers=self.gh_headers)
         resp.raise_for_status()
         for milestone in resp.json():
