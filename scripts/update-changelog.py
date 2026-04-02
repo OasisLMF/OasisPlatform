@@ -36,7 +36,7 @@ class PullRequestData:
     id: int
     title: str
     html_url: str
-    body: str | None
+    body: str
     linked_issues: list[IssueData]
 
 
