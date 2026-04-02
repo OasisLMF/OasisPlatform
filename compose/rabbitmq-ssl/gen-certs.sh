@@ -11,7 +11,8 @@ openssl req -x509 -newkey rsa:4096 \
     -keyout  "$CERTS_DIR/server_key.pem" \
     -out     "$CERTS_DIR/server_certificate.pem" \
     -days 365 -nodes \
-    -subj '/CN=localhost'
+    -subj '/CN=broker' \
+    -addext "subjectAltName=DNS:broker,DNS:localhost,IP:127.0.0.1"
 
 # Use the server cert as its own CA (self-signed)
 cp "$CERTS_DIR/server_certificate.pem" "$CERTS_DIR/ca_certificate.pem"
