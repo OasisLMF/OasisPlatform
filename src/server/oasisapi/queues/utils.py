@@ -28,10 +28,36 @@ def _add_to_dict(d, k, v):
     return d
 
 
+def _get_rabbitmq_queues_via_management_api():
+    """Fetch queue names from the RabbitMQ management HTTP/HTTPS API directly.
+
+    Uses HTTPS when the broker URL is amqps://, HTTP otherwise. The management
+    port defaults to 443 for amqps:// and 15672 for amqp://, and can be
+    overridden via OASIS_CELERY_BROKER_MANAGEMENT_PORT.
+    """
+    import requests
+    from urllib.parse import urlparse
+
+    parsed = urlparse(settings.BROKER_URL)
+    scheme = 'https' if settings.BROKER_URL.startswith('amqps://') else 'http'
+    host = parsed.hostname
+    port = settings.BROKER_MANAGEMENT_PORT
+    userid = parsed.username or 'guest'
+    password = parsed.password or 'guest'
+
+    url = f'{scheme}://{host}:{port}/api/queues'
+    ssl_verify = getattr(settings, 'BROKER_USE_SSL', False)
+    if isinstance(ssl_verify, dict):
+        ssl_verify = ssl_verify.get('ca_certs') or False
+
+    resp = requests.get(url, auth=(userid, password), verify=ssl_verify, timeout=10)
+    resp.raise_for_status()
+    return [q['name'] for q in resp.json() if 'pidbox' not in q['name'] and 'celeryev' not in q['name']]
+
+
 def _get_broker_queue_names():
-    if settings.BROKER_URL.startswith('amqp://'):
-        with Connection(settings.BROKER_URL) as c:
-            return [q['name'] for q in c.connection.client.manager.get_queues() if 'pidbox' not in q['name'] and 'celeryev' not in q['name']]
+    if settings.BROKER_URL.startswith('amqp://') or settings.BROKER_URL.startswith('amqps://'):
+        return _get_rabbitmq_queues_via_management_api()
     if settings.BROKER_URL.startswith('redis://'):
         with Connection(settings.BROKER_URL) as c:
             return [q['name'] for q in c.connection.client.manager.channel.active_queues if 'pidbox' not in q['name'] and 'celeryev' not in q['name']]
