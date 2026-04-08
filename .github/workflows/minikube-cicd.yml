@@ -189,7 +189,7 @@ jobs:
           cat <<EOF > test_settings.json
           {
             "computation_settings": {
-              "ktools_num_processes": 1
+              "kernel_num_processes": 1
             },
             "version": "3",
             "analysis_tag": "base_example",
