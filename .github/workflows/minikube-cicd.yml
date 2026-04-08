@@ -135,7 +135,7 @@ jobs:
           echo "Delay to wait for authentication server to start"
           sleep 60
           delay=1
-          for i in {1..8}; do
+          for i in {1..10}; do
             delay=$((delay * 2))
             if [ "$USE_OIDC" = "true" ]; then
               echo "Using OIDC authentication"
