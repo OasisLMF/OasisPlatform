@@ -392,13 +392,13 @@ class ExposureRun(TestCase):
 )
 def test_exposure_run_params(currency_conversion_json, reporting_currency):
     allowed_params = {
-        'kernel_alloc_rule_il': 2,
+        'ktools_alloc_rule_il': 2,
         'model_perils_covered': 3,
         'loss_factor': 5,
         'fmpy_sort_output': 7,
         'fmpy_low_memory': 11,
         'extra_summary_cols': 13,
-        'kernel_alloc_rule_ri': 17,
+        'ktools_alloc_rule_ri': 17,
         'check_oed': 19,
         'do_disaggregation': 23,
         'verbose': 29
@@ -412,14 +412,14 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
     with (patch("src.model_execution_worker.server_tasks.OasisManager") as fake_manager,
             patch('src.model_execution_worker.server_tasks.get_filestore') as _):
         fake_manager.return_value._params_run_exposure.return_value = {
-            'kernel_alloc_rule_il': "H",
+            'ktools_alloc_rule_il': "H",
             'model_perils_covered': "e",
             'loss_factor': "l",
             'supported_oed_coverage_types': "l",
             'fmpy_sort_output': "o",
             'fmpy_low_memory': " ",
             'extra_summary_cols': "W",
-            'kernel_alloc_rule_ri': "o",
+            'ktools_alloc_rule_ri': "o",
             'check_oed': "r",
             'do_disaggregation': "l",
             'verbose': "d",

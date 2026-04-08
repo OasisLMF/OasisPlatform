@@ -350,14 +350,14 @@ def update_params(params, given_params):
     Changes exposure run's given parameters.
     """
     ALLOWED_PARAMS = [
-        'kernel_alloc_rule_il',
+        'ktools_alloc_rule_il',
         'model_perils_covered',
         'loss_factor',
         'supported_oed_coverage_types',
         'fmpy_sort_output',
         'fmpy_low_memory',
         'extra_summary_cols',
-        'kernel_alloc_rule_ri',
+        'ktools_alloc_rule_ri',
         'check_oed',
         'do_disaggregation',
         'verbose'
