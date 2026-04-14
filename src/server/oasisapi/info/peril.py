@@ -3,6 +3,7 @@ __all__ = [
     'PERIL_GROUPS',
 ]
 from ods_tools.oed import OedSchema
+import os
 
 
 def get_peril_info_from_schema(oed_version='latest version'):
@@ -12,7 +13,8 @@ def get_peril_info_from_schema(oed_version='latest version'):
     Args:
         oed_version (str): The version of OedSchema, default to `latest version`.
     '''
-    oed_schema = OedSchema.from_oed_schema_info(oed_version)
+    oed_schema = OedSchema.from_oed_schema_info(
+        oed_schema_info=os.environ.get("OASIS_OED_SCHEMA_INFO", 'latest version'))
 
     peril_info = oed_schema.schema['perils']['info']
     peril_covered = oed_schema.schema['perils']['covered']
