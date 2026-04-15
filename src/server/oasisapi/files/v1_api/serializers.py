@@ -4,7 +4,7 @@ import io
 import os
 from pathlib import Path
 
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_field
 
 from ods_tools.oed.exposure import OedExposure
 
@@ -57,17 +57,17 @@ class MappingFileSerializer(serializers.ModelSerializer):
             'output_validation_file',
         )
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(serializers.CharField)
     def get_file(self, instance: MappingFile):
         request = self.context.get('request')
         return instance.get_absolute_conversion_file_url(request, namespace="v2-files")
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(serializers.CharField)
     def get_input_validation_file(self, instance: MappingFile):
         request = self.context.get('request')
         return instance.get_absolute_input_validation_file_url(request, namespace="v2-files")
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_field(serializers.CharField)
     def get_output_validation_file(self, instance: MappingFile):
         request = self.context.get('request')
         return instance.get_absolute_output_validation_file_url(request, namespace="v2-files")
@@ -99,19 +99,18 @@ class RelatedFileSerializer(serializers.ModelSerializer):
             # 'filehash_md5',
         )
 
-    def __init__(self, *args, content_types=None, parquet_storage=False, field=None, oed_validate=None, **kwargs):
+    def __init__(self, *args, content_types=None, parquet_storage=False, field=None, **kwargs):
         self.content_types = content_types or []
         self.parquet_storage = parquet_storage
         self.oed_field = field
-        self.oed_validate = oed_validate if oed_validate is not None else django_settings.PORTFOLIO_UPLOAD_VALIDATION
         super(RelatedFileSerializer, self).__init__(*args, **kwargs)
 
     def validate(self, attrs):
-        run_validation = self.oed_validate and self.oed_field in EXPOSURE_ARGS
         convert_to_parquet = self.parquet_storage and attrs['file'].content_type == 'text/csv'
 
         # Create dataframe from file upload
-        if run_validation or convert_to_parquet:
+        # Convert 'CSV' upload to 'parquet'
+        if convert_to_parquet:
             try:
                 uploaded_exposure = OedExposure(**{
                     EXPOSURE_ARGS[self.oed_field]: attrs['file'],
@@ -124,14 +123,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
                     'exception': type(e).__name__
                 })
 
-        # Run OED Validation
-        if run_validation:
-            oed_validation_errors = uploaded_exposure.check()
-            if len(oed_validation_errors) > 0:
-                raise ValidationError(detail=[(error['name'], error['msg']) for error in oed_validation_errors])
-
-        # Convert 'CSV' upload to 'parquet'
-        if convert_to_parquet:
             try:
                 f = io.open(attrs['file'].name + '.parquet', 'wb+')
                 exposure_file = getattr(uploaded_exposure, EXPOSURE_ARGS[self.oed_field])
@@ -151,7 +142,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name
         attrs['groups'] = self.context['request'].user.groups.all()
-        attrs['oed_validated'] = self.oed_validate
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):
@@ -217,7 +207,7 @@ class NestedRelatedFileSerializer(serializers.ModelSerializer):
         self.analyses = analyses
         super().__init__(*args, **kwargs)
 
-    @swagger_serializer_method(serializer_or_field=serializers.URLField)
+    @extend_schema_field(serializers.URLField)
     def get_sql(self, instance):
         request = self.context.get('request')
 
