@@ -1,6 +1,29 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.2`_
+ ---------
+* [#1340](https://github.com/OasisLMF/OasisPlatform/pull/1340) - Move from drf-yasg to drf-spectacular 
+* [#1346](https://github.com/OasisLMF/OasisPlatform/pull/1346) - Added Numba JIT warm-up to worker startup
+* [#1347](https://github.com/OasisLMF/OasisPlatform/pull/1347) - Fixed limiting cores on V2 workers
+* [#1351](https://github.com/OasisLMF/OasisPlatform/pull/1351) - adding ods lmf to workflow for unittest
+* [#1352](https://github.com/OasisLMF/OasisPlatform/pull/1352) - removed workaround for exposure run endpoint
+* [#1353](https://github.com/OasisLMF/OasisPlatform/pull/1353) - Update release notes script
+* [#1354](https://github.com/OasisLMF/OasisPlatform/pull/1354) - fix/CVE-2026-25673
+* [#1355](https://github.com/OasisLMF/OasisPlatform/pull/1355) - remove validate option when uploading exposure file
+* [#1356](https://github.com/OasisLMF/OasisPlatform/pull/1356) - Fix stalled CI pipelines in Piwind tests
+* [#1357](https://github.com/OasisLMF/OasisPlatform/pull/1357) - combine remove analysis copying from inputs
+* [#1358](https://github.com/OasisLMF/OasisPlatform/pull/1358) - fix
+* [#1361](https://github.com/OasisLMF/OasisPlatform/pull/1361) - Set logger based on oasislmf log level
+* [#1362](https://github.com/OasisLMF/OasisPlatform/pull/1362) - Remove Debian image from CI workflow
+* [#1363](https://github.com/OasisLMF/OasisPlatform/pull/1363) - Feature/celery ssl support
+* [#1364](https://github.com/OasisLMF/OasisPlatform/pull/1364) - Pin trivy-action to commit not a ref that is mutable
+* [#1365](https://github.com/OasisLMF/OasisPlatform/pull/1365) - CVE udpate for march 2026
+* [#1367](https://github.com/OasisLMF/OasisPlatform/pull/1367) - CI fix, run unittest with oasislmf main
+* [#1372](https://github.com/OasisLMF/OasisPlatform/pull/1372) - auto release branch
+* [#1374](https://github.com/OasisLMF/OasisPlatform/pull/1374) - fix worker build
+.. _`2.5.2`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.1...2.5.2
+
 `2.5.1`_
  ---------
 * [#1344](https://github.com/OasisLMF/OasisPlatform/pull/1344) - revert removal of `latest` docker image tag
