@@ -6,7 +6,7 @@ import os
 from datetime import timedelta
 from logging.handlers import RotatingFileHandler
 
-from chainmap import ChainMap
+from collections import ChainMap
 
 from configparser import ConfigParser
 
