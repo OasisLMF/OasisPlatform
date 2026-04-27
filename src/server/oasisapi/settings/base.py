@@ -286,7 +286,17 @@ EXTERNAL_URI = "https://" + INGRESS_EXTERNAL_HOST + "/"
 OIDC_AUTH_CODE_REDIRECT_URI = EXTERNAL_URI + "api/oidc/callback/"
 
 
-if API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
+if API_AUTH_TYPE == 'disabled':
+    REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = ('rest_framework.permissions.AllowAny',)
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = ()
+    SPECTACULAR_SETTINGS_AUTH = {
+        'SECURITY': [],
+        'SWAGGER_UI_SETTINGS': {
+            'persistAuthorization': False,
+        },
+    }
+
+elif API_AUTH_TYPE in ALLOWED_OIDC_AUTH_PROVIDERS:
     INSTALLED_APPS += (
         'mozilla_django_oidc',
     )
