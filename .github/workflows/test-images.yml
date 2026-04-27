@@ -132,7 +132,7 @@ jobs:
         id: pytest
         run: |
           if [[ -z "${{ inputs.pytest_options }}" ]]; then
-            echo "opts='-k case_1'" >> $GITHUB_OUTPUT
+            echo "opts='-k all_outputs'" >> $GITHUB_OUTPUT
           else
             echo "opts=${{ inputs.pytest_options }}" >> $GITHUB_OUTPUT
           fi
@@ -165,7 +165,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v1'
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-all-checks-v1'
 
   all_checks_v2:
@@ -182,7 +182,7 @@ jobs:
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v2'
       debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml "
+      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
       storage_suffix: '-all-checks-v2'
 
   storage_s3_v1:
