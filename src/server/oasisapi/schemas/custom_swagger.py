@@ -1,7 +1,6 @@
 __all__ = [
     'FILE_RESPONSE',
     'FILE_LIST_RESPONSE',
-    'FILE_UPLOAD_REQUEST',
     'HEALTHCHECK',
     'TOKEN_REFRESH_HEADER',
     'FILE_FORMAT_PARAM',
@@ -18,13 +17,6 @@ FILE_RESPONSE = OpenApiResponse(
     description='File Download',
     response=OpenApiTypes.BINARY,
 )
-
-
-class FileUploadSerializer(serializers.Serializer):
-    file = serializers.FileField()
-
-
-FILE_UPLOAD_REQUEST = {'multipart/form-data': FileUploadSerializer}
 
 FILE_LIST_RESPONSE = OpenApiResponse(
     description='File List',

@@ -31,7 +31,6 @@ from ...portfolios.models import Portfolio
 from ...schemas.serializers import AnalysisSettingsSerializer
 from ...schemas.custom_swagger import (
     FILE_RESPONSE,
-    FILE_UPLOAD_REQUEST,
     RUN_MODE_PARAM,
     SUBTASK_STATUS_PARAM,
     SUBTASK_SLUG_PARAM,
@@ -448,7 +447,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
-    @extend_schema(responses={200: FILE_RESPONSE}, request=FILE_UPLOAD_REQUEST)
+    @extend_schema(responses={200: FILE_RESPONSE})
     @settings_file.mapping.post
     def set_settings_file(self, request, pk=None, version=None):
         """

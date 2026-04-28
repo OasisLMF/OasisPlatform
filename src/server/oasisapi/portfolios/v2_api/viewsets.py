@@ -31,7 +31,7 @@ from ...files.v2_api.views import handle_related_file
 # from ...files.v2_api.views import handle_related_file_sql -- LOT3
 from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
-from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM, FILE_UPLOAD_REQUEST
+from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
 from ...files.models import RelatedFile
 
 
@@ -174,8 +174,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-    @extend_schema(methods=['get', 'delete'], responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
-    @extend_schema(methods=['post'], responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM], request=FILE_UPLOAD_REQUEST)
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def accounts_file(self, request, pk=None, version=None):
         """
@@ -195,8 +194,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = None
         return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
 
-    @extend_schema(methods=['get', 'delete'], responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
-    @extend_schema(methods=['post'], responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM], request=FILE_UPLOAD_REQUEST)
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def location_file(self, request, pk=None, version=None):
         """
@@ -216,8 +214,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = None
         return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
 
-    @extend_schema(methods=['get', 'delete'], responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
-    @extend_schema(methods=['post'], responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM], request=FILE_UPLOAD_REQUEST)
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_info_file(self, request, pk=None, version=None):
         """
@@ -237,8 +234,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = None
         return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
 
-    @extend_schema(methods=['get', 'delete'], responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
-    @extend_schema(methods=['post'], responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM], request=FILE_UPLOAD_REQUEST)
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
     def reinsurance_scope_file(self, request, pk=None, version=None):
         """

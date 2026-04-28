@@ -11,7 +11,7 @@ from ...files.v1_api.views import handle_related_file
 from ...filters import TimeStampedFilter
 from ..models import DataFile
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet
-from ...schemas.custom_swagger import FILE_RESPONSE, FILE_UPLOAD_REQUEST
+from ...schemas.custom_swagger import FILE_RESPONSE
 from .serializers import DataFileSerializer, DataFileListSerializer
 
 
@@ -114,7 +114,7 @@ class DataFileViewset(VerifyGroupAccessModelViewSet):
         file_response = handle_related_file(self.get_object(), 'file', request, None)
         return file_response
 
-    @extend_schema(responses={200: FILE_RESPONSE}, request=FILE_UPLOAD_REQUEST)
+    @extend_schema(responses={200: FILE_RESPONSE})
     @content.mapping.post
     def set_content(self, request, pk=None, version=None):
         """
