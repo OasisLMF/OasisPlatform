@@ -11,11 +11,8 @@ from rest_framework.permissions import BasePermission
 _system_user_cache = None
 
 
-def resolve_user(user):
-    """Return a real User instance, substituting a system superuser for AnonymousUser."""
-    if not isinstance(user, AnonymousUser):
-        return user
-
+def get_or_create_system_user():
+    """Return the first superuser, creating an admin account if none exists."""
     global _system_user_cache
     if _system_user_cache is not None:
         return _system_user_cache
@@ -27,6 +24,13 @@ def resolve_user(user):
         system_user = User.objects.create_superuser(username='admin', email='admin@localhost', password=None)
     _system_user_cache = system_user
     return system_user
+
+
+def resolve_user(user):
+    """Return a real User instance, substituting a system superuser for AnonymousUser."""
+    if not isinstance(user, AnonymousUser):
+        return user
+    return get_or_create_system_user()
 
 
 def get_group_names(groups: list) -> set:

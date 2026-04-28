@@ -141,7 +141,8 @@ def run_register_worker_v2(m_supplier, m_name, m_id, m_settings, m_version, m_co
                 model.activate()
 
         except ObjectDoesNotExist:
-            user = User.objects.get(username='admin')
+            from src.server.oasisapi.permissions.group_auth import get_or_create_system_user
+            user = get_or_create_system_user()
             model = AnalysisModel.objects.create(
                 model_id=m_name,
                 supplier_id=m_supplier,
@@ -190,7 +191,7 @@ def run_register_worker_v2(m_supplier, m_name, m_id, m_settings, m_version, m_co
     # Log unhandled execptions
     except Exception as e:
         logger.exception(str(e))
-        logger.exception(model)
+        logger.exception(locals().get('model'))
         if isinstance(e, S3_ClientError):
             raise e
 
