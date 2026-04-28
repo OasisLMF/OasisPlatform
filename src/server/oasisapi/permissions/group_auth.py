@@ -1,7 +1,7 @@
 from functools import reduce
 
 from django.conf import settings
-from django.contrib.auth.anonymous import AnonymousUser
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.models import Group
 from django.db.models import Q
 from rest_framework import viewsets
