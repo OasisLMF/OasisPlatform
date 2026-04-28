@@ -24,7 +24,7 @@ from ...data_files.v1_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...files.v1_api.views import handle_related_file, handle_json_data
 from ...files.v1_api.serializers import RelatedFileSerializer
-from ...schemas.custom_swagger import FILE_RESPONSE
+from ...schemas.custom_swagger import FILE_RESPONSE, FILE_UPLOAD_REQUEST
 from ...schemas.serializers import AnalysisSettingsSerializer
 
 
@@ -300,7 +300,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'settings_file', request, ['application/json'])
 
-    @extend_schema(responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE}, request=FILE_UPLOAD_REQUEST)
     @settings_file.mapping.post
     def set_settings_file(self, request, pk=None, version=None):
         """
