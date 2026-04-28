@@ -15,6 +15,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.conf import settings as django_settings
 
 from ..models import RelatedFile, MappingFile
+from ...permissions.group_auth import resolve_user
 
 logger = logging.getLogger('root')
 
@@ -134,10 +135,10 @@ class RelatedFileSerializer(serializers.ModelSerializer):
             except Exception as e:
                 raise ValidationError('Failed to covert file to parquet [{}]'.format(e))
 
-        attrs['creator'] = self.context['request'].user
+        attrs['creator'] = resolve_user(self.context['request'].user)
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name
-        attrs['groups'] = self.context['request'].user.groups.all()
+        attrs['groups'] = attrs['creator'].groups.all()
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):
