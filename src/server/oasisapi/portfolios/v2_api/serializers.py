@@ -17,7 +17,7 @@ from ...analyses.v2_api.serializers import AnalysisSerializer
 from ...files.models import RelatedFile
 from ...files.models import file_storage_link
 from ...files.upload import wait_for_blob_copy
-from ...permissions.group_auth import validate_and_update_groups, validate_user_is_owner
+from ...permissions.group_auth import validate_and_update_groups, validate_user_is_owner, resolve_user
 from ...schemas.serializers import (
     InputFileSerializer,
 )
@@ -154,7 +154,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(PortfolioSerializer, self).create(data)
 
     @extend_schema_field(serializers.URLField)
@@ -351,7 +351,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         files_for_removal = list()
-        user = self.context['request'].user
+        user = resolve_user(self.context['request'].user)
         for field in validated_data:
             old_file_name = validated_data[field]
             content_type = self.get_content_type(old_file_name)
@@ -456,7 +456,7 @@ class CreateAnalysisSerializer(AnalysisSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(CreateAnalysisSerializer, self).create(data)
 
 

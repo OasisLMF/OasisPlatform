@@ -18,6 +18,7 @@ from rest_framework.reverse import reverse
 
 from src.server.oasisapi.celery_app_v1 import v1 as celery_app_v1
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
+from src.server.oasisapi.permissions.group_auth import resolve_user
 from src.server.oasisapi.queues.consumers import send_task_status_message, TaskStatusMessageItem, \
     TaskStatusMessageAnalysisItem, build_task_status_message, build_all_queue_status_message
 from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
@@ -109,9 +110,9 @@ class AnalysisQuerySet(models.QuerySet):
         # Create combine analysis
         # need to add portfolio to handle permissions
         dummy_portfolio = Portfolio(name=f"{request.data['name']}-dummy-portfolio",
-                                    creator=request.user)
+                                    creator=resolve_user(request.user))
         dummy_portfolio.save()
-        combine_analysis = Analysis.objects.create(creator=request.user,
+        combine_analysis = Analysis.objects.create(creator=resolve_user(request.user),
                                                    name=request.data['name'],
                                                    portfolio=dummy_portfolio)
 

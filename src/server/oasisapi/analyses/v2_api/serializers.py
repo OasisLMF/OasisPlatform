@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from .....conf import iniconf
 from ..models import Analysis, AnalysisTaskStatus
 from ...files.models import file_storage_link
-from ...permissions.group_auth import verify_and_get_groups, validate_data_files
+from ...permissions.group_auth import verify_and_get_groups, validate_data_files, resolve_user
 
 from ...schemas.serializers import (
     GroupNameSerializer,
@@ -394,7 +394,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
 
-        user = self.context.get('request').user
+        user = resolve_user(self.context.get('request').user)
 
         if not attrs.get('creator') and 'request' in self.context:
             attrs['creator'] = user
@@ -455,7 +455,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
         data = validated_data.copy()
         settings = data.pop('settings', {})
         if 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
 
         instance = super(AnalysisSerializer, self).create(data)
         if settings:
