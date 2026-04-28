@@ -6,6 +6,7 @@ from django.conf import settings
 from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework.decorators import action
+from ...permissions.group_auth import resolve_user
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
@@ -219,7 +220,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
                 {'model': [f"Model pk {obj.model.id}' - Unsupported Operation, 'run_mode' must be 'V1', not '{obj.model.run_mode}'"]}
             )
         else:
-            obj.run(request.user)
+            obj.run(resolve_user(request.user))
             return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @extend_schema(responses={200: AnalysisSerializer})
@@ -257,7 +258,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
                 {'model': [f"Model pk {obj.model.id}' - Unsupported Operation, 'run_mode' must be 'V1', not '{obj.model.run_mode}'"]}
             )
         else:
-            obj.generate_inputs(request.user)
+            obj.generate_inputs(resolve_user(request.user))
             return Response(AnalysisSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @extend_schema(responses={200: AnalysisSerializer})
