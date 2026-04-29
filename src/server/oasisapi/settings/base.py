@@ -381,6 +381,9 @@ SPECTACULAR_SETTINGS = {
     ],
     'SCHEMA_PATH_PREFIX': r'/api/',
     'DEFAULT_GENERATOR_CLASS': 'src.server.oasisapi.schemas.generators.OasisSchemaGenerator',
+    # Generate separate request/response schemas so FileField renders as
+    # format:binary (file picker) in requests rather than a URL string.
+    'COMPONENT_SPLIT_REQUEST': True,
     **SPECTACULAR_SETTINGS_AUTH,
 }
 
