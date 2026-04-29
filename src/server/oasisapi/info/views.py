@@ -36,10 +36,6 @@ class ServerInfoView(views.APIView):
     Return a list of all support OED peril codes in the oasislmf package
     """
 
-    if settings.API_AUTH_TYPE == 'disabled':
-        authentication_classes = []
-        permission_classes = []
-
     @extend_schema(responses={200: SERVER_INFO}, tags=['info'])
     def get(self, request):
         server_version = ""
