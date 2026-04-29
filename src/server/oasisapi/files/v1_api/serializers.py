@@ -83,7 +83,7 @@ class ConvertSerializer(serializers.Serializer):
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 
-    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
+    groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
     mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
 
     class Meta:
@@ -99,6 +99,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
             'conversion_state',
             # 'filehash_md5',
         )
+        read_only_fields = ('conversion_state',)
 
     def __init__(self, *args, content_types=None, parquet_storage=False, field=None, **kwargs):
         self.content_types = content_types or []
@@ -142,7 +143,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['creator'] = resolve_user(self.context['request'].user)
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name
-        attrs['groups'] = self.context['request'].user.groups.all()
+        attrs['groups'] = attrs['creator'].groups.all()
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):
