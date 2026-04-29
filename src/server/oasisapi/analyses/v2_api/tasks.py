@@ -127,7 +127,6 @@ def log_worker_monitor(sender, **k):
 def run_register_worker_v2(m_supplier, m_name, m_id, m_settings, m_version, m_conf):
     logger.info('model_supplier: {}, model_name: {}, model_id: {}'.format(m_supplier, m_name, m_id))
     try:
-        from django.contrib.auth.models import User
         from src.server.oasisapi.analysis_models.models import AnalysisModel
 
         try:
