@@ -95,16 +95,6 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('conversion_state',)
 
-
-class PortfolioRelatedFileSerializer(RelatedFileSerializer):
-    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
-
-    class Meta(RelatedFileSerializer.Meta):
-        fields = RelatedFileSerializer.Meta.fields + (
-            'converted_file',
-            'mapping_file',
-        )
-
     def __init__(self, *args, content_types=None, parquet_storage=False, field=None, **kwargs):
         self.content_types = content_types or []
         self.parquet_storage = parquet_storage
@@ -173,6 +163,16 @@ class PortfolioRelatedFileSerializer(RelatedFileSerializer):
                     f"File extention '{file_extention}' mismatched with request header 'Content-Type': '{mapped_content_type}', should be set to '{extention_mapping.get(file_extention)}'")
 
         return value
+
+
+class PortfolioRelatedFileSerializer(RelatedFileSerializer):
+    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
+
+    class Meta(RelatedFileSerializer.Meta):
+        fields = RelatedFileSerializer.Meta.fields + (
+            'converted_file',
+            'mapping_file',
+        )
 
 
 class FileSQLSerializer(serializers.Serializer):
