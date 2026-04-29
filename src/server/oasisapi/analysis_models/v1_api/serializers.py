@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 from ..models import AnalysisModel, SettingsTemplate
 from ...analyses.models import Analysis
 from ...files.models import file_storage_link
+from ...permissions.group_auth import resolve_user
 
 
 class AnalysisModelSerializer(serializers.ModelSerializer):
@@ -32,7 +33,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = validated_data.copy()
         if 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(AnalysisModelSerializer, self).create(data)
 
     @extend_schema_field(serializers.URLField)
@@ -125,7 +126,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(CreateTemplateSerializer, self).create(data)
 
 

@@ -11,6 +11,7 @@ from rest_framework.reverse import reverse
 
 from ..files.models import RelatedFile
 from ..data_files.models import DataFile
+from ..permissions.group_auth import resolve_user
 
 
 class SoftDeleteManager(models.Manager):
@@ -185,7 +186,7 @@ class AnalysisModel(TimeStampedModel):
 
         # Update model
         if request:
-            self.creator = request.user
+            self.creator = resolve_user(request.user)
             try:
                 # update Data_files
                 file_pks = request.data['data_files']

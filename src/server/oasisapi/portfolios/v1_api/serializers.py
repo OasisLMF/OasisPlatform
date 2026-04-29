@@ -13,6 +13,7 @@ from azure.core.exceptions import ResourceNotFoundError as Blob_ResourceNotFound
 from azure.storage.blob import BlobLeaseClient
 
 from ...analyses.v1_api.serializers import AnalysisSerializer
+from ...permissions.group_auth import resolve_user
 from ...files.models import file_storage_link
 from ...files.models import RelatedFile
 from ...files.upload import wait_for_blob_copy
@@ -134,7 +135,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(PortfolioSerializer, self).create(data)
 
     @extend_schema_field(serializers.URLField)
@@ -344,7 +345,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     file=new_file,
                     filename=fname,
                     content_type=content_type,
-                    creator=self.context['request'].user,
+                    creator=resolve_user(self.context['request'].user),
                     store_as_filename=True,
                 )
                 bucket = default_storage.bucket
@@ -377,7 +378,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     file=File(stored_blob, name=new_file_name),
                     filename=fname,
                     content_type=content_type,
-                    creator=self.context['request'].user,
+                    creator=resolve_user(self.context['request'].user),
                     store_as_filename=True,
                 )
 
@@ -389,7 +390,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
                     file=new_file,
                     filename=fname,
                     content_type=content_type,
-                    creator=self.context['request'].user,
+                    creator=resolve_user(self.context['request'].user),
                     store_as_filename=True,
                 )
 
@@ -428,7 +429,7 @@ class CreateAnalysisSerializer(AnalysisSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(CreateAnalysisSerializer, self).create(data)
 
 
