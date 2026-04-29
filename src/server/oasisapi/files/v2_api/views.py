@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from oasis_data_manager.df_reader.config import get_df_reader
 from oasis_data_manager.df_reader.exceptions import InvalidSQLException
 from ..models import RelatedFile, list_tar_file, extract_file_from_tar
-from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
+from .serializers import RelatedFileSerializer, PortfolioRelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups, resolve_user
 
 from ods_tools.oed.exposure import OedExposure
@@ -93,9 +93,9 @@ def _handle_get_related_file(parent, field, request):
     return response
 
 
-def _handle_post_related_file(parent, field, request, content_types, parquet_storage):
-    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={
-                                       'request': request}, parquet_storage=parquet_storage, field=field)
+def _handle_post_related_file(parent, field, request, content_types, parquet_storage, serializer_class=RelatedFileSerializer):
+    serializer = serializer_class(data=request.data, content_types=content_types, context={
+                                  'request': request}, parquet_storage=parquet_storage, field=field)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 
@@ -110,7 +110,7 @@ def _handle_post_related_file(parent, field, request, content_types, parquet_sto
     parent.save(update_fields=[field])
 
     # Override 'file' return to hide storage details with stored filename
-    response = Response(RelatedFileSerializer(instance=instance, content_types=content_types).data)
+    response = Response(serializer_class(instance=instance, content_types=content_types).data)
     response.data['file'] = instance.file.name
     return response
 
@@ -159,13 +159,13 @@ def _json_read_from_file(parent, field):
         return Response(json.load(f))
 
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False):
+def handle_related_file(parent, field, request, content_types, parquet_storage=False, serializer_class=RelatedFileSerializer):
     method = request.method.lower()
 
     if method == 'get':
         return _handle_get_related_file(parent, field, request)
     elif method == 'post':
-        return _handle_post_related_file(parent, field, request, content_types, parquet_storage)
+        return _handle_post_related_file(parent, field, request, content_types, parquet_storage, serializer_class)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field, request)
 

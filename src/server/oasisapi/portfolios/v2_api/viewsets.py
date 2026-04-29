@@ -26,7 +26,7 @@ from .serializers import (
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
-from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer
+from ...files.v2_api.serializers import PortfolioRelatedFileSerializer, FileSQLSerializer
 from ...files.v2_api.views import handle_related_file
 # from ...files.v2_api.views import handle_related_file_sql -- LOT3
 from ...filters import TimeStampedFilter
@@ -117,10 +117,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             'set_storage_links': PortfolioStorageSerializer,
             'storage_links': PortfolioStorageSerializer,
             'validate': PortfolioValidationSerializer,
-            'accounts_file': RelatedFileSerializer,
-            'location_file': RelatedFileSerializer,
-            'reinsurance_info_file': RelatedFileSerializer,
-            'reinsurance_scope_file': RelatedFileSerializer,
+            'accounts_file': PortfolioRelatedFileSerializer,
+            'location_file': PortfolioRelatedFileSerializer,
+            'reinsurance_info_file': PortfolioRelatedFileSerializer,
+            'reinsurance_scope_file': PortfolioRelatedFileSerializer,
             'file_sql': FileSQLSerializer,
             'exposure_run': ExposureRunSerializer,
             'exposure_transform': ExposureTransformSerializer,
@@ -192,7 +192,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -212,7 +212,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -232,7 +232,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -252,7 +252,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @action(methods=['get', 'post'], detail=True)
     def validate(self, request, pk=None, version=None):

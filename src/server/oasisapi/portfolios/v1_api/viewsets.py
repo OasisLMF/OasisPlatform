@@ -181,7 +181,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -201,7 +201,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -221,7 +221,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -241,7 +241,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @action(methods=['get', 'post'], detail=True)
     def validate(self, request, pk=None, version=None):
