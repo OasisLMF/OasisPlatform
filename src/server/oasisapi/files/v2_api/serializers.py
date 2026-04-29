@@ -81,7 +81,6 @@ class ConvertSerializer(serializers.Serializer):
 class RelatedFileSerializer(serializers.ModelSerializer):
 
     groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
-    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
 
     class Meta:
         ref_name = None
@@ -89,14 +88,22 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         fields = (
             'created',
             'file',
-            'converted_file',
             'filename',
             'groups',
-            'mapping_file',
             'conversion_state',
             # 'filehash_md5',
         )
         read_only_fields = ('conversion_state',)
+
+
+class PortfolioRelatedFileSerializer(RelatedFileSerializer):
+    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
+
+    class Meta(RelatedFileSerializer.Meta):
+        fields = RelatedFileSerializer.Meta.fields + (
+            'converted_file',
+            'mapping_file',
+        )
 
     def __init__(self, *args, content_types=None, parquet_storage=False, field=None, **kwargs):
         self.content_types = content_types or []

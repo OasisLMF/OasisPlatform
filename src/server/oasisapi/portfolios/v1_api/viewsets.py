@@ -15,7 +15,7 @@ from rest_framework.status import HTTP_201_CREATED
 from ...filters import TimeStampedFilter
 from ...analyses.v1_api.serializers import AnalysisSerializer
 from ...files.v1_api.views import handle_related_file
-from ...files.v1_api.serializers import RelatedFileSerializer
+from ...files.v1_api.serializers import PortfolioRelatedFileSerializer
 from ..models import Portfolio, csv_into_currency_conversion_json
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
 from ...schemas.serializers import StorageLinkSerializer
@@ -112,7 +112,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         elif self.action in [
             'accounts_file', 'location_file', 'reinsurance_info_file', 'reinsurance_scope_file',
         ]:
-            return RelatedFileSerializer
+            return PortfolioRelatedFileSerializer
         elif self.action == 'exposure_run':
             return ExposureRunSerializer
         elif self.action == 'currency_conversion_json':
