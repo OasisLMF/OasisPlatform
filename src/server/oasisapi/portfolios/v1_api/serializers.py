@@ -429,7 +429,7 @@ class CreateAnalysisSerializer(AnalysisSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(CreateAnalysisSerializer, self).create(data)
 
 
