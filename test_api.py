@@ -66,6 +66,41 @@ SAMPLE_ACCOUNTS_CSV = textwrap.dedent("""\
 
 SAMPLE_DATA_FILE_CONTENT = b"sample,data\n1,2\n"
 
+SAMPLE_MODEL_SETTINGS = {
+    "version": "3",
+    "model_settings": {
+        "event_set": {
+            "name": "Event Set",
+            "desc": "Piwind Event Set selection",
+            "default": "p",
+            "options": [{"id": "p", "desc": "Probabilistic", "number_of_events": 1447}],
+        },
+        "event_occurrence_id": {
+            "name": "Occurrence Set",
+            "desc": "PiWind Occurrence selection",
+            "default": "lt",
+            "options": [{"id": "lt", "desc": "Long Term"}],
+        },
+    },
+    "lookup_settings": {
+        "supported_perils": [
+            {"id": "WSS", "desc": "Single Peril: Storm Surge", "peril_correlation_group": 1},
+            {"id": "WTC", "desc": "Single Peril: Tropical Cyclone", "peril_correlation_group": 2},
+            {"id": "WW1", "desc": "Group Peril: Windstorm with storm surge"},
+            {"id": "WW2", "desc": "Group Peril: Windstorm w/o storm surge"},
+        ]
+    },
+    "correlation_settings": [
+        {"peril_correlation_group": 1, "damage_correlation_value": "0.7", "hazard_correlation_value": "0.0"},
+        {"peril_correlation_group": 2, "damage_correlation_value": "0.5", "hazard_correlation_value": "0.0"},
+    ],
+    "data_settings": {
+        "damage_group_fields": ["PortNumber", "AccNumber", "LocNumber"],
+        "hazard_group_fields": ["PortNumber", "AccNumber", "LocNumber"],
+    },
+    "model_default_samples": 10,
+}
+
 SAMPLE_ANALYSIS_SETTINGS = {
         "version": "3",
         "analysis_tag": "ALL_outputs_tests",
@@ -369,6 +404,10 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
 
         resp, ms = client.get(f"/api/v2/models/{mid}/settings/")
         record(ctx, "v2_models_settings_retrieve", "GET", f"/api/v2/models/{mid}/settings/", resp, ms, [200, 404], v)
+
+        resp, ms = client.post(f"/api/v2/models/{mid}/settings/", json=SAMPLE_MODEL_SETTINGS)
+        record(ctx, "v2_models_settings_create", "POST", f"/api/v2/models/{mid}/settings/",
+               resp, ms, [200, 201], v, SAMPLE_MODEL_SETTINGS)
 
         resp, ms = client.get(f"/api/v2/models/{mid}/storage_links/")
         record(ctx, "v2_models_storage_links", "GET", f"/api/v2/models/{mid}/storage_links/", resp, ms, [200, 404], v)
