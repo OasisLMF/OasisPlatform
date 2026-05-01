@@ -64,6 +64,17 @@ SAMPLE_ACCOUNTS_CSV = textwrap.dedent("""\
     1,A11111,GBP,Layer1,WW1,2018-01-01,2018-12-31,WW1,1,0.3,5000000,500000,latest version
 """)
 
+SAMPLE_REINSURANCE_INFO_CSV = textwrap.dedent("""\
+    ReinsNumber,ReinsLayerNumber,ReinsName,ReinsPeril,ReinsInceptionDate,ReinsExpiryDate,CededPercent,RiskLimit,RiskAttachment,OccLimit,OccAttachment,PlacedPercent,ReinsCurrency,InuringPriority,ReinsType,RiskLevel,UseReinsDates,OEDVersion
+    1,1,ABC QS,WW1,2018-01-01,2018-12-31,1,0,0,0,0,1,GBP,1,SS,LOC,N,latest version
+""")
+
+SAMPLE_REINSURANCE_SCOPE_CSV = textwrap.dedent("""\
+    ReinsNumber,PortNumber,AccNumber,PolNumber,LocGroup,LocNumber,CedantName,ProducerName,LOB,CountryCode,ReinsTag,CededPercent,OEDVersion
+    1,1,A11111,,,10002082047,,,,,,0.1,latest version
+    1,1,A11111,,,10002082048,,,,,,0.2,latest version
+""")
+
 SAMPLE_DATA_FILE_CONTENT = b"sample,data\n1,2\n"
 
 SAMPLE_MODEL_SETTINGS = {
@@ -510,9 +521,24 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
         record(ctx, "v2_portfolios_validate_retrieve", "GET",
                f"/api/v2/portfolios/{pid}/validate/", resp, ms, [200], v)
 
-        # Reinsurance / currency files — not uploaded, so 404 is expected
-        for file_ep in ["reinsurance_info_file", "reinsurance_scope_file", "currency_conversion_json",
-                        "reporting_currency"]:
+        # Reinsurance files
+        for file_ep, filename, content in [
+            ("reinsurance_info_file", "reins_info.csv", SAMPLE_REINSURANCE_INFO_CSV),
+            ("reinsurance_scope_file", "reins_scope.csv", SAMPLE_REINSURANCE_SCOPE_CSV),
+        ]:
+            resp, ms = client.post(
+                f"/api/v2/portfolios/{pid}/{file_ep}/",
+                files={"file": (filename, io.BytesIO(content.encode()), "text/csv")},
+            )
+            record(ctx, f"v2_portfolios_{file_ep}_create", "POST",
+                   f"/api/v2/portfolios/{pid}/{file_ep}/", resp, ms, [200, 201], v)
+
+            resp, ms = client.get(f"/api/v2/portfolios/{pid}/{file_ep}/")
+            record(ctx, f"v2_portfolios_{file_ep}_retrieve", "GET",
+                   f"/api/v2/portfolios/{pid}/{file_ep}/", resp, ms, [200], v)
+
+        # Currency / reporting files — not uploaded, 404 expected
+        for file_ep in ["currency_conversion_json", "reporting_currency"]:
             resp, ms = client.get(f"/api/v2/portfolios/{pid}/{file_ep}/")
             record(ctx, f"v2_portfolios_{file_ep}_retrieve", "GET",
                    f"/api/v2/portfolios/{pid}/{file_ep}/", resp, ms, [200, 404], v)
