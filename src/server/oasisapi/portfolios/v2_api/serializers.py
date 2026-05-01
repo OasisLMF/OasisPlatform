@@ -17,7 +17,7 @@ from ...analyses.v2_api.serializers import AnalysisSerializer
 from ...files.models import RelatedFile
 from ...files.models import file_storage_link
 from ...files.upload import wait_for_blob_copy
-from ...permissions.group_auth import validate_and_update_groups, validate_user_is_owner
+from ...permissions.group_auth import validate_and_update_groups, validate_user_is_owner, resolve_user
 from ...schemas.serializers import (
     InputFileSerializer,
 )
@@ -154,7 +154,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(PortfolioSerializer, self).create(data)
 
     @extend_schema_field(serializers.URLField)
@@ -351,7 +351,7 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         files_for_removal = list()
-        user = self.context['request'].user
+        user = resolve_user(self.context['request'].user)
         for field in validated_data:
             old_file_name = validated_data[field]
             content_type = self.get_content_type(old_file_name)
@@ -456,7 +456,7 @@ class CreateAnalysisSerializer(AnalysisSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(CreateAnalysisSerializer, self).create(data)
 
 
@@ -498,7 +498,7 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
 
 class ExposureRunParamsSerializer(serializers.Serializer):
     """ The expected structure for the `params` field """
-    ktools_alloc_rule_il = serializers.IntegerField(default=2, help_text="Set the fmcalc allocation rule used in direct insured loss")
+    kernel_alloc_rule_il = serializers.IntegerField(default=2, help_text="Set the fmcalc allocation rule used in direct insured loss")
     model_perils_covered = serializers.ListField(child=serializers.CharField(), default=['AA1'], help_text="List of perils covered by the model")
     loss_factor = serializers.ListField(child=serializers.FloatField(), default=[1.0], help_text="Loss factor")
     supported_oed_coverage_types = serializers.ListField(
@@ -513,7 +513,7 @@ class ExposureRunParamsSerializer(serializers.Serializer):
         default=False, help_text="Use memory map instead of RAM to store loss array (may decrease performance but reduce RAM usage drastically)"
     )
     extra_summary_cols = serializers.ListField(child=serializers.CharField(), default=[], help_text="Extra columns to include in the summary")
-    ktools_alloc_rule_ri = serializers.IntegerField(default=3, help_text="Set the fmcalc allocation rule used in reinsurance")
+    kernel_alloc_rule_ri = serializers.IntegerField(default=3, help_text="Set the fmcalc allocation rule used in reinsurance")
     check_oed = serializers.BooleanField(default=True, help_text="If True, check input OED files")
     do_disaggregation = serializers.BooleanField(default=True, help_text="If True, run the Oasis disaggregation")
     verbose = serializers.BooleanField(default=False, help_text="Use verbose logging")

@@ -1,6 +1,18 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.3`_
+ ---------
+* [#1379](https://github.com/OasisLMF/OasisPlatform/pull/1379) - fix: chainmap import
+* [#1380](https://github.com/OasisLMF/OasisPlatform/pull/1380) - Ktools options -> kernel options
+* [#1381](https://github.com/OasisLMF/OasisPlatform/pull/1381) - enhancement/perils from OED
+* [#1382](https://github.com/OasisLMF/OasisPlatform/pull/1382) - Fix CVE-2026-33034 CVE-2026-3902 
+* [#1383](https://github.com/OasisLMF/OasisPlatform/pull/1383) - Fix resource monitor for V2 worker runs
+* [#1387](https://github.com/OasisLMF/OasisPlatform/pull/1387) - Added option to disable API authorization
+* [#1388](https://github.com/OasisLMF/OasisPlatform/pull/1388) - Fix swagger file picker
+* [#1392](https://github.com/OasisLMF/OasisPlatform/pull/1392) - Fix for 403 when calling analysis-task-statuses with no auth
+.. _`2.5.3`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.2...2.5.3
+
 `2.5.2`_
  ---------
 * [#1340](https://github.com/OasisLMF/OasisPlatform/pull/1340) - Move from drf-yasg to drf-spectacular 

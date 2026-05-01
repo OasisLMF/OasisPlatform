@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from ..models import Analysis
+from ...permissions.group_auth import resolve_user
 from ...files.models import file_storage_link
 
 
@@ -214,7 +215,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if not attrs.get('creator') and 'request' in self.context:
-            attrs['creator'] = self.context.get('request').user
+            attrs['creator'] = resolve_user(self.context.get('request').user)
 
         # Check that portfilio has a location file
         if attrs.get('portfolio'):

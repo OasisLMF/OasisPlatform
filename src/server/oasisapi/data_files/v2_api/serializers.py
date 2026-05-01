@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ..models import DataFile
-from ...permissions.group_auth import validate_and_update_groups
+from ...permissions.group_auth import validate_and_update_groups, resolve_user
 
 
 class DataFileListSerializer(serializers.Serializer):
@@ -89,5 +89,5 @@ class DataFileSerializer(serializers.ModelSerializer):
         data = dict(validated_data)
         # file_rsp = handle_related_file(self.get_object(), 'file', request, None)
         if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(DataFileSerializer, self).create(data)

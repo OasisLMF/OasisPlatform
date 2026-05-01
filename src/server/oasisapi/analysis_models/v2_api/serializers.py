@@ -8,7 +8,7 @@ from ..models import AnalysisModel, SettingsTemplate
 from ...analyses.models import Analysis
 
 from ..models import AnalysisModel, ModelScalingOptions, ModelChunkingOptions
-from ...permissions.group_auth import validate_and_update_groups, validate_data_files
+from ...permissions.group_auth import validate_and_update_groups, validate_data_files, resolve_user
 
 from ...schemas.serializers import ModelParametersSerializer
 from django.core.files import File
@@ -147,7 +147,7 @@ class AnalysisModelSerializer(serializers.ModelSerializer):
         data = validated_data.copy()
         settings = data.pop('settings', {})
         if 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
 
         instance = super(AnalysisModelSerializer, self).create(data)
         if settings:
@@ -238,7 +238,7 @@ class CreateTemplateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = dict(validated_data)
         if not data.get('creator') and 'request' in self.context:
-            data['creator'] = self.context.get('request').user
+            data['creator'] = resolve_user(self.context.get('request').user)
         return super(CreateTemplateSerializer, self).create(data)
 
 

@@ -26,7 +26,7 @@ from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer
 from ...files.v1_api.views import handle_related_file, handle_json_data, handle_related_file_sql
 from ...files.v2_api.views import handle_get_related_file_tar
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
-from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups
+from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups, resolve_user
 from ...portfolios.models import Portfolio
 from ...schemas.serializers import AnalysisSettingsSerializer
 from ...schemas.custom_swagger import (
@@ -312,7 +312,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_model_scaling(obj.model)
 
         run_mode_override = request.GET.get('run_mode_override', None)
-        obj.run(request.user, run_mode_override=run_mode_override)
+        obj.run(resolve_user(request.user), run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @extend_schema(
@@ -357,7 +357,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         obj.validate_standard_analysis()
         verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
         verify_model_scaling(obj.model)
-        obj.generate_and_run(request.user)
+        obj.generate_and_run(resolve_user(request.user))
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @extend_schema(responses={200: AnalysisListSerializer})
@@ -401,7 +401,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         verify_model_scaling(obj.model)
 
         run_mode_override = request.GET.get('run_mode_override', None)
-        obj.generate_inputs(request.user, run_mode_override=run_mode_override)
+        obj.generate_inputs(resolve_user(request.user), run_mode_override=run_mode_override)
         return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
 
     @extend_schema(responses={200: AnalysisListSerializer})
@@ -730,8 +730,13 @@ class AnalysisSettingsView(VerifyGroupAccessModelViewSet):
 class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
     queryset = AnalysisTaskStatus.objects.all()
     serializer_class = AnalysisTaskStatusSerializer
-    permission_classes = [IsAdminUser]
     filterset_class = AnalysisTaskFilter
+
+    def get_permissions(self):
+        from django.conf import settings
+        if getattr(settings, 'API_AUTH_TYPE', 'simple') == 'disabled':
+            return [permission() for permission in api_settings.DEFAULT_PERMISSION_CLASSES]
+        return [IsAdminUser()]
 
     @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)

@@ -12,7 +12,7 @@ from oasis_data_manager.df_reader.config import get_df_reader
 from oasis_data_manager.df_reader.exceptions import InvalidSQLException
 from ..models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
-from ...permissions.group_auth import verify_user_is_in_obj_groups
+from ...permissions.group_auth import verify_user_is_in_obj_groups, resolve_user
 
 from ods_tools.oed.exposure import OedExposure
 
@@ -135,7 +135,7 @@ def _json_write_to_file(parent, field, request, serializer):
             file=File(tmp_file, name=json_serializer.filename),
             filename=json_serializer.filename,
             content_type='application/json',
-            creator=request.user,
+            creator=resolve_user(request.user),
         )
 
     # Check for exisiting file and delete
