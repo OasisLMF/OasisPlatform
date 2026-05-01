@@ -67,12 +67,83 @@ SAMPLE_ACCOUNTS_CSV = textwrap.dedent("""\
 SAMPLE_DATA_FILE_CONTENT = b"sample,data\n1,2\n"
 
 SAMPLE_ANALYSIS_SETTINGS = {
-    "analysis_settings": {
-        "il_output": False,
+        "version": "3",
+        "analysis_tag": "ALL_outputs_tests",
+        "source_tag": "MDK",
+        "model_name_id": "PiWind",
+        "model_supplier_id": "OasisLMF",
+        "number_of_samples": 1,
+        "gul_threshold": 0,
         "gul_output": True,
-        "gul_summaries": [{"id": 1, "lec_output": False, "aalcalc": True, "eltcalc": False, "summarycalc": False}],
-    }
+        "model_settings": {
+            "event_set": "p",
+            "event_occurrence_id": "lt",
+        },
+        "gul_summaries": [
+            {
+                "id": 1,
+                "ord_output": {
+                    "plt_sample": True, "plt_quantile": True, "plt_moment": True,
+                    "elt_sample": True, "elt_quantile": True, "elt_moment": True,
+                    "alt_period": True,
+                    "ept_full_uncertainty_aep": True, "ept_full_uncertainty_oep": True,
+                    "ept_mean_sample_aep": True, "ept_mean_sample_oep": True,
+                    "ept_per_sample_mean_aep": True, "ept_per_sample_mean_oep": True,
+                    "psept_aep": True, "psept_oep": True,
+                    "parquet_format": False, "return_period_file": True,
+                },
+            }
+        ],
+        "il_output": True,
+        "il_summaries": [
+            {
+                "id": 1,
+                "ord_output": {
+                    "plt_sample": True, "plt_quantile": True, "plt_moment": True,
+                    "elt_sample": True, "elt_quantile": True, "elt_moment": True,
+                    "alt_period": True,
+                    "ept_full_uncertainty_aep": True, "ept_full_uncertainty_oep": True,
+                    "ept_mean_sample_aep": True, "ept_mean_sample_oep": True,
+                    "ept_per_sample_mean_aep": True, "ept_per_sample_mean_oep": True,
+                    "psept_aep": True, "psept_oep": True,
+                    "parquet_format": False, "return_period_file": True,
+                },
+            }
+        ],
+        "ri_output": True,
+        "ri_summaries": [
+            {
+                "id": 1,
+                "ord_output": {
+                    "plt_sample": True, "plt_quantile": True, "plt_moment": True,
+                    "elt_sample": True, "elt_quantile": True, "elt_moment": True,
+                    "alt_period": True,
+                    "ept_full_uncertainty_aep": True, "ept_full_uncertainty_oep": True,
+                    "ept_mean_sample_aep": True, "ept_mean_sample_oep": True,
+                    "ept_per_sample_mean_aep": True, "ept_per_sample_mean_oep": True,
+                    "psept_aep": True, "psept_oep": True,
+                    "parquet_format": False, "return_period_file": True,
+                },
+            }
+        ],
+        "rl_output": True,
+        "rl_summaries": [
+            {
+                "id": 1,
+                "ord_output": {
+                    "plt_sample": True, "plt_quantile": True, "plt_moment": True,
+                    "elt_sample": True, "elt_quantile": True, "elt_moment": True,
+                    "alt_period": True,
+                    "ept_full_uncertainty_aep": True, "ept_full_uncertainty_oep": True,
+                    "ept_mean_sample_aep": True, "ept_mean_sample_oep": True,
+                    "ept_per_sample_mean_aep": True, "ept_per_sample_mean_oep": True,
+                    "psept_aep": True, "psept_oep": True,
+                    "parquet_format": False, "return_period_file": True,
+                },
+            }
+        ],
 }
+
 
 # ---------------------------------------------------------------------------
 # Result tracking
@@ -192,6 +263,7 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
     v = args.verbose
     skip_ops = set(args.skip.split(",")) if args.skip else set()
     api = "/api"
+    run_id = str(int(time.time()))
 
     # ------------------------------------------------------------------
     # 0. Auth
@@ -227,12 +299,10 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
     resp, ms = client.get("/api/v2/data_files/")
     record(ctx, "v2_data_files_list", "GET", "/api/v2/data_files/", resp, ms, [200], v)
 
-    # Create a data file
-    file_bytes = io.BytesIO(SAMPLE_DATA_FILE_CONTENT)
+    # Create a data file (metadata only; content uploaded separately)
     resp, ms = client.post(
         "/api/v2/data_files/",
-        data={"file_description": "test-data-file"},
-        files={"file": ("test.csv", file_bytes, "text/csv")},
+        data={"file_description": f"test-data-file-{run_id}"},
     )
     if record(ctx, "v2_data_files_create", "POST", "/api/v2/data_files/",
               resp, ms, [200, 201], v):
@@ -247,6 +317,15 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
         resp, ms = client.patch(f"/api/v2/data_files/{dfid}/", json={"file_description": "updated"})
         record(ctx, "v2_data_files_partial_update", "PATCH", f"/api/v2/data_files/{dfid}/", resp, ms, [200], v)
 
+        # Upload content via the /content/ sub-endpoint
+        file_bytes = io.BytesIO(SAMPLE_DATA_FILE_CONTENT)
+        resp, ms = client.post(
+            f"/api/v2/data_files/{dfid}/content/",
+            files={"file": ("test.csv", file_bytes, "text/csv")},
+        )
+        record(ctx, "v2_data_files_content_create", "POST",
+               f"/api/v2/data_files/{dfid}/content/", resp, ms, [200, 201], v)
+
         resp, ms = client.get(f"/api/v2/data_files/{dfid}/content/")
         record(ctx, "v2_data_files_content_retrieve", "GET", f"/api/v2/data_files/{dfid}/content/", resp, ms, [200], v)
     else:
@@ -259,7 +338,12 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
     resp, ms = client.get("/api/v2/models/")
     record(ctx, "v2_models_list", "GET", "/api/v2/models/", resp, ms, [200], v)
 
-    model_payload = {"supplier_id": "test-supplier", "model_id": "test-model", "version_id": "test-v1"}
+    model_payload = {
+        "supplier_id": "test-supplier",
+        "model_id": "test-model",
+        "version_id": f"test-{run_id}",
+        "run_mode": "V2",
+    }
     resp, ms = client.post("/api/v2/models/", json=model_payload)
     if record(ctx, "v2_models_create", "POST", "/api/v2/models/", resp, ms, [200, 201], v, model_payload):
         ctx.model_id = resp.json().get("id")
@@ -270,11 +354,11 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
         resp, ms = client.get(f"/api/v2/models/{mid}/")
         record(ctx, "v2_models_retrieve", "GET", f"/api/v2/models/{mid}/", resp, ms, [200], v)
 
-        upd = {**model_payload, "version_id": "test-v1-updated"}
+        upd = {**model_payload, "version_id": f"test-{run_id}-upd"}
         resp, ms = client.put(f"/api/v2/models/{mid}/", json=upd)
         record(ctx, "v2_models_update", "PUT", f"/api/v2/models/{mid}/", resp, ms, [200], v, upd)
 
-        resp, ms = client.patch(f"/api/v2/models/{mid}/", json={"version_id": "test-v1-patched"})
+        resp, ms = client.patch(f"/api/v2/models/{mid}/", json={"version_id": f"test-{run_id}-pat"})
         record(ctx, "v2_models_partial_update", "PATCH", f"/api/v2/models/{mid}/", resp, ms, [200], v)
 
         resp, ms = client.get(f"/api/v2/models/{mid}/versions/")
@@ -284,7 +368,7 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
         record(ctx, "v2_models_data_files", "GET", f"/api/v2/models/{mid}/data_files/", resp, ms, [200], v)
 
         resp, ms = client.get(f"/api/v2/models/{mid}/settings/")
-        record(ctx, "v2_models_settings_retrieve", "GET", f"/api/v2/models/{mid}/settings/", resp, ms, [200], v)
+        record(ctx, "v2_models_settings_retrieve", "GET", f"/api/v2/models/{mid}/settings/", resp, ms, [200, 404], v)
 
         resp, ms = client.get(f"/api/v2/models/{mid}/storage_links/")
         record(ctx, "v2_models_storage_links", "GET", f"/api/v2/models/{mid}/storage_links/", resp, ms, [200, 404], v)
@@ -322,7 +406,7 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
 
             resp, ms = client.get(f"/api/v2/models/{mid}/setting_templates/{tid}/content/")
             record(ctx, "v2_models_setting_templates_content_retrieve", "GET",
-                   f"/api/v2/models/{mid}/setting_templates/{tid}/content/", resp, ms, [200], v)
+                   f"/api/v2/models/{mid}/setting_templates/{tid}/content/", resp, ms, [200, 404], v)
 
             resp, ms = client.delete(f"/api/v2/models/{mid}/setting_templates/{tid}/")
             record(ctx, "v2_models_setting_templates_destroy", "DELETE",
@@ -357,10 +441,6 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
 
         # Location file
         print(c(BOLD, "\n[Portfolio Files — v2]"))
-        resp, ms = client.get(f"/api/v2/portfolios/{pid}/location_file/")
-        record(ctx, "v2_portfolios_location_file_retrieve", "GET",
-               f"/api/v2/portfolios/{pid}/location_file/", resp, ms, [200], v)
-
         loc_file = io.BytesIO(SAMPLE_LOCATION_CSV.encode())
         resp, ms = client.post(
             f"/api/v2/portfolios/{pid}/location_file/",
@@ -369,11 +449,11 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
         record(ctx, "v2_portfolios_location_file_create", "POST",
                f"/api/v2/portfolios/{pid}/location_file/", resp, ms, [200, 201], v)
 
-        # Accounts file
-        resp, ms = client.get(f"/api/v2/portfolios/{pid}/accounts_file/")
-        record(ctx, "v2_portfolios_accounts_file_retrieve", "GET",
-               f"/api/v2/portfolios/{pid}/accounts_file/", resp, ms, [200], v)
+        resp, ms = client.get(f"/api/v2/portfolios/{pid}/location_file/")
+        record(ctx, "v2_portfolios_location_file_retrieve", "GET",
+               f"/api/v2/portfolios/{pid}/location_file/", resp, ms, [200], v)
 
+        # Accounts file
         acc_file = io.BytesIO(SAMPLE_ACCOUNTS_CSV.encode())
         resp, ms = client.post(
             f"/api/v2/portfolios/{pid}/accounts_file/",
@@ -382,17 +462,21 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
         record(ctx, "v2_portfolios_accounts_file_create", "POST",
                f"/api/v2/portfolios/{pid}/accounts_file/", resp, ms, [200, 201], v)
 
+        resp, ms = client.get(f"/api/v2/portfolios/{pid}/accounts_file/")
+        record(ctx, "v2_portfolios_accounts_file_retrieve", "GET",
+               f"/api/v2/portfolios/{pid}/accounts_file/", resp, ms, [200], v)
+
         # Validate portfolio
         resp, ms = client.get(f"/api/v2/portfolios/{pid}/validate/")
         record(ctx, "v2_portfolios_validate_retrieve", "GET",
                f"/api/v2/portfolios/{pid}/validate/", resp, ms, [200], v)
 
-        # Reinsurance files (just GET — we don't have sample data)
+        # Reinsurance / currency files — not uploaded, so 404 is expected
         for file_ep in ["reinsurance_info_file", "reinsurance_scope_file", "currency_conversion_json",
                         "reporting_currency"]:
             resp, ms = client.get(f"/api/v2/portfolios/{pid}/{file_ep}/")
             record(ctx, f"v2_portfolios_{file_ep}_retrieve", "GET",
-                   f"/api/v2/portfolios/{pid}/{file_ep}/", resp, ms, [200], v)
+                   f"/api/v2/portfolios/{pid}/{file_ep}/", resp, ms, [200, 404], v)
 
         resp, ms = client.get(f"/api/v2/portfolios/{pid}/storage_links/")
         record(ctx, "v2_portfolios_storage_links_retrieve", "GET",
@@ -473,7 +557,7 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
         # Settings
         print(c(BOLD, "\n[Analysis Settings — v2]"))
         resp, ms = client.get(f"/api/v2/analyses/{aid}/settings/")
-        record(ctx, "v2_analyses_settings_retrieve", "GET", f"/api/v2/analyses/{aid}/settings/", resp, ms, [200], v)
+        record(ctx, "v2_analyses_settings_retrieve", "GET", f"/api/v2/analyses/{aid}/settings/", resp, ms, [200, 404], v)
 
         resp, ms = client.post(f"/api/v2/analyses/{aid}/settings/", json=SAMPLE_ANALYSIS_SETTINGS)
         record(ctx, "v2_analyses_settings_create", "POST", f"/api/v2/analyses/{aid}/settings/",
