@@ -312,18 +312,27 @@ def run_tests(client: APIClient, ctx: TestContext, args: argparse.Namespace,
     run_id = str(int(time.time()))
 
     # ------------------------------------------------------------------
-    # 0. Auth
+    # 0. Auth — probe server_info without a token to detect auth-disabled mode
     # ------------------------------------------------------------------
-    print(c(BOLD, "\n[Auth]"))
-    creds = {"username": args.username, "password": args.password}
-    resp, ms = client.post(f"{api}/access_token/", json=creds)
-    if record(ctx, "access_token_create", "POST", f"{api}/access_token/",
-              resp, ms, [200], v, creds):
-        ctx.token = resp.json().get("access_token")
-        client.set_token(ctx.token)
+    print(c(BOLD, "\n[Auth probe]"))
+    probe_resp, probe_ms = client.get(f"{api}/server_info/")
+    auth_disabled = probe_resp.status_code == 200
+
+    if auth_disabled:
+        print(f"  {c(YELLOW, 'NOTE')}  server_info returned 200 without a token — "
+              f"authentication is disabled, proceeding without credentials")
     else:
-        print(c(RED, "\nAuthentication failed — cannot continue."))
-        return
+        print(f"  {c(DIM, 'INFO')}  server_info returned {probe_resp.status_code} — "
+              f"authentication is enabled, logging in")
+        creds = {"username": args.username, "password": args.password}
+        resp, ms = client.post(f"{api}/access_token/", json=creds)
+        if record(ctx, "access_token_create", "POST", f"{api}/access_token/",
+                  resp, ms, [200], v, creds):
+            ctx.token = resp.json().get("access_token")
+            client.set_token(ctx.token)
+        else:
+            print(c(RED, "\nAuthentication failed — cannot continue."))
+            return
 
     # ------------------------------------------------------------------
     # 1. Read-only info endpoints
