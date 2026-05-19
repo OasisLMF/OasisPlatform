@@ -2105,11 +2105,10 @@ class ResetUrlMixin:
             reload(sys.modules[django_settings.ROOT_URLCONF])
         clear_url_caches()
 
+# Tests for output_file_list and output_file_sql removed along with those endpoints.
+# output_file_list is superseded by output_file_tar_list.
+# output_file_sql needs reimplementing against the tar file — see viewsets.py TODO.
 
-@pytest.mark.skip(reason="LOT3 DISABLE")
-@override_settings(DEFAULT_READER_ENGINE='oasis_data_manager.df_reader.reader.OasisPandasReader')
-class AnalysisOutputFileListSQLApiDefaultReader(ResetUrlMixin, WebTestMixin, TestCase):
-    def test_endpoint_disabled___raises_no_reverse_match(self):
         user = fake_user()
         analysis = fake_analysis()
 

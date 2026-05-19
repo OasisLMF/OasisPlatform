@@ -22,8 +22,8 @@ from ...analysis_models.models import AnalysisModel
 from ...analysis_models.v2_api.serializers import ModelChunkingConfigSerializer
 from ...data_files.v2_api.serializers import DataFileSerializer
 from ...decorators import requires_sql_reader
-from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer, NestedRelatedFileSerializer
-from ...files.v1_api.views import handle_related_file, handle_json_data, handle_related_file_sql
+from ...files.v2_api.serializers import RelatedFileSerializer
+from ...files.v1_api.views import handle_related_file, handle_json_data
 from ...files.v2_api.views import handle_get_related_file_tar
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet, verify_user_is_in_obj_groups, resolve_user
@@ -283,8 +283,6 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
             return AnalysisStorageSerializer
         elif self.action in self.file_action_types_with_settings_file:
             return RelatedFileSerializer
-        elif self.action in ["output_file_sql"]:
-            return FileSQLSerializer
         elif self.action in ['chunking_configuration']:
             return ModelChunkingConfigSerializer
         else:
@@ -588,30 +586,19 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_get_related_file_tar(self.get_object(), 'output_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @requires_sql_reader
-    @extend_schema(responses={200: NestedRelatedFileSerializer})
-    @action(methods=['get'], detail=True)
-    def output_file_list(self, request, *args, **kwargs):
-        """
-        get:
-        Gets the portfolios `output_file` as a list of raw files, which can have SQL applied.
-        """
-        serializer = NestedRelatedFileSerializer(self.get_object().raw_output_files.all(), analyses=self.get_object(), many=True)
-        return Response(serializer.data)
-
-    @requires_sql_reader
-    @extend_schema(responses={200: FILE_RESPONSE})
-    @action(methods=['post'], url_path=r'output_file_sql/(?P<file_pk>\d+)', detail=True)
-    def output_file_sql(self, request, *args, file_pk=None, **kwargs):
-        """
-        get:
-        Gets the portfolios `output_file` contents, with applied sql SQL
-        """
-        serializer = self.get_serializer(self.get_object(), data=request.data)
-        serializer.is_valid(raise_exception=True)
-        sql = serializer.validated_data.get("sql")
-
-        return handle_related_file_sql(self.get_object(), "raw_output_files", request, sql, file_pk)
+    # TODO: refactor output_file_sql to extract files directly from the output tar
+    # (output_file_list is covered by output_file_tar_list; output_file_sql needs
+    # reimplementing to extract individual CSVs from the tar on demand rather than
+    # reading from the removed raw_output_files M2M field)
+    #
+    # @requires_sql_reader
+    # @extend_schema(responses={200: FILE_RESPONSE})
+    # @action(methods=['post'], url_path=r'output_file_sql/(?P<file_pk>\d+)', detail=True)
+    # def output_file_sql(self, request, *args, file_pk=None, **kwargs):
+    #     serializer = self.get_serializer(self.get_object(), data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     sql = serializer.validated_data.get("sql")
+    #     return handle_related_file_sql(self.get_object(), "raw_output_files", request, sql, file_pk)
 
     @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)
