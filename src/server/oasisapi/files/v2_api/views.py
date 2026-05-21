@@ -209,4 +209,3 @@ def handle_get_related_file_tar(parent, field, request, content_types):
         response = StreamingHttpResponse(output_buffer, content_type=content_type)
         response['Content-Disposition'] = f'attachment; filename="{os.path.basename(filename)}"'
         return response
-

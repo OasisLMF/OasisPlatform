@@ -358,4 +358,3 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
                 raise Http404()
         instance.save()
         return Response({"reporting_currency": instance.reporting_currency})
-

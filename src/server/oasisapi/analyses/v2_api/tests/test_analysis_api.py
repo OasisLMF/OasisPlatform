@@ -2104,4 +2104,3 @@ class ResetUrlMixin:
         if django_settings.ROOT_URLCONF in sys.modules:
             reload(sys.modules[django_settings.ROOT_URLCONF])
         clear_url_caches()
-

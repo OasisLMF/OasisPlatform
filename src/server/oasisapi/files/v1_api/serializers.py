@@ -169,4 +169,3 @@ class RelatedFileSerializer(serializers.ModelSerializer):
                     f"File extention '{file_extention}' mismatched with request header 'Content-Type': '{mapped_content_type}', should be set to '{extention_mapping.get(file_extention)}'")
 
         return value
-
