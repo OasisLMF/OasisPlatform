@@ -5,7 +5,6 @@ from tempfile import TemporaryFile
 from django.core.files import File
 from django.http import StreamingHttpResponse, Http404
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
 from ..models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS

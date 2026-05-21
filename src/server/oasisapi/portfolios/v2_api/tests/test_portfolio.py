@@ -11,7 +11,6 @@ from django.core.files.base import ContentFile
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTestMixin
-from django.conf import settings as django_settings
 from hypothesis import given, settings
 from hypothesis.extra.django import TestCase
 from hypothesis.strategies import text, binary, sampled_from
