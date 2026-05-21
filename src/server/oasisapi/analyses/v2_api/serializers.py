@@ -99,7 +99,6 @@ class AnalysisListSerializer(serializers.Serializer):
     # Groups - inherited from portfolio
     groups = serializers.SerializerMethodField(read_only=True)
 
-    # check this for multiple SQL calls with the 'list' call
     analysis_chunks = serializers.IntegerField(read_only=True)
     lookup_chunks = serializers.IntegerField(read_only=True)
     sub_task_count = serializers.SerializerMethodField(read_only=True)
