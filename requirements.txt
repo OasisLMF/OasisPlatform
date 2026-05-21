@@ -619,7 +619,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==25.5.0
+twisted[tls]==26.4.0
     # via daphne
 txaio==25.12.2
     # via autobahn
@@ -645,7 +645,7 @@ tzlocal==5.3.1
     # via celery
 uritemplate==4.2.0
     # via drf-spectacular
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in
