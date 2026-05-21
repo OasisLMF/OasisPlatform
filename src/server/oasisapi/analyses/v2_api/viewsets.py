@@ -730,8 +730,13 @@ class AnalysisSettingsView(VerifyGroupAccessModelViewSet):
 class AnalysisTaskStatusViewSet(viewsets.ModelViewSet):
     queryset = AnalysisTaskStatus.objects.all()
     serializer_class = AnalysisTaskStatusSerializer
-    permission_classes = [IsAdminUser]
     filterset_class = AnalysisTaskFilter
+
+    def get_permissions(self):
+        from django.conf import settings
+        if getattr(settings, 'API_AUTH_TYPE', 'simple') == 'disabled':
+            return [permission() for permission in api_settings.DEFAULT_PERMISSION_CLASSES]
+        return [IsAdminUser()]
 
     @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get', 'delete'], detail=True)

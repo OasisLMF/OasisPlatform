@@ -99,6 +99,8 @@ cryptography==45.0.6
     #   pyjwt
 cycler==0.12.1
     # via matplotlib
+cython==3.2.4
+    # via oasislmf
 fasteners==0.20
     # via -r requirements-worker.in
 fastparquet==2024.11.0
@@ -201,9 +203,9 @@ oasis-data-manager==0.2.1
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.5.2
+oasislmf[extra]==2.5.3
     # via -r requirements-worker.in
-ods-tools==5.0.3
+ods-tools==5.0.4
     # via oasislmf
 packaging==25.0
     # via
@@ -347,7 +349,7 @@ tzdata==2025.2
     # via
     #   kombu
     #   pandas
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -r requirements-worker.in
     #   botocore
