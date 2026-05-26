@@ -8,7 +8,6 @@ from drf_spectacular.utils import extend_schema_field
 
 from ods_tools.oed.exposure import OedExposure
 
-from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
@@ -80,8 +79,7 @@ class ConvertSerializer(serializers.Serializer):
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 
-    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
-    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
+    groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
     class Meta:
         ref_name = None
@@ -89,13 +87,12 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         fields = (
             'created',
             'file',
-            'converted_file',
             'filename',
             'groups',
-            'mapping_file',
             'conversion_state',
             # 'filehash_md5',
         )
+        read_only_fields = ('conversion_state',)
 
     def __init__(self, *args, content_types=None, parquet_storage=False, field=None, **kwargs):
         self.content_types = content_types or []
