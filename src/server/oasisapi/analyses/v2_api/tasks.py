@@ -402,15 +402,6 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
 
-    # remove then store raw files.
-    analysis.raw_output_files.all().delete()
-    if 'raw_output_locations' in result:
-        for name, put_location in result['raw_output_locations'].items():
-            content_type = 'application/octet-stream'
-            if name[-4:] == '.csv':
-                content_type = 'text/csv'
-            analysis.raw_output_files.add(store_file(put_location, content_type, initiator, filename=name))
-
     analysis.save()
     return result
 
