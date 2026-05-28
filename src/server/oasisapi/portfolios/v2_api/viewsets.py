@@ -25,7 +25,7 @@ from .serializers import (
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
-from ...files.v2_api.serializers import RelatedFileSerializer
+from ...files.v2_api.serializers import PortfolioRelatedFileSerializer
 from ...files.v2_api.views import handle_related_file
 from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet, resolve_user
@@ -115,10 +115,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             'set_storage_links': PortfolioStorageSerializer,
             'storage_links': PortfolioStorageSerializer,
             'validate': PortfolioValidationSerializer,
-            'accounts_file': RelatedFileSerializer,
-            'location_file': RelatedFileSerializer,
-            'reinsurance_info_file': RelatedFileSerializer,
-            'reinsurance_scope_file': RelatedFileSerializer,
+            'accounts_file': PortfolioRelatedFileSerializer,
+            'location_file': PortfolioRelatedFileSerializer,
+            'reinsurance_info_file': PortfolioRelatedFileSerializer,
+            'reinsurance_scope_file': PortfolioRelatedFileSerializer,
             'exposure_run': ExposureRunSerializer,
             'exposure_transform': ExposureTransformSerializer,
             'currency_conversion_json': CurrencyConversionSerializer,
