@@ -162,3 +162,13 @@ class RelatedFileSerializer(serializers.ModelSerializer):
                     f"File extention '{file_extention}' mismatched with request header 'Content-Type': '{mapped_content_type}', should be set to '{extention_mapping.get(file_extention)}'")
 
         return value
+
+
+class PortfolioRelatedFileSerializer(RelatedFileSerializer):
+    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
+
+    class Meta(RelatedFileSerializer.Meta):
+        fields = RelatedFileSerializer.Meta.fields + (
+            'converted_file',
+            'mapping_file',
+        )
