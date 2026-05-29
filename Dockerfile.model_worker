@@ -98,6 +98,12 @@ ENTRYPOINT ./startup.sh
 FROM model_worker AS jit-warmup
 
 ENV NUMBA_CPU_NAME=x86-64-v3
+# Prevent Numba from auto-detecting host-specific CPU features (e.g. AMD sha,
+# sse4a, clzero) which would be included in the cache key. Without this, a
+# cache built on an Intel CI runner is invalid on AMD hardware (and vice versa)
+# even though both support x86-64-v3. Empty string disables auto-detection so
+# the cache key is determined solely by NUMBA_CPU_NAME.
+ENV NUMBA_CPU_FEATURES=
 ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -109,5 +115,6 @@ RUN set -e; python3 /usr/local/bin/warmup-serial.py;
 FROM model_worker
 
 ENV NUMBA_CPU_NAME=x86-64-v3
+ENV NUMBA_CPU_FEATURES=
 ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
 COPY --from=jit-warmup --chown=worker:worker /home/worker/.numba_jit_cache /home/worker/.numba_jit_cache

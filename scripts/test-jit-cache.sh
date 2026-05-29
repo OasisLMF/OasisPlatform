@@ -38,6 +38,7 @@ sys.exit(1 if errors else 0)
 PYEOF
 
 docker run --rm \
+    -e NUMBA_CPU_FEATURES= \
     -v "${WARMUP_SCRIPT}:/tmp/warmup_test.py:ro" \
     --entrypoint bash \
     "${IMAGE}" -c '

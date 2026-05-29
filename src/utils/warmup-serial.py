@@ -23,10 +23,20 @@ import traceback
 from oasislmf.warmup import ALL_SILENT_TASKS, warmup
 
 print(
-    f"Warming Numba JIT cache ({len(ALL_SILENT_TASKS)} tasks, serial) ...",
+    f"Warming Numba JIT cache ({len(ALL_SILENT_TASKS)} tasks, serial, 2 passes) ...",
     flush=True,
 )
+
+# Pass 1: compile all task groups serially.
 errors = warmup(max_workers=1)
+
+# Pass 2: the subprocess pipelines inside each task (e.g. evepy|modelpy|gulpy)
+# run as concurrent OS processes and can race to write the shared .nbi index,
+# leaving some type variants missing after pass 1. A second serial pass finds
+# those missing variants and fills them in, stabilising the cache.
+if not errors:
+    print("Pass 1 done, running pass 2 to recover subprocess race gaps ...", flush=True)
+    errors = warmup(max_workers=1)
 
 for name, err in errors.items():
     print(f"\nTASK FAILED: {name}", file=sys.stderr)
