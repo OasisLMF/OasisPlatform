@@ -110,16 +110,4 @@ FROM model_worker
 
 ENV NUMBA_CPU_NAME=x86-64-v3
 ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
-
-
-RUN --mount=type=bind,from=jit-warmup,source=/home/worker/.numba_jit_cache,target=/mnt/jit-local \
-    set -e; \
-    find /mnt/jit-local \( -name "*.nbi" -o -name "*.nbc" \) | \
-    while IFS= read -r src; do \
-        dst="/home/worker/.numba_jit_cache${src#/mnt/jit-local}"; \
-        mkdir -p "$(dirname "$dst")"; \
-        cp "$src" "$dst"; \
-    done; \
-
-
-#COPY --from=jit-warmup --chown=worker:worker /home/worker/.numba_jit_cache /home/worker/.numba_jit_cache
+COPY --from=jit-warmup --chown=worker:worker /home/worker/.numba_jit_cache /home/worker/.numba_jit_cache
