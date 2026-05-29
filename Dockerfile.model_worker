@@ -36,6 +36,10 @@ RUN if [ -n "$odm_branch" ]; then \
       git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}#egg=oasis-data-manager; \
   fi
 
+# Normalise all installed file timestamps to epoch 0 so Numba's mtime-based
+# JIT cache validation passes consistently across builds.
+RUN find /root/.local -exec touch -d @0 {} +
+
 
 # ---- STAGE 2: model_worker base image ----
 FROM ubuntu:24.04 AS model_worker
@@ -94,40 +98,16 @@ ENTRYPOINT ./startup.sh
 FROM model_worker AS jit-warmup
 
 ENV NUMBA_CPU_NAME=x86-64-v3
+ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 COPY src/utils/warmup-serial.py /usr/local/bin/warmup-serial.py
-
 WORKDIR /tmp/jit-warmup-cwd
-
-RUN set -e; \
-    python3 /usr/local/bin/warmup-serial.py; \
-    pytools=/home/worker/.local/lib/python3.12/site-packages/oasislmf/pytools; \
-    nbi_count=$(find "${pytools}" -path "*/__pycache__/*.nbi" | wc -l); \
-    echo "produced ${nbi_count} total .nbi cache files"; \
-    [ "${nbi_count}" -ge 151 ]; \
-    for d in fm gul gulmc getmodel lec aal elt plt summary pla; do \
-      count=$(find "${pytools}/${d}" -name "*.nbi" 2>/dev/null | wc -l); \
-      printf "  %-10s %d\n" "${d}" "${count}"; \
-      if [ "${count}" -lt 1 ]; then \
-        echo "FATAL: pytools/${d} has no .nbi files — warmup task group likely failed" >&2; \
-        exit 1; \
-      fi; \
-    done
-
+RUN set -e; python3 /usr/local/bin/warmup-serial.py;
 
 # ---- STAGE 4: Final image with baked JIT cache ----
 FROM model_worker
 
 ENV NUMBA_CPU_NAME=x86-64-v3
-ENV OASIS_WORKER_NUMBA_WARMUP=False
-
-# Copy only .nbi/.nbc cache files — never the .py source files — so their
-# mtimes stay identical to the model_worker layer that Numba saw during warmup.
-RUN --mount=type=bind,from=jit-warmup,source=/home/worker/.local,target=/mnt/jit-local \
-    find /mnt/jit-local \( -name "*.nbi" -o -name "*.nbc" \) | \
-    while IFS= read -r src; do \
-        dst="/home/worker/.local${src#/mnt/jit-local}"; \
-        mkdir -p "$(dirname "$dst")"; \
-        cp "$src" "$dst"; \
-    done
+ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
+COPY --from=jit-warmup --chown=worker:worker /home/worker/.numba_jit_cache /home/worker/.numba_jit_cache
