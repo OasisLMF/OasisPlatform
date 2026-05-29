@@ -218,7 +218,7 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
             self.assertEqual({
                 'portfolio': ['"location_file" must not be null'],
                 'settings_file': ['Must not be null'],
-                'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
+                'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_NO_KEYS, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
             }, ex.exception.detail)
 
             self.assertEqual(status, analysis.status)
@@ -253,7 +253,7 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
                 'model': ['Model pk "1" - Unsupported Operation, "run_mode" must be "V2", not "V1"'],
                 'portfolio': ['"location_file" must not be null'],
                 'settings_file': ['Must not be null'],
-                'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
+                'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_NO_KEYS, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
             }, ex.exception.detail)
 
             self.assertEqual(status, analysis.status)
@@ -382,7 +382,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                         analysis.generate_inputs(initiator, run_mode_override='V2')
 
                     self.assertEqual({'status': [
-                        'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
+                        'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_NO_KEYS, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
                     ]}, ex.exception.detail)
                     self.assertEqual(status, analysis.status)
                     self.assertFalse(res_factory.revoke_called)
