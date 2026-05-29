@@ -1,8 +1,32 @@
+# Diagnostic test Dockerfile — outputs .nbi counts at each stage so we can
+# see exactly where the JIT cache is being created, copied, and whether it
+# survives into the final image.
+#
+# Build:
+#   docker buildx build --platform linux/amd64 --load --progress=plain \
+#       -f Dockerfile.model_worker_jit_test \
+#       -t coreoasis/model_worker:jit-test .
+#
+# Then verify the final image:
+#   docker run --rm --entrypoint bash coreoasis/model_worker:jit-test -c "
+#     echo '=== .nbi files in final image ===';
+#     find /home/worker/.local -name '*.nbi' | wc -l;
+#     echo '=== NUMBA env ===';
+#     echo NUMBA_CPU_NAME=\$NUMBA_CPU_NAME;
+#     echo '=== sample .nbi paths ===';
+#     find /home/worker/.local -name '*.nbi' | head -5;
+#     echo '=== source .py mtime (sample) ===';
+#     stat /home/worker/.local/lib/python3.12/site-packages/oasislmf/pytools/fm/financial_structure.py | grep Modify;
+#   "
+
 # ---- STAGE 1: Build python packages ----
 FROM ubuntu:24.04 AS build-packages
 
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV DEBIAN_FRONTEND=noninteractive
+# Normalize all pip-installed file timestamps to epoch 0 so they are
+# identical across every build — eliminates any mtime drift between stages.
+ENV SOURCE_DATE_EPOCH=0
 
 RUN apt-get update && apt-get install -y \
     libspatialindex-dev git curl g++ build-essential \
@@ -12,7 +36,6 @@ RUN apt-get update && apt-get install -y \
 COPY ./requirements-worker.txt ./requirements-worker.txt
 RUN pip3 install --user --no-warn-script-location -r ./requirements-worker.txt
 
-# Install MDK from git branch (Optional): docker build --build-arg oasislmf_branch=develop
 ARG oasislmf_branch
 RUN if [ -n "$oasislmf_branch" ]; then \
     pip uninstall oasislmf -y; \
@@ -20,7 +43,6 @@ RUN if [ -n "$oasislmf_branch" ]; then \
       git+https://git@github.com/OasisLMF/OasisLMF.git@${oasislmf_branch}#egg=oasislmf[extra]; \
   fi
 
-# Install ODS-Tools from git branch (Optional): docker build --build-arg ods_tools_branch=develop
 ARG ods_tools_branch
 RUN if [ -n "$ods_tools_branch" ]; then \
     pip uninstall ods-tools -y; \
@@ -28,7 +50,6 @@ RUN if [ -n "$ods_tools_branch" ]; then \
       git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}#egg=ods-tools; \
   fi
 
-# Install Oasis-Data-Manager from git branch (Optional): docker build --build-arg odm_branch=develop
 ARG odm_branch
 RUN if [ -n "$odm_branch" ]; then \
     pip uninstall oasis-data-manager -y; \
@@ -36,9 +57,18 @@ RUN if [ -n "$odm_branch" ]; then \
       git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}#egg=oasis-data-manager; \
   fi
 
+# Normalise all installed file timestamps to epoch 0.
+# Numba's cache validates source .py mtimes — if timestamps differ between
+# builds (pip uses current time by default), the JIT cache is considered stale.
+# Pinning to 0 makes them stable and identical across every build.
+RUN find /root/.local -exec touch -d @0 {} +
 
-# ---- STAGE 2: model_worker base image ----
+
+# ---- STAGE 2: model_worker base ----
 FROM ubuntu:24.04 AS model_worker
+
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
  && apt-get upgrade -y \
@@ -77,20 +107,18 @@ COPY ./VERSION ./
 USER worker
 
 ENV PATH=/home/worker/.local/bin:$PATH
-ENV PIP_BREAK_SYSTEM_PACKAGES=1
-ENV DEBIAN_FRONTEND=noninteractive
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_ENV_OVERRIDE=true
 ENV OASIS_CHECK_MISSING_INPUTS=true
+
+# Diagnostic: confirm source .py mtime is epoch 0 (SOURCE_DATE_EPOCH=0 worked)
+RUN stat /home/worker/.local/lib/python3.12/site-packages/oasislmf/pytools/fm/financial_structure.py \
+    | grep Modify
 
 ENTRYPOINT ./startup.sh
 
 
 # ---- STAGE 3: JIT warmup ----
-# FROM the same model_worker stage — BuildKit resolves both this FROM and the
-# final stage's FROM within the same build graph, guaranteeing they share the
-# identical snapshot. This means source .py file mtimes are provably the same
-# in both stages, so Numba's mtime-based cache validation always passes.
 FROM model_worker AS jit-warmup
 
 ENV NUMBA_CPU_NAME=x86-64-v3
@@ -104,30 +132,28 @@ RUN set -e; \
     python3 /usr/local/bin/warmup-serial.py; \
     pytools=/home/worker/.local/lib/python3.12/site-packages/oasislmf/pytools; \
     nbi_count=$(find "${pytools}" -path "*/__pycache__/*.nbi" | wc -l); \
-    echo "produced ${nbi_count} total .nbi cache files"; \
+    echo "=== warmup produced ${nbi_count} .nbi files ==="; \
     [ "${nbi_count}" -ge 151 ]; \
-    for d in fm gul gulmc getmodel lec aal elt plt summary pla; do \
-      count=$(find "${pytools}/${d}" -name "*.nbi" 2>/dev/null | wc -l); \
-      printf "  %-10s %d\n" "${d}" "${count}"; \
-      if [ "${count}" -lt 1 ]; then \
-        echo "FATAL: pytools/${d} has no .nbi files — warmup task group likely failed" >&2; \
-        exit 1; \
-      fi; \
-    done
+    echo "=== sample source mtime after warmup ==="; \
+    stat "${pytools}/fm/financial_structure.py" | grep Modify; \
+    echo "=== sample .nbi path ==="; \
+    find "${pytools}" -name "*.nbi" | head -3
 
 
-# ---- STAGE 4: Final image with baked JIT cache ----
+# ---- STAGE 4: Final image ----
 FROM model_worker
 
 ENV NUMBA_CPU_NAME=x86-64-v3
 ENV OASIS_WORKER_NUMBA_WARMUP=False
 
-# Copy only .nbi/.nbc cache files — never the .py source files — so their
-# mtimes stay identical to the model_worker layer that Numba saw during warmup.
 RUN --mount=type=bind,from=jit-warmup,source=/home/worker/.local,target=/mnt/jit-local \
+    set -e; \
     find /mnt/jit-local \( -name "*.nbi" -o -name "*.nbc" \) | \
     while IFS= read -r src; do \
         dst="/home/worker/.local${src#/mnt/jit-local}"; \
         mkdir -p "$(dirname "$dst")"; \
         cp "$src" "$dst"; \
-    done
+    done; \
+    nbi_count=$(find /home/worker/.local -name "*.nbi" | wc -l); \
+    echo "=== final stage has ${nbi_count} .nbi files after mount-copy ==="; \
+    [ "${nbi_count}" -ge 151 ]

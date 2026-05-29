@@ -1,0 +1,60 @@
+# Bake the Numba JIT cache into a pre-built model_worker image.
+#
+# This Dockerfile must be built AFTER Dockerfile.model_worker so that the
+# base image already exists locally. deploy.sh does this automatically.
+#
+# Usage (override CPU target at build time):
+#   docker buildx build --build-arg NUMBA_CPU_NAME=neoverse-n1 \
+#       -f Dockerfile.model_worker_jit -t coreoasis/model_worker:dev .
+#
+ARG IMAGE=coreoasis/model_worker
+ARG TAG=2.5.3
+
+# ---- STAGE 1: JIT warmup ----
+FROM ${IMAGE}:${TAG} AS jit-warmup
+
+ENV NUMBA_CPU_NAME=x86-64-v3
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+COPY src/utils/warmup-serial.py /usr/local/bin/warmup-serial.py
+
+USER worker
+# Fresh cwd: oasislmf.warmup._compile_pltpy calls os.makedirs("./log") without
+# exist_ok=True, which fails if the cwd already has a log/ directory.
+WORKDIR /tmp/jit-warmup-cwd
+
+RUN set -e; \
+    python3 /usr/local/bin/warmup-serial.py; \
+    pytools=/home/worker/.local/lib/python3.12/site-packages/oasislmf/pytools; \
+    nbi_count=$(find "${pytools}" -path "*/__pycache__/*.nbi" | wc -l); \
+    echo "produced ${nbi_count} total .nbi cache files"; \
+    [ "${nbi_count}" -ge 151 ]; \
+    for d in fm gul gulmc getmodel lec aal elt plt summary pla; do \
+      count=$(find "${pytools}/${d}" -name "*.nbi" 2>/dev/null | wc -l); \
+      printf "  %-10s %d\n" "${d}" "${count}"; \
+      if [ "${count}" -lt 1 ]; then \
+        echo "FATAL: pytools/${d} has no .nbi files — warmup task group likely failed" >&2; \
+        exit 1; \
+      fi; \
+    done
+
+
+# ---- STAGE 2: Final image ----
+FROM ${IMAGE}:${TAG}
+
+ENV NUMBA_CPU_NAME=x86-64-v3
+# Prevent the worker startup from re-running warmup; the cache is already baked in.
+ENV OASIS_WORKER_NUMBA_WARMUP=False
+
+# Surgically copy only .nbi/.nbc cache files from the warmup stage using a
+# BuildKit bind mount. Source .py files in this stage are never touched, so
+# their mtimes stay identical to what Numba recorded during warmup — no cache
+# invalidation. This replaces the naive COPY --from .local approach which
+# overwrote .py files and reset their mtimes.
+RUN --mount=type=bind,from=jit-warmup,source=/home/worker/.local,target=/mnt/jit-local \
+    find /mnt/jit-local \( -name "*.nbi" -o -name "*.nbc" \) | \
+    while IFS= read -r src; do \
+        dst="/home/worker/.local${src#/mnt/jit-local}"; \
+        mkdir -p "$(dirname "$dst")"; \
+        cp "$src" "$dst"; \
+    done
