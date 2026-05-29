@@ -23,6 +23,7 @@ echo ""
 # when embedding Python inside a bash -c '...' string.
 WARMUP_SCRIPT=$(mktemp /tmp/warmup_test_XXXXXX.py)
 trap 'rm -f "$WARMUP_SCRIPT"' EXIT
+chmod 644 "$WARMUP_SCRIPT"
 
 cat > "$WARMUP_SCRIPT" << 'PYEOF'
 import sys
