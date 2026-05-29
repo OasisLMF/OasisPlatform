@@ -127,6 +127,5 @@ FROM model_worker
 
 ARG NUMBA_CPU_NAME
 ENV NUMBA_CPU_NAME=${NUMBA_CPU_NAME}
-ENV OASIS_WORKER_NUMBA_WARMUP=False
 
 COPY --from=jit-warmup --chown=worker:worker /home/worker/.local /home/worker/.local
