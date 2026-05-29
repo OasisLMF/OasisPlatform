@@ -59,9 +59,14 @@ if [ ! -z $LMF_BRANCH ]; then
     BUILD_ARGS_WORKER="${BUILD_ARGS_WORKER} --build-arg oasislmf_branch=${LMF_BRANCH}"
 fi
 
+docker rmi coreoasis/model_worker:dev
 set -e
 docker build -f Dockerfile.api_server $BUILD_ARGS_SERVER -t coreoasis/api_server:dev .
-docker build -f Dockerfile.model_worker $BUILD_ARGS_WORKER -t coreoasis/model_worker:dev .
+
+# Single build: all stages (base + JIT warmup + final) live in one build graph.
+# BuildKit guarantees both FROM model_worker references share the same snapshot,
+# so source .py mtimes are identical between warmup and final — cache stays valid.
+docker buildx build --platform linux/amd64 --load -f Dockerfile.model_worker $BUILD_ARGS_WORKER -t coreoasis/model_worker:dev .
 
 # docker-compose -f compose/s3.docker-compose.yml up -d
 docker compose -f compose/debug.docker-compose.yml up -d
