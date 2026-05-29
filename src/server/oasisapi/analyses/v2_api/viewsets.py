@@ -351,7 +351,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         Generates the inputs for the analysis based on the portfolio and then runs it.
         The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
-        `INPUTS_GENERATION_CANCELLED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or `RUN_ERROR`.
+        `INPUTS_GENERATION_NO_KEYS`, `INPUTS_GENERATION_CANCELLED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or `RUN_ERROR`.
         """
         obj = self.get_object()
         obj.validate_standard_analysis()
