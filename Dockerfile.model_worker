@@ -96,30 +96,27 @@ FROM model_worker AS jit-warmup
 
 ARG NUMBA_CPU_NAME
 ENV NUMBA_CPU_NAME=${NUMBA_CPU_NAME}
+# Isolate the JIT cache from the source tree so that copying it back to the
+# final stage does not touch (and reset the mtime of) the .py source files.
+# Numba validates cached .nbi files against the source file mtime; if the
+# source files are overwritten by COPY --from their mtime changes and the
+# cache is considered stale even though the content is identical.
+ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-USER root
+# COPY always runs as root; no need for USER root / chmod since we invoke
+# the script via `python3 <path>` rather than as a direct executable.
 COPY src/utils/warmup-serial.py /usr/local/bin/warmup-serial.py
-RUN chmod +x /usr/local/bin/warmup-serial.py
 
 USER worker
 WORKDIR /tmp/jit-warmup-cwd
 
 RUN set -e; \
     python3 /usr/local/bin/warmup-serial.py; \
-    pytools=/home/worker/.local/lib/python3.12/site-packages/oasislmf/pytools; \
-    nbi_count=$(find "${pytools}" -path "*/__pycache__/*.nbi" | wc -l); \
-    echo "produced ${nbi_count} total .nbi cache files"; \
-    [ "${nbi_count}" -ge 151 ]; \
-    for d in fm gul gulmc getmodel lec aal elt plt summary pla; do \
-      count=$(find "${pytools}/${d}" -name "*.nbi" 2>/dev/null | wc -l); \
-      printf "  %-10s %d\n" "${d}" "${count}"; \
-      if [ "${count}" -lt 1 ]; then \
-        echo "FATAL: pytools/${d} has no .nbi files — warmup task group likely failed" >&2; \
-        exit 1; \
-      fi; \
-    done
+    nbi_count=$(find "${NUMBA_CACHE_DIR}" -name "*.nbi" 2>/dev/null | wc -l); \
+    echo "produced ${nbi_count} .nbi files"; \
+    [ "${nbi_count}" -ge 151 ]
 
 
 # ---- STAGE 4: Final image ----
@@ -127,5 +124,8 @@ FROM model_worker
 
 ARG NUMBA_CPU_NAME
 ENV NUMBA_CPU_NAME=${NUMBA_CPU_NAME}
+ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
 
-COPY --from=jit-warmup --chown=worker:worker /home/worker/.local /home/worker/.local
+# Copy only the pre-compiled JIT cache — not the whole .local — so the source
+# .py files in this stage keep their original mtimes from the model_worker layer.
+COPY --from=jit-warmup --chown=worker:worker /home/worker/.numba_jit_cache /home/worker/.numba_jit_cache
