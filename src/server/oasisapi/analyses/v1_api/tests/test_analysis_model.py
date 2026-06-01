@@ -216,7 +216,7 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                         analysis.generate_inputs(initiator, run_mode_override='V1')
 
                     self.assertEqual({'status': [
-                        'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_CANCELLED, READY, '
+                        'Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_NO_KEYS, INPUTS_GENERATION_CANCELLED, READY, '
                         'RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'
                     ]}, ex.exception.detail)
                     self.assertEqual(status, analysis.status)

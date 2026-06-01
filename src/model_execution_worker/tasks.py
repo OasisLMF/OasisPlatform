@@ -19,6 +19,7 @@ from celery.exceptions import Terminated
 
 
 from oasislmf.utils.data import get_json
+from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
 
 from ..common.filestore.filestore import get_filestore
@@ -480,6 +481,10 @@ def generate_input(self,
         try:
             OasisManager().generate_oasis_files(**params)
             returncode = 0
+        except OasisExceptionNoKeys:
+            task_logger.exception("Error occured in 'generate_oasis_files':")
+            notify_api_status_v1(analysis_pk, 'INPUTS_GENERATION_NO_KEYS')
+            returncode = 1
         except Exception:
             task_logger.exception("Error occured in 'generate_oasis_files':")
             returncode = 1

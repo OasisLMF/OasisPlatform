@@ -18,6 +18,7 @@ from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
 from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
+from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
@@ -677,7 +678,11 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     params['keys_errors_csv'] = os.path.join(params['target_dir'], 'keys-errors.csv')
     params['oasis_files_dir'] = params['target_dir']
     from oasislmf.manager import OasisManager
-    OasisManager().generate_files(**params)
+    try:
+        OasisManager().generate_files(**params)
+    except OasisExceptionNoKeys:
+        notify_api_status_v2(analysis_id, 'INPUTS_GENERATION_NO_KEYS')
+        raise
 
     # Optional step (Post file generation Hook)
     if params.get('post_file_gen_module', None):
