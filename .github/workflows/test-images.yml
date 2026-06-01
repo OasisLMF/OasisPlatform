@@ -48,6 +48,27 @@ jobs:
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
       ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.ods_branch }}
 
+  test-jit-cache:
+    runs-on: ubuntu-latest
+    needs: [build_images]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull model_worker image
+        run: |
+          IMAGE_TAG=$(git rev-parse HEAD)
+          docker pull coreoasis/github-actions:model_worker-${IMAGE_TAG}
+          echo "IMAGE=coreoasis/github-actions:model_worker-${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Test Numba JIT cache validity
+        run: ./scripts/test-jit-cache.sh ${{ env.IMAGE }}
+
   setup:
     runs-on: ubuntu-latest
     needs: [build_images]

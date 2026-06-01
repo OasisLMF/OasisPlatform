@@ -102,6 +102,7 @@ jobs:
           dive: 'worker-layers.txt'
           exit-code: '1'
           context: '.'
+          platform: 'linux/amd64'
 
         - image: worker_controller
           tag: 'worker_controller'
@@ -151,7 +152,9 @@ jobs:
       with:
         file: ${{ matrix.file }}
         context: ${{ matrix.context }}
+        platforms: ${{ matrix.platform }}
         push: ${{ env.DOCKER_PUSH }}
+        load: ${{ env.DOCKER_PUSH != 'true' }}
         tags: ${{ env.IMAGE_REPO }}:${{ matrix.tag }}-${{ env.IMAGE_TAG }}
         build-args: |
           oasislmf_branch=${{ inputs.oasislmf_branch }}
