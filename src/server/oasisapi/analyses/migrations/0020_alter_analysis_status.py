@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('analyses', '0018_alter_analysis_model'),
+        ('analyses', '0019_remove_analysis_raw_output_files'),
     ]
 
     operations = [
