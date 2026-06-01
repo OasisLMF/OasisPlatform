@@ -374,15 +374,15 @@ numpy==2.3.5
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.2.1
+oasis-data-manager==0.2.2
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.5.3
+oasislmf[extra]==2.5.4
     # via -r requirements-worker.in
-ods-tools==5.0.4
+ods-tools==5.0.5
     # via
     #   -r requirements-server.in
     #   oasislmf
@@ -619,7 +619,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==25.5.0
+twisted[tls]==26.4.0
     # via daphne
 txaio==25.12.2
     # via autobahn
@@ -645,7 +645,7 @@ tzlocal==5.3.1
     # via celery
 uritemplate==4.2.0
     # via drf-spectacular
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in

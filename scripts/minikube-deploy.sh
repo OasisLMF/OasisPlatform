@@ -36,7 +36,7 @@ fi
 
 ODM_BRANCH=''
 ODS_BRANCH=''
-LMF_BRANCH=''
+LMF_BRANCH='fix/input_gen_status'
 
 BUILD_ARGS_WORKER=''
 BUILD_ARGS_SERVER=''

@@ -78,7 +78,7 @@ coreschema==0.0.4
     # via -r requirements-server.in
 cramjam==2.11.0
     # via fastparquet
-cryptography==45.0.6
+cryptography==46.0.0
     # via
     #   autobahn
     #   azure-identity
@@ -208,11 +208,11 @@ numpy==2.2.6
     #   numba
     #   pandas
     #   scipy
-oasis-data-manager==0.2.1
+oasis-data-manager==0.2.2
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools==5.0.4
+ods-tools==5.0.5
     # via -r requirements-server.in
 packaging==25.0
     # via
@@ -258,7 +258,7 @@ pyjwt[crypto]==2.12.1
     #   redis
 pymysql==1.1.1
     # via -r requirements-server.in
-pyopenssl==25.1.0
+pyopenssl==26.2.0
     # via twisted
 pyparsing==3.2.3
     # via httplib2
@@ -310,7 +310,7 @@ sqlparse==0.5.3
     #   django-debug-toolbar
 tqdm==4.67.1
     # via ods-tools
-twisted[tls]==25.5.0
+twisted[tls]==26.4.0
     # via daphne
 txaio==25.6.1
     # via autobahn
@@ -332,7 +332,7 @@ tzdata==2025.2
     #   pandas
 uritemplate==4.2.0
     # via drf-spectacular
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   -r requirements-server.in
     #   botocore

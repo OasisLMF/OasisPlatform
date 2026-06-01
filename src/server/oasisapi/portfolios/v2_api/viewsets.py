@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.status import HTTP_201_CREATED
 from ..models import Portfolio, csv_into_currency_conversion_json
-# from ...decorators import requires_sql_reader -- LOT3
 from ...schemas.serializers import StorageLinkSerializer
 from .serializers import (
     PortfolioSerializer,
@@ -26,9 +25,8 @@ from .serializers import (
 )
 
 from ...analyses.v2_api.serializers import AnalysisSerializer
-from ...files.v2_api.serializers import RelatedFileSerializer, FileSQLSerializer
+from ...files.v2_api.serializers import PortfolioRelatedFileSerializer
 from ...files.v2_api.views import handle_related_file
-# from ...files.v2_api.views import handle_related_file_sql -- LOT3
 from ...filters import TimeStampedFilter
 from ...permissions.group_auth import VerifyGroupAccessModelViewSet, resolve_user
 from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
@@ -117,11 +115,10 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             'set_storage_links': PortfolioStorageSerializer,
             'storage_links': PortfolioStorageSerializer,
             'validate': PortfolioValidationSerializer,
-            'accounts_file': RelatedFileSerializer,
-            'location_file': RelatedFileSerializer,
-            'reinsurance_info_file': RelatedFileSerializer,
-            'reinsurance_scope_file': RelatedFileSerializer,
-            'file_sql': FileSQLSerializer,
+            'accounts_file': PortfolioRelatedFileSerializer,
+            'location_file': PortfolioRelatedFileSerializer,
+            'reinsurance_info_file': PortfolioRelatedFileSerializer,
+            'reinsurance_scope_file': PortfolioRelatedFileSerializer,
             'exposure_run': ExposureRunSerializer,
             'exposure_transform': ExposureTransformSerializer,
             'currency_conversion_json': CurrencyConversionSerializer,
@@ -192,7 +189,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'accounts_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -212,7 +209,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'location_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -232,7 +229,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'reinsurance_info_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get', 'post', 'delete'], detail=True)
@@ -252,7 +249,7 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
             store_as_parquet = django_settings.PORTFOLIO_PARQUET_STORAGE
         else:
             store_as_parquet = None
-        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet)
+        return handle_related_file(self.get_object(), 'reinsurance_scope_file', request, self.supported_mime_types, store_as_parquet, PortfolioRelatedFileSerializer)
 
     @action(methods=['get', 'post'], detail=True)
     def validate(self, request, pk=None, version=None):
@@ -361,18 +358,3 @@ class PortfolioViewSet(VerifyGroupAccessModelViewSet):
                 raise Http404()
         instance.save()
         return Response({"reporting_currency": instance.reporting_currency})
-
-    # LOT3 DISABLE
-    # @requires_sql_reader
-    # @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
-    # @action(methods=['post'], url_path=r'(?P<file>\w+)/sql', detail=True)
-    # def file_sql(self, request, *args, **kwargs):
-    #     """
-    #     post:
-    #     Gets the sql for  `<>_file` contents
-    #     """
-    #     serializer = self.get_serializer(self.get_object(), data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     sql = serializer.validated_data.get("sql")
-
-    #     return handle_related_file_sql(self.get_object(), kwargs["file"], request, sql)

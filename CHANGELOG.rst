@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.4`_
+ ---------
+* [#1389](https://github.com/OasisLMF/OasisPlatform/pull/1389) - Tidy up related file serializers
+* [#1395](https://github.com/OasisLMF/OasisPlatform/pull/1395) - Remove storage of raw output and SQL endpoints
+* [#1396](https://github.com/OasisLMF/OasisPlatform/pull/1396) - Updated Package Requirements: urllib3==2.7.0 twisted==26.*
+* [#1398](https://github.com/OasisLMF/OasisPlatform/pull/1398) - Bake numba JIT cache into model-worker
+* [#1400](https://github.com/OasisLMF/OasisPlatform/pull/1400) - fix/input_gen_status
+.. _`2.5.4`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.3...2.5.4
+
 `2.5.3`_
  ---------
 * [#1379](https://github.com/OasisLMF/OasisPlatform/pull/1379) - fix: chainmap import

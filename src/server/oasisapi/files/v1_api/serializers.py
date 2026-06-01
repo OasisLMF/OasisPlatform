@@ -8,7 +8,6 @@ from drf_spectacular.utils import extend_schema_field
 
 from ods_tools.oed.exposure import OedExposure
 
-from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
@@ -83,8 +82,7 @@ class ConvertSerializer(serializers.Serializer):
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 
-    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
-    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
+    groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
     class Meta:
         ref_name = __qualname__.split('.')[0] + 'V1'
@@ -92,13 +90,12 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         fields = (
             'created',
             'file',
-            'converted_file',
             'filename',
             'groups',
-            'mapping_file',
             'conversion_state',
             # 'filehash_md5',
         )
+        read_only_fields = ('conversion_state',)
 
     def __init__(self, *args, content_types=None, parquet_storage=False, field=None, **kwargs):
         self.content_types = content_types or []
@@ -142,7 +139,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         attrs['creator'] = resolve_user(self.context['request'].user)
         attrs['content_type'] = attrs['file'].content_type
         attrs['filename'] = attrs['file'].name
-        attrs['groups'] = self.context['request'].user.groups.all()
+        attrs['groups'] = attrs['creator'].groups.all()
         return super(RelatedFileSerializer, self).validate(attrs)
 
     def validate_file(self, value):
@@ -171,48 +168,12 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         return value
 
 
-class FileSQLSerializer(serializers.Serializer):
-    sql = serializers.CharField()
+class PortfolioRelatedFileSerializer(RelatedFileSerializer):
+    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
 
-    class Meta:
+    class Meta(RelatedFileSerializer.Meta):
         ref_name = __qualname__.split('.')[0] + 'V1'
-
-    def validate_sql(self, value):
-        # for purposes of validation, lowercase the sql, return the original
-        sql_to_validate = value.lower()
-        if "from table" not in sql_to_validate:
-            raise serializers.ValidationError("The from clause of the SQL must be "
-                                              "'FROM table', where table is explicitly the word table")
-
-        # TODO what else can we validate here? No point sanitising further as the SQL is not against a
-        # database which can be manipulated?
-
-        return value
-
-
-class NestedRelatedFileSerializer(serializers.ModelSerializer):
-    sql = serializers.SerializerMethodField()
-
-    class Meta:
-        ref_name = __qualname__.split('.')[0] + 'V1'
-        model = RelatedFile
-        fields = (
-            'id',
-            'created',
-            'file',
-            'filename',
-            'sql',
+        fields = RelatedFileSerializer.Meta.fields + (
+            'converted_file',
+            'mapping_file',
         )
-
-    def __init__(self, *args, analyses=None, **kwargs):
-        self.analyses = analyses
-        super().__init__(*args, **kwargs)
-
-    @extend_schema_field(serializers.URLField)
-    def get_sql(self, instance):
-        request = self.context.get('request')
-
-        try:
-            return self.analyses.get_absolute_output_file_sql_url(request=request, file_pk=instance.id, namespace="v1-files")
-        except:
-            return None

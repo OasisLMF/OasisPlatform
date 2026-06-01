@@ -425,7 +425,7 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     if return_code == 0:
         analysis.status = Analysis.status_choices.READY
     # FAILED
-    else:
+    elif analysis.status != Analysis.status_choices.INPUTS_GENERATION_NO_KEYS:
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
 
     # Add current Output

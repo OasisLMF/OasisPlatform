@@ -8,7 +8,6 @@ from drf_spectacular.utils import extend_schema_field
 
 from ods_tools.oed.exposure import OedExposure
 
-from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
@@ -80,8 +79,7 @@ class ConvertSerializer(serializers.Serializer):
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 
-    groups = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', required=False, queryset=Group.objects.all())
-    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
+    groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
     class Meta:
         ref_name = None
@@ -89,13 +87,12 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         fields = (
             'created',
             'file',
-            'converted_file',
             'filename',
             'groups',
-            'mapping_file',
             'conversion_state',
             # 'filehash_md5',
         )
+        read_only_fields = ('conversion_state',)
 
     def __init__(self, *args, content_types=None, parquet_storage=False, field=None, **kwargs):
         self.content_types = content_types or []
@@ -167,45 +164,11 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         return value
 
 
-class FileSQLSerializer(serializers.Serializer):
-    sql = serializers.CharField()
+class PortfolioRelatedFileSerializer(RelatedFileSerializer):
+    mapping_file = serializers.PrimaryKeyRelatedField(queryset=MappingFile.objects.all(), required=False)
 
-    def validate_sql(self, value):
-        # for purposes of validation, lowercase the sql, return the original
-        sql_to_validate = value.lower()
-        if "from table" not in sql_to_validate:
-            raise serializers.ValidationError("The from clause of the SQL must be "
-                                              "'FROM table', where table is explicitly the word table")
-
-        # TODO what else can we validate here? No point sanitising further as the SQL is not against a
-        # database which can be manipulated?
-
-        return value
-
-
-class NestedRelatedFileSerializer(serializers.ModelSerializer):
-    sql = serializers.SerializerMethodField()
-
-    class Meta:
-        ref_name = None
-        model = RelatedFile
-        fields = (
-            'id',
-            'created',
-            'file',
-            'filename',
-            'sql',
+    class Meta(RelatedFileSerializer.Meta):
+        fields = RelatedFileSerializer.Meta.fields + (
+            'converted_file',
+            'mapping_file',
         )
-
-    def __init__(self, *args, analyses=None, **kwargs):
-        self.analyses = analyses
-        super().__init__(*args, **kwargs)
-
-    @extend_schema_field(serializers.URLField)
-    def get_sql(self, instance):
-        request = self.context.get('request')
-
-        try:
-            return self.analyses.get_absolute_output_file_sql_url(request=request, file_pk=instance.id, namespace="v2-analyses")
-        except:
-            return None

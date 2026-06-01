@@ -2,14 +2,10 @@ import json
 import io
 from tempfile import TemporaryFile
 
-from django.conf import settings
 from django.core.files import File
 from django.http import StreamingHttpResponse, Http404
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
-from oasis_data_manager.df_reader.config import get_df_reader
-from oasis_data_manager.df_reader.exceptions import InvalidSQLException
 from ..models import RelatedFile
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups, resolve_user
@@ -92,9 +88,9 @@ def _handle_get_related_file(parent, field, request):
     return response
 
 
-def _handle_post_related_file(parent, field, request, content_types, parquet_storage):
-    serializer = RelatedFileSerializer(data=request.data, content_types=content_types, context={
-                                       'request': request}, parquet_storage=parquet_storage, field=field)
+def _handle_post_related_file(parent, field, request, content_types, parquet_storage, serializer_class=RelatedFileSerializer):
+    serializer = serializer_class(data=request.data, content_types=content_types, context={
+                                  'request': request}, parquet_storage=parquet_storage, field=field)
     serializer.is_valid(raise_exception=True)
     instance = serializer.create(serializer.validated_data)
 
@@ -109,7 +105,7 @@ def _handle_post_related_file(parent, field, request, content_types, parquet_sto
     parent.save(update_fields=[field])
 
     # Override 'file' return to hide storage details with stored filename
-    response = Response(RelatedFileSerializer(instance=instance, content_types=content_types).data)
+    response = Response(serializer_class(instance=instance, content_types=content_types).data)
     response.data['file'] = instance.file.name
     return response
 
@@ -158,13 +154,13 @@ def _json_read_from_file(parent, field):
         return Response(json.load(f))
 
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False):
+def handle_related_file(parent, field, request, content_types, parquet_storage=False, serializer_class=RelatedFileSerializer):
     method = request.method.lower()
 
     if method == 'get':
         return _handle_get_related_file(parent, field, request)
     elif method == 'post':
-        return _handle_post_related_file(parent, field, request, content_types, parquet_storage)
+        return _handle_post_related_file(parent, field, request, content_types, parquet_storage, serializer_class)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field, request)
 
@@ -178,41 +174,3 @@ def handle_json_data(parent, field, request, serializer):
         return _json_write_to_file(parent, field, request, serializer)
     elif method == 'delete':
         return _handle_delete_related_file(parent, field, request)
-
-
-def handle_related_file_sql(parent, field, request, sql, m2m_file_pk=None):
-    requested_format = request.GET.get('file_format', None)
-    f = getattr(parent, field)
-
-    if m2m_file_pk:
-        try:
-            f = f.get(pk=m2m_file_pk)
-        except RelatedFile.DoesNotExist:
-            raise Http404
-
-    download_name = f.filename if f.filename else f.file.name
-
-    reader = get_df_reader({'filepath': f.file.path, 'engine': settings.DEFAULT_READER_ENGINE})
-
-    try:
-        df = reader.sql(sql).as_pandas()
-    except InvalidSQLException:
-        raise ValidationError('Invalid SQL provided.')
-
-    output_buffer = io.BytesIO()
-
-    if requested_format == 'parquet':
-        df.to_parquet(output_buffer, index=False)
-        content_type = 'application/octet-stream'
-    elif requested_format == 'json':
-        df.to_json(output_buffer, orient='table', index=False)
-        content_type = 'application/json'
-    else:
-        df.to_csv(output_buffer, index=False)
-        content_type = 'text/csv'
-
-    output_buffer.seek(0)
-    response = StreamingHttpResponse(output_buffer, content_type=content_type)
-    response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(download_name, f'.{requested_format}')
-
-    return response
