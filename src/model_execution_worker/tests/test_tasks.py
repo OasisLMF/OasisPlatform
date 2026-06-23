@@ -102,8 +102,8 @@ class StartAnalysis(TestCase):
                     },
                     "model_name_id": "PiWind",
                     "model_supplier_id": "OasisLMF",
-                    "gul_output": False,
-                    "gul_summaries": []
+                    "gul_output": True,
+                    "gul_summaries": [{"id": 1, "aalcalc": True}]
                 }
 
                 with open(settings_file_path, 'w') as f:
