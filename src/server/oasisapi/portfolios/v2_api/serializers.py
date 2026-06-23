@@ -23,22 +23,40 @@ from ...schemas.serializers import (
 )
 
 
-def _serialize_input_file(file_obj, abs_uri, request):
+def _location_file_extra(portfolio_instance) -> dict:
+    """Return the source/provider/audit_url fields added to the location_file dict (backward-compatible)."""
+    audit_url = None
+    audit_file = getattr(portfolio_instance, 'location_file_audit', None)
+    if audit_file and audit_file.file:
+        try:
+            audit_url = audit_file.file.url
+        except Exception:
+            pass
+    return {
+        'source': getattr(portfolio_instance, 'location_file_source', 'user_upload') or 'user_upload',
+        'external_provider': getattr(portfolio_instance, 'location_file_external_provider', '') or '',
+        'audit_url': audit_url,
+    }
+
+
+def _serialize_input_file(file_obj, abs_uri, request, *, extra=None):
     if not file_obj:
         return None
-    else:
-        converted = (
-            file_obj.conversion_state == RelatedFile.ConversionState.DONE and file_obj.converted_file
-        )
-        return {
-            "uri": abs_uri,
-            "name": file_obj.filename,
-            "stored": str(file_obj.file),
-            "converted_uri": abs_uri + "?converted" if converted else None,
-            "converted_stored": str(file_obj.converted_file) if converted else None,
-            "conversion_state": file_obj.conversion_state,
-            "conversion_log_fie": file_obj.get_absolute_conversion_log_file_url(request, namespace="v2-files"),
-        }
+    converted = (
+        file_obj.conversion_state == RelatedFile.ConversionState.DONE and file_obj.converted_file
+    )
+    result = {
+        "uri": abs_uri,
+        "name": file_obj.filename,
+        "stored": str(file_obj.file),
+        "converted_uri": abs_uri + "?converted" if converted else None,
+        "converted_stored": str(file_obj.converted_file) if converted else None,
+        "conversion_state": file_obj.conversion_state,
+        "conversion_log_fie": file_obj.get_absolute_conversion_log_file_url(request, namespace="v2-files"),
+    }
+    if extra:
+        result.update(extra)
+    return result
 
 
 class PortfolioListSerializer(serializers.Serializer):
@@ -73,6 +91,7 @@ class PortfolioListSerializer(serializers.Serializer):
             instance.location_file,
             instance.get_absolute_location_file_url(request=request),
             request,
+            extra=_location_file_extra(instance),
         )
 
     @extend_schema_field(InputFileSerializer)
@@ -175,6 +194,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
             instance.location_file,
             instance.get_absolute_location_file_url(request=request),
             request,
+            extra=_location_file_extra(instance),
         )
 
     @extend_schema_field(InputFileSerializer)
