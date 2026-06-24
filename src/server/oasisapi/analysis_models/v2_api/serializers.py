@@ -39,7 +39,7 @@ class AnalysisModelStorageSerializer(serializers.ModelSerializer):
             'settings_file',
         )
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_settings_file(self, instance):
         return file_storage_link(instance.resource_file, True)
 

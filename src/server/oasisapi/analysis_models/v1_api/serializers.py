@@ -58,7 +58,7 @@ class AnalysisModelStorageSerializer(serializers.ModelSerializer):
             'settings_file',
         )
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_settings_file(self, instance):
         return file_storage_link(instance.resource_file, True)
 
@@ -79,7 +79,7 @@ class TemplateSerializer(serializers.ModelSerializer):
             'file_url',
         )
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_file_url(self, instance):
         request = self.context.get('request')
         model_pk = request.parser_context.get('kwargs', {}).get('models_pk')

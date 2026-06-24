@@ -46,7 +46,7 @@ class PortfolioListSerializer(serializers.Serializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_location_file(self, instance):
         if instance.location_file_id is None:
             return None
@@ -57,7 +57,7 @@ class PortfolioListSerializer(serializers.Serializer):
             "stored": str(instance.location_file.file)
         }
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_accounts_file(self, instance):
         if instance.accounts_file_id is None:
             return None
@@ -68,7 +68,7 @@ class PortfolioListSerializer(serializers.Serializer):
             "stored": str(instance.accounts_file.file)
         }
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_reinsurance_info_file(self, instance):
         if instance.reinsurance_info_file_id is None:
             return None
@@ -80,7 +80,7 @@ class PortfolioListSerializer(serializers.Serializer):
             "stored": str(instance.reinsurance_info_file.file)
         }
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_reinsurance_scope_file(self, instance):
         if instance.reinsurance_scope_file_id is None:
             return None
@@ -91,7 +91,7 @@ class PortfolioListSerializer(serializers.Serializer):
             "stored": str(instance.reinsurance_scope_file.file)
         }
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_currency_conversion_json(self, instance):
         if not instance.currency_conversion_json:
             return None
@@ -143,7 +143,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         return instance.get_absolute_storage_url(request=request)
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_location_file(self, instance):
         if not instance.location_file:
             return None
@@ -155,7 +155,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 "stored": str(instance.location_file.file)
             }
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_accounts_file(self, instance):
         if not instance.accounts_file:
             return None
@@ -167,7 +167,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 "stored": str(instance.accounts_file.file)
             }
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_reinsurance_info_file(self, instance):
         if not instance.reinsurance_info_file:
             return None
@@ -179,7 +179,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 "stored": str(instance.reinsurance_info_file.file)
             }
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_reinsurance_scope_file(self, instance):
         if not instance.reinsurance_scope_file:
             return None
@@ -191,7 +191,7 @@ class PortfolioSerializer(serializers.ModelSerializer):
                 "stored": str(instance.reinsurance_scope_file.file)
             }
 
-    @extend_schema_field(InputFileSerializer)
+    @extend_schema_field(InputFileSerializer(allow_null=True))
     def get_currency_conversion_json(self, instance):
         if not instance.currency_conversion_json:
             return None
@@ -222,23 +222,23 @@ class PortfolioStorageSerializer(serializers.ModelSerializer):
             'currency_conversion_json'
         )
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_location_file(self, instance):
         return file_storage_link(instance.location_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_accounts_file(self, instance):
         return file_storage_link(instance.accounts_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_reinsurance_info_file(self, instance):
         return file_storage_link(instance.reinsurance_info_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_reinsurance_scope_file(self, instance):
         return file_storage_link(instance.reinsurance_scope_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_currency_conversion_json(self, instance):
         return file_storage_link(instance.currency_conversion_json, True)
 
@@ -449,22 +449,22 @@ class PortfolioValidationSerializer(serializers.ModelSerializer):
             'reinsurance_scope_validated',
         )
 
-    @extend_schema_field(serializers.CharField)  # should it be BooleanField ?
+    @extend_schema_field(serializers.CharField(allow_null=True))  # should it be BooleanField ?
     def get_location_validated(self, instance):
         if instance.location_file:
             return instance.location_file.oed_validated
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_accounts_validated(self, instance):
         if instance.accounts_file:
             return instance.accounts_file.oed_validated
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_reinsurance_info_validated(self, instance):
         if instance.reinsurance_info_file:
             return instance.reinsurance_info_file.oed_validated
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_reinsurance_scope_validated(self, instance):
         if instance.reinsurance_scope_file:
             return instance.reinsurance_scope_file.oed_validated
