@@ -25,7 +25,7 @@ class DataFileListSerializer(serializers.Serializer):
     class Meta:
         ref_name = __qualname__.split('.')[0] + 'V1'
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_data_file_url(request=request) if instance.file_id else None
@@ -61,7 +61,7 @@ class DataFileSerializer(serializers.ModelSerializer):
             'content_type',
         )
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_data_file_url(request=request) if instance.file else None

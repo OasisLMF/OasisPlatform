@@ -60,17 +60,17 @@ class AnalysisTaskStatusSerializer(serializers.ModelSerializer):
             'retry_count',
         )
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_output_log(self, instance):
         request = self.context.get('request')
         return instance.get_output_log_url(request=request) if instance.output_log else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_error_log(self, instance):
         request = self.context.get('request')
         return instance.get_error_log_url(request=request) if instance.error_log else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_retry_log(self, instance):
         request = self.context.get('request')
         return instance.get_retry_log_url(request=request) if instance.retry_log else None
@@ -125,57 +125,57 @@ class AnalysisListSerializer(serializers.Serializer):
     def get_complex_model_data_files(self, instance):
         return list(instance.complex_model_data_files.values_list('pk', flat=True))
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_input_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_input_file_url(request=request) if instance.input_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_settings_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_file_url(request=request) if instance.settings_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request) if instance.settings_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_lookup_errors_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_lookup_errors_file_url(request=request) if instance.lookup_errors_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_lookup_success_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_lookup_success_file_url(request=request) if instance.lookup_success_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_lookup_validation_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_lookup_validation_file_url(request=request) if instance.lookup_validation_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_summary_levels_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_summary_levels_file_url(request=request) if instance.summary_levels_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_input_generation_traceback_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_input_generation_traceback_file_url(request=request) if instance.input_generation_traceback_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_output_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_output_file_url(request=request) if instance.output_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_run_traceback_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_run_traceback_file_url(request=request) if instance.run_traceback_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_run_log_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_run_log_file_url(request=request) if instance.run_log_file_id else None
@@ -291,57 +291,57 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'num_events_total',
         )
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_input_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_input_file_url(request=request, namespace=self.ns) if instance.input_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_settings_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_file_url(request=request, namespace=self.ns) if instance.settings_file_id else None
 
-    @extend_schema_field(AnalysisSettingsSerializer)
+    @extend_schema_field(AnalysisSettingsSerializer(allow_null=True))
     def get_settings(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_settings_url(request=request, namespace=self.ns) if instance.settings_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_lookup_errors_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_lookup_errors_file_url(request=request, namespace=self.ns) if instance.lookup_errors_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_lookup_success_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_lookup_success_file_url(request=request, namespace=self.ns) if instance.lookup_success_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_lookup_validation_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_lookup_validation_file_url(request=request, namespace=self.ns) if instance.lookup_validation_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_summary_levels_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_summary_levels_file_url(request=request, namespace=self.ns) if instance.summary_levels_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_input_generation_traceback_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_input_generation_traceback_file_url(request=request, namespace=self.ns) if instance.input_generation_traceback_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_output_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_output_file_url(request=request, namespace=self.ns) if instance.output_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_run_traceback_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_run_traceback_file_url(request=request, namespace=self.ns) if instance.run_traceback_file_id else None
 
-    @extend_schema_field(serializers.URLField)
+    @extend_schema_field(serializers.URLField(allow_null=True))
     def get_run_log_file(self, instance):
         request = self.context.get('request')
         return instance.get_absolute_run_log_file_url(request=request, namespace=self.ns) if instance.run_log_file_id else None
@@ -537,43 +537,43 @@ class AnalysisStorageSerializer(serializers.ModelSerializer):
             'summary_levels_file',
         )
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_settings_file(self, instance):
         return file_storage_link(instance.settings_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_input_file(self, instance):
         return file_storage_link(instance.input_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_input_generation_traceback_file(self, instance):
         return file_storage_link(instance.input_generation_traceback_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_output_file(self, instance):
         return file_storage_link(instance.output_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_run_traceback_file(self, instance):
         return file_storage_link(instance.run_traceback_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_run_log_file(self, instance):
         return file_storage_link(instance.run_log_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_lookup_errors_file(self, instance):
         return file_storage_link(instance.lookup_errors_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_lookup_success_file(self, instance):
         return file_storage_link(instance.lookup_success_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_lookup_validation_file(self, instance):
         return file_storage_link(instance.lookup_validation_file, True)
 
-    @extend_schema_field(serializers.CharField)
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_summary_levels_file(self, instance):
         return file_storage_link(instance.summary_levels_file, True)
 
