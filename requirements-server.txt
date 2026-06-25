@@ -208,11 +208,11 @@ numpy==2.2.6
     #   numba
     #   pandas
     #   scipy
-oasis-data-manager==0.2.2
+oasis-data-manager==0.2.3
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools==5.0.5
+ods-tools==5.0.6
     # via -r requirements-server.in
 packaging==25.0
     # via

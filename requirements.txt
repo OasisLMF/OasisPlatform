@@ -379,15 +379,15 @@ numpy==2.4.6
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.2.2
+oasis-data-manager==0.2.3
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.5.4
+oasislmf[extra]==2.5.5
     # via -r requirements-worker.in
-ods-tools==5.0.5
+ods-tools==5.0.6
     # via
     #   -r requirements-server.in
     #   oasislmf
