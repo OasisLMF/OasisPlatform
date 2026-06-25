@@ -1,6 +1,14 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.5`_
+ ---------
+* [#1403](https://github.com/OasisLMF/OasisPlatform/pull/1403) - fix dummy analysis settings
+* [#1404](https://github.com/OasisLMF/OasisPlatform/pull/1404) - Fix nullable fields in OpenAPI schema
+* [#1405](https://github.com/OasisLMF/OasisPlatform/pull/1405) - Fix CVE for release 2.5.5
+* [#1409](https://github.com/OasisLMF/OasisPlatform/pull/1409) - Handle missing S3 log files in handle_task_failure
+.. _`2.5.5`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.4...2.5.5
+
 `2.5.4`_
  ---------
 * [#1389](https://github.com/OasisLMF/OasisPlatform/pull/1389) - Tidy up related file serializers
