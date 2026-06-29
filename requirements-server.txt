@@ -87,7 +87,7 @@ coreschema==0.0.4
     #   drf-yasg
 cramjam==2.11.0
     # via fastparquet
-cryptography==45.0.6
+cryptography==45.0.7
     # via
     #   autobahn
     #   azure-identity
@@ -248,7 +248,7 @@ psycopg2-binary==2.9.10
     # via -r requirements-server.in
 pyarrow==17.0.0
     # via -r requirements-server.in
-pyasn1==0.6.2
+pyasn1==0.6.3
     # via
     #   pyasn1-modules
     #   service-identity
@@ -256,14 +256,14 @@ pyasn1-modules==0.4.2
     # via service-identity
 pycparser==2.22
     # via cffi
-pyjwt[crypto]==2.10.1
+pyjwt[crypto]==2.13.0
     # via
     #   djangorestframework-simplejwt
     #   msal
     #   redis
 pymysql==1.1.1
     # via -r requirements-server.in
-pyopenssl==25.1.0
+pyopenssl==25.3.0
     # via twisted
 pyparsing==3.2.3
     # via httplib2
@@ -314,7 +314,7 @@ sqlparse==0.5.3
     # via
     #   django
     #   django-debug-toolbar
-twisted[tls]==25.5.0
+twisted[tls]==26.4.0
     # via daphne
 txaio==25.6.1
     # via autobahn
@@ -336,7 +336,7 @@ uritemplate==4.2.0
     # via
     #   coreapi
     #   drf-yasg
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   botocore
     #   requests

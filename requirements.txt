@@ -402,7 +402,7 @@ pyarrow==17.0.0
     # via
     #   -r requirements-server.in
     #   oasislmf
-pyasn1==0.6.2
+pyasn1==0.6.3
     # via
     #   pyasn1-modules
     #   service-identity
@@ -419,7 +419,7 @@ pygments==2.19.2
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
-pyjwt[crypto]==2.10.1
+pyjwt[crypto]==2.13.0
     # via
     #   djangorestframework-simplejwt
     #   msal
@@ -571,7 +571,7 @@ uritemplate==4.2.0
     # via
     #   coreapi
     #   drf-yasg
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   botocore
     #   requests
