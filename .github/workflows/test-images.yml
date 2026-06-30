@@ -155,7 +155,7 @@ jobs:
     name: V1 all checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       oasislmf_branch: 'stable/2.3.x'
@@ -172,7 +172,7 @@ jobs:
     name: V2 all checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       oasislmf_branch: 'stable/2.3.x'
@@ -189,7 +189,7 @@ jobs:
     name: V1 Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       oasislmf_branch: 'stable/2.3.x'
@@ -206,7 +206,7 @@ jobs:
     name: V2 Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       oasislmf_branch: 'stable/2.3.x'
@@ -223,7 +223,7 @@ jobs:
     name: Worker Debian
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       oasislmf_branch: 'stable/2.3.x'
@@ -240,7 +240,7 @@ jobs:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-15 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/1.15.x'
       oasislmf_branch: 'stable/2.3.x'
@@ -257,7 +257,7 @@ jobs:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-23 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/1.23.x'
       oasislmf_branch: 'stable/2.3.x'
@@ -274,7 +274,7 @@ jobs:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-27 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/1.27.x'
       oasislmf_branch: 'stable/2.3.x'
@@ -291,7 +291,7 @@ jobs:
     name: test stable worker (${{ needs.setup.outputs.release_stable_1-28 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/1.28.x'
       oasislmf_branch: 'stable/2.3.x'
@@ -308,7 +308,7 @@ jobs:
     name: test stable worker (${{ needs.setup.outputs.release_stable_2-3 }})
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/2.3.x'
       oasislmf_branch: 'stable/2.3.x'
@@ -325,7 +325,7 @@ jobs:
     name: test stable server (${{ needs.setup.outputs.server_min_supported }}) v1
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/2.3.x'
       oasislmf_branch: 'stable/2.3.x'
@@ -342,7 +342,7 @@ jobs:
     name: test stable server (${{ needs.setup.outputs.server_min_supported }}) v2
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
       piwind_branch: 'stable/2.3.x'
       oasislmf_branch: 'stable/2.3.x'
