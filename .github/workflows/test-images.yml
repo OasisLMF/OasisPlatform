@@ -109,17 +109,11 @@ jobs:
         id: piwind
         run: |
           # Select matching base branch on piwind
-          if [[ "${{ github.event_name }}" = "pull_request" ]]; then
-            BRANCH=${{ github.base_ref }}
-            if [[ ! $BRANCH == stable/* ]]; then
-                BRANCH='main'
-            fi
-          elif [[ "${{ github.event_name }}" = "push" ]]; then
-            BRANCH=${{ github.ref_name }}
+          if [[ -n "${{ inputs.piwind_branch }}" ]]; then
+            BRANCH="${{ inputs.piwind_branch }}"
           else
-            BRANCH=${{ inputs.piwind_branch }}
+            BRANCH='stable/2.3.x'
           fi
-
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
 
@@ -327,7 +321,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
-      piwind_branch: 'stable/2.3.x'
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       oasislmf_branch: 'stable/2.3.x'
       server_image: 'coreoasis/api_server'
       server_tag: ${{ needs.setup.outputs.server_min_supported }}
@@ -344,7 +338,7 @@ jobs:
     needs: [setup]
     uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
     with:
-      piwind_branch: 'stable/2.3.x'
+      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       oasislmf_branch: 'stable/2.3.x'
       server_image: 'coreoasis/api_server'
       server_tag: ${{ needs.setup.outputs.server_min_supported }}
