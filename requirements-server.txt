@@ -185,7 +185,7 @@ mysqlclient==2.2.8
     # via -r requirements-server.in
 numba==0.65.1
     # via ods-tools
-numpy==2.4.6
+numpy==1.26.4
     # via
     #   -r requirements-server.in
     #   fastparquet

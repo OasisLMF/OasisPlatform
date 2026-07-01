@@ -23,7 +23,7 @@ jsonschema>=4.0,<5.0
 markdown>=3.0,<4.0
 mozilla_django_oidc
 ods-tools<3.3.0
-numpy>=2.0,<3.0
+numpy>=1.0,<2.0
 pandas>=2.0,<3.0
 pathlib2>=2.0,<3.0
 psycopg2-binary>=2.0,<3.0
