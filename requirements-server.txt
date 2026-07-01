@@ -4,28 +4,17 @@
 #
 #    pip-compile requirements-server.in
 #
-aioredis==1.3.1
-    # via channels-redis
 amqp==5.3.1
     # via kombu
 asgiref==3.11.1
     # via
     #   channels
     #   channels-redis
-    #   daphne
     #   django
-async-timeout==5.0.1
-    # via aioredis
 attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-    #   service-identity
-    #   twisted
-autobahn==25.10.2
-    # via daphne
-automat==25.4.16
-    # via twisted
 azure-core==1.41.0
     # via
     #   azure-identity
@@ -50,16 +39,14 @@ celery==5.6.3
 certifi==2026.6.17
     # via requests
 cffi==2.0.0
-    # via
-    #   autobahn
-    #   cryptography
+    # via cryptography
 chainmap==1.0.3
     # via -r requirements-server.in
-channels==2.4.0
+channels==4.0.0
     # via
     #   -r requirements-server.in
     #   channels-redis
-channels-redis==2.4.2
+channels-redis==4.2.1
     # via -r requirements-server.in
 chardet==7.4.3
     # via ods-tools
@@ -77,8 +64,6 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
-constantly==23.10.4
-    # via twisted
 coreapi==2.3.3
     # via
     #   -r requirements-server.in
@@ -91,17 +76,12 @@ cramjam==2.11.0
     # via fastparquet
 cryptography==49.0.0
     # via
-    #   autobahn
     #   azure-identity
     #   azure-storage-blob
     #   josepy
     #   mozilla-django-oidc
     #   msal
     #   pyjwt
-    #   pyopenssl
-    #   service-identity
-daphne==2.5.0
-    # via channels
 django==3.2.25
     # via
     #   -r requirements-server.in
@@ -153,21 +133,10 @@ greenlet==3.5.3
     # via sqlalchemy
 gunicorn==23.0.0
     # via -r requirements-server.in
-hiredis==3.4.0
-    # via aioredis
 httplib2==0.32.0
     # via pyrabbit
-hyperlink==21.0.0
-    # via
-    #   autobahn
-    #   twisted
 idna==3.18
-    # via
-    #   hyperlink
-    #   requests
-    #   twisted
-incremental==24.11.0
-    # via twisted
+    # via requests
 inflection==0.5.1
     # via drf-yasg
 isodate==0.7.2
@@ -210,7 +179,7 @@ msal==1.37.0
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-msgpack==0.6.2
+msgpack==1.2.1
     # via channels-redis
 mysqlclient==2.2.8
     # via -r requirements-server.in
@@ -222,7 +191,6 @@ numpy==2.4.6
     #   fastparquet
     #   numba
     #   pandas
-    #   pyarrow
 oasis-data-manager==0.2.3
     # via ods-tools
 ods-tools==3.2.10
@@ -232,7 +200,6 @@ packaging==26.2
     #   drf-yasg
     #   fastparquet
     #   gunicorn
-    #   incremental
     #   kombu
     #   ods-tools
 pandas==2.3.3
@@ -247,7 +214,7 @@ prompt-toolkit==3.0.52
     # via click-repl
 psycopg2-binary==2.9.12
     # via -r requirements-server.in
-pyarrow==17.0.0
+pyarrow==24.0.0
     # via -r requirements-server.in
 pycparser==3.0
     # via cffi
@@ -258,8 +225,6 @@ pyjwt[crypto]==2.13.0
     #   redis
 pymysql==1.2.0
     # via -r requirements-server.in
-pyopenssl==26.3.0
-    # via twisted
 pyparsing==3.3.2
     # via httplib2
 pyrabbit==1.1.0
@@ -276,7 +241,9 @@ pytz==2026.2
     #   drf-yasg
     #   pandas
 redis==5.3.1
-    # via -r requirements-server.in
+    # via
+    #   -r requirements-server.in
+    #   channels-redis
 referencing==0.37.0
     # via
     #   jsonschema
@@ -295,8 +262,6 @@ ruamel-yaml==0.19.1
     # via drf-yasg
 s3transfer==0.19.0
     # via boto3
-service-identity==26.1.0
-    # via twisted
 six==1.17.0
     # via
     #   pathlib2
@@ -307,20 +272,14 @@ sqlparse==0.5.5
     # via
     #   django
     #   django-debug-toolbar
-twisted[tls]==26.4.0
-    # via daphne
-txaio==26.6.1
-    # via autobahn
 typing-extensions==4.15.0
     # via
     #   azure-core
     #   azure-identity
     #   azure-storage-blob
     #   oasis-data-manager
-    #   pyopenssl
     #   referencing
     #   sqlalchemy
-    #   twisted
 tzdata==2026.2
     # via
     #   kombu
@@ -346,5 +305,3 @@ whitenoise==6.12.0
     # via -r requirements-server.in
 xxhash==3.8.0
     # via oasis-data-manager
-zope-interface==8.5
-    # via twisted

@@ -1,0 +1,13 @@
+vulnerabilities:
+  - id: CVE-2025-64459
+    paths:
+      - "requirements-server.in"
+    statement: Django upgrade from 3.x to 4.x deferred; risk accepted pending migration testing.
+  - id: CVE-2025-57833
+    paths:
+      - "requirements-server.in"
+    statement: Django upgrade from 3.x to 4.x deferred; risk accepted pending migration testing.
+  - id: CVE-2025-64458
+    paths:
+      - "requirements-server.in"
+    statement: Django upgrade from 3.x to 4.x deferred; risk accepted pending migration testing.

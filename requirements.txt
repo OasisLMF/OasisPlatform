@@ -4,8 +4,6 @@
 #
 #    pip-compile requirements.in
 #
-aioredis==1.3.1
-    # via channels-redis
 amqp==5.3.1
     # via kombu
 anytree==2.13.0
@@ -16,20 +14,14 @@ asgiref==3.11.1
     # via
     #   channels
     #   channels-redis
-    #   daphne
     #   django
 asttokens==3.0.1
     # via stack-data
-async-timeout==5.0.1
-    # via aioredis
 attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-    #   service-identity
     #   twisted
-autobahn==25.10.2
-    # via daphne
 automat==25.4.16
     # via twisted
 azure-core==1.41.0
@@ -82,11 +74,11 @@ chainmap==1.0.3
     # via
     #   -r requirements-server.in
     #   oasislmf
-channels==2.4.0
+channels==4.0.0
     # via
     #   -r requirements-server.in
     #   channels-redis
-channels-redis==2.4.2
+channels-redis==4.2.1
     # via -r requirements-server.in
 chardet==7.4.3
     # via
@@ -127,9 +119,9 @@ coverage[toml]==7.14.3
     #   pytest-cov
 cramjam==2.11.0
     # via fastparquet
-cryptography==44.0.3
+cryptography==49.0.0
     # via
-    #   autobahn
+    #   -r requirements.in
     #   azure-identity
     #   azure-storage-blob
     #   josepy
@@ -137,9 +129,6 @@ cryptography==44.0.3
     #   msal
     #   pyjwt
     #   pyopenssl
-    #   service-identity
-daphne==2.5.0
-    # via channels
 decorator==5.3.1
     # via
     #   ipdb
@@ -224,21 +213,16 @@ greenlet==3.5.3
     # via sqlalchemy
 gunicorn==23.0.0
     # via -r requirements-server.in
-hiredis==3.4.0
-    # via aioredis
 httplib2==0.32.0
     # via pyrabbit
 hyperlink==21.0.0
-    # via
-    #   autobahn
-    #   twisted
+    # via twisted
 hypothesis==6.155.7
     # via -r requirements.in
 idna==3.18
     # via
     #   hyperlink
     #   requests
-    #   twisted
 incremental==24.11.0
     # via twisted
 inflection==0.5.1
@@ -304,7 +288,7 @@ msal==1.37.0
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-msgpack==0.6.2
+msgpack==1.2.1
     # via
     #   channels-redis
     #   oasislmf
@@ -330,7 +314,6 @@ numpy==2.4.6
     #   numexpr
     #   oasislmf
     #   pandas
-    #   pyarrow
     #   pyogrio
     #   scikit-learn
     #   scipy
@@ -403,16 +386,10 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pyarrow==17.0.0
+pyarrow==24.0.0
     # via
     #   -r requirements-server.in
     #   oasislmf
-pyasn1==0.6.3
-    # via
-    #   pyasn1-modules
-    #   service-identity
-pyasn1-modules==0.4.2
-    # via service-identity
 pycodestyle==2.14.0
     # via flake8
 pycparser==3.0
@@ -435,10 +412,8 @@ pymysql==1.2.0
     #   -r requirements-worker.in
 pyogrio==0.13.0
     # via geopandas
-pyopenssl==24.3.0
-    # via
-    #   -r requirements.in
-    #   twisted
+pyopenssl==26.3.0
+    # via -r requirements.in
 pyparsing==3.3.2
     # via httplib2
 pyproj==3.7.2
@@ -482,6 +457,7 @@ redis==5.3.1
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in
+    #   channels-redis
 referencing==0.37.0
     # via
     #   jsonschema
@@ -514,8 +490,6 @@ scipy==1.18.0
     # via
     #   oasislmf
     #   scikit-learn
-service-identity==24.2.0
-    # via twisted
 shapely==2.1.2
     # via
     #   geopandas
@@ -558,10 +532,8 @@ traitlets==5.15.1
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==25.5.0
-    # via daphne
-txaio==26.6.1
-    # via autobahn
+twisted==26.4.0
+    # via -r requirements.in
 typing-extensions==4.15.0
     # via
     #   azure-core
@@ -569,6 +541,7 @@ typing-extensions==4.15.0
     #   azure-storage-blob
     #   beautifulsoup4
     #   oasis-data-manager
+    #   pyopenssl
     #   referencing
     #   sqlalchemy
     #   twisted
