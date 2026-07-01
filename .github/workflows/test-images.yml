@@ -121,7 +121,7 @@ jobs:
           else
              BRANCH='stable/2.4.x'
           fi
-
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: Select Pytest Options
         id: pytest
