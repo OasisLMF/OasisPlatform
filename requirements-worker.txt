@@ -119,7 +119,7 @@ numba==0.65.1
     #   ods-tools
 numexpr==2.14.1
     # via oasislmf
-numpy==2.4.6
+numpy==1.26.4
     # via
     #   -r requirements-worker.in
     #   fastparquet
