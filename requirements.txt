@@ -486,8 +486,9 @@ s3transfer==0.19.0
     # via boto3
 scikit-learn==1.9.0
     # via oasislmf
-scipy==1.18.0
+scipy==1.17.1
     # via
+    #   -r requirements-worker.in
     #   oasislmf
     #   scikit-learn
 shapely==2.1.2
