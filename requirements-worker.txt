@@ -10,44 +10,44 @@ anytree==2.13.0
     # via oasislmf
 argparsetree==0.0.6
     # via oasislmf
-attrs==25.3.0
+attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-azure-core==1.38.0
+azure-core==1.41.0
     # via
     #   -r requirements-worker.in
     #   azure-storage-blob
-azure-storage-blob==12.26.0
+azure-storage-blob==12.30.0
     # via -r requirements-worker.in
-billiard==4.2.1
+billiard==4.2.4
     # via
     #   -r requirements-worker.in
     #   celery
-boto3==1.40.3
+boto3==1.43.37
     # via -r requirements-worker.in
-botocore==1.40.3
+botocore==1.43.37
     # via
     #   boto3
     #   s3transfer
-celery==5.5.3
+celery==5.6.3
     # via -r requirements-worker.in
-certifi==2025.8.3
+certifi==2026.6.17
     # via
     #   pyogrio
     #   pyproj
     #   requests
-cffi==1.17.1
+cffi==2.0.0
     # via cryptography
 chainmap==1.0.3
     # via oasislmf
-chardet==5.2.0
+chardet==7.4.3
     # via
     #   oasislmf
     #   ods-tools
-charset-normalizer==3.4.2
+charset-normalizer==3.4.7
     # via requests
-click==8.2.1
+click==8.4.2
     # via
     #   celery
     #   click-didyoumean
@@ -63,61 +63,63 @@ configparser==7.2.0
     # via -r requirements-worker.in
 cramjam==2.11.0
     # via fastparquet
-cryptography==45.0.6
+cryptography==49.0.0
     # via azure-storage-blob
-fasteners==0.19
+fasteners==0.20
     # via -r requirements-worker.in
-fastparquet==2024.11.0
+fastparquet==2026.5.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.18.0
+filelock==3.29.4
     # via -r requirements-worker.in
 forex-python==1.9.2
     # via oasislmf
-fsspec==2025.7.0
+fsspec==2026.6.0
     # via
     #   fastparquet
     #   oasis-data-manager
-geopandas==1.1.2
+geopandas==1.1.4
     # via oasislmf
-greenlet==3.2.3
+greenlet==3.5.3
     # via sqlalchemy
-idna==3.10
+idna==3.18
     # via requests
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
 isodate==0.7.2
     # via azure-storage-blob
-jmespath==1.0.1
+jmespath==1.1.0
     # via
     #   boto3
     #   botocore
-joblib==1.5.1
+joblib==1.5.3
     # via
     #   -r requirements-worker.in
     #   scikit-learn
 jsonref==1.1.0
     # via ods-tools
-jsonschema==4.25.0
+jsonschema==4.26.0
     # via ods-tools
-jsonschema-specifications==2025.4.1
+jsonschema-specifications==2025.9.1
     # via jsonschema
-kombu==5.5.4
+kombu==5.6.2
     # via celery
-llvmlite==0.44.0
+llvmlite==0.47.0
     # via numba
-msgpack==1.1.1
+msgpack==1.2.1
     # via oasislmf
+narwhals==2.22.1
+    # via scikit-learn
 natsort==8.4.0
     # via -r requirements-worker.in
-numba==0.61.2
+numba==0.65.1
     # via
     #   oasislmf
     #   ods-tools
-numexpr==2.11.0
+numexpr==2.14.1
     # via oasislmf
-numpy==2.2.6
+numpy==2.4.6
     # via
     #   -r requirements-worker.in
     #   fastparquet
@@ -130,7 +132,7 @@ numpy==2.2.6
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.2.0
+oasis-data-manager==0.2.3
     # via
     #   oasislmf
     #   ods-tools
@@ -140,7 +142,7 @@ ods-tools==3.2.10
     # via
     #   -r requirements-worker.in
     #   oasislmf
-packaging==25.0
+packaging==26.2
     # via
     #   fastparquet
     #   geopandas
@@ -148,7 +150,7 @@ packaging==25.0
     #   ods-tools
     #   pyogrio
     #   pytest
-pandas==2.3.2
+pandas==2.3.3
     # via
     #   -r requirements-worker.in
     #   fastparquet
@@ -160,42 +162,42 @@ pathlib2==2.3.7.post1
     # via -r requirements-worker.in
 pluggy==1.6.0
     # via pytest
-prompt-toolkit==3.0.51
+prompt-toolkit==3.0.52
     # via click-repl
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.12
     # via -r requirements-worker.in
-pyarrow==21.0.0
+pyarrow==24.0.0
     # via oasislmf
-pycparser==2.22
+pycparser==3.0
     # via cffi
-pygments==2.19.2
+pygments==2.20.0
     # via pytest
-pyjwt==2.10.1
+pyjwt==2.13.0
     # via redis
-pymysql==1.1.1
+pymysql==1.2.0
     # via -r requirements-worker.in
-pyogrio==0.11.1
+pyogrio==0.13.0
     # via geopandas
-pyproj==3.7.1
+pyproj==3.7.2
     # via geopandas
-pytest==8.4.1
+pytest==8.4.2
     # via -r requirements-worker.in
 python-dateutil==2.9.0.post0
     # via
     #   botocore
     #   celery
     #   pandas
-pytz==2025.2
+pytz==2026.2
     # via
     #   oasislmf
     #   pandas
 redis==5.3.1
     # via -r requirements-worker.in
-referencing==0.36.2
+referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.4
+requests==2.34.2
     # via
     #   azure-core
     #   forex-python
@@ -203,54 +205,57 @@ requests==2.32.4
     #   requests-toolbelt
 requests-toolbelt==1.0.0
     # via oasislmf
-rpds-py==0.26.0
+rpds-py==2026.6.3
     # via
     #   jsonschema
     #   referencing
-rtree==1.4.0
+rtree==1.4.1
     # via oasislmf
-s3transfer==0.13.1
+s3transfer==0.19.0
     # via boto3
-scikit-learn==1.7.1
+scikit-learn==1.9.0
     # via oasislmf
-scipy==1.16.1
+scipy==1.17.1
     # via
+    #   -r requirements-worker.in
     #   oasislmf
     #   scikit-learn
-shapely==2.1.1
+shapely==2.1.2
     # via
     #   geopandas
     #   oasislmf
 shutilwhich==1.1.0
     # via oasislmf
-simplejson==3.20.1
+simplejson==4.1.1
     # via forex-python
 six==1.17.0
     # via
     #   pathlib2
     #   python-dateutil
-sqlalchemy==2.0.42
+sqlalchemy==2.0.51
     # via -r requirements-worker.in
-tabulate==0.9.0
+tabulate==0.10.0
     # via oasislmf
-tblib==3.1.0
+tblib==3.2.2
     # via oasislmf
 threadpoolctl==3.6.0
     # via scikit-learn
-tqdm==4.67.1
+tqdm==4.68.3
     # via oasislmf
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   azure-core
     #   azure-storage-blob
     #   oasis-data-manager
     #   referencing
     #   sqlalchemy
-tzdata==2025.2
+tzdata==2026.2
     # via
     #   kombu
     #   pandas
-urllib3==2.6.3
+tzlocal==5.4.4
+    # via celery
+urllib3==2.7.0
     # via
     #   botocore
     #   requests
@@ -259,7 +264,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-wcwidth==0.2.13
+wcwidth==0.8.2
     # via prompt-toolkit
-xxhash==3.6.0
+xxhash==3.8.0
     # via oasis-data-manager
