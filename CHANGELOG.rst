@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.3.21`_
+ ---------
+* [#1408](https://github.com/OasisLMF/OasisPlatform/pull/1409) - Worker monitor failed to report Input generation error
+* [#1411](https://github.com/OasisLMF/OasisPlatform/pull/1411) - Fix CVE issues 2.3.x
+* [#1359](https://github.com/OasisLMF/OasisPlatform/pull/1363) - Test using AMPQS with celery
+* [#1364](https://github.com/OasisLMF/OasisPlatform/pull/1364) - Pin trivy-action to commit not a ref that is mutable
+* [#1372](https://github.com/OasisLMF/OasisPlatform/pull/1372) - auto release branch
+.. _`2.3.21`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.20...2.3.21
+
 * [#1337](https://github.com/OasisLMF/OasisPlatform/pull/1337) - Update/ci latest 2.3
 .. _`2.3.20`:  https://github.com/OasisLMF/OasisPlatform/compare/2.3.19...2.3.20
 

@@ -1,8 +1,8 @@
 # ---- STAGE 1 -----
 FROM ubuntu:24.04 AS build-packages
 
-ENV PIP_BREAK_SYSTEM_PACKAGES 1
-ENV DEBIAN_FRONTEND noninteractive
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV DEBIAN_FRONTEND=noninteractive
 COPY ./requirements-server.txt ./requirements-server.txt
 RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential python3 python3-pip python3-dev pkg-config libmariadb-dev-compat && rm -rf /var/lib/apt/lists/*
 RUN pip install --user --no-warn-script-location -r ./requirements-server.txt && pip install --no-warn-script-location --user mysqlclient
@@ -21,7 +21,8 @@ USER server
 FROM ubuntu:24.04
 RUN apt-get update \
  && apt-get upgrade -y \
- && apt-get install -y --no-install-recommends python3 python3-pkg-resources curl libmariadbclient-dev-compat \
+ && apt-get install -y --no-install-recommends python3 python3-pkg-resources curl libmariadbclient-dev-compat  ca-certificates \ 
+ && update-ca-certificates \
  && rm -rf /var/lib/apt/lists/
 
 ARG USER_ID=1000
@@ -58,8 +59,8 @@ RUN chown -R server:server /shared-fs \
 
 USER server
 RUN OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
-ENV PIP_BREAK_SYSTEM_PACKAGES 1
-ENV OASIS_SERVER_DB_ENGINE django.db.backends.mysql
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV OASIS_SERVER_DB_ENGINE=django.db.backends.mysql
 ENV OASIS_MEDIA_ROOT=/shared-fs
 ENV OASIS_DEBUG=false
 ENV PATH=/home/server/.local/bin:$PATH

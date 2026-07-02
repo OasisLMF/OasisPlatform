@@ -702,8 +702,14 @@ def handle_task_failure(
                 if hasattr(subtask.error_log, 'read'):
                     tmp_file.write(f'\n=== {subtask.slug} ===\n'.encode('utf-8'))
                     if hasattr(subtask.output_log, 'read'):
-                        tmp_file.write(subtask.output_log.read())
-                    tmp_file.write(subtask.error_log.read())
+                        try:
+                            tmp_file.write(subtask.output_log.read())
+                        except FileNotFoundError:
+                            pass
+                    try:
+                        tmp_file.write(subtask.error_log.read())
+                    except FileNotFoundError:
+                        pass
 
             tmp_file.seek(0)
             setattr(analysis, traceback_property, RelatedFile.objects.create(
