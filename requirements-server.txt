@@ -96,7 +96,7 @@ cryptography==45.0.6
     #   service-identity
 daphne==4.2.1
     # via -r requirements-server.in
-django==5.2.11
+django==5.2.15
     # via
     #   -r requirements-server.in
     #   channels
@@ -196,8 +196,9 @@ markupsafe==3.0.2
     # via jinja2
 mozilla-django-oidc==4.0.1
     # via -r requirements-server.in
-msal==1.33.0
+msal==1.37.0
     # via
+    #   -r requirements-server.in
     #   azure-identity
     #   msal-extensions
 msal-extensions==1.3.1
@@ -213,7 +214,6 @@ numpy==2.2.6
     #   fastparquet
     #   numba
     #   pandas
-    #   pyarrow
 oasis-data-manager==0.2.0
     # via
     #   -r requirements-server.in
@@ -245,7 +245,7 @@ psycopg-pool==3.2.6
     # via psycopg
 psycopg2-binary==2.9.10
     # via -r requirements-server.in
-pyarrow==17.0.0
+pyarrow==24.0.0
     # via -r requirements-server.in
 pyasn1==0.6.2
     # via
