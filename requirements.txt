@@ -582,7 +582,7 @@ six==1.17.0
     #   python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.7
+soupsieve==2.8.4
     # via beautifulsoup4
 sqlalchemy==2.0.43
     # via
