@@ -1,6 +1,15 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.13`_
+ ---------
+* [#1408](https://github.com/OasisLMF/OasisPlatform/pull/1409) - Worker monitor failed to report Input generation error
+* [#1412](https://github.com/OasisLMF/OasisPlatform/pull/1412) - CVE and CI fixes for release 2.4.x
+* [#1359](https://github.com/OasisLMF/OasisPlatform/pull/1363) - Test using AMPQS with celery
+* [#1364](https://github.com/OasisLMF/OasisPlatform/pull/1364) - Pin trivy-action to commit not a ref that is mutable
+* [#1372](https://github.com/OasisLMF/OasisPlatform/pull/1372) - auto release branch
+.. _`2.4.13`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.12...2.4.13
+
 `2.4.12`_
  ---------
 * [#1323](https://github.com/OasisLMF/OasisPlatform/pull/1324) - Server DB connection overload
