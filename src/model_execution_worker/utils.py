@@ -35,7 +35,6 @@ from oasislmf.utils.exceptions import OasisException
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
 import requests
-from ..conf.iniconf import settings
 
 
 logger = logging.getLogger(__name__)
