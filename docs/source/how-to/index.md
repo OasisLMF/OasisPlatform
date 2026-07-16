@@ -6,6 +6,7 @@ Task-oriented guides for deploying, configuring and running the platform.
 :maxdepth: 1
 
 first-steps
+run-analysis-via-api
 deployment
 container_configuration
 distributed_execution
