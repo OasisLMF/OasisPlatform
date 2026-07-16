@@ -14,7 +14,32 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "sphinx.ext.intersphinx",
+    "sphinxcontrib.redoc",   # render the OpenAPI schemas
 ]
+
+# -- REST API reference (redoc) ---------------------------------------------
+# The Platform v1/v2 OpenAPI schemas are persisted in-repo under
+# _static/schemas/ and rendered as interactive redoc pages. They are generated
+# from the Django app with drf-spectacular (.github/workflows/build-schema.yml);
+# a CI step should regenerate and commit them on release so they stay in step
+# with the code (replacing the manually-committed snapshot).
+redoc = [
+    {
+        "name": "Platform v2 API",
+        "page": "reference/platform_v2",
+        "spec": "_static/schemas/platform-2.json",
+        "embed": True,
+    },
+    {
+        "name": "Platform v1 API",
+        "page": "reference/platform_v1",
+        "spec": "_static/schemas/platform-1.json",
+        "embed": True,
+    },
+]
+# No redoc_uri: use the redoc.js bundled with sphinxcontrib-redoc (vendored into
+# _static at build). This keeps the docs self-contained — no runtime CDN dependency
+# and no network needed at build time.
 
 source_suffix = {
     ".rst": "restructuredtext",
