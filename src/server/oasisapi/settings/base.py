@@ -113,6 +113,7 @@ INSTALLED_APPS = [
     'src.server.oasisapi.healthcheck',
     'src.server.oasisapi.info',
     'src.server.oasisapi.queues',
+    'src.server.oasisapi.external_providers',
     'django_cleanup.apps.CleanupConfig',
 
 
@@ -636,6 +637,12 @@ if IN_TEST:
 
 # Option to remote the 'v2' routes and only run the server with 'v1' endpoints
 DISABLE_V2_API = iniconf.settings.getboolean('server', 'disable_v2_api', fallback=False)
+
+# External exposure-provider integration (GXM phase 1)
+EXTERNAL_PROVIDERS_ENABLED = iniconf.settings.getboolean('server', 'EXTERNAL_PROVIDERS_ENABLED', fallback=False)
+GXM_BASE_URL = iniconf.settings.get('server', 'GXM_BASE_URL', fallback='')
+GXM_CLIENT_ID = iniconf.settings.get('server', 'GXM_CLIENT_ID', fallback='')
+GXM_CLIENT_SECRET = iniconf.settings.get('server', 'GXM_CLIENT_SECRET', fallback='')
 
 if DEBUG_TOOLBAR:
     INTERNAL_IPS = [
