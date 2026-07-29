@@ -257,7 +257,7 @@ gunicorn==23.0.0
     # via -r requirements-server.in
 h3==4.5.0
     # via oasislmf
-httplib2==0.31.2
+httplib2==0.32.0
     # via pyrabbit
 hyperlink==21.0.0
     # via
@@ -422,7 +422,7 @@ pathlib2==2.3.7.post1
     #   -r requirements-worker.in
 pexpect==4.9.0
     # via ipython
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 pip-tools==7.5.3
     # via -r requirements.in
@@ -468,7 +468,7 @@ pyarrow==24.0.0
     #   -r requirements-server.in
     #   oasislmf
     #   ods-tools
-pyasn1==0.6.3
+pyasn1==0.6.4
     # via -r requirements-server.in
 pycodestyle==2.14.0
     # via flake8
