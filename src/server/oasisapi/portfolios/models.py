@@ -264,11 +264,15 @@ class Portfolio(TimeStampedModel):
 
 def get_path_or_url(file):
     """
-    S3 Files have no path attribute and Localstorage needs to use path
+    Remote storage backends (S3, Azure, GCS) don't support absolute paths and
+    raise NotImplementedError from Storage.path(), so fall back to the URL.
     """
     file = getattr(file, 'file', None)
     if file:
-        return getattr(file, 'path', getattr(file, 'url', None))
+        try:
+            return file.path
+        except NotImplementedError:
+            return file.url
     return None
 
 
