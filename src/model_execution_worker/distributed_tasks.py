@@ -14,9 +14,6 @@ import numpy as np
 import polars as pl
 import pyarrow as pa
 import pyarrow.parquet as pq
-from numba import njit
-from numba.core import types as numba_types
-from numba.typed import Dict as NumbaDict
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
@@ -54,32 +51,10 @@ Celery task wrapper for Oasis calculation.
 
 logger = get_task_logger(__name__)
 LOG_FILE_SUFFIX = 'txt'
-# Rows read/written per batch during collect_keys' parquet merge - bounds peak
-# memory independent of total chunk count or file size. Could be wired to
-# settings.ini if operational tuning is ever needed.
-MERGE_BATCH_SIZE = 50_000
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback=True)
-
-
-@njit(cache=True)
-def _dedup_mask_numba(keys, seen):
-    """JIT-compiled first-occurrence membership check used by collect_keys'
-    parquet merge (see _merge_parquet_streaming) - keys is the row's actual
-    index value, and `seen` is reused across all batches/chunks of one merge
-    call so the same key is only ever kept once, keep='first' by call order."""
-    n = keys.shape[0]
-    mask = np.empty(n, dtype=np.bool_)
-    for i in range(n):
-        k = keys[i]
-        if k in seen:
-            mask[i] = False
-        else:
-            seen[k] = True
-            mask[i] = True
-    return mask
 
 
 app = Celery(task_cls=OasisWorkerTask)
@@ -623,13 +598,17 @@ def collect_keys(
     def merge_dataframes(paths, output_file, file_type):
         """Bounds peak memory to the number of UNIQUE rows across all chunks
         (previously: pd.concat of every chunk, i.e. total rows including
-        duplicates). CSV uses polars' lazy streaming engine; parquet uses a
-        numba-accelerated batch stream (see _merge_parquet_streaming - polars'
-        parquet writer doesn't preserve the pandas index metadata this path
-        relies on, so it's kept separate rather than unified onto polars too).
-        Output and dedup semantics (keep='first', value-based for csv,
-        index-based for parquet) are unchanged from the previous
-        pd.concat-then-dedup implementation.
+        duplicates), using polars' lazy streaming engine for both file types.
+
+        Dedup is by actual row content (keep='first') for both csv and
+        parquet. The previous parquet implementation deduped by the pandas
+        index instead, matching the pre-existing pd.concat-then-dedup
+        behaviour it replaced - but chunk files never carry a meaningful
+        index (see _merge_parquet_streaming), so that was a real, separate
+        bug in both the old and an earlier version of this code, not merely
+        a style difference: it silently dropped genuinely distinct rows
+        whenever more than one chunk was merged. Fixed here by switching
+        parquet to the same content-based dedup csv already used.
         """
         if not paths:
             logger.warning("merge_dataframes was called with an empty path list.")
@@ -679,61 +658,41 @@ def collect_keys(
             .sink_csv(str(output_file))
         )
 
-    def _merge_parquet_streaming(paths, output_file, batch_size=MERGE_BATCH_SIZE):
-        def align_to_schema(table, schema):
-            # Builds a table with exactly `schema`'s field order, filling any
-            # column the source table doesn't have with nulls and casting
-            # types as needed. pd.concat used to do this implicitly when
-            # chunks had heterogeneous schemas; pyarrow's Table.cast() requires
-            # the source to already match and won't materialize missing
-            # columns, so this replaces that behaviour explicitly.
-            arrays = []
-            for field in schema:
-                if field.name in table.column_names:
-                    col = table.column(field.name)
-                    if not col.type.equals(field.type):
-                        col = col.cast(field.type)
-                else:
-                    col = pa.nulls(table.num_rows, type=field.type)
-                arrays.append(col)
-            return pa.Table.from_arrays(arrays, schema=schema)
-
-        valid_paths, schemas = [], []
+    def _merge_parquet_streaming(paths, output_file):
+        # Same polars approach as _merge_csv_streaming, deduping by actual row
+        # content rather than by index. Chunk files never carry a meaningful
+        # index to dedup by in the first place: prepare_keys_file_chunk resets
+        # each chunk's location_df index before its lookup runs, and
+        # write_parquet_keys_file writes with preserve_index=False - so two
+        # chunks' outputs always collide on local position even when their
+        # actual content is entirely disjoint. An earlier index-based version
+        # of this function relied on that (nonexistent) index for dedup and
+        # silently dropped every row past the first chunk whenever more than
+        # one chunk was merged - confirmed by writing chunk files the same
+        # way OasisLMF does and replaying both dedup strategies against them.
+        valid_paths = []
         for path in paths:
             try:
-                schemas.append(pq.ParquetFile(path).schema_arrow)
-                valid_paths.append(path)
+                pq.ParquetFile(path).schema_arrow
+                valid_paths.append(str(path))
             except pa.lib.ArrowInvalid:
                 # Raised for a zero-byte file or otherwise corrupt/non-parquet
                 # content - the parquet equivalent of pd.errors.EmptyDataError
                 # in the csv path. Anything else should surface, not be hidden.
                 logger.info(f"File {path} is empty or unreadable. --skipped--")
-        if not schemas:
+        if not valid_paths:
             logger.warning(f"All files were empty: {paths}. --skipped--")
             return
 
-        unified_schema = pa.unify_schemas(schemas)
-        # No collision risk here, unlike a hash-based scheme: this is the
-        # row's actual index value (cast to uint64), not a content hash, so
-        # there's nothing to verify on a "hit" - equal keys are equal rows.
-        seen_index = NumbaDict.empty(key_type=numba_types.uint64, value_type=numba_types.boolean)
-        writer = pq.ParquetWriter(output_file, schema=unified_schema)
-        try:
-            for path in valid_paths:
-                pf = pq.ParquetFile(path)
-                for record_batch in pf.iter_batches(batch_size=batch_size):
-                    batch_df = pa.Table.from_batches([record_batch]).to_pandas()
-                    idx = batch_df.index.to_numpy().astype(np.uint64)
-                    mask = _dedup_mask_numba(idx, seen_index)
-                    batch_df = batch_df[mask]
-                    if batch_df.empty:
-                        continue
-                    out_table = pa.Table.from_pandas(batch_df, preserve_index=True)
-                    if not out_table.schema.equals(unified_schema):
-                        out_table = align_to_schema(out_table, unified_schema)
-                    writer.write_table(out_table)
-        finally:
-            writer.close()
+        # Scan each chunk as its own LazyFrame and concat with how='diagonal'
+        # rather than pl.scan_parquet(list_of_paths) directly, for the same
+        # heterogeneous-schema reason as the csv path.
+        lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
+        (
+            pl.concat(lazy_frames, how='diagonal')
+            .unique(keep='first', maintain_order=True)
+            .sink_parquet(str(output_file))
+        )
 
     def take_first(paths, output_file):
         first_path = paths[0]
