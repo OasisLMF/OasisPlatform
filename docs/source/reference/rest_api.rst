@@ -31,6 +31,7 @@ On each release of the Oasis Platform, all three of these API versions are publi
     :alt: Oasis platform release assest (github)
     :width: 700
     :align: center
+
 |
 
 
@@ -79,6 +80,7 @@ The run_mode selects execution workflow:
     :alt: RabbitMQ broker queues
     :width: 700
     :align: center
+
 |
 
 
@@ -99,7 +101,7 @@ To prevent such issues, whenever a Model Resource's configuration is changed in 
 
 **Option 1:** Update a Model Resource in the REST API from run_mode='V2' to run_mode='V1',
 
-**Option 2:** Set the container to listen on the 'distributed execution' celery queue by setting the environment variable **OASIS_RUN_MODE=V2** and restarting the container. This will cause the worker to listen on the new *-v2 suffixed queue.
+**Option 2:** Set the container to listen on the 'distributed execution' celery queue by setting the environment variable **OASIS_RUN_MODE=V2** and restarting the container. This will cause the worker to listen on the new ``-v2`` suffixed queue.
 
 Celery tasks on a queue are immutable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,7 +158,7 @@ To achieve this, first retrieve the storage links of an existing portfolio: ``GE
 Then, when creating a new portfolio (``POST portfolios/``) or updating an existing one (``POST portfolios/{id}/storage_links/``), you can reference these internal file identifiers:
 
 
-.. code-block:: http
+.. code-block:: text
 
     POST portfolios/
 
@@ -212,7 +214,7 @@ This links a specific **Oasis model** to an **uploaded portfolio** of exposure d
 Upon successful creation, the analysis will initially have a status of **NEW**. This is the field that tracks the current state of a loss analyses
 
 Flow of an execution
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 For all Oasis workflows, regardless of whether you're using V1 or V2 modes, the execution is logically divided into two distinct and **dependent sequential steps**: **Input Generation** and **Loss Generation**. To successfully calculate the losses, the **Input Generation** step must be completed first and without error.
 
@@ -247,7 +249,7 @@ All analysis states related to this initial generate_inputs step are prefixed wi
 * **INPUTS_GENERATION_CANCELLED**: The input generation process was explicitly canceled.
 
 2. Loss Generation: Executing the Model and Producing Results
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This is the second and final execution step, where the Oasis model performs the core loss calculations. This step is only enabled **after** the generate_inputs step has successfully completed and the analysis is in the **READY** state. It is initiated via the API endpoint:
 

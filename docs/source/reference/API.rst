@@ -12,24 +12,21 @@ On this page
 |
 
 .. _intro_api:
+
 Introduction:
 *************
-
-----
 
 An evaluation version of the Oasis platform and using can be deployed using the `Oasis evaluation repository 
 <https://github.com/OasisLMF/OasisEvaluation>`_. This includes a Jupyter notebook that illustrates the basic 
 operation of the API, using the Python API client.
 
-The API schemas can be found here:
+The interactive API schema references are:
 
-the Platform v1 REST API
+* :doc:`platform_v2` — the current Platform v2 REST API
+* :doc:`platform_v1` — the legacy Platform v1 REST API
 
-the Platform v2 REST API
-
-This is useful for more technical users who are looking to create their own UI or integrate Oasis with an existing 
-system. The v1 schema hierarchy is shown in json format in right column of the page. An interactive version of the 
-schema, with descriptions and examples, can be found below:
+This is useful for more technical users who are looking to create their own UI or integrate Oasis with an existing
+system. Each page renders the full OpenAPI schema with descriptions and examples.
 
 
 
@@ -39,8 +36,6 @@ schema, with descriptions and examples, can be found below:
 
 Oasis API
 *********
-
-----
 
 The Oasis Platform release now includes a full API for operating catastrophe models and a general consolidation of the 
 platform architecture. Windows SQL server is no longer a strict requirement. The platform can be run via docker containers 
@@ -70,8 +65,6 @@ operate your catastrophe models.
 API deployment in the Oasis Enterprise Platform
 ***********************************************
 
-----
-
 The **Oasis Enterprise Platform** is an open source `Kubernetes <https://kubernetes.io/docs/concepts/overview/>`_ based, 
 cloud computing cluster, which is deployable in `Microsoft Azure <https://azure.microsoft.com/en-gb/resources/
 cloud-computing-dictionary/what-is-azure/>`_ via `Helm charts <https://helm.sh/docs/topics/charts/>`_ and `Bicep scripts 
@@ -89,8 +82,6 @@ services. The diagram below sets out the **Oasis Enterprise Platform** architect
 
 Links for further information
 *****************************
-
-----
 
 There is more information availible in the `Oasis GitHub <https://github.com/OasisLMF>`_. 
 
@@ -110,7 +101,7 @@ github.com/OasisLMF/OasisAzureDeployment/blob/master/README.md#5-Deploy-without-
 github.com/OasisLMF/OasisAzureDeployment/blob/master/README.md#7-Troubleshooting>`_, and it answers some additional 
 `questions about the design <https://github.com/OasisLMF/OasisAzureDeployment/blob/master/README.md#8-Questions-about-design>`_.
 
-More information can be found `here <https://github.com/OasisLMF/OasisAzureDeployment/blob/master/README.md#8-Questions-about-design>`_.
+More information can be found `here <https://github.com/OasisLMF/OasisAzureDeployment/blob/master/README.md#8-Questions-about-design>`__.
 
 |
 
@@ -126,13 +117,13 @@ details <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/
 `keycloak <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#keycloak>`_, and how to 
 access `help scripts <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#help-scripts>`_.
 
-More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#helm-and-customization>`_.
+More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#helm-and-customization>`__.
 
 |
 
 3. How to deploy and manage the Oasis platform on a `Kubernetes <https://kubernetes.io/docs/concepts/overview/>`_ cluster.
 
-More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/README.md>`_.
+More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/README.md>`__.
 
 |
 
@@ -141,4 +132,4 @@ More information can be found `here <https://github.com/OasisLMF/OasisPlatform/b
 This application controls the number of workers in a kubernetes cluster based on analyses currently running, worker 
 deployments available and autoscaling configuration for each worker deployment.
 
-More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/worker-controller/README.md>`_.
+More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/worker-controller/README.md>`__.
