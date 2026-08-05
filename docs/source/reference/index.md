@@ -26,7 +26,7 @@ platform_v1
 :class: note
 
 The OpenAPI schemas are **persisted in-repo** under `_static/schemas/` and rendered here
-with redoc. They are generated from the Django app with drf-spectacular
+with Redoc (vendored standalone bundle). They are generated from the Django app with drf-spectacular
 (`.github/workflows/build-schema.yml`); a CI step should regenerate and commit them on
 release so they track the code (replacing the manually-committed snapshot). This fixes the
 previous situation where the schemas existed only as short-lived CI artifacts. Example

@@ -4,6 +4,10 @@
 # container/Kubernetes configuration, distributed execution, the web UI and the
 # REST API. Built with the same Furo + MyST toolchain as the OasisLMF docs and
 # pulled into the aggregated Oasis site via intersphinx.
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath("_ext"))
 
 project = "Oasis Platform"
 copyright = "Oasis Loss Modelling Framework"
@@ -14,32 +18,18 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "sphinx.ext.intersphinx",
-    "sphinxcontrib.redoc",   # render the OpenAPI schemas
+    "gen_redoc",   # generate the standalone Redoc API pages (spec inlined) at build time
 ]
 
-# -- REST API reference (redoc) ---------------------------------------------
-# The Platform v1/v2 OpenAPI schemas are persisted in-repo under
-# _static/schemas/ and rendered as interactive redoc pages. They are generated
-# from the Django app with drf-spectacular (.github/workflows/build-schema.yml);
-# a CI step should regenerate and commit them on release so they stay in step
-# with the code (replacing the manually-committed snapshot).
-redoc = [
-    {
-        "name": "Platform v2 API",
-        "page": "reference/platform_v2",
-        "spec": "_static/schemas/platform-2.json",
-        "embed": True,
-    },
-    {
-        "name": "Platform v1 API",
-        "page": "reference/platform_v1",
-        "spec": "_static/schemas/platform-1.json",
-        "embed": True,
-    },
-]
-# No redoc_uri: use the redoc.js bundled with sphinxcontrib-redoc (vendored into
-# _static at build). This keeps the docs self-contained — no runtime CDN dependency
-# and no network needed at build time.
+# -- REST API reference (Redoc) ---------------------------------------------
+# The Platform v1/v2 OpenAPI schemas are persisted in-repo under _static/schemas/
+# and rendered with Redoc — the maintained upstream renderer, vendored as a
+# standalone bundle in _static/redoc/ (no Sphinx extension, so no Sphinx version
+# cap and no pkg_resources dependency; fully offline/self-contained). The themed
+# pages reference/platform_v{1,2}.md embed the standalone _static/redoc/*.html via
+# an isolated iframe. Schemas are generated from the Django app with
+# drf-spectacular (.github/workflows/build-schema.yml); a CI step should
+# regenerate and commit them on release so they stay in step with the code.
 
 source_suffix = {
     ".rst": "restructuredtext",

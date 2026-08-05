@@ -1,0 +1,4 @@
+build/
+# Redoc API pages are generated at build time (spec inlined) by _ext/gen_redoc.py
+source/_static/redoc/platform-v*.html
+**/__pycache__/

@@ -1,8 +1,8 @@
 # Documentation build dependencies (OasisPlatform docs/source)
+# The REST API reference is rendered by Redoc, vendored as a standalone bundle in
+# _static/redoc/ — no Sphinx extension, so no Sphinx version cap or pkg_resources pin.
 sphinx
 furo
 myst-parser
 sphinx-design
 sphinx-copybutton
-sphinxcontrib-redoc
-setuptools<81      # sphinxcontrib-redoc needs pkg_resources
