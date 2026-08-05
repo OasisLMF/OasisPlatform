@@ -4,6 +4,7 @@ from typing import List, TYPE_CHECKING, NamedTuple
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
+from django.conf import settings
 from django.utils.timezone import now
 from django.db.models import F
 from rest_framework.serializers import DateTimeField
@@ -91,6 +92,9 @@ def build_task_status_message(items: List[TaskStatusMessageItem], message_type='
 
 
 def send_task_status_message(items: dict):
+    if settings.DISABLE_WORKER_WS:
+        logger.debug("Worker websocket messaging is disabled, skipping status message")
+        return
     layer = get_channel_layer()
     logger.debug("Message has been recieved")
     async_to_sync(layer.group_send)(
