@@ -1,5 +1,5 @@
 Container Configuration
-======================
+=======================
 
 .. _container_configuration:
 
@@ -15,7 +15,7 @@ Configuration for OASIS Docker containers is primarily managed via a conf.ini fi
 Naming Convention
 ^^^^^^^^^^^^^^^^^
 
-To ensure an environment variable is recognized and applied, it must be prefixed with **OASIS_**. Any environment variable lacking this prefix will be ignored by the OASIS applications.
+To ensure an environment variable is recognized and applied, it must be prefixed with **OASIS\_**. Any environment variable lacking this prefix will be ignored by the OASIS applications.
 
 * **Example:** Setting OASIS_DEBUG=True will override the default DEBUG=False value found in the conf.ini file.
 
@@ -40,7 +40,7 @@ Precedence Hierarchy
 When an OASIS container starts, configuration values are applied in the following order of precedence, with later steps overriding earlier ones:
 
 1. **conf.ini Defaults:** Values read from the conf.ini file ([default], [server], [worker], [celery] sections, respecting section-specific overrides).
-2. **OASIS_ Prefixed Environment Variables:** Any environment variable set with the OASIS_ prefix (e.g., OASIS_DEBUG) will *always* override a corresponding setting derived from the conf.ini file.
+2. **OASIS\_ Prefixed Environment Variables:** Any environment variable set with the OASIS\_ prefix (e.g., OASIS_DEBUG) will *always* override a corresponding setting derived from the conf.ini file.
 
 This ensures that you can define sensible defaults within your image, while maintaining the flexibility to adjust specific parameters at deployment time using environment variables, without needing to rebuild or modify the container image itself.
 
@@ -55,7 +55,7 @@ The conf.ini file employs a standard INI file format, organized into sections, e
 * **[celery]**: This section is dedicated to Celery-specific configuration options and applies to *both* server and worker container types, assuming both might interact with Celery.
 
 Precedence Rules
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 1. **Environment Variables (Highest Precedence):** An environment variable OASIS_SETTING_NAME_TO_GET=<value> will always override any setting, regardless of the conf.ini file. This provides the most dynamic and immediate way to adjust configurations without modifying the file itself.
 2. **Specific Section Overrides Default:** For server containers, values in [server] take precedence over [default]. For worker containers, values in [worker] take precedence over [default].
@@ -64,7 +64,7 @@ Precedence Rules
 Server Container Configuration Options
 --------------------------------------
 
-These options are specifically applicable to the **coreoasis/api_server** containers and can be set via environment variables (prefixed with OASIS_, OASIS_{ini sections}_{variable}) or within the conf.ini file's [server] or [default] sections.
+These options are specifically applicable to the **coreoasis/api_server** containers and can be set via environment variables (prefixed with OASIS\_, OASIS\_{ini sections}_{variable}) or within the conf.ini file's [server] or [default] sections.
 
 For example OASIS_DB_PASS=<value> or OASIS_SERVER_DB_PASS=<value> will both work.
 
@@ -83,7 +83,7 @@ Django Core Options
    "OASIS_ADMIN_PASS", "String", "None", "The password for the default admin user specified by OASIS_ADMIN_USER. Requires OASIS_ADMIN_USER."
 
 Debug Options
-^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 .. csv-table::
    :header: "Option Name", "Type", "Default", "Description"
@@ -162,7 +162,7 @@ Server Database (DB) Options
    "CHANNEL_LAYER_HOST", "String", "channel-layer", "The hostname or IP address of the server hosting the Django Channels layer (e.g., Redis or RabbitMQ)."
 
 Authentication Options
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. csv-table::
    :header: "Option Name", "Type", "Default", "Description"
@@ -211,7 +211,7 @@ These three variables are crucial for the worker to correctly identify and conne
    "MODEL_VERSION_ID", "String", "None", "Identifier for the model version, forming part of the Celery queue name."
 
 Workflow Run Mode
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 .. csv-table::
    :header: "Option Name", "Type", "Default", "Description"
@@ -235,7 +235,7 @@ These options define file locations within the worker container for models, conf
    "TASK_LOG_DIR", "String", "/var/log/oasis/tasks", "The directory where specific logs for individual tasks executed by the worker are stored."
 
 Debug Options
-^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 These options control various debugging behaviors and features within the worker.
 
@@ -347,7 +347,7 @@ Celery Broker: Image Versions 2.3.x or Newer
    "OASIS_CELERY_BROKER_URL", "String", "amqp://rabbit:rabbit@broker:5672", "Full connection URL for the Celery broker."
 
 Celery Results DB connection Values: Applies to All Versions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. csv-table::
    :header: "Option Name", "Type", "Default", "Description"

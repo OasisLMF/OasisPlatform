@@ -1,5 +1,5 @@
 Platform Architecture
-====================
+=====================
 
 .. _platform_architecture:
 
@@ -16,9 +16,8 @@ Oasis Components
     :alt: Oasis platform Components diagram
     :width: 700
     :align: center
+
 |
-
-
 
 Purple Boxes: Worker Images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -48,7 +47,7 @@ Roles of Each OASIS Container within the Platform
 The OASIS Platform operates as a microservices-based system, with each container type specializing in a particular function to ensure the scalable, efficient, and reliable execution of loss modeling tasks.
 
 Model Workers - Execution Environment for Oasis Models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Model Worker containers are Ubuntu-based Docker images that provide a self-contained Python environment capable of executing Oasis models. They encapsulate all necessary packages and their dependencies to perform the core computational tasks.
 
@@ -67,12 +66,12 @@ Key Python packages are:
 * **oasis-data-manager** (https://pypi.org/project/oasis-data-manager/): This component handles the loading and persistent storage of data, interacting with various object storage solutions such as AWS S3 or Azure Blob Storage.
 
 API Server - Centralized Interaction and Core Logic
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The API Server container hosts the main RESTful API, serving as the interface for all external interactions with the OASIS cluster, particularly when deployed in a distributed environment. It is hosted by a Gunicorn WSGI (Web Server Gateway Interface) server, ensuring robust handling of concurrent requests. This server exclusively accepts HTTP traffic, providing endpoints for submitting analysis requests, retrieving results, managing model resources, and other platform operations. It acts as the central orchestrator, translating external requests into internal task dispatches.
 
 Worker Monitors - Execution Status and Result Management
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Worker Monitor containers are dedicated to tracking and reporting the status of Celery-based execution tasks dispatched from the API server. There is typically one Worker Monitor instance per workflow type (e.g., a v1-worker-monitor and a v2-worker-monitor), each responsible for the specific set of queues it observes. Once a Model Worker completes its assigned task (regardless of success or failure), the relevant Worker Monitor is responsible for tasks like:
 
@@ -82,22 +81,22 @@ Worker Monitor containers are dedicated to tracking and reporting the status of 
 This ensures that the API server always reflects the most current state of ongoing and completed analyses, providing critical feedback to users and other platform components.
 
 Web-Socket Server - Real-time Status Updates
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Web-Socket Server container uses the same underlying Django framework and shares access to the same database as the REST API Server. Its function is to push real-time or near real-time status updates to connected clients and other scalable components, such as the Worker Controller, providing insights into model worker availability and overall compute capacity. These status updates are pushed either at a configurable periodic interval (defaulting to once per minute) or immediately triggered by significant events, such as the submission of a new analysis request or the completion of an existing one. This enables dynamic adjustments and a responsive user experience.
 
 Worker Controller - Dynamic Cluster Autoscaling
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Worker Controller is the component responsible for the dynamic autoscaling of Model Worker containers within a cluster. It continuously monitors the state of Celery queues and pending tasks. Each Oasis model installed on the platform has its own configurable scaling policy. By default, a model's associated workers scale to 0 when idle (no queued or running analyses) and automatically scale up to a single worker when analyses are queued or actively executing. This scaling behavior is tunable on a per-model basis, allowing administrators to optimize resource allocation for different models based on their anticipated workload and performance requirements.
 
 Celery Beat - Scheduler for Periodic Status Updates
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Celery Beat container acts as the scheduler for periodic tasks within the OASIS Celery ecosystem. Its main responsibility is to control the frequency at which the Web-Socket Server pushes its periodic status updates. By default, Celery Beat is configured to trigger these updates once per minute, ensuring a regular heartbeat of information regarding the platform's status.
 
 Task Controller - Distributed Workflow Management (V2 Only)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Task Controller is required for **distributed workflows (V2 run_mode)**. Its primary role is to orchestrate the parallelization of analysis tasks. It operates by:
 

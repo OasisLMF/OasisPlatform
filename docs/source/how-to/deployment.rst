@@ -17,8 +17,6 @@ On this page
 Introduction:
 *************
 
-----
-
 Models can be built, tested, and ran via four formats that can be assigned based on the type of user you are: 
 
 * :ref:`model_developer_deployment`
@@ -33,8 +31,6 @@ Models can be built, tested, and ran via four formats that can be assigned based
 Model developer
 ***************
 
-----
-
 This user would use the Oasis the OasisLMF MDK to create models with the command line. More information on this 
 tool can be found in the the OasisLMF MDK section.
 
@@ -44,8 +40,6 @@ tool can be found in the the OasisLMF MDK section.
 
 Single user / smaller company
 *****************************
-
-----
 
 A single users / smaller companies are advised to install the **Oasis package** for building, testing, and validating models. 
 This is a more traditional approach to model development than the the OasisLMF MDK; instead of interracting 
@@ -59,14 +53,25 @@ in the cloud. There are walkthough videos for how to download the Oasis platform
 
 * Oasis Installation Guide for Windows 10 operating systems
 
-..  youtube:: SxRt5E-Y5Sw
+.. raw:: html
+
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;margin:1em 0">
+      <iframe src="https://www.youtube.com/embed/SxRt5E-Y5Sw" title="YouTube video"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:0"
+              allowfullscreen loading="lazy"></iframe>
+    </div>
 
 |
 
 * Oasis Installation Guide for Linux based operating systems
 
+.. raw:: html
 
-..  youtube:: OFLTpGGEM10
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;margin:1em 0">
+      <iframe src="https://www.youtube.com/embed/OFLTpGGEM10" title="YouTube video"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:0"
+              allowfullscreen loading="lazy"></iframe>
+    </div>
 
 |
 
@@ -82,8 +87,6 @@ YouTube videos on how to use it.
 
 Larger company
 **************
-
-----
 
 For larger companies with more users and more needs in regards to volume of runs (ie. hundreds of analyses per week), we 
 advise our **Oasis Enterprise Platform**. This platform uses Google's Kubernetes orchestration engine to distribute workloads 
@@ -114,15 +117,12 @@ The :doc:`/explanation/Oasis-UI` is compatible with this system, however, the ad
 integrate this with your existing systems. This will enable you to then pass in exposure data and analysis requirements to 
 extract model results.
 
-
 |
 
 .. _any_deployment:
 
 Any size company
 ****************
-
-----
 
 The final option is SaaS (Software as a Service), and is availible to any size company. This is a growing number of 
 third-party organisations that host and run models on your behalf. These companies offer various commercial services, 

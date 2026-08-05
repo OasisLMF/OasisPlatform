@@ -13,15 +13,15 @@ Single Server Execution (run_mode = v1)
 In 'Single Server' execution, the system operates akin to a monolithic application, with each major workflow stage encapsulated within a single, self-contained Celery task. This mode mirrors the direct invocation of OasisLMF command-line interface (CLI) commands, such as ``$ oasislmf model generate-oasis-files`` for file preparation and ``$ oasislmf model generate-losses`` for losses generation. The execution occurs within the isolated Python environment provided by the 'model worker' Docker image.
 
 Celery Task Flow
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 Each of these large-grained tasks is dispatched from the central server. A single 'model worker' container then picks up the task, processes it to completion, and subsequently reports its results back to the system via the 'WorkerMonitor' container.
-
 
 .. figure:: /_static/images/platform/platform_img_4.png
     :alt: Exection workflow v1
     :width: 200
     :align: center
+
 |
 
 Internal Parallelization for Losses Generation
@@ -86,7 +86,7 @@ The chunks value can be determined in a few ways:
 It's crucial to understand that this chunks value, which defines the internal parallelism of an analysis, is distinct from the scaling value that controls the total number of 'model workers' available on the queue to process these sub-tasks.
 
 Distinction from OasisLMF MDK
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The distributed workflow (run_mode = v2) does not have a direct, equivalent command in the standard OasisLMF Model Development Kit (MDK). This is because the fundamental principles of splitting, distributing, and aggregating analyses are intrinsically handled by Celery, which are external to the core oasislmf package. The intelligence for managing this distributed execution resides within OasisPlatform components, such as the TaskController.
 
@@ -99,6 +99,7 @@ Workflow Submission and Execution Flow
     :alt: Exection workflow v1
     :width: 600
     :align: center
+
 |
 
 1. **Request Submission:** When an execution request for a v2 workflow is submitted, it is received by the API server.
@@ -119,7 +120,7 @@ Workflow Submission and Execution Flow
 6. **Output Collection:** Similar to the v1 mode, these aggregated outputs are then collected and stored by a single 'WorkerMonitor' instance, which reports the final status and results back to the API server.
 
 Worker maximum concurrent jobs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Each 'model worker' instance has a configurable maximum job concurrency value. By default, this is set to the number of CPU cores available on the underlying node. This can be overridden using the environment variable OASIS_CELERY_CONCURRENCY=<int-max-parallel-tasks>
 
@@ -145,7 +146,7 @@ In a highly distributed environment, there is no guarantee of which specific wor
    By default, these temporary intermediate files are removed by the final cleanup task in the workflow chain, typically prefixed with ``cleanup-``. However, for debugging purposes, an environment variable ``OASIS_KEEP_REMOTE_DATA=True`` can be set to retain these files for inspection.
 
 Optimizing Throughput
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 Within the ``generate-losses-chunk`` sub-task (part of the parallel section for losses generation), each chunk processes a single ``ktools`` data pipe:
 
@@ -171,22 +172,22 @@ The impact of this law varies significantly across different Oasis models and wo
 
 **1. File Preparation (e.g., generate-oasis-files):** For many Oasis models, the 'file preparation' stage, particularly the 'keys lookup' sub-task (which validates locations against a model's peril codes and coverage types), does not always benefit substantially from distribution. This is because the overall execution time for this stage is often dominated by sequential steps, such as generating and writing intermediate Oasis files, rather than the parallelizable lookup process itself.
 
-
 .. figure:: /_static/images/platform/platform_img_6.png
     :alt: Input generation sub-task Gantt chart 
     :width: 700
     :align: center
+
 |
 
 This Gantt chart illustrates an example where 32 'lookup chunks' run concurrently, completing in approximately 25 seconds. However, the overall task duration is bottlenecked by the subsequent sequential step of generating and writing the intermediate Oasis files, which takes around 300 seconds. In this scenario, allocating more computational resources to the parallel lookup chunks would yield little to no overall speedup, as the un-distributed, sequential file writing becomes the dominant factor.
 
 **2. Losses Generation (e.g., generate-losses):** Conversely, for the same model, the 'losses generation' stage typically exhibits the opposite pattern, where each 'chunk' is significantly more computationally intensive.
 
-
 .. figure:: /_static/images/platform/platform_img_7.png
     :alt: Losses generation sub-task Gantt chart 
     :width: 700
     :align: center
+
 |
 
 This Gantt chart for the losses generation stage demonstrates that the parallel 'generate-losses-chunk' sub-tasks represent the most substantial portion of the workload. Within each ``generate-losses-chunk`` sub-task, a single ``ktools`` data pipe executes:
@@ -212,7 +213,7 @@ Each analysis (whether for input generation or loss generation) is assigned a pr
    "1", "The lowest priority, for non-urgent or background tasks."
 
 Priority-Driven Task processing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When an analysis is initiated, every sub-task associated with that analysis inherits the analysis's assigned priority. 'Model workers' within the same queue will then prioritize and consume tasks in descending order of priority.
 
@@ -245,7 +246,7 @@ Important Rerun Behavior
 All previously existing sub-task resources associated with that analysis will be deleted from the Oasis API. Subsequently, a new set of sub-task resources will be created to track the state of the new execution run's sub-tasks. This ensures a clean slate for each analysis attempt and prevents confusion with stale sub-task data, but also wipes any error or output logs attached to a sub-task resource.
 
 Analysis Object Summary
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Once sub-tasks are created and attached to an analysis, the primary analysis object in the API has several fields that provide a summarized view of its ongoing or completed execution:
 
@@ -281,7 +282,7 @@ For a comprehensive view of all individual Sub-Task Resource objects attached to
 Calling this endpoint will return a detailed list of all Sub-Task Resource JSON objects, allowing for in-depth inspection of each task's status, logs, and timing.
 
 Oasis Sub-Task Resource Fields
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This JSON object represents the status and metadata for a single sub-task within an Oasis analysis workflow, designed to track its execution via Celery.
 
@@ -343,11 +344,11 @@ Input Generation Sub-tasks
 
 This section outlines the individual sub-tasks involved in the 'Input Generation' workflow. While the overall structure and presence of these sub-tasks are consistent across all v2 runs, the specific computations or actions performed within each task can vary based on the Oasis model and its configuration. For instance, a pre-analysis-hook task will always be part of the workflow chain, but for models that do not implement custom logic for this hook, it will effectively be a No-Operation (NO-OP) and be skipped over. Conversely, other models might use this hook to perform exposure disaggregation or data adjustments before proceeding to the keys lookup steps.
 
-
 .. figure:: /_static/images/platform/platform_img_8.png
     :alt: Input generation celery canvas 
     :width: 700
     :align: center
+
 |
 
 Workflow Parameters (params and kwargs)
@@ -434,6 +435,7 @@ The 'Losses Generation' workflow follows a similar chain of sub-tasks to the 'In
     :alt: Losses generation celery canvas 
     :width: 700
     :align: center
+
 |
 
 Specific Sub-Tasks in the Losses Generation Workflow

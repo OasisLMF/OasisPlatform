@@ -11,14 +11,14 @@ Introduction
 The **Oasis Loss Modelling Framework (OasisLMF)** is an open-source platform designed for the **development, deployment, and execution of catastrophe models**. These models are crucial for assessing financial risks associated with natural disasters like earthquakes, hurricanes, or floods.
 
 The OasisPlatform Repository
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This repository provides a **reference technical stack** and versioned **Docker images**. The goal is to make the installation process as **quick and easy**, allowing users to get up and running with the Oasis Loss Modelling software without significant setup hurdles.
 
 Key Use Cases for OasisPlatform:
 
 1. Single-Machine Operation for Development and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For individual users, model developers, or those focused on testing new catastrophe models, OasisLMF can be efficiently run on a single machine. This is achieved using **Docker Compose**, a tool for defining and running multi-container Docker applications. This setup is perfect for:
 
@@ -44,7 +44,7 @@ Platform Versions and Compatibility
 The OasisPlatform has evolved over time, offering different approaches to handling catastrophe model workloads. Understanding these versions is key to understanding the two major versions of the platform.
 
 OasisPlatform 1.x.x: Single Server Execution
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The original iteration of the OasisPlatform, versions starting with 1.x.x, was designed for 'single server' execution. In this model, the entire Oasis model workload, including the processing of events, runs within a single container as one large job. The events are distributed across all available cores on that single machine.
 
@@ -59,7 +59,7 @@ This includes the following stable OasisLMF versions where 'x' represents any pa
 * 1.28.x
 
 OasisPlatform 2.x.x: Distributed and Scalable Workflows
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The **second major iteration of the OasisPlatform, with images starting from 2.x.x**, brought about a fundamental rewrite of the execution workflow, introducing significant enhancements for scalability and flexibility. Key improvements in this version include:
 
@@ -91,7 +91,7 @@ The Oasis Platform uses two primary Docker images to operate:
   * **Websocket**: Reports on the status of the Oasis system to the autoscaling component.
 
 Image Version Compatibility Guidelines
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Oasis Platform is engineered and tested for **backward compatibility** between server and worker images.
 
@@ -100,7 +100,7 @@ This means that if your system is configured to use coreoasis/api_server:2.4.5, 
 Specifically, this includes stable worker image bases from versions: 1.15.x, 1.23.x, 1.26.x, 1.27.x, 1.28.x, 2.3.x, and 2.4.x.
 
 Important Exceptions and Limitations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **Unsupported Versions**: Versions 2.1.x and 2.2.x of the worker image are not supported by newer 2.x.x platform versions. We strongly advise against using these.
 * **Forward Compatibility**: It is important to understand that servers and workers are **not guaranteed to be forward compatible**. For example, running coreoasis/api_server:1.28.x with worker images from newer versions, such as 2.3.x or 2.4.x is untested by our release process and has a strong possibility of not working. For situations like these we recommend updating the server components to match the version of the most recent model worker version you wish to run.

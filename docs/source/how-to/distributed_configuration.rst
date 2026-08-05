@@ -9,7 +9,7 @@ Configuration for Distribution and Scaling
 The efficiency of an distributed execution is dependent on its underlying scaling and chunking configurations. These settings are tuned per model to match specific workload characteristics, resource availability, and performance objectives.
 
 Scaling Configuration
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 Each deployed Oasis model has its own independent scaling configuration, which is accessible and adjustable via the API at models/{id}/scaling_configuration/. When the WorkerController component initializes or receives updates, it reads these specific options for each active Oasis model deployment in the system.
 
@@ -24,7 +24,7 @@ This default idle behavior can be overridden by setting worker_count_min = <inte
 * **High Responsiveness:** Eliminating the spin-up time typically required to provision and ready new virtual machines or containers when a task arrives, thus reducing latency for the first task.
 
 Default Scaling Configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If no explicit scaling configuration is provided for a model, the system defaults to the following settings:
 
@@ -35,7 +35,7 @@ If no explicit scaling configuration is provided for a model, the system default
     worker_count_min = 0
 
 Scaling Strategies (scaling_strategy)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are three distinct modes of scaling operation, controlled by the scaling_strategy key, theses are FIXED_WORKERS, QUEUE_LOAD and DYNAMIC_TASKS.
 
@@ -68,7 +68,7 @@ A design principle for scaling configuration is that only the control values dir
 **Control Parameters:** chunks_per_worker dictates the worker-to-chunk ratio, and worker_count_max still applies as a hard upper limit on the total number of workers that can be spun up.
 
 Chunking Configuration
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 The 'chunking' configuration defines how a single analysis (both 'lookup' and 'loss' stages) is broken down into parallel sub-tasks. This can be configured at two levels, allowing for both system-wide defaults and analysis-specific overrides:
 
@@ -83,7 +83,7 @@ The 'chunking' configuration defines how a single analysis (both 'lookup' and 'l
    * **Behavior:** An individual analysis can have its chunking independently set at this endpoint. These settings take precedence over the model-level defaults and apply only to that specific analysis.
 
 Chunking Strategies (lookup_strategy and loss_strategy)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are two independent chunking strategies that can be applied separately, controlled by lookup_strategy and loss_strategy respectively. Each with two modes of either **FIXED_CHUNKS**, which creates <n> analyses chunks or DYNAMIC_CHUNKS which has some limited scaling options based on the input size.
 
@@ -109,7 +109,7 @@ There are two independent chunking strategies that can be applied separately, co
 
 In this example, every analysis run will be broken into 10 lookup chunks and 20 event batches for losses generation.
 
-**Ignored Parameters:** Any fields prefixed with dynamic_ (e.g., dynamic_events_per_analysis) are ignored when this strategy is active.
+**Ignored Parameters:** Any fields prefixed with dynamic\_ (e.g., dynamic_events_per_analysis) are ignored when this strategy is active.
 
 **Minimum Chunking Rule:** A practical minimum chunking rule applies: if the calculated (or fixed) chunk size results in more chunks than there are actual discrete items to process (e.g., a 4-line location file requested to be split into 5 chunks), then only the actual number of available items will be used as chunks (e.g., 4 chunks for the 4 lines).
 
@@ -130,4 +130,4 @@ For dynamic chunking of loss generation, the selected event set from model_setti
 
 **Example (PiWind):** If the PiWind model's event set p contains 1447 events, and dynamic_events_per_analysis is set to 100, then a total of 15 sub-tasks (ceil(1447 / 100) = 15) will be generated for loss calculation.
 
-**Ignored Parameters:** Any fields prefixed with fixed_ (e.g., fixed_lookup_chunks) are ignored when this strategy is active.
+**Ignored Parameters:** Any fields prefixed with fixed\_ (e.g., fixed_lookup_chunks) are ignored when this strategy is active.
