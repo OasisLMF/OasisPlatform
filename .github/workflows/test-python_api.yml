@@ -88,6 +88,14 @@ jobs:
     - name: Run Pytest
       run: pytest  --cov-config=tox.ini --junitxml=${{ github.workspace  }}/pytest_report.xml --cov=src --cov-report=xml --cov-report=term
 
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.xml
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+
     - name: Generate Report
       uses: dorny/test-reporter@v1
       if: success() || failure()    # run this step even if previous step failed

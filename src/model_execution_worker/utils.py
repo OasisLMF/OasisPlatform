@@ -34,9 +34,7 @@ from ods_tools import __version__ as ods_version
 from oasislmf.utils.exceptions import OasisException
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
-import boto3
-from urllib.parse import urlparse
-from ..conf.iniconf import settings
+import requests
 
 
 logger = logging.getLogger(__name__)
@@ -373,22 +371,22 @@ def update_params(params, given_params):
 def copy_or_download(source, destination):
     """
     Gets files needed into the storage they need to be in.
+
+    Local storage backends hand back a filesystem path, which is copied directly.
+    Remote backends (S3, Azure, GCS, ...) hand back a pre-authenticated HTTP(S) URL
+    (e.g. an S3 presigned URL or Azure SAS URL), which is fetched with a plain GET
+    rather than a backend-specific SDK call.
     """
     if not source:
         return
     if not source.startswith("http"):
         shutil.copy2(source, destination)
         return
-    s3 = boto3.client(
-        "s3",
-        endpoint_url="http://localstack-s3:4572",
-        aws_access_key_id=settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None'),
-        aws_secret_access_key=settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None),
-    )
-    parsed_url = urlparse(source)
-    bucket_name = parsed_url.path.split('/')[1]
-    key = "/".join(parsed_url.path.split('/')[2:])
-    s3.download_file(bucket_name, key, destination)
+    with requests.get(source, stream=True) as response:
+        response.raise_for_status()
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
 
 
 def get_destination_file(filename, destination_dir, destination_title):

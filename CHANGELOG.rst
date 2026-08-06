@@ -1,6 +1,13 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.6`_
+ ---------
+* [#1416](https://github.com/OasisLMF/OasisPlatform/pull/1416) - fix/minikube_script_lmfbranchfix
+* [#1417](https://github.com/OasisLMF/OasisPlatform/pull/1417) - Fix/validation s3 backing
+* [#1421](https://github.com/OasisLMF/OasisPlatform/pull/1421) - fix/cve_multiple
+.. _`2.5.6`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.5...2.5.6
+
 `2.5.5`_
  ---------
 * [#1403](https://github.com/OasisLMF/OasisPlatform/pull/1403) - fix dummy analysis settings
