@@ -11,7 +11,6 @@ from datetime import datetime
 
 import filelock
 import numpy as np
-import polars as pl
 import pyarrow as pa
 import pyarrow.parquet as pq
 from celery import Celery, signature
@@ -43,6 +42,11 @@ from .utils import (
     unwrap_task_args,
     notify_api_status_v2,
 )
+
+# Set before importing polars - it sizes its thread pool from host CPU count
+# at import time, which oversubscribes under celery's prefork concurrency.
+os.environ.setdefault("POLARS_MAX_THREADS", os.environ.get("OASIS_POLARS_MAX_THREADS", "1"))
+import polars as pl  # noqa: E402
 
 
 '''
@@ -596,20 +600,6 @@ def collect_keys(
     del chunk_params['chunk_keys']
 
     def merge_dataframes(paths, output_file, file_type):
-        """Bounds peak memory to the number of UNIQUE rows across all chunks
-        (previously: pd.concat of every chunk, i.e. total rows including
-        duplicates), using polars' lazy streaming engine for both file types.
-
-        Dedup is by actual row content (keep='first') for both csv and
-        parquet. The previous parquet implementation deduped by the pandas
-        index instead, matching the pre-existing pd.concat-then-dedup
-        behaviour it replaced - but chunk files never carry a meaningful
-        index (see _merge_parquet_streaming), so that was a real, separate
-        bug in both the old and an earlier version of this code, not merely
-        a style difference: it silently dropped genuinely distinct rows
-        whenever more than one chunk was merged. Fixed here by switching
-        parquet to the same content-based dedup csv already used.
-        """
         if not paths:
             logger.warning("merge_dataframes was called with an empty path list.")
             return
@@ -619,38 +609,18 @@ def collect_keys(
             _merge_parquet_streaming(paths, output_file)
 
     def _merge_csv_streaming(paths, output_file):
-        # Polars' lazy/streaming engine handles batching and memory-bounding
-        # internally - fastest of the approaches benchmarked for OasisPlatform#973
-        # (~7x faster than a hand-rolled Python streaming merge at 50M rows) and
-        # exact by construction: its group_by/unique hashing verifies actual row
-        # equality on a hash hit rather than trusting the hash alone (same
-        # guarantee as pandas' duplicated(), unlike a naive hash-only shortcut).
-        #
-        # pl.scan_csv errors on a zero-byte file (NoDataError), unlike
-        # pd.read_csv which only raises EmptyDataError in that same case - so
-        # filter those out first to match the previous implementation's
-        # handling of genuinely empty chunk files.
+        # scan_csv errors on a zero-byte file, so skip those first.
         non_empty_paths = []
         for path in paths:
             if os.path.getsize(path) > 0:
-                # str(), not the pathlib2.Path objects these paths actually
-                # are - polars' argument parsing doesn't recognize pathlib2's
-                # Path (distinct from stdlib pathlib.Path) and misidentifies
-                # it as a file-like object, raising a confusing .read() error.
-                non_empty_paths.append(str(path))
+                non_empty_paths.append(str(path))  # polars mishandles pathlib2.Path
             else:
                 logger.info(f"File {path} is empty. --skipped--")
         if not non_empty_paths:
             logger.warning(f"All files were empty: {paths}. --skipped--")
             return
 
-        # Scan each chunk as its own LazyFrame and concat with how='diagonal'
-        # rather than pl.scan_csv(list_of_paths) directly - the latter requires
-        # every file to share one schema and raises ComputeError otherwise.
-        # pd.concat used to fill mismatched columns with NaN implicitly (e.g. a
-        # custom lookup module whose output column set varies between chunks);
-        # diagonal concat is polars' equivalent of that behaviour, and both
-        # stay lazy so nothing is read until .sink_csv() executes the plan.
+        # diagonal concat: chunk files' column sets aren't always identical.
         lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
         (
             pl.concat(lazy_frames, how='diagonal')
@@ -659,34 +629,18 @@ def collect_keys(
         )
 
     def _merge_parquet_streaming(paths, output_file):
-        # Same polars approach as _merge_csv_streaming, deduping by actual row
-        # content rather than by index. Chunk files never carry a meaningful
-        # index to dedup by in the first place: prepare_keys_file_chunk resets
-        # each chunk's location_df index before its lookup runs, and
-        # write_parquet_keys_file writes with preserve_index=False - so two
-        # chunks' outputs always collide on local position even when their
-        # actual content is entirely disjoint. An earlier index-based version
-        # of this function relied on that (nonexistent) index for dedup and
-        # silently dropped every row past the first chunk whenever more than
-        # one chunk was merged - confirmed by writing chunk files the same
-        # way OasisLMF does and replaying both dedup strategies against them.
+        # Dedup by content, not index - chunk files carry no meaningful index.
         valid_paths = []
         for path in paths:
             try:
                 pq.ParquetFile(path).schema_arrow
                 valid_paths.append(str(path))
             except pa.lib.ArrowInvalid:
-                # Raised for a zero-byte file or otherwise corrupt/non-parquet
-                # content - the parquet equivalent of pd.errors.EmptyDataError
-                # in the csv path. Anything else should surface, not be hidden.
                 logger.info(f"File {path} is empty or unreadable. --skipped--")
         if not valid_paths:
             logger.warning(f"All files were empty: {paths}. --skipped--")
             return
 
-        # Scan each chunk as its own LazyFrame and concat with how='diagonal'
-        # rather than pl.scan_parquet(list_of_paths) directly, for the same
-        # heterogeneous-schema reason as the csv path.
         lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
         (
             pl.concat(lazy_frames, how='diagonal')
