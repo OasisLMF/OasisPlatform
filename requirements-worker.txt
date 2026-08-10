@@ -10,7 +10,7 @@ aiobotocore==2.24.1
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.3
+aiohttp==3.14.3
     # via
     #   -r requirements-worker.in
     #   adlfs
@@ -91,7 +91,7 @@ contourpy==1.3.3
     # via matplotlib
 cramjam==2.11.0
     # via fastparquet
-cryptography==48.0.1
+cryptography==50.0.0
     # via
     #   azure-identity
     #   azure-storage-blob
@@ -336,6 +336,7 @@ tqdm==4.67.1
     #   ods-tools
 typing-extensions==4.14.1
     # via
+    #   aiohttp
     #   aiosignal
     #   azure-core
     #   azure-identity
