@@ -582,6 +582,64 @@ def prepare_keys_file_chunk(
     return params
 
 
+def _merge_csv_streaming(paths, output_file):
+    # scan_csv errors on a zero-byte file, so skip those first.
+    non_empty_paths = []
+    for path in paths:
+        if os.path.getsize(path) > 0:
+            non_empty_paths.append(str(path))  # polars mishandles pathlib2.Path
+        else:
+            logger.info(f"File {path} is empty. --skipped--")
+    if not non_empty_paths:
+        logger.warning(f"All files were empty: {paths}. --skipped--")
+        return
+
+    # diagonal concat: chunk files' column sets aren't always identical.
+    lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
+    (
+        pl.concat(lazy_frames, how='diagonal')
+        .unique(keep='first', maintain_order=True)
+        .sink_csv(str(output_file))
+    )
+
+
+def _merge_parquet_streaming(paths, output_file):
+    # Dedup by content, not index - chunk files carry no meaningful index.
+    valid_paths = []
+    for path in paths:
+        try:
+            pq.ParquetFile(path).schema_arrow
+            valid_paths.append(str(path))
+        except pa.lib.ArrowInvalid:
+            logger.info(f"File {path} is empty or unreadable. --skipped--")
+    if not valid_paths:
+        logger.warning(f"All files were empty: {paths}. --skipped--")
+        return
+
+    lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
+    (
+        pl.concat(lazy_frames, how='diagonal')
+        .unique(keep='first', maintain_order=True)
+        .sink_parquet(str(output_file))
+    )
+
+
+def merge_dataframes(paths, output_file, file_type):
+    if not paths:
+        logger.warning("merge_dataframes was called with an empty path list.")
+        return
+    if file_type == 'csv':
+        _merge_csv_streaming(paths, output_file)
+    elif file_type == 'parquet':
+        _merge_parquet_streaming(paths, output_file)
+
+
+def take_first(paths, output_file):
+    first_path = paths[0]
+    logger.info(f"Using {first_path} and ignoring others.")
+    shutil.copy2(first_path, output_file)
+
+
 @app.task(bind=True, name='collect_keys', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def collect_keys(
@@ -598,60 +656,6 @@ def collect_keys(
     chunk_params = {**params[0]}
     storage_subdir = chunk_params['storage_subdir']
     del chunk_params['chunk_keys']
-
-    def merge_dataframes(paths, output_file, file_type):
-        if not paths:
-            logger.warning("merge_dataframes was called with an empty path list.")
-            return
-        if file_type == 'csv':
-            _merge_csv_streaming(paths, output_file)
-        elif file_type == 'parquet':
-            _merge_parquet_streaming(paths, output_file)
-
-    def _merge_csv_streaming(paths, output_file):
-        # scan_csv errors on a zero-byte file, so skip those first.
-        non_empty_paths = []
-        for path in paths:
-            if os.path.getsize(path) > 0:
-                non_empty_paths.append(str(path))  # polars mishandles pathlib2.Path
-            else:
-                logger.info(f"File {path} is empty. --skipped--")
-        if not non_empty_paths:
-            logger.warning(f"All files were empty: {paths}. --skipped--")
-            return
-
-        # diagonal concat: chunk files' column sets aren't always identical.
-        lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
-        (
-            pl.concat(lazy_frames, how='diagonal')
-            .unique(keep='first', maintain_order=True)
-            .sink_csv(str(output_file))
-        )
-
-    def _merge_parquet_streaming(paths, output_file):
-        # Dedup by content, not index - chunk files carry no meaningful index.
-        valid_paths = []
-        for path in paths:
-            try:
-                pq.ParquetFile(path).schema_arrow
-                valid_paths.append(str(path))
-            except pa.lib.ArrowInvalid:
-                logger.info(f"File {path} is empty or unreadable. --skipped--")
-        if not valid_paths:
-            logger.warning(f"All files were empty: {paths}. --skipped--")
-            return
-
-        lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
-        (
-            pl.concat(lazy_frames, how='diagonal')
-            .unique(keep='first', maintain_order=True)
-            .sink_parquet(str(output_file))
-        )
-
-    def take_first(paths, output_file):
-        first_path = paths[0]
-        logger.info(f"Using {first_path} and ignoring others.")
-        shutil.copy2(first_path, output_file)
 
     # Collect files and tar here from chunk_params['target_dir']
     with TemporaryDir() as chunks_dir:
