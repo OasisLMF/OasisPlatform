@@ -613,7 +613,7 @@ def _merge_parquet_streaming(paths, output_file):
         except pa.lib.ArrowInvalid:
             logger.info(f"File {path} is empty or unreadable. --skipped--")
     if not valid_paths:
-        logger.warning(f"All files were empty: {paths}. --skipped--")
+        logger.warning(f"All files were empty or unreadable: {paths}. --skipped--")
         return
 
     lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
