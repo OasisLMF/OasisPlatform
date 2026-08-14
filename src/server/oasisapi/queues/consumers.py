@@ -7,6 +7,7 @@ from channels.layers import get_channel_layer
 from django.conf import settings
 from django.utils.timezone import now
 from django.db.models import F
+from redis.exceptions import RedisError
 from rest_framework.serializers import DateTimeField
 
 from celery.utils.log import get_task_logger
@@ -97,10 +98,15 @@ def send_task_status_message(items: dict):
         return
     layer = get_channel_layer()
     logger.debug("Message has been recieved")
-    async_to_sync(layer.group_send)(
-        'queue_status',
-        items
-    )
+    try:
+        async_to_sync(layer.group_send)(
+            'queue_status',
+            items
+        )
+    except RedisError as e:
+        # Don't let a broken/unreachable channel layer take down the caller -
+        # this is a best-effort UI status broadcast, not part of run correctness.
+        logger.warning(f"Could not send queue status message, channel layer unreachable: {e}")
 
 
 def build_all_queue_status_message(analysis_filter=None, message_type='queue_status.updated'):
