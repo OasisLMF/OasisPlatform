@@ -574,6 +574,8 @@ class Analysis(TimeStampedModel):
             raise ValidationError(detail=errors)
 
         self.status = self.status_choices.RUN_QUEUED
+        self.num_events_total = 0
+        self.num_events_complete = 0
         self.save()
 
         # Start V1 run

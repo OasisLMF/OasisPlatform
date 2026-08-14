@@ -34,8 +34,10 @@ class AnalysisStatusView(APIView):
 
         update_fields = {}
         if 'events_total' in data:
+            # num_events_complete is reset once at run-start (Analysis.run()), not here -
+            # events_total is reported once per chunk, so resetting on every ping would
+            # wipe out progress already reported by other chunks of the same run.
             update_fields['num_events_total'] = data['events_total']
-            update_fields['num_events_complete'] = 0
         if 'events_complete' in data:
             update_fields['num_events_complete'] = F('num_events_complete') + data['events_complete']
 

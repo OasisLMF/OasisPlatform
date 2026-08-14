@@ -237,8 +237,10 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         logger.info(f"New update received on run {pk}")
 
         if "events_total" in content:
+            # num_events_complete is reset once at run-start (Analysis.run()), not here -
+            # events_total is reported once per chunk, so resetting on every ping would
+            # wipe out progress already reported by other chunks of the same run.
             analysis.num_events_total = int(float(content["events_total"]))
-            analysis.num_events_complete = 0
 
         if "events_complete" in content:
             analysis.num_events_complete = F('num_events_complete') + int(content["events_complete"])
