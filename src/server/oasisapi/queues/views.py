@@ -1,0 +1,45 @@
+from django.db.models import F
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .serializers import AnalysisStatusSerializer
+
+
+class AnalysisStatusView(APIView):
+    """
+    HTTP equivalent of the `ws/analysis-status/` websocket used by workers to report
+    run progress. Sits outside the versioned `v1`/`v2` API, alongside `healthcheck/`
+    and `server_info/`, since it's a worker-facing status ping rather than a
+    user-facing resource. Unauthenticated to match the websocket's current
+    behaviour (the consumer accepts any connection, authenticated or not).
+    """
+    permission_classes = [AllowAny]
+
+    @extend_schema(request=AnalysisStatusSerializer, responses={204: None}, exclude=True)
+    def post(self, request, *args, **kwargs):
+        """
+        Record progress for a running analysis. Safe to call concurrently from
+        multiple worker processes for the same `analysis_pk` - `events_complete`
+        is applied as an atomic SQL increment rather than a read/modify/write, so
+        updates from different processes can't clobber one another.
+        """
+        from src.server.oasisapi.analyses.models import Analysis
+
+        serializer = AnalysisStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        update_fields = {}
+        if 'events_total' in data:
+            update_fields['num_events_total'] = data['events_total']
+            update_fields['num_events_complete'] = 0
+        if 'events_complete' in data:
+            update_fields['num_events_complete'] = F('num_events_complete') + data['events_complete']
+
+        if update_fields:
+            Analysis.objects.filter(pk=data['analysis_pk']).update(**update_fields)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

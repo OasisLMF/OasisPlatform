@@ -1,6 +1,5 @@
 from rest_framework.routers import SimpleRouter
 from django.urls import re_path, include
-from .viewsets import AnalysisStatusViewSet
 from .viewsets import QueueViewSet
 from .viewsets import WebsocketViewSet
 
@@ -10,7 +9,6 @@ v2_api_router = SimpleRouter()
 v2_api_router.include_root_view = False
 v2_api_router.register('queue', QueueViewSet, basename='queue')
 v2_api_router.register('queue-status', WebsocketViewSet, basename='queue')
-v2_api_router.register('analysis-status', AnalysisStatusViewSet, basename='analysis-status')
 
 urlpatterns = [
     re_path(r'', include(v2_api_router.urls)),
