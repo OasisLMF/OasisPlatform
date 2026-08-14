@@ -48,6 +48,16 @@ class WebsocketContentSerializer(serializers.Serializer):
         pass
 
 
+class AnalysisStatusSerializer(serializers.Serializer):
+    """ Payload accepted by the HTTP equivalent of the `ws/analysis-status/` websocket.
+    Workers POST progress updates here; `events_total` and `events_complete` are both
+    optional but at least one should be set for the call to have any effect.
+    """
+    analysis_pk = serializers.IntegerField()
+    events_total = serializers.IntegerField(required=False, min_value=0)
+    events_complete = serializers.IntegerField(required=False, min_value=0)
+
+
 class WebsocketSerializer(serializers.Serializer):
     """ This is a 'dummy' Serializer to document
     the WebSocket  schema
