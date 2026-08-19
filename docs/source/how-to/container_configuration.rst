@@ -91,7 +91,7 @@ Debug Options
 
    "DEBUG", "Boolean", "False", "Controls Django's debug mode. If True, enables verbose logging, error pages, and other development features. **Should be False in production.**"
    "DEBUG_TOOLBAR", "Boolean", "False", "If True, enables the Django Debug Toolbar, typically accessible in the Swagger UI for development and debugging purposes."
-   "URL_SUB_PATH", "Boolean", "False", "If True, all REST API routes will be nested under a /api/ sub-path (e.g., https://<site-domain>/api/). Otherwise, routes are directly under the domain (e.g., https://<site-domain>/)."
+   "URL_SUB_PATH", "Boolean", "False", "If True, all REST API routes will be nested under a /api/ sub-path (e.g., ``https://<site-domain>/api/``). Otherwise, routes are directly under the domain (e.g., ``https://<site-domain>/``)."
    "DISABLE_V2_API", "Boolean", "False", "If True, disables the V2 API routes, primarily for backward compatibility with older client integrations."
 
 Storage Related Options

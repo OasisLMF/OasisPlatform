@@ -41,7 +41,7 @@ Calling the Server
 
 The API server provides a REST interface which is described here. You
 can use any suitable command line client such as ``curl`` or
-`httpie <www.httpie.org>`_  to make individual API calls, but a custom Python client
+`httpie <https://httpie.io/>`_  to make individual API calls, but a custom Python client
 may be a better option - for this you can use the `OasisAPIClient repository <https://github.com/OasisLMF/OasisAPIClient>`_.
 
 Oasis provides a built-in client ``model_api_tester.py`` (located in
