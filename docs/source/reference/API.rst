@@ -107,23 +107,23 @@ More information can be found `here <https://github.com/OasisLMF/OasisAzureDeplo
 
 2. How to implement `Kubernetes <https://kubernetes.io/docs/concepts/overview/>`_.
 
-This guide takes you through `requirements <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/
-README.md#requirements>`_, how to `build images <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/
-charts/README.md#build-images>`_, a `quick start <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/
+This guide takes you through `requirements <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/charts/
+README.md#requirements>`_, how to `build images <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/
+charts/README.md#build-images>`_, a `quick start <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/
 charts/README.md#quick-start>`_ tutorial, how to `access the user interfaces <https://github.com/OasisLMF/OasisPlatform/
-blob/platform-2.0/kubernetes/charts/README.md#accessing-user-interfaces>`_, and introduction to `helm and customisation 
-<https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#helm-and-customization>`_, `chart 
-details <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#chart-details>`_, and 
-`keycloak <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#keycloak>`_, and how to 
-access `help scripts <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#help-scripts>`_.
+blob/main/kubernetes/charts/README.md#accessing-user-interfaces>`_, and introduction to `helm and customisation 
+<https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/charts/README.md#helm-and-customization>`_, `chart 
+details <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/charts/README.md#chart-details>`_, and 
+`keycloak <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/charts/README.md#keycloak>`_, and how to 
+access `help scripts <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/charts/README.md#help-scripts>`_.
 
-More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/charts/README.md#helm-and-customization>`__.
+More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/charts/README.md#helm-and-customization>`__.
 
 |
 
 3. How to deploy and manage the Oasis platform on a `Kubernetes <https://kubernetes.io/docs/concepts/overview/>`_ cluster.
 
-More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/README.md>`__.
+More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/README.md>`__.
 
 |
 
@@ -132,4 +132,4 @@ More information can be found `here <https://github.com/OasisLMF/OasisPlatform/b
 This application controls the number of workers in a kubernetes cluster based on analyses currently running, worker 
 deployments available and autoscaling configuration for each worker deployment.
 
-More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/platform-2.0/kubernetes/worker-controller/README.md>`__.
+More information can be found `here <https://github.com/OasisLMF/OasisPlatform/blob/main/kubernetes/worker-controller/README.md>`__.
