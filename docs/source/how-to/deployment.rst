@@ -9,6 +9,7 @@ On this page
 * :ref:`single_small_deplyment`
 * :ref:`larger_deployment`
 * :ref:`any_deployment`
+* :ref:`saas_providers_deployment`
 
 |
 
@@ -139,5 +140,25 @@ additonal functionalilty boyond the :doc:`/explanation/Oasis-UI`, such has the U
 |
 
 Companies offering this service include the likes of Verisk Model Exchange, Xceedance, and Impact Forecasting Elements. More 
-information about SaaS and the companies can be found in the SaaS providers section.
+information about SaaS and the companies can be found in :ref:`saas_providers_deployment` below.
 
+|
+
+.. _saas_providers_deployment:
+
+SaaS providers
+**************
+
+Whilst Oasis is open source and anyone can install and run it themselves for free, there are a number of companies offering
+services (and support) around Oasis which are commercial in nature. Some of these companies offer a hosted platform on
+which to run Oasis models, some have Oasis integrated into their own platforms and some offer a traditional support option
+for in-house Oasis deployments.
+
+A few of these companies are listed below:
+
+* `Verisk Model Exchange <https://www.verisk.com/products/model-exchange/>`_
+* `Xceedance <https://xceedance.com/>`_
+* `Impact Forecasting Elements <https://www.aon.com/reinsurance/impact-forecasting/default>`_
+* `RMS IRP <https://www.rms.com/>`_
+* `Oasis Palm Tree <http://oasispalmtree.co.uk/>`_
+* `JBA <https://www.jbarisk.com/>`_
