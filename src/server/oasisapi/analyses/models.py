@@ -676,6 +676,8 @@ class Analysis(TimeStampedModel):
         self.generate_inputs_task_id = task_id
         self.task_started = timezone.now()
         self.task_finished = None
+        self.num_events_total = 0
+        self.num_events_complete = 0
         self.save()
         celery_app_v2.send_task('send_queue_status_digest')
 
