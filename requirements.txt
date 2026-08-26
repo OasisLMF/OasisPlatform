@@ -104,8 +104,6 @@ cffi==2.0.0
     #   autobahn
     #   azure-datalake-store
     #   cryptography
-chainmap==1.0.3
-    # via -r requirements-server.in
 channels==4.3.2
     # via
     #   -r requirements-server.in
@@ -257,8 +255,6 @@ gunicorn==23.0.0
     # via -r requirements-server.in
 h3==4.5.0
     # via oasislmf
-httplib2==0.32.0
-    # via pyrabbit
 hyperlink==21.0.0
     # via
     #   autobahn
@@ -511,8 +507,6 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
-pyrabbit==1.1.0
-    # via -r requirements-server.in
 pytest==8.4.2
     # via
     #   -r requirements.in

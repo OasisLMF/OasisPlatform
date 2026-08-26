@@ -48,8 +48,6 @@ certifi==2025.8.3
     # via requests
 cffi==2.0.0
     # via cryptography
-chainmap==1.0.3
-    # via -r requirements-server.in
 channels==4.3.1
     # via
     #   -r requirements-server.in
@@ -142,8 +140,6 @@ greenlet==3.2.4
     # via sqlalchemy
 gunicorn==23.0.0
     # via -r requirements-server.in
-httplib2==0.22.0
-    # via pyrabbit
 hyperlink==21.0.0
     # via
     #   autobahn
@@ -262,8 +258,6 @@ pyopenssl==26.2.0
     # via twisted
 pyparsing==3.2.3
     # via httplib2
-pyrabbit==1.1.0
-    # via -r requirements-server.in
 python-dateutil==2.9.0.post0
     # via
     #   botocore
