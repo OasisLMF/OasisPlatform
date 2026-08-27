@@ -11,7 +11,8 @@ from datetime import datetime
 
 import filelock
 import numpy as np
-import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
@@ -41,6 +42,11 @@ from .utils import (
     unwrap_task_args,
     notify_api_status_v2,
 )
+
+# Set before importing polars - it sizes its thread pool from host CPU count
+# at import time, which oversubscribes under celery's prefork concurrency.
+os.environ.setdefault("POLARS_MAX_THREADS", os.environ.get("OASIS_POLARS_MAX_THREADS", "1"))
+import polars as pl  # noqa: E402
 
 
 '''
@@ -576,6 +582,64 @@ def prepare_keys_file_chunk(
     return params
 
 
+def _merge_csv_streaming(paths, output_file):
+    # scan_csv errors on a zero-byte file, so skip those first.
+    non_empty_paths = []
+    for path in paths:
+        if os.path.getsize(path) > 0:
+            non_empty_paths.append(str(path))  # polars mishandles pathlib2.Path
+        else:
+            logger.info(f"File {path} is empty. --skipped--")
+    if not non_empty_paths:
+        logger.warning(f"All files were empty: {paths}. --skipped--")
+        return
+
+    # diagonal concat: chunk files' column sets aren't always identical.
+    lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
+    (
+        pl.concat(lazy_frames, how='diagonal')
+        .unique(keep='first', maintain_order=True)
+        .sink_csv(str(output_file))
+    )
+
+
+def _merge_parquet_streaming(paths, output_file):
+    # Dedup by content, not index - chunk files carry no meaningful index.
+    valid_paths = []
+    for path in paths:
+        try:
+            pq.ParquetFile(path).schema_arrow
+            valid_paths.append(str(path))
+        except pa.lib.ArrowInvalid:
+            logger.info(f"File {path} is empty or unreadable. --skipped--")
+    if not valid_paths:
+        logger.warning(f"All files were empty or unreadable: {paths}. --skipped--")
+        return
+
+    lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
+    (
+        pl.concat(lazy_frames, how='diagonal')
+        .unique(keep='first', maintain_order=True)
+        .sink_parquet(str(output_file))
+    )
+
+
+def merge_dataframes(paths, output_file, file_type):
+    if not paths:
+        logger.warning("merge_dataframes was called with an empty path list.")
+        return
+    if file_type == 'csv':
+        _merge_csv_streaming(paths, output_file)
+    elif file_type == 'parquet':
+        _merge_parquet_streaming(paths, output_file)
+
+
+def take_first(paths, output_file):
+    first_path = paths[0]
+    logger.info(f"Using {first_path} and ignoring others.")
+    shutil.copy2(first_path, output_file)
+
+
 @app.task(bind=True, name='collect_keys', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def collect_keys(
@@ -592,40 +656,6 @@ def collect_keys(
     chunk_params = {**params[0]}
     storage_subdir = chunk_params['storage_subdir']
     del chunk_params['chunk_keys']
-
-    def merge_dataframes(paths, output_file, file_type):
-        pd_read_func = getattr(pd, f"read_{file_type}")
-        if not paths:
-            logger.warning("merge_dataframes was called with an empty path list.")
-            return
-        df_chunks = []
-        for path in paths:
-            try:
-                df_chunks.append(pd_read_func(path))
-            except pd.errors.EmptyDataError:
-                # Ignore empty files.
-                logger.info(f"File {path} is empty. --skipped--")
-
-        if not df_chunks:
-            logger.warning(f"All files were empty: {paths}. --skipped--")
-            return
-        # add opt for Select merge strat
-        df = pd.concat(df_chunks)
-
-        if file_type == 'parquet':
-            # Parquet files should have an index which can be used to filter duplicates.
-            df = df[~df.index.duplicated(keep='first')]
-        elif file_type == 'csv':
-            # CSV files only have an automatic index so we use the values themselves to filter dups.
-            df = df[~df.duplicated(keep='first')]
-        pd_write_func = getattr(df, f"to_{file_type}")
-        # Only write index for parquet files to avoid useless extra column for csv files.
-        pd_write_func(output_file, index=file_type == 'parquet')
-
-    def take_first(paths, output_file):
-        first_path = paths[0]
-        logger.info(f"Using {first_path} and ignoring others.")
-        shutil.copy2(first_path, output_file)
 
     # Collect files and tar here from chunk_params['target_dir']
     with TemporaryDir() as chunks_dir:

@@ -429,6 +429,10 @@ pluggy==1.6.0
     # via
     #   pytest
     #   tox
+polars==1.43.2
+    # via -r requirements-worker.in
+polars-runtime-32==1.43.2
+    # via polars
 prompt-toolkit==3.0.52
     # via
     #   click-repl
