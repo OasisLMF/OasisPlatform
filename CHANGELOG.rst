@@ -1,6 +1,17 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.7`_
+ ---------
+* [#1418](https://github.com/OasisLMF/OasisPlatform/pull/1418) - docs: Diátaxis foundation, OpenAPI/redoc, validated Platform-API how-to
+* [#1419](https://github.com/OasisLMF/OasisPlatform/pull/1419) - fix/collect_keys_merge
+* [#1423](https://github.com/OasisLMF/OasisPlatform/pull/1423) - Add codecov upload to platform
+* [#1424](https://github.com/OasisLMF/OasisPlatform/pull/1424) - fix/cve_stuff
+* [#1425](https://github.com/OasisLMF/OasisPlatform/pull/1425) - Hubspot ticket tracking
+* [#1427](https://github.com/OasisLMF/OasisPlatform/pull/1427) - Feature/decouple websocket
+* [#1428](https://github.com/OasisLMF/OasisPlatform/pull/1428) - Fix CVE sqlparse
+.. _`2.5.7`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.6...2.5.7
+
 `2.5.6`_
  ---------
 * [#1416](https://github.com/OasisLMF/OasisPlatform/pull/1416) - fix/minikube_script_lmfbranchfix
