@@ -5,6 +5,7 @@ volumes:
   filestore-OasisData:
 x-shared-env: &shared-env
   OASIS_DEBUG: 1
+  OASIS_PYTOOLS_LOG_LEVEL: 'DEBUG'
   OASIS_DEBUG_TOOLBAR: 1
   OASIS_KEEP_RUN_DIR: 1
   OASIS_KEEP_LOCAL_DATA: 1
@@ -17,7 +18,8 @@ x-shared-env: &shared-env
   OASIS_SERVER_DB_USER: oasis
   OASIS_SERVER_DB_NAME: oasis
   OASIS_SERVER_DB_PORT: 5432
-  OASIS_SERVER_CHANNEL_LAYER_HOST: channel-layer
+  OASIS_SERVER_DISABLE_WORKER_WS: "true"
+  OASIS_ANALYSIS_STATUS_URL: "http://server:8000/analysis-status/"
   OASIS_SERVER_DB_ENGINE: django.db.backends.postgresql
   OASIS_CELERY_DB_ENGINE: db+postgresql+psycopg
   OASIS_CELERY_DB_HOST: celery-db
@@ -26,8 +28,6 @@ x-shared-env: &shared-env
   OASIS_CELERY_DB_NAME: celery
   OASIS_CELERY_DB_PORT: 5432
   OASIS_TASK_CONTROLLER_QUEUE: task-controller
-  OASIS_WEBSOCKET_PORT: 8001
-  OASIS_WEBSOCKET_URL: ws://server-websocket
 
 x-oasis-env-v1: &oasis-env-v1
   OASIS_DEBUG: ${DEBUG:-0}
@@ -65,21 +65,6 @@ services:
      OASIS_USE_OIDC: ""
      OASIS_SERVICE_USERNAME_OR_ID: admin
      OASIS_SERVICE_PASSWORD_OR_SECRET: password
-   volumes:
-     - filestore-OasisData:/shared-fs:rw
-     - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
-  server-websocket:
-   restart: always
-   image: coreoasis/api_server:dev
-   command: ["./asgi/run-asgi.sh"]
-   links:
-     - server-db
-     - celery-db
-     - broker
-   ports:
-     - 8001:8001
-   environment:
-     <<: *shared-env
    volumes:
      - filestore-OasisData:/shared-fs:rw
      - ../src/server/oasisapi:/var/www/oasis/src/server/oasisapi
@@ -239,11 +224,6 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
-  channel-layer:
-    restart: always
-    image: redis:5.0.7
-    ports:
-      - 6379:6379
   user-interface:
     restart: always
     image: coreoasis/oasisui_app:${VERS_UI:-latest}

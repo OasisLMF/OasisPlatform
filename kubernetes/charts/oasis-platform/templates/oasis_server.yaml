@@ -1,3 +1,8 @@
+{{- range .Values.oasisServer.env }}
+{{- if and (regexMatch "(?i)^(OASIS_(SERVER_)?)?DISABLE_WORKER_WS$" (.name | default "")) (ne (.value | toString) "0") (ne (.value | toString | lower) "false") (ne (.value | toString) "") }}
+{{- fail "oasisServer.env sets OASIS_SERVER_DISABLE_WORKER_WS/DISABLE_WORKER_WS. This flag also disables the queue-status broadcast the worker-controller autoscaler depends on (see kubernetes/worker-controller/src/oasis_websocket.py), so it must not be set in Helm deployments - it is only safe in docker-compose, which has no autoscaler." }}
+{{- end }}
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

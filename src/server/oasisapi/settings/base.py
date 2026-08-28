@@ -634,6 +634,10 @@ if IN_TEST:
     }
     CELERY_TASK_ALWAYS_EAGER = True
 
+# Set when redis/websockets aren't deployed - task status updates are skipped
+# instead of raising when the channel layer can't be reached
+DISABLE_WORKER_WS = iniconf.settings.getboolean('server', 'disable_worker_ws', fallback=False)
+
 # Option to remote the 'v2' routes and only run the server with 'v1' endpoints
 DISABLE_V2_API = iniconf.settings.getboolean('server', 'disable_v2_api', fallback=False)
 
