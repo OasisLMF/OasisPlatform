@@ -24,6 +24,7 @@ api_v2_urlpatterns = [
     re_path(r'^v2/', include('src.server.oasisapi.data_files.v2_api.urls', namespace='v2-data-files')),
     # re_path(r'^v2/', include('src.server.oasisapi.files.v2_api.urls', namespace='v2-files')), LOT3 DISABLE
     re_path(r'^v2/', include('src.server.oasisapi.queues.urls', namespace='v2-queues')),
+    re_path(r'^v2/', include('src.server.oasisapi.external_providers.urls', namespace='v2-external-providers')),
 ]
 
 
