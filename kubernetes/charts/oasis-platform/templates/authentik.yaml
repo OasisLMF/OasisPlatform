@@ -118,6 +118,12 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: authentik-media
+              mountPath: /media
+            - name: authentik-certs
+              mountPath: /certs
+            - name: authentik-templates
+              mountPath: /templates
           startupProbe:
             httpGet:
               path: "/authentik/-/health/live/"
@@ -144,6 +150,12 @@ spec:
             failureThreshold: 60
       volumes:
         - name: tmp
+          emptyDir: {}
+        - name: authentik-media
+          emptyDir: {}
+        - name: authentik-certs
+          emptyDir: {}
+        - name: authentik-templates
           emptyDir: {}
 ---
 apiVersion: apps/v1
@@ -188,11 +200,11 @@ spec:
             - name: tmp
               mountPath: /tmp
             - name: authentik-media
-              mountPath: /authentik/media
+              mountPath: /media
             - name: authentik-certs
-              mountPath: /authentik/certs
+              mountPath: /certs
             - name: authentik-templates
-              mountPath: /authentik/templates
+              mountPath: /templates
           startupProbe:
             exec:
               command:
