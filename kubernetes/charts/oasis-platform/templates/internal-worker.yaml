@@ -18,13 +18,19 @@ spec:
         {{- include "h.labels" . | nindent 8}}
         app: {{ .Values.internalWorker.name }}
     spec:
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       containers:
         - name: {{ .Values.internalWorker.name }}
           image: {{ .Values.images.oasis.worker_internal.image }}:{{ .Values.images.oasis.worker_internal.version }}
           imagePullPolicy: {{ .Values.images.oasis.worker_internal.imagePullPolicy }}
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
             - name: OASIS_RUN_MODE
               value: server-internal
+            # Image bakes NUMBA_CACHE_DIR into the (now read-only) rootfs; redirect it to the writable /tmp mount.
+            - name: NUMBA_CACHE_DIR
+              value: /tmp/numba_cache
             {{- toYaml .Values.internalWorker.env | nindent 12 }}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
@@ -44,7 +50,23 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
+            - name: tmp
+              mountPath: /tmp
+            - name: var-log-oasis
+              mountPath: /var/log/oasis
+            - name: var-oasis
+              mountPath: /var/oasis
+            - name: worker-model
+              mountPath: /home/worker/model
       volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: var-log-oasis
+          emptyDir: {}
+        - name: var-oasis
+          emptyDir: {}
+        - name: worker-model
+          emptyDir: {}
 {{- if ((.Values.volumes.host).sharedFs) }}
         - name: shared-fs-persistent-storage
           persistentVolumeClaim:

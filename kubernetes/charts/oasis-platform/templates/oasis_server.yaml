@@ -59,6 +59,7 @@ spec:
         checksum/{{ .Values.databases.celery_db.name }}: {{ toJson .Values.databases.celery_db | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- $checks := list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.broker.name }}
 
@@ -75,7 +76,11 @@ spec:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisWebsocket.name }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
+            - name: NUMBA_CACHE_DIR
+              value: /tmp/numba_cache
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
@@ -126,6 +131,8 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
+            - name: tmp
+              mountPath: /tmp
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -145,6 +152,8 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 2
       volumes:
+        - name: tmp
+          emptyDir: {}
 {{- if ((.Values.volumes.host).sharedFs) }}
         - name: shared-fs-persistent-storage
           persistentVolumeClaim:
@@ -198,6 +207,7 @@ spec:
         checksum/{{ .Values.databases.celery_db.name }}: {{ toJson .Values.databases.celery_db | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- $checks := list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.broker.name }}
 
@@ -213,6 +223,8 @@ spec:
         - name: set-mount-permissions
           image: busybox
           command: ["sh", "-c", "find /shared-fs -user root -exec chown 1000:1000 {} \\;"]
+          securityContext:
+            readOnlyRootFilesystem: true
           volumeMounts:
           - mountPath: /shared-fs
             name: shared-fs-persistent-storage
@@ -220,7 +232,11 @@ spec:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           name: {{ .Values.oasisServer.name }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
+            - name: NUMBA_CACHE_DIR
+              value: /tmp/numba_cache
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
@@ -269,6 +285,8 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
+            - name: tmp
+              mountPath: /tmp
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -292,6 +310,8 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 2
       volumes:
+        - name: tmp
+          emptyDir: {}
 {{- if ((.Values.volumes.host).sharedFs) }}
         - name: shared-fs-persistent-storage
           persistentVolumeClaim:
