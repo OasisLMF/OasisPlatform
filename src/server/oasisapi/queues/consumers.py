@@ -4,6 +4,7 @@ from typing import List, TYPE_CHECKING, NamedTuple
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
+from django.conf import settings
 from django.utils.timezone import now
 from django.db.models import F
 from rest_framework.serializers import DateTimeField
@@ -91,12 +92,20 @@ def build_task_status_message(items: List[TaskStatusMessageItem], message_type='
 
 
 def send_task_status_message(items: dict):
+    if settings.DISABLE_WORKER_WS:
+        logger.debug("Worker websocket messaging is disabled, skipping status message")
+        return
     layer = get_channel_layer()
     logger.debug("Message has been recieved")
-    async_to_sync(layer.group_send)(
-        'queue_status',
-        items
-    )
+    try:
+        async_to_sync(layer.group_send)(
+            'queue_status',
+            items
+        )
+    except Exception as e:
+        # Don't let a broken/unreachable channel layer take down the caller -
+        # this is a best-effort UI status broadcast, not part of run correctness.
+        logger.warning(f"Could not send queue status message, channel layer unreachable: {e}")
 
 
 def build_all_queue_status_message(analysis_filter=None, message_type='queue_status.updated'):
@@ -233,8 +242,10 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         logger.info(f"New update received on run {pk}")
 
         if "events_total" in content:
+            # num_events_complete is reset once at run-start (Analysis.run()), not here -
+            # events_total is reported once per chunk, so resetting on every ping would
+            # wipe out progress already reported by other chunks of the same run.
             analysis.num_events_total = int(float(content["events_total"]))
-            analysis.num_events_complete = 0
 
         if "events_complete" in content:
             analysis.num_events_complete = F('num_events_complete') + int(content["events_complete"])
