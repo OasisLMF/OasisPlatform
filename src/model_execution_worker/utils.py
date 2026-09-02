@@ -109,33 +109,40 @@ class _ThreadScopedFilter(logging.Filter):
         return record.thread == self.thread_id
 
 
-_root_level_lock = threading.Lock()
-_root_level_requests = []
-_root_level_baseline = None
-
-
 def _level_to_int(level):
     return level if isinstance(level, int) else logging.getLevelNamesMapping()[level]
 
 
-def _acquire_root_level(logger, level):
-    """ Tracks concurrently active level requests so one task finishing early
-        can't drop the root logger's level out from under a still-running sibling.
+class _LevelTracker:
+    """ Tracks concurrently active level requests per logger, so one task
+        finishing early can't drop the effective level out from under a
+        still-running sibling task using the same logger.
     """
-    global _root_level_baseline
-    numeric_level = _level_to_int(level)
-    with _root_level_lock:
-        if not _root_level_requests:
-            _root_level_baseline = logger.level
-        _root_level_requests.append(numeric_level)
-        logger.setLevel(min(_root_level_requests))
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._state = {}  # logger -> (baseline_level, [requested_levels])
+
+    def acquire(self, logger, level):
+        numeric_level = _level_to_int(level)
+        with self._lock:
+            baseline, requests = self._state.setdefault(logger, (logger.level, []))
+            requests.append(numeric_level)
+            logger.setLevel(min(requests))
+
+    def release(self, logger, level):
+        numeric_level = _level_to_int(level)
+        with self._lock:
+            baseline, requests = self._state[logger]
+            requests.remove(numeric_level)
+            if requests:
+                logger.setLevel(min(requests))
+            else:
+                logger.setLevel(baseline)
+                del self._state[logger]
 
 
-def _release_root_level(logger, level):
-    numeric_level = _level_to_int(level)
-    with _root_level_lock:
-        _root_level_requests.remove(numeric_level)
-        logger.setLevel(min(_root_level_requests) if _root_level_requests else _root_level_baseline)
+_level_tracker = _LevelTracker()
 
 
 class LoggingTaskContext:
@@ -158,7 +165,7 @@ class LoggingTaskContext:
     def __enter__(self):
         if self.level:
             self.handler.setLevel(self.level)
-            _acquire_root_level(self.logger, self.level)
+            _level_tracker.acquire(self.logger, self.level)
             if _level_to_int(self.level) <= logging.DEBUG:
                 self._filter = TaskLogFilter()
                 self.logger.addFilter(self._filter)
@@ -167,7 +174,7 @@ class LoggingTaskContext:
 
     def __exit__(self, et, ev, tb):
         if self.level:
-            _release_root_level(self.logger, self.level)
+            _level_tracker.release(self.logger, self.level)
             if self._filter:
                 self.logger.removeFilter(self._filter)
         if self.handler:
