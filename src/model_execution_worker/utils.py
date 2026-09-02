@@ -115,7 +115,6 @@ _root_level_baseline = None
 
 
 def _level_to_int(level):
-    # logging.getLevelName(str) -> int is deprecated
     return level if isinstance(level, int) else logging.getLevelNamesMapping()[level]
 
 
