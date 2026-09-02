@@ -9,16 +9,10 @@ from src.model_execution_worker.utils import LoggingTaskContext
 
 class LoggingTaskContextThreadIsolation(TestCase):
     def test_concurrent_tasks_do_not_leak_into_each_others_log_file(self):
-        """ Regression test for https://github.com/OasisLMF/OasisPlatform/issues/799 -
-            under a thread-based Celery pool, two tasks running concurrently in the
-            same process must not write into each other's per-chunk log file.
-        """
         with TemporaryDirectory() as tmp_dir:
             log_a = os.path.join(tmp_dir, 'chunk-a.log')
             log_b = os.path.join(tmp_dir, 'chunk-b.log')
 
-            # Deterministically nest chunk-b's whole run inside chunk-a's open
-            # context window, rather than relying on sleep timing.
             a_holding_context = threading.Event()
             b_done = threading.Event()
 
@@ -61,12 +55,8 @@ class LoggingTaskContextThreadIsolation(TestCase):
 
 class LoggingTaskContextLevelIsolation(TestCase):
     def test_one_tasks_exit_does_not_drop_a_still_running_siblings_level(self):
-        """ Regression test: LoggingTaskContext used to restore the root logger's
-            level to whatever it captured on entry. If task A enters first (raising
-            the root level to DEBUG) and task B enters afterwards (nested), A exiting
-            before B finishes used to reset the root level back to A's own pre-entry
-            baseline - silently dropping B's DEBUG logging for the rest of B's run,
-            even though B's own handler was still attached and still wanted DEBUG.
+        """ Regression test: A exiting used to reset the root logger's level to its
+            own pre-entry baseline, dropping B's DEBUG logging while B was still running.
         """
         root_logger = logging.getLogger()
         original_level = root_logger.level

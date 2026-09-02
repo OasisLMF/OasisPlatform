@@ -94,13 +94,11 @@ class TaskLogFilter(logging.Filter):
 
 
 class _ThreadScopedFilter(logging.Filter):
-    """ Restricts a handler to records emitted by the thread that installed it.
+    """ Restricts a handler to records from the thread that installed it.
 
         The root logger is shared process-wide, so under a thread-based Celery
-        pool (--pool=threads/eventlet/gevent) multiple tasks can have their own
-        FileHandler attached to it at the same time - without this filter every
-        attached handler receives every thread's log records, corrupting each
-        task's per-chunk log file with output from concurrently running chunks.
+        pool multiple tasks can have their own FileHandler attached to it at
+        once; without this, every handler receives every thread's records.
     """
 
     def __init__(self):
@@ -117,15 +115,13 @@ _root_level_baseline = None
 
 
 def _level_to_int(level):
-    # logging.getLevelName(str) is a deprecated way to do a name -> int lookup
+    # logging.getLevelName(str) -> int is deprecated
     return level if isinstance(level, int) else logging.getLevelNamesMapping()[level]
 
 
 def _acquire_root_level(logger, level):
-    """ Raises the root logger's level to admit 'level', tracking every concurrently
-        active request for it so that one task finishing early can't drop the
-        effective level out from under a sibling task that is still running and
-        still relying on it (see _release_root_level).
+    """ Tracks concurrently active level requests so one task finishing early
+        can't drop the root logger's level out from under a still-running sibling.
     """
     global _root_level_baseline
     numeric_level = _level_to_int(level)
