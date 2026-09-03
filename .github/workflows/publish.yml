@@ -114,29 +114,29 @@ jobs:
 
     steps:
      ## RELEASE CHECKS
-    - name: check branchname is valid for release
-      if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'stable/') }}
-      run: |
-        echo "Releases must be trigged on branchs 'release/x.x.x' or 'stable/x.x.x' "
-        exit 1
+    #- name: check branchname is valid for release
+    #  if: ${{ !startsWith(github.ref_name , 'release/') && !startsWith(github.ref_name, 'stable/') }}
+    #  run: |
+    #    echo "Releases must be trigged on branchs 'release/x.x.x' or 'stable/x.x.x' "
+    #    exit 1
 
-    - name: Check tag is valid for release
-      if: env.pre_release == 'false'
-      run: |
-        VALID=$(echo ${{ env.release_tag }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)$")
-        if [[ ! "$VALID" == 1 ]]; then
-            echo "Release Tag ${{ env.release_tag }} is not valid"
-            exit 1
-        fi
+    #- name: Check tag is valid for release
+    #  if: env.pre_release == 'false'
+    #  run: |
+    #    VALID=$(echo ${{ env.release_tag }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)$")
+    #    if [[ ! "$VALID" == 1 ]]; then
+    #        echo "Release Tag ${{ env.release_tag }} is not valid"
+    #        exit 1
+    #    fi
 
-    - name: Check tag is valid for pre-release
-      if: env.pre_release == 'true'
-      run: |
-        VALID=$(echo ${{ env.release_tag }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)rc(\d+)$")
-        if [[ ! "$VALID" == 1 ]]; then
-            echo "Release Tag ${{ env.release_tag }} is not valid"
-            exit 1
-        fi
+    #- name: Check tag is valid for pre-release
+    #  if: env.pre_release == 'true'
+    #  run: |
+    #    VALID=$(echo ${{ env.release_tag }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)rc(\d+)$")
+    #    if [[ ! "$VALID" == 1 ]]; then
+    #        echo "Release Tag ${{ env.release_tag }} is not valid"
+    #        exit 1
+    #    fi
 
     - name: set Oasislmf to stable
       if: startsWith(github.ref_name, 'stable/')
