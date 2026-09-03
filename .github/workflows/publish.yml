@@ -495,7 +495,6 @@ jobs:
 
   trigger_docs:
     needs: release
-    if: needs.release.outputs.pre_release == 'false'
     uses: OasisLMF/GenerateDocs/.github/workflows/publish.yml@fix/ci-publish
     secrets: inherit
     with:
