@@ -402,28 +402,28 @@ jobs:
         cat ./RELEASE.md >> $GITHUB_STEP_SUMMARY
 
     ## --- Push Images --- #
-    - name: Push images
-      run: |
-        docker push coreoasis/api_server:${{ env.release_tag }}
-        docker push coreoasis/model_worker:${{ env.release_tag }}
-        docker push coreoasis/worker_controller:${{ env.release_tag }}
-        docker push coreoasis/piwind_worker:${{ env.release_tag }}
+    #- name: Push images
+    #  run: |
+    #    docker push coreoasis/api_server:${{ env.release_tag }}
+    #    docker push coreoasis/model_worker:${{ env.release_tag }}
+    #    docker push coreoasis/worker_controller:${{ env.release_tag }}
+    #    docker push coreoasis/piwind_worker:${{ env.release_tag }}
 
-    - name: Push images (Latest)
-      if: ${{ env.push_latest == 'true' }}
-      run: |
-        docker push coreoasis/api_server:latest
-        docker push coreoasis/model_worker:latest
-        docker push coreoasis/worker_controller:latest
-        docker push coreoasis/piwind_worker:latest
+    #- name: Push images (Latest)
+    #  if: ${{ env.push_latest == 'true' }}
+    #  run: |
+    #    docker push coreoasis/api_server:latest
+    #    docker push coreoasis/model_worker:latest
+    #    docker push coreoasis/worker_controller:latest
+    #    docker push coreoasis/piwind_worker:latest
 
-    - name: Push images (Production)
-      if: ${{ env.pre_release == 'false' }}
-      run: |
-        docker push coreoasis/api_server:${{ env.latest_tag }}
-        docker push coreoasis/model_worker:${{ env.latest_tag }}
-        docker push coreoasis/worker_controller:${{ env.latest_tag }}
-        docker push coreoasis/piwind_worker:${{ env.latest_tag }}
+    #- name: Push images (Production)
+    #  if: ${{ env.pre_release == 'false' }}
+    #  run: |
+    #    docker push coreoasis/api_server:${{ env.latest_tag }}
+    #    docker push coreoasis/model_worker:${{ env.latest_tag }}
+    #    docker push coreoasis/worker_controller:${{ env.latest_tag }}
+    #    docker push coreoasis/piwind_worker:${{ env.latest_tag }}
 
     # --- Create Release --- #
     - name: Push changes
@@ -496,33 +496,34 @@ jobs:
   trigger_docs:
     needs: release
     if: needs.release.outputs.pre_release == 'false'
-    uses: OasisLMF/GenerateDocs/.github/workflows/publish.yml@main
+    uses: OasisLMF/GenerateDocs/.github/workflows/publish.yml@fix/ci-publish
     secrets: inherit
     with:
+      pages_branch: 'gh-pages_testing'
       version: ${{ needs.release.outputs.release_tag }}
       platform: ${{ needs.release.outputs.release_tag }}
       oasislmf: ${{ needs.release.outputs.oasislmf_release }}
       ods-tools: ${{ needs.release.outputs.ods_tools_release }}
 
-  tag_piwind:
-    uses: OasisLMF/OasisPiWind/.github/workflows/tag-release.yml@main
-    secrets: inherit
-    needs: release
-    with:
-      release_tag: ${{ inputs.release_tag }}
-      piwind_branch: ${{ inputs.piwind_branch }}
+  #tag_piwind:
+  #  uses: OasisLMF/OasisPiWind/.github/workflows/tag-release.yml@main
+  #  secrets: inherit
+  #  needs: release
+  #  with:
+  #    release_tag: ${{ inputs.release_tag }}
+  #    piwind_branch: ${{ inputs.piwind_branch }}
 
 
   # --- Notify Slack --- #
-  slack:
-    uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@main
-    secrets: inherit
-    needs: release
-    with:
-      heading: ${{ needs.release.outputs.heading }}
-      title: ${{ needs.release.outputs.title }}
-      build_branch: ${{ needs.release.outputs.build_branch }}
-      run_url: ${{ needs.release.outputs.run_url }}
-      run_id: ${{ needs.release.outputs.run_id }}
-      run_status: ${{ needs.release.outputs.run_status }}
-      run_date: ${{ needs.release.outputs.run_date }}
+  #slack:
+  #  uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@main
+  #  secrets: inherit
+  #  needs: release
+  #  with:
+  #    heading: ${{ needs.release.outputs.heading }}
+  #    title: ${{ needs.release.outputs.title }}
+  #    build_branch: ${{ needs.release.outputs.build_branch }}
+  #    run_url: ${{ needs.release.outputs.run_url }}
+  #    run_id: ${{ needs.release.outputs.run_id }}
+  #    run_status: ${{ needs.release.outputs.run_status }}
+  #    run_date: ${{ needs.release.outputs.run_date }}
