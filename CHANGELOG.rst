@@ -1,6 +1,8 @@
 OasisPlatform Changelog
 =======================
 
+.. _`2.5.7-test`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.7...2.5.7-test
+
 `2.5.7`_
  ---------
 * [#1418](https://github.com/OasisLMF/OasisPlatform/pull/1418) - docs: Diátaxis foundation, OpenAPI/redoc, validated Platform-API how-to

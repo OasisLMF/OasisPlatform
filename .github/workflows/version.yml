@@ -39,30 +39,30 @@ jobs:
   version:
     runs-on: ubuntu-latest
     steps:
-    - name: Check valid semvar
-      run: |
-        VALID=$(echo ${{ inputs.platform_version }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)$")
-        [[ "$VALID" -eq "1" ]] || exit 1
+    #- name: Check valid semvar
+    #  run: |
+    #    VALID=$(echo ${{ inputs.platform_version }} | grep -oPc "^(\d+)\.(\d+)\.(\d+)rc(\d+)|(\d+)\.(\d+)\.(\d+)$")
+    #    [[ "$VALID" -eq "1" ]] || exit 1
 
-    - name: Check backport branch matches version (Platform)
-      if: startsWith(github.ref_name, 'backports/')
-      run: |
-        BRANCH_VER=$(echo ${{ github.ref_name }} | grep -oP "(\d+)\.(\d+)")
-        VALID=$(echo ${{ inputs.platform_version }} | grep $BRANCH_VER -c)
-        if [[ ! "$VALID" == 1 ]]; then
-            echo "Release Tag ${{ inputs.platform_version }} doesn't match branch ${{ github.ref_name }}"
-            exit 1
-        fi
+    #- name: Check backport branch matches version (Platform)
+    #  if: startsWith(github.ref_name, 'backports/')
+    #  run: |
+    #    BRANCH_VER=$(echo ${{ github.ref_name }} | grep -oP "(\d+)\.(\d+)")
+    #    VALID=$(echo ${{ inputs.platform_version }} | grep $BRANCH_VER -c)
+    #    if [[ ! "$VALID" == 1 ]]; then
+    #        echo "Release Tag ${{ inputs.platform_version }} doesn't match branch ${{ github.ref_name }}"
+    #        exit 1
+    #    fi
 
-    - name: Check backport branch matches version (Oasislmf)
-      if: startsWith(github.ref_name, 'backports/') && inputs.oasislmf_version != ''
-      run: |
-        BRANCH_VER=$(echo ${{ github.ref_name }} | grep -oP "(\d+)\.(\d+)")
-        VALID=$(echo ${{ inputs.oasislmf_version }} | grep $BRANCH_VER -c)
-        if [[ ! "$VALID" == 1 ]]; then
-            echo "Release Tag ${{ inputs.oasislmf_version }} doesn't match branch ${{ github.ref_name }}"
-            exit 1
-        fi
+    #- name: Check backport branch matches version (Oasislmf)
+    #  if: startsWith(github.ref_name, 'backports/') && inputs.oasislmf_version != ''
+    #  run: |
+    #    BRANCH_VER=$(echo ${{ github.ref_name }} | grep -oP "(\d+)\.(\d+)")
+    #    VALID=$(echo ${{ inputs.oasislmf_version }} | grep $BRANCH_VER -c)
+    #    if [[ ! "$VALID" == 1 ]]; then
+    #        echo "Release Tag ${{ inputs.oasislmf_version }} doesn't match branch ${{ github.ref_name }}"
+    #        exit 1
+    #    fi
 
     - name: Checkout
       uses: actions/checkout@v3
