@@ -50,35 +50,35 @@ jobs:
       oasislmf_version: ${{ inputs.oasislmf_release }}
       ods_tools_version: ${{ inputs.ods_tools_release }}
 
-  build_schema:
-    uses: ./.github/workflows/build-schema.yml
-    secrets: inherit
-    needs: update
+  #build_schema:
+  #  uses: ./.github/workflows/build-schema.yml
+  #  secrets: inherit
+  #  needs: update
 
 
-  build_images:
-    uses: ./.github/workflows/build-images.yml
-    secrets: inherit
-    needs: update
-    with:
-      docker_push: true
-      ignore_unfixed: true
-      cve_severity: ${{ inputs.cve_severity }}
+  #build_images:
+  #  uses: ./.github/workflows/build-images.yml
+  #  secrets: inherit
+  #  needs: update
+  #  with:
+  #    docker_push: true
+  #    ignore_unfixed: true
+  #    cve_severity: ${{ inputs.cve_severity }}
 
 
-  build_piwind:
-    uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@main
-    secrets: inherit
-    needs: build_images
-    with:
-      docker_push: true
-      from_image: ${{ needs.build_images.outputs.worker_image }}
-      piwind_branch: ${{ inputs.piwind_branch }}
+  #build_piwind:
+  #  uses: OasisLMF/OasisPiWind/.github/workflows/build.yml@main
+  #  secrets: inherit
+  #  needs: build_images
+  #  with:
+  #    docker_push: true
+  #    from_image: ${{ needs.build_images.outputs.worker_image }}
+  #    piwind_branch: ${{ inputs.piwind_branch }}
 
 
   release:
     runs-on: ubuntu-latest
-    needs: [build_images, build_schema, build_piwind]
+    needs: [update]
     outputs:
       heading: ${{ steps.slack_vars.outputs.heading }}
       title: ${{ steps.slack_vars.outputs.title }}
@@ -233,123 +233,123 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    ## pull a rename build images
-    - name: Pull and re-tag images
-      run: |
-        # Server
-        docker pull ${{ needs.build_images.outputs.server_image }}
-        docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.release_tag }}
-        docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.latest_tag }}
-        docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:latest
-        # Worker
-        docker pull ${{ needs.build_images.outputs.worker_image }}
-        docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.release_tag }}
-        docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.latest_tag }}
-        docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:latest
-        # Worker-controller
-        docker pull ${{ needs.build_images.outputs.worker_controller_image }}
-        docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:${{ env.release_tag }}
-        docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:${{ env.latest_tag }}
-        docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:latest
-        # Worker-PiWind
-        docker pull ${{ needs.build_piwind.outputs.piwind_image }}
-        docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.release_tag }}
-        docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.latest_tag }}
-        docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:latest
+    ### pull a rename build images
+    #- name: Pull and re-tag images
+    #  run: |
+    #    # Server
+    #    docker pull ${{ needs.build_images.outputs.server_image }}
+    #    docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.release_tag }}
+    #    docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:${{ env.latest_tag }}
+    #    docker tag  ${{ needs.build_images.outputs.server_image }} coreoasis/api_server:latest
+    #    # Worker
+    #    docker pull ${{ needs.build_images.outputs.worker_image }}
+    #    docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.release_tag }}
+    #    docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:${{ env.latest_tag }}
+    #    docker tag  ${{ needs.build_images.outputs.worker_image }} coreoasis/model_worker:latest
+    #    # Worker-controller
+    #    docker pull ${{ needs.build_images.outputs.worker_controller_image }}
+    #    docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:${{ env.release_tag }}
+    #    docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:${{ env.latest_tag }}
+    #    docker tag  ${{ needs.build_images.outputs.worker_controller_image }} coreoasis/worker_controller:latest
+    #    # Worker-PiWind
+    #    docker pull ${{ needs.build_piwind.outputs.piwind_image }}
+    #    docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.release_tag }}
+    #    docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:${{ env.latest_tag }}
+    #    docker tag  ${{ needs.build_piwind.outputs.piwind_image }} coreoasis/piwind_worker:latest
 
 
-    - name: Check tag matches (Repo)
-      working-directory: ${{ env.dir_platform }}
-      run: |
-        BUILD_VER=$(cat VERSION)
-        [[ "${{ env.release_tag }}" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
-        if [[ "$ERROR_CODE" == 1 ]]; then
-            echo "BUILD_VER: $BUILD_VER stored in Repo 'VERSION' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
-        fi
+    #- name: Check tag matches (Repo)
+    #  working-directory: ${{ env.dir_platform }}
+    #  run: |
+    #    BUILD_VER=$(cat VERSION)
+    #    [[ "${{ env.release_tag }}" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
+    #    if [[ "$ERROR_CODE" == 1 ]]; then
+    #        echo "BUILD_VER: $BUILD_VER stored in Repo 'VERSION' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
+    #    fi
 
-    - name: Check tags match (worker image)
-      run: |
-        container_id=$(docker create "${{ needs.build_images.outputs.worker_image }}")
-        docker cp "$container_id:/home/worker/VERSION" "./IMAGE_WORKER_VERSION"
-        docker rm "$container_id"
+    #- name: Check tags match (worker image)
+    #  run: |
+    #    container_id=$(docker create "${{ needs.build_images.outputs.worker_image }}")
+    #    docker cp "$container_id:/home/worker/VERSION" "./IMAGE_WORKER_VERSION"
+    #    docker rm "$container_id"
 
-        BUILD_VER=$(cat ./IMAGE_WORKER_VERSION)
-        RELEASE_VER=${{ env.release_tag }}
-        [[ "$RELEASE_VER" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
-        if [[ "$ERROR_CODE" == 1 ]]; then
-            echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_images.outputs.worker_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
-        fi
+    #    BUILD_VER=$(cat ./IMAGE_WORKER_VERSION)
+    #    RELEASE_VER=${{ env.release_tag }}
+    #    [[ "$RELEASE_VER" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
+    #    if [[ "$ERROR_CODE" == 1 ]]; then
+    #        echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_images.outputs.worker_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
+    #    fi
 
-    - name: Check tags match (piwind image)
-      run: |
-        container_id=$(docker create "${{ needs.build_piwind.outputs.piwind_image }}")
-        docker cp "$container_id:/home/worker/VERSION" "./IMAGE_PIWIND_VERSION"
-        docker rm "$container_id"
+    #- name: Check tags match (piwind image)
+    #  run: |
+    #    container_id=$(docker create "${{ needs.build_piwind.outputs.piwind_image }}")
+    #    docker cp "$container_id:/home/worker/VERSION" "./IMAGE_PIWIND_VERSION"
+    #    docker rm "$container_id"
 
-        BUILD_VER=$(cat ./IMAGE_PIWIND_VERSION)
-        RELEASE_VER=${{ env.release_tag }}
-        [[ "$RELEASE_VER" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
-        if [[ "$ERROR_CODE" == 1 ]]; then
-            echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_piwind.outputs.piwind_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
-        fi
+    #    BUILD_VER=$(cat ./IMAGE_PIWIND_VERSION)
+    #    RELEASE_VER=${{ env.release_tag }}
+    #    [[ "$RELEASE_VER" = "$BUILD_VER" ]] && ERROR_CODE=0 || ERROR_CODE=1
+    #    if [[ "$ERROR_CODE" == 1 ]]; then
+    #        echo "BUILD_VER: $BUILD_VER stored in image '${{ needs.build_piwind.outputs.piwind_image }}' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
+    #    fi
 
-    - name: Check new component versions
-      continue-on-error: true
-      run: |
-        docker run --entrypoint "oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
-        docker run --entrypoint "python3" ${{ needs.build_images.outputs.worker_image }} '-cimport ods_tools; print(ods_tools.__version__)' > ODS_VERSION
+    #- name: Check new component versions
+    #  continue-on-error: true
+    #  run: |
+    #    docker run --entrypoint "oasislmf" ${{ needs.build_images.outputs.worker_image }} 'version' > OASISLMF_VERSION
+    #    docker run --entrypoint "python3" ${{ needs.build_images.outputs.worker_image }} '-cimport ods_tools; print(ods_tools.__version__)' > ODS_VERSION
 
-    - name: 'store OASISLMF_VERSION'
-      uses: actions/upload-artifact@v4
-      with:
-        name: OASISLMF_VERSION
-        path: OASISLMF_VERSION
-        retention-days: 5
+    #- name: 'store OASISLMF_VERSION'
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: OASISLMF_VERSION
+    #    path: OASISLMF_VERSION
+    #    retention-days: 5
 
-    - name: 'store ODS_VERSION'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ODS_VERSION
-        path: ODS_VERSION
-        retention-days: 5
+    #- name: 'store ODS_VERSION'
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: ODS_VERSION
+    #    path: ODS_VERSION
+    #    retention-days: 5
 
-    - name: Check for Oasislmf version match
-      run: test "$(cat OASISLMF_VERSION)" = ${{ env.oasislmf_release }} || exit 1
+    #- name: Check for Oasislmf version match
+    #  run: test "$(cat OASISLMF_VERSION)" = ${{ env.oasislmf_release }} || exit 1
 
-    - name: Check for ods-tools version match
-      run: test "$(cat ODS_VERSION)" = ${{ env.ods_tools_release }} || exit 1
+    #- name: Check for ods-tools version match
+    #  run: test "$(cat ODS_VERSION)" = ${{ env.ods_tools_release }} || exit 1
 
-    - name: Download API schema
-      uses: actions/download-artifact@v4
-      with:
-        name: openapi-schema
-        path: ${{ github.workspace }}/
+    #- name: Download API schema
+    #  uses: actions/download-artifact@v4
+    #  with:
+    #    name: openapi-schema
+    #    path: ${{ github.workspace }}/
 
-    - name: Download API schema (v1)
-      uses: actions/download-artifact@v4
-      with:
-        name: v1-openapi-schema
-        path: ${{ github.workspace }}/
+    #- name: Download API schema (v1)
+    #  uses: actions/download-artifact@v4
+    #  with:
+    #    name: v1-openapi-schema
+    #    path: ${{ github.workspace }}/
 
-    - name: Download API schema (v2)
-      uses: actions/download-artifact@v4
-      with:
-        name: v2-openapi-schema
-        path: ${{ github.workspace }}/
+    #- name: Download API schema (v2)
+    #  uses: actions/download-artifact@v4
+    #  with:
+    #    name: v2-openapi-schema
+    #    path: ${{ github.workspace }}/
 
-    - name: Name API schema
-      id: api_schema
-      run: |
-        schema_filename="openapi-schema-${{ env.release_tag }}.json"
-        v1_schema_filename="v1-openapi-schema-${{ env.release_tag }}.json"
-        v2_schema_filename="v2-openapi-schema-${{ env.release_tag }}.json"
+    #- name: Name API schema
+    #  id: api_schema
+    #  run: |
+    #    schema_filename="openapi-schema-${{ env.release_tag }}.json"
+    #    v1_schema_filename="v1-openapi-schema-${{ env.release_tag }}.json"
+    #    v2_schema_filename="v2-openapi-schema-${{ env.release_tag }}.json"
 
-        mv openapi-schema.json  $schema_filename
-        mv v1-openapi-schema.json  $v1_schema_filename
-        mv v2-openapi-schema.json  $v2_schema_filename
-        echo "filename_all=$schema_filename" >> $GITHUB_OUTPUT
-        echo "filename_v1=$v1_schema_filename" >> $GITHUB_OUTPUT
-        echo "filename_v2=$v2_schema_filename" >> $GITHUB_OUTPUT
+    #    mv openapi-schema.json  $schema_filename
+    #    mv v1-openapi-schema.json  $v1_schema_filename
+    #    mv v2-openapi-schema.json  $v2_schema_filename
+    #    echo "filename_all=$schema_filename" >> $GITHUB_OUTPUT
+    #    echo "filename_v1=$v1_schema_filename" >> $GITHUB_OUTPUT
+    #    echo "filename_v2=$v2_schema_filename" >> $GITHUB_OUTPUT
 
     # --- Create Changelog --- #
     - name: Tag Release
@@ -477,20 +477,20 @@ jobs:
     #    asset_name: ${{ steps.api_schema.outputs.filename_v2 }}
     #    asset_content_type: application/json
     ## --- Slack notify --- #
-    - name: slack message vars
-      id: slack_vars
-      run: |
-        HEAD=$(echo "*${{ github.event.repository.name}} Release* (${{ env.release_tag }})")
-        DATE=$(date)
-        TITLE=$(echo "• <https://github.com/${{ github.repository }}/releases/tag/${{ env.release_tag }}|${{ github.event.repository.name }} ${{ env.release_tag }} - Release Notes>")
-        JOB_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        echo "heading=$HEAD" >> $GITHUB_OUTPUT
-        echo "run_date=$DATE" >> $GITHUB_OUTPUT
-        echo "title=$TITLE" >> $GITHUB_OUTPUT
-        echo "run_url=$JOB_URL" >> $GITHUB_OUTPUT
-        echo "run_id=${{ github.run_id }}"  >> $GITHUB_OUTPUT
-        echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-        echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
+    #- name: slack message vars
+    #  id: slack_vars
+    #  run: |
+    #    HEAD=$(echo "*${{ github.event.repository.name}} Release* (${{ env.release_tag }})")
+    #    DATE=$(date)
+    #    TITLE=$(echo "• <https://github.com/${{ github.repository }}/releases/tag/${{ env.release_tag }}|${{ github.event.repository.name }} ${{ env.release_tag }} - Release Notes>")
+    #    JOB_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    #    echo "heading=$HEAD" >> $GITHUB_OUTPUT
+    #    echo "run_date=$DATE" >> $GITHUB_OUTPUT
+    #    echo "title=$TITLE" >> $GITHUB_OUTPUT
+    #    echo "run_url=$JOB_URL" >> $GITHUB_OUTPUT
+    #    echo "run_id=${{ github.run_id }}"  >> $GITHUB_OUTPUT
+    #    echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+    #    echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
 
   trigger_docs:
     needs: release
