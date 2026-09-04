@@ -497,6 +497,7 @@ jobs:
     uses: OasisLMF/GenerateDocs/.github/workflows/publish.yml@fix/ci-publish
     secrets: inherit
     with:
+      gendoc_branch: 'fix/ci-publish'
       pages_branch: 'gh-pages_testing'
       version: ${{ needs.release.outputs.release_tag }}
       platform: ${{ needs.release.outputs.release_tag }}
