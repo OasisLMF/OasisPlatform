@@ -499,6 +499,8 @@ jobs:
     uses: OasisLMF/GenerateDocs/.github/workflows/publish.yml@main
     secrets: inherit
     with:
+      gendoc_branch: 'main'
+      pages_branch: 'gh-pages'
       version: ${{ needs.release.outputs.release_tag }}
       platform: ${{ needs.release.outputs.release_tag }}
       oasislmf: ${{ needs.release.outputs.oasislmf_release }}
