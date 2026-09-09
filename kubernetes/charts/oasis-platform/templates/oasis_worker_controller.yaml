@@ -51,6 +51,7 @@ spec:
         checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisWebsocket | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       serviceAccountName: {{ $workerControllerServiceAccountName }}
       initContainers:
       {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisWebsocket.name) | nindent 8}}
@@ -58,6 +59,14 @@ spec:
         - image: {{ .Values.images.oasis.worker_controller.image }}:{{ .Values.images.oasis.worker_controller.version }}
           imagePullPolicy: {{ .Values.images.oasis.worker_controller.imagePullPolicy }}
           name: main
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
           env:
             {{- include "h.serverApiVars" . | nindent 12}}
             - name: OASIS_SERVICE_USERNAME_OR_ID
@@ -104,8 +113,11 @@ spec:
               value: {{ .modelsLimit | quote }}
               {{- end }}
             {{- end }}
-{{- if (.Values.azure).secretProvider }}
       volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- include "h.projectedServiceAccountToken" . | nindent 8 }}
+{{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
             driver: secrets-store.csi.k8s.io
