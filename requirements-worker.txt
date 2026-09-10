@@ -218,7 +218,7 @@ pandas==2.3.2
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-worker.in
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 polars==1.40.1
     # via -r requirements-worker.in
