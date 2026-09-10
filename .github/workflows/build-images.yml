@@ -83,6 +83,7 @@ jobs:
     outputs:
       image_tag: ${{ steps.set_tag.outputs.image_tag }}
     strategy:
+      fail-fast: false
       matrix:
         image: [worker, server, worker_controller]
         include:
