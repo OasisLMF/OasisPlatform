@@ -105,7 +105,11 @@ class LoggingTaskContext:
         self.prev_level = logger.level
         self.log_filename = log_filename
         self.close = close
-        self.handler = logging.FileHandler(log_filename)
+        # 'w' (truncate) rather than the FileHandler default of 'a' (append) - on a
+        # failed task the file is deliberately left on disk for 'task_failure' to
+        # upload (see __exit__ below); if the task is then retried by celery, that
+        # retry must not append onto the previous failed attempt's leftover content.
+        self.handler = logging.FileHandler(log_filename, mode='w')
         self.delete_on_exit = delete_on_exit
         self._filter = None
 
@@ -128,7 +132,10 @@ class LoggingTaskContext:
             self.logger.removeHandler(self.handler)
         if self.handler and self.close:
             self.handler.close()
-        if os.path.isfile(self.log_filename) and self.delete_on_exit:
+        # On failure leave the log file in place - 'task_failure' handlers read it
+        # from disk (after the context manager has exited) to attach the full
+        # output (including kernel STDOUT/STDERR) to the failed task/analysis.
+        if os.path.isfile(self.log_filename) and self.delete_on_exit and et is None:
             os.remove(self.log_filename)
 
 

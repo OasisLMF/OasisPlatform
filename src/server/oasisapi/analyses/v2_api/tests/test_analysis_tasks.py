@@ -17,9 +17,10 @@ from pathlib2 import Path
 from .fakes import fake_analysis, fake_analysis_task_status
 from ...models import Analysis, AnalysisTaskStatus
 from ....auth.tests.fakes import fake_user
+from ....files.v2_api.tests.fakes import fake_related_file
 from ...v2_api.tasks import (
-    chord_error_callback, record_sub_task_failure, record_sub_task_success, record_sub_task_start, start_input_and_loss_generation_task,
-    start_loss_generation_task, start_input_generation_task
+    chord_error_callback, handle_task_failure, record_sub_task_failure, record_sub_task_success, record_sub_task_start,
+    start_input_and_loss_generation_task, start_loss_generation_task, start_input_generation_task
 )
 from ...v1_api.tasks import (
     record_run_analysis_result, generate_input_success, record_generate_input_failure, record_run_analysis_failure
@@ -278,6 +279,155 @@ class RecordSubTaskFailure(TestCase):
             self.assertEqual(status.status, AnalysisTaskStatus.status_choices.ERROR)
             self.assertEqual(status.end_time, _now)
             self.assertEqual(status.error_log.read().decode(), error_content)
+
+
+class HandleTaskFailure(TestCase):
+    """ 'handle_task_failure' is the chain-level errback that builds the analysis-wide
+        traceback/log file when a V2 run fails. It merges in each failed sub-task's
+        'output_log' (the full KERNEL_STDERR/STDOUT output captured by the worker) and
+        'error_log' (its traceback), so a user doesn't have to dig through individual
+        sub-tasks to see why a run failed.
+    """
+
+    def test_run_failure___subtask_output_and_error_logs_are_merged_into_run_traceback_and_log_file(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            initiator = fake_user()
+            analysis = fake_analysis()
+            fake_analysis_task_status(
+                analysis=analysis,
+                slug='generate-losses-chunk-1',
+                status=AnalysisTaskStatus.status_choices.ERROR,
+                output_log=fake_related_file(file='KERNEL_STDERR:\nboom\nSTDOUT:\nfailure output'),
+                error_log=fake_related_file(file='Traceback (most recent call last):\nOasisException: boom'),
+            )
+
+            handle_task_failure(
+                None, None, 'top level celery traceback',
+                analysis_id=analysis.pk,
+                initiator_id=initiator.pk,
+                run_data_uuid='run-uuid',
+                traceback_property='run_traceback_file',
+                failure_status=Analysis.status_choices.RUN_ERROR,
+            )
+
+            analysis.refresh_from_db()
+            self.assertEqual(analysis.status, Analysis.status_choices.RUN_ERROR)
+            self.assertIsNotNone(analysis.run_traceback_file)
+            self.assertIsNotNone(analysis.run_log_file)
+            # both fields point at the same combined content, so it's visible from
+            # either place on the analysis, without opening a sub-task record
+            self.assertEqual(analysis.run_traceback_file_id, analysis.run_log_file_id)
+
+            content = analysis.run_traceback_file.read().decode('utf-8')
+            self.assertIn('generate-losses-chunk-1', content)
+            self.assertIn('KERNEL_STDERR', content)
+            self.assertIn('STDOUT', content)
+            self.assertIn('failure output', content)
+            self.assertIn('OasisException: boom', content)
+            self.assertIn('top level celery traceback', content)
+
+    def test_input_generation_failure___leaves_run_log_file_untouched(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            initiator = fake_user()
+            analysis = fake_analysis()
+            fake_analysis_task_status(
+                analysis=analysis,
+                slug='write-input-files',
+                status=AnalysisTaskStatus.status_choices.ERROR,
+                output_log=fake_related_file(file='STDOUT:\nlookup failure'),
+                error_log=fake_related_file(file='OasisExceptionNoKeys: boom'),
+            )
+
+            handle_task_failure(
+                None, None, 'top level celery traceback',
+                analysis_id=analysis.pk,
+                initiator_id=initiator.pk,
+                run_data_uuid='run-uuid',
+                traceback_property='input_generation_traceback_file',
+                failure_status=Analysis.status_choices.INPUTS_GENERATION_ERROR,
+            )
+
+            analysis.refresh_from_db()
+            self.assertEqual(analysis.status, Analysis.status_choices.INPUTS_GENERATION_ERROR)
+            self.assertIsNotNone(analysis.input_generation_traceback_file)
+            self.assertIsNone(analysis.run_log_file)
+
+    def test_subtask_output_log_not_yet_available___retries_instead_of_writing_a_bare_traceback(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            initiator = fake_user()
+            analysis = fake_analysis()
+            # sub-task has failed, but the worker's separately-dispatched
+            # 'subtask_error_log' task hasn't attached the output log yet
+            fake_analysis_task_status(
+                analysis=analysis,
+                slug='generate-losses-chunk-1',
+                status=AnalysisTaskStatus.status_choices.ERROR,
+                error_log=fake_related_file(file='Traceback (most recent call last):\nOasisException: boom'),
+            )
+
+            with patch.object(handle_task_failure, 'retry', side_effect=RuntimeError('retried')) as retry_mock:
+                with self.assertRaises(RuntimeError):
+                    handle_task_failure(
+                        None, None, 'top level celery traceback',
+                        analysis_id=analysis.pk,
+                        initiator_id=initiator.pk,
+                        run_data_uuid='run-uuid',
+                        traceback_property='run_traceback_file',
+                        failure_status=Analysis.status_choices.RUN_ERROR,
+                    )
+
+            retry_mock.assert_called_once()
+            analysis.refresh_from_db()
+            self.assertNotEqual(analysis.status, Analysis.status_choices.RUN_ERROR)
+            self.assertIsNone(analysis.run_traceback_file)
+
+    def test_no_failed_subtask_recorded_yet___retries_instead_of_writing_a_bare_traceback(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            initiator = fake_user()
+            analysis = fake_analysis()
+
+            with patch.object(handle_task_failure, 'retry', side_effect=RuntimeError('retried')) as retry_mock:
+                with self.assertRaises(RuntimeError):
+                    handle_task_failure(
+                        None, None, 'top level celery traceback',
+                        analysis_id=analysis.pk,
+                        initiator_id=initiator.pk,
+                        run_data_uuid='run-uuid',
+                        traceback_property='run_traceback_file',
+                        failure_status=Analysis.status_choices.RUN_ERROR,
+                    )
+
+            retry_mock.assert_called_once()
+
+    def test_retries_exhausted___writes_the_bare_traceback_rather_than_failing_silently(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            initiator = fake_user()
+            analysis = fake_analysis()
+            fake_analysis_task_status(
+                analysis=analysis,
+                slug='generate-losses-chunk-1',
+                status=AnalysisTaskStatus.status_choices.ERROR,
+                error_log=fake_related_file(file='Traceback (most recent call last):\nOasisException: boom'),
+            )
+            task_request_mock = Mock()
+            task_request_mock.retries = handle_task_failure.max_retries
+
+            with patch('celery.app.task.Context', return_value=task_request_mock):
+                handle_task_failure(
+                    None, None, 'top level celery traceback',
+                    analysis_id=analysis.pk,
+                    initiator_id=initiator.pk,
+                    run_data_uuid='run-uuid',
+                    traceback_property='run_traceback_file',
+                    failure_status=Analysis.status_choices.RUN_ERROR,
+                )
+
+            analysis.refresh_from_db()
+            self.assertEqual(analysis.status, Analysis.status_choices.RUN_ERROR)
+            self.assertIsNotNone(analysis.run_traceback_file)
+            content = analysis.run_traceback_file.read().decode('utf-8')
+            self.assertIn('top level celery traceback', content)
+            self.assertIn('OasisException: boom', content)
 
 
 class ChordErrorCallback(TestCase):

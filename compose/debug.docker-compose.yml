@@ -152,6 +152,8 @@ services:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ../src/model_execution_worker:/home/worker/src/model_execution_worker
      - filestore-OasisData:/shared-fs:rw
+     - /home/sam/work/oasis-repos/oasisLMF/oasislmf:/home/worker/.local/lib/python3.12/site-packages/oasislmf
+
   v2-worker:
     restart: always
     image: coreoasis/model_worker:dev
@@ -171,6 +173,7 @@ services:
      - ${OASIS_MODEL_DATA_DIR:-./data/static}:/home/worker/model:rw
      - ../src/model_execution_worker:/home/worker/src/model_execution_worker
      - filestore-OasisData:/shared-fs:rw
+     - /home/sam/work/oasis-repos/oasisLMF/oasislmf:/home/worker/.local/lib/python3.12/site-packages/oasislmf
 
   internal-worker:
     restart: always
