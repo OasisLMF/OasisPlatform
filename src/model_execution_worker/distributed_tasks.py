@@ -1091,6 +1091,9 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     task_params = unwrap_task_args(kwargs.get('args'))
 
     # Store output log
+    # 'LoggingTaskContext' leaves this file on disk when a task fails (instead of
+    # deleting it on exit) so that the full task output - including the kernel's
+    # KERNEL_STDERR/STDOUT logging - is still available here to upload.
     task_log_file = f"{TASK_LOG_DIR}/{task_args.get('run_data_uuid')}_{task_args.get('slug')}.log"
     if os.path.isfile(task_log_file):
         signature('subtask_error_log').delay(
@@ -1100,6 +1103,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
             task_id,
             filestore.put(task_log_file)
         )
+        os.remove(task_log_file)
 
     # Note: Might be worth extending this to also store partial work of chunks that failed
 

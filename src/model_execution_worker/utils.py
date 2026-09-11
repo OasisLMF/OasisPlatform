@@ -128,7 +128,10 @@ class LoggingTaskContext:
             self.logger.removeHandler(self.handler)
         if self.handler and self.close:
             self.handler.close()
-        if os.path.isfile(self.log_filename) and self.delete_on_exit:
+        # On failure leave the log file in place - 'task_failure' handlers read it
+        # from disk (after the context manager has exited) to attach the full
+        # output (including kernel STDOUT/STDERR) to the failed task/analysis.
+        if os.path.isfile(self.log_filename) and self.delete_on_exit and et is None:
             os.remove(self.log_filename)
 
 
