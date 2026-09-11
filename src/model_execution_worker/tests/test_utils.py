@@ -66,3 +66,29 @@ class LoggingTaskContextTests(TestCase):
 
         self.assertEqual(logger.handlers, initial_handlers)
         self.assertEqual(logger.filters, initial_filters)
+
+    def test_retried_task_reusing_same_log_filename___does_not_duplicate_previous_attempts_output(self):
+        """ Regression test: a celery 'autoretry_for' retry re-enters
+            'LoggingTaskContext' with the same 'log_filename' (it's derived from
+            run_data_uuid + slug, both constant across retries). The failed first
+            attempt's file is deliberately left on disk for 'task_failure' to
+            upload - the second attempt must not append onto it.
+        """
+        logger = logging.getLogger('test-logging-task-context-retry')
+
+        with self.assertRaises(ValueError):
+            with LoggingTaskContext(logger, log_filename=self.log_path, level='INFO'):
+                logger.info('attempt 1 output')
+                raise ValueError('attempt 1 failed')
+
+        self.assertTrue(os.path.isfile(self.log_path))
+
+        with self.assertRaises(ValueError):
+            with LoggingTaskContext(logger, log_filename=self.log_path, level='INFO'):
+                logger.info('attempt 2 output')
+                raise ValueError('attempt 2 failed')
+
+        with open(self.log_path) as f:
+            content = f.read()
+        self.assertNotIn('attempt 1 output', content)
+        self.assertIn('attempt 2 output', content)
