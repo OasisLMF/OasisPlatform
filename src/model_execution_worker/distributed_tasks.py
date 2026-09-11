@@ -640,6 +640,20 @@ def take_first(paths, output_file):
     shutil.copy2(first_path, output_file)
 
 
+def merge_chunk_log_storage(chunk_results):
+    """ Merge the per-chunk 'log_storage' dict from each parallel
+        'prepare_keys_file_chunk' result.
+
+        Each chunk registers its own step log under its own slug (e.g.
+        'prepare-keys-file-chunk-2'), so keeping only one chunk's dict would silently
+        drop every other chunk's log reference.
+    """
+    merged = {}
+    for chunk in chunk_results:
+        merged.update(chunk.get('log_storage', {}))
+    return merged
+
+
 @app.task(bind=True, name='collect_keys', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def collect_keys(
@@ -656,6 +670,9 @@ def collect_keys(
     chunk_params = {**params[0]}
     storage_subdir = chunk_params['storage_subdir']
     del chunk_params['chunk_keys']
+
+    # 'chunk_params' above only keeps chunk 0's 'log_storage' - merge in the rest.
+    chunk_params['log_storage'] = merge_chunk_log_storage(params)
 
     # Collect files and tar here from chunk_params['target_dir']
     with TemporaryDir() as chunks_dir:
