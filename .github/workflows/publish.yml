@@ -263,6 +263,12 @@ jobs:
             echo "BUILD_VER: $BUILD_VER stored in Repo 'VERSION' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
         fi
 
+    # The version workflow resolves '.. versionadded:: NEXT' markers to the release tag.
+    # This is the backstop: a surviving NEXT would ship docs reading "New in version NEXT".
+    - name: Check no unresolved version markers
+      working-directory: ${{ env.dir_platform }}
+      run: ./scripts/resolve-version-markers.sh --check
+
     - name: Check tags match (worker image)
       run: |
         container_id=$(docker create "${{ needs.build_images.outputs.worker_image }}")
