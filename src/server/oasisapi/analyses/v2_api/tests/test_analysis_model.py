@@ -388,23 +388,45 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     self.assertFalse(res_factory.revoke_called)
 
     @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
-    def test_portfolio_has_no_location_file___validation_error_is_raised_revoke_is_not_called(self, task_id):
+    def test_portfolio_has_no_location_file_and_lookup_strategy_is_fixed_chunks___run_is_started(self, task_id):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
-                res_factory = FakeAsyncResultFactory(target_task_id=task_id)
+                # fake_analysis_model defaults chunking_options.lookup_strategy to FIXED_CHUNKS,
+                # which does not need the location file's row count for chunk scaling
+                analysis = fake_analysis(status=Analysis.status_choices.NEW, run_task_id=task_id)
                 initiator = fake_user()
 
-                sig_res = Mock()
-                with patch('src.server.oasisapi.analyses.models.Analysis.v2_generate_input_signature', PropertyMock(return_value=sig_res)):
-                    analysis = fake_analysis(status=Analysis.status_choices.NEW, run_task_id=task_id)
+                task_obj = type('', (), {})()
+                task_obj.id = task_id
+                mock_task = MagicMock(return_value=task_obj)
+                with (
+                    patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=mock_task),
+                    patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                    patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+                ):
+                    analysis.generate_inputs(initiator, run_mode_override='V2')
+                    args, kwargs = mock_task.call_args_list[0]
+                    # loc_lines is None as there is no location_file to derive it from
+                    assert args == ('start_input_generation_task', (analysis.pk, initiator.pk, None), {})
 
-                    with self.assertRaises(ValidationError) as ex:
-                        analysis.generate_inputs(initiator, run_mode_override='V2')
+                    self.assertEqual(Analysis.status_choices.INPUTS_GENERATION_QUEUED, analysis.status)
 
-                    self.assertEqual({'portfolio': ['"location_file" must not be null for run_mode = V2']}, ex.exception.detail)
+    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_portfolio_has_no_location_file_and_lookup_strategy_is_dynamic_chunks___validation_error_is_raised(self, task_id):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(status=Analysis.status_choices.NEW, run_task_id=task_id)
+                analysis.model.chunking_options.lookup_strategy = analysis.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
+                analysis.model.chunking_options.save()
+                initiator = fake_user()
 
-                    self.assertEqual(Analysis.status_choices.NEW, analysis.status)
-                    self.assertFalse(res_factory.revoke_called)
+                with self.assertRaises(ValidationError) as ex:
+                    analysis.generate_inputs(initiator, run_mode_override='V2')
+
+                self.assertEqual({'portfolio': [
+                    '"location_file" must not be null for run_mode = V2 when the lookup chunking strategy is DYNAMIC_CHUNKS'
+                ]}, ex.exception.detail)
+                self.assertEqual(Analysis.status_choices.NEW, analysis.status)
 
     def test_generate_input_signature_is_correct(self):
         with TemporaryDirectory() as d:

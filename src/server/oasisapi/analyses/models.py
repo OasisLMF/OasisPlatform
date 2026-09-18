@@ -726,16 +726,28 @@ class Analysis(TimeStampedModel):
                 errors['portfolio'] = ['Either "location_file" or "accounts_file" must not be null for run_mode = V1']
 
         # check for location file if V2
+        # note: "location_file" is only mandatory for V2 when the lookup chunking
+        # strategy is DYNAMIC_CHUNKS, since that strategy needs the row count to
+        # scale the number of chunks - FIXED_CHUNKS has no such dependency
+        loc_lines = None
         if run_mode == self.run_mode_choices.V2:
-            if not self.portfolio.location_file:
-                errors['portfolio'] = ['"location_file" must not be null for run_mode = V2']
+            if self.chunking_options is None:
+                chunking_options = self.model.chunking_options
             else:
+                chunking_options = self.chunking_options
+
+            if self.portfolio.location_file:
                 try:
                     loc_lines = self.portfolio.location_file_len()
                 except Exception as e:
                     errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
-                if loc_lines < 1:
-                    errors['portfolio'] = ['"location_file" must at least one row']
+                else:
+                    if loc_lines < 1:
+                        errors['portfolio'] = ['"location_file" must at least one row']
+            elif chunking_options.lookup_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
+                errors['portfolio'] = [
+                    '"location_file" must not be null for run_mode = V2 when the lookup chunking strategy is DYNAMIC_CHUNKS'
+                ]
 
         if errors:
             raise ValidationError(errors)

@@ -390,7 +390,7 @@ class Controller:
         ])
 
     @classmethod
-    def generate_inputs(cls, analysis: 'Analysis', initiator: User, loc_lines: int) -> chain:
+    def generate_inputs(cls, analysis: 'Analysis', initiator: User, loc_lines: Optional[int]) -> chain:
         """
         Starts the input generation chain
 
@@ -453,7 +453,10 @@ class Controller:
 
         # Set chunks
         if chunking_options.lookup_strategy == 'FIXED_CHUNKS':
-            num_chunks = min(chunking_options.fixed_lookup_chunks, loc_lines)
+            # loc_lines may be None when no location_file was provided - validation
+            # only allows this when the strategy is FIXED_CHUNKS, so it never needs
+            # to be used for scaling here
+            num_chunks = chunking_options.fixed_lookup_chunks if loc_lines is None else min(chunking_options.fixed_lookup_chunks, loc_lines)
         elif chunking_options.lookup_strategy == 'DYNAMIC_CHUNKS':
             loc_lines_per_chunk = chunking_options.dynamic_locations_per_lookup
             num_chunks = min(ceil(loc_lines / loc_lines_per_chunk), chunking_options.dynamic_chunks_max)
