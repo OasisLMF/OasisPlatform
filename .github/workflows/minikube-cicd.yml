@@ -59,6 +59,7 @@ jobs:
         uses: medyagh/setup-minikube@latest
         with:
           memory: 12288
+          container-runtime: docker
           extra-config: 'kubelet.system-reserved=memory=512Mi'
 
       - name: Enable swap on Minikube

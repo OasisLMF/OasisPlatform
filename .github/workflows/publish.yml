@@ -63,7 +63,7 @@ jobs:
     with:
       docker_push: true
       ignore_unfixed: true
-      cve_severity: ${{ inputs.cve_severity }}
+      cve_severity: ${{ inputs.cve_severity || 'SKIP' }}
 
 
   build_piwind:

@@ -93,6 +93,7 @@ spec:
         {{- include "h.labels" . | nindent 8 }}
         app: {{ .Values.authentik.name }}
     spec:
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.authentik_db.name) | nindent 8}}
       containers:
@@ -102,8 +103,10 @@ spec:
             - server
           ports:
             - containerPort: {{ .Values.authentik.port }}
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
-            - name: AUTHENTIK_LOG_LEVEL 
+            - name: AUTHENTIK_LOG_LEVEL
               value: DEBUG
             - name: AUTHENTIK_WEB__PATH
               value: /authentik/
@@ -112,6 +115,15 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Values.authentik.name }}-secret
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: authentik-media
+              mountPath: /media
+            - name: authentik-certs
+              mountPath: /certs
+            - name: authentik-templates
+              mountPath: /templates
           startupProbe:
             httpGet:
               path: "/authentik/-/health/live/"
@@ -136,6 +148,15 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 60
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: authentik-media
+          emptyDir: {}
+        - name: authentik-certs
+          emptyDir: {}
+        - name: authentik-templates
+          emptyDir: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -154,6 +175,7 @@ spec:
         {{- include "h.labels" . | nindent 8 }}
         app: {{ .Values.authentik.name }}-worker
     spec:
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.authentik_db.name) | nindent 8}}
       containers:
@@ -161,8 +183,10 @@ spec:
           image: {{ .Values.images.authentik.image }}:{{ .Values.images.authentik.version }}
           args:
             - worker
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
-            - name: AUTHENTIK_LOG_LEVEL 
+            - name: AUTHENTIK_LOG_LEVEL
               value: DEBUG
             - name: AUTHENTIK_DISABLE_UPDATE_CHECK
               value: "true"
@@ -173,6 +197,14 @@ spec:
             - name: blueprint-config
               mountPath: /blueprints/oasis-blueprint.yaml
               subPath: oasis-blueprint.yaml
+            - name: tmp
+              mountPath: /tmp
+            - name: authentik-media
+              mountPath: /media
+            - name: authentik-certs
+              mountPath: /certs
+            - name: authentik-templates
+              mountPath: /templates
           startupProbe:
             exec:
               command:
@@ -204,4 +236,12 @@ spec:
         - name: blueprint-config
           configMap:
             name: {{ .Values.authentik.name }}-blueprint
+        - name: tmp
+          emptyDir: {}
+        - name: authentik-media
+          emptyDir: {}
+        - name: authentik-certs
+          emptyDir: {}
+        - name: authentik-templates
+          emptyDir: {}
 {{- end }}
