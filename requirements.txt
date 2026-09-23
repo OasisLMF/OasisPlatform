@@ -489,8 +489,10 @@ scipy==1.17.1
     #   -r ./requirements-worker.in
     #   oasislmf
     #   scikit-learn
-setuptools==84.0.0
-    # via pip-tools
+setuptools==80.10.2
+    # via
+    #   -r ./requirements-server.in
+    #   pip-tools
 shapely==2.1.2
     # via
     #   geopandas
