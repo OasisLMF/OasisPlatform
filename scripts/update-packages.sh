@@ -13,7 +13,7 @@ else
 fi     
 
 set -e
-uv pip compile --python-version 3.12 $PKG_UPDATE requirements-worker.in --output-file requirements-worker.txt
-uv pip compile --python-version 3.12 $PKG_UPDATE requirements-server.in --output-file requirements-server.txt
-uv pip compile --python-version 3.12 $PKG_UPDATE requirements.in --output-file requirements.txt
-uv pip compile --python-version 3.12 $PKG_UPDATE kubernetes/worker-controller/requirements.in --output-file kubernetes/worker-controller/requirements.txt
+uv pip compile --python-version 3.12  --no-strip-extras $PKG_UPDATE requirements-worker.in --output-file requirements-worker.txt
+uv pip compile --python-version 3.12  --no-strip-extras $PKG_UPDATE requirements-server.in --output-file requirements-server.txt
+uv pip compile --python-version 3.12  --no-strip-extras $PKG_UPDATE requirements.in --output-file requirements.txt
+uv pip compile --python-version 3.12  --no-strip-extras $PKG_UPDATE kubernetes/worker-controller/requirements.in --output-file kubernetes/worker-controller/requirements.txt
