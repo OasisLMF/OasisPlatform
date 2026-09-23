@@ -445,7 +445,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pyarrow==24.0.0
+pyarrow==25.0.1
     # via
     #   -r ./requirements-server.in
     #   oasislmf
@@ -618,7 +618,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==26.4.0
+twisted[tls]==26.4.0rc2
     # via
     #   -r requirements.in
     #   daphne
