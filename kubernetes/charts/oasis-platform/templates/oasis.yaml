@@ -53,13 +53,18 @@ spec:
         checksum/{{ .Values.databases.celery_db.name }}: versions{{ toJson .Values.databases.celery_db | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: oasis-v1-worker-monitor
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
+            - name: NUMBA_CACHE_DIR
+              value: /tmp/numba_cache
 {{- include "h.serverDbVars" . | indent 12}}
 {{- include "h.celeryDbVars" . | indent 12}}
 {{- include "h.brokerVars" . | indent 12 }}
@@ -70,6 +75,8 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
+            - name: tmp
+              mountPath: /tmp
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -88,6 +95,8 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
+        - name: tmp
+          emptyDir: {}
 {{- if ((.Values.volumes.host).sharedFs) }}
         - name: shared-fs-persistent-storage
           persistentVolumeClaim:
@@ -128,13 +137,18 @@ spec:
         checksum/{{ .Values.databases.celery_db.name }}: versions{{ toJson .Values.databases.celery_db | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.oasisServer.name .Values.databases.broker.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: oasis-v2-worker-monitor
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
+            - name: NUMBA_CACHE_DIR
+              value: /tmp/numba_cache
 {{- include "h.serverDbVars" . | indent 12}}
 {{- include "h.celeryDbVars" . | indent 12}}
 {{- include "h.brokerVars" . | indent 12 }}
@@ -145,6 +159,8 @@ spec:
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs
+            - name: tmp
+              mountPath: /tmp
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -163,6 +179,8 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
       volumes:
+        - name: tmp
+          emptyDir: {}
 {{- if ((.Values.volumes.host).sharedFs) }}
         - name: shared-fs-persistent-storage
           persistentVolumeClaim:
@@ -201,6 +219,7 @@ spec:
         checksum/{{ .Values.oasisServer.name }}: {{ toJson .Values.oasisServer | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.oasisServer.name) | nindent 8}}
       containers:
@@ -274,19 +293,28 @@ spec:
         checksum/{{ .Values.databases.channel_layer.name }}: versions{{ toJson .Values.databases.channel_layer | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.channel_layer.name) | nindent 8}}
       containers:
         - image: {{ .Values.images.oasis.platform.image }}:{{ .Values.images.oasis.platform.version }}
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: celery-beat
-          command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "beat", "--loglevel=DEBUG"]
+          command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "beat", "--loglevel=DEBUG", "--schedule=/var/run/celery-beat/celerybeat-schedule", "--pidfile=/var/run/celery-beat/celerybeat.pid"]
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
+            - name: NUMBA_CACHE_DIR
+              value: /tmp/numba_cache
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
             {{- include "h.channelLayerVars" . | indent 12 }}
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: celery-beat-state
+              mountPath: /var/run/celery-beat
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -304,8 +332,12 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
-{{- if (.Values.azure).secretProvider }}
       volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: celery-beat-state
+          emptyDir: {}
+{{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
             driver: secrets-store.csi.k8s.io
@@ -338,6 +370,7 @@ spec:
         checksum/{{ .Values.databases.channel_layer.name }}: versions{{ toJson .Values.databases.channel_layer | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.oasis_db.name .Values.databases.celery_db.name .Values.databases.channel_layer.name .Values.databases.broker.name) | nindent 8}}
       containers:
@@ -345,7 +378,11 @@ spec:
           imagePullPolicy: {{ .Values.images.oasis.platform.imagePullPolicy }}
           name: main
           command: ["celery", "-A", "src.server.oasisapi.celery_app_v2", "worker", "--loglevel=INFO", "-Q", "task-controller"]
+          securityContext:
+            readOnlyRootFilesystem: true
           env:
+            - name: NUMBA_CACHE_DIR
+              value: /tmp/numba_cache
             {{- include "h.serverDbVars" . | indent 12}}
             {{- include "h.celeryDbVars" . | indent 12}}
             {{- include "h.brokerVars" . | indent 12 }}
@@ -353,6 +390,8 @@ spec:
             - name: OASIS_DEBUG
               value: "1"
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
 {{- if (.Values.azure).secretProvider }}
             - name: azure-secret-provider
               mountPath: "/mnt/azure-secrets-store"
@@ -370,8 +409,10 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
-{{- if (.Values.azure).secretProvider }}
       volumes:
+        - name: tmp
+          emptyDir: {}
+{{- if (.Values.azure).secretProvider }}
         - name: azure-secret-provider
           csi:
             driver: secrets-store.csi.k8s.io
