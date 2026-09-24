@@ -7,9 +7,12 @@ metadata:
   annotations:
     "helm.sh/hook": test
 spec:
+  {{- include "h.disableTokenAutomount" . | nindent 2 }}
   containers:
     - name: wget
       image: {{ .Values.images.init.image }}:{{ .Values.images.init.version }}
       command: ['sh']
       args: ['-c', 'wget -O /dev/null {{ .Values.oasisServer.name }}:{{ .Values.oasisServer.port }} && wget -O /dev/null {{ .Values.oasisUI.name }}:{{ .Values.oasisUI.port }}']
+      securityContext:
+        readOnlyRootFilesystem: true
   restartPolicy: Never
