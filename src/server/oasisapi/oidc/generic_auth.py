@@ -41,13 +41,17 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         elif not username:
             raise SuspiciousOperation('Required key not found in claim: preferred_username')
 
-        user = self.get_user_by_oidc_id(sub)
+        # Concurrent first requests for the same identity (e.g. the worker-controller and model registration job
+        # sharing a service account) can both reach the create path. Run lookup/archive/create in one transaction so
+        # row locks and the unique username constraint serialise them onto a single user.
+        with transaction.atomic():
+            user = self.get_user_by_oidc_id(sub)
 
-        if user:
-            return self.update_user(user, username, user_info)
-        else:
-            self.archive_old_user(username, sub)
-            return self.create_user(username, user_info)
+            if user:
+                return self.update_user(user, username, user_info)
+            else:
+                self.archive_old_user(username, sub)
+                return self.create_user(username, user_info)
 
     def create_user(self, username, claims):
         """
@@ -176,7 +180,7 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :param user: Django user object
         :param user_id: OIDC user id
         """
-        OIDCUserId.objects.create(user=user, oidc_sub=user_id)
+        OIDCUserId.objects.get_or_create(user=user, defaults={'oidc_sub': user_id})
 
     def is_oidc_user_id_same(self, user, sub) -> bool:
         """
@@ -211,12 +215,20 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :param username: Username
         :param sub: OIDC user id. Used for renaming the user to a unique name.
         """
-        user_filter = self.UserModel.objects.filter(username__iexact=username)
+        # Never archive or delete a user already bound to this sub - it is the same identity (typically created by a
+        # concurrent request), and deleting it would cascade to its models, portfolios and analyses.
+        # (subquery rather than a join - FOR UPDATE can't lock the nullable side of an outer join)
+        same_identity = OIDCUserId.objects.filter(oidc_sub__iexact=sub).values('user_id')
+        user_filter = (
+            self.UserModel.objects.select_for_update()
+            .filter(username__iexact=username)
+            .exclude(pk__in=same_identity)
+        )
 
         for user in user_filter:
             # check for and remove exisiting users before rename
             new_username = f'{user.username}-{sub}'
-            self.UserModel.objects.filter(username=new_username).delete()
+            self.UserModel.objects.filter(username=new_username).exclude(pk__in=same_identity).delete()
 
             user.username = new_username
             user.active = False
