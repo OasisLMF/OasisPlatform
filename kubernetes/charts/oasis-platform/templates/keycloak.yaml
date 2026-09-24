@@ -92,6 +92,16 @@ spec:
       {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.keycloak_db.name) | nindent 8}}
+        # Keycloak re-augments (rebuilds) itself on start because KC_DB differs from the stock image build, which
+        # rewrites /opt/keycloak/lib/quarkus. Seed a writable copy so this works with a read-only root filesystem.
+        - name: keycloak-seed-quarkus
+          image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
+          command: ["/bin/sh", "-c", "cp -r /opt/keycloak/lib/quarkus/. /mnt/quarkus/"]
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: keycloak-quarkus
+              mountPath: /mnt/quarkus
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
@@ -182,6 +192,8 @@ spec:
               mountPath: /tmp
             - name: keycloak-data
               mountPath: /opt/keycloak/data
+            - name: keycloak-quarkus
+              mountPath: /opt/keycloak/lib/quarkus
             - name: realm-config
               mountPath: /opt/keycloak/data/import/oasis-realm.json
               subPath: oasis
@@ -198,6 +210,8 @@ spec:
         - name: tmp
           emptyDir: {}
         - name: keycloak-data
+          emptyDir: {}
+        - name: keycloak-quarkus
           emptyDir: {}
         - name: realm-config
           configMap:
