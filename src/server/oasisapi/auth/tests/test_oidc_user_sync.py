@@ -102,5 +102,7 @@ class TestOIDCUserSync(TestCase):
 
         self.assertNotEqual(user.pk, old.pk)
         self.assertEqual(user.username, USERNAME)
-        self.assertEqual(get_user_model().objects.get(pk=old.pk).username, f'{USERNAME}-{SUB}')
+        archived = get_user_model().objects.get(pk=old.pk)
+        self.assertEqual(archived.username, f'{USERNAME}-{SUB}')
+        self.assertFalse(archived.is_active)
         self.assertTrue(AnalysisModel.objects.filter(pk=model.pk).exists())

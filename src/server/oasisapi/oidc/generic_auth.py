@@ -1,5 +1,5 @@
 from django.contrib.auth.models import Group
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.db import transaction
 from mozilla_django_oidc import auth
 from src.server.oasisapi.oidc.common import auth_server_create_connection
@@ -180,7 +180,11 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :param user: Django user object
         :param user_id: OIDC user id
         """
-        OIDCUserId.objects.get_or_create(user=user, defaults={'oidc_sub': user_id})
+        binding, created = OIDCUserId.objects.get_or_create(user=user, defaults={'oidc_sub': user_id})
+        # A different identity claimed this username concurrently - never hand its account to this one. Raising inside
+        # get_or_create_user's transaction also rolls back the roles/groups this request already applied to the user.
+        if not created and binding.oidc_sub != user_id:
+            raise PermissionDenied('OIDC subject mismatch for user')
 
     def is_oidc_user_id_same(self, user, sub) -> bool:
         """
@@ -231,5 +235,8 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
             self.UserModel.objects.filter(username=new_username).exclude(pk__in=same_identity).delete()
 
             user.username = new_username
+            # `active` isn't a User field, so it was never persisted - `is_active` is what actually deactivates the user.
+            # Kept in case anything reads `.active` off the instance.
             user.active = False
+            user.is_active = False
             user.save()
