@@ -1,6 +1,6 @@
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from mozilla_django_oidc import auth
 from src.server.oasisapi.oidc.common import auth_server_create_connection
 from src.server.oasisapi.oidc.models import OIDCUserId
@@ -44,14 +44,23 @@ class GenericOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         # Concurrent first requests for the same identity (e.g. the worker-controller and model registration job
         # sharing a service account) can both reach the create path. Run lookup/archive/create in one transaction so
         # row locks and the unique username constraint serialise them onto a single user.
-        with transaction.atomic():
-            user = self.get_user_by_oidc_id(sub)
+        #
+        # If we still lose the race with an IntegrityError, retry once in a fresh transaction, which sees the winner's
+        # committed rows. get_or_create's own retry can't do this under REPEATABLE READ (e.g. MySQL with isolation_level
+        # overridden from Django's READ COMMITTED default), as its lookup reuses the snapshot that missed the winner.
+        for attempt in range(2):
+            try:
+                with transaction.atomic():
+                    user = self.get_user_by_oidc_id(sub)
 
-            if user:
-                return self.update_user(user, username, user_info)
-            else:
-                self.archive_old_user(username, sub)
-                return self.create_user(username, user_info)
+                    if user:
+                        return self.update_user(user, username, user_info)
+                    else:
+                        self.archive_old_user(username, sub)
+                        return self.create_user(username, user_info)
+            except IntegrityError:
+                if attempt:
+                    raise
 
     def create_user(self, username, claims):
         """

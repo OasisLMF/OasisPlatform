@@ -1,6 +1,7 @@
 import mock
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
 from django.test import TestCase, override_settings
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel
@@ -76,6 +77,24 @@ class TestOIDCUserSync(TestCase):
 
         self.assertTrue(get_user_model().objects.filter(pk=archived.pk).exists())
         self.assertTrue(AnalysisModel.objects.filter(pk=model.pk).exists())
+
+    def test_integrity_error_retries_in_fresh_transaction(self):
+        # e.g. under REPEATABLE READ, where get_or_create's own retry can't see the winner's user
+        existing = fake_user(username=USERNAME)
+
+        with mock.patch.object(self.backend, 'get_user_by_oidc_id', side_effect=[None, existing]), \
+                mock.patch.object(self.backend, 'create_user', side_effect=IntegrityError) as create_user:
+            user = self.login()
+
+        self.assertEqual(user.pk, existing.pk)
+        self.assertEqual(create_user.call_count, 1)
+
+    def test_repeated_integrity_error_is_raised(self):
+        with mock.patch.object(self.backend, 'create_user', side_effect=IntegrityError) as create_user:
+            with self.assertRaises(IntegrityError):
+                self.login()
+
+        self.assertEqual(create_user.call_count, 2)
 
     def test_lost_race_to_other_identity_is_rejected(self):
         # Another identity created the username after our archive step missed it, so get_or_create hands us its user
