@@ -92,6 +92,22 @@ jobs:
           fi
         working-directory: kubernetes/charts
 
+      # The worker-controller and model registration job share the same service account. Let the controller's first
+      # authenticated connection create the Django user before registration starts, so the two never race on it.
+      - name: Wait for worker-controller
+        run: |
+          kubectl rollout status deployment/oasis-worker-controller --timeout=600s
+          for i in $(seq 1 60); do
+            if kubectl logs deployment/oasis-worker-controller | grep -q 'Connected to ws'; then
+              echo "worker-controller connected"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "worker-controller did not connect within 5 minutes"
+          kubectl logs deployment/oasis-worker-controller --tail=50
+          exit 1
+
       - name: Deploy Models
         run: |
           if ! helm status models > /dev/null 2>&1; then
