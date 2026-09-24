@@ -53,7 +53,7 @@ class TestOIDCUserSync(TestCase):
         KeycloakUserId.objects.create(user=existing, keycloak_user_id=SUB)
         model = fake_analysis_model(creator=existing)
 
-        with mock.patch.object(self.backend, 'get_user_by_oidc_id', return_value=None):
+        with mock.patch.object(self.backend, 'get_user_by_keycloak_id', return_value=None):
             user = self.login()
 
         self.assertEqual(user.pk, existing.pk)
