@@ -1,10 +1,11 @@
 import mock
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 from django.test import TestCase, override_settings
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel
 from src.server.oasisapi.analysis_models.v2_api.tests.fakes import fake_analysis_model
-from src.server.oasisapi.auth.tests.fakes import fake_user
+from src.server.oasisapi.auth.tests.fakes import add_fake_group, fake_user
 from src.server.oasisapi.oidc.generic_auth import GenericOIDCAuthenticationBackend
 from src.server.oasisapi.oidc.models import OIDCUserId
 
@@ -75,6 +76,22 @@ class TestOIDCUserSync(TestCase):
 
         self.assertTrue(get_user_model().objects.filter(pk=archived.pk).exists())
         self.assertTrue(AnalysisModel.objects.filter(pk=model.pk).exists())
+
+    def test_lost_race_to_other_identity_is_rejected(self):
+        # Another identity created the username after our archive step missed it, so get_or_create hands us its user
+        other = fake_user(username=USERNAME, is_superuser=False, is_staff=False)
+        OIDCUserId.objects.create(user=other, oidc_sub='other-sub')
+        add_fake_group(other, 'other-group')
+
+        with mock.patch.object(self.backend, 'archive_old_user'):
+            with self.assertRaises(PermissionDenied):
+                self.login(dict(CLAIMS, groups=['admin']))
+
+        other.refresh_from_db()
+        self.assertEqual(other.username, USERNAME)
+        self.assertFalse(other.is_superuser)
+        self.assertEqual([g.name for g in other.groups.all()], ['other-group'])
+        self.assertEqual(OIDCUserId.objects.get(user=other).oidc_sub, 'other-sub')
 
     def test_user_with_same_username_but_other_sub_is_archived(self):
         old = fake_user(username=USERNAME)
