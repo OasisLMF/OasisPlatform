@@ -80,6 +80,7 @@ jobs:
     name: Docker build
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         image: [worker, worker_deb, server, worker_controller]
         include:
