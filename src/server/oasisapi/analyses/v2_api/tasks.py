@@ -532,8 +532,9 @@ def chord_error_callback(self, analysis_id):
     )
 
 
-@celery_app_v2.task(name='handle_task_failure')
+@celery_app_v2.task(bind=True, name='handle_task_failure', max_retries=8, default_retry_delay=2)
 def handle_task_failure(
+    self,
     *args,
     analysis_id=None,
     initiator_id=None,
@@ -544,10 +545,24 @@ def handle_task_failure(
     tb = _traceback_from_errback_args(*args)
     logger.info('analysis_pk: {}, initiator_pk: {}, traceback: {}, run_data_uuid: {}, failure_status: {}'.format(
         analysis_id, initiator_id, tb, run_data_uuid, failure_status))
-    try:
-        from ..models import Analysis
 
-        analysis = Analysis.objects.get(pk=analysis_id)
+    from ..models import Analysis
+    analysis = Analysis.objects.get(pk=analysis_id)
+    failed_subtasks = list(analysis.sub_task_statuses.filter(
+        status=AnalysisTaskStatus.status_choices.ERROR
+    ))
+
+    # The worker records each failed sub-task's full output (KERNEL_STDERR/STDOUT etc.)
+    # via a separate delayed task ('subtask_error_log'), which can still be in-flight
+    # when this chain-level errback runs. Retry briefly so that content is picked up
+    # here instead of this task only ever recording the bare celery traceback.
+    logs_pending = not failed_subtasks or any(not hasattr(t.output_log, 'read') for t in failed_subtasks)
+    if logs_pending and self.request.retries < self.max_retries:
+        raise self.retry()
+    elif logs_pending:
+        logger.warning(f'handle_task_failure: giving up waiting for sub-task logs, analysis_id={analysis_id}')
+
+    try:
         if analysis.status not in [analysis.status_choices.INPUTS_GENERATION_CANCELLED,
                                    analysis.status_choices.RUN_CANCELLED,
                                    analysis.status_choices.INPUTS_GENERATION_NO_KEYS]:
@@ -561,35 +576,35 @@ def handle_task_failure(
                 tmp_file.write('\n=== Trace Back ===\n'.encode('utf-8'))
                 tmp_file.write(tb.encode('utf-8'))
 
-            # Write Error logs
-            subtask_qs = analysis.sub_task_statuses.filter(
-                status__in=[AnalysisTaskStatus.status_choices.ERROR]
-            )
-            for subtask in subtask_qs:
+            # Write Error logs (KERNEL_STDERR/STDOUT + traceback captured per sub-task)
+            for subtask in failed_subtasks:
+                tmp_file.write(f'\n=== {subtask.slug} ===\n'.encode('utf-8'))
+                if hasattr(subtask.output_log, 'read'):
+                    try:
+                        tmp_file.write(subtask.output_log.read())
+                    except FileNotFoundError:
+                        pass
                 if hasattr(subtask.error_log, 'read'):
-                    tmp_file.write(f'\n=== {subtask.slug} ===\n'.encode('utf-8'))
-                    if hasattr(subtask.output_log, 'read'):
-                        try:
-                            tmp_file.write(subtask.output_log.read())
-                        except FileNotFoundError:
-                            pass
                     try:
                         tmp_file.write(subtask.error_log.read())
                     except FileNotFoundError:
                         pass
 
             tmp_file.seek(0)
-            setattr(analysis, traceback_property, RelatedFile.objects.create(
+            log_file = RelatedFile.objects.create(
                 file=File(tmp_file, name=random_filename),
                 filename=f'analysis_{analysis_id}_worker_traceback.txt',
                 content_type='text/plain',
                 creator=get_user_model().objects.get(pk=initiator_id),
-            ))
+            )
 
-        # remove the current command log file
-        if analysis.run_log_file:
-            analysis.run_log_file.delete()
-            analysis.run_log_file = None
+        # Store the combined traceback + sub-task output on the analysis itself, so it's
+        # visible without having to dig into individual sub-task records.
+        setattr(analysis, traceback_property, log_file)
+        if traceback_property == 'run_traceback_file':
+            if analysis.run_log_file:
+                analysis.run_log_file.delete()
+            analysis.run_log_file = log_file
 
         analysis.save()
     except Exception as e:

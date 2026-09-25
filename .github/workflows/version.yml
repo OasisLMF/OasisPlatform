@@ -122,6 +122,13 @@ jobs:
           git add $fl.txt
         done
 
+    # Docs and docstrings are authored as '.. versionadded:: NEXT' because the release
+    # version is not known at PR time; resolve them in the same commit as the bump.
+    - name: Resolve version markers
+      run: |
+        ./scripts/resolve-version-markers.sh ${{ inputs.platform_version }}
+        git add -u
+
     - name: Git Commit
       run: |
         [[ -z $(git status -s) ]] || git commit -m "Set version ${{ inputs.platform_version }}"
