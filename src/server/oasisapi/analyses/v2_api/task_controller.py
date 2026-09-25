@@ -344,6 +344,9 @@ class Controller:
                     TaskParams(
                         idx,
                         num_chunks,
+                        # acc_file is needed to detect the class of business, and is the
+                        # subject at risk source for account only models (e.g. cyber)
+                        acc_file=file_storage_link(analysis.portfolio.accounts_file),
                         **base_kwargs,
                     ) for idx in range(num_chunks)
                 ],
