@@ -190,6 +190,61 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
                         priority=4
                     )
 
+    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_portfolio_has_no_location_file_and_lookup_strategy_is_fixed_chunks___run_is_started(self, task_id):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                initiator = fake_user()
+                # fake_analysis_model defaults chunking_options.lookup_strategy to FIXED_CHUNKS,
+                # which does not need the location file's row count for chunk scaling
+                analysis = fake_analysis(
+                    status=Analysis.status_choices.NEW,
+                    run_task_id=task_id,
+                    portfolio=fake_portfolio(accounts_file=fake_related_file()),
+                    settings_file=fake_related_file())
+                analysis.model.run_mode = analysis.model.run_mode_choices.V2
+                analysis.model.save()
+
+                task_sig = Mock()
+                task_sig.apply_async.return_value = FakeAsyncResultFactory(target_task_id=task_id)(task_id)
+
+                with (
+                    patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)),
+                    patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                    patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+                ):
+                    analysis.generate_and_run(initiator)
+
+                    # loc_lines is None as there is no location_file to derive it from
+                    task_sig.apply_async.assert_called_with(
+                        args=[analysis.pk, initiator.pk, None, None],
+                        priority=4
+                    )
+                    self.assertEqual(Analysis.status_choices.INPUTS_GENERATION_QUEUED, analysis.status)
+
+    @given(task_id=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_portfolio_has_no_location_file_and_lookup_strategy_is_dynamic_chunks___validation_error_is_raised(self, task_id):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                initiator = fake_user()
+                analysis = fake_analysis(
+                    status=Analysis.status_choices.NEW,
+                    run_task_id=task_id,
+                    portfolio=fake_portfolio(accounts_file=fake_related_file()),
+                    settings_file=fake_related_file())
+                analysis.model.run_mode = analysis.model.run_mode_choices.V2
+                analysis.model.save()
+                analysis.model.chunking_options.lookup_strategy = analysis.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
+                analysis.model.chunking_options.save()
+
+                with self.assertRaises(ValidationError) as ex:
+                    analysis.generate_and_run(initiator)
+
+                self.assertEqual({'portfolio': [
+                    '"location_file" must not be null for run_mode = V2 when the lookup chunking strategy is DYNAMIC_CHUNKS'
+                ]}, ex.exception.detail)
+                self.assertEqual(Analysis.status_choices.NEW, analysis.status)
+
     @given(
         status=sampled_from([
             Analysis.status_choices.INPUTS_GENERATION_QUEUED,
@@ -216,7 +271,6 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
 
             self.maxDiff = None
             self.assertEqual({
-                'portfolio': ['"location_file" must not be null'],
                 'settings_file': ['Must not be null'],
                 'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_NO_KEYS, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
             }, ex.exception.detail)
@@ -251,7 +305,6 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
             self.maxDiff = None
             self.assertEqual({
                 'model': ['Model pk "1" - Unsupported Operation, "run_mode" must be "V2", not "V1"'],
-                'portfolio': ['"location_file" must not be null'],
                 'settings_file': ['Must not be null'],
                 'status': ['Analysis status must be one of [NEW, INPUTS_GENERATION_ERROR, INPUTS_GENERATION_NO_KEYS, INPUTS_GENERATION_CANCELLED, READY, RUN_COMPLETED, RUN_CANCELLED, RUN_ERROR]'],
             }, ex.exception.detail)

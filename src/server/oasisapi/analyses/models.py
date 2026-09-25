@@ -613,6 +613,34 @@ class Analysis(TimeStampedModel):
         if self.model is None:
             raise ValidationError({'model': 'Model not assigned to analysis'})
 
+    def validate_v2_location_file(self, errors):
+        """ Checks the portfolio's location file for V2 input generation, adding any
+        problems to `errors`. Returns the location file row count, or None if there isn't one.
+
+        "location_file" is only mandatory when the lookup chunking strategy is
+        DYNAMIC_CHUNKS, since that strategy needs the row count to scale the number
+        of chunks - FIXED_CHUNKS has no such dependency (e.g. account only cyber models)
+        """
+        if self.chunking_options is None:
+            chunking_options = self.model.chunking_options
+        else:
+            chunking_options = self.chunking_options
+
+        loc_lines = None
+        if self.portfolio.location_file:
+            try:
+                loc_lines = self.portfolio.location_file_len()
+            except Exception as e:
+                errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
+            else:
+                if loc_lines < 1:
+                    errors['portfolio'] = ['"location_file" must at least one row']
+        elif chunking_options.lookup_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
+            errors['portfolio'] = [
+                '"location_file" must not be null for run_mode = V2 when the lookup chunking strategy is DYNAMIC_CHUNKS'
+            ]
+        return loc_lines
+
     def generate_and_run(self, initiator):
         self.validate_standard_analysis()
 
@@ -637,16 +665,7 @@ class Analysis(TimeStampedModel):
             errors['model'] = ['Model pk "{}" - Unsupported Operation, "run_mode" must be "V2", not "{}"'.format(self.model.id, self.model.run_mode)]
         if not self.settings_file:
             errors['settings_file'] = ['Must not be null']
-        if not self.portfolio.location_file:
-            errors['portfolio'] = ['"location_file" must not be null']
-        else:
-            # get loc lines
-            try:
-                loc_lines = self.portfolio.location_file_len()
-            except Exception as e:
-                errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
-            if loc_lines < 1:
-                errors['portfolio'] = ['"location_file" must at least one row']
+        loc_lines = self.validate_v2_location_file(errors)
 
         # get events
         events_total = self.get_num_events()
@@ -726,28 +745,9 @@ class Analysis(TimeStampedModel):
                 errors['portfolio'] = ['Either "location_file" or "accounts_file" must not be null for run_mode = V1']
 
         # check for location file if V2
-        # note: "location_file" is only mandatory for V2 when the lookup chunking
-        # strategy is DYNAMIC_CHUNKS, since that strategy needs the row count to
-        # scale the number of chunks - FIXED_CHUNKS has no such dependency
         loc_lines = None
         if run_mode == self.run_mode_choices.V2:
-            if self.chunking_options is None:
-                chunking_options = self.model.chunking_options
-            else:
-                chunking_options = self.chunking_options
-
-            if self.portfolio.location_file:
-                try:
-                    loc_lines = self.portfolio.location_file_len()
-                except Exception as e:
-                    errors['portfolio'] = [f"Failed to read location file size for chunking: {e}"]
-                else:
-                    if loc_lines < 1:
-                        errors['portfolio'] = ['"location_file" must at least one row']
-            elif chunking_options.lookup_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
-                errors['portfolio'] = [
-                    '"location_file" must not be null for run_mode = V2 when the lookup chunking strategy is DYNAMIC_CHUNKS'
-                ]
+            loc_lines = self.validate_v2_location_file(errors)
 
         if errors:
             raise ValidationError(errors)

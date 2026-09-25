@@ -629,7 +629,7 @@ class Controller:
         return num_chunks
 
     @classmethod
-    def generate_input_and_losses(cls, analysis: 'Analysis', initiator: User, loc_lines: int, events_total: int):
+    def generate_input_and_losses(cls, analysis: 'Analysis', initiator: User, loc_lines: Optional[int], events_total: int):
         """
         Starts the input generation chain
 
