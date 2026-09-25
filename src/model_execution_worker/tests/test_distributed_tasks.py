@@ -230,7 +230,7 @@ class LoadSubjectAtRiskData(TestCase):
         self.assertIn('loc_id', sar_df.columns)
         self.assertIn('LocNumber', sar_df.columns)
 
-        
+
 class MergeChunkLogStorage(TestCase):
     """ Regression tests for 'collect_keys': it used to build its return value from
         only 'params[0]' (the first lookup chunk's result), which silently dropped
