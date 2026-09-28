@@ -1,10 +1,12 @@
 import mock
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
 from django.test import TestCase, override_settings
 
 from src.server.oasisapi.analysis_models.models import AnalysisModel
 from src.server.oasisapi.analysis_models.v2_api.tests.fakes import fake_analysis_model
-from src.server.oasisapi.auth.tests.fakes import fake_user
+from src.server.oasisapi.auth.tests.fakes import add_fake_group, fake_user
 from src.server.oasisapi.oidc.keycloak_auth import KeycloakOIDCAuthenticationBackend
 from src.server.oasisapi.oidc.models import KeycloakUserId
 
@@ -76,6 +78,40 @@ class TestOIDCUserSync(TestCase):
         self.assertTrue(get_user_model().objects.filter(pk=archived.pk).exists())
         self.assertTrue(AnalysisModel.objects.filter(pk=model.pk).exists())
 
+    def test_integrity_error_retries_in_fresh_transaction(self):
+        # e.g. under REPEATABLE READ, where get_or_create's own retry can't see the winner's user
+        existing = fake_user(username=USERNAME)
+
+        with mock.patch.object(self.backend, 'get_user_by_keycloak_id', side_effect=[None, existing]), \
+                mock.patch.object(self.backend, 'create_user', side_effect=IntegrityError) as create_user:
+            user = self.login()
+
+        self.assertEqual(user.pk, existing.pk)
+        self.assertEqual(create_user.call_count, 1)
+
+    def test_repeated_integrity_error_is_raised(self):
+        with mock.patch.object(self.backend, 'create_user', side_effect=IntegrityError) as create_user:
+            with self.assertRaises(IntegrityError):
+                self.login()
+
+        self.assertEqual(create_user.call_count, 2)
+
+    def test_lost_race_to_other_identity_is_rejected(self):
+        # Another identity created the username after our archive step missed it, so get_or_create hands us its user
+        other = fake_user(username=USERNAME, is_superuser=False, is_staff=False)
+        KeycloakUserId.objects.create(user=other, keycloak_user_id='other-sub')
+        add_fake_group(other, 'other-group')
+
+        with mock.patch.object(self.backend, 'archive_old_user'):
+            with self.assertRaises(PermissionDenied):
+                self.login(dict(CLAIMS, realm_access={'roles': ['admin']}, groups=['admin']))
+
+        other.refresh_from_db()
+        self.assertEqual(other.username, USERNAME)
+        self.assertFalse(other.is_superuser)
+        self.assertEqual([g.name for g in other.groups.all()], ['other-group'])
+        self.assertEqual(KeycloakUserId.objects.get(user=other).keycloak_user_id, 'other-sub')
+
     def test_user_with_same_username_but_other_sub_is_archived(self):
         old = fake_user(username=USERNAME)
         KeycloakUserId.objects.create(user=old, keycloak_user_id='old-sub')
@@ -85,5 +121,7 @@ class TestOIDCUserSync(TestCase):
 
         self.assertNotEqual(user.pk, old.pk)
         self.assertEqual(user.username, USERNAME)
-        self.assertEqual(get_user_model().objects.get(pk=old.pk).username, f'{USERNAME}-{SUB}')
+        archived = get_user_model().objects.get(pk=old.pk)
+        self.assertEqual(archived.username, f'{USERNAME}-{SUB}')
+        self.assertFalse(archived.is_active)
         self.assertTrue(AnalysisModel.objects.filter(pk=model.pk).exists())
