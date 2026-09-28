@@ -76,26 +76,52 @@ logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
 
 
-def load_location_data(loc_filepath, oed_schema_info=None):
-    """ Returns location file as DataFrame
+def load_subject_at_risk_data(params):
+    """ Returns the subject at risk (SAR) exposure as a DataFrame, with 'loc_id' assigned
 
-    Returns a DataFrame of Loaction data with 'loc_id' row assgined
+    The SAR source depends on the class of business: the location file for
+    property / marine, but the account file for cyber / liability, which can be
+    run with no location file at all. Both files are loaded (when present) so the
+    class of business is detected the same way as in `write_input_files`.
     """
     from ods_tools.oed.exposure import OedExposure
+
+    def _abs_path(key):
+        return pathlib.Path(os.path.abspath(params[key])) if params.get(key) else None
+
     exposure = OedExposure(
-        location=pathlib.Path(os.path.abspath(loc_filepath)),
-        oed_schema_info=oed_schema_info or os.environ.get("OASIS_OED_SCHEMA_INFO", None))
+        location=_abs_path('oed_location_csv'),
+        account=_abs_path('oed_accounts_csv'),
+        oed_schema_info=params.get('oed_schema_info') or os.environ.get("OASIS_OED_SCHEMA_INFO", None),
+        check_oed=params.get('check_oed', True),
+        use_field=True,
+        backend_dtype=params.get('oed_backend_dtype', 'pd_dtype'),
+        disable_oed_version_update=params.get('disable_oed_version_update', False),
+    )
 
     try:
         # Oasislmf 2.4.x
         from oasislmf.utils.data import prepare_oed_exposure
         prepare_oed_exposure(exposure)
-        return exposure.location.dataframe
     except ImportError:
-        # Fallback Oasislmf LTS 2.3.x, LTS 1.28.x
+        # Fallback Oasislmf LTS 2.3.x, LTS 1.28.x (location based models only)
         from oasislmf.utils.data import prepare_location_df
         exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
         return exposure.location.dataframe
+
+    return exposure.get_subject_at_risk_source().dataframe
+
+
+def split_subject_at_risk_data(sar_df, num_chunks, chunk_idx):
+    """ Returns the `chunk_idx` slice of `sar_df`, split into `num_chunks` parts
+
+    Split by subject id ('loc_id') rather than by row, so that every row for a
+    subject (e.g. multiple layers of a cyber account) is looked up in the same chunk.
+    """
+    sar_ids = sar_df['loc_id'].unique()
+    chunk_ids = np.array_split(sar_ids, num_chunks)[chunk_idx]
+    chunk_df = sar_df[sar_df['loc_id'].isin(chunk_ids)]
+    return chunk_df.reset_index(drop=True)
 
 
 @task_revoked.connect
@@ -484,12 +510,13 @@ def pre_analysis_hook(self,
             files_modified = pre_hook_output.get('modified', {})
 
             # store updated files
-            pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
-            params['pre_loc_file'] = filestore.put(
-                pre_loc_fp,
-                # filename=os.path.basename(pre_loc_fp),
-                subdir=params['storage_subdir']
-            )
+            if files_modified.get('location'):
+                pre_loc_fp = os.path.join(hook_target_dir, files_modified.get('location'))
+                params['pre_loc_file'] = filestore.put(
+                    pre_loc_fp,
+                    # filename=os.path.basename(pre_loc_fp),
+                    subdir=params['storage_subdir']
+                )
             if files_modified.get('account'):
                 pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
                 params['pre_acc_file'] = filestore.put(
@@ -549,26 +576,27 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        location_df = load_location_data(
-            loc_filepath=params['oed_location_csv'],
-            oed_schema_info=params.get('oed_schema_info', None)
-        )
-        location_df = np.array_split(location_df, num_chunks)[chunk_idx]
-        location_df.reset_index(drop=True, inplace=True)
+        sar_df = split_subject_at_risk_data(load_subject_at_risk_data(params), num_chunks, chunk_idx)
 
-        chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
-        chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
-        lookup.generate_key_files(
-            location_fp=None,
-            location_df=location_df,
-            successes_fp=chunk_keys_fp,
-            errors_fp=chunk_keys_errors_fp,
-            output_format='oasis',
-            keys_success_msg=False,
-            multiproc_enabled=params.get('lookup_multiprocessing', False),
-            multiproc_num_cores=params.get('lookup_num_processes', -1),
-            multiproc_num_partitions=params.get('lookup_num_chunks', -1),
-        )
+        # With no location file the chunk count isn't capped by the row count
+        # (see `_get_inputs_generation_chunks`), so a chunk can be empty. Skip the
+        # lookup, `collect_keys` merges whatever the other chunks produced.
+        if sar_df.empty:
+            logger.info(f'Lookup chunk {chunk_idx + 1}/{num_chunks} is empty --skipped--')
+        else:
+            chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
+            chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
+            lookup.generate_key_files(
+                location_fp=None,
+                location_df=sar_df,
+                successes_fp=chunk_keys_fp,
+                errors_fp=chunk_keys_errors_fp,
+                output_format='oasis',
+                keys_success_msg=False,
+                multiproc_enabled=params.get('lookup_multiprocessing', False),
+                multiproc_num_cores=params.get('lookup_num_processes', -1),
+                multiproc_num_partitions=params.get('lookup_num_chunks', -1),
+            )
 
         # Store chunks
         params['chunk_keys'] = filestore.put(

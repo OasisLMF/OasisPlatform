@@ -1,13 +1,16 @@
 import os
 from unittest import TestCase
 
+import pandas as pd
 import polars as pl
 from backports.tempfile import TemporaryDirectory
 from mock import patch
 from pathlib2 import Path
 
 from src.model_execution_worker.distributed_tasks import (
+    load_subject_at_risk_data,
     merge_dataframes,
+    split_subject_at_risk_data,
     merge_chunk_log_storage,
     _merge_csv_streaming,
     _merge_parquet_streaming,
@@ -182,6 +185,50 @@ class TakeFirst(TestCase):
             take_first([first, second], output_file)
 
             self.assertEqual(output_file.read_bytes(), b'first-content')
+
+
+class SplitSubjectAtRiskData(TestCase):
+    def test_all_subjects_are_covered_once_across_chunks(self):
+        sar_df = pd.DataFrame({'loc_id': range(1, 11), 'value': range(10)})
+
+        chunks = [split_subject_at_risk_data(sar_df, 3, idx) for idx in range(3)]
+
+        self.assertEqual(sorted(pd.concat(chunks)['loc_id'].to_list()), list(range(1, 11)))
+        for chunk in chunks:
+            self.assertEqual(chunk.index.to_list(), list(range(len(chunk))))
+
+    def test_rows_sharing_a_subject_id_stay_in_the_same_chunk(self):
+        # e.g. an account only (cyber) portfolio, with several layers per account
+        sar_df = pd.DataFrame({'loc_id': [1, 1, 2, 2, 2, 3], 'LayerNumber': [1, 2, 1, 2, 3, 1]})
+
+        chunks = [split_subject_at_risk_data(sar_df, 2, idx) for idx in range(2)]
+
+        self.assertEqual(chunks[0]['loc_id'].to_list(), [1, 1, 2, 2, 2])
+        self.assertEqual(chunks[1]['loc_id'].to_list(), [3])
+
+    def test_more_chunks_than_subjects___extra_chunks_are_empty(self):
+        sar_df = pd.DataFrame({'loc_id': [1, 2]})
+
+        chunks = [split_subject_at_risk_data(sar_df, 4, idx) for idx in range(4)]
+
+        self.assertEqual([len(c) for c in chunks], [1, 1, 0, 0])
+
+
+class LoadSubjectAtRiskData(TestCase):
+    inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
+
+    def test_property_portfolio___location_rows_are_returned(self):
+        params = {
+            'oed_location_csv': os.path.join(self.inputs_dir, 'location.csv'),
+            'oed_accounts_csv': os.path.join(self.inputs_dir, 'accounts.csv'),
+        }
+        expected_rows = len(pd.read_csv(params['oed_location_csv']))
+
+        sar_df = load_subject_at_risk_data(params)
+
+        self.assertEqual(len(sar_df), expected_rows)
+        self.assertIn('loc_id', sar_df.columns)
+        self.assertIn('LocNumber', sar_df.columns)
 
 
 class MergeChunkLogStorage(TestCase):
