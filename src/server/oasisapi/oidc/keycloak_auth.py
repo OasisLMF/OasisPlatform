@@ -1,7 +1,7 @@
 import os
 from django.contrib.auth.models import Group
-from django.core.exceptions import SuspiciousOperation
-from django.db import transaction
+from django.core.exceptions import PermissionDenied, SuspiciousOperation
+from django.db import IntegrityError, transaction
 from mozilla_django_oidc import auth
 
 from urllib3.util import connection
@@ -60,15 +60,26 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         sub = self.get_userinfo_attribute(user_info, 'sub')
         username = self.get_userinfo_attribute(user_info, 'preferred_username')
 
-        user = self.get_user_by_keycloak_id(sub)
+        # Concurrent first requests for the same identity (e.g. the worker-controller and model registration job
+        # sharing a service account) can both reach the create path. Run lookup/archive/create in one transaction so
+        # row locks and the unique username constraint serialise them onto a single user.
+        #
+        # If we still lose the race with an IntegrityError, retry once in a fresh transaction, which sees the winner's
+        # committed rows. get_or_create's own retry can't do this under REPEATABLE READ (e.g. MySQL with isolation_level
+        # overridden from Django's READ COMMITTED default), as its lookup reuses the snapshot that missed the winner.
+        for attempt in range(2):
+            try:
+                with transaction.atomic():
+                    user = self.get_user_by_keycloak_id(sub)
 
-        if user:
-
-            return self.update_user(user, username, user_info)
-        else:
-
-            self.archive_old_user(username, sub)
-            return self.create_user(username, user_info)
+                    if user:
+                        return self.update_user(user, username, user_info)
+                    else:
+                        self.archive_old_user(username, sub)
+                        return self.create_user(username, user_info)
+            except IntegrityError:
+                if attempt:
+                    raise
 
     def create_user(self, username, claims):
         """
@@ -205,7 +216,11 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :param user_id: Keycloak user id
         """
 
-        KeycloakUserId.objects.create(user=user, keycloak_user_id=user_id)
+        binding, created = KeycloakUserId.objects.get_or_create(user=user, defaults={'keycloak_user_id': user_id})
+        # A different identity claimed this username concurrently - never hand its account to this one. Raising inside
+        # get_or_create_user's transaction also rolls back the roles/groups this request already applied to the user.
+        if not created and binding.keycloak_user_id != user_id:
+            raise PermissionDenied('Keycloak user id mismatch for user')
 
     def is_keycloak_user_id_same(self, user, sub) -> bool:
         """
@@ -245,13 +260,24 @@ class KeycloakOIDCAuthenticationBackend(auth.OIDCAuthenticationBackend):
         :param username: Username
         :param sub: Keycloak user id. Used for renaming the user to a unique name.
         """
-        user_filter = self.UserModel.objects.filter(username__iexact=username)
+        # Never archive or delete a user already bound to this sub - it is the same identity (typically created by a
+        # concurrent request), and deleting it would cascade to its models, portfolios and analyses.
+        # (subquery rather than a join - FOR UPDATE can't lock the nullable side of an outer join)
+        same_identity = KeycloakUserId.objects.filter(keycloak_user_id__iexact=sub).values('user_id')
+        user_filter = (
+            self.UserModel.objects.select_for_update()
+            .filter(username__iexact=username)
+            .exclude(pk__in=same_identity)
+        )
 
         for user in user_filter:
             # check for and remove exisiting users before rename
             new_username = f'{user.username}-{sub}'
-            self.UserModel.objects.filter(username=new_username).delete()
+            self.UserModel.objects.filter(username=new_username).exclude(pk__in=same_identity).delete()
 
             user.username = new_username
+            # `active` isn't a User field, so it was never persisted - `is_active` is what actually deactivates the user.
+            # Kept in case anything reads `.active` off the instance.
             user.active = False
+            user.is_active = False
             user.save()
