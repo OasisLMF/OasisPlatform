@@ -181,3 +181,70 @@ class TaskController(TestCase):
             "analysis_chunks",
             "run_task_id"
         ])
+
+    def test_generate_input_and_losses___input_and_loss_stages_are_chained(self):
+        analysis = MagicMock()
+        analysis.priority = 3
+        initiator = fake_user()
+
+        mock_subtask_1 = MagicMock()
+        mock_subtask_2 = MagicMock()
+        analysis.sub_task_statuses = MagicMock()
+        analysis.sub_task_statuses.all.return_value = [mock_subtask_1, mock_subtask_2]
+        input_chain, loss_chain = Mock(), Mock()
+        calls = {}
+
+        class MockController(Controller):
+            @classmethod
+            def _get_inputs_generation_chunks(cls, *args):
+                return 2
+
+            @classmethod
+            def _get_loss_generation_chunks(cls, *args):
+                return 5
+
+            @classmethod
+            def get_inputs_generation_tasks(cls, *args):
+                calls['inputs_finish_status'] = args[-1]
+                return ['input_status'], ['input_task']
+
+            @classmethod
+            def get_loss_generation_tasks(cls, *args):
+                return ['loss_status'], ['loss_task']
+
+            @classmethod
+            def _replace_subtask_statuses(cls, analysis, statuses):
+                calls['statuses'] = statuses
+
+            @classmethod
+            def _create_chain(cls, analysis, initiator, tasks, run_data_uuid, traceback_property, failure_status):
+                calls[tasks[0]] = (traceback_property, failure_status)
+                return input_chain if tasks == ['input_task'] else loss_chain
+
+            @classmethod
+            def extract_celery_task_ids(cls, *args):
+                return ['id_2', 'id_1']
+
+        with patch("src.server.oasisapi.analyses.v2_api.task_controller.chain") as mock_chain:
+            mock_chain.return_value.delay.return_value = Mock(id='test_task_id')
+            MockController.generate_input_and_losses(analysis, initiator, loc_lines=10, events_total=100)
+
+        mock_chain.assert_called_once_with(input_chain, loss_chain)
+        mock_chain.return_value.delay.assert_called_once_with({}, priority=3, ignore_result=True)
+        self.assertEqual(calls['statuses'], ['input_status', 'loss_status'])
+        self.assertEqual(calls['inputs_finish_status'], 'RUN_STARTED')
+        self.assertEqual(calls['input_task'], ('input_generation_traceback_file', 'INPUTS_GENERATION_ERROR'))
+        self.assertEqual(calls['loss_task'], ('run_traceback_file', 'RUN_ERROR'))
+
+        self.assertEqual(mock_subtask_1.task_id, 'id_1')
+        self.assertEqual(mock_subtask_2.task_id, 'id_2')
+        self.assertEqual(analysis.lookup_chunks, 2)
+        self.assertEqual(analysis.analysis_chunks, 5)
+        self.assertEqual(analysis.generate_inputs_task_id, 'test_task_id')
+        self.assertEqual(analysis.run_task_id, 'test_task_id')
+        analysis.save.assert_called_once_with(update_fields=[
+            "lookup_chunks",
+            "analysis_chunks",
+            "generate_inputs_task_id",
+            "run_task_id"
+        ])

@@ -294,6 +294,14 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         else:
             return api_settings.DEFAULT_PARSER_CLASSES
 
+    def _start_analysis_task(self, request, start_method, **kwargs):
+        obj = self.get_object()
+        obj.validate_standard_analysis()
+        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
+        verify_model_scaling(obj.model)
+        getattr(obj, start_method)(resolve_user(request.user), **kwargs)
+        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
+
     @extend_schema(responses={200: AnalysisListSerializer}, parameters=[RUN_MODE_PARAM])
     @action(methods=['post'], detail=True)
     def run(self, request, pk=None, version=None):
@@ -302,15 +310,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         statuses, `NEW`, `RUN_COMPLETED`, `RUN_CANCELLED` or
         `RUN_ERROR`
         """
-        obj = self.get_object()
-
-        obj.validate_standard_analysis()
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        verify_model_scaling(obj.model)
-
-        run_mode_override = request.GET.get('run_mode_override', None)
-        obj.run(resolve_user(request.user), run_mode_override=run_mode_override)
-        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return self._start_analysis_task(request, 'run', run_mode_override=request.GET.get('run_mode_override', None))
 
     @extend_schema(
         responses={200: AnalysisListSerializer},
@@ -350,12 +350,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         The analysis must have one of the following statuses, `NEW`, `INPUTS_GENERATION_ERROR`,
         `INPUTS_GENERATION_NO_KEYS`, `INPUTS_GENERATION_CANCELLED`, `READY`, `RUN_COMPLETED`, `RUN_CANCELLED` or `RUN_ERROR`.
         """
-        obj = self.get_object()
-        obj.validate_standard_analysis()
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        verify_model_scaling(obj.model)
-        obj.generate_and_run(resolve_user(request.user))
-        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return self._start_analysis_task(request, 'generate_and_run')
 
     @extend_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
@@ -391,15 +386,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         Generates the inputs for the analysis based on the portfolio.
         The analysis must have one of the following statuses, `INPUTS_GENERATION_QUEUED` or `INPUTS_GENERATION_STARTED`
         """
-        obj = self.get_object()
-
-        obj.validate_standard_analysis()
-        verify_user_is_in_obj_groups(request.user, obj.model, 'You are not allowed to run this model')
-        verify_model_scaling(obj.model)
-
-        run_mode_override = request.GET.get('run_mode_override', None)
-        obj.generate_inputs(resolve_user(request.user), run_mode_override=run_mode_override)
-        return Response(AnalysisListSerializer(instance=obj, context=self.get_serializer_context()).data)
+        return self._start_analysis_task(request, 'generate_inputs', run_mode_override=request.GET.get('run_mode_override', None))
 
     @extend_schema(responses={200: AnalysisListSerializer})
     @action(methods=['post'], detail=True)
