@@ -1,3 +1,4 @@
+import json
 import string
 
 from .fakes import fake_analysis, FakeAsyncResultFactory
@@ -312,6 +313,54 @@ class AnalysisGenerateAndRun(WebTestMixin, TestCase):
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
 
+    def test_dynamic_loss_chunks_without_model_settings___validation_error_is_raised(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(
+                    status=Analysis.status_choices.NEW,
+                    portfolio=fake_portfolio(location_file=fake_related_file()),
+                    settings_file=fake_related_file())
+                analysis.model.run_mode = analysis.model.run_mode_choices.V2
+                analysis.model.save()
+                analysis.model.chunking_options.loss_strategy = analysis.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
+                analysis.model.chunking_options.save()
+
+                with self.assertRaises(ValidationError) as ex:
+                    analysis.generate_and_run(fake_user())
+
+                self.assertEqual({'model_settings_file': ['Must not be null for Dynamic chunking']}, ex.exception.detail)
+                self.assertEqual(Analysis.status_choices.NEW, analysis.status)
+
+    def test_dynamic_loss_chunks___selected_event_count_is_sent_to_task(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                initiator = fake_user()
+                analysis = fake_analysis(
+                    status=Analysis.status_choices.NEW,
+                    portfolio=fake_portfolio(location_file=fake_related_file()),
+                    settings_file=fake_related_file(
+                        file=json.dumps({'model_settings': {'event_set': 'p'}}), content_type='application/json'))
+                analysis.model.run_mode = analysis.model.run_mode_choices.V2
+                analysis.model.resource_file = fake_related_file(
+                    file=json.dumps({'model_settings': {'event_set': {'options': [{'id': 'p', 'number_of_events': 25}]}}}),
+                    content_type='application/json')
+                analysis.model.save()
+                analysis.model.chunking_options.loss_strategy = analysis.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
+                analysis.model.chunking_options.save()
+
+                task_sig = Mock()
+                task_sig.apply_async.return_value = FakeAsyncResultFactory(target_task_id='abc')('abc')
+
+                with (
+                    patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature', PropertyMock(return_value=task_sig)),
+                    patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                    patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+                ):
+                    analysis.generate_and_run(initiator)
+
+                task_sig.apply_async.assert_called_once_with(args=[analysis.pk, initiator.pk, 4, 25], priority=4)
+                self.assertEqual('abc', analysis.generate_inputs_task_id)
+
 
 class AnalysisRun(WebTestMixin, TestCase):
     @given(
@@ -369,6 +418,20 @@ class AnalysisRun(WebTestMixin, TestCase):
                 {'status': ['Analysis must be in one of the following states [READY, RUN_COMPLETED, RUN_ERROR, RUN_CANCELLED]']}, ex.exception.detail)
             self.assertEqual(status, analysis.status)
             self.assertFalse(res_factory.revoke_called)
+
+    def test_dynamic_loss_chunks_without_model_settings___validation_error_is_raised(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(
+                    status=Analysis.status_choices.READY, input_file=fake_related_file(), settings_file=fake_related_file())
+                analysis.model.chunking_options.loss_strategy = analysis.model.chunking_options.chunking_types.DYNAMIC_CHUNKS
+                analysis.model.chunking_options.save()
+
+                with self.assertRaises(ValidationError) as ex:
+                    analysis.run(fake_user(), run_mode_override='V2')
+
+                self.assertEqual({'model_settings_file': ['Must not be null for Dynamic chunking']}, ex.exception.detail)
+                self.assertEqual(Analysis.status_choices.READY, analysis.status)
 
     def test_run_analysis_signature_is_correct(self):
         with TemporaryDirectory() as d:

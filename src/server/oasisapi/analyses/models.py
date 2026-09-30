@@ -234,6 +234,23 @@ class Analysis(TimeStampedModel):
         ('V2', 'Distributed Execution'),
     )
 
+    INPUTS_GENERATION_VALID_STATUSES = [
+        status_choices.NEW,
+        status_choices.INPUTS_GENERATION_ERROR,
+        status_choices.INPUTS_GENERATION_NO_KEYS,
+        status_choices.INPUTS_GENERATION_CANCELLED,
+        status_choices.READY,
+        status_choices.RUN_COMPLETED,
+        status_choices.RUN_CANCELLED,
+        status_choices.RUN_ERROR,
+    ]
+    RUN_VALID_STATUSES = [
+        status_choices.READY,
+        status_choices.RUN_COMPLETED,
+        status_choices.RUN_ERROR,
+        status_choices.RUN_CANCELLED,
+    ]
+
     input_generation_traceback_file_id = None
 
     creator = models.ForeignKey(django_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analyses')
@@ -411,11 +428,7 @@ class Analysis(TimeStampedModel):
 
     def get_num_events(self):
 
-        # Select Chunking opts
-        if self.chunking_options is None:
-            chunking_options = self.model.chunking_options
-        else:
-            chunking_options = self.chunking_options
+        chunking_options = self.get_chunking_options()
 
         # Esc if not DYNAMIC
         DYNAMIC_CHUNKS = chunking_options.chunking_types.DYNAMIC_CHUNKS
@@ -511,18 +524,19 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_STARTED
         self.save()
 
-    def run(self, initiator, run_mode_override=None):
-        self.validate_standard_analysis()
+    def get_chunking_options(self):
+        if self.chunking_options is None:
+            return self.model.chunking_options
+        return self.chunking_options
 
-        valid_choices = [
-            self.status_choices.READY,
-            self.status_choices.RUN_COMPLETED,
-            self.status_choices.RUN_ERROR,
-            self.status_choices.RUN_CANCELLED,
-        ]
-        if self.status not in valid_choices:
-            raise ValidationError(
-                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(valid_choices))]})
+    def raise_validate_errors(self, errors):
+        raise ValidationError(detail=errors)
+
+    def validate_standard_analysis(self):
+        if self.model is None:
+            raise ValidationError({'model': 'Model not assigned to analysis'})
+
+    def resolve_run_mode(self, run_mode_override=None):
         if (self.model.run_mode is None) and (run_mode_override is None):
             raise ValidationError({
                 'model': ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]})
@@ -534,84 +548,7 @@ class Analysis(TimeStampedModel):
         ]
         if run_mode not in valid_run_modes:
             raise ValidationError({'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]})
-
-        errors = {}
-        if self.model.deleted:
-            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-        if not self.settings_file:
-            errors['analysis_settings_file'] = ['Must not be null']
-        if not self.input_file:
-            errors['input_file'] = ['Must not be null']
-
-        # Valadation for dyanmic loss chunks
-        if run_mode == self.run_mode_choices.V2:
-            if self.chunking_options is None:
-                chunking_options = self.model.chunking_options
-            else:
-                chunking_options = self.chunking_options
-
-            if chunking_options.loss_strategy == chunking_options.chunking_types.DYNAMIC_CHUNKS:
-                if not self.model.resource_file:
-                    errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
-                elif self.settings_file:
-                    # cross check model and analysis settings if not given a set of events
-                    model_settings = self.model.resource_file.read_json()
-                    analysis_settings = self.settings_file.read_json()
-                    if not analysis_settings.get('event_ids'):
-                        events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
-                        events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
-                        events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
-                        if not events_selected:
-                            errors['analysis_settings_file'] = ['event_set, Must not be null for Dynamic chunking']
-                        if not events_options:
-                            errors['model_settings_file'] = ['event_set, No options given in Model settings']
-                        if not events_matched:
-                            errors['settings_files'] = [f"selected event_set '{events_selected}' from analysis_settings not found in model_settings"]
-                        elif not events_matched[0].get('number_of_events'):
-                            errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
-
-        if errors:
-            raise ValidationError(detail=errors)
-
-        self.status = self.status_choices.RUN_QUEUED
-        self.num_events_total = 0
-        self.num_events_complete = 0
-        self.save()
-
-        # Start V1 run
-        if run_mode == self.run_mode_choices.V1:
-            task = self.v1_run_analysis_signature
-            task.link(record_run_analysis_result.s(self.pk, initiator.pk))
-            task.link_error(
-                celery_app_v1.signature('on_error', args=('record_run_analysis_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-            )
-            self.run_mode = self.run_mode_choices.V1
-            task_id = task.delay().id
-        # Start V2 run
-        elif run_mode == self.run_mode_choices.V2:
-            events_total = self.get_num_events()
-            task = self.v2_run_analysis_signature
-            task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
-                'analysis_id': self.pk,
-                'initiator_id': initiator.pk,
-                'traceback_property': 'run_traceback_file',
-                'failure_status': Analysis.status_choices.RUN_ERROR,
-            }, queue='celery-v2'))
-            self.run_mode = self.run_mode_choices.V2
-            task_id = task.apply_async(args=[self.pk, initiator.pk, events_total], priority=self.priority).id
-
-        self.run_task_id = task_id
-        self.task_started = timezone.now()
-        self.task_finished = None
-        self.save()
-        celery_app_v2.send_task('send_queue_status_digest')
-
-    def raise_validate_errors(self, errors):
-        raise ValidationError(detail=errors)
-
-    def validate_standard_analysis(self):
-        if self.model is None:
-            raise ValidationError({'model': 'Model not assigned to analysis'})
+        return run_mode
 
     def validate_v2_location_file(self, errors):
         """ Checks the portfolio's location file for V2 input generation, adding any
@@ -621,10 +558,7 @@ class Analysis(TimeStampedModel):
         DYNAMIC_CHUNKS, since that strategy needs the row count to scale the number
         of chunks - FIXED_CHUNKS has no such dependency (e.g. account only cyber models)
         """
-        if self.chunking_options is None:
-            chunking_options = self.model.chunking_options
-        else:
-            chunking_options = self.chunking_options
+        chunking_options = self.get_chunking_options()
 
         loc_lines = None
         if self.portfolio.location_file:
@@ -641,39 +575,47 @@ class Analysis(TimeStampedModel):
             ]
         return loc_lines
 
-    def generate_and_run(self, initiator):
-        self.validate_standard_analysis()
+    def validate_input_generation(self, run_mode, errors):
+        """ Adds portfolio problems for input generation to `errors`.
+        Returns the location file row count for V2 lookup chunking, or None.
+        """
+        if run_mode == self.run_mode_choices.V1:
+            if (not self.portfolio.location_file) and (not self.portfolio.accounts_file):
+                errors['portfolio'] = ['Either "location_file" or "accounts_file" must not be null for run_mode = V1']
+            return None
+        return self.validate_v2_location_file(errors)
 
-        valid_choices = [
-            self.status_choices.NEW,
-            self.status_choices.INPUTS_GENERATION_ERROR,
-            self.status_choices.INPUTS_GENERATION_NO_KEYS,
-            self.status_choices.INPUTS_GENERATION_CANCELLED,
-            self.status_choices.READY,
-            self.status_choices.RUN_COMPLETED,
-            self.status_choices.RUN_CANCELLED,
-            self.status_choices.RUN_ERROR,
-        ]
+    def validate_loss_generation(self, run_mode, errors):
+        """ Adds settings problems for loss generation to `errors`, only DYNAMIC_CHUNKS
+        loss chunking (V2) depends on the settings files, to size the selected event set.
+        """
+        if run_mode != self.run_mode_choices.V2:
+            return
 
-        # validation
-        errors = {}
-        if self.status not in valid_choices:
-            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
-        if self.model.deleted:
-            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-        if self.model.run_mode != self.model.run_mode_choices.V2:
-            errors['model'] = ['Model pk "{}" - Unsupported Operation, "run_mode" must be "V2", not "{}"'.format(self.model.id, self.model.run_mode)]
-        if not self.settings_file:
-            errors['settings_file'] = ['Must not be null']
-        loc_lines = self.validate_v2_location_file(errors)
+        chunking_options = self.get_chunking_options()
+        if chunking_options.loss_strategy != chunking_options.chunking_types.DYNAMIC_CHUNKS:
+            return
 
-        # get events
-        events_total = self.get_num_events()
+        if not self.model.resource_file:
+            errors['model_settings_file'] = ['Must not be null for Dynamic chunking']
+        elif self.settings_file:
+            # cross check model and analysis settings if not given a set of events
+            model_settings = self.model.resource_file.read_json()
+            analysis_settings = self.settings_file.read_json()
+            if not analysis_settings.get('event_ids'):
+                events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
+                events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
+                events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
+                if not events_selected:
+                    errors['analysis_settings_file'] = ['event_set, Must not be null for Dynamic chunking']
+                if not events_options:
+                    errors['model_settings_file'] = ['event_set, No options given in Model settings']
+                if not events_matched:
+                    errors['settings_files'] = [f"selected event_set '{events_selected}' from analysis_settings not found in model_settings"]
+                elif not events_matched[0].get('number_of_events'):
+                    errors['model_settings_file'] = [f"Option 'number_of_events' is not set for event_set = '{events_selected}'"]
 
-        # Raise for error
-        if errors:
-            raise ValidationError(detail=errors)
-
+    def _reset_input_generation(self):
         self.status = self.status_choices.INPUTS_GENERATION_QUEUED
         self.lookup_errors_file = None
         self.lookup_success_file = None
@@ -682,111 +624,123 @@ class Analysis(TimeStampedModel):
         self.input_generation_traceback_file_id = None
         self.input_file = None
 
-        task = self.v2_start_input_and_loss_generation_signature
+    def _reset_loss_progress(self):
+        self.num_events_total = 0
+        self.num_events_complete = 0
+
+    def _dispatch_v1(self, task, initiator, success_callback, failure_callback_name):
+        task.link(success_callback.s(self.pk, initiator.pk))
+        task.link_error(
+            celery_app_v1.signature('on_error', args=(failure_callback_name, self.pk, initiator.pk), queue=self.model.queue_name)
+        )
+        self.run_mode = self.run_mode_choices.V1
+        return task.delay().id
+
+    def _dispatch_v2(self, task, initiator, args, traceback_property, failure_status):
         task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
             'analysis_id': self.pk,
             'initiator_id': initiator.pk,
-            'traceback_property': 'input_generation_traceback_file',
-            'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
-        }))
+            'traceback_property': traceback_property,
+            'failure_status': failure_status,
+        }, queue='celery-v2'))
         self.run_mode = self.run_mode_choices.V2
-        task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines, events_total], priority=self.priority).id
+        return task.apply_async(args=[self.pk, initiator.pk, *args], priority=self.priority).id
 
-        self.generate_inputs_task_id = task_id
+    def _record_dispatch(self, task_id_field, task_id):
+        setattr(self, task_id_field, task_id)
         self.task_started = timezone.now()
         self.task_finished = None
-        self.num_events_total = 0
-        self.num_events_complete = 0
         self.save()
         celery_app_v2.send_task('send_queue_status_digest')
+
+    def run(self, initiator, run_mode_override=None):
+        self.validate_standard_analysis()
+
+        if self.status not in self.RUN_VALID_STATUSES:
+            raise ValidationError(
+                {'status': ['Analysis must be in one of the following states [{}]'.format(', '.join(self.RUN_VALID_STATUSES))]})
+        run_mode = self.resolve_run_mode(run_mode_override)
+
+        errors = {}
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        if not self.settings_file:
+            errors['analysis_settings_file'] = ['Must not be null']
+        if not self.input_file:
+            errors['input_file'] = ['Must not be null']
+        self.validate_loss_generation(run_mode, errors)
+        if errors:
+            raise ValidationError(detail=errors)
+
+        self.status = self.status_choices.RUN_QUEUED
+        self._reset_loss_progress()
+        self.save()
+
+        if run_mode == self.run_mode_choices.V1:
+            task_id = self._dispatch_v1(
+                self.v1_run_analysis_signature, initiator, record_run_analysis_result, 'record_run_analysis_failure')
+        else:
+            task_id = self._dispatch_v2(
+                self.v2_run_analysis_signature, initiator, [self.get_num_events()],
+                'run_traceback_file', self.status_choices.RUN_ERROR)
+        self._record_dispatch('run_task_id', task_id)
+
+    def generate_inputs(self, initiator, run_mode_override=None):
+        self.validate_standard_analysis()
+        run_mode = self.resolve_run_mode(run_mode_override)
+
+        errors = {}
+        if self.status not in self.INPUTS_GENERATION_VALID_STATUSES:
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(self.INPUTS_GENERATION_VALID_STATUSES))]
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        loc_lines = self.validate_input_generation(run_mode, errors)
+        if errors:
+            raise ValidationError(errors)
+
+        self._reset_input_generation()
+        self.save()
+
+        if run_mode == self.run_mode_choices.V1:
+            task_id = self._dispatch_v1(
+                self.v1_generate_input_signature, initiator, record_generate_input_result, 'record_generate_input_failure')
+        else:
+            task_id = self._dispatch_v2(
+                self.v2_generate_input_signature, initiator, [loc_lines],
+                'input_generation_traceback_file', self.status_choices.INPUTS_GENERATION_ERROR)
+        self._record_dispatch('generate_inputs_task_id', task_id)
+
+    def generate_and_run(self, initiator):
+        self.validate_standard_analysis()
+        run_mode = self.run_mode_choices.V2
+
+        errors = {}
+        if self.status not in self.INPUTS_GENERATION_VALID_STATUSES:
+            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(self.INPUTS_GENERATION_VALID_STATUSES))]
+        if self.model.deleted:
+            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
+        if self.model.run_mode != run_mode:
+            errors['model'] = ['Model pk "{}" - Unsupported Operation, "run_mode" must be "V2", not "{}"'.format(self.model.id, self.model.run_mode)]
+        if not self.settings_file:
+            errors['settings_file'] = ['Must not be null']
+        loc_lines = self.validate_input_generation(run_mode, errors)
+        self.validate_loss_generation(run_mode, errors)
+        if errors:
+            raise ValidationError(detail=errors)
+
+        self._reset_input_generation()
+        self._reset_loss_progress()
+        self.save()
+
+        task_id = self._dispatch_v2(
+            self.v2_start_input_and_loss_generation_signature, initiator, [loc_lines, self.get_num_events()],
+            'input_generation_traceback_file', self.status_choices.INPUTS_GENERATION_ERROR)
+        self._record_dispatch('generate_inputs_task_id', task_id)
 
     def cancel_subtasks(self):
         if self.run_mode == self.run_mode_choices.V2:
             cancel_tasks = self.v2_cancel_subtasks_signature
             cancel_tasks.apply_async(args=[self.pk], priority=1).id
-
-    def generate_inputs(self, initiator, run_mode_override=None):
-        self.validate_standard_analysis()
-
-        valid_choices = [
-            self.status_choices.NEW,
-            self.status_choices.INPUTS_GENERATION_ERROR,
-            self.status_choices.INPUTS_GENERATION_NO_KEYS,
-            self.status_choices.INPUTS_GENERATION_CANCELLED,
-            self.status_choices.READY,
-            self.status_choices.RUN_COMPLETED,
-            self.status_choices.RUN_CANCELLED,
-            self.status_choices.RUN_ERROR,
-        ]
-        valid_run_modes = [
-            self.run_mode_choices.V1,
-            self.run_mode_choices.V2,
-        ]
-
-        # check run model
-        run_mode = run_mode_override if run_mode_override else self.model.run_mode
-        if run_mode not in valid_run_modes:
-            raise ValidationError(
-                {'run_mode': ['run_mode must be  [{}]'.format(', '.join(valid_run_modes))]}
-            )
-
-        # check everything else
-        errors = {}
-        if self.status not in valid_choices:
-            errors['status'] = ['Analysis status must be one of [{}]'.format(', '.join(valid_choices))]
-        if self.model.deleted:
-            errors['model'] = ['Model pk "{}" has been deleted'.format(self.model.id)]
-        if (self.model.run_mode is None) and (run_mode_override is None):
-            errors['model'] = ['Model pk "{}" - "run_mode" must not be null'.format(self.model.id)]
-
-        # check for eitehr location or account file if V1
-        if run_mode == self.run_mode_choices.V1:
-            if (not self.portfolio.location_file) and (not self.portfolio.accounts_file):
-                errors['portfolio'] = ['Either "location_file" or "accounts_file" must not be null for run_mode = V1']
-
-        # check for location file if V2
-        loc_lines = None
-        if run_mode == self.run_mode_choices.V2:
-            loc_lines = self.validate_v2_location_file(errors)
-
-        if errors:
-            raise ValidationError(errors)
-
-        self.status = self.status_choices.INPUTS_GENERATION_QUEUED
-        self.lookup_errors_file = None
-        self.lookup_success_file = None
-        self.lookup_validation_file = None
-        self.summary_levels_file = None
-        self.input_generation_traceback_file_id = None
-        self.input_file = None
-        self.save()
-
-        if run_mode == self.run_mode_choices.V1:
-            task = self.v1_generate_input_signature
-            task.link(record_generate_input_result.s(self.pk, initiator.pk))
-            task.link_error(
-                celery_app_v1.signature('on_error', args=('record_generate_input_failure', self.pk, initiator.pk), queue=self.model.queue_name)
-            )
-            self.run_mode = self.run_mode_choices.V1
-            self.status = self.status_choices.INPUTS_GENERATION_QUEUED
-            task_id = task.delay().id
-
-        elif run_mode == self.run_mode_choices.V2:
-            task = self.v2_generate_input_signature
-            task.on_error(celery_app_v2.signature('handle_task_failure', kwargs={
-                'analysis_id': self.pk,
-                'initiator_id': initiator.pk,
-                'traceback_property': 'input_generation_traceback_file',
-                'failure_status': Analysis.status_choices.INPUTS_GENERATION_ERROR,
-            }))
-            self.run_mode = self.run_mode_choices.V2
-            task_id = task.apply_async(args=[self.pk, initiator.pk, loc_lines], priority=self.priority).id
-
-        self.generate_inputs_task_id = task_id
-        self.task_started = timezone.now()
-        self.task_finished = None
-        self.save()
-        celery_app_v2.send_task('send_queue_status_digest')
 
     def cancel_any(self):
         INPUTS_GENERATION_STATES = [
