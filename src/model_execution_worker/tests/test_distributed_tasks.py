@@ -1,15 +1,21 @@
+import os
 from unittest import TestCase
 
+import pandas as pd
 import polars as pl
 from backports.tempfile import TemporaryDirectory
 from mock import patch
 from pathlib2 import Path
 
 from src.model_execution_worker.distributed_tasks import (
+    load_subject_at_risk_data,
     merge_dataframes,
+    split_subject_at_risk_data,
+    merge_chunk_log_storage,
     _merge_csv_streaming,
     _merge_parquet_streaming,
     take_first,
+    handle_task_failure,
 )
 
 
@@ -179,3 +185,152 @@ class TakeFirst(TestCase):
             take_first([first, second], output_file)
 
             self.assertEqual(output_file.read_bytes(), b'first-content')
+
+
+class SplitSubjectAtRiskData(TestCase):
+    def test_all_subjects_are_covered_once_across_chunks(self):
+        sar_df = pd.DataFrame({'loc_id': range(1, 11), 'value': range(10)})
+
+        chunks = [split_subject_at_risk_data(sar_df, 3, idx) for idx in range(3)]
+
+        self.assertEqual(sorted(pd.concat(chunks)['loc_id'].to_list()), list(range(1, 11)))
+        for chunk in chunks:
+            self.assertEqual(chunk.index.to_list(), list(range(len(chunk))))
+
+    def test_rows_sharing_a_subject_id_stay_in_the_same_chunk(self):
+        # e.g. an account only (cyber) portfolio, with several layers per account
+        sar_df = pd.DataFrame({'loc_id': [1, 1, 2, 2, 2, 3], 'LayerNumber': [1, 2, 1, 2, 3, 1]})
+
+        chunks = [split_subject_at_risk_data(sar_df, 2, idx) for idx in range(2)]
+
+        self.assertEqual(chunks[0]['loc_id'].to_list(), [1, 1, 2, 2, 2])
+        self.assertEqual(chunks[1]['loc_id'].to_list(), [3])
+
+    def test_more_chunks_than_subjects___extra_chunks_are_empty(self):
+        sar_df = pd.DataFrame({'loc_id': [1, 2]})
+
+        chunks = [split_subject_at_risk_data(sar_df, 4, idx) for idx in range(4)]
+
+        self.assertEqual([len(c) for c in chunks], [1, 1, 0, 0])
+
+
+class LoadSubjectAtRiskData(TestCase):
+    inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
+
+    def test_property_portfolio___location_rows_are_returned(self):
+        params = {
+            'oed_location_csv': os.path.join(self.inputs_dir, 'location.csv'),
+            'oed_accounts_csv': os.path.join(self.inputs_dir, 'accounts.csv'),
+        }
+        expected_rows = len(pd.read_csv(params['oed_location_csv']))
+
+        sar_df = load_subject_at_risk_data(params)
+
+        self.assertEqual(len(sar_df), expected_rows)
+        self.assertIn('loc_id', sar_df.columns)
+        self.assertIn('LocNumber', sar_df.columns)
+
+
+class MergeChunkLogStorage(TestCase):
+    """ Regression tests for 'collect_keys': it used to build its return value from
+        only 'params[0]' (the first lookup chunk's result), which silently dropped
+        every other chunk's own step log from 'log_storage'. 'merge_chunk_log_storage'
+        is the extracted fix - it must combine every chunk's entries.
+    """
+
+    def test_each_chunks_own_log_entry_is_kept(self):
+        chunk_results = [
+            {'log_storage': {'prepare-keys-file-chunk-0': 'loc-0'}},
+            {'log_storage': {'prepare-keys-file-chunk-1': 'loc-1'}},
+            {'log_storage': {'prepare-keys-file-chunk-2': 'loc-2'}},
+        ]
+
+        merged = merge_chunk_log_storage(chunk_results)
+
+        self.assertEqual(merged, {
+            'prepare-keys-file-chunk-0': 'loc-0',
+            'prepare-keys-file-chunk-1': 'loc-1',
+            'prepare-keys-file-chunk-2': 'loc-2',
+        })
+
+    def test_shared_earlier_step_entries_are_not_duplicated(self):
+        # every chunk also carries forward the log_storage from steps before the
+        # chord (e.g. 'pre-analysis-hook'), which is identical across all chunks
+        chunk_results = [
+            {'log_storage': {'pre-analysis-hook': 'loc-hook', 'prepare-keys-file-chunk-0': 'loc-0'}},
+            {'log_storage': {'pre-analysis-hook': 'loc-hook', 'prepare-keys-file-chunk-1': 'loc-1'}},
+        ]
+
+        merged = merge_chunk_log_storage(chunk_results)
+
+        self.assertEqual(merged, {
+            'pre-analysis-hook': 'loc-hook',
+            'prepare-keys-file-chunk-0': 'loc-0',
+            'prepare-keys-file-chunk-1': 'loc-1',
+        })
+
+    def test_missing_log_storage_key_is_tolerated(self):
+        chunk_results = [{'log_storage': {'prepare-keys-file-chunk-0': 'loc-0'}}, {}]
+
+        merged = merge_chunk_log_storage(chunk_results)
+
+        self.assertEqual(merged, {'prepare-keys-file-chunk-0': 'loc-0'})
+
+    def test_no_chunks___returns_empty_dict(self):
+        self.assertEqual(merge_chunk_log_storage([]), {})
+
+
+class HandleTaskFailureSignal(TestCase):
+    """ Tests for the worker-side 'task_failure' signal handler that uploads a failed
+        task's local log file (which includes any KERNEL_STDERR/STDOUT output logged
+        before the failure) to the filestore.
+    """
+
+    def _task_args(self, **overrides):
+        return {
+            'analysis_id': 1,
+            'initiator_id': 2,
+            'slug': 'generate-losses-chunk-1',
+            'run_data_uuid': 'run-uuid',
+            **overrides,
+        }
+
+    def test_log_file_present___is_uploaded_dispatched_and_removed_locally(self):
+        with TemporaryDirectory() as tmp_dir:
+            task_args = self._task_args()
+            log_path = os.path.join(tmp_dir, f"{task_args['run_data_uuid']}_{task_args['slug']}.log")
+            with open(log_path, 'w') as f:
+                f.write('KERNEL_STDERR:\nboom\nSTDOUT:\nfailure output\n')
+
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', tmp_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                    patch('src.model_execution_worker.distributed_tasks.signature') as signature_mock:
+                filestore_mock.put.return_value = 'remote/log-location.txt'
+
+                handle_task_failure(kwargs=task_args, args=[], task_id='task-99')
+
+                filestore_mock.put.assert_any_call(log_path)
+                signature_mock.assert_any_call('subtask_error_log')
+                signature_mock.return_value.delay.assert_any_call(
+                    task_args['analysis_id'],
+                    task_args['initiator_id'],
+                    task_args['slug'],
+                    'task-99',
+                    'remote/log-location.txt',
+                )
+
+            # local copy is removed once it has been uploaded
+            self.assertFalse(os.path.isfile(log_path))
+
+    def test_log_file_missing___no_upload_is_attempted_and_no_error_is_raised(self):
+        with TemporaryDirectory() as tmp_dir:
+            task_args = self._task_args(slug='some-other-task')
+
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', tmp_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                    patch('src.model_execution_worker.distributed_tasks.signature') as signature_mock:
+                handle_task_failure(kwargs=task_args, args=[], task_id='task-1')
+
+                filestore_mock.put.assert_not_called()
+                dispatched_names = [c.args[0] for c in signature_mock.call_args_list]
+                self.assertNotIn('subtask_error_log', dispatched_names)

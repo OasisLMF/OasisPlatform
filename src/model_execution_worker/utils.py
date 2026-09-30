@@ -24,6 +24,7 @@ import re
 import tempfile
 import shutil
 import subprocess
+import threading
 from datetime import datetime
 from copy import deepcopy
 from celery import signature
@@ -92,6 +93,58 @@ class TaskLogFilter(logging.Filter):
         return True
 
 
+class _ThreadScopedFilter(logging.Filter):
+    """ Restricts a handler to records from the thread that installed it.
+
+        The root logger is shared process-wide, so under a thread-based Celery
+        pool multiple tasks can have their own FileHandler attached to it at
+        once; without this, every handler receives every thread's records.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.thread_id = threading.get_ident()
+
+    def filter(self, record):
+        return record.thread == self.thread_id
+
+
+def _level_to_int(level):
+    return level if isinstance(level, int) else logging.getLevelNamesMapping()[level]
+
+
+class _LevelTracker:
+    """ Tracks concurrently active level requests per logger, so one task
+        finishing early can't drop the effective level out from under a
+        still-running sibling task using the same logger.
+    """
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._state = {}  # logger -> (baseline_level, [requested_levels])
+
+    def acquire(self, logger, level):
+        numeric_level = _level_to_int(level)
+        with self._lock:
+            baseline, requests = self._state.setdefault(logger, (logger.level, []))
+            requests.append(numeric_level)
+            logger.setLevel(min(requests))
+
+    def release(self, logger, level):
+        numeric_level = _level_to_int(level)
+        with self._lock:
+            baseline, requests = self._state[logger]
+            requests.remove(numeric_level)
+            if requests:
+                logger.setLevel(min(requests))
+            else:
+                logger.setLevel(baseline)
+                del self._state[logger]
+
+
+_level_tracker = _LevelTracker()
+
+
 class LoggingTaskContext:
     """ Adds a file log handler to the root logger and pushes a copy all logs to
         the 'log_filename'
@@ -102,18 +155,22 @@ class LoggingTaskContext:
     def __init__(self, logger, log_filename, level=None, close=True, delete_on_exit=True):
         self.logger = logger
         self.level = level
-        self.prev_level = logger.level
         self.log_filename = log_filename
         self.close = close
-        self.handler = logging.FileHandler(log_filename)
+        # 'w' (truncate) rather than the FileHandler default of 'a' (append) - on a
+        # failed task the file is deliberately left on disk for 'task_failure' to
+        # upload (see __exit__ below); if the task is then retried by celery, that
+        # retry must not append onto the previous failed attempt's leftover content.
+        self.handler = logging.FileHandler(log_filename, mode='w')
+        self.handler.addFilter(_ThreadScopedFilter())
         self.delete_on_exit = delete_on_exit
         self._filter = None
 
     def __enter__(self):
         if self.level:
             self.handler.setLevel(self.level)
-            self.logger.setLevel(self.level)
-            if logging.getLevelName(self.level) <= logging.DEBUG:
+            _level_tracker.acquire(self.logger, self.level)
+            if _level_to_int(self.level) <= logging.DEBUG:
                 self._filter = TaskLogFilter()
                 self.logger.addFilter(self._filter)
         if self.handler:
@@ -121,14 +178,17 @@ class LoggingTaskContext:
 
     def __exit__(self, et, ev, tb):
         if self.level:
-            self.logger.setLevel(self.prev_level)
+            _level_tracker.release(self.logger, self.level)
             if self._filter:
                 self.logger.removeFilter(self._filter)
         if self.handler:
             self.logger.removeHandler(self.handler)
         if self.handler and self.close:
             self.handler.close()
-        if os.path.isfile(self.log_filename) and self.delete_on_exit:
+        # On failure leave the log file in place - 'task_failure' handlers read it
+        # from disk (after the context manager has exited) to attach the full
+        # output (including kernel STDOUT/STDERR) to the failed task/analysis.
+        if os.path.isfile(self.log_filename) and self.delete_on_exit and et is None:
             os.remove(self.log_filename)
 
 

@@ -185,5 +185,35 @@ The general workflow is as follows
 * <a href="https://oasislmf.github.io/docs/oasis_rest_api.html">Oasis API documentation</a>
 * <a href="https://oasislmf.github.io/OasisPlatform/modules.html">Oasis Platform module documentation</a>
 
+### Recording which version a feature landed in
+
+Document a new or changed feature with a Sphinx version directive, and write `NEXT` where
+the version goes — in reStructuredText:
+
+````rst
+.. versionadded:: NEXT
+````
+
+or in MyST Markdown:
+
+````md
+```{versionadded} NEXT
+```
+````
+
+`NEXT` is deliberate. The release version does not exist yet when you open the PR: it is
+chosen on the release branch, and `scripts/resolve-version-markers.sh` rewrites every
+`NEXT` to the real version in the same commit that bumps `VERSION`. Nothing ships with
+`NEXT` in it — the release workflow refuses to tag if any survives.
+
+`versionchanged`, `deprecated` and `versionremoved` work the same way. `NEXT` must be the
+whole version argument: `.. versionadded:: NEXT (see below)` is not rewritten, and CI
+rejects it.
+
+**Maintainers:** `scripts/resolve-version-markers.sh` is **copied**, not shared — identical
+copies live in OasisLMF, OasisPlatform and ODS_Tools. Port any fix to all three, or the
+repos will resolve markers differently and it will only surface when a release stamps the
+wrong version. Only the script's `SCOPE` exclusion is meant to differ per repo.
+
 ## License
 The code in this project is licensed under BSD 3-clause license.

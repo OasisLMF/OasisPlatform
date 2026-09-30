@@ -125,7 +125,7 @@ fsspec==2024.12.0
     #   s3fs
 geopandas==1.1.2
     # via oasislmf
-greenlet==3.2.4
+greenlet==3.5.6
     # via sqlalchemy
 h3==4.4.2
     # via oasislmf
@@ -203,9 +203,9 @@ oasis-data-manager==0.2.3
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.5.7
+oasislmf[extra]==2.5.8
     # via -r requirements-worker.in
-ods-tools==5.0.8
+ods-tools==5.0.9
     # via oasislmf
 packaging==25.0
     # via
@@ -224,7 +224,7 @@ pandas==2.3.2
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-worker.in
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 polars==1.40.1
     # via -r requirements-worker.in
@@ -238,9 +238,9 @@ propcache==0.3.2
     #   yarl
 psutil==7.2.2
     # via oasislmf
-psycopg[binary,pool]==3.2.9
+psycopg[binary,pool]==3.3.5
     # via -r requirements-worker.in
-psycopg-binary==3.2.9
+psycopg-binary==3.3.5
     # via psycopg
 psycopg-pool==3.2.6
     # via psycopg

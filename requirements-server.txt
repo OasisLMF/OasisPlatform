@@ -76,7 +76,7 @@ coreschema==0.0.4
     # via -r requirements-server.in
 cramjam==2.11.0
     # via fastparquet
-cryptography==48.0.1
+cryptography==50.0.0
     # via
     #   autobahn
     #   azure-identity
@@ -136,7 +136,7 @@ fsspec==2025.7.0
     # via
     #   fastparquet
     #   oasis-data-manager
-greenlet==3.2.4
+greenlet==3.5.6
     # via sqlalchemy
 gunicorn==23.0.0
     # via -r requirements-server.in
@@ -208,7 +208,7 @@ oasis-data-manager==0.2.3
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools==5.0.8
+ods-tools==5.0.9
     # via -r requirements-server.in
 packaging==25.0
     # via
@@ -226,9 +226,9 @@ pathlib2==2.3.7.post1
     # via -r requirements-server.in
 prompt-toolkit==3.0.51
     # via click-repl
-psycopg[binary,pool]==3.2.9
+psycopg[binary,pool]==3.3.5
     # via -r requirements-server.in
-psycopg-binary==3.2.9
+psycopg-binary==3.3.5
     # via psycopg
 psycopg-pool==3.2.6
     # via psycopg
@@ -238,7 +238,7 @@ pyarrow==23.0.1
     # via
     #   -r requirements-server.in
     #   ods-tools
-pyasn1==0.6.3
+pyasn1==0.6.4
     # via
     #   -r requirements-server.in
     #   pyasn1-modules
@@ -254,7 +254,7 @@ pyjwt[crypto]==2.13.0
     #   redis
 pymysql==1.1.1
     # via -r requirements-server.in
-pyopenssl==26.2.0
+pyopenssl==26.4.0
     # via twisted
 python-dateutil==2.9.0.post0
     # via

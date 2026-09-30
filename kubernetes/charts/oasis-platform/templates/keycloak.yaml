@@ -83,12 +83,15 @@ spec:
         checksum/realm: {{ .Files.Get "resources/oasis-realm.json" | sha256sum }}
     spec:
       {{- include "h.affinity" . | nindent 6 }}
+      {{- include "h.disableTokenAutomount" . | nindent 6 }}
       initContainers:
         {{- include "h.initTcpAvailabilityCheckBySecret" (list . .Values.databases.keycloak_db.name) | nindent 8}}
       containers:
         - name: {{ .Values.keycloak.name }}
           image: {{ .Values.images.keycloak.image }}:{{ .Values.images.keycloak.version }}
           args: ["start", "--import-realm"]
+          securityContext:
+            readOnlyRootFilesystem: true
           ports:
             - containerPort: {{ .Values.keycloak.port }}
           env:
@@ -169,6 +172,10 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 2
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: keycloak-data
+              mountPath: /opt/keycloak/data
             - name: realm-config
               mountPath: /opt/keycloak/data/import/oasis-realm.json
               subPath: oasis
@@ -182,6 +189,10 @@ spec:
             {{- end }}
 
       volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: keycloak-data
+          emptyDir: {}
         - name: realm-config
           configMap:
             name: {{ $realmSecretName }}

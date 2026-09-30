@@ -81,6 +81,7 @@ spec:
       annotations:
         checksum/{{ $v.name }}: {{ toJson $v | sha256sum }}
     spec:
+      {{- include "h.disableTokenAutomount" $root | nindent 6 }}
       volumes:
 {{- if or $v.volumeSize (eq $v.type "rabbitmq") }}
         {{- if or $v.volumeSize }}
