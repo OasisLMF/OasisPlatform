@@ -8,6 +8,7 @@ import pathlib
 import tempfile
 import shutil
 from datetime import datetime
+from urllib.parse import urlparse
 
 import filelock
 import numpy as np
@@ -23,7 +24,7 @@ from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
-from ..common.filestore.filestore import get_filestore
+from ..common.filestore.filestore import get_filestore, strip_storage_location
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
@@ -1061,6 +1062,18 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         }
 
 
+def input_reupload_filename(input_ref):
+    """ Filename to pass to `filestore.put()` so it overwrites the stored inputs tarball in place.
+
+    `input_ref` is either a download URL (non-shared bucket) or a storage key that may
+    already carry the storage location prefix, which `put()` would otherwise apply a
+    second time (e.g. 'oasis/files/oasis/files/<name>').
+    """
+    if filestore._is_valid_url(input_ref):
+        input_ref = os.path.basename(urlparse(input_ref).path)
+    return strip_storage_location(filestore, input_ref)
+
+
 @app.task(bind=True, name='generate_losses_output', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
@@ -1104,7 +1117,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         input_files_added = True
 
     if input_files_added:
-        filestore.put(res['oasis_files_dir'], filename=res['input_location_storage'])
+        filestore.put(res['oasis_files_dir'], filename=input_reupload_filename(res['input_location_storage']))
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')
