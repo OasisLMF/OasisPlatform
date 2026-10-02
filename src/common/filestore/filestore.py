@@ -87,3 +87,18 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
         else:
             return None
+
+
+def strip_storage_location(filestore, reference):
+    """Return `reference` relative to the filestore's `location` prefix.
+
+    `AwsS3Storage.put()` and `get_storage_url()` return bucket-relative keys that
+    already include `location` (e.g. 'oasis/files/<name>'). Passing one of those
+    back into `put(filename=...)`, or storing it on a Django FileField (whose
+    storage also applies AWS_LOCATION), would apply the prefix a second time
+    and produce 'oasis/files/oasis/files/<name>'.
+    """
+    location = (getattr(filestore, 'location', '') or '').strip('/')
+    if location and reference and reference.startswith(location + '/'):
+        return reference[len(location) + 1:]
+    return reference

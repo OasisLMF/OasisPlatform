@@ -16,7 +16,10 @@ from src.model_execution_worker.distributed_tasks import (
     _merge_parquet_streaming,
     take_first,
     handle_task_failure,
+    input_reupload_filename,
 )
+from oasis_data_manager.filestore.backends.aws import AwsS3Storage
+from oasis_data_manager.filestore.backends.local import LocalStorage
 
 
 def write_csv(path, rows):
@@ -334,3 +337,40 @@ class HandleTaskFailureSignal(TestCase):
                 filestore_mock.put.assert_not_called()
                 dispatched_names = [c.args[0] for c in signature_mock.call_args_list]
                 self.assertNotIn('subtask_error_log', dispatched_names)
+
+
+class InputReuploadFilename(TestCase):
+    """ The inputs tarball is re-uploaded under its existing name once extra input files are
+        added; the name passed to `put()` must not carry the storage location prefix, or the
+        object lands under 'oasis/files/oasis/files/'.
+    """
+
+    def setUp(self):
+        self.s3_filestore = AwsS3Storage(bucket_name='bucket', location='oasis/files')
+
+    def test_s3_key_with_location___prefix_is_stripped(self):
+        with patch('src.model_execution_worker.distributed_tasks.filestore', self.s3_filestore):
+            self.assertEqual(input_reupload_filename('oasis/files/abc123.tar.gz'), 'abc123.tar.gz')
+
+    def test_presigned_url___object_name_is_used(self):
+        url = (
+            'https://bucket.s3.amazonaws.com/oasis/files/analysis_1_inputs.tar.gz'
+            '?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=abc'
+        )
+        with patch('src.model_execution_worker.distributed_tasks.filestore', self.s3_filestore):
+            self.assertEqual(input_reupload_filename(url), 'analysis_1_inputs.tar.gz')
+
+    def test_put_with_resolved_name___returns_the_original_key(self):
+        with TemporaryDirectory() as tmp_dir, \
+                patch('src.model_execution_worker.distributed_tasks.filestore', self.s3_filestore), \
+                patch('oasis_data_manager.filestore.backends.base.BaseStorage.put') as base_put:
+            base_put.side_effect = lambda ref, filename=None, subdir='', **kw: os.path.join(subdir, filename)
+
+            stored_key = self.s3_filestore.put(tmp_dir, filename=input_reupload_filename('oasis/files/abc123.tar.gz'))
+
+            self.assertEqual(stored_key, 'oasis/files/abc123.tar.gz')
+
+    def test_shared_fs_filename___is_unchanged(self):
+        with TemporaryDirectory() as tmp_dir, \
+                patch('src.model_execution_worker.distributed_tasks.filestore', LocalStorage(root_dir=tmp_dir)):
+            self.assertEqual(input_reupload_filename('abc123.tar.gz'), 'abc123.tar.gz')
