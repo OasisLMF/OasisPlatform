@@ -419,7 +419,12 @@ def keys_generation_task(fn):
 
         # Complex model lookup files
         if settings_file:
-            maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
+            # Fetch to both paths - they can differ when set by the model config, and on a
+            # retry (e.g. after a worker crash) this task may start from an empty run dir,
+            # so it can't rely on an earlier task having left 'analysis_settings_json' here.
+            for settings_fp in {params.get('analysis_settings_json'), params.get('lookup_complex_config_json')}:
+                if settings_fp:
+                    maybe_fetch_file(settings_file, settings_fp)
         else:
             params['lookup_complex_config_json'] = None
             params['analysis_settings_json'] = None
