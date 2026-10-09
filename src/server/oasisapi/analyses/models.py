@@ -671,6 +671,7 @@ class Analysis(TimeStampedModel):
         self.validate_loss_generation(run_mode, errors)
         if errors:
             raise ValidationError(detail=errors)
+        events_total = self.get_num_events() if run_mode == self.run_mode_choices.V2 else None
 
         self.status = self.status_choices.RUN_QUEUED
         self._reset_loss_progress()
@@ -681,7 +682,7 @@ class Analysis(TimeStampedModel):
                 self.v1_run_analysis_signature, initiator, record_run_analysis_result, 'record_run_analysis_failure')
         else:
             task_id = self._dispatch_v2(
-                self.v2_run_analysis_signature, initiator, [self.get_num_events()],
+                self.v2_run_analysis_signature, initiator, [events_total],
                 'run_traceback_file', self.status_choices.RUN_ERROR)
         self._record_dispatch('run_task_id', task_id)
 
@@ -727,13 +728,14 @@ class Analysis(TimeStampedModel):
         self.validate_loss_generation(run_mode, errors)
         if errors:
             raise ValidationError(detail=errors)
+        events_total = self.get_num_events()
 
         self._reset_input_generation()
         self._reset_loss_progress()
         self.save()
 
         task_id = self._dispatch_v2(
-            self.v2_start_input_and_loss_generation_signature, initiator, [loc_lines, self.get_num_events()],
+            self.v2_start_input_and_loss_generation_signature, initiator, [loc_lines, events_total],
             'input_generation_traceback_file', self.status_choices.INPUTS_GENERATION_ERROR)
         self._record_dispatch('generate_inputs_task_id', task_id)
 
