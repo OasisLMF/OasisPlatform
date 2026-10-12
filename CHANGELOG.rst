@@ -1,6 +1,20 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.8`_
+ ---------
+* [#1431](https://github.com/OasisLMF/OasisPlatform/pull/1431) - Helm: enforce read-only root filesystem and explicit SA token mounting
+* [#1432](https://github.com/OasisLMF/OasisPlatform/pull/1432) - fix/subtask_logging
+* [#1433](https://github.com/OasisLMF/OasisPlatform/pull/1433) - Only Track issue with the hubspot label
+* [#1434](https://github.com/OasisLMF/OasisPlatform/pull/1434) - Ci/publish docs on release
+* [#1440](https://github.com/OasisLMF/OasisPlatform/pull/1440) - Fix CI image scans
+* [#1442](https://github.com/OasisLMF/OasisPlatform/pull/1442) - Fix/worker logging
+* [#1443](https://github.com/OasisLMF/OasisPlatform/pull/1443) - docs: author version availability as NEXT, resolve it at release
+* [#1445](https://github.com/OasisLMF/OasisPlatform/pull/1445) - Fixed running cyber models with distributed executions
+* [#1448](https://github.com/OasisLMF/OasisPlatform/pull/1448) - 2.5.8 fix CVE
+* [#1449](https://github.com/OasisLMF/OasisPlatform/pull/1449) - Fix/OIDC atomic user create
+.. _`2.5.8`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.7...2.5.8
+
 `2.5.7`_
  ---------
 * [#1418](https://github.com/OasisLMF/OasisPlatform/pull/1418) - docs: Diátaxis foundation, OpenAPI/redoc, validated Platform-API how-to

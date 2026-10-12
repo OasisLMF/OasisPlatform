@@ -113,7 +113,7 @@ frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2024.12.0
+fsspec==2026.6.0
     # via
     #   adlfs
     #   fastparquet
@@ -199,9 +199,9 @@ oasis-data-manager==0.2.3
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.5.7
+oasislmf[extra]==2.5.8
     # via -r requirements-worker.in
-ods-tools==5.0.8
+ods-tools==5.0.9
     # via oasislmf
 packaging==25.0
     # via
@@ -248,7 +248,7 @@ pyarrow==23.0.1
     #   ods-tools
 pycparser==2.22
     # via cffi
-pyjwt[crypto]==2.13.0
+pyjwt[crypto]==2.14.0
     # via
     #   msal
     #   redis
@@ -297,7 +297,7 @@ rpds-py==0.27.0
     #   referencing
 rtree==1.4.1
     # via oasislmf
-s3fs==2024.12.0
+s3fs==2026.6.0
     # via -r requirements-worker.in
 s3transfer==0.13.1
     # via boto3
@@ -350,7 +350,7 @@ tzdata==2025.2
     # via
     #   kombu
     #   pandas
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -r requirements-worker.in
     #   botocore
