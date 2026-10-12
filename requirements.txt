@@ -422,7 +422,6 @@ pip-tools==7.5.3
     # via -r requirements.in
 platformdirs==4.10.0
     # via
-    #   python-discovery
     #   tox
     #   virtualenv
 pluggy==1.6.0
@@ -524,7 +523,7 @@ python-dateutil==2.9.0.post0
     #   freezegun
     #   matplotlib
     #   pandas
-python-discovery==1.4.2
+python-discovery==1.6.2
     # via
     #   tox
     #   virtualenv
@@ -661,7 +660,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==21.5.1
+virtualenv==21.7.13
     # via tox
 waitress==3.0.2
     # via webtest
