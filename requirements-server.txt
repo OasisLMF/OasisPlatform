@@ -196,7 +196,7 @@ oasis-data-manager==0.2.3
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@bfe27892bd24ec6eb482d653236c641a5f69f779
+ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@feature/optional-numba
     # via -r requirements-server.in
 packaging==25.0
     # via
