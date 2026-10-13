@@ -48,7 +48,7 @@ RUN mkdir -p /rootfs/bin /rootfs/usr/bin \
  && for app in sh basename cat chmod cp date dirname env find grep head id ls mkdir mv ps rm sed sleep tail timeout tr wc; do ln -s /bin/busybox /rootfs/bin/$app; done \
  && ln -s /bin/busybox /rootfs/usr/bin/env \
  && { find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \); echo /bin/bash; echo /bin/busybox; echo /usr/bin/curl; } \
-    | xargs -r ldd 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $3}' | sort -u \
+    | xargs -r -n1 ldd 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $3}' | sort -u \
     | while read lib; do \
         [ -e "/runtime-base$lib" ] && continue; \
         case "$lib" in /root/.local/*) continue ;; esac; \
