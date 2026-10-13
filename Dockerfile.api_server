@@ -39,7 +39,7 @@ RUN if [ ! -z "$odm_branch" ] ; then \
 # Slim down site-packages: drop bundled test suites (scipy/numpy/etc) and strip debug symbols
 # from compiled libs (llvmlite is built from source with debug info)
 RUN find /root/.local -type d -name tests -prune -exec rm -rf {} + \
- && find /root/.local -name '*.so*' -type f -exec strip --strip-unneeded {} +
+ && find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \) -exec strip --strip-unneeded {} +
 
 # Stage the runtime filesystem in /rootfs
 #  - bash (startup scripts), curl (wait-for-server) and a minimal set of busybox applets
@@ -50,7 +50,7 @@ RUN mkdir -p /rootfs/bin /rootfs/usr/bin \
  && cp /usr/bin/curl /rootfs/usr/bin/ \
  && for app in sh cat chmod cp env find grep ls mkdir mv rm sed sleep timeout; do ln -s /bin/busybox /rootfs/bin/$app; done \
  && ln -s /bin/busybox /rootfs/usr/bin/env \
- && { find /root/.local -name '*.so*' -type f; echo /bin/bash; echo /bin/busybox; echo /usr/bin/curl; } \
+ && { find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \); echo /bin/bash; echo /bin/busybox; echo /usr/bin/curl; } \
     | xargs -r ldd 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $3}' | sort -u \
     | while read lib; do \
         [ -e "/runtime-base$lib" ] && continue; \
