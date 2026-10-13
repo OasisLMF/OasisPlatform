@@ -14,7 +14,7 @@ ENV PIP_BREAK_SYSTEM_PACKAGES=1
 # llvm22 is needed to compile llvmlite (numba), no musllinux wheels are published
 RUN apk add --no-cache gcc g++ make cmake musl-dev linux-headers pkgconf python3-dev mariadb-connector-c-dev \
     llvm22-dev llvm22-static llvm22-gtest zlib-dev zstd-dev libxml2-dev \
-    bash curl mariadb-connector-c musl-utils
+    bash curl mariadb-connector-c musl-utils git
 ENV CMAKE_PREFIX_PATH=/usr/lib/llvm22
 
 COPY ./requirements-server.txt ./requirements-server.txt
