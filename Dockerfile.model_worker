@@ -9,7 +9,7 @@ ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libspatialindex-dev git curl g++ build-essential \
+    git curl g++ build-essential \
     libtool autoconf automake pkg-config \
  && rm -rf /var/lib/apt/lists/*
 
@@ -40,6 +40,11 @@ RUN if [ -n "$odm_branch" ]; then \
       "oasis-data-manager @ git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}"; \
   fi
 
+# Slim down site-packages: drop bundled test suites (scipy/numpy/etc) and strip debug symbols
+# from compiled libs. Must run before the timestamp normalisation below.
+RUN find /root/.local -type d -name tests -prune -exec rm -rf {} + \
+ && find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \) -exec strip --strip-unneeded {} +
+
 # Normalise all installed file timestamps to epoch 0 so Numba's mtime-based
 # JIT cache validation passes consistently across builds.
 RUN find /root/.local -exec touch -d @0 {} +
@@ -51,7 +56,7 @@ FROM ${PYTHON_IMAGE} AS model_worker
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
-    vim git libspatialindex-dev curl procps passwd ca-certificates \
+    curl procps passwd ca-certificates \
  && update-ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
