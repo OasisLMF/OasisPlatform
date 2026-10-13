@@ -59,10 +59,9 @@ RUN mkdir -p /rootfs/bin /rootfs/usr/bin \
 # OpenShift support: the user's primary group is root (0), runtime files are owned by ${USER_ID}:0
 # with group permissions matching the user's, so the image also runs under a random assigned UID
 ARG USER_ID=1000
-RUN echo "server:x:${USER_ID}:0:server:/home/server:/bin/bash" >> /etc/passwd \
- && echo "server:!::0:99999:7:::" >> /etc/shadow \
+RUN adduser -D -u ${USER_ID} -G root -h /home/server -s /bin/bash server \
  && mkdir -p /rootfs/etc \
- && cp -p /etc/passwd /etc/group /etc/shadow /rootfs/etc/
+ && cp /etc/passwd /etc/group /rootfs/etc/
 
 WORKDIR /var/www/oasis
 COPY ./requirements-server.txt ./requirements.txt
