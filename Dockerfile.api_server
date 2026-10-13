@@ -56,11 +56,13 @@ RUN mkdir -p /rootfs/bin /rootfs/usr/bin \
       done \
  && rm -rf /runtime-base
 
+# OpenShift support: the user's primary group is root (0), runtime files are owned by ${USER_ID}:0
+# with group permissions matching the user's, so the image also runs under a random assigned UID
 ARG USER_ID=1000
-RUN adduser -D -u ${USER_ID} -h /home/server -s /bin/bash server \
- && mkdir -p /rootfs/etc /rootfs/var/log/oasis /rootfs/shared-fs \
- && chmod 777 /rootfs/var/log/oasis \
- && cp /etc/passwd /etc/group /rootfs/etc/
+RUN echo "server:x:${USER_ID}:0:server:/home/server:/bin/bash" >> /etc/passwd \
+ && echo "server:!::0:99999:7:::" >> /etc/shadow \
+ && mkdir -p /rootfs/etc \
+ && cp -p /etc/passwd /etc/group /etc/shadow /rootfs/etc/
 
 WORKDIR /var/www/oasis
 COPY ./requirements-server.txt ./requirements.txt
@@ -81,18 +83,27 @@ COPY --chmod=755 ./src/startup_server.sh /rootfs/usr/local/bin/startup
 COPY --chmod=755 ./src/utils/wait-for-it.sh /rootfs/usr/local/bin/wait-for-it
 COPY --chmod=755 ./src/utils/wait-for-server.sh /rootfs/usr/local/bin/wait-for-server
 COPY --chmod=755 ./src/utils/plat2-migration-helper.sh /rootfs/usr/local/bin/migration-helper.sh
+COPY ./src/utils/server_bashrc /rootfs/home/server/.bashrc
+
+# Stage the writable paths into /rootfs owned by ${USER_ID}:0 with group perms = user perms (g=u).
+# They're copied as part of /rootfs (not as COPY destinations) so the ownership and modes are kept.
+RUN mkdir -p /rootfs/var/www /rootfs/var/log/oasis /rootfs/shared-fs \
+ && mv /root/.local /rootfs/home/server/.local \
+ && cp -a /var/www/oasis /rootfs/var/www/oasis \
+ && chown -R ${USER_ID}:0 /rootfs/home/server /rootfs/var/www/oasis /rootfs/var/log/oasis /rootfs/shared-fs \
+ && chmod -R g=u /rootfs/home/server /rootfs/var/www/oasis /rootfs/var/log/oasis /rootfs/shared-fs \
+ && chmod 775 /rootfs/home/server /rootfs/shared-fs \
+ && chmod 777 /rootfs/var/log/oasis \
+ && chmod 755 /rootfs /rootfs/home /rootfs/var /rootfs/var/www /rootfs/var/log
 
 # ---- STAGE 2 ----
 FROM runtime-base
 
 COPY --from=build-packages /rootfs /
-COPY --chown=server:server --from=build-packages /root/.local /home/server/.local
-COPY --chown=server:server --from=build-packages /var/www/oasis /var/www/oasis
-COPY --chown=server:server --from=build-packages /rootfs/shared-fs /shared-fs
-COPY --chown=server:server ./src/utils/server_bashrc /home/server/.bashrc
 
 WORKDIR /var/www/oasis
-USER server
+USER 1000
+ENV HOME=/home/server
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV OASIS_SERVER_DB_ENGINE=django.db.backends.mysql
 ENV OASIS_MEDIA_ROOT=/shared-fs

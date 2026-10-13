@@ -45,6 +45,9 @@ RUN if [ -n "$odm_branch" ]; then \
 RUN find /root/.local -type d -name tests -prune -exec rm -rf {} + \
  && find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \) -exec strip --strip-unneeded {} +
 
+# Group permissions match the user's (g=u) so the packages work under a random OpenShift UID (group 0)
+RUN chmod -R g=u /root/.local
+
 # Normalise all installed file timestamps to epoch 0 so Numba's mtime-based
 # JIT cache validation passes consistently across builds.
 RUN find /root/.local -exec touch -d @0 {} +
@@ -56,18 +59,22 @@ FROM ${PYTHON_IMAGE} AS model_worker
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
-    curl procps passwd ca-certificates \
+    curl procps ca-certificates \
  && update-ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
+# OpenShift support: the user's primary group is root (0), writable paths are owned by ${USER_ID}:0
+# with group permissions matching the user's, so the image also runs under a random assigned UID
 ARG USER_ID=1000
-RUN useradd -u ${USER_ID} --home /home/worker --shell /bin/bash worker
+# Written directly as the DHI image has no useradd (avoids installing the 'passwd' package)
+RUN echo "worker:x:${USER_ID}:0:worker:/home/worker:/bin/bash" >> /etc/passwd \
+ && echo "worker:!::0:99999:7:::" >> /etc/shadow
 
-COPY --chown=worker:worker --from=build-packages /root/.local /home/worker/.local
+COPY --chown=${USER_ID}:0 --from=build-packages /root/.local /home/worker/.local
 
 WORKDIR /home/worker
 COPY ./requirements-worker.txt ./requirements.txt
-COPY --chown=worker:worker ./conf.ini ./
+COPY --chown=${USER_ID}:0 ./conf.ini ./
 COPY ./src/startup_worker.sh ./startup.sh
 COPY ./src/__init__.py ./src/
 COPY ./src/common ./src/common/
@@ -82,12 +89,16 @@ RUN mkdir -p /var/oasis \
              /shared-fs \
  && touch /var/log/oasis/worker.log \
  && chmod 777 /var/log/oasis/worker.log \
- && chown -R worker:worker /var/oasis /var/log /shared-fs
+ && chown -R ${USER_ID}:0 /var/oasis /var/log /shared-fs /home/worker/model \
+ && chmod -R g=u /var/oasis /var/log /shared-fs /home/worker/model \
+ && chown ${USER_ID}:0 /home/worker /home/worker/.local \
+ && chmod g=u /home/worker /home/worker/.local
 
 COPY ./VERSION ./
 
-USER worker
+USER ${USER_ID}
 
+ENV HOME=/home/worker
 ENV PATH=/home/worker/.local/bin:$PATH
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV DEBIAN_FRONTEND=noninteractive
@@ -116,7 +127,7 @@ ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /tmp/jit-warmup-cwd
-RUN set -e; oasislmf warmup;
+RUN set -e; oasislmf warmup; chmod -R g=u "$NUMBA_CACHE_DIR"
 
 # ---- STAGE 4: Final image with baked JIT cache ----
 FROM model_worker
@@ -124,4 +135,7 @@ FROM model_worker
 ENV NUMBA_CPU_NAME=x86-64-v3
 ENV NUMBA_CPU_FEATURES=
 ENV NUMBA_CACHE_DIR=/home/worker/.numba_jit_cache
-COPY --from=jit-warmup --chown=worker:worker /home/worker/.numba_jit_cache /home/worker/.numba_jit_cache
+ARG USER_ID=1000
+COPY --from=jit-warmup --chown=${USER_ID}:0 /home/worker/.numba_jit_cache /home/worker/.numba_jit_cache
+# COPY creates the top-level dir as 755, make it group writable so a random UID can add cache entries
+RUN chmod g=u /home/worker/.numba_jit_cache
