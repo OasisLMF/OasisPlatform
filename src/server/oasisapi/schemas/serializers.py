@@ -20,7 +20,7 @@ from jsonschema.exceptions import SchemaError as JSONSchemaError
 
 from ods_tools.oed import AnalysisSettingHandler, ModelSettingHandler
 from ods_tools.oed.common import OdsException
-from ods_tools.combine.combine import CombineSettingsSchema
+from ods_tools.combine.settings import CombineSettingsSchema
 
 
 TaskErrorSerializer = serializers.ListField(child=serializers.IntegerField())
